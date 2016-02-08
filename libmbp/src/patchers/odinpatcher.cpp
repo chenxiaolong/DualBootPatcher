@@ -365,13 +365,13 @@ bool OdinPatcher::Impl::processContents()
             continue;
         } else if (strcmp(name, "cache.img.ext4") != 0
                 && strcmp(name, "system.img.ext4") != 0) {
+            LOGD("Skipping %s", name);
             if (archive_read_data_skip(aInput) != ARCHIVE_OK) {
                 LOGE("libarchive: Failed to skip data: %s",
                      archive_error_string(aInput));
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
-            LOGD("Skipping %s", name);
             continue;
         }
 
@@ -572,7 +572,8 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
              impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileReadError;
     }
-    return ret ? (la_ssize_t) bytesRead : -1;
+    return (ret || impl->laFile.error() == io::File::ErrorEndOfFile)
+            ? (la_ssize_t) bytesRead : -1;
 }
 
 la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
