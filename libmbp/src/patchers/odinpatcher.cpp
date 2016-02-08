@@ -317,6 +317,12 @@ bool OdinPatcher::Impl::processContents()
         if (cancelled) return false;
 
         const char *name = archive_entry_pathname(entry);
+        if (!name) {
+            continue;
+        }
+
+        updateDetails(name);
+
         if (strcmp(name, "boot.img") == 0) {
             LOGD("Handling boot.img");
 
@@ -529,10 +535,10 @@ void OdinPatcher::Impl::updateProgress(uint64_t bytes, uint64_t maxBytes)
     if (progressCb) {
         bool shouldCall = true;
         if (maxBytes > 0) {
-            // Rate limit... call back only if percentage exceeds 0.1%
+            // Rate limit... call back only if percentage exceeds 0.01%
             double oldRatio = (double) oldBytes / maxBytes;
             double newRatio = (double) bytes / maxBytes;
-            if (newRatio - oldRatio < 0.001) {
+            if (newRatio - oldRatio < 0.0001) {
                 shouldCall = false;
             }
         }
