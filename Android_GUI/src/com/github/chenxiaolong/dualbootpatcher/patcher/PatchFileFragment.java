@@ -102,6 +102,7 @@ public class PatchFileFragment extends Fragment implements
     private static final String EXTRA_SELECTED_OUTPUT_URI = "selected_output_file";
     private static final String EXTRA_SELECTED_INPUT_FILE_NAME = "selected_input_file_name";
     private static final String EXTRA_SELECTED_INPUT_FILE_SIZE = "selected_input_file_size";
+    private static final String EXTRA_SELECTED_IS_ODIN = "selected_is_odin";
     private static final String EXTRA_SELECTED_TASK_ID = "selected_task_id";
     private static final String EXTRA_SELECTED_DEVICE = "selected_device";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
@@ -167,6 +168,8 @@ public class PatchFileFragment extends Fragment implements
     private String mSelectedInputFileName;
     /** Selected input file's size */
     private long mSelectedInputFileSize;
+    /** Selected file is Odin image */
+    private boolean mSelectedIsOdin;
     /** Task ID of selected patcher item */
     private int mSelectedTaskId;
     /** Target device */
@@ -204,6 +207,7 @@ public class PatchFileFragment extends Fragment implements
             mSelectedOutputUri = savedInstanceState.getParcelable(EXTRA_SELECTED_OUTPUT_URI);
             mSelectedInputFileName = savedInstanceState.getString(EXTRA_SELECTED_INPUT_FILE_NAME);
             mSelectedInputFileSize = savedInstanceState.getLong(EXTRA_SELECTED_INPUT_FILE_SIZE);
+            mSelectedIsOdin = savedInstanceState.getBoolean(EXTRA_SELECTED_IS_ODIN);
             mSelectedTaskId = savedInstanceState.getInt(EXTRA_SELECTED_TASK_ID);
             mSelectedDevice = savedInstanceState.getParcelable(EXTRA_SELECTED_DEVICE);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
@@ -275,6 +279,7 @@ public class PatchFileFragment extends Fragment implements
         outState.putParcelable(EXTRA_SELECTED_OUTPUT_URI, mSelectedOutputUri);
         outState.putString(EXTRA_SELECTED_INPUT_FILE_NAME, mSelectedInputFileName);
         outState.putLong(EXTRA_SELECTED_INPUT_FILE_SIZE, mSelectedInputFileSize);
+        outState.putBoolean(EXTRA_SELECTED_IS_ODIN, mSelectedIsOdin);
         outState.putInt(EXTRA_SELECTED_TASK_ID, mSelectedTaskId);
         outState.putParcelable(EXTRA_SELECTED_DEVICE, mSelectedDevice);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
@@ -695,8 +700,15 @@ public class PatchFileFragment extends Fragment implements
      * @see {@link #onSelectedOutputUri(Uri)}
      */
     private void selectOutputFile() {
-        String baseName = FilenameUtils.getBaseName(mSelectedInputFileName);
-        String extension = FilenameUtils.getExtension(mSelectedInputFileName);
+        String baseName;
+        String extension;
+        if (mSelectedIsOdin) {
+            baseName = mSelectedInputFileName.replaceAll("\\.tar\\.md5(\\.gz|\\.xz)?$", "");
+            extension = "zip";
+        } else {
+            baseName = FilenameUtils.getBaseName(mSelectedInputFileName);
+            extension = FilenameUtils.getExtension(mSelectedInputFileName);
+        }
         StringBuilder sb = new StringBuilder();
         if (baseName != null) {
             sb.append(baseName);
@@ -804,6 +816,10 @@ public class PatchFileFragment extends Fragment implements
         mSelectedInputFileName = metadata.displayName;
         mSelectedInputFileSize = metadata.size;
 
+        mSelectedIsOdin = mSelectedInputFileName.endsWith(".tar.md5")
+                || mSelectedInputFileName.endsWith(".tar.md5.gz")
+                || mSelectedInputFileName.endsWith(".tar.md5.xz");
+
         // Open patcher options
         showPatcherOptionsDialog(-1);
     }
@@ -871,7 +887,11 @@ public class PatchFileFragment extends Fragment implements
             @Override
             public void run() {
                 final PatchFileItem pf = new PatchFileItem();
-                pf.patcherId = "MultiBootPatcher";
+                if (mSelectedIsOdin) {
+                    pf.patcherId = "OdinPatcher";
+                } else {
+                    pf.patcherId = "MultiBootPatcher";
+                }
                 pf.device = mSelectedDevice;
                 pf.inputUri = mSelectedInputUri;
                 pf.outputUri = mSelectedOutputUri;
