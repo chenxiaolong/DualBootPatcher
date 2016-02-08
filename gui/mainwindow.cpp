@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -60,8 +60,6 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     }
 
     d->pc = pc;
-
-    d->patcher = pc->createPatcher("MultiBootPatcher");
 
     addWidgets();
     setWidgetActions();
@@ -224,6 +222,9 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
                                     const QString &errorMessage)
 {
     Q_D(MainWindow);
+
+    d->pc->destroyPatcher(d->patcher);
+    d->patcher = nullptr;
 
     d->patcherNewFile = newFile;
     d->patcherFailed = failed;
@@ -429,7 +430,7 @@ void MainWindow::chooseFile()
 
     QString fileName = QFileDialog::getOpenFileName(this, QString(),
             d->settings.value(QStringLiteral("last_dir")).toString(),
-            tr("Zip files (*.zip)"));
+            tr("Zip files and Odin tarballs (*.zip *.tar.md5 *.tar.md5.gz *.tar.md5.xz)"));
     if (fileName.isNull()) {
         return;
     }
@@ -508,14 +509,36 @@ void MainWindow::startPatching()
     }
 
 
-    QFileInfo qFileInfo(d->fileName);
+    QStringList suffixes;
+    suffixes << QStringLiteral(".tar.md5");
+    suffixes << QStringLiteral(".tar.md5.gz");
+    suffixes << QStringLiteral(".tar.md5.xz");
+    suffixes << QStringLiteral(".zip");
 
-    // Output file name is <parent path>/<base name>_<rom id>.<suffix>
-    QString outputName(qFileInfo.completeBaseName()
-            % QStringLiteral("_")
-            % romId
-            % QStringLiteral(".")
-            % qFileInfo.suffix());
+    QFileInfo qFileInfo(d->fileName);
+    QString suffix;
+    QString outputName;
+    bool isOdin = false;
+
+    for (const QString &suffix : suffixes) {
+        if (d->fileName.endsWith(suffix)) {
+            // Input name: <parent path>/<base name>.<suffix>
+            // Output name: <parent path>/<base name>_<rom id>.zip
+            outputName = d->fileName.left(d->fileName.size() - suffix.size())
+                    % QStringLiteral("_")
+                    % romId
+                    % QStringLiteral(".zip");
+            isOdin = suffix.contains(QStringLiteral(".tar.md5"));
+            break;
+        }
+    }
+    if (outputName.isEmpty()) {
+        outputName = qFileInfo.completeBaseName()
+                % QStringLiteral("_")
+                % romId
+                % QStringLiteral(".")
+                % qFileInfo.suffix();
+    }
 
     QString inputPath(QDir::toNativeSeparators(qFileInfo.filePath()));
     QString outputPath(QDir::toNativeSeparators(
@@ -526,6 +549,12 @@ void MainWindow::startPatching()
     fileInfo->setOutputPath(outputPath.toUtf8().constData());
     fileInfo->setDevice(d->device);
     fileInfo->setRomId(romId.toUtf8().constData());
+
+    if (isOdin) {
+        d->patcher = d->pc->createPatcher("OdinPatcher");
+    } else {
+        d->patcher = d->pc->createPatcher("MultiBootPatcher");
+    }
 
     emit runThread(d->patcher, fileInfo);
 }
