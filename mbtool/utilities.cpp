@@ -25,8 +25,8 @@
 #include <getopt.h>
 #include <sys/stat.h>
 
-#include "external/minizip/zip.h"
-#include "external/minizip/ioandroid.h"
+#include "minizip/zip.h"
+#include "minizip/ioandroid.h"
 
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"

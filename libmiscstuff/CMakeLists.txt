@@ -22,6 +22,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
         INSTALL_COMMAND ""
     )
 
+    add_dependencies(
+        libmiscstuff
+        mblog-static-android
+    )
+
     # Always rebuild since files may have changed
     ExternalProject_Add_Step(
         libmiscstuff

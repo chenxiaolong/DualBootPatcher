@@ -1,5 +1,4 @@
-#_LOCAL_PATH := $(call my-dir)
-_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+include @CMAKE_BINARY_DIR@/ndk/common.mk
 
 # To debug using valgrind, set DEBUGGING to true and push
 # <build dir>/mbtool/mbtool-prefix/tmp/local/armeabi-v7a/mbtool_recovery
@@ -22,27 +21,21 @@ _LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 #   cd /tmp/
 DEBUGGING := false
 
-# Whether ccache should be used (highly recommended!)
-USE_CCACHE := true
-
-
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
 
-
-SKIP_EXAMPLES := true
 include $(EXTERNAL_DIR)/minizip/Android.mk
 
-include @CMAKE_BINARY_DIR@/libmblog/Android.include.mk
-include @CMAKE_BINARY_DIR@/libmbp/Android.include.mk
-include @CMAKE_BINARY_DIR@/libmbpio/Android.include.mk
-include @CMAKE_BINARY_DIR@/libmbutil/Android.include.mk
+include @CMAKE_BINARY_DIR@/libmblog/Android.static.include.mk
+include @CMAKE_BINARY_DIR@/libmbp/Android.static.include.mk
+include @CMAKE_BINARY_DIR@/libmbpio/Android.static.include.mk
+include @CMAKE_BINARY_DIR@/libmbutil/Android.static.include.mk
 include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
 
 include miniadbd/Android.mk
 
 
-LOCAL_PATH := $(_LOCAL_PATH)
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 
 mbtool_src_base := \
 	appsync.cpp \
@@ -81,21 +74,11 @@ mbtool_src_recovery := \
 	utilities.cpp
 
 mb_common_cflags := \
-	-Wall -Wextra -Werror \
-	-fno-exceptions -fno-rtti \
-	-ffunction-sections -fdata-sections \
-	-Os
+	$(mb_global_cflags)
 
 # minizip type safety
 mb_common_cflags += \
 	-DSTRICTZIPUNZIP
-
-mb_common_ldflags := \
-	-Wl,--gc-sections
-
-# Workaround https://code.google.com/p/android/issues/detail?id=177690
-mb_common_ldflags += \
-	-fuse-ld=bfd
 
 mb_common_cflags += \
 	-DPUGIXML_NO_EXCEPTIONS \
@@ -113,24 +96,33 @@ mb_common_cflags += \
 	-Wno-error=cpp
 endif
 
+mb_common_ldflags := \
+	$(mb_global_ldflags)
+
+# Workaround https://code.google.com/p/android/issues/detail?id=177690
+mb_common_ldflags += \
+	-fuse-ld=bfd
+
 mb_common_includes := \
-	@CMAKE_SOURCE_DIR@/libmbcommon/include \
+	$(mb_global_c_includes) \
 	$(EXTERNAL_DIR) \
 	$(EXTERNAL_DIR)/flatbuffers/include \
 	$(EXTERNAL_DIR)/pugixml/src
-
-
-ifeq ($(USE_CCACHE),true)
-TARGET_CC := ccache $(TARGET_CC)
-TARGET_CXX := ccache $(TARGET_CXX)
-endif
 
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base)
 
 LOCAL_MODULE := mbtool
-LOCAL_STATIC_LIBRARIES := libminiadbd libmbutil libmblog libjansson libsepol procps-ng minizip libcrypto
+LOCAL_STATIC_LIBRARIES := \
+	libminiadbd \
+	prebuilt-libmbutil-static \
+	prebuilt-libmblog-static \
+	libjansson \
+	libsepol \
+	procps-ng \
+	minizip \
+	libcrypto
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 
@@ -152,7 +144,20 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbtool_src_base) $(mbtool_src_recovery)
 
 LOCAL_MODULE := mbtool_recovery
-LOCAL_STATIC_LIBRARIES := libmbutil libmblog libmbp-static libmbpio libjansson libsepol libarchive liblzo2 liblz4 liblzma minizip procps-ng libcrypto
+LOCAL_STATIC_LIBRARIES := \
+	prebuilt-libmbutil-static \
+	prebuilt-libmblog-static \
+	prebuilt-libmbp-static \
+	prebuilt-libmbpio-static \
+	libjansson \
+	libsepol \
+	libarchive \
+	liblzo2 \
+	liblz4 \
+	liblzma \
+	minizip \
+	procps-ng \
+	libcrypto
 
 LOCAL_C_INCLUDES := $(mb_common_includes)
 

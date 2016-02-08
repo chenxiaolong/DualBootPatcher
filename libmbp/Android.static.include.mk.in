@@ -1,8 +1,6 @@
-TOP_DIR := @CMAKE_SOURCE_DIR@
 MBP_STATIC_DIR := @CMAKE_CURRENT_BINARY_DIR@/mbp-static-android-prefix/tmp/local
 
 include $(CLEAR_VARS)
-LOCAL_MODULE            := libmbp-static
+LOCAL_MODULE            := prebuilt-libmbp-static
 LOCAL_SRC_FILES         := $(MBP_STATIC_DIR)/$(TARGET_ARCH_ABI)/libmbp-static.a
-LOCAL_EXPORT_C_INCLUDES := $(TOP_DIR)/libmbp/include
 include $(PREBUILT_STATIC_LIBRARY)

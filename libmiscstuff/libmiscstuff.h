@@ -22,9 +22,15 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+extern "C" {
+
 int64_t get_mnt_total_size(const char *mountpoint);
 int64_t get_mnt_avail_size(const char *mountpoint);
 
 bool is_same_file(const char *path1, const char *path2);
 
 bool extract_archive(const char *filename, const char *target);
+
+void mblog_set_logcat();
+
+}

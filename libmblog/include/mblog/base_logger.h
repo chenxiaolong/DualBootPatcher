@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
 #include "mblog/log_level.h"
 
 #include <cstdarg>
@@ -28,7 +29,7 @@ namespace mb
 namespace log
 {
 
-class BaseLogger
+class MB_EXPORT BaseLogger
 {
 public:
     virtual void log(LogLevel prio, const char *fmt, va_list ap) = 0;

@@ -28,7 +28,7 @@ namespace mb
 namespace log
 {
 
-class StdioLogger : public BaseLogger
+class MB_EXPORT StdioLogger : public BaseLogger
 {
 public:
     StdioLogger(std::FILE *stream, bool show_timestamps);

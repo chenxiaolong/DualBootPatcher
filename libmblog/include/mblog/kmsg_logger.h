@@ -28,7 +28,7 @@ namespace mb
 namespace log
 {
 
-class KmsgLogger : public BaseLogger
+class MB_EXPORT KmsgLogger : public BaseLogger
 {
 public:
     KmsgLogger();

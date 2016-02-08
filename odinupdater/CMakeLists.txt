@@ -34,10 +34,10 @@ ExternalProject_Add_Step(
 
 add_dependencies(
     odinupdater
-    mblog-android
-    mbpio-android
-    mbsparse-android
-    mbutil
+    mblog-static-android
+    mbpio-static-android
+    mbsparse-static-android
+    mbutil-static-android
 )
 
 install(

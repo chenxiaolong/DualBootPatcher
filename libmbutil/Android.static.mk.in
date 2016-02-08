@@ -1,20 +1,15 @@
-#_LOCAL_PATH := $(call my-dir)
-_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+include @CMAKE_BINARY_DIR@/ndk/common.mk
+include @CMAKE_BINARY_DIR@/libmblog/Android.static.include.mk
+include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
+
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 
 # If set to true, util/properties.cpp will try to dlopen libc.so to read/write
 # properties
 DYNAMICALLY_LINKED := false
 
-# Whether ccache should be used (highly recommended!)
-USE_CCACHE := true
-
 TOP_DIR := @CMAKE_SOURCE_DIR@
 EXTERNAL_DIR := $(TOP_DIR)/external
-
-include @CMAKE_BINARY_DIR@/libmblog/Android.include.mk
-include @CMAKE_BINARY_DIR@/thirdparty/Android.mk
-
-LOCAL_PATH := $(_LOCAL_PATH)
 
 mbutil_src := \
 	src/autoclose/dir.cpp \
@@ -43,31 +38,22 @@ mbutil_src := \
 	external/mntent.c
 
 mbutil_cflags := \
-	-Wall -Wextra -Werror \
-	-fno-exceptions -fno-rtti \
-	-ffunction-sections -fdata-sections \
-	-Os
+	$(mb_global_cflags)
 
 ifeq ($(DYNAMICALLY_LINKED),true)
 mbutil_cflags += -DDYNAMICALLY_LINKED
 endif
 
 mbutil_includes := \
-	include \
+	$(mb_global_c_includes) \
 	$(EXTERNAL_DIR)
-
-
-ifeq ($(USE_CCACHE),true)
-TARGET_CC := ccache $(TARGET_CC)
-TARGET_CXX := ccache $(TARGET_CXX)
-endif
 
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(mbutil_src)
-LOCAL_MODULE := libmbutil
+LOCAL_MODULE := libmbutil-static
 LOCAL_STATIC_LIBRARIES := \
-	libmblog \
+	prebuilt-libmblog-static \
 	libarchive \
 	libsepol \
 	libcrypto \

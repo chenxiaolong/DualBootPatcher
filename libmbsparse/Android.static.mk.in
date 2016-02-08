@@ -1,0 +1,12 @@
+include @CMAKE_BINARY_DIR@/ndk/common.mk
+include @CMAKE_BINARY_DIR@/libmblog/Android.static.include.mk
+
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := @MBSPARSE_SOURCES_STR@
+LOCAL_MODULE := libmbsparse-static
+LOCAL_CFLAGS := $(mb_global_cflags)
+LOCAL_C_INCLUDES := $(mb_global_c_includes)
+LOCAL_STATIC_LIBRARIES := prebuilt-libmblog-static
+include $(BUILD_STATIC_LIBRARY)

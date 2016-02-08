@@ -51,8 +51,8 @@ ExternalProject_Add_Step(
 add_dependencies(
     mbtool
     mbp-static-android
-    mbpio-android
-    mbutil
+    mbpio-static-android
+    mbutil-static-android
 )
 
 install(

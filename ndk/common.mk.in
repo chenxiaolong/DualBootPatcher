@@ -1,0 +1,36 @@
+PREBUILT_SHARED_LIBRARY_NO_COPY := \
+	@CMAKE_CURRENT_SOURCE_DIR@/prebuilt-shared-library-no-copy.mk
+
+# Whether ccache should be used (highly recommended!)
+mb_use_ccache := true
+
+ifeq (${mb_use_ccache},true)
+TARGET_CC := ccache $(TARGET_CC)
+TARGET_CXX := ccache $(TARGET_CXX)
+endif
+
+# Global CFLAGS
+mb_global_cflags := \
+	-Wall -Wextra -Werror \
+	-fno-exceptions -fno-rtti \
+	-ffunction-sections -fdata-sections \
+	-fvisibility=hidden \
+	-Wl,--no-undefined \
+	-O2
+
+# Global CONLYFLAGS
+mb_global_conlyflags := \
+	-Wall -Wextra -Werror \
+	-ffunction-sections -fdata-sections \
+	-fvisibility=hidden \
+	-Wl,--no-undefined \
+	-O2
+
+# Global LDFLAGS
+mb_global_ldflags := \
+	-Wl,--gc-sections \
+	-O2
+
+# Global include directories
+mb_global_c_includes := \
+	@MBP_GLOBAL_INCLUDE_DIRS_STR@

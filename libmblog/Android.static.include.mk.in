@@ -1,0 +1,6 @@
+MBLOG_STATIC_DIR := @CMAKE_CURRENT_BINARY_DIR@/mblog-static-android-prefix/tmp/local
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := prebuilt-libmblog-static
+LOCAL_SRC_FILES         := $(MBLOG_STATIC_DIR)/$(TARGET_ARCH_ABI)/libmblog-static.a
+include $(PREBUILT_STATIC_LIBRARY)

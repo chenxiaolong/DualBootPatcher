@@ -19,6 +19,8 @@
 
 #include "libmiscstuff.h"
 
+#include <memory>
+
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
@@ -26,19 +28,13 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-
 #include <android/log.h>
 
-#define LOG_TAG "libmiscstuff"
-
-#define LOG(prio, tag, fmt...) __android_log_print(prio, tag, fmt)
-#define LOGD(...) LOG(ANDROID_LOG_DEBUG,   LOG_TAG, __VA_ARGS__)
-#define LOGE(...) LOG(ANDROID_LOG_ERROR,   LOG_TAG, __VA_ARGS__)
-#define LOGI(...) LOG(ANDROID_LOG_INFO,    LOG_TAG, __VA_ARGS__)
-#define LOGV(...) LOG(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
-#define LOGW(...) LOG(ANDROID_LOG_WARN,    LOG_TAG, __VA_ARGS__)
+#include "mblog/android_logger.h"
+#include "mblog/logging.h"
 
 
+extern "C" {
 
 int64_t get_mnt_total_size(const char *mountpoint) {
     struct statfs sfs;
@@ -171,4 +167,12 @@ error:
     archive_write_free(out);
 
     return false;
+}
+
+void mblog_set_logcat()
+{
+    mb::log::set_log_tag("libmbp");
+    mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
+}
+
 }

@@ -26,7 +26,7 @@ namespace mb
 namespace log
 {
 
-class AndroidLogger : public BaseLogger
+class MB_EXPORT AndroidLogger : public BaseLogger
 {
 public:
     virtual void log(LogLevel prio, const char *fmt, va_list ap) override;

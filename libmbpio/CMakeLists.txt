@@ -70,17 +70,18 @@ foreach(_source ${MBP_IO_ANDROID_SOURCES})
 endforeach()
 
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
     @ONLY
 )
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.include.mk
+    @ONLY
 )
 
 ExternalProject_Add(
-    mbpio-android
+    mbpio-static-android
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
     BUILD_COMMAND ${NDK_BUILD}
@@ -89,14 +90,14 @@ ExternalProject_Add(
                   NDK_APPLICATION_MK=Application.mk
                   NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out/
                   NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
+                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
                   ${NDK_ARGS}
     INSTALL_COMMAND ""
 )
 
 # Always rebuild since files may have changed
 ExternalProject_Add_Step(
-    mbpio-android
+    mbpio-static-android
     forcerebuild
     DEPENDEES update
     DEPENDERS configure

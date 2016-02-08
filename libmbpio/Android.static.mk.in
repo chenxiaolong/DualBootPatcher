@@ -1,0 +1,23 @@
+include @CMAKE_BINARY_DIR@/ndk/common.mk
+
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := \
+	external/android-libc/ftw.c \
+	external/android-libc/nftw.c
+LOCAL_MODULE := libc_compat-static
+LOCAL_C_INCLUDES := external/android-libc
+LOCAL_CFLAGS := \
+	$(mb_global_conlyflags) \
+	-pie
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := @MBP_IO_SOURCES_STR@
+LOCAL_MODULE := libmbpio-static
+LOCAL_C_INCLUDES := include external/android-libc
+LOCAL_CFLAGS := \
+	$(mb_global_cflags) \
+	-pie
+include $(BUILD_STATIC_LIBRARY)

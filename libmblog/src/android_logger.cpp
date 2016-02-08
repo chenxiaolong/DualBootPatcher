@@ -21,7 +21,7 @@
 
 #include <android/log.h>
 
-#define LOG_TAG "mblog"
+#include "mblog/logging.h"
 
 namespace mb
 {
@@ -52,7 +52,7 @@ void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
         return;
     }
 
-    __android_log_vprint(logcatprio, LOG_TAG, fmt, ap);
+    __android_log_vprint(logcatprio, get_log_tag(), fmt, ap);
 }
 
 }

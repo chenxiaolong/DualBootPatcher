@@ -26,7 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define LOG_TAG "mblog"
+#include "mblog/logging.h"
 
 namespace mb
 {
@@ -96,8 +96,8 @@ void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
     }
 
     char new_fmt[64];
-    if (snprintf(new_fmt, sizeof(new_fmt), "%s" LOG_TAG ": %s\n", kprio, fmt)
-            >= (int) sizeof(new_fmt)) {
+    if (snprintf(new_fmt, sizeof(new_fmt), "%s%s: %s\n",
+                 kprio, get_log_tag(), fmt) >= (int) sizeof(new_fmt)) {
         // Doesn't fit
         return;
     }

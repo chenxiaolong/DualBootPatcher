@@ -60,7 +60,7 @@ include(cmake/AndroidNDK.cmake)
 # Third party binaries
 add_subdirectory(thirdparty)
 
-include_directories(
+set(MBP_GLOBAL_INCLUDE_DIRS
     libmbcommon/include
     libmblog/include
     libmbpio/include
@@ -69,7 +69,10 @@ include_directories(
     libmbutil/include
 )
 
+include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
+
 # Main patcher
+add_subdirectory(ndk)
 add_subdirectory(libmbcommon)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)

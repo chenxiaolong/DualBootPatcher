@@ -23,6 +23,7 @@
 
 #include <cstdarg>
 
+#include "mbcommon/common.h"
 #include "mblog/base_logger.h"
 #include "mblog/log_level.h"
 
@@ -43,10 +44,12 @@ namespace mb
 namespace log
 {
 
-void log_set_logger(std::shared_ptr<BaseLogger> logger);
+MB_EXPORT const char * get_log_tag();
+MB_EXPORT void set_log_tag(const char *tag);
+MB_EXPORT void log_set_logger(std::shared_ptr<BaseLogger> logger);
 __attribute__((format(printf, 2, 3)))
-void log(LogLevel prio, const char *fmt, ...);
-void logv(LogLevel prio, const char *fmt, va_list ap);
+MB_EXPORT void log(LogLevel prio, const char *fmt, ...);
+MB_EXPORT void logv(LogLevel prio, const char *fmt, va_list ap);
 
 }
 }

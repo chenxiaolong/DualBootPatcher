@@ -28,7 +28,18 @@ namespace mb
 namespace log
 {
 
+static std::string log_tag("mblog");
 static std::shared_ptr<BaseLogger> logger;
+
+const char * get_log_tag()
+{
+    return log_tag.c_str();
+}
+
+void set_log_tag(const char *tag)
+{
+    log_tag = tag;
+}
 
 void log_set_logger(std::shared_ptr<BaseLogger> logger_local)
 {

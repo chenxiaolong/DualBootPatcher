@@ -1,17 +1,13 @@
-#_LOCAL_PATH := $(call my-dir)
-_LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
-
+include @CMAKE_BINARY_DIR@/libmblog/Android.static.include.mk
 include @CMAKE_CURRENT_BINARY_DIR@/Android.common.mk
 
-LOCAL_PATH := $(_LOCAL_PATH)
+LOCAL_PATH := @CMAKE_CURRENT_SOURCE_DIR@
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libmbp-static
 LOCAL_SRC_FILES := $(mbp_sources)
 LOCAL_C_INCLUDES := $(mbp_includes)
 LOCAL_CFLAGS := $(mbp_cflags)
-# Temporary hack to avoid needing liblog
-LOCAL_CFLAGS += -DMBP_NO_LOGCAT
-LOCAL_STATIC_LIBRARIES := $(mbp_static_libs)
+LOCAL_STATIC_LIBRARIES := $(mbp_static_libs) prebuilt-libmblog-static
 LOCAL_STATIC_LIBRARIES += libarchive
 include $(BUILD_STATIC_LIBRARY)

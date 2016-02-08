@@ -101,8 +101,13 @@ configure_file(
     @ONLY
 )
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.include.mk
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.shared.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.shared.include.mk
+    @ONLY
+)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.include.mk.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.include.mk
     @ONLY
 )
 configure_file(
@@ -146,7 +151,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
 
     add_dependencies(
         mbp-shared-android
-        mbpio-android
+        mbpio-static-android
     )
 else()
     # For desktop machines, we'll build with cmake
@@ -222,6 +227,6 @@ ExternalProject_Add_Step(
 
 add_dependencies(
     mbp-static-android
-    mbpio-android
-    mblog-android
+    mbpio-static-android
+    mblog-static-android
 )
