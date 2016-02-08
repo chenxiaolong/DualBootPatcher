@@ -159,7 +159,7 @@ public class FileUtils {
         }
 
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("application/zip");
+        intent.setType("*/*");
 
         return intent;
     }
@@ -178,7 +178,7 @@ public class FileUtils {
         }
 
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("application/zip");
+        intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, defaultName);
 
         return intent;
