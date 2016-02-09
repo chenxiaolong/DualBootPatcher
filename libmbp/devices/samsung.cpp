@@ -324,6 +324,19 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices->push_back(device);
 
+    // Samsung Galaxy S 5 4G+
+    device = new Device();
+    device->setId("kccat6");
+    device->setCodenames({ "kccat6", "kccat6xx" });
+    device->setName("Samsung Galaxy S 5 4G+");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p24" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p25" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p27" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p17" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p18" });
+    devices->push_back(device);
+
     // Samsung Galaxy S 6 Flat/Edge
     device = new Device();
     device->setId("zerolte");
