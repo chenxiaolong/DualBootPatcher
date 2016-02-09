@@ -116,7 +116,8 @@ static bool backup_directory(const std::string &output_file,
 {
     autoclose::dir dp(autoclose::opendir(directory.c_str()));
     if (!dp) {
-        LOGE("%s: %s", directory.c_str(), strerror(errno));
+        LOGE("%s: Failed to open directory: %s",
+             directory.c_str(), strerror(errno));
         return false;
     }
 
@@ -135,7 +136,8 @@ static bool backup_directory(const std::string &output_file,
     }
 
     if (errno) {
-        LOGE("%s: %s", directory.c_str(), strerror(errno));
+        LOGE("%s: Failed to read directory contents: %s",
+             directory.c_str(), strerror(errno));
         return false;
     }
 
@@ -158,7 +160,8 @@ static bool backup_image(const std::string &output_file,
                          const std::vector<std::string> &exclusions)
 {
     if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
-        LOGE("%s: %s", BACKUP_MNT_DIR, strerror(errno));
+        LOGE("%s: Failed to create directory: %s",
+             BACKUP_MNT_DIR, strerror(errno));
         return false;
     }
 
@@ -207,7 +210,8 @@ static bool restore_image(const std::string &input_file,
     }
 
     if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
-        LOGE("%s: %s", BACKUP_MNT_DIR, strerror(errno));
+        LOGE("%s: Failed to create directory: %s",
+             BACKUP_MNT_DIR, strerror(errno));
         return false;
     }
 
@@ -874,7 +878,8 @@ int backup_main(int argc, char *argv[])
     }
 
     if (!util::mkdir_recursive(output_dir, 0755)) {
-        fprintf(stderr, "%s: %s\n", output_dir.c_str(), strerror(errno));
+        fprintf(stderr, "%s: Failed to create directory: %s\n",
+                output_dir.c_str(), strerror(errno));
         return EXIT_FAILURE;
     }
 
