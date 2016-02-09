@@ -32,6 +32,7 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Spazio Disponibile</string>
   <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Impostazioni</string>
   <!--Navigation drawer item for changing the app sharing settings-->
   <string name="title_app_sharing">Condivisione delle App</string>
   <!--Nagivation drawer item for rebooting the device-->
@@ -87,9 +88,11 @@ Continuare</string>
   <!--Build text shown on ROM card if the build could not be detected-->
   <string name="rom_card_unknown_build">Build sconosciuta</string>
   <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Aggiorna il ramdisk</string>
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Imposta kernel</string>
   <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">Backup ROM</string>
   <!--ROM menu item for adding an icon to the home screen-->
   <string name="rom_menu_add_to_home_screen">Aggiungi alla schermata Home</string>
   <!--ROM menu item for changing the name-->
@@ -130,6 +133,7 @@ Continuare</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM attualmente in uso non può essere eliminata.</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">Il nome ed i thumbnail non possono essere caricati perchè è stato negato l\'accesso alla memoria interna.</string>
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo della ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
@@ -181,20 +185,36 @@ Continuare</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="zip_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
   <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Slot</string>
   <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Versione</string>
   <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Build</string>
   <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">Stato mbtool</string>
   <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">App</string>
   <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s app di sistema, %2$s app aggiornate,
+%3$s app utente</string>
   <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">Percorso sistema</string>
   <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Percorso cache</string>
   <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Percorso dati</string>
   <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">Dimensione sistema</string>
   <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Dimensione cache</string>
   <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Dimensione dati</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Calcolando...</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">Il patcher non può patchare i file senza l\'accesso alla memoria interna. Per favore, garantisci l\'accesso per patchare i file.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Il file selezionato è già in coda.</string>
   <!--Title of the device selection box in the patcher-->
   <string name="patcher_device_title">Dispositivo:</string>
   <!--Title of the partition configuration box in the patcher-->
@@ -203,11 +223,17 @@ Continuare</string>
   <string name="patcher_partconfig_desc_title">Descrizione:</string>
   <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
   <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Riuscito</string>
   <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Fallito (codice errore %s)</string>
   <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">In attesa</string>
   <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">In coda</string>
   <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Annullato</string>
   <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Opzioni patcher</string>
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">Aggiornamento ROM primaria</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -258,6 +284,7 @@ Continuare</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
   <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni condividere.</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">La configurazione della condivisione delle app non può essere salvata perchè l\'accesso alla memoria interna è stato negato. Per favore, garantisci l\'accesso per salvare la configurazione.</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
   <!--Title for preference category for boot options-->
@@ -275,6 +302,7 @@ Continuare</string>
   <!--Message asking user to reboot when the ramdisk updating succeeds-->
   <string name="update_ramdisk_reboot_desc">Il ramdisk è stato aggiornato con successo. Vuoi riavviare adesso?</string>
   <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">Il ramdisk è stato aggiornato con successo.</string>
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Aggiornamento ramdisk fallito</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
@@ -336,11 +364,13 @@ Continuare</string>
   <!--Word/phrase for No (used in dialog boxes)-->
   <string name="no">No</string>
   <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">Riprova</string>
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Riavvia adesso</string>
   <!--Reboot later (used in dialog boxes)-->
   <string name="reboot_later">Riavvia dopo</string>
   <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">Sconosciuto</string>
   <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
   <string name="do_not_show_again">Non mostrare di nuovo</string>
   <!--Text shown in a progress dialog asking the user to wait-->
