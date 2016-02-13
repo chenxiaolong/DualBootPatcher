@@ -27,6 +27,10 @@
 #include <cinttypes>
 #include <cstring>
 
+#ifdef __ANDROID__
+#include <cerrno>
+#endif
+
 // libarcihve
 #include <archive.h>
 #include <archive_entry.h>
@@ -41,6 +45,7 @@
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/private/fileutils.h"
 #include "mbp/private/miniziputils.h"
+#include "mbp/private/stringutils.h"
 
 // minizip
 #include "minizip/zip.h"
@@ -67,6 +72,9 @@ public:
 
     unsigned char laBuf[10240];
     io::File laFile;
+#ifdef __ANDROID__
+    int fd = -1;
+#endif
 
     // Callbacks
     ProgressUpdatedCallback progressCb;
@@ -563,17 +571,40 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
     Impl *impl = static_cast<Impl *>(userdata);
     *buffer = impl->laBuf;
     uint64_t bytesRead;
-    bool ret = impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead);
+    bool ret = true;
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        ssize_t n = read(impl->fd, impl->laBuf, sizeof(impl->laBuf));
+        if (n < 0) {
+            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+                 strerror(errno));
+            ret = false;
+        } else {
+            bytesRead = n;
+        }
+    } else {
+#endif
+        ret = impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead);
+        if (!ret && impl->laFile.error() == io::File::ErrorEndOfFile) {
+            ret = true;
+        }
+        if (!ret) {
+            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+                 impl->laFile.errorString().c_str());
+        }
+#ifdef __ANDROID__
+    }
+#endif
+
     if (ret) {
         impl->bytes += bytesRead;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileReadError;
     }
-    return (ret || impl->laFile.error() == io::File::ErrorEndOfFile)
-            ? (la_ssize_t) bytesRead : -1;
+
+    return ret ? (la_ssize_t) bytesRead : -1;
 }
 
 la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
@@ -581,22 +612,70 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
-    bool ret = impl->laFile.seek(request, io::File::SeekCurrent);
+    bool ret = true;
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        if (lseek64(impl->fd, request, SEEK_CUR) < 0) {
+            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+                 strerror(errno));
+            ret = false;
+        }
+    } else {
+#endif
+        if (!impl->laFile.seek(request, io::File::SeekCurrent)) {
+            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+                impl->laFile.errorString().c_str());
+            ret = false;
+        }
+#ifdef __ANDROID__
+    }
+#endif
+
     if (ret) {
         impl->bytes += request;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileSeekError;
     }
+
     return ret ? request : -1;
 }
+
+#ifdef __ANDROID__
+static bool convertToInt(const char *str, int *out)
+{
+    char *end;
+    errno = 0;
+    long num = strtol(str, &end, 10);
+    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
+            || *str == '\0' || *end != '\0') {
+        return false;
+    }
+    *out = (int) num;
+    return true;
+}
+#endif
 
 int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
+
+#ifdef __ANDROID__
+    static const char *prefix = "/proc/self/fd/";
+    if (StringUtils::starts_with(impl->info->inputPath(), prefix)) {
+        std::string fdStr = impl->info->inputPath().substr(strlen(prefix));
+        if (!convertToInt(fdStr.c_str(), &impl->fd)) {
+            LOGE("Invalid fd: %s", fdStr.c_str());
+            return -1;
+        }
+        return 0;
+    } else {
+        impl->fd = -1;
+    }
+#endif
+
     bool ret = impl->laFile.open(impl->info->inputPath(), io::File::OpenRead);
     if (!ret) {
         LOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
@@ -610,6 +689,13 @@ int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        return 0;
+    }
+#endif
+
     bool ret = impl->laFile.close();
     if (!ret) {
         LOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),
