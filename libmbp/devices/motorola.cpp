@@ -85,6 +85,25 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p33" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices->push_back(device);
+
+    // Motorola Moto X Pure Edition
+    device = new Device();
+    device->setId("clark");
+    device->setCodenames({ "clark" });
+    device->setName("Motorola Moto X Pure Edition");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM,
+                                 "/dev/block/mmcblk0p46" });
+    device->setCacheBlockDevs({ F9824900_SOC0_CACHE,
+                                "/dev/block/mmcblk0p45" });
+    device->setDataBlockDevs({ F9824900_SOC0_USERDATA,
+                               "/dev/block/mmcblk0p47" });
+    device->setBootBlockDevs({ F9824900_SOC0_BOOT,
+                               "/dev/block/mmcblk0p36" });
+    device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY,
+                                   "/dev/block/mmcblk0p37" });
+    devices->push_back(device);
 }
 
 }
