@@ -9,10 +9,15 @@ set(MBSPARSE_SOURCES
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    # Only needed if building DLL on Windows
-    #add_definitions(-DMB_LIBRARY)
+    add_definitions(-DMB_DYNAMIC_LINK)
 
-    add_library(mbsparse STATIC ${MBSPARSE_SOURCES})
+    add_library(mbsparse SHARED ${MBSPARSE_SOURCES})
+
+    target_compile_definitions(
+        mbsparse
+        PRIVATE
+        -DMB_LIBRARY
+    )
 
     set_target_properties(
         mbsparse
@@ -29,12 +34,24 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         )
     endif()
 
+    target_link_libraries(
+        mbsparse
+        mblog
+    )
+
+    # Install library
+    install(
+        TARGETS mbsparse
+        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    )
+
     if(MBP_ENABLE_TESTS)
         add_executable(test_sparse tests/test_sparse.cpp)
         target_link_libraries(test_sparse
             mbpio
             mbsparse
-            mblog
             ${GTEST_BOTH_LIBRARIES}
         )
 
