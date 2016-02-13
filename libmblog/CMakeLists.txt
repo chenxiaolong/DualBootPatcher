@@ -11,17 +11,19 @@ set(MBLOG_ANDROID_SOURCES
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    add_definitions(
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
-    )
-
-    add_library(mblog STATIC ${MBLOG_SOURCES})
+    add_library(mblog SHARED ${MBLOG_SOURCES})
 
     set_target_properties(
         mblog
         PROPERTIES
         POSITION_INDEPENDENT_CODE 1
+    )
+
+    target_compile_definitions(
+        mblog
+        PRIVATE
+        -DDMB_DYNAMIC_LINK
+        -DMB_LIBRARY
     )
 
     if(NOT MSVC)
@@ -32,6 +34,14 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
             CXX_STANDARD_REQUIRED 1
         )
     endif()
+
+    # Install library
+    install(
+        TARGETS mblog
+        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    )
 endif()
 
 set(MBLOG_SOURCES_STR "")
