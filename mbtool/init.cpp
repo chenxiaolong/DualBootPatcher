@@ -91,6 +91,8 @@ static std::string find_fstab()
         return std::string();
     }
 
+    std::vector<std::string> fallback;
+
     struct dirent *ent;
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
@@ -167,10 +169,21 @@ static std::string find_fstab()
                 continue;
             }
 
+            // If the fstab file is for charger mode, add to fallback
+            if (fstab.find("charger") != std::string::npos) {
+                LOGE("Adding charger fstab to fallback fstabs: %s",
+                     fstab.c_str());
+                fallback.push_back(fstab);
+                continue;
+            }
+
             return fstab;
         }
     }
 
+    if (!fallback.empty()) {
+        return fallback[0];
+    }
     return std::string();
 }
 
