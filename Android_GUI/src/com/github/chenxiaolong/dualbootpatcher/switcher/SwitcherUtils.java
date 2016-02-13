@@ -71,7 +71,13 @@ public class SwitcherUtils {
 
             if (matches) {
                 String[] bootBlockDevs = d.getBootBlockDevs();
-                if (bootBlockDevs.length > 0) {
+                for (String blockDev : bootBlockDevs) {
+                    if (new File(blockDev).exists()) {
+                        bootBlockDev = blockDev;
+                        break;
+                    }
+                }
+                if (bootBlockDev == null && bootBlockDevs.length > 0) {
                     bootBlockDev = bootBlockDevs[0];
                 }
                 break;
