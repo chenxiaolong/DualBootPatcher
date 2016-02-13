@@ -28,14 +28,15 @@ endif()
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
     # For desktop machines, we'll build with cmake
 
-    add_library(mbpio SHARED ${MBP_IO_SOURCES})
+    #add_library(mbpio SHARED ${MBP_IO_SOURCES})
+    add_library(mbpio STATIC ${MBP_IO_SOURCES})
 
-    target_compile_definitions(
-        mbpio
-        PRIVATE
-        -DDMB_DYNAMIC_LINK
-        -DMB_LIBRARY
-    )
+    #target_compile_definitions(
+    #    mbpio
+    #    PRIVATE
+    #    -DDMB_DYNAMIC_LINK
+    #    -DMB_LIBRARY
+    #)
 
     set_target_properties(
         mbpio
@@ -53,12 +54,12 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     endif()
 
     # Install library
-    install(
-        TARGETS mbpio
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-    )
+    #install(
+    #    TARGETS mbpio
+    #    LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    #    RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    #    #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    #)
 endif()
 
 
