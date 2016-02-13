@@ -250,8 +250,10 @@ static bool add_extra_images(const std::string &multiboot_dir,
         path += "/";
         path += name;
 
-        // Blacklist non-modem partition
-        if (partition != "mdm" && partition != "modem") {
+        // Blacklist non-modem partitions
+        if (partition != "mdm"
+                && partition != "modem"
+                && partition != "apnhlos") {
             LOGW("Partition %s is not whitelisted for flashing",
                  partition.c_str());
             continue;
