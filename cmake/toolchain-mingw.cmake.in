@@ -38,3 +38,5 @@ set(CMAKE_Fortran_COMPILER ${MINGW_TRIPLET}-gfortran)
 set(CMAKE_AR:FILEPATH ${MINGW_TRIPLET}-ar)
 set(CMAKE_RANLIB:FILEPATH ${MINGW_TRIPLET}-ranlib)
 
+# Run executables through wine
+set(CMAKE_CROSSCOMPILING_EMULATOR wine)
