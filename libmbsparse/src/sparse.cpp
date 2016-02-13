@@ -60,8 +60,6 @@
 #define ERROR(...)
 #endif
 
-extern "C" {
-
 /*! \brief Minimum information we need from the chunk headers while reading */
 struct ChunkInfo
 {
@@ -689,6 +687,8 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
 
     return true;
 }
+
+extern "C" {
 
 SparseCtx * sparseCtxNew()
 {
