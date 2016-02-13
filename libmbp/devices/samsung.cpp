@@ -256,6 +256,19 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
 
+    // Samsung Galaxy S 4 Active (ONLY for SKT variant)
+    device = new Device();
+    device->setId("jactivelteskt");
+    device->setCodenames({ "jactivelteskt" });
+    device->setName("Samsung Galaxy S 4 Active (SKT Variant Only)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices->push_back(device);
+
     // Samsung Galaxy S 4 Mini Reg./Duos/LTE
     device = new Device();
     device->setId("serrano");
