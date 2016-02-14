@@ -177,9 +177,52 @@ bool OdinPatcher::patchFile(ProgressUpdatedCallback progressCb,
     return ret;
 }
 
+#ifdef __ANDROID__
+static bool convertToInt(const char *str, int *out)
+{
+    char *end;
+    errno = 0;
+    long num = strtol(str, &end, 10);
+    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
+            || *str == '\0' || *end != '\0') {
+        return false;
+    }
+    *out = (int) num;
+    return true;
+}
+#endif
+
 bool OdinPatcher::Impl::patchTar()
 {
+#ifdef __ANDROID__
+    static const char *prefix = "/proc/self/fd/";
+    fd = -1;
+    if (StringUtils::starts_with(info->inputPath(), prefix)) {
+        std::string fdStr = info->inputPath().substr(strlen(prefix));
+        if (!convertToInt(fdStr.c_str(), &fd)) {
+            LOGE("Invalid fd: %s", fdStr.c_str());
+            error = ErrorCode::FileOpenError;
+            return false;
+        }
+        LOGD("Input path '%s' is a file descriptor: %d",
+             info->inputPath().c_str(), fd);
+    }
+#endif
+
     // Get file size for progress information
+#ifdef __ANDROID__
+    if (fd > 0) {
+        off64_t offset = lseek64(fd, 0, SEEK_END);
+        if (offset < 0 || lseek64(fd, 0, SEEK_SET) < 0) {
+            LOGE("%s: Failed to seek fd: %s", info->inputPath().c_str(),
+                 strerror(errno));
+            error = ErrorCode::FileSeekError;
+            return false;
+        }
+        maxBytes = offset;
+    } else {
+#endif
+
     io::File file;
     if (!file.open(info->inputPath(), io::File::OpenRead)) {
         LOGE("%s: Failed to open: %s", info->inputPath().c_str(),
@@ -200,6 +243,10 @@ bool OdinPatcher::Impl::patchTar()
         return false;
     }
     file.close();
+
+#ifdef __ANDROID__
+    }
+#endif
 
     updateProgress(bytes, maxBytes);
 
@@ -649,37 +696,14 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
     return ret ? request : -1;
 }
 
-#ifdef __ANDROID__
-static bool convertToInt(const char *str, int *out)
-{
-    char *end;
-    errno = 0;
-    long num = strtol(str, &end, 10);
-    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
-            || *str == '\0' || *end != '\0') {
-        return false;
-    }
-    *out = (int) num;
-    return true;
-}
-#endif
-
 int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
 
 #ifdef __ANDROID__
-    static const char *prefix = "/proc/self/fd/";
-    if (StringUtils::starts_with(impl->info->inputPath(), prefix)) {
-        std::string fdStr = impl->info->inputPath().substr(strlen(prefix));
-        if (!convertToInt(fdStr.c_str(), &impl->fd)) {
-            LOGE("Invalid fd: %s", fdStr.c_str());
-            return -1;
-        }
+    if (impl->fd >= 0) {
         return 0;
-    } else {
-        impl->fd = -1;
     }
 #endif
 
