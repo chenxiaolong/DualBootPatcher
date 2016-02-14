@@ -43,8 +43,8 @@
 #define DEBUG_SKIP_FLASH_CSC    0
 #define DEBUG_SKIP_FLASH_BOOT   0
 
-#define SYSTEM_SPARSE_FILE      "system.img.ext4"
-#define CACHE_SPARSE_FILE       "cache.img.ext4"
+#define SYSTEM_SPARSE_FILE      "system.img.sparse"
+#define CACHE_SPARSE_FILE       "cache.img.sparse"
 #define BOOT_IMAGE_FILE         "boot.img"
 #define BLOCK_DEVS_FILE         "block_devs.prop"
 #define FUSE_SPARSE_FILE        "fuse-sparse"

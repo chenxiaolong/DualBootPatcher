@@ -371,8 +371,8 @@ bool OdinPatcher::Impl::processContents()
             }
 
             continue;
-        } else if (strcmp(name, "cache.img.ext4") != 0
-                && strcmp(name, "system.img.ext4") != 0) {
+        } else if (!StringUtils::starts_with(name, "cache.img")
+                && !StringUtils::starts_with(name, "system.img")) {
             LOGD("Skipping %s", name);
             if (archive_read_data_skip(aInput) != ARCHIVE_OK) {
                 LOGE("libarchive: Failed to skip data: %s",
@@ -385,6 +385,12 @@ bool OdinPatcher::Impl::processContents()
 
         LOGD("Handling %s", name);
 
+        std::string zipName(name);
+        if (StringUtils::ends_with(name, ".ext4")) {
+            zipName.erase(zipName.size() - 5);
+        }
+        zipName += ".sparse";
+
         // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
         int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
 
@@ -394,7 +400,7 @@ bool OdinPatcher::Impl::processContents()
         // Open file in output zip
         mzRet = zipOpenNewFileInZip2_64(
             zf,                    // file
-            name,                  // filename
+            zipName.c_str(),       // filename
             &zi,                   // zip_fileinfo
             nullptr,               // extrafield_local
             0,                     // size_extrafield_local
@@ -421,7 +427,8 @@ bool OdinPatcher::Impl::processContents()
             mzRet = zipWriteInFileInZip(zf, buf, nRead);
             if (mzRet != ZIP_OK) {
                 LOGE("minizip: Failed to write %s in output zip: %s",
-                     name, MinizipUtils::zipErrorString(mzRet).c_str());
+                     zipName.c_str(),
+                     MinizipUtils::zipErrorString(mzRet).c_str());
                 error = ErrorCode::ArchiveWriteDataError;
                 zipCloseFileInZip(zf);
                 return false;
