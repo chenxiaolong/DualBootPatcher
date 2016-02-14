@@ -92,16 +92,22 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setCodenames({ "clark" });
     device->setName("Motorola Moto X Pure Edition");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR });
-    device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM,
+    device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR, F9824900_BASE_DIR,
+                                  F9824900_SOC0_BASE_DIR });
+    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, F9824900_SYSTEM,
+                                 F9824900_SOC0_SYSTEM,
                                  "/dev/block/mmcblk0p46" });
-    device->setCacheBlockDevs({ F9824900_SOC0_CACHE,
+    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, F9824900_CACHE,
+                                F9824900_SOC0_CACHE,
                                 "/dev/block/mmcblk0p45" });
-    device->setDataBlockDevs({ F9824900_SOC0_USERDATA,
+    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, F9824900_USERDATA,
+                               F9824900_SOC0_USERDATA,
                                "/dev/block/mmcblk0p47" });
-    device->setBootBlockDevs({ F9824900_SOC0_BOOT,
+    device->setBootBlockDevs({ BOOTDEVICE_BOOT, F9824900_BOOT,
+                               F9824900_SOC0_BOOT,
                                "/dev/block/mmcblk0p36" });
-    device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY,
+    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, F9824900_RECOVERY,
+                                   F9824900_SOC0_RECOVERY,
                                    "/dev/block/mmcblk0p37" });
     devices->push_back(device);
 }
