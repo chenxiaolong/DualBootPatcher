@@ -1174,26 +1174,7 @@ int appsync_main(int argc, char *argv[])
         }
     }
 
-    /*
-    bool is_tw_async = util::file_find_one_of(INSTALLD_PATH, {"asyncDexopt"});
-    if (is_tw_async) {
-        LOGE("TouchWiz's async installd is NOT SUPPORTED");
-        LOGE("App sharing will not work");
-
-        int status = util::run_command({ INSTALLD_PATH });
-        if (WIFEXITED(status)) {
-            LOGI("installd exited with status: %d", WEXITSTATUS(status));
-            return WEXITSTATUS(status);
-        } else {
-            LOGE("installd killed by signal: %d", WTERMSIG(status));
-            return EXIT_FAILURE;
-        }
-    } else {
-        */
-        return hijack_socket(can_appsync) ? EXIT_SUCCESS : EXIT_FAILURE;
-        /*
-    }
-    */
+    return hijack_socket(can_appsync) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 }
