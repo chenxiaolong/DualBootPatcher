@@ -113,7 +113,8 @@ std::unordered_map<std::string, std::string> RomInstaller::get_properties()
 {
     static std::vector<std::string> needed_props{
         "ro.product.device",
-        "ro.build.product"
+        "ro.build.product",
+        "ro.bootloader"
     };
 
     std::unordered_map<std::string, std::string> props(_recovery_props);
