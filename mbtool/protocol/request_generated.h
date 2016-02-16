@@ -236,7 +236,9 @@ enum RequestType {
   RequestType_MbSetKernelRequest = 19,
   RequestType_MbWipeRomRequest = 20,
   RequestType_MbGetPackagesCountRequest = 21,
-  RequestType_RebootRequest = 22
+  RequestType_RebootRequest = 22,
+  RequestType_MIN = RequestType_NONE,
+  RequestType_MAX = RequestType_RebootRequest
 };
 
 inline const char **EnumNamesRequestType() {
@@ -249,12 +251,16 @@ inline const char *EnumNameRequestType(RequestType e) { return EnumNamesRequestT
 inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *union_obj, RequestType type);
 
 struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  RequestType request_type() const { return static_cast<RequestType>(GetField<uint8_t>(4, 0)); }
-  const void *request() const { return GetPointer<const void *>(6); }
+  enum {
+    VT_REQUEST_TYPE = 4,
+    VT_REQUEST = 6
+  };
+  RequestType request_type() const { return static_cast<RequestType>(GetField<uint8_t>(VT_REQUEST_TYPE, 0)); }
+  const void *request() const { return GetPointer<const void *>(VT_REQUEST); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* request_type */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* request */) &&
+           VerifyField<uint8_t>(verifier, VT_REQUEST_TYPE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_REQUEST) &&
            VerifyRequestType(verifier, request(), request_type()) &&
            verifier.EndTable();
   }
@@ -263,8 +269,8 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct RequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_request_type(RequestType request_type) { fbb_.AddElement<uint8_t>(4, static_cast<uint8_t>(request_type), 0); }
-  void add_request(flatbuffers::Offset<void> request) { fbb_.AddOffset(6, request); }
+  void add_request_type(RequestType request_type) { fbb_.AddElement<uint8_t>(Request::VT_REQUEST_TYPE, static_cast<uint8_t>(request_type), 0); }
+  void add_request(flatbuffers::Offset<void> request) { fbb_.AddOffset(Request::VT_REQUEST, request); }
   RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RequestBuilder &operator=(const RequestBuilder &);
   flatbuffers::Offset<Request> Finish() {

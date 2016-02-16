@@ -5,134 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-#include "path_get_directory_size_generated.h"
-#include "path_selinux_get_label_generated.h"
-#include "path_selinux_set_label_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -165,10 +37,13 @@ inline flatbuffers::Offset<MbGetVersionRequest> CreateMbGetVersionRequest(flatbu
 }
 
 struct MbGetVersionResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *version() const { return GetPointer<const flatbuffers::String *>(4); }
+  enum {
+    VT_VERSION = 4
+  };
+  const flatbuffers::String *version() const { return GetPointer<const flatbuffers::String *>(VT_VERSION); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* version */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_VERSION) &&
            verifier.Verify(version()) &&
            verifier.EndTable();
   }
@@ -177,7 +52,7 @@ struct MbGetVersionResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
 struct MbGetVersionResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_version(flatbuffers::Offset<flatbuffers::String> version) { fbb_.AddOffset(4, version); }
+  void add_version(flatbuffers::Offset<flatbuffers::String> version) { fbb_.AddOffset(MbGetVersionResponse::VT_VERSION, version); }
   MbGetVersionResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbGetVersionResponseBuilder &operator=(const MbGetVersionResponseBuilder &);
   flatbuffers::Offset<MbGetVersionResponse> Finish() {

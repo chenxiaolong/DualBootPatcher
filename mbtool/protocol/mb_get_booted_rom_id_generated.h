@@ -5,153 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "mb_get_installed_roms_generated.h"
-#include "mb_get_version_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-#include "path_get_directory_size_generated.h"
-#include "path_selinux_get_label_generated.h"
-#include "path_selinux_set_label_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetVersionRequest;
-struct MbGetVersionResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbRom;
-struct MbGetInstalledRomsRequest;
-struct MbGetInstalledRomsResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -184,10 +37,13 @@ inline flatbuffers::Offset<MbGetBootedRomIdRequest> CreateMbGetBootedRomIdReques
 }
 
 struct MbGetBootedRomIdResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
+  enum {
+    VT_ROM_ID = 4
+  };
+  const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(VT_ROM_ID); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* rom_id */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
            verifier.EndTable();
   }
@@ -196,7 +52,7 @@ struct MbGetBootedRomIdResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::T
 struct MbGetBootedRomIdResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(4, rom_id); }
+  void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(MbGetBootedRomIdResponse::VT_ROM_ID, rom_id); }
   MbGetBootedRomIdResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbGetBootedRomIdResponseBuilder &operator=(const MbGetBootedRomIdResponseBuilder &);
   flatbuffers::Offset<MbGetBootedRomIdResponse> Finish() {

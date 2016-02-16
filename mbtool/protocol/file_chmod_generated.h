@@ -14,12 +14,16 @@ struct FileChmodRequest;
 struct FileChmodResponse;
 
 struct FileChmodRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  int32_t id() const { return GetField<int32_t>(4, 0); }
-  uint32_t mode() const { return GetField<uint32_t>(6, 0); }
+  enum {
+    VT_ID = 4,
+    VT_MODE = 6
+  };
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
+  uint32_t mode() const { return GetField<uint32_t>(VT_MODE, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* id */) &&
-           VerifyField<uint32_t>(verifier, 6 /* mode */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyField<uint32_t>(verifier, VT_MODE) &&
            verifier.EndTable();
   }
 };
@@ -27,8 +31,8 @@ struct FileChmodRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileChmodRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(4, id, 0); }
-  void add_mode(uint32_t mode) { fbb_.AddElement<uint32_t>(6, mode, 0); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileChmodRequest::VT_ID, id, 0); }
+  void add_mode(uint32_t mode) { fbb_.AddElement<uint32_t>(FileChmodRequest::VT_MODE, mode, 0); }
   FileChmodRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileChmodRequestBuilder &operator=(const FileChmodRequestBuilder &);
   flatbuffers::Offset<FileChmodRequest> Finish() {
@@ -47,12 +51,16 @@ inline flatbuffers::Offset<FileChmodRequest> CreateFileChmodRequest(flatbuffers:
 }
 
 struct FileChmodResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            verifier.EndTable();
   }
@@ -61,8 +69,8 @@ struct FileChmodResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileChmodResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileChmodResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileChmodResponse::VT_ERROR_MSG, error_msg); }
   FileChmodResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileChmodResponseBuilder &operator=(const FileChmodResponseBuilder &);
   flatbuffers::Offset<FileChmodResponse> Finish() {
@@ -72,7 +80,7 @@ struct FileChmodResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileChmodResponse> CreateFileChmodResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   FileChmodResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);

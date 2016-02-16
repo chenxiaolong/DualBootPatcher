@@ -5,43 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -53,7 +16,9 @@ struct FileSeekResponse;
 enum FileSeekWhence {
   FileSeekWhence_SEEK_SET = 0,
   FileSeekWhence_SEEK_CUR = 1,
-  FileSeekWhence_SEEK_END = 2
+  FileSeekWhence_SEEK_END = 2,
+  FileSeekWhence_MIN = FileSeekWhence_SEEK_SET,
+  FileSeekWhence_MAX = FileSeekWhence_SEEK_END
 };
 
 inline const char **EnumNamesFileSeekWhence() {
@@ -64,14 +29,19 @@ inline const char **EnumNamesFileSeekWhence() {
 inline const char *EnumNameFileSeekWhence(FileSeekWhence e) { return EnumNamesFileSeekWhence()[static_cast<int>(e)]; }
 
 struct FileSeekRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  int32_t id() const { return GetField<int32_t>(4, 0); }
-  int64_t offset() const { return GetField<int64_t>(6, 0); }
-  FileSeekWhence whence() const { return static_cast<FileSeekWhence>(GetField<int16_t>(8, 0)); }
+  enum {
+    VT_ID = 4,
+    VT_OFFSET = 6,
+    VT_WHENCE = 8
+  };
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
+  int64_t offset() const { return GetField<int64_t>(VT_OFFSET, 0); }
+  FileSeekWhence whence() const { return static_cast<FileSeekWhence>(GetField<int16_t>(VT_WHENCE, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* id */) &&
-           VerifyField<int64_t>(verifier, 6 /* offset */) &&
-           VerifyField<int16_t>(verifier, 8 /* whence */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyField<int64_t>(verifier, VT_OFFSET) &&
+           VerifyField<int16_t>(verifier, VT_WHENCE) &&
            verifier.EndTable();
   }
 };
@@ -79,9 +49,9 @@ struct FileSeekRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileSeekRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(4, id, 0); }
-  void add_offset(int64_t offset) { fbb_.AddElement<int64_t>(6, offset, 0); }
-  void add_whence(FileSeekWhence whence) { fbb_.AddElement<int16_t>(8, static_cast<int16_t>(whence), 0); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileSeekRequest::VT_ID, id, 0); }
+  void add_offset(int64_t offset) { fbb_.AddElement<int64_t>(FileSeekRequest::VT_OFFSET, offset, 0); }
+  void add_whence(FileSeekWhence whence) { fbb_.AddElement<int16_t>(FileSeekRequest::VT_WHENCE, static_cast<int16_t>(whence), 0); }
   FileSeekRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileSeekRequestBuilder &operator=(const FileSeekRequestBuilder &);
   flatbuffers::Offset<FileSeekRequest> Finish() {
@@ -102,15 +72,20 @@ inline flatbuffers::Offset<FileSeekRequest> CreateFileSeekRequest(flatbuffers::F
 }
 
 struct FileSeekResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
-  int64_t offset() const { return GetField<int64_t>(8, 0); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6,
+    VT_OFFSET = 8
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  int64_t offset() const { return GetField<int64_t>(VT_OFFSET, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<int64_t>(verifier, 8 /* offset */) &&
+           VerifyField<int64_t>(verifier, VT_OFFSET) &&
            verifier.EndTable();
   }
 };
@@ -118,9 +93,9 @@ struct FileSeekResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileSeekResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
-  void add_offset(int64_t offset) { fbb_.AddElement<int64_t>(8, offset, 0); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileSeekResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileSeekResponse::VT_ERROR_MSG, error_msg); }
+  void add_offset(int64_t offset) { fbb_.AddElement<int64_t>(FileSeekResponse::VT_OFFSET, offset, 0); }
   FileSeekResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileSeekResponseBuilder &operator=(const FileSeekResponseBuilder &);
   flatbuffers::Offset<FileSeekResponse> Finish() {
@@ -130,7 +105,7 @@ struct FileSeekResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileSeekResponse> CreateFileSeekResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
    int64_t offset = 0) {
   FileSeekResponseBuilder builder_(_fbb);
