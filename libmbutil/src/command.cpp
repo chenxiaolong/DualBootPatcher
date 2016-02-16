@@ -21,6 +21,8 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
+
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -134,7 +136,9 @@ int run_command2(const std::vector<std::string> &argv,
                 close(stdio_fds[1]);
             }
 
-            execvp(argv_c[0], const_cast<char * const *>(argv_c.data()));
+            if (execvp(argv_c[0], const_cast<char * const *>(argv_c.data())) < 0) {
+                LOGE("Failed to exec: %s", strerror(errno));
+            }
             _exit(127);
         } else {
             if (cb) {
