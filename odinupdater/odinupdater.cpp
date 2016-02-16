@@ -278,6 +278,22 @@ static bool load_block_devs()
     info("System block device: %s", system_block_dev);
     info("Cache block device: %s", boot_block_dev);
 
+    struct stat sb;
+    if (stat(system_block_dev, &sb) < 0) {
+        error("%s: Failed to stat: %s", system_block_dev, strerror(errno));
+        return false;
+    } else if (!S_ISBLK(sb.st_mode)) {
+        error("%s: Not a block device", system_block_dev);
+        return false;
+    }
+    if (stat(boot_block_dev, &sb) < 0) {
+        error("%s: Failed to stat: %s", boot_block_dev, strerror(errno));
+        return false;
+    } else if (!S_ISBLK(sb.st_mode)) {
+        error("%s: Not a block device", boot_block_dev);
+        return false;
+    }
+
     return true;
 }
 
