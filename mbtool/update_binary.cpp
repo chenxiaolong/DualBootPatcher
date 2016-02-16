@@ -196,16 +196,16 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 
 void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 {
-    if (ret == ProceedState::Fail) {
-        if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
-            LOGE("Failed to copy log file: %s", strerror(errno));
-        }
+    (void) ret;
 
-        fix_multiboot_permissions();
-
-        display_msg("The log file was saved as MultiBoot.log on the "
-                    "internal storage.");
+    if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
+        LOGE("Failed to copy log file: %s", strerror(errno));
     }
+
+    fix_multiboot_permissions();
+
+    display_msg("The log file was saved as MultiBoot.log on the "
+                "internal storage.");
 }
 
 static void update_binary_usage(int error)
