@@ -19,9 +19,9 @@ public final class PathChmodResponse extends Table {
 
   public static int createPathChmodResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    PathChmodResponse.addErrorMsg(builder, error_msg);
+    PathChmodResponse.addErrorMsg(builder, error_msgOffset);
     PathChmodResponse.addSuccess(builder, success);
     return PathChmodResponse.endPathChmodResponse(builder);
   }

@@ -21,11 +21,11 @@ public final class MbWipeRomResponse extends Table {
   public ByteBuffer failedAsByteBuffer() { return __vector_as_bytebuffer(6, 2); }
 
   public static int createMbWipeRomResponse(FlatBufferBuilder builder,
-      int succeeded,
-      int failed) {
+      int succeededOffset,
+      int failedOffset) {
     builder.startObject(2);
-    MbWipeRomResponse.addFailed(builder, failed);
-    MbWipeRomResponse.addSucceeded(builder, succeeded);
+    MbWipeRomResponse.addFailed(builder, failedOffset);
+    MbWipeRomResponse.addSucceeded(builder, succeededOffset);
     return MbWipeRomResponse.endMbWipeRomResponse(builder);
   }
 

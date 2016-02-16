@@ -18,9 +18,9 @@ public final class MbGetInstalledRomsResponse extends Table {
   public int romsLength() { int o = __offset(4); return o != 0 ? __vector_len(o) : 0; }
 
   public static int createMbGetInstalledRomsResponse(FlatBufferBuilder builder,
-      int roms) {
+      int romsOffset) {
     builder.startObject(1);
-    MbGetInstalledRomsResponse.addRoms(builder, roms);
+    MbGetInstalledRomsResponse.addRoms(builder, romsOffset);
     return MbGetInstalledRomsResponse.endMbGetInstalledRomsResponse(builder);
   }
 

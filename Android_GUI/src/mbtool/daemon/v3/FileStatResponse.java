@@ -21,11 +21,11 @@ public final class FileStatResponse extends Table {
 
   public static int createFileStatResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
-      int stat) {
+      int error_msgOffset,
+      int statOffset) {
     builder.startObject(3);
-    FileStatResponse.addStat(builder, stat);
-    FileStatResponse.addErrorMsg(builder, error_msg);
+    FileStatResponse.addStat(builder, statOffset);
+    FileStatResponse.addErrorMsg(builder, error_msgOffset);
     FileStatResponse.addSuccess(builder, success);
     return FileStatResponse.endFileStatResponse(builder);
   }

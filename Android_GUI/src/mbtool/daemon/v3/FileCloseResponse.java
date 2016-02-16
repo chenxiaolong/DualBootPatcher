@@ -19,9 +19,9 @@ public final class FileCloseResponse extends Table {
 
   public static int createFileCloseResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    FileCloseResponse.addErrorMsg(builder, error_msg);
+    FileCloseResponse.addErrorMsg(builder, error_msgOffset);
     FileCloseResponse.addSuccess(builder, success);
     return FileCloseResponse.endFileCloseResponse(builder);
   }

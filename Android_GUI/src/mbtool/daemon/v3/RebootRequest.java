@@ -19,11 +19,11 @@ public final class RebootRequest extends Table {
   public boolean confirm() { int o = __offset(8); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
 
   public static int createRebootRequest(FlatBufferBuilder builder,
-      int arg,
+      int argOffset,
       short type,
       boolean confirm) {
     builder.startObject(3);
-    RebootRequest.addArg(builder, arg);
+    RebootRequest.addArg(builder, argOffset);
     RebootRequest.addType(builder, type);
     RebootRequest.addConfirm(builder, confirm);
     return RebootRequest.endRebootRequest(builder);

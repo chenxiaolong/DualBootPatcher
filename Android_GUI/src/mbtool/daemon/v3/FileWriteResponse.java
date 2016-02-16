@@ -20,11 +20,11 @@ public final class FileWriteResponse extends Table {
 
   public static int createFileWriteResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
+      int error_msgOffset,
       long bytes_written) {
     builder.startObject(3);
     FileWriteResponse.addBytesWritten(builder, bytes_written);
-    FileWriteResponse.addErrorMsg(builder, error_msg);
+    FileWriteResponse.addErrorMsg(builder, error_msgOffset);
     FileWriteResponse.addSuccess(builder, success);
     return FileWriteResponse.endFileWriteResponse(builder);
   }

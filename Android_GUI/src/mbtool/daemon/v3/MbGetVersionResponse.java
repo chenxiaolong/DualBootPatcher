@@ -17,9 +17,9 @@ public final class MbGetVersionResponse extends Table {
   public ByteBuffer versionAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
 
   public static int createMbGetVersionResponse(FlatBufferBuilder builder,
-      int version) {
+      int versionOffset) {
     builder.startObject(1);
-    MbGetVersionResponse.addVersion(builder, version);
+    MbGetVersionResponse.addVersion(builder, versionOffset);
     return MbGetVersionResponse.endMbGetVersionResponse(builder);
   }
 

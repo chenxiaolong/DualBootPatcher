@@ -22,14 +22,14 @@ public final class MbSwitchRomRequest extends Table {
   public boolean forceUpdateChecksums() { int o = __offset(10); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
 
   public static int createMbSwitchRomRequest(FlatBufferBuilder builder,
-      int rom_id,
-      int boot_blockdev,
-      int blockdev_base_dirs,
+      int rom_idOffset,
+      int boot_blockdevOffset,
+      int blockdev_base_dirsOffset,
       boolean force_update_checksums) {
     builder.startObject(4);
-    MbSwitchRomRequest.addBlockdevBaseDirs(builder, blockdev_base_dirs);
-    MbSwitchRomRequest.addBootBlockdev(builder, boot_blockdev);
-    MbSwitchRomRequest.addRomId(builder, rom_id);
+    MbSwitchRomRequest.addBlockdevBaseDirs(builder, blockdev_base_dirsOffset);
+    MbSwitchRomRequest.addBootBlockdev(builder, boot_blockdevOffset);
+    MbSwitchRomRequest.addRomId(builder, rom_idOffset);
     MbSwitchRomRequest.addForceUpdateChecksums(builder, force_update_checksums);
     return MbSwitchRomRequest.endMbSwitchRomRequest(builder);
   }

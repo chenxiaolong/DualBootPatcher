@@ -61,10 +61,10 @@ public final class StructStat extends Table {
   public static void startStructStat(FlatBufferBuilder builder) { builder.startObject(13); }
   public static void addStDev(FlatBufferBuilder builder, long stDev) { builder.addLong(0, stDev, 0); }
   public static void addStIno(FlatBufferBuilder builder, long stIno) { builder.addLong(1, stIno, 0); }
-  public static void addStMode(FlatBufferBuilder builder, long stMode) { builder.addInt(2, (int)(stMode & 0xFFFFFFFFL), 0); }
+  public static void addStMode(FlatBufferBuilder builder, long stMode) { builder.addInt(2, (int)stMode, 0); }
   public static void addStNlink(FlatBufferBuilder builder, long stNlink) { builder.addLong(3, stNlink, 0); }
-  public static void addStUid(FlatBufferBuilder builder, long stUid) { builder.addInt(4, (int)(stUid & 0xFFFFFFFFL), 0); }
-  public static void addStGid(FlatBufferBuilder builder, long stGid) { builder.addInt(5, (int)(stGid & 0xFFFFFFFFL), 0); }
+  public static void addStUid(FlatBufferBuilder builder, long stUid) { builder.addInt(4, (int)stUid, 0); }
+  public static void addStGid(FlatBufferBuilder builder, long stGid) { builder.addInt(5, (int)stGid, 0); }
   public static void addStRdev(FlatBufferBuilder builder, long stRdev) { builder.addLong(6, stRdev, 0); }
   public static void addStSize(FlatBufferBuilder builder, long stSize) { builder.addLong(7, stSize, 0); }
   public static void addStBlksize(FlatBufferBuilder builder, long stBlksize) { builder.addLong(8, stBlksize, 0); }

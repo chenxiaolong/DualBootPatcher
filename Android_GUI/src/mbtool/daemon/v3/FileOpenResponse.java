@@ -20,11 +20,11 @@ public final class FileOpenResponse extends Table {
 
   public static int createFileOpenResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
+      int error_msgOffset,
       int id) {
     builder.startObject(3);
     FileOpenResponse.addId(builder, id);
-    FileOpenResponse.addErrorMsg(builder, error_msg);
+    FileOpenResponse.addErrorMsg(builder, error_msgOffset);
     FileOpenResponse.addSuccess(builder, success);
     return FileOpenResponse.endFileOpenResponse(builder);
   }

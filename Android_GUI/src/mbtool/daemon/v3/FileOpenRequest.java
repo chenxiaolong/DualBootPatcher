@@ -21,13 +21,13 @@ public final class FileOpenRequest extends Table {
   public long perms() { int o = __offset(8); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0; }
 
   public static int createFileOpenRequest(FlatBufferBuilder builder,
-      int path,
-      int flags,
+      int pathOffset,
+      int flagsOffset,
       long perms) {
     builder.startObject(3);
     FileOpenRequest.addPerms(builder, perms);
-    FileOpenRequest.addFlags(builder, flags);
-    FileOpenRequest.addPath(builder, path);
+    FileOpenRequest.addFlags(builder, flagsOffset);
+    FileOpenRequest.addPath(builder, pathOffset);
     return FileOpenRequest.endFileOpenRequest(builder);
   }
 
@@ -36,7 +36,7 @@ public final class FileOpenRequest extends Table {
   public static void addFlags(FlatBufferBuilder builder, int flagsOffset) { builder.addOffset(1, flagsOffset, 0); }
   public static int createFlagsVector(FlatBufferBuilder builder, short[] data) { builder.startVector(2, data.length, 2); for (int i = data.length - 1; i >= 0; i--) builder.addShort(data[i]); return builder.endVector(); }
   public static void startFlagsVector(FlatBufferBuilder builder, int numElems) { builder.startVector(2, numElems, 2); }
-  public static void addPerms(FlatBufferBuilder builder, long perms) { builder.addInt(2, (int)(perms & 0xFFFFFFFFL), 0); }
+  public static void addPerms(FlatBufferBuilder builder, long perms) { builder.addInt(2, (int)perms, 0); }
   public static int endFileOpenRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

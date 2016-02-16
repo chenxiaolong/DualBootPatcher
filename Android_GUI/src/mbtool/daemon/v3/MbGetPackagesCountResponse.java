@@ -33,9 +33,9 @@ public final class MbGetPackagesCountResponse extends Table {
 
   public static void startMbGetPackagesCountResponse(FlatBufferBuilder builder) { builder.startObject(4); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
-  public static void addSystemPackages(FlatBufferBuilder builder, long systemPackages) { builder.addInt(1, (int)(systemPackages & 0xFFFFFFFFL), 0); }
-  public static void addSystemUpdatePackages(FlatBufferBuilder builder, long systemUpdatePackages) { builder.addInt(2, (int)(systemUpdatePackages & 0xFFFFFFFFL), 0); }
-  public static void addNonSystemPackages(FlatBufferBuilder builder, long nonSystemPackages) { builder.addInt(3, (int)(nonSystemPackages & 0xFFFFFFFFL), 0); }
+  public static void addSystemPackages(FlatBufferBuilder builder, long systemPackages) { builder.addInt(1, (int)systemPackages, 0); }
+  public static void addSystemUpdatePackages(FlatBufferBuilder builder, long systemUpdatePackages) { builder.addInt(2, (int)systemUpdatePackages, 0); }
+  public static void addNonSystemPackages(FlatBufferBuilder builder, long nonSystemPackages) { builder.addInt(3, (int)nonSystemPackages, 0); }
   public static int endMbGetPackagesCountResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

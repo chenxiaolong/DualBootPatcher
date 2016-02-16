@@ -23,13 +23,13 @@ public final class FileReadResponse extends Table {
 
   public static int createFileReadResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
+      int error_msgOffset,
       long bytes_read,
-      int data) {
+      int dataOffset) {
     builder.startObject(4);
     FileReadResponse.addBytesRead(builder, bytes_read);
-    FileReadResponse.addData(builder, data);
-    FileReadResponse.addErrorMsg(builder, error_msg);
+    FileReadResponse.addData(builder, dataOffset);
+    FileReadResponse.addErrorMsg(builder, error_msgOffset);
     FileReadResponse.addSuccess(builder, success);
     return FileReadResponse.endFileReadResponse(builder);
   }

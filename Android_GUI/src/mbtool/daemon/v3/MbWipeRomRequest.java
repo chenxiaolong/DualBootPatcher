@@ -20,11 +20,11 @@ public final class MbWipeRomRequest extends Table {
   public ByteBuffer targetsAsByteBuffer() { return __vector_as_bytebuffer(6, 2); }
 
   public static int createMbWipeRomRequest(FlatBufferBuilder builder,
-      int rom_id,
-      int targets) {
+      int rom_idOffset,
+      int targetsOffset) {
     builder.startObject(2);
-    MbWipeRomRequest.addTargets(builder, targets);
-    MbWipeRomRequest.addRomId(builder, rom_id);
+    MbWipeRomRequest.addTargets(builder, targetsOffset);
+    MbWipeRomRequest.addRomId(builder, rom_idOffset);
     return MbWipeRomRequest.endMbWipeRomRequest(builder);
   }
 

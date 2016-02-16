@@ -20,11 +20,11 @@ public final class FileSeekResponse extends Table {
 
   public static int createFileSeekResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
+      int error_msgOffset,
       long offset) {
     builder.startObject(3);
     FileSeekResponse.addOffset(builder, offset);
-    FileSeekResponse.addErrorMsg(builder, error_msg);
+    FileSeekResponse.addErrorMsg(builder, error_msgOffset);
     FileSeekResponse.addSuccess(builder, success);
     return FileSeekResponse.endFileSeekResponse(builder);
   }
