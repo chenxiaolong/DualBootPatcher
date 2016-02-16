@@ -929,7 +929,8 @@ Installer::ProceedState Installer::install_stage_initialize()
     std::vector<util::exists_info> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
-        { "system.img", false }
+        { "system.img", false },
+        { "system.img.sparse", false },
     };
     if (!util::archive_exists(_zip_file, info)) {
         LOGE("Failed to read zip file");
