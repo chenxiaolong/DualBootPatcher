@@ -55,6 +55,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
+#include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -273,7 +274,8 @@ bool Installer::create_chroot()
             || log_mkdir(in_chroot("/tmp").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/data").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/cache").c_str(), 0755) < 0
-            || log_mkdir(in_chroot("/system").c_str(), 0755) < 0) {
+            || log_mkdir(in_chroot("/system").c_str(), 0755) < 0
+            || log_mkdir(in_chroot("/efs").c_str(), 0755) < 0) {
         return false;
     }
 
@@ -348,6 +350,56 @@ bool Installer::create_chroot()
     }
 #endif
 
+    struct stat sb;
+
+    // Mount /efs as read-only if it exists
+    if (log_is_mounted("/efs")) {
+        if (log_mount("/efs", in_chroot("/efs").c_str(), "", MS_BIND | MS_RDONLY, "") < 0) {
+            return false;
+        }
+        LOGD("Bind mounted /efs to chroot as read-only");
+    } else if (stat("/etc/recovery.fstab", &sb) == 0) {
+        LOGD("Found /etc/recovery.fstab");
+
+        std::string efs_dev;
+
+        if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            LOGD("Looking for /efs entry in TWRP-format fstab");
+
+            std::vector<util::twrp_fstab_rec> recs =
+                    util::read_twrp_fstab("/etc/recovery.fstab");
+            for (const util::twrp_fstab_rec &rec : recs) {
+                if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                    LOGD("Found /efs fstab entry");
+                    for (const std::string &dev : rec.blk_devices) {
+                        if (stat(dev.c_str(), &sb) == 0) {
+                            efs_dev = dev.c_str();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        } else {
+            LOGE("Looking for /efs entry in non-TWRP-format fstab");
+
+            std::vector<util::fstab_rec> recs =
+                    util::read_fstab("/etc/recovery.fstab");
+            for (const util::fstab_rec &rec : recs) {
+                if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                    LOGD("Found /efs fstab entry");
+                    efs_dev = rec.blk_device;
+                    break;
+                }
+            }
+        }
+
+        if (!efs_dev.empty() && stat(efs_dev.c_str(), &sb) == 0
+                && log_mount(efs_dev.c_str(), in_chroot("/efs").c_str(), "ext4", MS_RDONLY, "") < 0) {
+            return false;
+        }
+    }
+
     util::create_empty_file(in_chroot("/.chroot"));
 
     return true;
@@ -358,6 +410,7 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/system").c_str());
     log_umount(in_chroot("/cache").c_str());
     log_umount(in_chroot("/data").c_str());
+    log_umount(in_chroot("/efs").c_str());
 
     log_umount(in_chroot("/dev/pts").c_str());
     log_umount(in_chroot("/dev").c_str());
