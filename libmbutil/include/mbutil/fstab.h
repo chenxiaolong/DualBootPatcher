@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -56,7 +56,19 @@ struct fstab_rec
     std::string orig_line;
 };
 
+struct twrp_fstab_rec
+{
+    std::vector<std::string> blk_devices;
+    std::string mount_point;
+    std::string fs_type;
+    std::vector<std::string> twrp_flags;
+    std::vector<std::string> unknown_options;
+    int length;
+    std::string orig_line;
+};
+
 std::vector<fstab_rec> read_fstab(const std::string &path);
+std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path);
 
 }
 }

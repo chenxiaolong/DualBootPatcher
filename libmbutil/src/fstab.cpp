@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -20,15 +20,17 @@
 #include "mbutil/fstab.h"
 
 #include <memory>
+#include <cctype>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <ctype.h>
 #include <sys/mount.h>
 
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
+#include "mbutil/string.h"
 
 
 namespace mb
@@ -95,10 +97,45 @@ static struct mount_flag fs_mgr_flags[] =
     { nullptr,          0 }
 };
 
-
 static int options_to_flags(struct mount_flag *flags_map, char *args,
-                            char *new_args, int size);
+                            char *new_args, int size)
+{
+    char *temp;
+    char *save_ptr;
+    int flags = 0;
+    int i;
 
+    if (new_args && size > 0) {
+        new_args[0] = '\0';
+    }
+
+    temp = strtok_r(args, ",", &save_ptr);
+    while (temp) {
+        for (i = 0; flags_map[i].name; ++i) {
+            if (strncmp(temp, flags_map[i].name, strlen(flags_map[i].name)) == 0) {
+                flags |= flags_map[i].flag;
+                break;
+            }
+        }
+
+        if (!flags_map[i].name) {
+            if (new_args) {
+                strlcat(new_args, temp, size);
+                strlcat(new_args, ",", size);
+            } else {
+                LOGW("Only universal mount options expected, but found %s", temp);
+            }
+        }
+
+        temp = strtok_r(nullptr, ",", &save_ptr);
+    }
+
+    if (new_args && new_args[0]) {
+        new_args[strlen(new_args) - 1] = '\0';
+    }
+
+    return flags;
+}
 
 // Much simplified version of fs_mgr's fstab parsing code
 std::vector<fstab_rec> read_fstab(const std::string &path)
@@ -222,44 +259,107 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
     return fstab;
 }
 
-static int options_to_flags(struct mount_flag *flags_map, char *args,
-                            char *new_args, int size)
+static bool convert_to_int(const char *str, int *out)
 {
+    char *end;
+    errno = 0;
+    long num = strtol(str, &end, 10);
+    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
+            || *str == '\0' || *end != '\0') {
+        return false;
+    }
+    *out = (int) num;
+    return true;
+}
+
+std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
+{
+    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    if (!fp) {
+        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
+        return {};
+    }
+
+    char *line = nullptr;
+    size_t len = 0; // allocated memory size
+    ssize_t bytes_read; // number of bytes read
     char *temp;
     char *save_ptr;
-    int flags = 0;
-    int i;
+    const char *delim = " \t";
+    std::vector<twrp_fstab_rec> fstab;
 
-    if (new_args && size > 0) {
-        new_args[0] = '\0';
-    }
+    auto free_line = finally([&] {
+        free(line);
+    });
 
-    temp = strtok_r(args, ",", &save_ptr);
-    while (temp) {
-        for (i = 0; flags_map[i].name; ++i) {
-            if (strncmp(temp, flags_map[i].name, strlen(flags_map[i].name)) == 0) {
-                flags |= flags_map[i].flag;
-                break;
-            }
+    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
+        // Strip newlines
+        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
+            line[bytes_read - 1] = '\0';
         }
 
-        if (!flags_map[i].name) {
-            if (new_args) {
-                strlcat(new_args, temp, size);
-                strlcat(new_args, ",", size);
+        // Strip leading whitespace
+        temp = line;
+        while (isspace(*temp)) {
+            ++temp;
+        }
+
+        // Skip empty lines and comments
+        if (*temp == '\0' || *temp == '#') {
+            continue;
+        }
+
+        twrp_fstab_rec rec;
+
+        rec.orig_line = line;
+
+        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
+            LOGE("No mount point found in entry: %s", line);
+            return {};
+        }
+        rec.mount_point = temp;
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No filesystem type found in entry: %s", line);
+            return {};
+        }
+        rec.fs_type = temp;
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No block device found in entry: %s", line);
+            return {};
+        }
+        rec.blk_devices.push_back(temp);
+
+        while ((temp = strtok_r(nullptr, delim, &save_ptr))) {
+            if (*temp == '/') {
+                // Additional block device
+                rec.blk_devices.push_back(temp);
+            } else if (strncmp(temp, "length=", 7) == 0) {
+                // Length of partition
+                temp += 7;
+                if (!convert_to_int(temp, &rec.length)) {
+                    LOGE("Invalid length: %s", temp);
+                    return {};
+                }
+            } else if (strncmp(temp, "flags=", 6) == 0) {
+                // TWRP flags
+                temp += 6;
+                rec.twrp_flags = util::tokenize(temp, ";");
+            } else if (strncmp(temp, "null", 4) == 0
+                    || strncmp(temp, "NULL", 4) == 0) {
+                // Skip
+                continue;
             } else {
-                LOGW("Only universal mount options expected, but found %s", temp);
+                // Unknown option
+                rec.unknown_options.push_back(temp);
             }
         }
 
-        temp = strtok_r(nullptr, ",", &save_ptr);
+        fstab.push_back(std::move(rec));
     }
 
-    if (new_args && new_args[0]) {
-        new_args[strlen(new_args) - 1] = '\0';
-    }
-
-    return flags;
+    return fstab;
 }
 
 }
