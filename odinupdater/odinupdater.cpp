@@ -57,6 +57,8 @@
 #define TEMP_CSC_ZIP_FILE       TEMP_CACHE_MOUNT_DIR "/recovery/sec_csc.zip"
 #define TEMP_FUSE_SPARSE_FILE   "/tmp/fuse-sparse"
 
+#define EFS_SALES_CODE_FILE     "/efs/imei/mps_code.dat"
+
 #define PROP_SYSTEM_DEV         "system"
 #define PROP_BOOT_DEV           "boot"
 
@@ -64,6 +66,7 @@ static int interface;
 static int output_fd;
 static const char *zip_file;
 
+static char sales_code[10];
 static char system_block_dev[1024];
 static char boot_block_dev[1024];
 
@@ -183,6 +186,38 @@ static bool la_skip_to(archive *a, const char *filename, archive_entry **entry)
 
     error("libarchive: Failed to find %s in zip", filename);
     return false;
+}
+
+static bool load_sales_code()
+{
+    int fd = open64(EFS_SALES_CODE_FILE, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        error("%s: Failed to open file: %s",
+              EFS_SALES_CODE_FILE, strerror(errno));
+        return false;
+    } else {
+        ssize_t n = read(fd, sales_code, sizeof(sales_code) - 1);
+        close(fd);
+        if (n < 0) {
+            error("%s: Failed to read file: %s",
+                  EFS_SALES_CODE_FILE, strerror(errno));
+            return false;
+        }
+        sales_code[n] = '\0';
+
+        char *newline = strchr(sales_code, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
+    }
+
+    if (!*sales_code) {
+        error("Sales code is empty");
+        return false;
+    }
+
+    info("EFS partition says sales code is: %s", sales_code);
+    return true;
 }
 
 static bool load_block_devs()
@@ -535,17 +570,6 @@ static bool copy_dir_if_exists(const char *source_dir,
 
 static bool apply_multi_csc()
 {
-    // Get current sales code
-    std::string sales_code;
-    mb::util::get_property("ro.patcher.sales_code", &sales_code, "");
-
-    if (sales_code.empty()) {
-        error("Sales code is empty");
-        return false;
-    }
-
-    info("EFS partition says sales code is: %s", sales_code.c_str());
-
     info("Applying Multi-CSC");
 
     static const char *common_system = "/system/csc/common/system";
@@ -553,9 +577,9 @@ static bool apply_multi_csc()
     char sales_code_csc_contents[100];
 
     snprintf(sales_code_system, sizeof(sales_code_system),
-             "/system/csc/%s/system", sales_code.c_str());
+             "/system/csc/%s/system", sales_code);
     snprintf(sales_code_csc_contents, sizeof(sales_code_csc_contents),
-             "/system/csc/%s/csc_contents", sales_code.c_str());
+             "/system/csc/%s/csc_contents", sales_code);
 
     // TODO: TouchWiz hard links files that go in /system/app
 
@@ -790,6 +814,11 @@ static bool flash_zip()
     ui_print("------ EXPERIMENTAL ------");
     ui_print("Patched Odin image flasher");
     ui_print("------ EXPERIMENTAL ------");
+
+    // Load sales code from EFS partition
+    if (!load_sales_code()) {
+        return false;
+    }
 
     // Load block device info
     if (!load_block_devs()) {
