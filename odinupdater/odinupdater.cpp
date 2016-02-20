@@ -33,7 +33,9 @@
 
 // libmbutil
 #include "mbutil/command.h"
+#include "mbutil/copy.h"
 #include "mbutil/mount.h"
+#include "mbutil/properties.h"
 
 // minizip
 #include <archive.h>
@@ -499,6 +501,85 @@ error:
     return false;
 }
 
+static bool copy_dir_if_exists(const char *source_dir,
+                               const char *target_dir)
+{
+    struct stat sb;
+    if (stat(source_dir, &sb) < 0) {
+        if (errno == ENOENT) {
+            info("Skipping %s -> %s copy as source doesn't exist",
+                 source_dir, target_dir);
+            return true;
+        } else {
+            error("%s: Failed to stat: %s", source_dir, strerror(errno));
+            return false;
+        }
+    }
+
+    if (!S_ISDIR(sb.st_mode)) {
+        error("%s: Source path is not a directory", source_dir);
+        return false;
+    }
+
+    bool ret = mb::util::copy_dir(source_dir, target_dir,
+                                  mb::util::COPY_ATTRIBUTES
+                                | mb::util::COPY_XATTRS
+                                | mb::util::COPY_EXCLUDE_TOP_LEVEL);
+    if (!ret) {
+        error("Failed to copy %s to %s: %s",
+              source_dir, target_dir, strerror(errno));
+    }
+
+    return ret;
+}
+
+static bool apply_multi_csc()
+{
+    // Get current sales code
+    std::string sales_code;
+    mb::util::get_property("ro.patcher.sales_code", &sales_code, "");
+
+    if (sales_code.empty()) {
+        error("Sales code is empty");
+        return false;
+    }
+
+    info("EFS partition says sales code is: %s", sales_code.c_str());
+
+    info("Applying Multi-CSC");
+
+    static const char *common_system = "/system/csc/common/system";
+    char sales_code_system[100];
+    char sales_code_csc_contents[100];
+
+    snprintf(sales_code_system, sizeof(sales_code_system),
+             "/system/csc/%s/system", sales_code.c_str());
+    snprintf(sales_code_csc_contents, sizeof(sales_code_csc_contents),
+             "/system/csc/%s/csc_contents", sales_code.c_str());
+
+    // TODO: TouchWiz hard links files that go in /system/app
+
+    if (!copy_dir_if_exists(common_system, "/system")
+            || !copy_dir_if_exists(sales_code_system, "/system")) {
+        return false;
+    }
+
+    if (remove("/system/csc_contents") < 0 && errno != ENOENT) {
+        error("%s: Failed to remove: %s",
+              "/system/csc_contents", strerror(errno));
+        return false;
+    }
+    if (symlink(sales_code_csc_contents, "/system/csc_contents") < 0) {
+        error("Failed to symlink %s to %s: %s",
+              sales_code_csc_contents, "/system/csc_contents", strerror(errno));
+        return false;
+    }
+
+    info("Successfully applied multi-CSC");
+
+    return true;
+}
+
 static bool flash_csc_zip()
 {
     archive *matcher;
@@ -670,6 +751,11 @@ static bool flash_csc()
 
     if (!flash_csc_zip()) {
         error("Failed to flash CSC zip");
+        goto error_system_mounted;
+    }
+
+    if (!apply_multi_csc()) {
+        error("Failed to apply Multi-CSC");
         goto error_system_mounted;
     }
 
