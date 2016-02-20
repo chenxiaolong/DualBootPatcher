@@ -122,7 +122,6 @@ private:
                             const std::string &loop_target,
                             bool is_image,
                             uint64_t image_size);
-    bool get_efs_sales_code(std::string *sales_code_out);
     bool run_real_updater();
 
     ProceedState install_stage_initialize();
