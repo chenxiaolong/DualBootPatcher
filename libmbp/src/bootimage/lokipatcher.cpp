@@ -59,6 +59,7 @@ static LokiTarget targets[] = {
     { "Verizon",               "Samsung Galaxy Stellar", "JZO54K.I200VRBMA1",                          0x88e101ac, 0x88ed72e0, false },
     { "T-Mobile",              "LG Optimus F3Q",         "D52010c",                                    0x88f1079c, 0x88f64508, true  },
     { "DoCoMo",                "LG Optimus G",           "L01E20b",                                    0x88F10E48, 0x88F54418, true  },
+    { "DoCoMo",                "LG Optimus it L05E",     "L05E10d",                                    0x88f1157c, 0x88f31e10, true  },
     { "DoCoMo",                "LG Optimus G Pro",       "L04E10f",                                    0x88f1102c, 0x88f54418, true  },
     { "AT&T or HK",            "LG Optimus G Pro",       "E98010g or E98810b",                         0x88f11084, 0x88f54418, true  },
     { "KT, LGU, or SKT",       "LG Optimus G Pro",       "F240K10o, F240L10v, or F240S10w",            0x88f110b8, 0x88f54418, true  },
