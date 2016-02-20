@@ -32,6 +32,8 @@
 
 #define ABOOT_PARTITION                 "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
+#define EFS_SALES_CODE_FILE             "/efs/imei/mps_code.dat"
+
 #define UNIVERSAL_BY_NAME_DIR           "/dev/block/by-name"
 
 #define PACKAGES_XML                    "/data/system/packages.xml"

@@ -243,6 +243,7 @@ bool Installer::create_chroot()
     run_command({ "mount", "/system" });
     run_command({ "mount", "/cache" });
     run_command({ "mount", "/data" });
+    run_command({ "mount", "-o", "ro", "/efs" });
 
     // Make sure everything really is mounted
     if (!log_is_mounted("/system")
@@ -373,6 +374,10 @@ bool Installer::destroy_chroot() const
     }
 
     util::delete_recursive(_chroot);
+
+    if (log_is_mounted("/efs")) {
+        log_umount("/efs");
+    }
 
     return true;
 }
@@ -574,6 +579,40 @@ bool Installer::mount_dir_or_image(const std::string &source,
     return true;
 }
 
+bool Installer::get_efs_sales_code(std::string *sales_code_out)
+{
+    // Get current sales code
+    char sales_code[10];
+    int fd = open64(EFS_SALES_CODE_FILE, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        if (errno == ENOENT) {
+            LOGD("%s: Does not exist. Probably not a Samsung device",
+                 EFS_SALES_CODE_FILE);
+        } else {
+            LOGE("%s: Failed to open file: %s",
+                 EFS_SALES_CODE_FILE, strerror(errno));
+        }
+        return false;
+    } else {
+        ssize_t n = read(fd, sales_code, sizeof(sales_code) - 1);
+        close(fd);
+        if (n < 0) {
+            LOGE("%s: Failed to read file: %s",
+                 EFS_SALES_CODE_FILE, strerror(errno));
+            return false;
+        }
+        sales_code[n] = '\0';
+
+        char *newline = strchr(sales_code, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
+    }
+
+    *sales_code_out = sales_code;
+    return true;
+}
+
 /*!
  * \brief Run real update-binary in the chroot
  */
@@ -659,6 +698,10 @@ bool Installer::run_real_updater()
     // Keep get_properties() out of the fork since it might need to call
     // util::get_properties()
     std::unordered_map<std::string, std::string> props = get_properties();
+    std::string sales_code;
+    if (get_efs_sales_code(&sales_code)) {
+        props["ro.patcher.sales_code"] = sales_code;
+    }
 
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
