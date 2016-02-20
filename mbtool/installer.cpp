@@ -979,9 +979,16 @@ Installer::ProceedState Installer::install_stage_initialize()
         LOGE("Failed to read zip file");
     } else {
         _has_block_image = false;
+        _copy_to_temp_image = false;
         for (auto const &item : info) {
             if (item.exists) {
                 _has_block_image = true;
+                // Flashing an Odin image discards the system image anyway, so
+                // there's no point in copying the data.
+                // TODO: libmbp should be setting this option in info.prop
+                if (item.path != "system.img.sparse") {
+                    _copy_to_temp_image = true;
+                }
                 break;
             }
         }
@@ -1328,8 +1335,6 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Create temporary system image if needed
     if (!_rom->system_is_image && (_has_block_image || _rom->id == "primary")) {
-        display_msg("Copying system to temporary image");
-
         // Try /data/.system.img.tmp and if /data doesn't have enough space,
         // then try [External SD]/.system.img.tmp
 
@@ -1359,11 +1364,15 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
             }
         }
 
-        // Copy current /system files to the image
-        if (!system_image_copy(_system_path, _temp_image_path, false)) {
-            display_msg("Failed to copy %s to %s",
-                        _system_path.c_str(), _temp_image_path.c_str());
-            return ProceedState::Fail;
+        if (_copy_to_temp_image) {
+            display_msg("Copying system to temporary image");
+
+            // Copy current /system files to the image
+            if (!system_image_copy(_system_path, _temp_image_path, false)) {
+                display_msg("Failed to copy %s to %s",
+                            _system_path.c_str(), _temp_image_path.c_str());
+                return ProceedState::Fail;
+            }
         }
 
         system_is_image = true;

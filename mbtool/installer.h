@@ -91,6 +91,7 @@ protected:
 
     std::string _temp_image_path;
     bool _has_block_image;
+    bool _copy_to_temp_image;
     bool _is_aroma;
 
     std::vector<std::string> _associated_loop_devs;
