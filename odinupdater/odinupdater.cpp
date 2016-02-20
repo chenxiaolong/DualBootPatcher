@@ -276,7 +276,7 @@ static bool load_block_devs()
     }
 
     info("System block device: %s", system_block_dev);
-    info("Cache block device: %s", boot_block_dev);
+    info("Boot block device: %s", boot_block_dev);
 
     struct stat sb;
     if (stat(system_block_dev, &sb) < 0) {
@@ -391,7 +391,7 @@ static bool extract_sparse_file(const char *zip_filename,
         do {
             if ((nwritten = write(fd, out_ptr, n)) < 0) {
                 error("%s: Failed to write: %s",
-                      system_block_dev, strerror(errno));
+                      out_filename, strerror(errno));
                 goto error_fd_opened;
             }
 
@@ -473,7 +473,7 @@ static bool extract_raw_file(const char *zip_filename,
         do {
             if ((nwritten = write(fd, out_ptr, n)) < 0) {
                 error("%s: Failed to write: %s",
-                      system_block_dev, strerror(errno));
+                      out_filename, strerror(errno));
                 goto error_fd_opened;
             }
 
