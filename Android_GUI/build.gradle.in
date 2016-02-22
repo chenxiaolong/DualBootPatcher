@@ -90,9 +90,7 @@ android {
                 'assets'
             ]
             jniLibs.srcDirs = [
-                '@CMAKE_BINARY_DIR@/libmblog/out.shared/',
-                '@CMAKE_BINARY_DIR@/libmbp/out.shared/',
-                '@CMAKE_BINARY_DIR@/libmiscstuff/out/',
+                '@CMAKE_BINARY_DIR@/android/result/lib/',
                 '@CMAKE_BINARY_DIR@/thirdparty/android/jna/@JNA_VER@/all/lib/'
             ]
         }

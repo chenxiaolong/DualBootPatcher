@@ -1,3 +1,7 @@
+if(NOT MBP_TARGET_NEEDS_BUILDS)
+    return()
+endif()
+
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(BOOTIMGTOOL_SOURCES
         bootimgtool.cpp
@@ -11,8 +15,8 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
 
     target_link_libraries(
         bootimgtool
-        mbp
-        mbpio
+        mbp-shared
+        mbpio-static
     )
 
     if(NOT MSVC)

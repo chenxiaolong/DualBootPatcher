@@ -1,0 +1,6 @@
+if(ANDROID)
+    set(MBP_JANSSON_INCLUDES
+        ${THIRD_PARTY_JANSSON_DIR}/${ANDROID_ABI}/include)
+    set(MBP_JANSSON_LIBRARIES
+        ${THIRD_PARTY_JANSSON_DIR}/${ANDROID_ABI}/lib/libjansson.a)
+endif()

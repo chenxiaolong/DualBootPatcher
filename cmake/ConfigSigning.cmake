@@ -1,6 +1,3 @@
-#include(CMakeDependentOption)
-#include(GNUInstallDirs)
-
 # Find Java's keytool
 find_program(JAVA_KEYTOOL NAMES keytool)
 if(NOT JAVA_KEYTOOL)

@@ -1,8 +1,0 @@
-include @CMAKE_BINARY_DIR@/ndk/common.mk
-
-MBP_SHARED_DIR := @CMAKE_CURRENT_BINARY_DIR@/out.shared
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := prebuilt-libmbp
-LOCAL_SRC_FILES         := $(MBP_SHARED_DIR)/$(TARGET_ARCH_ABI)/libmbp.so
-include $(PREBUILT_SHARED_LIBRARY_NO_COPY)
