@@ -126,7 +126,7 @@ dependencies {
     compile 'commons-io:commons-io:2.4'
     compile project(":emulatorview")
     compile project(":neuteredsaf")
-    compile files('@CMAKE_BINARY_DIR@/thirdparty/android/jna/@JNA_VER@/all/jna.jar')
+    compile files('@CMAKE_BINARY_DIR@/thirdparty/prebuilts/jna/@JNA_VER@/all/jna.jar')
     compile files('libs/RootTools-4.1.jar')
 
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.3.1'
