@@ -127,9 +127,12 @@ def get_builds(targetdir):
     versions = list()
 
     for f in os.listdir(filesdir):
+        if not os.path.isdir(os.path.join(filesdir, f)):
+            print('Skipping ' + f)
+            continue
+
         version = Version(f)
         versions.append(version)
-        print('Found version: ' + str(version))
 
     versions.sort(reverse=True)
 
@@ -235,6 +238,10 @@ def get_builds(targetdir):
 
         # Sort by target and then the name
         build['files'].sort(key=lambda x: (x['target'], x['name']))
+
+        print('Found version %s (%s) with %s files and %s commits' %
+              (build['version'], build['timestamp'], len(build['files']),
+               len(build['commits'])))
 
         builds.append(build)
 
