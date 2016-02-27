@@ -129,17 +129,29 @@
                                 <li>
                                     <!-- For extra-small devices -->
                                     <div class="visible-xs">
-                                        <a href="{{ file_info.build }}">{{ file_info.target }}</a>
-                                        {% if 'md5sum' in file_info %}
-                                            | <a href="{{ file_info.md5sum }}">MD5</a>
+                                        <a href="{{ file_info.file }}">{{ file_info.target }}</a>
+                                        {% if 'md5' in file_info %}
+                                            | <a href="{{ file_info.md5 }}">MD5</a>
+                                        {% endif %}
+                                        {% if 'sha1' in file_info %}
+                                            | <a href="{{ file_info.sha1 }}">SHA1</a>
+                                        {% endif %}
+                                        {% if 'sha512' in file_info %}
+                                            | <a href="{{ file_info.sha512 }}">SHA512</a>
                                         {% endif %}
                                         ({{ file_info.size }})
                                     </div>
                                     <!-- For non-extra-small devices -->
                                     <div class="hidden-xs">
-                                        {{ file_info.target }}: <a href="{{ file_info.build }}">{{ file_info.build }}</a>
-                                        {% if 'md5sum' in file_info %}
-                                            | <a href="{{ file_info.md5sum }}">MD5</a>
+                                        {{ file_info.target }}: <a href="{{ file_info.file }}">{{ file_info.name }}</a>
+                                        {% if 'md5' in file_info %}
+                                            | <a href="{{ file_info.md5 }}">MD5</a>
+                                        {% endif %}
+                                        {% if 'sha1' in file_info %}
+                                            | <a href="{{ file_info.sha1 }}">SHA1</a>
+                                        {% endif %}
+                                        {% if 'sha512' in file_info %}
+                                            | <a href="{{ file_info.sha512 }}">SHA512</a>
                                         {% endif %}
                                         ({{ file_info.size }})
                                     </div>

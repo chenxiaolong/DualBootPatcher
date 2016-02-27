@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,11 @@ import distutils.core
 import jinja2
 import os
 import re
+import shutil
 import subprocess
 import sys
 
-maxbuilds = 999999
+maxbuilds = 0
 
 
 class Version():
@@ -98,16 +99,6 @@ class Version():
         return hash(self.ver)
 
 
-def quicksort(l):
-    if l == []:
-        return []
-    else:
-        pivot = l[0]
-        left = quicksort([x for x in l[1:] if x >= pivot])
-        right = quicksort([x for x in l[1:] if x < pivot])
-        return left + [pivot] + right
-
-
 # From http://code.activestate.com/recipes/577081-humanized-representation-of-a-number-of-bytes/
 def humanize_bytes(numbytes, precision=1):
     abbrevs = (
@@ -129,30 +120,26 @@ def humanize_bytes(numbytes, precision=1):
     return '%.*f %s' % (precision, numbytes / factor, suffix)
 
 
-def get_builds(filesdir):
+def get_builds(targetdir):
+    filesdir = os.path.join(targetdir, 'files')
+
     # List of patcher files and versions
-    files = list()
     versions = list()
 
     for f in os.listdir(filesdir):
-        r = re.search(r'^DualBootPatcher(?:Android)?-(.*)-.*\.(apk|zip|7z)', f)
-        if not r:
-            r = re.search(r'^DualBootUtilities-(.*)\.zip', f)
-        if not r:
-            print('Skipping %s ...' % f)
-            continue
-        files.append(f)
-        versions.append(Version(r.group(1)))
+        version = Version(f)
+        versions.append(version)
+        print('Found version: ' + str(version))
 
-    versions = quicksort(list(set(versions)))
+    versions.sort(reverse=True)
 
     # Remove old builds
-    if len(versions) >= maxbuilds:
+    assert shutil.rmtree.avoids_symlink_attacks
+    if maxbuilds > 0 and len(versions) >= maxbuilds:
         for i in range(maxbuilds, len(versions)):
-            for f in files:
-                if versions[i].ver in f:
-                    print('Removing old build %s ...' % f)
-                    os.remove(os.path.join(filesdir, f))
+            versiondir = os.path.join(filesdir, versions[i].ver)
+            print('Removing old version %s ...' % versiondir)
+            shutil.rmtree(versiondir)
         del versions[maxbuilds:]
 
     # List of builds
@@ -161,6 +148,7 @@ def get_builds(filesdir):
     # Get file list and changelog
     for i in range(0, len(versions)):
         version = versions[i]
+        versiondir = os.path.join(filesdir, versions[i].ver)
 
         # Get commit log
         process = subprocess.Popen(
@@ -175,28 +163,13 @@ def get_builds(filesdir):
             raise Exception('Failed to determine timestamp for commit: %s'
                             % version.commit)
 
-        # Get list of files
-        cur_files = dict()
-        md5sums = dict()
-        for f in files:
-            if version.ver in f:
-                if f.endswith('.md5sum'):
-                    md5sums[f[:-7]] = f
-                    continue
-
-                if f.endswith('.apk'):
-                    target = 'Android'
-                elif f.endswith('win32.zip') or f.endswith('.7z'):
-                    target = 'Win32'
-                elif f.startswith('DualBootUtilities'):
-                    target = 'Utilities'
-                else:
-                    target = 'Other'
-
-                if target not in cur_files:
-                    cur_files[target] = list()
-
-                cur_files[target].append(f)
+        def cmp_items(a, b):
+            if a > b:
+                return 1
+            elif a == b:
+                return 0
+            else:
+                return -1
 
         build = dict()
         build['version'] = str(version)
@@ -204,30 +177,35 @@ def get_builds(filesdir):
         build['files'] = list()
         build['commits'] = list()
 
-        utilities = list()
+        # Get list of files
+        for target in os.listdir(versiondir):
+            builddir = os.path.join(versiondir, target)
 
-        # Write files list
-        for target in sorted(cur_files):
-            for f in cur_files[target]:
-                fullpath = os.path.join(filesdir, f)
-                size = humanize_bytes(os.path.getsize(fullpath))
+            for f in os.listdir(builddir):
+                fullpath = os.path.join(builddir, f)
+                relpath = os.path.relpath(fullpath, targetdir)
+                splitext = os.path.splitext(f)
 
-                file_info = dict()
-                file_info['target'] = target
-                file_info['build'] = f
-                file_info['size'] = size
+                # Skip checksum files for now
+                if splitext[1].endswith('sum'):
+                    continue
 
-                if f in md5sums:
-                    file_info['md5sum'] = md5sums[f]
+                fileinfo = dict()
+                fileinfo['target'] = target
+                fileinfo['file'] = relpath
+                fileinfo['name'] = f
+                fileinfo['size'] = humanize_bytes(os.path.getsize(fullpath))
 
-                # Make sure utilities appear at the end of the list
-                if target == 'Utilities':
-                    utilities.append(file_info)
-                else:
-                    build['files'].append(file_info)
+                if os.path.exists(fullpath + '.md5sum'):
+                    fileinfo['md5'] = relpath + '.md5sum'
+                if os.path.exists(fullpath + '.sha1sum'):
+                    fileinfo['sha1'] = relpath + '.sha1sum'
+                if os.path.exists(fullpath + '.sha512sum'):
+                    fileinfo['sha512'] = relpath + '.sha512sum'
 
-        build['files'] += utilities
+                build['files'].append(fileinfo)
 
+        # Get list of commits
         if i < len(versions) - 1:
             new_commit = version.commit
             old_commit = versions[i + 1].commit
@@ -255,6 +233,9 @@ def get_builds(filesdir):
                     'message': subject
                 })
 
+        # Sort by target and then the name
+        build['files'].sort(key=lambda x: (x['target'], x['name']))
+
         builds.append(build)
 
     return builds
@@ -262,19 +243,19 @@ def get_builds(filesdir):
 
 def main():
     if len(sys.argv) != 2:
-        print('Usage: %s [files directory]' % sys.argv[0])
+        print('Usage: %s [target directory]' % sys.argv[0])
         sys.exit(1)
 
     # Files directory
-    filesdir = sys.argv[1]
-    if not os.path.exists(filesdir):
-        os.makedirs(filesdir)
+    targetdir = sys.argv[1]
+    if not os.path.exists(targetdir):
+        os.makedirs(targetdir)
 
     sourcedir = os.path.dirname(os.path.realpath(__file__))
     resdir = os.path.join(sourcedir, 'res')
-    outfile = os.path.join(filesdir, 'index.html')
+    outfile = os.path.join(targetdir, 'index.html')
 
-    builds = get_builds(filesdir)
+    builds = get_builds(targetdir)
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(sourcedir),
                              undefined=jinja2.StrictUndefined)
@@ -284,7 +265,7 @@ def main():
     with open(outfile, 'wb') as f:
         f.write(html.encode('utf-8'))
 
-    distutils.dir_util.copy_tree(resdir, filesdir)
+    distutils.dir_util.copy_tree(resdir, targetdir)
 
 
 if __name__ == '__main__':
