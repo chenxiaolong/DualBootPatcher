@@ -96,6 +96,6 @@ else()
             )
         endif()
 
-        add_test(test_sparse test_sparse)
+        add_test(NAME test_sparse COMMAND test_sparse)
     endif()
 endif()
