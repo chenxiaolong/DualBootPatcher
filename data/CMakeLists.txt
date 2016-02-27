@@ -1,5 +1,5 @@
 # Scripts
-if(MBP_TOP_LEVEL_TARGET)
+if(MBP_TOP_LEVEL_BUILD)
     install(
         DIRECTORY scripts/
         DESTINATION ${DATA_INSTALL_DIR}/scripts
