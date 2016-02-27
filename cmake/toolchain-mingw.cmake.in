@@ -9,6 +9,10 @@ set(CMAKE_SYSTEM_NAME Windows)
 # Use static libraries only
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
+# _CMAKE_TOOLCHAIN_PREFIX autodetection will not work if CMAKE_C_COMPILER is
+# not set to the gcc binary (eg. if ccache is used), so set it manually here
+set(_CMAKE_TOOLCHAIN_PREFIX "${MINGW_TRIPLET}-")
+
 # specify the cross compiler
 set(CMAKE_C_COMPILER ${MINGW_TRIPLET}-gcc)
 set(CMAKE_CXX_COMPILER ${MINGW_TRIPLET}-g++)
