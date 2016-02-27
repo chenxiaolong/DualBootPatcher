@@ -13,8 +13,8 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
         <!-- Material Design fonts -->
-        <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700">
-        <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/icon?family=Material+Icons">
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
         <!-- Material Design CSS -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-material-design/0.5.8/css/bootstrap-material-design.min.css">
@@ -30,11 +30,6 @@
 
             iframe, img, embed {
                 border: none;
-            }
-
-            .mdi {
-                position: relative;
-                top: 1px;
             }
 
             /* Small Devices */
@@ -57,7 +52,7 @@
         <link rel="icon" href="images/favicon.png">
     </head>
     <body>
-        <nav class="navbar navbar-default navbar-fixed-top">
+        <nav class="navbar navbar-inverse navbar-fixed-top">
             <div class="container">
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
@@ -121,7 +116,7 @@
                         <h2 class="panel-title" style="font-size:20px;">{{ build.version }}<p class="visible-xs"></p> <small>{{ build.timestamp }}</small></h2>
                     </div>
                     <div class="panel-body">
-                        <h4><span class="mdi mdi-file-folder"></span> Files:</h4>
+                        <h4>Files:</h4>
                         <ul>
                             <!-- List of downloads for the build -->
                             {% for file_info in build.files %}
@@ -157,7 +152,7 @@
                                 </li>
                             {% endfor %}
                         </ul>
-                        <h4><span class="mdi mdi-action-schedule"></span> Changelog:</h4>
+                        <h4>Changelog:</h4>
                         {% if build.commits %}
                             <table class="table table-striped table-hover">
                                 <thead>
