@@ -95,6 +95,7 @@ if(MBP_TOP_LEVEL_BUILD)
             FILES ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
                   ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
                   ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
+                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )
