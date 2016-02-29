@@ -33,6 +33,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// Linux
+#include <linux/loop.h>
+
 // Legacy properties
 #include "external/legacy_property_service.h"
 
@@ -45,6 +48,7 @@
 #include "mbp/patcherconfig.h"
 
 // libmbutil
+#include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
@@ -422,6 +426,20 @@ bool Installer::create_chroot()
 
 bool Installer::destroy_chroot() const
 {
+    // Disassociate loop devices that the ROM installer may have assigned
+    // (grr, SuperSU...)
+    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    if (dp) {
+        std::string path;
+        struct dirent *ent;
+        while ((ent = readdir(dp.get()))) {
+            path = in_chroot("/dev/block/");
+            path += ent->d_name;
+            util::loopdev_remove_device(path.c_str());
+        }
+        dp.reset();
+    }
+
     log_umount(in_chroot("/system").c_str());
     log_umount(in_chroot("/cache").c_str());
     log_umount(in_chroot("/data").c_str());
