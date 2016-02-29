@@ -9,9 +9,15 @@ if(${MBP_BUILD_TYPE} STREQUAL debug)
     # Only use Windows path when natively compiling, not cross-compiling
     #if(WIN32)
     if(CMAKE_HOST_WIN32)
-        set(DEBUG_KEYSTORE "$ENV{USERPROFILE}\\.android\\debug.keystore")
+        set(DOT_ANDROID_DIR "$ENV{USERPROFILE}\\.android")
+        set(DEBUG_KEYSTORE "${DOT_ANDROID_DIR}\\debug.keystore")
     else()
-        set(DEBUG_KEYSTORE "$ENV{HOME}/.android/debug.keystore")
+        set(DOT_ANDROID_DIR "$ENV{HOME}/.android")
+        set(DEBUG_KEYSTORE "${DOT_ANDROID_DIR}/debug.keystore")
+    endif()
+
+    if(NOT EXISTS "${DOT_ANDROID_DIR}")
+        file(MAKE_DIRECTORY "${DOT_ANDROID_DIR}")
     endif()
 
     if(NOT EXISTS "${DEBUG_KEYSTORE}")
