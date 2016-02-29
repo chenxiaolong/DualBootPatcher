@@ -26,13 +26,14 @@ if(${MBP_BUILD_TYPE} STREQUAL debug)
         execute_process(
             COMMAND
             "${JAVA_KEYTOOL}"
-            -genkey -v
-            -keystore "${DEBUG_KEYSTORE}"
-            -alias androiddebugkey
-            -storepass android
-            -keypass android
-            -keyalg RSA
-            -validity 10950 # 30 years
+                -genkey -v
+                -keystore "${DEBUG_KEYSTORE}"
+                -alias androiddebugkey
+                -storepass android
+                -keypass android
+                -keyalg RSA
+                -validity 10950 # 30 years
+                -dname "CN=Android Debug,O=Android,C=US"
             RESULT_VARIABLE KEYTOOL_RET
         )
         if(NOT KEYTOOL EQUAL 0)
