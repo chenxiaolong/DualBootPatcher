@@ -33,6 +33,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// Linux
+#include <linux/loop.h>
+
 // Legacy properties
 #include "external/legacy_property_service.h"
 
@@ -45,6 +48,7 @@
 #include "mbp/patcherconfig.h"
 
 // libmbutil
+#include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
@@ -327,6 +331,20 @@ bool Installer::create_chroot()
         return false;
     }
 
+    // Create a few loopback devices since some installers expect them to exist,
+    // but don't create them. They are not necessary for mbtool to work.
+    if (log_mkdir(in_chroot("/dev/block").c_str(), 0755) < 0
+            || log_mknod(in_chroot("/dev/block/loop0").c_str(), S_IFBLK | 0644, makedev(7, 0)) < 0
+            || log_mknod(in_chroot("/dev/block/loop1").c_str(), S_IFBLK | 0644, makedev(7, 1)) < 0
+            || log_mknod(in_chroot("/dev/block/loop2").c_str(), S_IFBLK | 0644, makedev(7, 2)) < 0
+            || log_mknod(in_chroot("/dev/block/loop3").c_str(), S_IFBLK | 0644, makedev(7, 3)) < 0
+            || log_mknod(in_chroot("/dev/block/loop4").c_str(), S_IFBLK | 0644, makedev(7, 4)) < 0
+            || log_mknod(in_chroot("/dev/block/loop5").c_str(), S_IFBLK | 0644, makedev(7, 5)) < 0
+            || log_mknod(in_chroot("/dev/block/loop6").c_str(), S_IFBLK | 0644, makedev(7, 6)) < 0
+            || log_mknod(in_chroot("/dev/block/loop7").c_str(), S_IFBLK | 0644, makedev(7, 7)) < 0) {
+        return false;
+    }
+
     // We need /dev/input/* and /dev/graphics/* for AROMA
 #if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
@@ -408,6 +426,20 @@ bool Installer::create_chroot()
 
 bool Installer::destroy_chroot() const
 {
+    // Disassociate loop devices that the ROM installer may have assigned
+    // (grr, SuperSU...)
+    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    if (dp) {
+        std::string path;
+        struct dirent *ent;
+        while ((ent = readdir(dp.get()))) {
+            path = in_chroot("/dev/block/");
+            path += ent->d_name;
+            util::loopdev_remove_device(path.c_str());
+        }
+        dp.reset();
+    }
+
     log_umount(in_chroot("/system").c_str());
     log_umount(in_chroot("/cache").c_str());
     log_umount(in_chroot("/data").c_str());
@@ -1309,6 +1341,13 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
+    // Copy /etc/fstab
+    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+
+    // Copy /etc/recovery.fstab
+    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
     return on_set_up_chroot();
 }
