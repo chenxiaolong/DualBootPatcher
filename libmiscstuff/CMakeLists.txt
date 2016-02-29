@@ -1,39 +1,46 @@
-if(${MBP_BUILD_TARGET} STREQUAL android)
-    include(ExternalProject)
+if(NOT MBP_TARGET_NEEDS_BUILDS)
+    return()
+endif()
 
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-        @ONLY
+include_directories(${MBP_LIBARCHIVE_LOWAPI_INCLUDES})
+
+if(${MBP_BUILD_TARGET} STREQUAL android-app)
+    set(MISCSTUFF_SOURCES
+        libmiscstuff.cpp
+        mntent.c
     )
 
-    ExternalProject_Add(
-        libmiscstuff
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
-        BUILD_COMMAND ${NDK_BUILD}
-                      -C <SOURCE_DIR>
-                      NDK_PROJECT_PATH=.
-                      NDK_APPLICATION_MK=Application.mk
-                      NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
-                      NDK_OUT=<TMP_DIR>
-                      APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-                      ${NDK_ARGS}
-        INSTALL_COMMAND ""
+    add_definitions(-fvisibility=default)
+
+    add_library(miscstuff SHARED ${MISCSTUFF_SOURCES})
+
+    set_target_properties(
+        miscstuff
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
     )
 
-    add_dependencies(
-        libmiscstuff
-        mblog-static-android
+    if(NOT MSVC)
+        set_target_properties(
+            miscstuff
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
+
+    target_link_libraries(
+        miscstuff
+        mblog-shared
+        ${MBP_LIBARCHIVE_LOWAPI_LIBRARIES}
+        ${MBP_LIBLZMA_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
     )
 
-    # Always rebuild since files may have changed
-    ExternalProject_Add_Step(
-        libmiscstuff
-        forcerebuild
-        DEPENDEES update
-        DEPENDERS configure
-        ALWAYS 1
-        COMMAND ""
+    install(
+        TARGETS miscstuff
+        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
     )
 endif()

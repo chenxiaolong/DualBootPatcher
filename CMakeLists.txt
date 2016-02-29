@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(DualBootPatcher)
+project(DualBootPatcher CXX C)
 set(MBP_VERSION_MAJOR 8)
 set(MBP_VERSION_MINOR 99)
 set(MBP_VERSION_PATCH 13)
@@ -11,16 +11,32 @@ set(MBP_BUILD_TARGET "desktop"
     CACHE STRING "Target platform (desktop or android)")
 set(MBP_BUILD_TYPE "debug"
     CACHE STRING "Target build type (release, debug, or ci)")
+set(MBP_SYSTEM_BUILD_TYPE "release"
+    CACHE STRING "Target build type for Android system components (release or debug)")
+
+# Build types:
+# - desktop: Standard build for PCs
+# - android: Standard build for Android
+# - android-app: Build libraries to be used for the Android app
+#                (not to be built manually)
+# - android-system: Build executables to be included in the distrbution
+#                   (not to be built manually)
 
 # Verify build target and type
 if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL android)
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL android
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL android-app
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
 endif()
 if(NOT ${MBP_BUILD_TYPE} STREQUAL release
         AND NOT ${MBP_BUILD_TYPE} STREQUAL debug
         AND NOT ${MBP_BUILD_TYPE} STREQUAL ci)
     message(FATAL_ERROR "Invalid build type: ${MBP_BUILD_TYPE}")
+endif()
+if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
+        AND NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL debug)
+    message(FATAL_ERROR "Invalid system build type: ${MBP_SYSTEM_BUILD_TYPE}")
 endif()
 
 # Allow version to be overridden in Jenkins
@@ -45,20 +61,75 @@ set(CPACK_PACKAGE_VERSION_MINOR ${MBP_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${MBP_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION ${MBP_VERSION})
 
-# Code signing options
-include(cmake/ConfigSigning.cmake)
+# Ensure CMAKE_BUILD_TYPE is set
+if(NOT CMAKE_BUILD_TYPE)
+    if(${MBP_BUILD_TYPE} STREQUAL release)
+        set(NEW_CMAKE_BUILD_TYPE Release)
+    elseif(${MBP_BUILD_TYPE} STREQUAL debug)
+        set(NEW_CMAKE_BUILD_TYPE Debug)
+    elseif(${MBP_BUILD_TYPE} STREQUAL ci)
+        set(NEW_CMAKE_BUILD_TYPE Release)
+    endif()
 
-if(${MBP_BUILD_TARGET} STREQUAL android)
-    include(cmake/ConfigAndroid.cmake)
-elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
-    include(cmake/ConfigDesktop.cmake)
+    message(STATUS "Setting CMAKE_BUILD_TYPE to ${NEW_CMAKE_BUILD_TYPE} because it wasn't explicitly specified")
+    set(CMAKE_BUILD_TYPE ${NEW_CMAKE_BUILD_TYPE} CACHE STRING
+        "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel."
+        FORCE)
+    unset(NEW_CMAKE_BUILD_TYPE)
 endif()
 
-include(cmake/LogicalCoreCount.cmake)
-include(cmake/AndroidNDK.cmake)
+# Ensure CMAKE_BUILD_TYPE is set to Release or Debug when targeting Android as
+# the NDK toolchain file does not support other build types
+if(${MBP_BUILD_TARGET} STREQUAL android
+        AND NOT ${CMAKE_BUILD_TYPE} STREQUAL Release
+        AND NOT ${CMAKE_BUILD_TYPE} STREQUAL Debug)
+    message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set to Release or Debug for the 'android' target")
+endif()
+
+# Sets:
+# - MBP_TOP_LEVEL_BUILD: Whether this is a parent CMake build
+# - MBP_INTERNAL_BUILD: Whether this is a recursive CMake build
+# - MBP_TARGET_CONFIG_FILE: Config file for the current build target
+# - MBP_TARGET_NEEDS_BUILDS: Whether the target requires anything to be built
+
+if(${MBP_BUILD_TARGET} STREQUAL android)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroid.cmake)
+    set(MBP_TOP_LEVEL_BUILD TRUE)
+    set(MBP_INTERNAL_BUILD FALSE)
+    set(MBP_TARGET_NEEDS_BUILDS FALSE)
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigDesktop.cmake)
+    set(MBP_TOP_LEVEL_BUILD TRUE)
+    set(MBP_INTERNAL_BUILD FALSE)
+    set(MBP_TARGET_NEEDS_BUILDS TRUE)
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidApp.cmake)
+    set(MBP_TOP_LEVEL_BUILD FALSE)
+    set(MBP_INTERNAL_BUILD TRUE)
+    set(MBP_TARGET_NEEDS_BUILDS TRUE)
+elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
+    set(MBP_TOP_LEVEL_BUILD FALSE)
+    set(MBP_INTERNAL_BUILD TRUE)
+    set(MBP_TARGET_NEEDS_BUILDS TRUE)
+endif()
+
+# Code signing options
+if(MBP_TOP_LEVEL_BUILD)
+    include(cmake/ConfigSigning.cmake)
+endif()
+
+# Build target config
+include(${MBP_TARGET_CONFIG_FILE})
+
+# Compile and link flags
+include(cmake/CompilerFlags.cmake)
 
 # Third party binaries
 add_subdirectory(thirdparty)
+
+# Dependencies
+include(cmake/Dependencies.cmake)
 
 set(MBP_GLOBAL_INCLUDE_DIRS
     libmbcommon/include
@@ -72,7 +143,6 @@ set(MBP_GLOBAL_INCLUDE_DIRS
 include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
 
 # Main patcher
-add_subdirectory(ndk)
 add_subdirectory(libmbcommon)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
@@ -88,5 +158,6 @@ add_subdirectory(gui)
 add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(utilities)
+add_subdirectory(android)
 
 include(CPack)

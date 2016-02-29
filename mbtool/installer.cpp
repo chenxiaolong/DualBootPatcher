@@ -369,7 +369,8 @@ bool Installer::create_chroot()
             std::vector<util::twrp_fstab_rec> recs =
                     util::read_twrp_fstab("/etc/recovery.fstab");
             for (const util::twrp_fstab_rec &rec : recs) {
-                if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                if (util::path_compare(rec.mount_point, "/efs") == 0
+                        || util::path_compare(rec.mount_point, "/efs1") == 0) {
                     LOGD("Found /efs fstab entry");
                     for (const std::string &dev : rec.blk_devices) {
                         if (stat(dev.c_str(), &sb) == 0) {

@@ -1,8 +1,0 @@
-include @CMAKE_BINARY_DIR@/ndk/common.mk
-
-MBLOG_SHARED_DIR := @CMAKE_CURRENT_BINARY_DIR@/out.shared
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := prebuilt-libmblog
-LOCAL_SRC_FILES         := $(MBLOG_SHARED_DIR)/$(TARGET_ARCH_ABI)/libmblog.so
-include $(PREBUILT_SHARED_LIBRARY_NO_COPY)

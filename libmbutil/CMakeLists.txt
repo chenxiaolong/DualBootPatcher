@@ -1,43 +1,67 @@
-include(ExternalProject)
+if(NOT MBP_TARGET_NEEDS_BUILDS)
+    return()
+endif()
 
-# Generate Android.mk
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.include.mk
-    @ONLY
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+include_directories(${MBP_LIBARCHIVE_INCLUDES})
+include_directories(${MBP_LIBCRYPTO_INCLUDES})
+include_directories(${MBP_LIBSEPOL_INCLUDES})
+
+# If enabled, util/properties.cpp will try to dlopen libc.so to read/write
+# properties
+#add_definitions(-DDYNAMICALLY_LINKED)
+
+set(MBUTIL_SOURCES
+    src/autoclose/dir.cpp
+    src/autoclose/file.cpp
+    src/archive.cpp
+    src/chmod.cpp
+    src/chown.cpp
+    src/cmdline.cpp
+    src/command.cpp
+    src/copy.cpp
+    src/delete.cpp
+    src/directory.cpp
+    src/file.cpp
+    src/fstab.cpp
+    src/fts.cpp
+    src/hash.cpp
+    src/loopdev.cpp
+    src/mount.cpp
+    src/path.cpp
+    src/properties.cpp
+    src/selinux.cpp
+    src/socket.cpp
+    src/string.cpp
+    src/time.cpp
+    src/vibrate.cpp
+    external/mntent.c
 )
 
-ExternalProject_Add(
-    mbutil-static-android
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
-    BUILD_COMMAND ${NDK_BUILD}
-                  -C <SOURCE_DIR>
-                  NDK_PROJECT_PATH=.
-                  NDK_APPLICATION_MK=Application.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
-                  NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
-                  ${NDK_ARGS}
-    INSTALL_COMMAND ""
-)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    # Build static library
 
-add_dependencies(
-    mbutil-static-android
-    mblog-static-android
-)
+    add_library(mbutil-static STATIC ${MBUTIL_SOURCES})
 
-# Always rebuild since files may have changed
-ExternalProject_Add_Step(
-    mbutil-static-android
-    forcerebuild
-    DEPENDEES update
-    DEPENDERS configure
-    ALWAYS 1
-    COMMAND ""
-)
+    set_target_properties(
+        mbutil-static
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+    )
+
+    if(NOT MSVC)
+        set_target_properties(
+            mbutil-static
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
+
+    target_link_libraries(
+        mbutil-static
+        ${MBP_LIBCRYPTO_LIBRARIES}
+        ${MBP_LIBSEPOL_LIBRARIES}
+    )
+endif()

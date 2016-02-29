@@ -1,6 +1,0 @@
-MBUTIL_DIR := @CMAKE_CURRENT_BINARY_DIR@/mbutil-static-android-prefix/tmp/local
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := prebuilt-libmbutil-static
-LOCAL_SRC_FILES         := $(MBUTIL_DIR)/$(TARGET_ARCH_ABI)/libmbutil-static.a
-include $(PREBUILT_STATIC_LIBRARY)

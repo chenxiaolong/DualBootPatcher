@@ -1,9 +1,10 @@
+if(NOT MBP_TARGET_NEEDS_BUILDS)
+    return()
+endif()
+
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
     set(CMAKE_AUTOMOC ON)
-
-    # Needs QtWidgets
-    find_package(Qt5Widgets 5.3 REQUIRED)
 
     if(${MBP_PORTABLE})
         set(LOCAL_DATA_DIR "data")
@@ -53,14 +54,16 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
 
     add_executable(gui WIN32 ${GUI_SOURCES} ${GUI_RESOURCES_RCC})
 
-    target_link_libraries(gui
+    target_link_libraries(
+        gui
         Qt5::Core
         Qt5::Widgets
-        mbp
+        mbp-shared
     )
 
     if(NOT MSVC)
-        set_target_properties(gui
+        set_target_properties(
+            gui
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
