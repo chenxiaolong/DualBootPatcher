@@ -95,7 +95,9 @@ static int find_loopdev_by_scanning(void)
     int fd;
     char loopdev[64];
 
-    for (int n = 0; n < MAX_LOOPDEVS; ++n) {
+    // Avoid /dev/block/loop0 since some installers (ahem, SuperSU) are
+    // hardcoded to use it
+    for (int n = 1; n < MAX_LOOPDEVS; ++n) {
         struct loop_info64 loopinfo;
         struct stat sb;
 
@@ -146,7 +148,9 @@ static int find_loopdev_by_scanning(void)
 std::string loopdev_find_unused(void)
 {
     int n = find_loopdev_by_loop_control();
-    if (n < 0) {
+    // Also search by scanning if n == 0, since some installers hardcode
+    // /dev/block/loop0
+    if (n <= 0) {
         n = find_loopdev_by_scanning();
     }
     if (n < 0) {
