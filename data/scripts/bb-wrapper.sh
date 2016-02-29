@@ -1,32 +1,60 @@
 #!/sbin/busybox_orig sh
 
-do_mount() {
+mount_parse_target() {
+    local target=""
+
     while [ "${#}" -gt 0 ]; do
         case "${1}" in
-        -o|-O|-t) shift; shift ;;
+        -o|-O|-t) shift 2 ;;
         -*) shift ;;
-        /system) /update-binary-tool mount /system; exit "${?}" ;;
-        /cache) /update-binary-tool mount /cache; exit "${?}" ;;
-        /data) /update-binary-tool mount /data; exit "${?}" ;;
-        *) shift ;;
+        *) target="${1}"; shift ;;
         esac
     done
-    echo "mount command disabled in chroot environment" >&2
-    exit 0
+
+    echo "${target}"
+}
+
+umount_parse_target() {
+    local target=""
+
+    while [ "${#}" -gt 0 ]; do
+        case "${1}" in
+        -*) shift ;;
+        *) target="${1}"; shift ;;
+        esac
+    done
+
+    echo "${target}"
+}
+
+do_mount() {
+    local target
+    target=$(mount_parse_target "${@}")
+
+    if [ "${target:0:7}" = /system ] && [ "${target}" -ef /system ]; then
+        exec /update-binary-tool mount /system
+    elif [ "${target:0:6}" = /cache ] && [ "${target}" -ef /cache ]; then
+        exec /update-binary-tool mount /cache
+    elif [ "${target:0:5}" = /data ] && [ "${target}" -ef /data ]; then
+        exec /update-binary-tool mount /data
+    else
+        exec /sbin/busybox_orig mount "${@}"
+    fi
 }
 
 do_umount() {
-    while [ "${#}" -gt 0 ]; do
-        case "${1}" in
-        -*) shift ;;
-        /system) /update-binary-tool unmount /system; exit "${?}" ;;
-        /cache) /update-binary-tool unmount /cache; exit "${?}" ;;
-        /data) /update-binary-tool unmount /data; exit "${?}" ;;
-        *) shift ;;
-        esac
-    done
-    echo "umount command disabled in chroot environment" >&2
-    exit 0
+    local target
+    target=$(umount_parse_target "${@}")
+
+    if [ "${target:0:7}" = /system ] && [ "${target}" -ef /system ]; then
+        exec /update-binary-tool unmount /system
+    elif [ "${target:0:6}" = /cache ] && [ "${target}" -ef /cache ]; then
+        exec /update-binary-tool unmount /cache
+    elif [ "${target:0:5}" = /data ] && [ "${target}" -ef /data ]; then
+        exec /update-binary-tool unmount /data
+    else
+        exec /sbin/busybox_orig umount "${@}"
+    fi
 }
 
 do_reboot() {
@@ -48,6 +76,5 @@ case "${tool}" in
     mount) do_mount "${@}" ;;
     umount) do_umount "${@}" ;;
     reboot) do_reboot "${@}" ;;
+    *) exec /sbin/busybox_orig "${tool}" "${@}" ;;
 esac
-
-exec /sbin/busybox_orig "${tool}" "${@}"
