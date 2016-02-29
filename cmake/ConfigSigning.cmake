@@ -36,9 +36,9 @@ if(${MBP_BUILD_TYPE} STREQUAL debug)
                 -dname "CN=Android Debug,O=Android,C=US"
             RESULT_VARIABLE KEYTOOL_RET
         )
-        if(NOT KEYTOOL EQUAL 0)
+        if(NOT KEYTOOL_RET EQUAL 0)
             message(FATAL_ERROR "Failed to create debug keystore"
-                                " (keytool exit code: ${KEYTOOL RET})")
+                                " (keytool exit code: ${KEYTOOL_RET})")
         endif()
     endif()
 
