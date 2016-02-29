@@ -91,7 +91,7 @@ android {
             ]
             jniLibs.srcDirs = [
                 '@CMAKE_BINARY_DIR@/android/result/lib/',
-                '@CMAKE_BINARY_DIR@/thirdparty/android/jna/@JNA_VER@/all/lib/'
+                '@CMAKE_BINARY_DIR@/thirdparty/prebuilts/jna/@JNA_VER@/all/lib/'
             ]
         }
 
