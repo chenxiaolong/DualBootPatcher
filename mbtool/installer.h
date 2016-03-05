@@ -111,6 +111,7 @@ private:
 
     bool create_chroot();
     bool destroy_chroot() const;
+    bool mount_efs() const;
 
     bool extract_multiboot_files();
     bool set_up_busybox_wrapper();
