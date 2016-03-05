@@ -43,6 +43,24 @@ void addLenovoDevices(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ MTK_LOGO, MTK_PARA, MTK_TEE1, MTK_UBOOT });
     devices->push_back(device);
 
+    // Lenovo Vibe Z2 Pro
+    device = new Device();
+    device->setId("K920");
+    device->setCodenames({ "kingdom_row", "kingdomt" });
+    device->setName("Lenovo Vibe Z2 Pro");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
+                                "/dev/block/mmcblk0p20" });
+    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/mmcblk0p10" });
+    devices->push_back(device);
+
     // Lenovo ZUK Z1
     device = new Device();
     device->setId("Z1");
