@@ -50,10 +50,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ "/dev/block/mmcblk0p15" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p2" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p11" });
-     device->setExtraBlockDevs({
-        QCOM_TA, "/dev/block/mmcblk0p1",
-        QCOM_TZ, "/dev/block/mmcblk0p5"
-    });
+    device->setExtraBlockDevs({ QCOM_TA, QCOM_TZ, });
     devices->push_back(device);
 }
 
