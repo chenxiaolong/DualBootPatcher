@@ -169,3 +169,37 @@
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+
+
+- name: Sony Xperia SP
+  id: huashan
+  codenames:
+    - huashan
+    - C5303
+    - C5302
+    - C5306
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p14
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p15
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p2
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/mmcblk0p11
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/TA
+      - /dev/block/platform/msm_sdcc.1/by-name/TZ
