@@ -38,6 +38,20 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
     devices->push_back(device);
+
+     // Sony Xperia SP
+    device = new Device();
+    device->setId("huashan");
+    device->setCodenames({ "huashan", "C5303", "C5302", "C5306" });
+    device->setName("Sony Xperia SP");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p13" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p14" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p15" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p2" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p11" });
+    device->setExtraBlockDevs({ QCOM_BASE_DIR "/TA", QCOM_BASE_DIR "/TZ" });
+    devices->push_back(device);
 }
 
 }
