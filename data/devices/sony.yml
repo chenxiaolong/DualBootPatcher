@@ -17,6 +17,7 @@
     boot:
       - /dev/block/mmcblk0p9
 
+
 - name: Sony Xperia E1
   id: falconss
   codenames:
@@ -48,3 +49,40 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
+
+
+- name: Sony Xperia Z1
+  id: honami
+  codenames:
+    - honami
+    - C6903
+    - C6902
+    - C6906
+    - C6943
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      - /dev/block/platform/msm_sdcc.1/by-name/rpm
+      - /dev/block/platform/msm_sdcc.1/by-name/sbl1
+      - /dev/block/platform/msm_sdcc.1/by-name/tz
