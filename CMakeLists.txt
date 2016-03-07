@@ -114,6 +114,15 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_NEEDS_BUILDS TRUE)
 endif()
 
+# Screw Ubuntu's multiarch. FIND_LIBRARY_USE_LIB64_PATHS is disabled when
+# /etc/debian_version exists, but we need lib64 in the library search path
+# because the x86_64 NDK libraries are in:
+#   <ndk>/platforms/android-21/arch-x86_64/usr/lib64/
+if(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
+    set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+endif()
+
 # Code signing options
 if(MBP_TOP_LEVEL_BUILD)
     include(cmake/ConfigSigning.cmake)
