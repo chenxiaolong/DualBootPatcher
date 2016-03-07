@@ -16,3 +16,35 @@
       - /dev/block/mmcblk0p11
     boot:
       - /dev/block/mmcblk0p9
+
+- name: Sony Xperia E1
+  id: falconss
+  codenames:
+    - falconss
+    - D2004
+    - D2005
+    - D2104
+    - D2105
+    - D2114
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p15
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
