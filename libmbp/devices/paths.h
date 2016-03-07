@@ -49,6 +49,7 @@
 #define QCOM_MODEM              QCOM_BASE_DIR "/modem"
 #define QCOM_OPPOSTANVBK        QCOM_BASE_DIR "/oppostanvbk"
 #define QCOM_RECOVERY           QCOM_BASE_DIR "/recovery"
+#define QCOM_FOTA_RECOVERY      QCOM_BASE_DIR "/FOTAKernel"
 #define QCOM_RESERVE4           QCOM_BASE_DIR "/reserve4"
 #define QCOM_RPM                QCOM_BASE_DIR "/rpm"
 #define QCOM_SBL1               QCOM_BASE_DIR "/sbl1"
