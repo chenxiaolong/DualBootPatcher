@@ -67,7 +67,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_FOTA_RECOVERY, "/dev/block/mmcblk0p16" });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_RPM, QCOM_SBL1, QCOM_TZ });
-    devices.push_back(device);
+    devices->push_back(device);
 }
 
 }
