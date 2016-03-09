@@ -290,7 +290,7 @@ public class LibMbp {
         if (ptr == null) {
             sb.append("null");
         } else {
-            sb.append(ptr.getPointer().getNativeLong(0));
+            sb.append(ptr.getPointer());
         }
         sb.append(") ");
         sb.append(clazz.getSimpleName());
