@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,6 +21,8 @@
 
 #include <unordered_map>
 
+#include "mbp/ramdiskpatchers/default.h"
+
 
 namespace mbp
 {
@@ -33,6 +35,8 @@ public:
     std::vector<std::string> codenames;
     std::string name;
     std::string architecture;
+    uint64_t flags = 0;
+    std::string defaultRP;
 
     std::vector<std::string> baseDirs;
 
@@ -56,6 +60,7 @@ public:
 Device::Device() : m_impl(new Impl())
 {
     m_impl->architecture = ARCH_ARMEABI_V7A;
+    m_impl->defaultRP = DefaultRP::Id;
 }
 
 Device::~Device()
@@ -134,6 +139,26 @@ std::string Device::architecture() const
 void Device::setArchitecture(std::string arch)
 {
     m_impl->architecture = std::move(arch);
+}
+
+uint64_t Device::flags() const
+{
+    return m_impl->flags;
+}
+
+void Device::setFlags(uint64_t flags)
+{
+    m_impl->flags = flags;
+}
+
+std::string Device::ramdiskPatcher() const
+{
+    return m_impl->defaultRP;
+}
+
+void Device::setRamdiskPatcher(std::string id)
+{
+    m_impl->defaultRP = std::move(id);
 }
 
 std::vector<std::string> Device::blockDevBaseDirs() const
