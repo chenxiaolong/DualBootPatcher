@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "mbcommon/common.h"
 #include "mbp/cwrapper/ctypes.h"
 
@@ -40,6 +42,12 @@ MB_EXPORT void mbp_device_set_name(CDevice *device, const char *name);
 
 MB_EXPORT char * mbp_device_architecture(const CDevice *device);
 MB_EXPORT void mbp_device_set_architecture(CDevice *device, const char *arch);
+
+MB_EXPORT uint64_t mbp_device_flags(const CDevice *device);
+MB_EXPORT void mbp_device_set_flags(CDevice *device, uint64_t flags);
+
+MB_EXPORT char * mbp_device_ramdisk_patcher(const CDevice *device);
+MB_EXPORT void mbp_device_set_ramdisk_patcher(CDevice *device, const char *id);
 
 MB_EXPORT char ** mbp_device_block_dev_base_dirs(const CDevice *device);
 MB_EXPORT void mbp_device_set_block_dev_base_dirs(CDevice *device, const char **dirs);

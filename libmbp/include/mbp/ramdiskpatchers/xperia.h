@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -29,13 +29,13 @@
 namespace mbp
 {
 
-class PepperBaseRP : public RamdiskPatcher
+class XperiaBaseRP : public RamdiskPatcher
 {
 public:
-    explicit PepperBaseRP(const PatcherConfig * const pc,
+    explicit XperiaBaseRP(const PatcherConfig * const pc,
                           const FileInfo * const info,
                           CpioFile * const cpio);
-    virtual ~PepperBaseRP();
+    virtual ~XperiaBaseRP();
 
     virtual ErrorCode error() const override;
 
@@ -49,10 +49,10 @@ protected:
 };
 
 
-class PepperDefaultRP : public PepperBaseRP
+class XperiaDefaultRP : public XperiaBaseRP
 {
 public:
-    explicit PepperDefaultRP(const PatcherConfig * const pc,
+    explicit XperiaDefaultRP(const PatcherConfig * const pc,
                              const FileInfo * const info,
                              CpioFile * const cpio);
 

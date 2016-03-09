@@ -561,12 +561,8 @@ bool MultiBootPatcher::patchRamdisk(PatcherConfig * const pc,
         return false;
     }
 
-    std::string rpId = info->device()->id() + "/default";
+    std::string rpId = info->device()->ramdiskPatcher();
     auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    if (!rp) {
-        rpId = "default";
-        rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    }
     if (!rp) {
         if (errorOut) {
             *errorOut = ErrorCode::RamdiskPatcherCreateError;

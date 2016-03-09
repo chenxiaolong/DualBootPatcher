@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,6 +19,8 @@
 
 #include "devices/sony.h"
 
+#include "mbp/ramdiskpatchers/xperia.h"
+
 #include "devices/paths.h"
 
 namespace mbp
@@ -33,6 +35,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("pepper");
     device->setCodenames({ "pepper", "MT27a", "MT27i" });
     device->setName("Sony Xperia Sola");
+    device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setSystemBlockDevs({ "/dev/block/mmcblk0p10" });
     device->setCacheBlockDevs({ "/dev/block/mmcblk0p12" });
     device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });

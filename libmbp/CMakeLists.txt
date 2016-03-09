@@ -63,7 +63,7 @@ set(MBP_CORE_SOURCES
     # Ramdisk patchers
     src/ramdiskpatchers/core.cpp
     src/ramdiskpatchers/default.cpp
-    src/ramdiskpatchers/pepper.cpp
+    src/ramdiskpatchers/xperia.cpp
     # SHA1 library
     external/sha.cpp
 )

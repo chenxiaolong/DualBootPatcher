@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -48,7 +48,7 @@
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/patchers/odinpatcher.h"
 #include "mbp/ramdiskpatchers/default.h"
-#include "mbp/ramdiskpatchers/pepper.h"
+#include "mbp/ramdiskpatchers/xperia.h"
 
 
 namespace mbp
@@ -248,7 +248,7 @@ std::vector<std::string> PatcherConfig::ramdiskPatchers() const
 {
     return {
         DefaultRP::Id,
-        PepperDefaultRP::Id,
+        XperiaDefaultRP::Id,
     };
 }
 
@@ -321,8 +321,8 @@ RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
 
     if (id == DefaultRP::Id) {
         rp = new DefaultRP(this, info, cpio);
-    } else if (id == PepperDefaultRP::Id) {
-        rp = new PepperDefaultRP(this, info, cpio);
+    } else if (id == XperiaDefaultRP::Id) {
+        rp = new XperiaDefaultRP(this, info, cpio);
     }
 
     if (rp != nullptr) {
