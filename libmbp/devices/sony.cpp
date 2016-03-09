@@ -47,6 +47,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("falconss");
     device->setCodenames({ "falconss", "D2004", "D2005", "D2104", "D2105", "D2114" });
     device->setName("Sony Xperia E1");
+    device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p19" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p20" });
@@ -60,6 +61,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("honami");
     device->setCodenames({ "honami", "C6903", "C6902", "C6906", "C6943" });
     device->setName("Sony Xperia Z1");
+    device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
