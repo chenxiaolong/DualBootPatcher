@@ -38,6 +38,33 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ "/dev/block/mmcblk0p11" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9" });
     devices->push_back(device);
+
+    // Sony Xperia E1
+    device = new Device();
+    device->setId("falconss");
+    device->setCodenames({ "falconss", "D2004", "D2005", "D2104", "D2105", "D2114" });
+    device->setName("Sony Xperia E1");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p19" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p20" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
+    device->setRecoveryBlockDevs({ QCOM_FOTA_RECOVERY, "/dev/block/mmcblk0p16" });
+    devices->push_back(device);
+
+    // Sony Xperia Z1
+    device = new Device();
+    device->setId("honami");
+    device->setCodenames({ "honami", "C6903", "C6902", "C6906", "C6943" });
+    device->setName("Sony Xperia Z1");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_FOTA_RECOVERY, "/dev/block/mmcblk0p16" });
+    device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_RPM, QCOM_SBL1, QCOM_TZ });
+    devices->push_back(device);
 }
 
 }
