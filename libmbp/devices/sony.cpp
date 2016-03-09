@@ -35,6 +35,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("pepper");
     device->setCodenames({ "pepper", "MT27a", "MT27i" });
     device->setName("Sony Xperia Sola");
+    device->setFlags(Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY);
     device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setSystemBlockDevs({ "/dev/block/mmcblk0p10" });
     device->setCacheBlockDevs({ "/dev/block/mmcblk0p12" });
@@ -47,6 +48,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("falconss");
     device->setCodenames({ "falconss", "D2004", "D2005", "D2104", "D2105", "D2114" });
     device->setName("Sony Xperia E1");
+    device->setFlags(Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY);
     device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p19" });
@@ -61,6 +63,7 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setId("honami");
     device->setCodenames({ "honami", "C6903", "C6902", "C6906", "C6943" });
     device->setName("Sony Xperia Z1");
+    device->setFlags(Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY);
     device->setRamdiskPatcher(XperiaDefaultRP::Id);
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
