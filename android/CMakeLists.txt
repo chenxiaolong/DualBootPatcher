@@ -50,6 +50,11 @@ if(MBP_TOP_LEVEL_BUILD)
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_INTERNAL_PREBUILTS_DIR=${MBP_PREBUILTS_DIR}
+            -DMBP_SIGN_JAVA_KEYSTORE_PATH=${MBP_SIGN_JAVA_KEYSTORE_PATH}
+            -DMBP_SIGN_JAVA_KEYSTORE_PASSWORD=${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}
+            -DMBP_SIGN_JAVA_KEY_ALIAS=${MBP_SIGN_JAVA_KEY_ALIAS}
+            -DMBP_SIGN_JAVA_KEY_PASSWORD=${MBP_SIGN_JAVA_KEY_PASSWORD}
+            -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
@@ -74,6 +79,8 @@ if(MBP_TOP_LEVEL_BUILD)
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
         foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
+            string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
+                   _option "${_option}")
             message(STATUS "  ${_option}")
         endforeach()
 
@@ -104,6 +111,8 @@ if(MBP_TOP_LEVEL_BUILD)
         if(${MBP_BUILD_TARGET} STREQUAL android)
             message(STATUS "Recursive CMake build for Android app components (${abi}):")
             foreach(_option ${INTERNAL_ANDROID_APP_OPTIONS})
+                string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
+                       _option "${_option}")
                 message(STATUS "  ${_option}")
             endforeach()
 

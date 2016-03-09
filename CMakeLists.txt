@@ -124,9 +124,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
 endif()
 
 # Code signing options
-if(MBP_TOP_LEVEL_BUILD)
-    include(cmake/ConfigSigning.cmake)
-endif()
+include(cmake/ConfigSigning.cmake)
 
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
