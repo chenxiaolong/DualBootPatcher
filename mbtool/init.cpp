@@ -240,7 +240,7 @@ static bool fix_file_contexts()
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
         if (util::starts_with(line, "/data/media(")
                 && !strstr(line, "<<none>>")) {
-            continue;
+            fputc('#', fp_new.get());
         }
 
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
