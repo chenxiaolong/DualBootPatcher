@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -72,11 +72,43 @@ std::string DefaultRP::id() const
 
 bool DefaultRP::patchRamdisk()
 {
-    CoreRP corePatcher(m_impl->pc, m_impl->info, m_impl->cpio);
+    CpioFile cpioInCpio;
+    CpioFile *target;
+
+    bool hasCombined = mb_device_flags(m_impl->info->device())
+            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+
+    const unsigned char *data;
+    std::size_t size;
+    if (hasCombined
+            && m_impl->cpio->contentsC("sbin/ramdisk.cpio", &data, &size)) {
+        // Mess with the Android cpio archive for ramdisks on Sony devices with
+        // combined boot/recovery partitions
+        if (!cpioInCpio.load(data, size)) {
+            m_impl->error = cpioInCpio.error();
+            return false;
+        }
+
+        target = &cpioInCpio;
+    } else {
+        target = m_impl->cpio;
+    }
+
+    CoreRP corePatcher(m_impl->pc, m_impl->info, target);
 
     if (!corePatcher.patchRamdisk()) {
         m_impl->error = corePatcher.error();
         return false;
+    }
+
+    if (target == &cpioInCpio) {
+        // Store new internal cpio archive
+        std::vector<unsigned char> newContents;
+        if (!cpioInCpio.createData(&newContents)) {
+            m_impl->error = cpioInCpio.error();
+            return false;
+        }
+        m_impl->cpio->setContents("sbin/ramdisk.cpio", std::move(newContents));
     }
 
     return true;

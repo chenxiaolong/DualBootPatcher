@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -46,6 +46,9 @@ public:
     bool remove(const std::string &name);
 
     std::vector<std::string> filenames() const;
+
+    bool isSymlink(const std::string &name) const;
+    bool symlinkPath(const std::string &name, std::string *out) const;
 
     // File contents
 
