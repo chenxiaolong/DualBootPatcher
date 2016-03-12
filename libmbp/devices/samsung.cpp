@@ -522,6 +522,20 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
 
+    // Samsung Galaxy Note 10.1 3G (2014 Edition)
+    device = new Device();
+    device->setId("lt033g");
+    device->setCodenames({ "lt033g", "lt033gxx" });
+    device->setName("Samsung Galaxy Note 10.1 3G (2014 Edition)");
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
+    devices->push_back(device);
+
     // Samsung Galaxy Note 10.1 LTE (2014 Edition)
     device = new Device();
     device->setId("lt03lte");
