@@ -49,8 +49,10 @@ void addSonyDevices(std::vector<Device *> *devices)
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p14" });
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p15" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p2" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p11" });
+    device->setRecoveryBlockDevs({ QCOM_FOTA_RECOVERY, "/dev/block/mmcblk0p11" });
     device->setExtraBlockDevs({ QCOM_BASE_DIR "/TA", QCOM_BASE_DIR "/TZ" });
+    device->setFlags(Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY);
+    device->setRamdiskPatcher(XperiaDefaultRP::Id);
     devices->push_back(device);
 }
 
