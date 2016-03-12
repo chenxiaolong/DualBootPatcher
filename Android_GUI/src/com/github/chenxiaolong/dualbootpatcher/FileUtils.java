@@ -262,7 +262,13 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            IOUtils.closeQuietly(zf);
+            //IOUtils.closeQuietly(zf);
+            try {
+                if (zf != null) {
+                    zf.close();
+                }
+            } catch (IOException e) {
+            }
             IOUtils.closeQuietly(fos);
         }
 
