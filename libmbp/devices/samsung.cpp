@@ -406,6 +406,32 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     devices->push_back(device);
 }
 
+static void addGalaxyJSeriesPhones(std::vector<Device *> *devices)
+{
+    Device *device;
+
+    // Samsung Galaxy J7
+    device = new Device();
+    device->setId("j7elte");
+    device->setCodenames({ "j7elte", "j7eltexx" });
+    device->setName("Samsung Galaxy J7");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ DWMMC0_13540000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_13540000_SYSTEM,
+                                 "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_13540000_CACHE,
+                                "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ DWMMC0_13540000_USERDATA,
+                               "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ DWMMC0_13540000_BOOT,
+                               "/dev/block/mmcblk0p10" });
+    device->setRecoveryBlockDevs({ DWMMC0_13540000_RECOVERY,
+                                   "/dev/block/mmcblk0p11" });
+    device->setExtraBlockDevs({ DWMMC0_13540000_CDMA_RADIO,
+                                DWMMC0_13540000_RADIO });
+    devices->push_back(device);
+}
+
 static void addOtherSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
@@ -668,6 +694,7 @@ void addSamsungDevices(std::vector<Device *> *devices)
 {
     addGalaxySSeriesPhones(devices);
     addGalaxyNoteSeriesPhones(devices);
+    addGalaxyJSeriesPhones(devices);
     addOtherSeriesPhones(devices);
     addGalaxyTabSeriesTablets(devices);
     addGalaxyNoteSeriesTablets(devices);
