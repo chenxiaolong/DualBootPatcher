@@ -145,12 +145,24 @@ public class FileUtils {
         return !FORCE_NEUTERED_SAF && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
+    public static boolean isOxygenOS(Context context) {
+        String value = SystemPropertiesProxy.get(context, "ro.build.version.ota");
+        if (value == null) {
+            value = SystemPropertiesProxy.get(context, "ro.build.ota.versionname");
+        }
+        return value != null && value.contains("OnePlus2Oxygen");
+    }
+
     @NonNull
     public static Intent getFileOpenIntent(Context context) {
         Intent intent;
 
         if (useNativeSaf()) {
-            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            if (isOxygenOS(context)) {
+                intent = new Intent(Intent.ACTION_GET_CONTENT);
+            } else {
+                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            }
             intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         } else {
