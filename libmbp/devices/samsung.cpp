@@ -482,11 +482,11 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC_RADIO });
     devices->push_back(device);
 
-    // Samsung Galaxy Note 10.1 (2014 Edition)
+    // Samsung Galaxy Note 10.1 Wifi (2014 Edition)
     device = new Device();
     device->setId("lt03wifi");
     device->setCodenames({ "lt03wifi", "lt03wifiue" });
-    device->setName("Samsung Galaxy Note 10.1 (2014 Edition)");
+    device->setName("Samsung Galaxy Note 10.1 Wifi (2014 Edition)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
     device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
@@ -494,6 +494,19 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
     device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
     device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy Note 10.1 LTE (2014 Edition)
+    device = new Device();
+    device->setId("lt03lte");
+    device->setCodenames({ "lt03lte", "lt03ltexx" });
+    device->setName("Samsung Galaxy Note 10.1 LTE (2014 Edition)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
 }
 
