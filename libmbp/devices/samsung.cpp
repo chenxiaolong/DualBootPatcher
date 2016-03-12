@@ -599,7 +599,9 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
         // 8.4" variant (LTE)
         "klimtlte", "klimtltexx",
         // 10.5" variant (wifi)
-        "chagallwifi", "chagallwifixx"
+        "chagallwifi", "chagallwifixx",
+        // 10.5" variant (LTE)
+        "chagalllte", "chagallltexx"
     });
     device->setName("Samsung Galaxy Tab S 8.4/10.5");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
