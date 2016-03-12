@@ -162,3 +162,11 @@
 #define INTEL_PCI_SYSTEM        INTEL_PCI_BASE_DIR "/SYSTEM"
 #define INTEL_PCI_SYSTEM_2      INTEL_PCI_BASE_DIR "/system"
 #define INTEL_PCI_USERDATA      INTEL_PCI_BASE_DIR "/USERDATA"
+
+// Block device paths with no platform name (used by the 2015 Moto G)
+#define SOC0_BASE_DIR           "/dev/block/platform/soc.0/by-name"
+#define SOC0_BOOT               SOC0_BASE_DIR "/boot"
+#define SOC0_CACHE              SOC0_BASE_DIR "/cache"
+#define SOC0_RECOVERY           SOC0_BASE_DIR "/recovery"
+#define SOC0_SYSTEM             SOC0_BASE_DIR "/system"
+#define SOC0_USERDATA           SOC0_BASE_DIR "/userdata"

@@ -42,6 +42,19 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices->push_back(device);
 
+    // Motorola Moto G (2015)
+    device = new Device();
+    device->setId("osprey");
+    device->setCodenames({ "osprey", "osprey_u2" });
+    device->setName("Motorola Moto G (2015)");
+    device->setBlockDevBaseDirs({ SOC0_BASE_DIR });
+    device->setSystemBlockDevs({ SOC0_SYSTEM, "/dev/block/mmcblk0p41" });
+    device->setCacheBlockDevs({ SOC0_CACHE, "/dev/block/mmcblk0p40" });
+    device->setDataBlockDevs({ SOC0_USERDATA, "/dev/block/mmcblk0p42" });
+    device->setBootBlockDevs({ SOC0_BOOT, "/dev/block/mmcblk0p31" });
+    device->setRecoveryBlockDevs({ SOC0_RECOVERY, "/dev/block/mmcblk0p32" });
+    devices->push_back(device);
+
     // Motorola Moto E (1st gen)
     device = new Device();
     device->setId("condor");
