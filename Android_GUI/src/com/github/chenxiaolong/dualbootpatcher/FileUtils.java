@@ -176,24 +176,35 @@ public class FileUtils {
         return intent;
     }
 
-    @NonNull
-    public static Intent getFileSaveIntent(Context context, String defaultName) {
-        Intent intent;
-
-        if (useNativeSaf()) {
-            intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-            intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
-        } else {
-            intent = new Intent(context, DocumentsActivity.class);
-            intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
-        }
-
+    private static Intent buildNativeSafSaveIntent(String defaultName) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, defaultName);
-
         return intent;
+    }
+
+    private static Intent buildNeuteredSafSaveIntent(Context context, String defaultName) {
+        Intent intent = new Intent(context, DocumentsActivity.class);
+        intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_TITLE, defaultName);
+        return intent;
+    }
+
+    @NonNull
+    public static Intent getFileSaveIntent(Context context, String defaultName) {
+        if (useNativeSaf()) {
+            Intent intent = buildNativeSafSaveIntent(defaultName);
+            if (canHandleIntent(context.getPackageManager(), intent)) {
+                return intent;
+            }
+        }
+
+        return buildNeuteredSafSaveIntent(context, defaultName);
     }
 
     public static void showMissingFileChooserDialog(Context context, FragmentManager fm) {
