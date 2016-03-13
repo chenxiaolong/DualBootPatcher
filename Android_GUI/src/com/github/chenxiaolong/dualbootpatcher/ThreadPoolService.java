@@ -43,6 +43,8 @@ public class ThreadPoolService extends Service {
     /** Thread pool for executing operations */
     private HashMap<String, ThreadPoolExecutor> mThreadPools = new HashMap<>();
 
+    private HashMap<Runnable, Runnable> mWrappedRunnables = new HashMap<>();
+
     /** Number of currently running or pending operations */
     private int mOperations = 0;
 
@@ -166,8 +168,13 @@ public class ThreadPoolService extends Service {
         }
 
         synchronized (mLock) {
+            if (mWrappedRunnables.containsKey(runnable)) {
+                throw new IllegalStateException(
+                        "Runnable " + runnable + " already queued in thread pool: " + id);
+            }
+
             mOperations++;
-            executor.execute(new Runnable() {
+            Runnable wrapped = new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -179,7 +186,10 @@ public class ThreadPoolService extends Service {
                         }
                     }
                 }
-            });
+            };
+            mWrappedRunnables.put(runnable, wrapped);
+            executor.execute(wrapped);
+            log("Added runnable " + runnable + " to thread pool: " + id);
         }
     }
 
@@ -196,13 +206,25 @@ public class ThreadPoolService extends Service {
             throw new IllegalArgumentException("Thread pool does not exist: " + id);
         }
 
-        boolean ret = executor.remove(runnable);
+        log("Trying to cancel " + runnable + " in thread pool: " + id);
+
+        boolean ret;
+
         synchronized (mLock) {
+            Runnable wrapped = mWrappedRunnables.remove(runnable);
+            if (wrapped == null) {
+                log("Runnable " + runnable + " does not exist in thread pool: " + id);
+                return false;
+            }
+
+            ret = executor.remove(wrapped);
             if (ret) {
+                log("Successfully cancelled " + runnable + " in thread pool: " + id);
                 mOperations--;
                 attemptToStop();
             }
         }
+
         return ret;
     }
 
