@@ -410,11 +410,16 @@ static void addGalaxyJSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // Samsung Galaxy J7
+    // Samsung Galaxy J7 (Exynos)
     device = new Device();
-    device->setId("j7elte");
-    device->setCodenames({ "j7elte", "j7eltexx" });
-    device->setName("Samsung Galaxy J7");
+    device->setId("j7e");
+    device->setCodenames({
+        // LTE variant
+        "j7elte", "j7eltexx",
+        // 3G variant
+        "j7e3g", "j7e3gxx"
+    });
+    device->setName("Samsung Galaxy J7 (Exynos)");
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ DWMMC0_13540000_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_13540000_SYSTEM,
