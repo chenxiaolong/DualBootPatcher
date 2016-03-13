@@ -261,13 +261,14 @@ public class PatcherService extends ThreadPoolService {
      *   positive.
      *
      * When the patching is finished,
-     * {@link PatcherEventListener#onPatcherFinished(int, boolean, boolean, int, String)} will be
+     * {@link PatcherEventListener#onPatcherFinished(int, PatchFileState, boolean, int)} will be
      * called.
      *
      * @param taskId Task ID
      */
     public void startPatching(int taskId) {
         PatchFileTask task = getTask(taskId);
+        task.mState.set(PatchFileState.PENDING);
         enqueueOperation(THREAD_POOL_PATCHING, task);
     }
 
@@ -277,7 +278,7 @@ public class PatcherService extends ThreadPoolService {
      * This method will attempt to cancel a patching operation in progress. The task will only be
      * cancelled if the corresponding libmbp patcher respects the cancelled flag and stops when it
      * is set. If a task has been cancelled,
-     * {@link PatcherEventListener#onPatcherFinished(int, boolean, boolean, int, String)} will be
+     * {@link PatcherEventListener#onPatcherFinished(int, PatchFileState, boolean, int)} will be
      * called in the same manner as described in {@link #startPatching(int)}. The returned error
      * code may or may not specify that the task has been cancelled.
      *
@@ -416,7 +417,7 @@ public class PatcherService extends ThreadPoolService {
 
         void onPatcherStarted(int taskId);
 
-        void onPatcherFinished(int taskId, boolean cancelled, boolean ret, int errorCode);
+        void onPatcherFinished(int taskId, PatchFileState state, boolean ret, int errorCode);
     }
 
     private void onPatcherInitialized() {
@@ -465,12 +466,12 @@ public class PatcherService extends ThreadPoolService {
         });
     }
 
-    private void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
+    private void onPatcherFinished(final int taskId, final PatchFileState state, final boolean ret,
                                    final int errorCode) {
         executeAllCallbacks(new CallbackRunnable() {
             @Override
             public void call(PatcherEventListener callback) {
-                callback.onPatcherFinished(taskId, cancelled, ret, errorCode);
+                callback.onPatcherFinished(taskId, state, ret, errorCode);
             }
         });
     }
@@ -551,7 +552,9 @@ public class PatcherService extends ThreadPoolService {
 
         public void cancel() {
             // If the file was patching, then it should be considered cancelled
-            mCancelled.set(true);
+            if (mExecuted) {
+                mCancelled.set(true);
+            }
 
             synchronized (this) {
                 if (mPatcher != null) {
@@ -569,6 +572,11 @@ public class PatcherService extends ThreadPoolService {
                 throw new IllegalStateException("Task " + mTaskId + " has already been executed!");
             } else {
                 mExecuted = true;
+            }
+
+            if (mCancelled.get()) {
+                throw new IllegalStateException("Task " + mTaskId + " tried to run, but it has " +
+                        "already been cancelled");
             }
 
             mState.set(PatchFileState.IN_PROGRESS);
@@ -605,7 +613,8 @@ public class PatcherService extends ThreadPoolService {
                 pfdOut = cr.openFileDescriptor(mOutputUri, "w");
                 if (pfdIn == null || pfdOut == null) {
                     Log.e(TAG, "Failed to open input or output URI");
-                    getService().onPatcherFinished(mTaskId, false, false, -1);
+                    mState.set(PatchFileState.CANCELLED);
+                    getService().onPatcherFinished(mTaskId, PatchFileState.CANCELLED, false, -1);
                     return;
                 }
                 Log.d(TAG, "Input file descriptor is: " + pfdIn.getFd());
@@ -624,17 +633,20 @@ public class PatcherService extends ThreadPoolService {
 
                 boolean cancelled = mCancelled.get();
 
-                getService().onPatcherFinished(mTaskId, cancelled, ret, mPatcher.getError());
-
                 // Set to complete if the task wasn't cancelled
+                PatchFileState state;
                 if (cancelled) {
-                    mState.set(PatchFileState.CANCELLED);
+                    state = PatchFileState.CANCELLED;
                 } else {
-                    mState.set(PatchFileState.COMPLETED);
+                    state = PatchFileState.COMPLETED;
                 }
+                mState.set(state);
+
+                getService().onPatcherFinished(mTaskId, state, ret, mPatcher.getError());
             } catch (FileNotFoundException e) {
                 Log.e(TAG, "Failed to open URI", e);
-                getService().onPatcherFinished(mTaskId, false, false, -1);
+                mState.set(PatchFileState.COMPLETED);
+                getService().onPatcherFinished(mTaskId, PatchFileState.COMPLETED, false, -1);
             } finally {
                 // Ensure we destroy allocated objects on the C++ side
                 synchronized (this) {
