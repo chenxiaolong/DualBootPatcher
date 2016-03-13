@@ -293,7 +293,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device = new Device();
     device->setId("klte");
     device->setCodenames({ "klte", "kltecan", "kltedv", "kltespr", "kltetmo",
-                           "klteusc", "kltevzw", "kltexx" });
+                           "klteusc", "kltevzw", "kltexx", "kltekdi" });
     device->setName("Samsung Galaxy S 5 (Qcom)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
