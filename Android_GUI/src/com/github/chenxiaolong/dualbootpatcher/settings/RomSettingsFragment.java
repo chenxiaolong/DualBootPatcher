@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,21 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceFragment;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
 
-public class RomSettingsFragment extends PreferenceFragment {
+public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
+
+    private static final String KEY_PARALLEL_PATCHING = "parallel_patching_threads";
+
+    private Preference mParallelPatchingPref;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -32,5 +40,40 @@ public class RomSettingsFragment extends PreferenceFragment {
         getPreferenceManager().setSharedPreferencesName("settings");
 
         addPreferencesFromResource(R.xml.rom_settings);
+
+        int threads = getPreferenceManager().getSharedPreferences().getInt(
+                KEY_PARALLEL_PATCHING, PatcherService.DEFAULT_PATCHING_THREADS);
+
+        mParallelPatchingPref = findPreference(KEY_PARALLEL_PATCHING);
+        mParallelPatchingPref.setDefaultValue(Integer.toString(threads));
+        mParallelPatchingPref.setOnPreferenceChangeListener(this);
+        updateParallelPatchingSummary(threads);
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        if (preference == mParallelPatchingPref) {
+            try {
+                int threads = Integer.parseInt(newValue.toString());
+                if (threads >= 1) {
+                    // Do this instead of using EditTextPreference's built-in persisting since we
+                    // want it saved as an integer
+                    SharedPreferences.Editor editor =
+                            getPreferenceManager().getSharedPreferences().edit();
+                    editor.putInt(KEY_PARALLEL_PATCHING, threads);
+                    editor.apply();
+
+                    updateParallelPatchingSummary(threads);
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+            }
+        }
+        return false;
+    }
+
+    private void updateParallelPatchingSummary(int threads) {
+        String summary = getString(R.string.rom_settings_parallel_patching_desc, threads);
+        mParallelPatchingPref.setSummary(summary);
     }
 }

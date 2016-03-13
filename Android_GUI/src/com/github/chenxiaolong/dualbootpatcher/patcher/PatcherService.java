@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.content.ContentResolver;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -49,10 +50,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class PatcherService extends ThreadPoolService {
     private static final String TAG = PatcherService.class.getSimpleName();
 
+    public static final int DEFAULT_PATCHING_THREADS = 2;
+
     private static final String THREAD_POOL_DEFAULT = "default";
     private static final String THREAD_POOL_PATCHING = "patching";
     private static final int THREAD_POOL_DEFAULT_THREADS = 2;
-    private static final int THREAD_POOL_PATCHING_THREADS = 2;
 
     /**
      * {@inheritDoc}
@@ -72,8 +74,14 @@ public class PatcherService extends ThreadPoolService {
             mCallbacksLock.writeLock().unlock();
         }
 
+        SharedPreferences prefs = getSharedPreferences("settings", 0);
+        int threads = prefs.getInt("parallel_patching_threads", DEFAULT_PATCHING_THREADS);
+        if (threads < 1) {
+            threads = DEFAULT_PATCHING_THREADS;
+        }
+
         addThreadPool(THREAD_POOL_DEFAULT, THREAD_POOL_DEFAULT_THREADS);
-        addThreadPool(THREAD_POOL_PATCHING, THREAD_POOL_PATCHING_THREADS);
+        addThreadPool(THREAD_POOL_PATCHING, threads);
     }
 
     /** List of callbacks for receiving events */

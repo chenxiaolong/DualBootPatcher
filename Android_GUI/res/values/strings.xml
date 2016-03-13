@@ -448,6 +448,11 @@
     <string name="rom_settings_show_reboot_confirm_desc">Show Android\'s reboot dialog instead of
         directly rebooting. This allows for rebooting to recovery in ROMs that have advanced reboot
         menus.</string>
+    <!-- Title for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_title">Parallel patching operations</string>
+    <!-- Description for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_desc">When multiple files are in the patching
+        queue, process them %s at a time.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>
