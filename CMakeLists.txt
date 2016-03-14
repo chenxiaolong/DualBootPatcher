@@ -39,6 +39,14 @@ if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
     message(FATAL_ERROR "Invalid system build type: ${MBP_SYSTEM_BUILD_TYPE}")
 endif()
 
+# Require at least Android NDK r11
+if(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
+    if(ANDROID_NDK_RELEASE_NUM LESS 11000)
+        message(FATAL_ERROR "Only android-ndk r11 or newer is supported")
+    endif()
+endif()
+
 # Allow version to be overridden in Jenkins
 set(MBP_CI_VERSION "" CACHE STRING "Override version (continuous integration)")
 if(MBP_CI_VERSION)
