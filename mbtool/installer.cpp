@@ -424,9 +424,12 @@ bool Installer::destroy_chroot() const
 bool Installer::mount_efs() const
 {
     std::string manufacturer;
+    std::string brand;
     util::get_property("ro.product.manufacturer", &manufacturer, "");
+    util::get_property("ro.product.brand", &brand, "");
 
-    if (strcasecmp(manufacturer.c_str(), "samsung") != 0) {
+    if (strcasecmp(manufacturer.c_str(), "samsung") != 0
+            && strcasecmp(brand.c_str(), "samsung") != 0) {
         LOGD("Not mounting EFS partition because this is not a Samsung device");
         return true;
     }
