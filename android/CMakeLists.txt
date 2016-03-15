@@ -47,6 +47,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DANDROID_ABI=${abi}
             -DANDROID_TOOLCHAIN_NAME=${toolchain_name}
             -DANDROID_STL=gnustl_static
+            #-DANDROID_STL=c++_static
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_INTERNAL_PREBUILTS_DIR=${MBP_PREBUILTS_DIR}

@@ -25,6 +25,10 @@
 #include <cerrno>
 #include <cstring>
 
+#ifdef __ANDROID__
+#include <time.h>
+#endif
+
 #include "mblog/logging.h"
 
 #include "mbpio/directory.h"

@@ -43,7 +43,7 @@ public:
     {
     }
 
-    virtual int on_changed_path()
+    virtual int on_changed_path() override
     {
         // Exclude first-level directories
         if (_curr->fts_level == 1) {

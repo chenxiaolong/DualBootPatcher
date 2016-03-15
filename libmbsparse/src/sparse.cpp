@@ -28,6 +28,8 @@
 // For std::min()
 #include <algorithm>
 
+#include <vector>
+
 #include <cassert>
 #include <cinttypes>
 #include <cstdint>

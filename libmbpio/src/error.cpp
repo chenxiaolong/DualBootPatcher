@@ -19,6 +19,10 @@
 
 #include "mbpio/error.h"
 
+#ifdef __ANDROID__
+#include <pthread.h>
+#endif
+
 namespace io
 {
 
