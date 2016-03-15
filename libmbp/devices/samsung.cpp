@@ -454,6 +454,19 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices->push_back(device);
 
+    // Samsung Galaxy Grand 2
+    device = new Device();
+    device->setId("ms013g");
+    device->setCodenames({ "ms013g" });
+    device->setName("Samsung Galaxy Grand 2");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices->push_back(device);
+
     // Samsung Galaxy Mega 6.3 (Intl)
     device = new Device();
     device->setId("melius_intl");
