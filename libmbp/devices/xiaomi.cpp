@@ -53,6 +53,14 @@ void addXiaomiDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p17" });
     device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
+    device->setExtraBlockDevs({
+        // write_raw_image() callback in update-binary checks if the para
+        // partition exists
+        MTK_PARA, "/dev/block/mmcblk0p10",
+        // From reverse engineering the update-binary, it appears that
+        // /dev/block/mmcblk0boot0 is the "preloader" partition
+        "/dev/block/mmcblk0boot0"
+    });
     devices->push_back(device);
 }
 
