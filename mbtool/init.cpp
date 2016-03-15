@@ -39,6 +39,7 @@
 #include "mbutil/cmdline.h"
 #include "mbutil/chown.h"
 #include "mbutil/directory.h"
+#include "mbutil/file.h"
 #include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -701,9 +702,9 @@ int init_main(int argc, char *argv[])
 
     std::string fstab = find_fstab();
     if (fstab.empty()) {
-        LOGE("Failed to find a suitable fstab file");
-        emergency_reboot();
-        return EXIT_FAILURE;
+        LOGW("Failed to find a suitable fstab file. Continuing anyway...");
+        fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
+        util::create_empty_file(fstab);
     }
 
     mkdir("/system", 0755);
