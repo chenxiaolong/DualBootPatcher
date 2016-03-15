@@ -74,7 +74,7 @@ if(MBP_TOP_LEVEL_BUILD)
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_APP_PIE=OFF
-            -DANDROID_NATIVE_API_LEVEL=21
+            -DANDROID_NATIVE_API_LEVEL=23
             -DMBP_BUILD_TARGET=android-system
         )
 
