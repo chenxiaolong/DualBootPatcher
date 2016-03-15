@@ -202,6 +202,18 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC_RADIO });
     devices->push_back(device);
 
+    // Samsung Galaxy S 3 Mini
+    device = new Device();
+    device->setId("golden");
+    device->setCodenames({ "golden" });
+    device->setName("Samsung Galaxy S 3 Mini");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p21" });
+    devices->push_back(device);
+
     // Samsung Galaxy S 4 (Qcom)
     device = new Device();
     device->setId("jflte");
