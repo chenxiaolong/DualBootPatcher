@@ -40,6 +40,14 @@ struct exists_info {
     bool exists;
 };
 
+enum class compression_type
+{
+    NONE,
+    LZ4,
+    GZIP,
+    XZ
+};
+
 int libarchive_copy_data(archive *in, archive *out, archive_entry *entry);
 bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
                                           archive_entry *entry);
@@ -47,10 +55,12 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
                                     archive_entry *entry);
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
-                            const std::vector<std::string> &patterns);
+                            const std::vector<std::string> &patterns,
+                            compression_type compression);
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
-                           const std::vector<std::string> &paths);
+                           const std::vector<std::string> &paths,
+                           compression_type compression);
 
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,

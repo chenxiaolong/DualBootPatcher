@@ -172,7 +172,8 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
-                            const std::vector<std::string> &patterns)
+                            const std::vector<std::string> &patterns,
+                            compression_type compression)
 {
     if (target.empty()) {
         LOGE("%s: Invalid target path for extraction", target.c_str());
@@ -207,9 +208,23 @@ bool libarchive_tar_extract(const std::string &filename,
     // Set up archive reader parameters
     //archive_read_support_format_gnutar(in.get());
     archive_read_support_format_tar(in.get());
-    //archive_read_support_filter_bzip2(in.get());
-    //archive_read_support_filter_gzip(in.get());
-    //archive_read_support_filter_xz(in.get());
+
+    switch (compression) {
+    case compression_type::NONE:
+        break;
+    case compression_type::LZ4:
+        archive_read_support_filter_lz4(in.get());
+        break;
+    case compression_type::GZIP:
+        archive_read_support_filter_gzip(in.get());
+        break;
+    case compression_type::XZ:
+        archive_read_support_filter_xz(in.get());
+        break;
+    default:
+        LOGE("Invalid compression type");
+        return false;
+    }
 
     // Set up disk writer parameters
     archive_write_disk_set_standard_lookup(out.get());
@@ -328,7 +343,8 @@ static int metadata_filter(archive *a, void *data, archive_entry *entry)
  */
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
-                           const std::vector<std::string> &paths)
+                           const std::vector<std::string> &paths,
+                           compression_type compression)
 {
     if (base_dir.empty() && paths.empty()) {
         LOGE("%s: No base directory or paths specified", filename.c_str());
@@ -371,10 +387,24 @@ bool libarchive_tar_create(const std::string &filename,
     //       backup useless.
     //archive_write_set_format_gnutar(out.get());
     archive_write_set_format_pax_restricted(out.get());
-    //archive_write_set_compression_bzip2(out.get());
-    //archive_write_set_compression_gzip(out.get());
-    //archive_write_set_compression_xz(out.get());
     archive_write_set_bytes_per_block(out.get(), 10240);
+
+    switch (compression) {
+    case compression_type::NONE:
+        break;
+    case compression_type::LZ4:
+        archive_write_add_filter_lz4(out.get());
+        break;
+    case compression_type::GZIP:
+        archive_write_add_filter_gzip(out.get());
+        break;
+    case compression_type::XZ:
+        archive_write_add_filter_xz(out.get());
+        break;
+    default:
+        LOGE("Invalid compression type");
+        return false;
+    }
 
     // Set up link resolver parameters
     archive_entry_linkresolver_set_strategy(resolver.get(),
