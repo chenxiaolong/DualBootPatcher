@@ -437,6 +437,8 @@
     <!-- Description for the initial screen preference -->
     <string name="rom_settings_initial_screen_desc">First screen to show when opening the
         app.</string>
+    <!-- Title for the preference to use the dark theme -->
+    <string name="rom_settings_use_dark_theme">Use dark theme</string>
     <!-- Title for the preference to enable receiving intents from third party applications -->
     <string name="rom_settings_allow_intents_title">Allow receiving intents</string>
     <!-- Description for the preference to enable receiving intents from third party applications -->

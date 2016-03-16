@@ -67,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     private static final String PROGRESS_DIALOG_REBOOT =
             MainActivity.class.getCanonicalName() + ".progress.reboot";
 
+    private static final int REQUEST_SETTINGS_ACTIVITY = 1000;
+
     private SharedPreferences mPrefs;
 
     private DrawerLayout mDrawerLayout;
@@ -247,6 +249,18 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+        case REQUEST_SETTINGS_ACTIVITY:
+            // Reload activity for theme changes
+            recreate();
+            break;
+        default:
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         return mDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
     }
@@ -332,7 +346,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
         case R.id.nav_rom_settings: {
             Intent intent = new Intent(this, RomSettingsActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_SETTINGS_ACTIVITY);
             break;
         }
 

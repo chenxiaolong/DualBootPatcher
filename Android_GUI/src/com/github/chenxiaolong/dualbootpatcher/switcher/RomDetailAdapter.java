@@ -21,7 +21,11 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.ColorInt;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -171,8 +175,21 @@ public class RomDetailAdapter extends RecyclerView.Adapter<BaseViewHolder> {
         @Override
         public void display(Item item) {
             ActionItem actionItem = (ActionItem) item;
-            vIcon.setImageResource(actionItem.iconResId);
+            // Tint drawable
+            Context context = vIcon.getContext();
+            Drawable drawable = ContextCompat.getDrawable(context, actionItem.iconResId);
+            Drawable wrapped = DrawableCompat.wrap(drawable);
+            DrawableCompat.setTint(wrapped, getThemeTextColor(context));
+            vIcon.setImageDrawable(wrapped);
+            //vIcon.setImageResource(actionItem.iconResId);
             vTitle.setText(actionItem.title);
+        }
+
+        @ColorInt
+        private static int getThemeTextColor(final Context context) {
+            final TypedValue value = new TypedValue();
+            context.getTheme().resolveAttribute(android.R.attr.textColor, value, true);
+            return value.data;
         }
     }
 

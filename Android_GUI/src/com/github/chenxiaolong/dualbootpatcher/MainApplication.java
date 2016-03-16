@@ -19,6 +19,8 @@ package com.github.chenxiaolong.dualbootpatcher;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.support.v7.app.AppCompatDelegate;
 
 import com.squareup.leakcanary.LeakCanary;
 import com.squareup.leakcanary.RefWatcher;
@@ -40,6 +42,11 @@ public class MainApplication extends Application {
         if (!FileUtils.useNativeSaf()) {
             DocumentsApplication.install(this);
         }
+
+        SharedPreferences prefs = getSharedPreferences("settings", 0);
+        boolean useDarkTheme = prefs.getBoolean("use_dark_theme", false);
+
+        setUseDarkTheme(useDarkTheme);
     }
 
     @Override
@@ -48,5 +55,14 @@ public class MainApplication extends Application {
         if (!FileUtils.useNativeSaf()) {
             DocumentsApplication.onTrimMemory(level);
         }
+    }
+
+    public static boolean getUseDarkTheme() {
+        return AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES;
+    }
+
+    public static void setUseDarkTheme(boolean useDarkTheme) {
+        AppCompatDelegate.setDefaultNightMode(
+                useDarkTheme ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
     }
 }

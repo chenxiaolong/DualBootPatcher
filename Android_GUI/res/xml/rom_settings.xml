@@ -28,6 +28,10 @@
             android:persistent="true"
             android:summary="@string/rom_settings_initial_screen_desc"
             android:title="@string/rom_settings_initial_screen_title" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_dark_theme"
+            android:title="@string/rom_settings_use_dark_theme" />
         <!-- com.afollestad.materialdialogs.prefs.MaterialEditTextPreference -->
         <EditTextPreference
             android:key="parallel_patching_threads"

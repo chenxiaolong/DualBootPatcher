@@ -23,6 +23,7 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceFragment;
 
+import com.github.chenxiaolong.dualbootpatcher.MainApplication;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
 
@@ -30,8 +31,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
     private static final String KEY_PARALLEL_PATCHING = "parallel_patching_threads";
+    private static final String KEY_USE_DARK_THEME = "use_dark_theme";
 
     private Preference mParallelPatchingPref;
+    private Preference mUseDarkThemePref;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,6 +51,9 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         mParallelPatchingPref.setDefaultValue(Integer.toString(threads));
         mParallelPatchingPref.setOnPreferenceChangeListener(this);
         updateParallelPatchingSummary(threads);
+
+        mUseDarkThemePref = findPreference(KEY_USE_DARK_THEME);
+        mUseDarkThemePref.setOnPreferenceChangeListener(this);
     }
 
     @Override
@@ -68,6 +74,11 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                 }
             } catch (NumberFormatException e) {
             }
+        } else if (preference == mUseDarkThemePref) {
+            // Apply dark theme and recreate activity
+            MainApplication.setUseDarkTheme((Boolean) newValue);
+            getActivity().recreate();
+            return true;
         }
         return false;
     }
