@@ -1,7 +1,5 @@
 # Dependencies
 
-include(CMakeDependentOption)
-
 if(MBP_TOP_LEVEL_BUILD)
     option(MBP_ANDROID_ENABLE_CCACHE "Enable use of ccache for Android" ON)
 
@@ -30,7 +28,7 @@ if(NOT ANDROID)
     endif()
 
     # Same logic as CMakeLists.txt from the CMake source
-    set(EXTERNAL_LIBRARIES LIBARCHIVE LIBLZMA LZO LZ4 ZLIB)
+    set(EXTERNAL_LIBRARIES LIBARCHIVE)
     foreach(extlib ${EXTERNAL_LIBRARIES})
         if(NOT DEFINED MBP_USE_SYSTEM_LIBRARY_${extlib}
                 AND DEFINED MBP_USE_SYSTEM_LIBRARIES)
@@ -55,34 +53,6 @@ if(NOT ANDROID)
         MBP_USE_SYSTEM_LIBARCHIVE
         "Use system-installed libarchive"
         "${MBP_USE_SYSTEM_LIBRARY_LIBARCHIVE}"
-    )
-    cmake_dependent_option(
-        MBP_USE_SYSTEM_ZLIB
-        "Use system-installed zlib"
-        "${MBP_USE_SYSTEM_LIBRARY_ZLIB}"
-        "NOT MBP_USE_SYSTEM_LIBARCHIVE"
-        ON
-    )
-    cmake_dependent_option(
-        MBP_USE_SYSTEM_LIBLZMA
-        "Use system-installed liblzma"
-        "${MBP_USE_SYSTEM_LIBRARY_LIBLZMA}"
-        "NOT MBP_USE_SYSTEM_LIBARCHIVE"
-        ON
-    )
-    cmake_dependent_option(
-        MBP_USE_SYSTEM_LZO
-        "Use system-installed lzo"
-        "${MBP_USE_SYSTEM_LIBRARY_LZO}"
-        "NOT MBP_USE_SYSTEM_LIBARCHIVE"
-        ON
-    )
-    cmake_dependent_option(
-        MBP_USE_SYSTEM_LZ4
-        "Use system-installed lz4"
-        "${MBP_USE_SYSTEM_LIBRARY_LZ4}"
-        "NOT MBP_USE_SYSTEM_LIBARCHIVE"
-        ON
     )
 
     foreach(extlib ${EXTERNAL_LIBRARIES})

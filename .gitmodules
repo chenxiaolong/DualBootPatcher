@@ -2,18 +2,6 @@
 	path = external/libarchive
 	url = https://github.com/chenxiaolong/libarchive.git
 	branch = install
-[submodule "external/xz"]
-	path = external/xz
-	url = https://github.com/chenxiaolong/xz.git
-	branch = mbp
-[submodule "external/zlib"]
-	path = external/zlib
-	url = https://github.com/chenxiaolong/zlib.git
-	ignore = dirty
-[submodule "external/lz4"]
-	path = external/lz4
-	url = https://github.com/chenxiaolong/lz4.git
-	branch = mbp
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git
@@ -26,9 +14,6 @@
 [submodule "external/minizip"]
 	path = external/minizip
 	url = https://github.com/chenxiaolong/minizip.git
-[submodule "external/lzo"]
-	path = external/lzo
-	url = https://github.com/chenxiaolong/lzo.git
 [submodule "external/neuteredsaf"]
 	path = external/neuteredsaf
 	url = https://github.com/chenxiaolong/neuteredsaf.git
