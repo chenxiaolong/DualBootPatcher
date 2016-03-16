@@ -1,7 +1,5 @@
 # Dependencies
 
-include(CMakeDependentOption)
-
 if(MBP_TOP_LEVEL_BUILD)
     option(MBP_ANDROID_ENABLE_CCACHE "Enable use of ccache for Android" ON)
 
