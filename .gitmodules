@@ -2,10 +2,6 @@
 	path = external/libarchive
 	url = https://github.com/chenxiaolong/libarchive.git
 	branch = install
-[submodule "external/lz4"]
-	path = external/lz4
-	url = https://github.com/chenxiaolong/lz4.git
-	branch = mbp
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git

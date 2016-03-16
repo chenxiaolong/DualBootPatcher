@@ -30,7 +30,7 @@ if(NOT ANDROID)
     endif()
 
     # Same logic as CMakeLists.txt from the CMake source
-    set(EXTERNAL_LIBRARIES LIBARCHIVE LZ4)
+    set(EXTERNAL_LIBRARIES LIBARCHIVE)
     foreach(extlib ${EXTERNAL_LIBRARIES})
         if(NOT DEFINED MBP_USE_SYSTEM_LIBRARY_${extlib}
                 AND DEFINED MBP_USE_SYSTEM_LIBRARIES)
@@ -55,13 +55,6 @@ if(NOT ANDROID)
         MBP_USE_SYSTEM_LIBARCHIVE
         "Use system-installed libarchive"
         "${MBP_USE_SYSTEM_LIBRARY_LIBARCHIVE}"
-    )
-    cmake_dependent_option(
-        MBP_USE_SYSTEM_LZ4
-        "Use system-installed lz4"
-        "${MBP_USE_SYSTEM_LIBRARY_LZ4}"
-        "NOT MBP_USE_SYSTEM_LIBARCHIVE"
-        ON
     )
 
     foreach(extlib ${EXTERNAL_LIBRARIES})
