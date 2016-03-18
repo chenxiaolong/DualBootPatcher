@@ -73,14 +73,23 @@
 #define F9824900_SOC0_SYSTEM    F9824900_SOC0_BASE_DIR "/system"
 #define F9824900_SOC0_USERDATA  F9824900_SOC0_BASE_DIR "/userdata"
 
+// Block device paths used by the Exynos 8890
+#define UFS_155A0000_BASE_DIR   "/dev/block/platform/155a0000.ufs/by-name"
+#define UFS_155A0000_BOOT       UFS_155A0000_BASE_DIR "/BOOT"
+#define UFS_155A0000_CACHE      UFS_155A0000_BASE_DIR "/CACHE"
+#define UFS_155A0000_RADIO      UFS_155A0000_BASE_DIR "/RADIO"
+#define UFS_155A0000_RECOVERY   UFS_155A0000_BASE_DIR "/RECOVERY"
+#define UFS_155A0000_SYSTEM     UFS_155A0000_BASE_DIR "/SYSTEM"
+#define UFS_155A0000_USERDATA   UFS_155A0000_BASE_DIR "/USERDATA"
+
 // Block device paths used by the Exynos 7420
-#define UFS_BASE_DIR            "/dev/block/platform/15570000.ufs/by-name"
-#define UFS_BOOT                UFS_BASE_DIR "/BOOT"
-#define UFS_CACHE               UFS_BASE_DIR "/CACHE"
-#define UFS_RADIO               UFS_BASE_DIR "/RADIO"
-#define UFS_RECOVERY            UFS_BASE_DIR "/RECOVERY"
-#define UFS_SYSTEM              UFS_BASE_DIR "/SYSTEM"
-#define UFS_USERDATA            UFS_BASE_DIR "/USERDATA"
+#define UFS_15570000_BASE_DIR   "/dev/block/platform/15570000.ufs/by-name"
+#define UFS_15570000_BOOT       UFS_15570000_BASE_DIR "/BOOT"
+#define UFS_15570000_CACHE      UFS_15570000_BASE_DIR "/CACHE"
+#define UFS_15570000_RADIO      UFS_15570000_BASE_DIR "/RADIO"
+#define UFS_15570000_RECOVERY   UFS_15570000_BASE_DIR "/RECOVERY"
+#define UFS_15570000_SYSTEM     UFS_15570000_BASE_DIR "/SYSTEM"
+#define UFS_15570000_USERDATA   UFS_15570000_BASE_DIR "/USERDATA"
 
 // Block device paths used by the Exynos 5422
 #define DWMMC0_12200000_BASE_DIR   "/dev/block/platform/12200000.dwmmc0/by-name"

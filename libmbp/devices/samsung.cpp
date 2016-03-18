@@ -144,13 +144,13 @@ static void addGalaxyNoteSeriesPhones(std::vector<Device *> *devices)
     device->setCodenames({ "noblelte", "nobleltespr" });
     device->setName("Samsung Galaxy Note 5 (Sprint)");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda16" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda17" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda19" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda7" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda8" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda16" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda17" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda19" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda7" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda8" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 }
 
@@ -373,13 +373,13 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda15" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda16" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda17" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda5" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda6" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda15" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda16" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 6 Flat/Edge (Sprint)
@@ -393,13 +393,13 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge (Sprint)");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda18" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda19" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda21" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda8" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda9" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda18" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda19" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda21" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda8" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda9" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 6 Edge+
@@ -408,13 +408,28 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setCodenames({ "zenlte", "zenltexx" });
     device->setName("Samsung Galaxy S 6 Edge+");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda14" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda15" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda17" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda5" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda6" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda14" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda15" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 7 Edge (Exynos)
+    device = new Device();
+    device->setId("hero2lte");
+    device->setCodenames({ "hero2lte", "hero2ltexx", "hero2ltebmc" });
+    device->setName("Samsung Galaxy S 7 Edge (Exynos)");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ UFS_155A0000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_155A0000_SYSTEM, "/dev/block/sda14" });
+    device->setCacheBlockDevs({ UFS_155A0000_CACHE, "/dev/block/sda15" });
+    device->setDataBlockDevs({ UFS_155A0000_USERDATA, "/dev/block/sda18" });
+    device->setBootBlockDevs({ UFS_155A0000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_155A0000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_155A0000_RADIO, "/dev/block/sda8" });
     devices->push_back(device);
 }
 
