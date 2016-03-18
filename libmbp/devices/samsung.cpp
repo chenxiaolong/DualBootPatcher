@@ -519,6 +519,18 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices->push_back(device);
+    
+    // Samsung Galaxy Star
+    device = new Device();
+    device->setId("mint");
+    device->setCodenames({ "mint", "mint2g"});
+    device->setName("Samsung Galaxy Star");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
 }
 
 static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
