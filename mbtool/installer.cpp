@@ -1114,12 +1114,12 @@ Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
 
-    mbp::PatcherConfig pc;
-    LOGD("libmbp version: %s", pc.version().c_str());
+    LOGD("libmbp version: %s", _pc.version().c_str());
 
     std::string prop_product_device;
     std::string prop_build_product;
     std::string prop_patcher_device;
+    std::string install_prop_device;
 
     // Verify device
     if (_prop.find("mbtool.installer.device") == _prop.end()) {
@@ -1127,7 +1127,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    _device = _prop["mbtool.installer.device"];
+    install_prop_device = _prop["mbtool.installer.device"];
 
     util::get_property("ro.product.device", &prop_product_device, "");
     util::get_property("ro.build.product", &prop_build_product, "");
@@ -1136,7 +1136,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
     LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
-    LOGD("Target device = %s", _device.c_str());
+    LOGD("Target device = %s", install_prop_device.c_str());
 
     if (!prop_patcher_device.empty()) {
         _detected_device = prop_patcher_device;
@@ -1161,119 +1161,122 @@ Installer::ProceedState Installer::install_stage_check_device()
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
 
-    bool found_device = false;
-
-    for (const mbp::Device *d : pc.devices()) {
-        if (d->id() != _device) {
-            // Haven't found device
-            continue;
+    for (const mbp::Device *d : _pc.devices()) {
+        if (d->id() == install_prop_device) {
+            _device = d;
+            break;
         }
-
-        found_device = true;
-
-        // Verify codename
-        if (skip_codename_check) {
-            display_msg("Skipping device check as requested by info.prop");
-        } else {
-            auto codenames = d->codenames();
-            auto it = std::find_if(codenames.begin(), codenames.end(),
-                                   [&](const std::string &codename) {
-                return _detected_device == codename;
-            });
-
-            if (it == codenames.end()) {
-                display_msg("Patched zip is for:");
-                for (const std::string &codename : d->codenames()) {
-                    display_msg("- %s", codename.c_str());
-                }
-                display_msg("This device is '%s'", _detected_device.c_str());
-
-                return ProceedState::Fail;
-            }
-        }
-
-        // Copy boot partition block devices to the chroot
-        auto devs = d->bootBlockDevs();
-        if (devs.empty()) {
-            display_msg("Could not determine the boot block device");
-            return ProceedState::Fail;
-        }
-
-        _boot_block_dev = devs[0];
-        LOGD("Boot block device: %s", _boot_block_dev.c_str());
-
-        // Recovery block devices
-        auto recovery_devs = d->recoveryBlockDevs();
-        if (recovery_devs.empty()) {
-            display_msg("Could not determine the recovery block device");
-            return ProceedState::Fail;
-        }
-
-        _recovery_block_dev = recovery_devs[0];
-        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
-
-        // System block devices
-        auto system_devs = d->systemBlockDevs();
-        if (system_devs.empty()) {
-            display_msg("Could not determine the system block device");
-            return ProceedState::Fail;
-        }
-
-        _system_block_dev = system_devs[0];
-        LOGD("System block device: %s", _system_block_dev.c_str());
-
-        // Copy any other required block devices to the chroot
-        auto extra_devs = d->extraBlockDevs();
-
-        devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
-        devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
-
-        for (auto const &dev : devs) {
-            std::string dev_path(_chroot);
-            dev_path += "/";
-            dev_path += dev;
-
-            if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of %s",
-                     dev_path.c_str());
-            }
-
-            // Follow symlinks just in case the symlink source isn't in the list
-            if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                              | util::COPY_XATTRS
-                                              | util::COPY_FOLLOW_SYMLINKS)) {
-                LOGE("Failed to copy %s. Continuing anyway", dev.c_str());
-            } else {
-                LOGD("Copied %s to the chroot", dev.c_str());
-            }
-        }
-
-        // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
-        for (auto const &dev : system_devs) {
-            std::string dev_path(_chroot);
-            dev_path += "/";
-            dev_path += dev;
-
-            if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of %s",
-                     dev_path.c_str());
-            }
-
-            if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
-                LOGE("Failed to symlink %s to %s: %s. Continuing anyway",
-                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
-            } else {
-                LOGD("Symlinked %s to %s in the chroot",
-                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
-            }
-        }
-
-        break;
     }
 
-    if (!found_device) {
-        display_msg("Invalid device ID: " + _device);
+    if (!_device) {
+        display_msg("Invalid device ID: " + install_prop_device);
         return ProceedState::Fail;
+    }
+
+    // Verify codename
+    if (skip_codename_check) {
+        display_msg("Skipping device check as requested by info.prop");
+    } else {
+        auto codenames = _device->codenames();
+        auto it = std::find_if(codenames.begin(), codenames.end(),
+                               [&](const std::string &codename) {
+            return _detected_device == codename;
+        });
+
+        if (it == codenames.end()) {
+            display_msg("Patched zip is for:");
+            for (const std::string &codename : _device->codenames()) {
+                display_msg("- %s", codename.c_str());
+            }
+            display_msg("This device is '%s'", _detected_device.c_str());
+
+            return ProceedState::Fail;
+        }
+    }
+
+    auto find_existing_path = [](const std::string &path) {
+        return access(path.c_str(), R_OK) == 0;
+    };
+
+    // Find boot blockdev path
+    auto boot_devs = _device->bootBlockDevs();
+    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                           find_existing_path);
+    if (it == boot_devs.end()) {
+        display_msg("Could not determine the boot block device");
+        return ProceedState::Fail;
+    } else {
+        _boot_block_dev = *it;
+        LOGD("Boot block device: %s", _boot_block_dev.c_str());
+    }
+
+    // Find recovery blockdev path
+    auto recovery_devs = _device->recoveryBlockDevs();
+    it = std::find_if(recovery_devs.begin(), recovery_devs.end(),
+                      find_existing_path);
+    if (it == recovery_devs.end()) {
+        LOGW("Could not determine the recovery block device");
+        // Non-fatal
+    } else {
+        _recovery_block_dev = *it;
+        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
+    }
+
+    // Find system blockdev path
+    auto system_devs = _device->systemBlockDevs();
+    it = std::find_if(system_devs.begin(), system_devs.end(),
+                      find_existing_path);
+    if (it == system_devs.end()) {
+        display_msg("Could not determine the system block device");
+        return ProceedState::Fail;
+    } else {
+        _system_block_dev = *it;
+        LOGD("System block device: %s", _system_block_dev.c_str());
+    }
+
+    // Other block devices to copy
+    auto extra_devs = _device->extraBlockDevs();
+
+    std::vector<std::string> devs;
+    devs.insert(devs.end(), boot_devs.begin(), boot_devs.end());
+    devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
+    devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
+
+    // Copy block devices to the chroot
+    for (auto const &dev : devs) {
+        std::string dev_path(in_chroot(dev));
+
+        if (!util::mkdir_parent(dev_path, 0755)) {
+            LOGW("Failed to create parent directory of %s",
+                 dev_path.c_str());
+        }
+
+        // Follow symlinks just in case the symlink source isn't in the list
+        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
+                                          | util::COPY_XATTRS
+                                          | util::COPY_FOLLOW_SYMLINKS)) {
+            LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
+        } else {
+            LOGD("Copied %s to the chroot", dev.c_str());
+        }
+    }
+
+    // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
+    for (auto const &dev : system_devs) {
+        std::string dev_path(in_chroot(dev));
+
+        if (!util::mkdir_parent(dev_path, 0755)) {
+            LOGW("Failed to create parent directory of %s",
+                 dev_path.c_str());
+        }
+
+        if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
+            LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
+                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
+        } else {
+            LOGD("Symlinked %s to %s in the chroot",
+                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
+        }
     }
 
     return on_checked_device();

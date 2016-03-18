@@ -23,8 +23,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "roms.h"
+#include "mbp/device.h"
+#include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
+
+#include "roms.h"
 
 namespace mb
 {
@@ -76,7 +79,8 @@ protected:
     int _output_fd;
     bool _passthrough;
 
-    std::string _device;
+    mbp::PatcherConfig _pc;
+    const mbp::Device *_device = nullptr;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
