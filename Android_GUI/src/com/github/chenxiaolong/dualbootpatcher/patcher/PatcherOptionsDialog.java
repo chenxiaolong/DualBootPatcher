@@ -21,6 +21,8 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.AppCompatEditText;
@@ -40,16 +42,20 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class PatcherOptionsDialog extends DialogFragment {
     private static final String ARG_ID = "id";
     private static final String ARG_PRESELECTED_DEVICE_ID = "preselected_device_id";
     private static final String ARG_PRESELECTED_ROM_ID = "rom_id";
+
+    private static Device sHero2qlteDevice;
 
     private MaterialDialog mDialog;
     private AppCompatSpinner mDeviceSpinner;
@@ -59,7 +65,8 @@ public class PatcherOptionsDialog extends DialogFragment {
     private View mDummy;
 
     private ArrayAdapter<String> mDeviceAdapter;
-    private ArrayList<String> mDevices = new ArrayList<>();
+    private ArrayList<Device> mDevices = new ArrayList<>();
+    private ArrayList<String> mDevicesNames = new ArrayList<>();
     private ArrayAdapter<String> mRomIdAdapter;
     private ArrayList<String> mRomIds = new ArrayList<>();
     private ArrayList<InstallLocation> mInstallLocations = new ArrayList<>();
@@ -133,8 +140,13 @@ public class PatcherOptionsDialog extends DialogFragment {
                         PatcherOptionsDialogListener owner = getOwner();
                         if (owner != null) {
                             int position = mDeviceSpinner.getSelectedItemPosition();
-                            Device device = PatcherUtils.sPC.getDevices()[position];
-                            owner.onConfirmedOptions(id, device, getRomId());
+                            Device device = mDevices.get(position);
+                            if (device.getId().equals("hero2qlte")) {
+                                Intent intent = getRickRollIntent();
+                                getActivity().startActivity(intent);
+                            } else {
+                                owner.onConfirmedOptions(id, device, getRomId());
+                            }
                         }
                     }
                 })
@@ -165,6 +177,12 @@ public class PatcherOptionsDialog extends DialogFragment {
                 Device device = PatcherUtils.getCurrentDevice(getActivity(), PatcherUtils.sPC);
                 if (device != null) {
                     preselectedDeviceId = device.getId();
+                } else {
+                    Device rrd = getRickRollDevice();
+                    String codename = RomUtils.getDeviceCodename(getActivity());
+                    if (Arrays.asList(rrd.getCodenames()).contains(codename)) {
+                        preselectedDeviceId = rrd.getId();
+                    }
                 }
             }
             if (preselectedDeviceId != null) {
@@ -185,7 +203,7 @@ public class PatcherOptionsDialog extends DialogFragment {
 
     private void initDevices() {
         mDeviceAdapter = new ArrayAdapter<>(getActivity(),
-                android.R.layout.simple_spinner_item, android.R.id.text1, mDevices);
+                android.R.layout.simple_spinner_item, android.R.id.text1, mDevicesNames);
         mDeviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDeviceSpinner.setAdapter(mDeviceAdapter);
     }
@@ -259,13 +277,42 @@ public class PatcherOptionsDialog extends DialogFragment {
         });
     }
 
+    private static Device getRickRollDevice() {
+        if (sHero2qlteDevice == null) {
+            sHero2qlteDevice = new Device();
+            sHero2qlteDevice.setId("hero2qlte");
+            sHero2qlteDevice.setCodenames(new String[]{"hero2qlte", "hero2qlteatt",
+                    "hero2qltespr", "hero2qltetmo", "hero2qltevzw"});
+            sHero2qlteDevice.setName("Samsung Galaxy S 7 Edge (Qcom)");
+            sHero2qlteDevice.setArchitecture("arm64-v8a");
+            sHero2qlteDevice.setSystemBlockDevs(new String[]{"/dev/null"});
+            sHero2qlteDevice.setCacheBlockDevs(new String[]{"/dev/null"});
+            sHero2qlteDevice.setDataBlockDevs(new String[]{"/dev/null"});
+            sHero2qlteDevice.setBootBlockDevs(new String[]{"/dev/null"});
+            sHero2qlteDevice.setExtraBlockDevs(new String[]{"/dev/null"});
+        }
+        return sHero2qlteDevice;
+    }
+
+    private static Intent getRickRollIntent() {
+        return new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
+    }
+
     /**
      * Refresh the list of supported devices from libmbp.
      */
     public void refreshDevices() {
         mDevices.clear();
+        mDevicesNames.clear();
         for (Device device : PatcherUtils.sPC.getDevices()) {
-            mDevices.add(String.format("%s - %s", device.getId(), device.getName()));
+            mDevices.add(device);
+            mDevicesNames.add(String.format("%s - %s", device.getId(), device.getName()));
+            if (device.getId().equals("hero2lte")) {
+                Device rrd = getRickRollDevice();
+                mDevices.add(rrd);
+                mDevicesNames.add(String.format("%s - %s", rrd.getId(), rrd.getName()));
+            }
         }
         mDeviceAdapter.notifyDataSetChanged();
     }
@@ -288,9 +335,8 @@ public class PatcherOptionsDialog extends DialogFragment {
     }
 
     private void selectDeviceId(String deviceId) {
-        Device[] devices = PatcherUtils.sPC.getDevices();
-        for (int i = 0; i < devices.length; i++) {
-            Device device = devices[i];
+        for (int i = 0; i < mDevices.size(); i++) {
+            Device device = mDevices.get(i);
             if (device.getId().equals(deviceId)) {
                 mDeviceSpinner.setSelection(i);
                 return;
