@@ -13,19 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=674256be882fc379f0737de74550e8e7121898a0
+_commit=e93899c8f3c01dfb47e81d3da4b67283fb459f20
 
 pkgname=libsepol
-pkgver=2.4.r1240.674256b
+pkgver=2.5.r1468.e93899c
 pkgrel=1
 pkgdesc="SELinux binary policy manipulation library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://userspace.selinuxproject.org"
 license=(LGPL)
 source=("git+https://github.com/SELinuxProject/selinux.git#commit=${_commit}"
-        0001-Build-for-Android-targets.patch)
+        0001-Build-for-Android-targets.patch
+        0001-Support-Android-M-and-official-v30-sepolicy-format.patch)
 sha512sums=('SKIP'
-            'd70b556eaf0bbe4668bd5c7cf0f2dc32a3582d06d0b1913c4caae648a053b39928b90c8ba2611ea300eda27fd6f8bdd2c43d6dac58d565f71ee80f4724585e5d')
+            'd70b556eaf0bbe4668bd5c7cf0f2dc32a3582d06d0b1913c4caae648a053b39928b90c8ba2611ea300eda27fd6f8bdd2c43d6dac58d565f71ee80f4724585e5d'
+            'cd55b9bd8e744b6bf7b753be81556ce371ebd15b7cc3c2fcf77ce369fd37945784a186410be57ff080a3fd13666f4b856690d77b5d7e5b8223a2a8ef2968c83e')
 
 pkgver() {
     cd selinux
@@ -37,6 +39,7 @@ pkgver() {
 prepare() {
     cd selinux
     git am ../0001-Build-for-Android-targets.patch
+    git am ../0001-Support-Android-M-and-official-v30-sepolicy-format.patch
 }
 
 build() {
@@ -47,10 +50,10 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=4.9 \
+        NDK_TOOLCHAIN_VERSION=clang3.6 \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-23 \
         "${MAKEFLAGS}"
 }
 
