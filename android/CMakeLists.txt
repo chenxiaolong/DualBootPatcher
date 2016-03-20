@@ -26,6 +26,38 @@ if(MBP_TOP_LEVEL_BUILD)
         endif()
     endfunction()
 
+    function(join out glue)
+        set(first TRUE)
+        set(result "")
+        foreach(arg ${ARGN})
+            if(FIRST)
+                set(FIRST FALSE)
+            else()
+                string(CONCAT result "${result}" "${glue}")
+            endif()
+            string(CONCAT result "${result}" "${arg}")
+        endforeach()
+        set("${out}" "${result}" PARENT_SCOPE)
+    endfunction()
+
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sign.cmake" "
+set(ENV{MBSIGN_PASSPHRASE} \"\${PASSPHRASE}\")
+foreach(file \${SIGN_FILES})
+    message(STATUS \"Signing: \${file}\")
+    execute_process(
+        COMMAND
+        \"\${SIGNTOOL}\"
+        \"\${KEYSTORE}\"
+        \"\${file}\"
+        \"\${file}.sig\"
+        RESULT_VARIABLE ret
+    )
+    if(NOT ret EQUAL 0)
+        message(FATAL_ERROR \"Failed to sign: \${file}\")
+    endif()
+endforeach()
+")
+
     # Always make release builds for the system components unless explicitly
     # told not to since a debug build of mbtool is too large to fit in some
     # devices' ramdisks.
@@ -94,16 +126,39 @@ if(MBP_TOP_LEVEL_BUILD)
             BUILD_ALWAYS 1
             INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
             VERBATIM
+            LIST_SEPARATOR "*****"
+        )
+
+        set(result_files
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse)
+        set(sig_files "")
+        foreach(file ${result_files})
+            list(APPEND sig_files "${file}.sig")
+        endforeach()
+
+        join(sign_files_str "*****" ${result_files})
+
+        ExternalProject_Add_Step(
+            android-system_${abi}
+            sign
+            COMMAND
+                ${CMAKE_COMMAND}
+                -DSIGNTOOL=${SIGNTOOL_COMMAND}
+                -DKEYSTORE=${PKCS12_KEYSTORE_PATH}
+                -DPASSPHRASE=${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}
+                -DSIGN_FILES=${sign_files_str}
+                -P ${CMAKE_CURRENT_BINARY_DIR}/sign.cmake
+            DEPENDEES install
         )
 
         ExternalProject_Get_Property(android-system_${abi} BINARY_DIR)
         list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
 
         install(
-            FILES ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse
+            FILES ${result_files} ${sig_files}
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )

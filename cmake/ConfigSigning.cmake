@@ -109,6 +109,8 @@ execute_process(
     -file "${CMAKE_BINARY_DIR}/java_keystore_cert.des"
 )
 
+set(PKCS12_KEYSTORE_PATH "${CMAKE_BINARY_DIR}/java_keystore.p12")
+
 # Export keystore to encrypted PKCS12
 execute_process(
     COMMAND
@@ -117,7 +119,7 @@ execute_process(
     -srcstoretype JKS
     -deststoretype PKCS12
     -srckeystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
-    -destkeystore "${CMAKE_BINARY_DIR}/java_keystore.p12"
+    -destkeystore "${PKCS12_KEYSTORE_PATH}"
     -srcstorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
     -deststorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
     -srcalias "${MBP_SIGN_JAVA_KEY_ALIAS}"
