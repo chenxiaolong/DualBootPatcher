@@ -1,89 +1,100 @@
+if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
+    return()
+endif()
+
 if(MBP_ENABLE_TESTS)
     include_directories(${GTEST_INCLUDE_DIRS})
 endif()
 
-set(MBSPARSE_SOURCES
-    src/sparse.cpp
+include_directories(${MBP_OPENSSL_INCLUDES})
+
+if(MBP_ENABLE_TESTS)
+    include_directories(${GTEST_INCLUDE_DIRS})
+endif()
+
+set(MBSIGN_SOURCES
+    src/mbsign.cpp
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
     # Build static library
 
-    add_library(mbsparse-static STATIC ${MBSPARSE_SOURCES})
+    add_library(mbsign-static STATIC ${MBSIGN_SOURCES})
 
     target_compile_definitions(
-        mbsparse-static
+        mbsign-static
         PRIVATE
         -DMB_LIBRARY
     )
 
     set_target_properties(
-        mbsparse-static
+        mbsign-static
         PROPERTIES
         POSITION_INDEPENDENT_CODE 1
     )
 
     if(NOT MSVC)
         set_target_properties(
-            mbsparse-static
+            mbsign-static
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
+else()
     # Build shared library
 
-    add_library(mbsparse-shared SHARED ${MBSPARSE_SOURCES})
+    add_library(mbsign-shared SHARED ${MBSIGN_SOURCES})
 
     target_compile_definitions(
-        mbsparse-shared
+        mbsign-shared
         PRIVATE
-        -DMB_DYNAMIC_LINK
+        -DDMB_DYNAMIC_LINK
         -DMB_LIBRARY
     )
 
     set_target_properties(
-        mbsparse-shared
+        mbsign-shared
         PROPERTIES
         POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbsparse
+        OUTPUT_NAME mbsign
+    )
+
+    target_link_libraries(
+        mbsign-shared
+        mblog-shared
+        ${MBP_OPENSSL_CRYPTO_LIBRARY}
     )
 
     if(NOT MSVC)
         set_target_properties(
-            mbsparse-shared
+            mbsign-shared
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-
-    target_link_libraries(
-        mbsparse-shared
-        mblog-shared
-    )
 
     # Install shared library
     install(
-        TARGETS mbsparse-shared
+        TARGETS mbsign-shared
         LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
     )
 
     if(MBP_ENABLE_TESTS)
-        add_executable(test_sparse tests/test_sparse.cpp)
+        add_executable(test_sign tests/test_sign.cpp)
         target_link_libraries(
-            test_sparse
-            mbpio-static
-            mbsparse-shared
+            test_sign
+            mbsign-shared
             ${GTEST_BOTH_LIBRARIES}
         )
 
         if(NOT MSVC)
             set_target_properties(
-                test_sparse
+                test_sign
                 PROPERTIES
                 CXX_STANDARD 11
                 CXX_STANDARD_REQUIRED 1
@@ -92,6 +103,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
             )
         endif()
 
-        add_test(NAME test_sparse COMMAND test_sparse)
+        add_test(NAME test_sign COMMAND test_sign)
     endif()
 endif()

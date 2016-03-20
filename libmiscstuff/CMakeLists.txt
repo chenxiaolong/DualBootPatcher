@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 include_directories(${MBP_LIBARCHIVE_LOWAPI_INCLUDES})
 
 if(${MBP_BUILD_TARGET} STREQUAL android-app)

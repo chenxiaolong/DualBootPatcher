@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 include_directories(${MBP_FUSE_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 

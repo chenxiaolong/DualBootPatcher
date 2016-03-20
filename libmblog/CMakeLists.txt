@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 set(MBLOG_SOURCES
     src/logging.cpp
     src/stdio_logger.cpp
@@ -41,7 +37,9 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-else()
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop
+        OR ${MBP_BUILD_TARGET} STREQUAL signtool)
     # Build shared library
 
     add_library(mblog-shared SHARED ${MBLOG_SOURCES})

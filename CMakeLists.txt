@@ -21,12 +21,15 @@ set(MBP_SYSTEM_BUILD_TYPE "release"
 #                (not to be built manually)
 # - android-system: Build executables to be included in the distrbution
 #                   (not to be built manually)
+# - signtool: Builds only the code signing tool
+#             (not to be built manually)
 
 # Verify build target and type
 if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-app
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
 endif()
 if(NOT ${MBP_BUILD_TYPE} STREQUAL release
@@ -98,28 +101,27 @@ endif()
 # - MBP_TOP_LEVEL_BUILD: Whether this is a parent CMake build
 # - MBP_INTERNAL_BUILD: Whether this is a recursive CMake build
 # - MBP_TARGET_CONFIG_FILE: Config file for the current build target
-# - MBP_TARGET_NEEDS_BUILDS: Whether the target requires anything to be built
 
 if(${MBP_BUILD_TARGET} STREQUAL android)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroid.cmake)
     set(MBP_TOP_LEVEL_BUILD TRUE)
     set(MBP_INTERNAL_BUILD FALSE)
-    set(MBP_TARGET_NEEDS_BUILDS FALSE)
 elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigDesktop.cmake)
     set(MBP_TOP_LEVEL_BUILD TRUE)
     set(MBP_INTERNAL_BUILD FALSE)
-    set(MBP_TARGET_NEEDS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidApp.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
-    set(MBP_TARGET_NEEDS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
-    set(MBP_TARGET_NEEDS_BUILDS TRUE)
+elseif(${MBP_BUILD_TARGET} STREQUAL signtool)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigSignTool.cmake)
+    set(MBP_TOP_LEVEL_BUILD FALSE)
+    set(MBP_INTERNAL_BUILD TRUE)
 endif()
 
 # Screw Ubuntu's multiarch. FIND_LIBRARY_USE_LIB64_PATHS is disabled when
@@ -151,6 +153,7 @@ set(MBP_GLOBAL_INCLUDE_DIRS
     libmblog/include
     libmbpio/include
     libmbp/include
+    libmbsign/include
     libmbsparse/include
     libmbutil/include
 )
@@ -162,6 +165,7 @@ add_subdirectory(libmbcommon)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
+add_subdirectory(libmbsign)
 add_subdirectory(libmbsparse)
 add_subdirectory(libmbutil)
 add_subdirectory(data)
@@ -174,5 +178,7 @@ add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(utilities)
 add_subdirectory(android)
+add_subdirectory(signtool)
+add_subdirectory(signtool/wrapped)
 
 include(CPack)

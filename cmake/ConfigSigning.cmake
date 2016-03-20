@@ -1,3 +1,8 @@
+# We don't need the keys for building signtool
+if(${MBP_BUILD_TARGET} STREQUAL signtool)
+    return()
+endif()
+
 # Find Java's keytool
 find_program(JAVA_KEYTOOL NAMES keytool)
 if(NOT JAVA_KEYTOOL)
@@ -96,12 +101,30 @@ endif()
 # Export certificate to file
 execute_process(
     COMMAND
-    ${JAVA_KEYTOOL}
+    "${JAVA_KEYTOOL}"
     -exportcert
     -keystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
     -storepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
     -alias "${MBP_SIGN_JAVA_KEY_ALIAS}"
-    -file ${CMAKE_BINARY_DIR}/java_keystore_cert.des
+    -file "${CMAKE_BINARY_DIR}/java_keystore_cert.des"
+)
+
+# Export keystore to encrypted PKCS12
+execute_process(
+    COMMAND
+    "${JAVA_KEYTOOL}"
+    -importkeystore
+    -srcstoretype JKS
+    -deststoretype PKCS12
+    -srckeystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
+    -destkeystore "${CMAKE_BINARY_DIR}/java_keystore.p12"
+    -srcstorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
+    -deststorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
+    -srcalias "${MBP_SIGN_JAVA_KEY_ALIAS}"
+    -destalias "${MBP_SIGN_JAVA_KEY_ALIAS}"
+    -srckeypass "${MBP_SIGN_JAVA_KEY_PASSWORD}"
+    -destkeypass "${MBP_SIGN_JAVA_KEY_PASSWORD}"
+    -noprompt
 )
 
 # Read des certificate as hex
