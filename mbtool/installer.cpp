@@ -1517,6 +1517,19 @@ Installer::ProceedState Installer::install_stage_installation()
     }
 #endif
 
+    // Determine if fuse-exfat should be used. We can't detect this at boot time
+    // since vold is not yet available. We used to detect whether fuse-exfat
+    // should be used by checking for the presence of "EXFAT   " or "exfat" in
+    // /init. That would work because only ROMs that use fuse-exfat link init to
+    // libblkid. However, there were exceptions to that, such as with the Moto
+    // X Pure, which uses the exfat kernel module in all ROMs. This is a more
+    // robust solution since the "/system/bin/mount.exfat" string only exists
+    // #ifndef CONFIG_KERNEL_HAVE_EXFAT
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
+    std::string vold_path(in_chroot("/system/bin/vold"));
+    _use_fuse_exfat = util::file_find_one_of(vold_path, {
+        "/system/bin/mount.exfat"
+    });
 
     hook_ret = on_post_install(updater_ret);
     if (hook_ret != ProceedState::Continue) return hook_ret;
@@ -1622,14 +1635,19 @@ Installer::ProceedState Installer::install_stage_finish()
         // Set ro.patcher.device=<device ID> in /default.prop
         std::vector<unsigned char> default_prop;
         if (cpio.contents("default.prop", &default_prop)) {
+            // Device codename
             std::string prop("\nro.patcher.device=");
             prop += _detected_device;
-            prop.push_back('\n');
+            prop += '\n';
+            // Whether to use fuse-exfat
+            prop += "ro.patcher.use_fuse_exfat=";
+            prop += _use_fuse_exfat ? "true" : "false";
+            prop += '\n';
 
             default_prop.insert(default_prop.end(), prop.begin(), prop.end());
             if (!cpio.setContents("default.prop", std::move(default_prop))) {
                 LOGE("Failed to modify /default.prop in the ramdisk");
-                display_msg("Failed to add device ID to ramdisk");
+                display_msg("Failed to modify /default.prop in the ramdisk");
                 return ProceedState::Fail;
             }
         }

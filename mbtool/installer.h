@@ -97,6 +97,7 @@ protected:
     bool _has_block_image;
     bool _copy_to_temp_image;
     bool _is_aroma;
+    bool _use_fuse_exfat;
 
     std::vector<std::string> _associated_loop_devs;
 

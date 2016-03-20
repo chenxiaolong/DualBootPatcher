@@ -467,20 +467,34 @@ static bool try_extsd_mount(const std::string &block_dev)
     // filesystem. We don't link in blkid, so we'll use a trial and error
     // approach.
 
-    // Ugly hack: CM's vold uses fuse-exfat regardless if the exfat kernel
-    // module is available. CM's init binary has the "exfat" and "EXFAT   "
-    // due to the linking of libblkid. We'll use that fact to determine whether
-    // we're on CM or not.
-    if (util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" })) {
-        if (mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
-            return true;
+    bool use_fuse_exfat =
+            util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+    std::string value;
+    if (util::file_get_property(
+            DEFAULT_PROP_PATH, "ro.patcher.use_fuse_exfat", &value, "false")) {
+        LOGD("%s contains fuse-exfat override: %s",
+             DEFAULT_PROP_PATH, value.c_str());
+        if (value == "true") {
+            use_fuse_exfat = true;
+        } else if (value == "false") {
+            use_fuse_exfat = false;
+        } else {
+            LOGW("Invalid 'ro.patcher.use_fuse_exfat' value: '%s'",
+                 value.c_str());
         }
     } else {
-        if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
-            return true;
-        }
+        LOGW("%s: Failed to read properties: %s",
+             DEFAULT_PROP_PATH, strerror(errno));
     }
 
+    LOGD("Using fuse-exfat: %d", use_fuse_exfat);
+
+    if (use_fuse_exfat && mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
+        return true;
+    }
+    if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
+        return true;
+    }
     if (mount_vfat(block_dev, EXTSD_MOUNT_POINT)) {
         return true;
     }
