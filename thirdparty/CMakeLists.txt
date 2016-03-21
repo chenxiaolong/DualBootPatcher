@@ -96,8 +96,14 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=27796496bcba29563fd61e580fd1e63bbe22fe805d074bdab6a812e9991b9e19681ab33e2c5d7ed67588e786f8084bd6cbe772d5362371803d3b1bbcfbc8b337)
 
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
+        add_sign_files_target(
+            sign_prebuilt_exfat_${abi}
+            ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
+        )
+
         install(
             FILES ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
+                  ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat.sig
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )
@@ -303,9 +309,17 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(e2fsprogs ${E2FSPROGS_VER} x86_64      SHA512=5523d9b3ece096decc481193a6633df6febe987909374cc36accde9bbb9afb64d38217dd9ae68d1147959f5c19746c8b70c8b8553683b958200a4357743a0086)
 
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
+        add_sign_files_target(
+            sign_prebuilt_e2fsprogs_${abi}
+            ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
+            ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
+        )
+
         install(
             FILES ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
+                  ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck.sig
                   ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
+                  ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs.sig
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )

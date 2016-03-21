@@ -26,40 +26,6 @@ if(MBP_TOP_LEVEL_BUILD)
         endif()
     endfunction()
 
-    function(join out glue)
-        set(first TRUE)
-        set(result "")
-        foreach(arg ${ARGN})
-            if(FIRST)
-                set(FIRST FALSE)
-            else()
-                string(CONCAT result "${result}" "${glue}")
-            endif()
-            string(CONCAT result "${result}" "${arg}")
-        endforeach()
-        set("${out}" "${result}" PARENT_SCOPE)
-    endfunction()
-
-    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sign.cmake" "
-include(\"\${SOURCE_DIR}/cmake/SigningConfigReader.cmake\")
-read_signing_config(MBP_SIGN_JAVA_ \${SIGNING_CONFIG})
-set(ENV{MBSIGN_PASSPHRASE} \"\${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}\")
-foreach(file \${SIGN_FILES})
-    message(STATUS \"Signing: \${file}\")
-    execute_process(
-        COMMAND
-        \"\${SIGNTOOL}\"
-        \"\${PKCS12_KEYSTORE_PATH}\"
-        \"\${file}\"
-        \"\${file}.sig\"
-        RESULT_VARIABLE ret
-    )
-    if(NOT ret EQUAL 0)
-        message(FATAL_ERROR \"Failed to sign: \${file}\")
-    endif()
-endforeach()
-")
-
     # Always make release builds for the system components unless explicitly
     # told not to since a debug build of mbtool is too large to fit in some
     # devices' ramdisks.
@@ -123,7 +89,6 @@ endforeach()
             BUILD_ALWAYS 1
             INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
             VERBATIM
-            LIST_SEPARATOR "*****"
         )
 
         set(result_files
@@ -136,20 +101,13 @@ endforeach()
             list(APPEND sig_files "${file}.sig")
         endforeach()
 
-        join(sign_files_str "*****" ${result_files})
-
-        ExternalProject_Add_Step(
+        add_sign_files_target(
+            sign_android-system_${abi}
+            ${result_files}
+        )
+        add_dependencies(
+            sign_android-system_${abi}
             android-system_${abi}
-            sign
-            COMMAND
-                ${CMAKE_COMMAND}
-                -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
-                -DSIGNTOOL=${SIGNTOOL_COMMAND}
-                -DSIGNING_CONFIG=${MBP_SIGN_CONFIG_PATH}
-                -DSIGN_FILES=${sign_files_str}
-                -DPKCS12_KEYSTORE_PATH=${PKCS12_KEYSTORE_PATH}
-                -P ${CMAKE_CURRENT_BINARY_DIR}/sign.cmake
-            DEPENDEES install
         )
 
         ExternalProject_Get_Property(android-system_${abi} BINARY_DIR)

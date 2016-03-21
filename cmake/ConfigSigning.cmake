@@ -132,3 +132,18 @@ file(
     MBP_SIGN_JAVA_CERT_HEX
     HEX
 )
+
+function(add_sign_files_target name)
+    set(files)
+    foreach(file ${ARGN})
+        string(CONCAT files "${files}" "${file}" "$<SEMICOLON>")
+    endforeach()
+    add_custom_target(
+        ${name} ALL
+        ${CMAKE_COMMAND}
+            -DSIGN_FILES=${files}
+            -P ${CMAKE_BINARY_DIR}/cmake/SignFiles.cmake
+        COMMENT "File signing target '${name}'"
+        VERBATIM
+    )
+endfunction()

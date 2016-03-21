@@ -182,4 +182,11 @@ add_subdirectory(signtool)
 add_subdirectory(signtool/wrapped)
 add_subdirectory(android)
 
+# Must go after signtool since it references SIGNTOOL_COMMAND
+configure_file(
+    cmake/SignFiles.cmake.in
+    ${CMAKE_BINARY_DIR}/cmake/SignFiles.cmake
+    @ONLY
+)
+
 include(CPack)
