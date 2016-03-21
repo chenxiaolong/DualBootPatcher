@@ -283,6 +283,20 @@ bool OdinPatcher::Impl::patchTar()
 
     if (cancelled) return false;
 
+    updateDetails("META-INF/com/google/android/update-binary.orig.sig");
+
+    // Add odinupdater.sig
+    result = MinizipUtils::addFile(
+            zf, "META-INF/com/google/android/update-binary.orig",
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/odinupdater.sig");
+    if (result != ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    if (cancelled) return false;
+
     updateDetails("fuse-sparse");
 
     // Add fuse-sparse
@@ -304,6 +318,20 @@ bool OdinPatcher::Impl::patchTar()
             zf, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
+    if (result != ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    if (cancelled) return false;
+
+    updateDetails("META-INF/com/google/android/update-binary.sig");
+
+    // Add mbtool_recovery.sig
+    result = MinizipUtils::addFile(
+            zf, "META-INF/com/google/android/update-binary",
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery.sig");
     if (result != ErrorCode::NoError) {
         error = result;
         return false;

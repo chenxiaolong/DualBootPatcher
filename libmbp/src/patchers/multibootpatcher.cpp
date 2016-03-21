@@ -215,10 +215,10 @@ bool MultiBootPatcher::Impl::patchZip()
 
     if (cancelled) return false;
 
-    // +1 for mbtool_recovery (update-binary)
+    // +2 for mbtool_recovery (update-binary) and sig
     // +1 for bb-wrapper.sh
     // +1 for info.prop
-    maxFiles = stats.files + 3;
+    maxFiles = stats.files + 4;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -254,6 +254,21 @@ bool MultiBootPatcher::Impl::patchZip()
             zf, "META-INF/com/google/android/update-binary",
             pc->dataDirectory() + "/binaries/android/"
                     + info->device()->architecture() + "/mbtool_recovery");
+    if (result != ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    if (cancelled) return false;
+
+    updateFiles(++files, maxFiles);
+    updateDetails("META-INF/com/google/android/update-binary.sig");
+
+    // Add mbtool_recovery.sig
+    result = MinizipUtils::addFile(
+            zf, "META-INF/com/google/android/update-binary.sig",
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery.sig");
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
