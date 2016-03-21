@@ -38,23 +38,11 @@ android {
     }
 
     signingConfigs {
-        release {
-            if ("@_RELEASE_SIGN_JAVA_KEYSTORE_PATH@" != "") {
-                storeFile file('@_RELEASE_SIGN_JAVA_KEYSTORE_PATH@')
-                storePassword  '@_RELEASE_SIGN_JAVA_KEYSTORE_PASSWORD@'
-                keyAlias       '@_RELEASE_SIGN_JAVA_KEY_ALIAS@'
-                keyPassword    '@_RELEASE_SIGN_JAVA_KEY_PASSWORD@'
-            }
-        }
+        release
 
-        ci {
-            if ("@_CI_SIGN_JAVA_KEYSTORE_PATH@" != "") {
-                storeFile file('@_CI_SIGN_JAVA_KEYSTORE_PATH@')
-                storePassword  '@_CI_SIGN_JAVA_KEYSTORE_PASSWORD@'
-                keyAlias       '@_CI_SIGN_JAVA_KEY_ALIAS@'
-                keyPassword    '@_CI_SIGN_JAVA_KEY_PASSWORD@'
-            }
-        }
+        debug
+
+        ci
     }
 
     buildTypes {
@@ -64,6 +52,7 @@ android {
         }
 
         debug {
+            signingConfig signingConfigs.debug
             applicationIdSuffix ".debug"
             versionNameSuffix "-DEBUG"
             buildConfigField "int", "APP_NAME_RESOURCE", "R.string.app_name_debug"
@@ -104,6 +93,30 @@ android {
         }
     }
 }
+
+def readSigningConfig(path, target) {
+    def props = new Properties()
+    def propFile = new File(path)
+    if (propFile.canRead()) {
+        props.load(new FileInputStream(propFile));
+        if (props != null
+                && props.containsKey('keystore')
+                && props.containsKey('keystore_passphrase')
+                && props.containsKey('key_alias')
+                && props.containsKey('key_passphrase')) {
+            target.storeFile = file(props['keystore'])
+            target.storePassword = props['keystore_passphrase']
+            target.keyAlias = props['key_alias']
+            target.keyPassword = props['key_passphrase']
+            return true;
+        }
+    }
+    return false;
+}
+
+readSigningConfig('@_RELEASE_SIGN_CONFIG_PATH@', android.signingConfigs.release)
+readSigningConfig('@_DEBUG_SIGN_CONFIG_PATH@', android.signingConfigs.debug)
+readSigningConfig('@_CI_SIGN_CONFIG_PATH@', android.signingConfigs.ci)
 
 dependencies {
     compile 'com.android.support:support-v4:23.2.1'

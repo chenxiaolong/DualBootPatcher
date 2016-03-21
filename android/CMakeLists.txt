@@ -41,13 +41,15 @@ if(MBP_TOP_LEVEL_BUILD)
     endfunction()
 
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sign.cmake" "
-set(ENV{MBSIGN_PASSPHRASE} \"\${PASSPHRASE}\")
+include(\"\${SOURCE_DIR}/cmake/SigningConfigReader.cmake\")
+read_signing_config(MBP_SIGN_JAVA_ \${SIGNING_CONFIG})
+set(ENV{MBSIGN_PASSPHRASE} \"\${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}\")
 foreach(file \${SIGN_FILES})
     message(STATUS \"Signing: \${file}\")
     execute_process(
         COMMAND
         \"\${SIGNTOOL}\"
-        \"\${KEYSTORE}\"
+        \"\${PKCS12_KEYSTORE_PATH}\"
         \"\${file}\"
         \"\${file}.sig\"
         RESULT_VARIABLE ret
@@ -83,10 +85,7 @@ endforeach()
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_INTERNAL_PREBUILTS_DIR=${MBP_PREBUILTS_DIR}
-            -DMBP_SIGN_JAVA_KEYSTORE_PATH=${MBP_SIGN_JAVA_KEYSTORE_PATH}
-            -DMBP_SIGN_JAVA_KEYSTORE_PASSWORD=${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}
-            -DMBP_SIGN_JAVA_KEY_ALIAS=${MBP_SIGN_JAVA_KEY_ALIAS}
-            -DMBP_SIGN_JAVA_KEY_PASSWORD=${MBP_SIGN_JAVA_KEY_PASSWORD}
+            -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
         )
 
@@ -112,8 +111,6 @@ endforeach()
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
         foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
-            string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
-                   _option "${_option}")
             message(STATUS "  ${_option}")
         endforeach()
 
@@ -146,10 +143,11 @@ endforeach()
             sign
             COMMAND
                 ${CMAKE_COMMAND}
+                -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
                 -DSIGNTOOL=${SIGNTOOL_COMMAND}
-                -DKEYSTORE=${PKCS12_KEYSTORE_PATH}
-                -DPASSPHRASE=${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}
+                -DSIGNING_CONFIG=${MBP_SIGN_CONFIG_PATH}
                 -DSIGN_FILES=${sign_files_str}
+                -DPKCS12_KEYSTORE_PATH=${PKCS12_KEYSTORE_PATH}
                 -P ${CMAKE_CURRENT_BINARY_DIR}/sign.cmake
             DEPENDEES install
         )
@@ -167,8 +165,6 @@ endforeach()
         if(${MBP_BUILD_TARGET} STREQUAL android)
             message(STATUS "Recursive CMake build for Android app components (${abi}):")
             foreach(_option ${INTERNAL_ANDROID_APP_OPTIONS})
-                string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
-                       _option "${_option}")
                 message(STATUS "  ${_option}")
             endforeach()
 

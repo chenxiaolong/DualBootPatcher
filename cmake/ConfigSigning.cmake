@@ -9,8 +9,15 @@ if(NOT JAVA_KEYTOOL)
     message(FATAL_ERROR "The java 'keytool' program was not found")
 endif()
 
+# Signing config
+set(MBP_SIGN_CONFIG_PATH "" CACHE FILEPATH "Signing configuration file path")
+
 # Create debug keystore if it doesn't exist
-if(${MBP_BUILD_TYPE} STREQUAL debug)
+if(${MBP_BUILD_TYPE} STREQUAL debug AND "${MBP_SIGN_CONFIG_PATH}" STREQUAL "")
+    message(WARNING "MBP_SIGN_CONFIG_PATH wasn't specified, but because this "
+            "is a debug build, a signing config will be generated for the "
+            "default Android SDK debug signing key.")
+
     # Only use Windows path when natively compiling, not cross-compiling
     #if(WIN32)
     if(CMAKE_HOST_WIN32)
@@ -47,50 +54,31 @@ if(${MBP_BUILD_TYPE} STREQUAL debug)
         endif()
     endif()
 
-    set(DEFAULT_SIGN_JAVA_KEYSTORE_PATH     "${DEBUG_KEYSTORE}")
-    set(DEFAULT_SIGN_JAVA_KEYSTORE_PASSWORD "android")
-    set(DEFAULT_SIGN_JAVA_KEY_ALIAS         "androiddebugkey")
-    set(DEFAULT_SIGN_JAVA_KEY_PASSWORD      "android")
-else()
-    # No defaults, since the user should provide these
-    set(DEFAULT_SIGN_JAVA_KEYSTORE_PATH     "")
-    set(DEFAULT_SIGN_JAVA_KEYSTORE_PASSWORD "")
-    set(DEFAULT_SIGN_JAVA_KEY_ALIAS         "")
-    set(DEFAULT_SIGN_JAVA_KEY_PASSWORD      "")
+    # For debug builds, we can allow not providing a signing config
+    set(REPLACE_ME_KEYSTORE_PATH       "${DEBUG_KEYSTORE}")
+    set(REPLACE_ME_KEYSTORE_PASSPHRASE "android")
+    set(REPLACE_ME_KEY_ALIAS           "androiddebugkey")
+    set(REPLACE_ME_KEY_PASSPHRASE      "android")
+
+    set(MBP_SIGN_CONFIG_PATH ${CMAKE_BINARY_DIR}/SigningConfig.debug.prop
+        CACHE FILEPATH "Signing configuration file path" FORCE)
+
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/cmake/SigningConfig.prop.in
+        ${MBP_SIGN_CONFIG_PATH}
+        @ONLY
+    )
 endif()
 
-# User's signing options
-set(MBP_SIGN_JAVA_KEYSTORE_PATH     "${DEFAULT_SIGN_JAVA_KEYSTORE_PATH}"
-    CACHE FILEPATH "Java signing keystore path")
-set(MBP_SIGN_JAVA_KEYSTORE_PASSWORD "${DEFAULT_SIGN_JAVA_KEYSTORE_PASSWORD}"
-    CACHE STRING "Java signing keystore password")
-set(MBP_SIGN_JAVA_KEY_ALIAS         "${DEFAULT_SIGN_JAVA_KEY_ALIAS}"
-    CACHE STRING "Java signing key alias")
-set(MBP_SIGN_JAVA_KEY_PASSWORD      "${DEFAULT_SIGN_JAVA_KEY_PASSWORD}"
-    CACHE STRING "Java signing key password")
+# The user must provide a signing config
 
-# Ensure all signing variables are defined
-set(SIGNING_UNDEFINED_VARS "")
-if(NOT MBP_SIGN_JAVA_KEYSTORE_PATH)
-    list(APPEND SIGNING_UNDEFINED_VARS MBP_SIGN_JAVA_KEYSTORE_PATH)
-endif()
-if(NOT MBP_SIGN_JAVA_KEYSTORE_PASSWORD)
-    list(APPEND SIGNING_UNDEFINED_VARS MBP_SIGN_JAVA_KEYSTORE_PASSWORD)
-endif()
-if(NOT MBP_SIGN_JAVA_KEY_ALIAS)
-    list(APPEND SIGNING_UNDEFINED_VARS MBP_SIGN_JAVA_KEY_ALIAS)
-endif()
-if(NOT MBP_SIGN_JAVA_KEY_PASSWORD)
-    list(APPEND SIGNING_UNDEFINED_VARS MBP_SIGN_JAVA_KEY_PASSWORD)
+if(NOT MBP_SIGN_CONFIG_PATH)
+    message(FATAL_ERROR
+            "A code signing configuration file must be provided. "
+            "See cmake/SigningConfig.prop.in for more details")
 endif()
 
-if(SIGNING_UNDEFINED_VARS)
-    set(ERROR_MSG "The following code signing variables must be specified:")
-    foreach(SIGNING_UNDEFINED_VAR ${SIGNING_UNDEFINED_VARS})
-        set(ERROR_MSG "${ERROR_MSG}\n- ${SIGNING_UNDEFINED_VAR}")
-    endforeach()
-    message(FATAL_ERROR "${ERROR_MSG}")
-endif()
+read_signing_config(MBP_SIGN_JAVA_ ${MBP_SIGN_CONFIG_PATH})
 
 # Try to prevent using debug key in release builds
 if(${MBP_BUILD_TYPE} STREQUAL release
@@ -104,10 +92,14 @@ execute_process(
     "${JAVA_KEYTOOL}"
     -exportcert
     -keystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
-    -storepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
+    -storepass "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}"
     -alias "${MBP_SIGN_JAVA_KEY_ALIAS}"
     -file "${CMAKE_BINARY_DIR}/java_keystore_cert.des"
+    RESULT_VARIABLE ret
 )
+if(NOT ret EQUAL 0)
+    message(FATAL_ERROR "Failed to extract certificate from keystore")
+endif()
 
 set(PKCS12_KEYSTORE_PATH "${CMAKE_BINARY_DIR}/java_keystore.p12")
 
@@ -120,14 +112,18 @@ execute_process(
     -deststoretype PKCS12
     -srckeystore "${MBP_SIGN_JAVA_KEYSTORE_PATH}"
     -destkeystore "${PKCS12_KEYSTORE_PATH}"
-    -srcstorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
-    -deststorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}"
+    -srcstorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}"
+    -deststorepass "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}"
     -srcalias "${MBP_SIGN_JAVA_KEY_ALIAS}"
     -destalias "${MBP_SIGN_JAVA_KEY_ALIAS}"
-    -srckeypass "${MBP_SIGN_JAVA_KEY_PASSWORD}"
-    -destkeypass "${MBP_SIGN_JAVA_KEY_PASSWORD}"
+    -srckeypass "${MBP_SIGN_JAVA_KEY_PASSPHRASE}"
+    -destkeypass "${MBP_SIGN_JAVA_KEY_PASSPHRASE}"
     -noprompt
+    RESULT_VARIABLE ret
 )
+if(NOT ret EQUAL 0)
+    message(FATAL_ERROR "Failed to convert keystore to PKCS12")
+endif()
 
 # Read des certificate as hex
 file(
