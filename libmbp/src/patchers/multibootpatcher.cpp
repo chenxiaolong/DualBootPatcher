@@ -168,6 +168,11 @@ bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
     return ret;
 }
 
+struct CopySpec {
+    std::string source;
+    std::string target;
+};
+
 bool MultiBootPatcher::Impl::patchZip()
 {
     std::unordered_set<std::string> excludeFromPass1;
@@ -215,10 +220,26 @@ bool MultiBootPatcher::Impl::patchZip()
 
     if (cancelled) return false;
 
-    // +2 for mbtool_recovery (update-binary) and sig
-    // +1 for bb-wrapper.sh
+    std::vector<CopySpec> toCopy{
+        {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery",
+            "META-INF/com/google/android/update-binary"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery.sig",
+            "META-INF/com/google/android/update-binary.sig"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh",
+            "multiboot/bb-wrapper.sh"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh.sig",
+            "multiboot/bb-wrapper.sh.sig"
+        }
+    };
+
     // +1 for info.prop
-    maxFiles = stats.files + 4;
+    maxFiles = stats.files + toCopy.size() + 1;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -244,48 +265,17 @@ bool MultiBootPatcher::Impl::patchZip()
 
     io::deleteRecursively(tempDir);
 
-    if (cancelled) return false;
+    for (const CopySpec &spec : toCopy) {
+        if (cancelled) return false;
 
-    updateFiles(++files, maxFiles);
-    updateDetails("META-INF/com/google/android/update-binary");
+        updateFiles(++files, maxFiles);
+        updateDetails(spec.target);
 
-    // Add mbtool_recovery
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("META-INF/com/google/android/update-binary.sig");
-
-    // Add mbtool_recovery.sig
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary.sig",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery.sig");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateFiles(++files, maxFiles);
-    updateDetails("multiboot/bb-wrapper.sh");
-
-    // Add bb-wrapper.sh
-    result = MinizipUtils::addFile(
-        zf, "multiboot/bb-wrapper.sh",
-        pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
+        result = MinizipUtils::addFile(zf, spec.target, spec.source);
+        if (result != ErrorCode::NoError) {
+            error = result;
+            return false;
+        }
     }
 
     if (cancelled) return false;

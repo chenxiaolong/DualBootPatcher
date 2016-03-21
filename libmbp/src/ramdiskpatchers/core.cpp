@@ -86,15 +86,11 @@ bool CoreRP::addMbtool()
     std::string sigPath(mbtoolPath);
     sigPath += ".sig";
 
-    if (m_impl->cpio->exists(mbtool)) {
-        m_impl->cpio->remove(mbtool);
-    }
-    if (m_impl->cpio->exists(sig)) {
-        m_impl->cpio->remove(sig);
-    }
+    m_impl->cpio->remove(mbtool);
+    m_impl->cpio->remove(sig);
 
     if (!m_impl->cpio->addFile(mbtoolPath, mbtool, 0750)
-            || !m_impl->cpio->addFile(sigPath, sig, 0750)) {
+            || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
@@ -106,26 +102,25 @@ bool CoreRP::addExfat()
 {
     const std::string mount("sbin/mount.exfat");
     const std::string fsck("sbin/fsck.exfat");
+    const std::string mountSig("sbin/mount.exfat.sig");
+    const std::string fsckSig("sbin/fsck.exfat.sig");
 
     std::string mountPath(m_impl->pc->dataDirectory());
     mountPath += "/binaries/android/";
     mountPath += m_impl->info->device()->architecture();
     mountPath += "/mount.exfat";
+    std::string sigPath(mountPath);
+    sigPath += ".sig";
 
-    if (m_impl->cpio->exists(mount)) {
-        m_impl->cpio->remove(mount);
-    }
+    m_impl->cpio->remove(mount);
+    m_impl->cpio->remove(fsck);
+    m_impl->cpio->remove(mountSig);
+    m_impl->cpio->remove(fsckSig);
 
-    if (m_impl->cpio->exists(fsck)) {
-        m_impl->cpio->remove(fsck);
-    }
-
-    if (!m_impl->cpio->addFile(mountPath, mount, 0750)) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    if (!m_impl->cpio->addSymlink("mount.exfat", fsck)) {
+    if (!m_impl->cpio->addFile(mountPath, mount, 0750)
+            || !m_impl->cpio->addFile(sigPath, mountSig, 0640)
+            || !m_impl->cpio->addSymlink("mount.exfat", fsck)
+            || !m_impl->cpio->addSymlink("mount.exfat.sig", fsckSig)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
@@ -141,12 +136,8 @@ bool CoreRP::setUpInitWrapper()
         return true;
     }
 
-    if (!m_impl->cpio->rename("init", "init.orig")) {
-        m_impl->error = m_impl->cpio->error();
-        return false;
-    }
-
-    if (!m_impl->cpio->addSymlink("mbtool", "init")) {
+    if (!m_impl->cpio->rename("init", "init.orig")
+            || !m_impl->cpio->addSymlink("mbtool", "init")) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }

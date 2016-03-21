@@ -192,6 +192,11 @@ static bool convertToInt(const char *str, int *out)
 }
 #endif
 
+struct CopySpec {
+    std::string source;
+    std::string target;
+};
+
 bool OdinPatcher::Impl::patchTar()
 {
 #ifdef __ANDROID__
@@ -263,91 +268,54 @@ bool OdinPatcher::Impl::patchTar()
         return false;
     }
 
+    std::vector<CopySpec> toCopy{
+        {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/odinupdater",
+            "META-INF/com/google/android/update-binary.orig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/odinupdater.sig",
+            "META-INF/com/google/android/update-binary.orig.sig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/fuse-sparse",
+            "fuse-sparse"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/fuse-sparse.sig",
+            "fuse-sparse.sig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery",
+            "META-INF/com/google/android/update-binary"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery.sig",
+            "META-INF/com/google/android/update-binary.sig"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh",
+            "multiboot/bb-wrapper.sh"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh.sig",
+            "multiboot/bb-wrapper.sh.sig"
+        }
+    };
+
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
     ErrorCode result;
 
-    if (cancelled) return false;
+    for (const CopySpec &spec : toCopy) {
+        if (cancelled) return false;
 
-    updateDetails("META-INF/com/google/android/update-binary.orig");
+        updateDetails(spec.target);
 
-    // Add odinupdater
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary.orig",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("META-INF/com/google/android/update-binary.orig.sig");
-
-    // Add odinupdater.sig
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary.orig",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater.sig");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("fuse-sparse");
-
-    // Add fuse-sparse
-    result = MinizipUtils::addFile(
-            zf, "fuse-sparse",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("META-INF/com/google/android/update-binary");
-
-    // Add mbtool_recovery
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("META-INF/com/google/android/update-binary.sig");
-
-    // Add mbtool_recovery.sig
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery.sig");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("multiboot/bb-wrapper.sh");
-
-    // Add bb-wrapper.sh
-    result = MinizipUtils::addFile(
-            zf, "multiboot/bb-wrapper.sh",
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
+        result = MinizipUtils::addFile(zf, spec.target, spec.source);
+        if (result != ErrorCode::NoError) {
+            error = result;
+            return false;
+        }
     }
 
     if (cancelled) return false;
