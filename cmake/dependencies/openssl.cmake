@@ -1,10 +1,11 @@
 if(ANDROID)
+    message(STATUS "NOTE: Android actually uses BoringSSL")
     set(MBP_OPENSSL_INCLUDES
-        ${THIRD_PARTY_OPENSSL_DIR}/${ANDROID_ABI}/include)
+        ${THIRD_PARTY_BORINGSSL_DIR}/${ANDROID_ABI}/include)
     set(MBP_OPENSSL_CRYPTO_LIBRARY
-        ${THIRD_PARTY_OPENSSL_DIR}/${ANDROID_ABI}/lib/libcrypto.a)
+        ${THIRD_PARTY_BORINGSSL_DIR}/${ANDROID_ABI}/lib/libcrypto.a)
     set(MBP_OPENSSL_SSL_LIBRARY
-        ${THIRD_PARTY_OPENSSL_DIR}/${ANDROID_ABI}/lib/libssl.a)
+        ${THIRD_PARTY_BORINGSSL_DIR}/${ANDROID_ABI}/lib/libssl.a)
 else()
     find_package(OpenSSL)
     if(NOT OPENSSL_FOUND)

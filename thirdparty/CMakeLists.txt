@@ -221,18 +221,18 @@ else()
 endif()
 
 ################################################################################
-# openssl for Android
+# boringssl for Android
 ################################################################################
 
-set(OPENSSL_VER "1.0.2d-1")
+set(BORINGSSL_VER "r2486.a2d4c0c-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(openssl ${OPENSSL_VER} armeabi-v7a SHA512=a2b0e64d156dd9d361a66f5009ac616bbe4890449ba8fac9c603e1e4741eaa52b6f0208fc6dc675f918fd979e4cda720667792cf15c5c7797ed11bf60dbe9d96)
-    get_prebuilt(openssl ${OPENSSL_VER} arm64-v8a   SHA512=73bf3af333d16e843ea36f93a03e885ce02de5aef980038bd1bc491e24c431a08b8cc5d32dac9c1d0379505dab05c424cfa47c101dca19d6bc939042b96bc0d1)
-    get_prebuilt(openssl ${OPENSSL_VER} x86         SHA512=a9e10a0bd19c6c7f7b01547685807b2610e9250b34fe1c1b4f51b94f0e2b42b3b58b01fb756012a205b5a163ca9cb628152d8e7306c85c756c338ecc063f63d5)
-    get_prebuilt(openssl ${OPENSSL_VER} x86_64      SHA512=c2d2362274ff72234e8922383115a6466a7f91281c4a8cada7c12c1f4473864dc76179a2c140cfeed0d22ac21a88a268494fec497af620a19030007c3c026305)
+    get_prebuilt(boringssl ${BORINGSSL_VER} armeabi-v7a SHA512=3e765d4153718eb332a78af2f933c8fc77740e7c7f029221132eaf52bb1743c55e98df69a263d0374685ee8e1d804b7b2af211cfbbe76c1e0400e75e64786c88)
+    get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=5fc9e4834ccbd869b56187477e553fa318d9e9489eae5b759cd8141075209df5f06919491012b6766a4e7427db107ab4437e6557656fbb215ff67173fae4cd88)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=72695bed3ed19f779f6dda21bcd604a5e24861e7bda103b2db1d7d807081ff25a201ee3fbfcfec40c006d8a72967ee4e3c7af88a31be8eef857b251c1c8f24df)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=646d1c9a9ca358ddb6d1382aa09a35036a31b6825b66964630e5b71f242aa5447585c55192b2e8d76ea5b15e58067b11739506c0d0d4695955338c1ec3424a4d)
 else()
-    set(THIRD_PARTY_OPENSSL_DIR "${PREBUILTS_DIR}/openssl/${OPENSSL_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_BORINGSSL_DIR "${PREBUILTS_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
