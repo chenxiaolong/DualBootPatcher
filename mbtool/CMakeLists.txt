@@ -80,6 +80,7 @@ set(MBTOOL_BASE_SOURCES
     romconfig.cpp
     roms.cpp
     sepolpatch.cpp
+    signature.cpp
     switcher.cpp
     uevent_dump.cpp
     wipe.cpp
@@ -179,6 +180,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool
         miniadbd-static
         mbutil-static
+        mbsign-static
         mblog-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
