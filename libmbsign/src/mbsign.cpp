@@ -23,6 +23,9 @@
 #include <cstring>
 
 #include <openssl/err.h>
+#ifdef OPENSSL_IS_BORINGSSL
+#include <openssl/mem.h>
+#endif
 #include <openssl/pem.h>
 #include <openssl/pkcs12.h>
 
@@ -330,12 +333,20 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
 
     EVP_MD_CTX *mctx = nullptr;
     EVP_PKEY_CTX *pctx = nullptr;
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX ctx;
+#else
     BIO *bio_md = nullptr;
+#endif
     BIO *bio_input = nullptr;
     unsigned char *buf = nullptr;
     size_t len;
     int n;
 
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_init(&ctx);
+    mctx = &ctx;
+#else
     bio_md = BIO_new(BIO_f_md());
     if (!bio_md) {
         openssl_log_errors();
@@ -347,6 +358,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
         openssl_log_errors();
         goto error;
     }
+#endif
 
     if (!EVP_DigestSignInit(mctx, &pctx, md_type, nullptr, pkey)) {
         LOGE("Failed to set message digest context");
@@ -361,7 +373,11 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
         goto error;
     }
 
+#ifdef OPENSSL_IS_BORINGSSL
+    bio_input = bio_data_in;
+#else
     bio_input = BIO_push(bio_md, bio_data_in);
+#endif
 
     while (true) {
         n = BIO_read(bio_input, buf, BUFSIZE);
@@ -373,6 +389,13 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
         if (n == 0) {
             break;
         }
+#ifdef OPENSSL_IS_BORINGSSL
+        if (!EVP_DigestUpdate(mctx, buf, n)) {
+            LOGE("Failed to update digest");
+            openssl_log_errors();
+            goto error;
+        }
+#endif
     }
 
     len = BUFSIZE;
@@ -388,13 +411,21 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
         goto error;
     }
 
-    OPENSSL_free(buf);
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_cleanup(&ctx);
+#else
     BIO_free(bio_md);
+#endif
+    OPENSSL_free(buf);
     return true;
 
 error:
-    OPENSSL_free(buf);
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_cleanup(&ctx);
+#else
     BIO_free(bio_md);
+#endif
+    OPENSSL_free(buf);
     return false;
 }
 
@@ -418,13 +449,21 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
 
     EVP_MD_CTX *mctx = nullptr;
     EVP_PKEY_CTX *pctx = nullptr;
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX ctx;
+#else
     BIO *bio_md = nullptr;
+#endif
     BIO *bio_input = nullptr;
     unsigned char *buf = nullptr;
     unsigned char *sigbuf = nullptr;
     int siglen;
     int n;
 
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_init(&ctx);
+    mctx = &ctx;
+#else
     bio_md = BIO_new(BIO_f_md());
     if (!bio_md) {
         openssl_log_errors();
@@ -436,6 +475,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         openssl_log_errors();
         goto error;
     }
+#endif
 
     if (!EVP_DigestVerifyInit(mctx, &pctx, md_type, nullptr, pkey)) {
         LOGE("Failed to set message digest context");
@@ -464,7 +504,11 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
+#ifdef OPENSSL_IS_BORINGSSL
+    bio_input = bio_data_in;
+#else
     bio_input = BIO_push(bio_md, bio_data_in);
+#endif
 
     while (true) {
         n = BIO_read(bio_input, buf, BUFSIZE);
@@ -476,6 +520,13 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         if (n == 0) {
             break;
         }
+#ifdef OPENSSL_IS_BORINGSSL
+        if (!EVP_DigestUpdate(mctx, buf, n)) {
+            LOGE("Failed to update digest");
+            openssl_log_errors();
+            goto error;
+        }
+#endif
     }
 
     n = EVP_DigestVerifyFinal(mctx, sigbuf, siglen);
@@ -489,13 +540,21 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_cleanup(&ctx);
+#else
     BIO_free(bio_md);
+#endif
     OPENSSL_free(sigbuf);
     OPENSSL_free(buf);
     return true;
 
 error:
+#ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX_cleanup(&ctx);
+#else
     BIO_free(bio_md);
+#endif
     OPENSSL_free(sigbuf);
     OPENSSL_free(buf);
     return false;
