@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -64,29 +64,50 @@ int run_shell_command(const std::string &command)
 
 int run_command(const std::vector<std::string> &argv)
 {
-    return run_command2(argv, std::string(), nullptr, nullptr);
+    if (argv.empty()) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return run_command2(argv[0], argv, std::string(), nullptr, nullptr);
 }
 
 int run_command_cb(const std::vector<std::string> &argv,
                    OutputCb cb, void *data)
 {
-    return run_command2(argv, std::string(), cb, data);
+    if (argv.empty()) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return run_command2(argv[0], argv, std::string(), cb, data);
 }
 
 int run_command_chroot(const std::string &dir,
                        const std::vector<std::string> &argv)
 {
-    return run_command2(argv, dir, nullptr, nullptr);
+    if (argv.empty()) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return run_command2(argv[0], argv, dir, nullptr, nullptr);
 }
 
 int run_command_chroot_cb(const std::string &dir,
                           const std::vector<std::string> &argv,
                           OutputCb cb, void *data)
 {
-    return run_command2(argv, dir, cb, data);
+    if (argv.empty()) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return run_command2(argv[0], argv, dir, cb, data);
 }
 
-int run_command2(const std::vector<std::string> &argv,
+int run_command2(const std::string &path,
+                 const std::vector<std::string> &argv,
                  const std::string &chroot_dir,
                  OutputCb cb, void *data)
 {
@@ -136,7 +157,8 @@ int run_command2(const std::vector<std::string> &argv,
                 close(stdio_fds[1]);
             }
 
-            if (execvp(argv_c[0], const_cast<char * const *>(argv_c.data())) < 0) {
+            if (execvp(path.c_str(),
+                       const_cast<char * const *>(argv_c.data())) < 0) {
                 LOGE("Failed to exec: %s", strerror(errno));
             }
             _exit(127);

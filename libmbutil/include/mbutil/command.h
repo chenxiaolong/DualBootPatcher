@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -38,7 +38,8 @@ int run_command_chroot(const std::string &dir,
 int run_command_chroot_cb(const std::string &dir,
                           const std::vector<std::string> &argv,
                           OutputCb cb, void *data);
-int run_command2(const std::vector<std::string> &argv,
+int run_command2(const std::string &path,
+                 const std::vector<std::string> &argv,
                  const std::string &chroot_dir,
                  OutputCb cb, void *data);
 
