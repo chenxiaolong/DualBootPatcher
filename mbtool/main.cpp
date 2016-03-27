@@ -38,6 +38,7 @@
 #include "miniadbd.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
+#include "signature.h"
 #include "uevent_dump.h"
 #endif
 #include "version.h"
@@ -79,6 +80,7 @@ struct tool tools[] = {
     { "miniadbd", mb::miniadbd_main },
     { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
+    { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
 #endif
     { nullptr, nullptr }
