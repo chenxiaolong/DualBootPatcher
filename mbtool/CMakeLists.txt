@@ -189,6 +189,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool_recovery
         miniadbd-static
         mbutil-static
+        mbsign-static
         mblog-static
         mbp-static
         mbpio-static

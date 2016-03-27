@@ -71,6 +71,7 @@
 #include "image.h"
 #include "main.h"
 #include "multiboot.h"
+#include "signature.h"
 #include "switcher.h"
 #include "wipe.h"
 
@@ -93,13 +94,14 @@
 //#define DEBUG_UPDATER_WRAPPER_ARGS "-f" // Comma-separated strings
 
 
+#define HELPER_TOOL             "/update-binary-tool"
+#define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
+#define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
+#define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
+#define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
+
 namespace mb {
 
-const std::string Installer::HELPER_TOOL = "/update-binary-tool";
-const std::string Installer::UPDATE_BINARY =
-        "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
-const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::CANCELLED = "cancelled";
 
 
@@ -498,13 +500,30 @@ bool Installer::mount_efs() const
 bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
-        { UPDATE_BINARY + ".orig", _temp + "/updater"       },
-        { MULTIBOOT_BBWRAPPER,     _temp + "/bb-wrapper.sh" },
-        { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     },
+        { UPDATE_BINARY_ORIG,          _temp + "/updater"           },
+        { UPDATE_BINARY,               _temp + "/mbtool"            },
+        { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
+        { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
+        { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
+        { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
     };
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
+        return false;
+    }
+
+    SigVerifyResult result;
+    result = verify_signature((_temp + "/mbtool").c_str(),
+                              (_temp + "/mbtool.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mbtool signature");
+        return false;
+    }
+    result = verify_signature((_temp + "/bb-wrapper.sh").c_str(),
+                              (_temp + "/bb-wrapper.sh.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid busybox wrapper signature");
         return false;
     }
 
