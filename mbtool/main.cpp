@@ -166,6 +166,10 @@ int main_normal(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
 
     umask(0);
 
