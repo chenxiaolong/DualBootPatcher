@@ -27,6 +27,7 @@
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 #include "reboot_generated.h"
+#include "signed_exec_generated.h"
 
 namespace mbtool {
 namespace daemon {
@@ -144,6 +145,15 @@ struct PathGetDirectorySizeResponse;
 namespace mbtool {
 namespace daemon {
 namespace v3 {
+struct SignedExecRequest;
+struct SignedExecOutputResponse;
+struct SignedExecResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
 struct MbGetVersionRequest;
 struct MbGetVersionResponse;
 }  // namespace v3
@@ -237,12 +247,13 @@ enum RequestType {
   RequestType_MbWipeRomRequest = 20,
   RequestType_MbGetPackagesCountRequest = 21,
   RequestType_RebootRequest = 22,
+  RequestType_SignedExecRequest = 23,
   RequestType_MIN = RequestType_NONE,
-  RequestType_MAX = RequestType_RebootRequest
+  RequestType_MAX = RequestType_SignedExecRequest
 };
 
 inline const char **EnumNamesRequestType() {
-  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", nullptr };
+  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", "SignedExecRequest", nullptr };
   return names;
 }
 
@@ -313,6 +324,7 @@ inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *union
     case RequestType_MbWipeRomRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbWipeRomRequest *>(union_obj));
     case RequestType_MbGetPackagesCountRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetPackagesCountRequest *>(union_obj));
     case RequestType_RebootRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::RebootRequest *>(union_obj));
+    case RequestType_SignedExecRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecRequest *>(union_obj));
     default: return false;
   }
 }
