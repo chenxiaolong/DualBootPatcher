@@ -69,7 +69,6 @@
 
 // Local
 #include "image.h"
-#include "main.h"
 #include "multiboot.h"
 #include "signature.h"
 #include "switcher.h"
@@ -850,6 +849,7 @@ bool Installer::run_real_updater()
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
 
             execvpe(argv_c[0], const_cast<char * const *>(argv_c.data()), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
             _exit(127);
         } else {
             if (!_passthrough) {
@@ -1375,7 +1375,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     // Copy ourself for the real update-binary to use
-    util::copy_file(mb_self_get_path(), in_chroot(HELPER_TOOL),
+    util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 

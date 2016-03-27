@@ -17,8 +17,6 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
-
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>
@@ -44,9 +42,6 @@
 #include "version.h"
 
 #include "mblog/logging.h"
-
-
-const char *main_argv0 = nullptr;
 
 
 int main_multicall(int argc, char *argv[]);
@@ -171,7 +166,6 @@ int main_normal(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    main_argv0 = argv[0];
 
     umask(0);
 
@@ -185,9 +179,4 @@ int main(int argc, char *argv[])
     } else {
         return main_multicall(argc, argv);
     }
-}
-
-const char * mb_self_get_path(void)
-{
-    return main_argv0;
 }
