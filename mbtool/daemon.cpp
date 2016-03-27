@@ -265,20 +265,25 @@ static void run_daemon_fork(void)
 
     LOGD("Started daemon in background");
 
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    if (open("/dev/null", O_RDONLY) < 0) {
+    int fd = open("/dev/null", O_RDWR);
+    if (fd < 0) {
+        LOGE("Failed to open /dev/null: %s", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+    if (dup2(fd, STDIN_FILENO) < 0) {
         LOGE("Failed to reopen stdin: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
-    if (open("/dev/null", O_WRONLY) < 0) {
+    if (dup2(fd, STDOUT_FILENO) < 0) {
         LOGE("Failed to reopen stdout: %s", strerror(errno));
         _exit(EXIT_FAILURE);
     }
-    if (open("/dev/null", O_RDWR) < 0) {
+    if (dup2(fd, STDERR_FILENO) < 0) {
         LOGE("Failed to reopen stderr: %s", strerror(errno));
         _exit(EXIT_FAILURE);
+    }
+    if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
+        close(fd);
     }
 
     run_daemon();
