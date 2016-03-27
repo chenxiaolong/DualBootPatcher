@@ -12,6 +12,7 @@ include "v3/path_copy.fbs";
 include "v3/path_selinux_get_label.fbs";
 include "v3/path_selinux_set_label.fbs";
 include "v3/path_get_directory_size.fbs";
+include "v3/signed_exec.fbs";
 include "v3/mb_get_version.fbs";
 include "v3/mb_get_installed_roms.fbs";
 include "v3/mb_get_booted_rom_id.fbs";
@@ -54,7 +55,9 @@ union ResponseType {
     MbSetKernelResponse,
     MbWipeRomResponse,
     MbGetPackagesCountResponse,
-    RebootResponse
+    RebootResponse,
+    SignedExecOutputResponse,
+    SignedExecResponse
 }
 
 table Response {
