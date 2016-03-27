@@ -1700,7 +1700,7 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        int fd_source = open(temp_boot_img.c_str(), O_RDONLY);
+        int fd_source = open(temp_boot_img.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd_source < 0) {
             LOGE("Failed to open %s: %s",
                  temp_boot_img.c_str(), strerror(errno));
@@ -1709,7 +1709,7 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_source = util::finally([&] { close(fd_source); });
 
-        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY);
+        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY | O_CLOEXEC);
         if (fd_boot < 0) {
             LOGE("Failed to open %s: %s",
                  _boot_block_dev.c_str(), strerror(errno));
@@ -1718,7 +1718,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_boot = util::finally([&] { close(fd_boot); });
 
-        int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
+        int fd_backup = open(path.c_str(),
+                             O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0775);
         if (fd_backup < 0) {
             LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
             return ProceedState::Fail;

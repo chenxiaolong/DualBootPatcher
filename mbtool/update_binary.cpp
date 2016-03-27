@@ -180,7 +180,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
     if (stat("/sys/fs/selinux", &sb) == 0) {
         if (!patch_sepolicy()) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
-            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY);
+            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {
                 write(fd, "0", 1);
                 close(fd);

@@ -298,7 +298,7 @@ static bool backup_sepolicy(const std::string backup_path)
 
 static bool restore_sepolicy(const std::string &backup_path)
 {
-    int fd = open(backup_path.c_str(), O_RDONLY);
+    int fd = open(backup_path.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         fprintf(stderr, "Failed to open backup SELinux policy file: %s\n",
                 strerror(errno));
