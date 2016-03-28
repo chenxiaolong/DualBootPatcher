@@ -24,172 +24,17 @@ import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
 import com.stericson.RootTools.RootTools;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 
 public final class CommandUtils {
     private static final String TAG = CommandUtils.class.getSimpleName();
-
-    public static final String STREAM_STDOUT = "stdout";
-    public static final String STREAM_STDERR = "stderr";
-
-    public interface CommandListener {
-        void onNewOutputLine(String line, String stream);
-
-        void onCommandCompletion(CommandResult result);
-    }
-
-    public static class CommandParams {
-        public String[] command;
-        public String[] environment;
-        public File cwd;
-        public CommandListener listener;
-        public LiveOutputFilter filter;
-        public boolean logStdout = true;
-        public boolean logStderr = true;
-    }
 
     public static class CommandResult {
         public int exitCode;
 
         // The output filter can put things here
         public Bundle data = new Bundle();
-    }
-
-    public interface LiveOutputFilter {
-        void onStdoutLine(CommandParams params, CommandResult result, String line);
-
-        void onStderrLine(CommandParams params, CommandResult result, String line);
-    }
-
-    public static class CommandRunner extends Thread {
-        private BufferedReader stdout = null;
-        private BufferedReader stderr = null;
-
-        private final CommandParams mParams;
-        private CommandResult mResult;
-
-        public CommandRunner(CommandParams params) {
-            super();
-            mParams = params;
-        }
-
-        public CommandResult getResult() {
-            return mResult;
-        }
-
-        @Override
-        public void run() {
-            mResult = new CommandResult();
-
-            try {
-                Log.v(TAG, "Command: " + Arrays.toString(mParams.command));
-
-                ProcessBuilder pb = new ProcessBuilder(
-                        Arrays.asList(mParams.command));
-
-                if (mParams.environment != null) {
-                    Log.v(TAG,
-                            "Environment: "
-                                    + Arrays.toString(mParams.environment));
-
-                    for (String s : mParams.environment) {
-                        String[] split = s.split("=");
-                        pb.environment().put(split[0], split[1]);
-                    }
-                } else {
-                    Log.v(TAG, "Environment: Inherited");
-                }
-
-                if (mParams.cwd != null) {
-                    Log.v(TAG, "Working directory: " + mParams.cwd);
-
-                    pb.directory(mParams.cwd);
-                } else {
-                    Log.v(TAG, "Working directory: Inherited");
-                }
-
-                Process p = pb.start();
-
-                stdout = new BufferedReader(new InputStreamReader(
-                        p.getInputStream()));
-                stderr = new BufferedReader(new InputStreamReader(
-                        p.getErrorStream()));
-
-                // Read stdout and stderr at the same time
-                Thread stdoutReader = new Thread() {
-                    @Override
-                    public void run() {
-                        String s;
-                        try {
-                            while ((s = stdout.readLine()) != null) {
-                                if (mParams.logStdout) {
-                                    Log.d(TAG, "Standard output: " + s);
-                                }
-
-                                if (mParams.filter != null) {
-                                    mParams.filter.onStdoutLine(mParams,
-                                            mResult, s);
-                                }
-
-                                if (mParams.listener != null) {
-                                    mParams.listener.onNewOutputLine(s,
-                                            STREAM_STDOUT);
-                                }
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                };
-
-                Thread stderrReader = new Thread() {
-                    @Override
-                    public void run() {
-                        String s;
-                        try {
-                            while ((s = stderr.readLine()) != null) {
-                                if (mParams.logStderr) {
-                                    Log.d(TAG, "Standard error: " + s);
-                                }
-
-                                if (mParams.filter != null) {
-                                    mParams.filter.onStderrLine(mParams,
-                                            mResult, s);
-                                }
-
-                                if (mParams.listener != null) {
-                                    mParams.listener.onNewOutputLine(s,
-                                            STREAM_STDERR);
-                                }
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                };
-
-                stdoutReader.start();
-                stderrReader.start();
-                stdoutReader.join();
-                stderrReader.join();
-                p.waitFor();
-                mResult.exitCode = p.exitValue();
-
-                // TODO: Should this be done on another thread?
-                if (mParams.listener != null) {
-                    mParams.listener.onCommandCompletion(mResult);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "Process was interrupted", e);
-            }
-        }
     }
 
     public interface RootCommandListener {
@@ -283,22 +128,6 @@ public final class CommandUtils {
         }
     }
 
-    public static void waitForCommand(CommandRunner cmd) {
-        try {
-            cmd.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void waitForRootCommand(RootCommandRunner cmd) {
-        try {
-            cmd.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static int runRootCommand(String command) {
         RootCommandParams params = new RootCommandParams();
         params.command = command;
@@ -318,24 +147,5 @@ public final class CommandUtils {
         }
 
         return -1;
-    }
-
-    public static String quoteArg(String arg) {
-        return "'" + arg.replace("'", "'\"'\"'") + "'";
-    }
-
-    public static class FullRootOutputListener implements RootCommandListener {
-        private final StringBuilder mOutput = new StringBuilder();
-
-        @Override
-        public void onNewOutputLine(String line) {
-            mOutput.append(line);
-            mOutput.append(System.getProperty("line.separator"));
-        }
-
-        @Override
-        public void onCommandCompletion(CommandResult result) {
-            result.data.putString("output", mOutput.toString());
-        }
     }
 }
