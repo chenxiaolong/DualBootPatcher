@@ -95,6 +95,10 @@ import mbtool.daemon.v3.Request;
 import mbtool.daemon.v3.RequestType;
 import mbtool.daemon.v3.Response;
 import mbtool.daemon.v3.ResponseType;
+import mbtool.daemon.v3.SignedExecOutputResponse;
+import mbtool.daemon.v3.SignedExecRequest;
+import mbtool.daemon.v3.SignedExecResponse;
+import mbtool.daemon.v3.SignedExecResult;
 import mbtool.daemon.v3.StructStat;
 
 public class MbtoolSocket {
@@ -1232,6 +1236,112 @@ public class MbtoolSocket {
         }
     }
 
+    public interface SignedExecOutputCallback {
+        void onOutputLine(String line);
+    }
+
+    public static class SignedExecCompletion {
+        public short result;
+        public String errorMsg;
+        public int exitStatus;
+        public int termSig;
+    }
+
+    public synchronized SignedExecCompletion signedExec(Context context, String path,
+                                                        String sigPath, String arg0, String[] args,
+                                                        SignedExecOutputCallback callback) throws IOException {
+        connect(context);
+
+        try {
+            // Create request
+            FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+            int fbPath = builder.createString(path);
+            int fbSigPath = builder.createString(sigPath);
+            int fbArg0 = 0;
+            int fbArgv = 0;
+            if (arg0 != null) {
+                fbArg0 = builder.createString(arg0);
+            }
+            if (args != null) {
+                int[] argsOffsets = new int[args.length];
+                for (int i = 0; i < args.length; i++) {
+                    argsOffsets[i] = builder.createString(args[i]);
+                }
+
+                fbArgv = SignedExecRequest.createArgsVector(builder, argsOffsets);
+            }
+
+            SignedExecRequest.startSignedExecRequest(builder);
+            SignedExecRequest.addBinaryPath(builder, fbPath);
+            SignedExecRequest.addSignaturePath(builder, fbSigPath);
+            SignedExecRequest.addArg0(builder, fbArg0);
+            SignedExecRequest.addArgs(builder, fbArgv);
+            int fbRequest = SignedExecRequest.endSignedExecRequest(builder);
+
+            // Send request
+
+            Request.startRequest(builder);
+            Request.addRequestType(builder, RequestType.SignedExecRequest);
+            Request.addRequest(builder, fbRequest);
+            builder.finish(Request.endRequest(builder));
+
+            SocketUtils.writeBytes(mSocketOS, builder.sizedByteArray());
+
+            // Loop until we get the completion response
+            while (true) {
+                byte[] responseBytes = SocketUtils.readBytes(mSocketIS);
+                ByteBuffer bb = ByteBuffer.wrap(responseBytes);
+                Response root = Response.getRootAsResponse(bb);
+
+                Table table;
+
+                switch (root.responseType()) {
+                case ResponseType.SignedExecResponse:
+                    table = new SignedExecResponse();
+                    break;
+                case ResponseType.SignedExecOutputResponse:
+                    table = new SignedExecOutputResponse();
+                    break;
+                default:
+                    throw new IOException("Invalid response type: " + root.responseType());
+                }
+
+                table = root.response(table);
+                if (table == null) {
+                    throw new IOException("Invalid union data");
+                }
+
+                if (root.responseType() == ResponseType.SignedExecResponse) {
+                    SignedExecResponse response = (SignedExecResponse) table;
+
+                    SignedExecCompletion result = new SignedExecCompletion();
+                    result.result = response.result();
+                    result.errorMsg = response.errorMsg();
+                    result.exitStatus = response.exitStatus();
+                    result.termSig = response.termSig();
+
+                    if (response.result() != SignedExecResult.PROCESS_EXITED
+                            && response.result() != SignedExecResult.PROCESS_KILLED_BY_SIGNAL) {
+                        Log.e(TAG, "Signed exec error: " + response.errorMsg());
+                    }
+
+                    return result;
+                } else if (root.responseType() == ResponseType.SignedExecOutputResponse) {
+                    SignedExecOutputResponse response = (SignedExecOutputResponse) table;
+                    if (callback != null) {
+                        String line = response.line();
+                        if (line != null) {
+                            callback.onOutputLine(line);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            disconnect();
+            throw e;
+        }
+    }
+
     // Private helper functions
 
     @NonNull
@@ -1303,6 +1413,12 @@ public class MbtoolSocket {
             break;
         case ResponseType.PathGetDirectorySizeResponse:
             table = new PathGetDirectorySizeResponse();
+            break;
+        case ResponseType.SignedExecResponse:
+            table = new SignedExecResponse();
+            break;
+        case ResponseType.SignedExecOutputResponse:
+            table = new SignedExecOutputResponse();
             break;
         case ResponseType.MbGetVersionResponse:
             table = new MbGetVersionResponse();
