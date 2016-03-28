@@ -215,6 +215,17 @@ static bool run_daemon(void)
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
+            // Restore default SIGCHLD handler
+            struct sigaction sa;
+            sa.sa_handler = SIG_DFL;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            if (sigaction(SIGCHLD, &sa, 0) < 0) {
+                LOGE("Failed to set default SIGCHLD handler: %s",
+                     strerror(errno));
+                _exit(127);
+            }
+
             bool ret = client_connection(client_fd);
             close(client_fd);
             _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
