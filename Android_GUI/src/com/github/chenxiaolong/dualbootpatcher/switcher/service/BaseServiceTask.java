@@ -20,20 +20,17 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 import android.content.Context;
 
 import java.lang.ref.WeakReference;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class BaseServiceTask implements Runnable {
     private final int mTaskId;
     private final WeakReference<Context> mContext;
-    private AtomicReference<TaskState> mState = new AtomicReference<>(TaskState.NOT_STARTED);
+    private final HashSet<BaseServiceTaskListener> mListeners = new HashSet<>();
+    private final AtomicBoolean mExecuted = new AtomicBoolean(false);
 
     public interface BaseServiceTaskListener {
-    }
-
-    public enum TaskState {
-        NOT_STARTED,
-        RUNNING,
-        FINISHED
     }
 
     public BaseServiceTask(int taskId, Context context) {
@@ -45,24 +42,95 @@ public abstract class BaseServiceTask implements Runnable {
         return mTaskId;
     }
 
-    public TaskState getState() {
-        return mState.get();
-    }
-
     protected Context getContext() {
         // Guaranteed to be non-null until the task has been executed. After run() finishes, the
         // service can die and the context will go away.
         return mContext.get();
     }
 
+    /**
+     * Add listener for this task's events.
+     *
+     * If there are cached events (such as an event with the current progress), they are guaranteed
+     * to be resent before any further events to ensure chronological ordering.
+     *
+     * No cache events will be resent if the listener has already been added.
+     *
+     * @param listener Listener to add
+     * @return Whether the listener was successfully added
+     */
+    public boolean addListener(BaseServiceTaskListener listener) {
+        synchronized (mListeners) {
+            if (mListeners.add(listener)) {
+                onListenerAdded(listener);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Remove listener for this task's events.
+     *
+     * After this method returns, it is guaranteed that no further events will be delivered to the
+     * listener, regardless of which thread is making the call.
+     *
+     * @param listener Listener to remove
+     * @return Whether the listener was successfully removed
+     */
+    public boolean removeListener(BaseServiceTaskListener listener) {
+        synchronized (mListeners) {
+            if (mListeners.remove(listener)) {
+                onListenerRemoved(listener);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Remove all listeners for this task's events
+     *
+     * After this method returns, it is guaranteed that no futher events will be delivered to any
+     * previously added listener, regardless of which thread is making the call.
+     */
+    public void removeAllListeners() {
+        synchronized (mListeners) {
+            Iterator<BaseServiceTaskListener> iter = mListeners.iterator();
+            while (iter.hasNext()) {
+                onListenerRemoved(iter.next());
+                iter.remove();
+            }
+        }
+    }
+
+    protected interface CallbackRunnable {
+        void call(BaseServiceTaskListener listener);
+    }
+
+    protected void forEachListener(CallbackRunnable runnable) {
+        synchronized (mListeners) {
+            for (BaseServiceTaskListener listener : mListeners) {
+                runnable.call(listener);
+            }
+        }
+    }
+
     @Override
     public final void run() {
-        if (!mState.compareAndSet(TaskState.NOT_STARTED, TaskState.RUNNING)) {
+        if (!mExecuted.compareAndSet(false, true)) {
             throw new IllegalStateException("Task " + mTaskId + " has already been executed!");
         }
 
         execute();
-        mState.set(TaskState.FINISHED);
+    }
+
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        // Override to send events upon adding a listener
+    }
+
+    protected void onListenerRemoved(BaseServiceTaskListener listener) {
+        // Override to send events upon removing a listener
     }
 
     protected abstract void execute();

@@ -24,25 +24,51 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 
 public final class CacheWallpaperTask extends BaseServiceTask {
-    public final RomInformation mRomInfo;
-    private final CacheWallpaperTaskListener mListener;
+    private final RomInformation mRomInfo;
 
-    public CacheWallpaperResult mResult;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private CacheWallpaperResult mResult;
 
     public interface CacheWallpaperTaskListener extends BaseServiceTaskListener {
         void onCachedWallpaper(int taskId, RomInformation romInfo, CacheWallpaperResult result);
     }
 
-    public CacheWallpaperTask(int taskId, Context context, RomInformation romInfo,
-                              CacheWallpaperTaskListener listener) {
+    public CacheWallpaperTask(int taskId, Context context, RomInformation romInfo) {
         super(taskId, context);
         mRomInfo = romInfo;
-        mListener = listener;
     }
 
     @Override
     public void execute() {
-        mResult = RomUtils.cacheWallpaper(getContext(), mRomInfo);
-        mListener.onCachedWallpaper(getTaskId(), mRomInfo, mResult);
+        CacheWallpaperResult result = RomUtils.cacheWallpaper(getContext(), mRomInfo);
+
+        synchronized (mStateLock) {
+            mResult = result;
+            sendOnCachedWallpaper();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnCachedWallpaper();
+            }
+        }
+    }
+
+    private void sendOnCachedWallpaper() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((CacheWallpaperTaskListener) listener).onCachedWallpaper(
+                        getTaskId(), mRomInfo, mResult);
+            }
+        });
     }
 }

@@ -35,7 +35,6 @@ import android.view.ViewGroup;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
 
 import org.apache.commons.io.IOUtils;
@@ -46,6 +45,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jackpal.androidterm.emulatorview.EmulatorView;
 import jackpal.androidterm.emulatorview.TermSession;
@@ -151,12 +151,15 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         if (getActivity().isFinishing()) {
             if (mTaskIdFlashZips >= 0) {
                 removeCachedTaskId(mTaskIdFlashZips);
+                mTaskIdFlashZips = -1;
             }
         }
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            mService.unregisterCallback(mCallback);
+            if (mTaskIdFlashZips >= 0) {
+                mService.removeCallback(mTaskIdFlashZips, mCallback);
+            }
         }
 
         // Unbind from our service
@@ -174,9 +177,6 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
 
-        // Register callback
-        mService.registerCallback(mCallback);
-
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
             mService.removeCachedTask(taskId);
@@ -185,17 +185,13 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
 
         if (mTaskIdFlashZips < 0) {
             Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_PENDING_ACTIONS);
-            PendingAction[] actions = new PendingAction[parcelables.length];
-            System.arraycopy(parcelables, 0, actions, 0, parcelables.length);
+            PendingAction[] actions =
+                    Arrays.copyOf(parcelables, parcelables.length, PendingAction[].class);
             mTaskIdFlashZips = mService.flashZips(actions);
+            mService.addCallback(mTaskIdFlashZips, mCallback);
+            mService.enqueueTaskId(mTaskIdFlashZips);
         } else {
-            String[] lines = mService.getResultFlashZipsOutputLines(mTaskIdFlashZips);
-            for (String line : lines) {
-                onNewOutputLine(line);
-            }
-            if (mService.getCachedTaskState(mTaskIdFlashZips) == TaskState.FINISHED) {
-                onFinishedFlashing();
-            }
+            mService.addCallback(mTaskIdFlashZips, mCallback);
         }
     }
 

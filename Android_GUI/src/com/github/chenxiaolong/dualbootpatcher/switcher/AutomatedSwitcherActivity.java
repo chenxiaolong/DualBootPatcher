@@ -121,7 +121,9 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            mService.unregisterCallback(mCallback);
+            if (mTaskIdSwitchRom >= 0) {
+                mService.removeCallback(mTaskIdSwitchRom, mCallback);
+            }
         }
 
         // Unbind from our service
@@ -139,14 +141,15 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
 
-        // Register callback
-        mService.registerCallback(mCallback);
-
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
             mService.removeCachedTask(taskId);
         }
         mTaskIdsToRemove.clear();
+
+        if (mTaskIdSwitchRom >= 0) {
+            mService.addCallback(mTaskIdSwitchRom, mCallback);
+        }
 
         if (mInitialRun) {
             boolean shouldShow = mPrefs.getBoolean(PREF_SHOW_CONFIRM_DIALOG, true);
@@ -248,6 +251,8 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), "automated_switch_rom_waiting");
 
         mTaskIdSwitchRom = mService.switchRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
+        mService.addCallback(mTaskIdSwitchRom, mCallback);
+        mService.enqueueTaskId(mTaskIdSwitchRom);
     }
 
     private class SwitcherEventCallback implements SwitchRomTaskListener {

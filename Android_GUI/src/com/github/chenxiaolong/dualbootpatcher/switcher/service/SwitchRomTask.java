@@ -28,36 +28,60 @@ import java.io.IOException;
 public final class SwitchRomTask extends BaseServiceTask {
     private static final String TAG = SwitchRomTask.class.getSimpleName();
 
-    public final String mRomId;
+    private final String mRomId;
     private final boolean mForceChecksumsUpdate;
-    private final SwitchRomTaskListener mListener;
 
-    public SwitchRomResult mResult;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private SwitchRomResult mResult;
 
     public interface SwitchRomTaskListener extends BaseServiceTaskListener {
         void onSwitchedRom(int taskId, String romId, SwitchRomResult result);
     }
 
-    public SwitchRomTask(int taskId, Context context, String romId, boolean forceChecksumsUpdate,
-                         SwitchRomTaskListener listener) {
+    public SwitchRomTask(int taskId, Context context, String romId, boolean forceChecksumsUpdate) {
         super(taskId, context);
         mRomId = romId;
         mForceChecksumsUpdate = forceChecksumsUpdate;
-        mListener = listener;
     }
 
     @Override
     public void execute() {
         Log.d(TAG, "Switching to " + mRomId + " (force=" + mForceChecksumsUpdate + ")");
 
-        mResult = SwitchRomResult.FAILED;
+        SwitchRomResult result = SwitchRomResult.FAILED;
         try {
-            mResult = MbtoolSocket.getInstance().switchRom(
+            result = MbtoolSocket.getInstance().switchRom(
                     getContext(), mRomId, mForceChecksumsUpdate);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
 
-        mListener.onSwitchedRom(getTaskId(), mRomId, mResult);
+        synchronized (mStateLock) {
+            mResult = result;
+            sendOnSwitchedRom();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnSwitchedRom();
+            }
+        }
+    }
+
+    private void sendOnSwitchedRom() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((SwitchRomTaskListener) listener).onSwitchedRom(getTaskId(), mRomId, mResult);
+            }
+        });
     }
 }

@@ -84,7 +84,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.UpdateRamdiskResultDialo
         .UpdateRamdiskResultDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
         .CacheWallpaperTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
@@ -304,15 +303,37 @@ public class RomDetailActivity extends AppCompatActivity implements
         if (isFinishing()) {
             if (mTaskIdCacheWallpaper >= 0) {
                 removeCachedTaskId(mTaskIdCacheWallpaper);
+                mTaskIdCacheWallpaper = -1;
             }
             if (mTaskIdGetRomDetails >= 0) {
                 removeCachedTaskId(mTaskIdGetRomDetails);
+                mTaskIdGetRomDetails = -1;
             }
         }
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            mService.unregisterCallback(mCallback);
+            if (mTaskIdCacheWallpaper >= 0) {
+                mService.removeCallback(mTaskIdCacheWallpaper, mCallback);
+            }
+            if (mTaskIdSwitchRom >= 0) {
+                mService.removeCallback(mTaskIdSwitchRom, mCallback);
+            }
+            if (mTaskIdSetKernel >= 0) {
+                mService.removeCallback(mTaskIdSetKernel, mCallback);
+            }
+            if (mTaskIdUpdateRamdisk >= 0) {
+                mService.removeCallback(mTaskIdUpdateRamdisk, mCallback);
+            }
+            if (mTaskIdWipeRom >= 0) {
+                mService.removeCallback(mTaskIdWipeRom, mCallback);
+            }
+            if (mTaskIdCreateLauncher >= 0) {
+                mService.removeCallback(mTaskIdCreateLauncher, mCallback);
+            }
+            if (mTaskIdGetRomDetails >= 0) {
+                mService.removeCallback(mTaskIdGetRomDetails, mCallback);
+            }
         }
 
         // Unbind from our service
@@ -330,9 +351,6 @@ public class RomDetailActivity extends AppCompatActivity implements
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
 
-        // Register callback
-        mService.registerCallback(mCallback);
-
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
             mService.removeCachedTask(taskId);
@@ -341,67 +359,38 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         if (mTaskIdCacheWallpaper < 0) {
             mTaskIdCacheWallpaper = mService.cacheWallpaper(mRomInfo);
-        } else if (mService.getCachedTaskState(mTaskIdCacheWallpaper) == TaskState.FINISHED) {
-            CacheWallpaperResult result =
-                    mService.getResultCacheWallpaperResult(mTaskIdCacheWallpaper);
-            onCachedWallpaper(result);
+            mService.addCallback(mTaskIdCacheWallpaper, mCallback);
+            mService.enqueueTaskId(mTaskIdCacheWallpaper);
+        } else {
+            mService.addCallback(mTaskIdCacheWallpaper, mCallback);
         }
 
         if (mTaskIdGetRomDetails < 0) {
             mTaskIdGetRomDetails = mService.getRomDetails(mRomInfo);
+            mService.addCallback(mTaskIdGetRomDetails, mCallback);
+            mService.enqueueTaskId(mTaskIdGetRomDetails);
         } else {
-            if (mService.hasResultRomDetailsSystemSize(mTaskIdGetRomDetails)) {
-                boolean success = mService.getResultRomDetailsSystemSizeSuccess(mTaskIdGetRomDetails);
-                long size = mService.getResultRomDetailsSystemSize(mTaskIdGetRomDetails);
-                onHaveSystemSize(success, size);
-            }
-            if (mService.hasResultRomDetailsCacheSize(mTaskIdGetRomDetails)) {
-                boolean success = mService.getResultRomDetailsCacheSizeSuccess(mTaskIdGetRomDetails);
-                long size = mService.getResultRomDetailsCacheSize(mTaskIdGetRomDetails);
-                onHaveCacheSize(success, size);
-            }
-            if (mService.hasResultRomDetailsDataSize(mTaskIdGetRomDetails)) {
-                boolean success = mService.getResultRomDetailsDataSizeSuccess(mTaskIdGetRomDetails);
-                long size = mService.getResultRomDetailsDataSize(mTaskIdGetRomDetails);
-                onHaveDataSize(success, size);
-            }
-            if (mService.hasResultRomDetailsPackagesCounts(mTaskIdGetRomDetails)) {
-                boolean success = mService.getResultRomDetailsPackagesCountsSuccess(mTaskIdGetRomDetails);
-                int systemPackages = mService.getResultRomDetailsSystemPackages(mTaskIdGetRomDetails);
-                int updatedPackages = mService.getResultRomDetailsUpdatedPackages(mTaskIdGetRomDetails);
-                int userPackages = mService.getResultRomDetailsUserPackages(mTaskIdGetRomDetails);
-                onHavePackagesCounts(success, systemPackages, updatedPackages, userPackages);
-            }
+            mService.addCallback(mTaskIdGetRomDetails, mCallback);
         }
 
-        if (mTaskIdCreateLauncher >= 0 &&
-                mService.getCachedTaskState(mTaskIdCreateLauncher) == TaskState.FINISHED) {
-            onCreatedLauncher();
+        if (mTaskIdCreateLauncher >= 0) {
+            mService.addCallback(mTaskIdCreateLauncher, mCallback);
         }
 
-        if (mTaskIdSwitchRom >= 0 &&
-                mService.getCachedTaskState(mTaskIdSwitchRom) == TaskState.FINISHED) {
-            SwitchRomResult result = mService.getResultSwitchRomResult(mTaskIdSwitchRom);
-            onSwitchedRom(result);
+        if (mTaskIdSwitchRom >= 0) {
+            mService.addCallback(mTaskIdSwitchRom, mCallback);
         }
 
-        if (mTaskIdSetKernel >= 0 &&
-                mService.getCachedTaskState(mTaskIdSetKernel) == TaskState.FINISHED) {
-            SetKernelResult result = mService.getResultSetKernelResult(mTaskIdSetKernel);
-            onSetKernel(result);
+        if (mTaskIdSetKernel >= 0) {
+            mService.addCallback(mTaskIdSetKernel, mCallback);
         }
 
-        if (mTaskIdUpdateRamdisk >= 0 &&
-                mService.getCachedTaskState(mTaskIdUpdateRamdisk) == TaskState.FINISHED) {
-            boolean success = mService.getResultUpdateRamdiskSuccess(mTaskIdUpdateRamdisk);
-            onUpdatedRamdisk(success);
+        if (mTaskIdUpdateRamdisk >= 0) {
+            mService.addCallback(mTaskIdUpdateRamdisk, mCallback);
         }
 
-        if (mTaskIdWipeRom >= 0 &&
-                mService.getCachedTaskState(mTaskIdWipeRom) == TaskState.FINISHED) {
-            short[] succeeded = mService.getResultWipeRomTargetsSucceeded(mTaskIdWipeRom);
-            short[] failed = mService.getResultWipeRomTargetsFailed(mTaskIdWipeRom);
-            onWipedRom(succeeded, failed);
+        if (mTaskIdWipeRom >= 0) {
+            mService.addCallback(mTaskIdWipeRom, mCallback);
         }
     }
 
@@ -683,6 +672,8 @@ public class RomDetailActivity extends AppCompatActivity implements
     @Override
     public void onConfirmAddToHomeScreenOptions(RomInformation info, boolean reboot) {
         mTaskIdCreateLauncher = mService.createLauncher(info, reboot);
+        mService.addCallback(mTaskIdCreateLauncher, mCallback);
+        mService.enqueueTaskId(mTaskIdCreateLauncher);
     }
 
     @Override
@@ -967,6 +958,8 @@ public class RomDetailActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(mRomInfo.getId(), forceChecksumsUpdate);
+        mService.addCallback(mTaskIdSwitchRom, mCallback);
+        mService.enqueueTaskId(mTaskIdSwitchRom);
     }
 
     private void setKernel() {
@@ -975,6 +968,8 @@ public class RomDetailActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(mRomInfo.getId());
+        mService.addCallback(mTaskIdSetKernel, mCallback);
+        mService.enqueueTaskId(mTaskIdSetKernel);
     }
 
     private void updateRamdisk() {
@@ -983,6 +978,8 @@ public class RomDetailActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
 
         mTaskIdUpdateRamdisk = mService.updateRamdisk(mRomInfo);
+        mService.addCallback(mTaskIdUpdateRamdisk, mCallback);
+        mService.enqueueTaskId(mTaskIdUpdateRamdisk);
     }
 
     private void wipeRom(short[] targets) {
@@ -991,6 +988,8 @@ public class RomDetailActivity extends AppCompatActivity implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
 
         mTaskIdWipeRom = mService.wipeRom(mRomInfo.getId(), targets);
+        mService.addCallback(mTaskIdWipeRom, mCallback);
+        mService.enqueueTaskId(mTaskIdWipeRom);
     }
 
     private void showChecksumIssueDialog(int issue, String romId) {

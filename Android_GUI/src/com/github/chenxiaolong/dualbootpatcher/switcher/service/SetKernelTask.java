@@ -28,32 +28,57 @@ import java.io.IOException;
 public final class SetKernelTask extends BaseServiceTask {
     private static final String TAG = SetKernelTask.class.getSimpleName();
 
-    public final String mRomId;
-    private final SetKernelTaskListener mListener;
+    private final String mRomId;
 
-    public SetKernelResult mResult;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private SetKernelResult mResult;
 
     public interface SetKernelTaskListener extends BaseServiceTaskListener {
         void onSetKernel(int taskId, String romId, SetKernelResult result);
     }
 
-    public SetKernelTask(int taskId, Context context, String romId, SetKernelTaskListener listener) {
+    public SetKernelTask(int taskId, Context context, String romId) {
         super(taskId, context);
         mRomId = romId;
-        mListener = listener;
     }
 
     @Override
     public void execute() {
         Log.d(TAG, "Setting kernel for " + mRomId);
 
-        mResult = SetKernelResult.FAILED;
+        SetKernelResult result = SetKernelResult.FAILED;
         try {
-            mResult = MbtoolSocket.getInstance().setKernel(getContext(), mRomId);
+            result = MbtoolSocket.getInstance().setKernel(getContext(), mRomId);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
         }
 
-        mListener.onSetKernel(getTaskId(), mRomId, mResult);
+        synchronized (mStateLock) {
+            mResult = result;
+            sendOnSetKernel();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnSetKernel();
+            }
+        }
+    }
+
+    private void sendOnSetKernel() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((SetKernelTaskListener) listener).onSetKernel(getTaskId(), mRomId, mResult);
+            }
+        });
     }
 }

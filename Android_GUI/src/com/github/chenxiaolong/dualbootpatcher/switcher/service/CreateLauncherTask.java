@@ -34,18 +34,18 @@ public final class CreateLauncherTask extends BaseServiceTask {
 
     private final RomInformation mRomInfo;
     private final boolean mReboot;
-    private final CreateLauncherTaskListener mListener;
+
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
     public interface CreateLauncherTaskListener extends BaseServiceTaskListener {
         void onCreatedLauncher(int taskId, RomInformation romInfo);
     }
 
-    public CreateLauncherTask(int taskId, Context context, RomInformation romInfo, boolean reboot,
-                              CreateLauncherTaskListener listener) {
+    public CreateLauncherTask(int taskId, Context context, RomInformation romInfo, boolean reboot) {
         super(taskId, context);
         mRomInfo = romInfo;
         mReboot = reboot;
-        mListener = listener;
     }
 
     @Override
@@ -76,7 +76,10 @@ public final class CreateLauncherTask extends BaseServiceTask {
 
         getContext().sendBroadcast(addIntent);
 
-        mListener.onCreatedLauncher(getTaskId(), mRomInfo);
+        synchronized (mStateLock) {
+            sendOnCreatedLauncher();
+            mFinished = true;
+        }
     }
 
     private Bitmap createScaledIcon(Bitmap icon) {
@@ -84,5 +87,25 @@ public final class CreateLauncherTask extends BaseServiceTask {
                 getContext().getSystemService(Context.ACTIVITY_SERVICE);
         final int iconSize = am.getLauncherLargeIconSize();
         return Bitmap.createScaledBitmap(icon, iconSize, iconSize, true);
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnCreatedLauncher();
+            }
+        }
+    }
+
+    private void sendOnCreatedLauncher() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((CreateLauncherTaskListener) listener).onCreatedLauncher(getTaskId(), mRomInfo);
+            }
+        });
     }
 }

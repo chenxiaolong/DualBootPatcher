@@ -30,51 +30,77 @@ import java.io.File;
 public final class GetRomsStateTask extends BaseServiceTask {
     private static final String TAG = GetRomsStateTask.class.getSimpleName();
 
-    private final GetRomsStateTaskListener mListener;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
-    public RomInformation[] mRoms;
-    public RomInformation mCurrentRom;
-    public String mActiveRomId;
-    public KernelStatus mKernelStatus;
+    private RomInformation[] mRoms;
+    private RomInformation mCurrentRom;
+    private String mActiveRomId;
+    private KernelStatus mKernelStatus;
 
     public interface GetRomsStateTaskListener extends BaseServiceTaskListener {
         void onGotRomsState(int taskId, RomInformation[] roms, RomInformation currentRom,
                             String activeRomId, KernelStatus kernelStatus);
     }
 
-    public GetRomsStateTask(int taskId, Context context, GetRomsStateTaskListener listener) {
+    public GetRomsStateTask(int taskId, Context context) {
         super(taskId, context);
-        mListener = listener;
     }
 
     @Override
     public void execute() {
-        mRoms = RomUtils.getRoms(getContext());
-        mCurrentRom = RomUtils.getCurrentRom(getContext());
+        RomInformation[] roms = RomUtils.getRoms(getContext());
+        RomInformation currentRom = RomUtils.getCurrentRom(getContext());
 
         long start = System.currentTimeMillis();
-        obtainBootPartitionInfo();
-        long end = System.currentTimeMillis();
 
-        Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
-        Log.d(TAG, "Current boot partition ROM ID: " + mActiveRomId);
-        Log.d(TAG, "Kernel status: " + mKernelStatus.name());
-
-        mListener.onGotRomsState(getTaskId(), mRoms, mCurrentRom, mActiveRomId, mKernelStatus);
-    }
-
-    private void obtainBootPartitionInfo() {
-        mActiveRomId = null;
-        mKernelStatus = KernelStatus.UNKNOWN;
+        String activeRomId = null;
+        KernelStatus kernelStatus = KernelStatus.UNKNOWN;
 
         File tmpImageFile = new File(getContext().getCacheDir() + File.separator + "boot.img");
         if (SwitcherUtils.copyBootPartition(getContext(), tmpImageFile)) {
             try {
-                mActiveRomId = SwitcherUtils.getBootImageRomId(getContext(), tmpImageFile);
-                mKernelStatus = SwitcherUtils.compareRomBootImage(mCurrentRom, tmpImageFile);
+                activeRomId = SwitcherUtils.getBootImageRomId(getContext(), tmpImageFile);
+                kernelStatus = SwitcherUtils.compareRomBootImage(mCurrentRom, tmpImageFile);
             } finally {
                 tmpImageFile.delete();
             }
         }
+
+        long end = System.currentTimeMillis();
+
+        Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
+        Log.d(TAG, "Current boot partition ROM ID: " + activeRomId);
+        Log.d(TAG, "Kernel status: " + kernelStatus.name());
+
+        synchronized (mStateLock) {
+            mRoms = roms;
+            mCurrentRom = currentRom;
+            mActiveRomId = activeRomId;
+            mKernelStatus = kernelStatus;
+            sendOnGotRomsState();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnGotRomsState();
+            }
+        }
+    }
+
+    private void sendOnGotRomsState() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((GetRomsStateTaskListener) listener).onGotRomsState(
+                        getTaskId(), mRoms, mCurrentRom, mActiveRomId, mKernelStatus);
+            }
+        });
     }
 }

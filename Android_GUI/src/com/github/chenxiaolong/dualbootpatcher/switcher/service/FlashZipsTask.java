@@ -47,12 +47,13 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
     private static final String UPDATE_BINARY_SIG = UPDATE_BINARY + ".sig";
 
     private final PendingAction[] mPendingActions;
-    private final FlashZipsTaskListener mListener;
 
-    public final Object mLinesLock = new Object();
-    public ArrayList<String> mLines = new ArrayList<>();
-    public int mTotal = -1;
-    public int mFailed = -1;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private ArrayList<String> mLines = new ArrayList<>();
+    private int mTotal = -1;
+    private int mFailed = -1;
 
     public interface FlashZipsTaskListener extends BaseServiceTaskListener {
         void onFlashedZips(int taskId, int totalActions, int failedActions);
@@ -60,17 +61,9 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
         void onCommandOutput(int taskId, String line);
     }
 
-    public FlashZipsTask(int taskId, Context context, PendingAction[] pendingActions,
-                         FlashZipsTaskListener listener) {
+    public FlashZipsTask(int taskId, Context context, PendingAction[] pendingActions) {
         super(taskId, context);
         mPendingActions = pendingActions;
-        mListener = listener;
-    }
-
-    public String[] getLines() {
-        synchronized (mLinesLock) {
-            return mLines.toArray(new String[mLines.size()]);
-        }
     }
 
     @Override
@@ -184,9 +177,12 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
 
             printBoldText(Color.CYAN, "Successfully completed " + frac + " actions\n");
 
-            mTotal = mPendingActions.length;
-            mFailed = mPendingActions.length - succeeded;
-            mListener.onFlashedZips(getTaskId(), mTotal, mFailed);
+            synchronized (mStateLock) {
+                mTotal = mPendingActions.length;
+                mFailed = mPendingActions.length - succeeded;
+                sendOnFlashedZips();
+                mFinished = true;
+            }
         }
     }
 
@@ -196,10 +192,10 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
     }
 
     private void onCommandOutput(String line) {
-        synchronized (mLinesLock) {
+        synchronized (mStateLock) {
             mLines.add(line);
+            sendOnCommandOutput(line);
         }
-        mListener.onCommandOutput(getTaskId(), line);
     }
 
     private void printBoldText(Color color, String text) {
@@ -209,5 +205,37 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
 
     private void printSeparator() {
         printBoldText(Color.WHITE, StringUtils.repeat('-', 16) + "\n");
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            for (String line : mLines) {
+                sendOnCommandOutput(line);
+            }
+            if (mFinished) {
+                sendOnFlashedZips();
+            }
+        }
+    }
+
+    private void sendOnCommandOutput(final String line) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onCommandOutput(getTaskId(), line);
+            }
+        });
+    }
+
+    private void sendOnFlashedZips() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onFlashedZips(getTaskId(), mTotal, mFailed);
+            }
+        });
     }
 }

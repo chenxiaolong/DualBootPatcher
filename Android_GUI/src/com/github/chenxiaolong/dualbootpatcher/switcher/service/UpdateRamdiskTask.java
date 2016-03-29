@@ -49,20 +49,20 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
     /** Suffix for boot image backup */
     private static final String BOOT_IMAGE_BACKUP_SUFFIX = ".before-ramdisk-update.img";
 
-    public final RomInformation mRomInfo;
-    private final UpdateRamdiskTaskListener mListener;
+    private final RomInformation mRomInfo;
 
-    public boolean mSuccess;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private boolean mSuccess;
 
     public interface UpdateRamdiskTaskListener extends BaseServiceTaskListener {
         void onUpdatedRamdisk(int taskId, RomInformation romInfo, boolean success);
     }
 
-    public UpdateRamdiskTask(int taskId, Context context, RomInformation romInfo,
-                             UpdateRamdiskTaskListener listener) {
+    public UpdateRamdiskTask(int taskId, Context context, RomInformation romInfo) {
         super(taskId, context);
         mRomInfo = romInfo;
-        mListener = listener;
     }
 
     /**
@@ -336,7 +336,33 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
 
     @Override
     public void execute() {
-        mSuccess = updateRamdisk();
-        mListener.onUpdatedRamdisk(getTaskId(), mRomInfo, mSuccess);
+        boolean success = updateRamdisk();
+
+        synchronized (mStateLock) {
+            mSuccess = success;
+            sendOnUpdatedRamdisk();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnUpdatedRamdisk();
+            }
+        }
+    }
+
+    private void sendOnUpdatedRamdisk() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((UpdateRamdiskTaskListener) listener).onUpdatedRamdisk(
+                        getTaskId(), mRomInfo, mSuccess);
+            }
+        });
     }
 }

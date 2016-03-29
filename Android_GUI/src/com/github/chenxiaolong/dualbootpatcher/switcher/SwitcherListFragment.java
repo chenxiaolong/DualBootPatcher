@@ -64,7 +64,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardAc
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelNeededDialog
         .SetKernelNeededDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.KernelStatus;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask
         .GetRomsStateTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
@@ -89,6 +88,7 @@ public class SwitcherListFragment extends Fragment implements
     private static final String EXTRA_ACTIVE_ROM_ID = "active_rom_id";
     private static final String EXTRA_SHOWED_SET_KERNEL_WARNING = "showed_set_kernel_warning";
     private static final String EXTRA_HAVE_PERMISSIONS_RESULT = "have_permissions_result";
+    private static final String EXTRA_IS_LOADING = "is_loading";
 
     /** Fragment tag for progress dialog for switching ROMS */
     private static final String PROGRESS_DIALOG_SWITCH_ROM =
@@ -156,6 +156,7 @@ public class SwitcherListFragment extends Fragment implements
     private boolean mShowedSetKernelWarning;
 
     private boolean mIsInitialStart;
+    private boolean mIsLoading;
 
     public static SwitcherListFragment newInstance() {
         return new SwitcherListFragment();
@@ -183,6 +184,8 @@ public class SwitcherListFragment extends Fragment implements
                     EXTRA_SHOWED_SET_KERNEL_WARNING);
             mHavePermissionsResult = savedInstanceState.getBoolean(
                     EXTRA_HAVE_PERMISSIONS_RESULT);
+
+            mIsLoading = savedInstanceState.getBoolean(EXTRA_IS_LOADING);
         }
 
         mFabFlashZip = (FloatingActionButton) getActivity()
@@ -253,7 +256,15 @@ public class SwitcherListFragment extends Fragment implements
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            mService.unregisterCallback(mCallback);
+            if (mTaskIdGetRomsState >= 0) {
+                mService.removeCallback(mTaskIdGetRomsState, mCallback);
+            }
+            if (mTaskIdSwitchRom >= 0) {
+                mService.removeCallback(mTaskIdSwitchRom, mCallback);
+            }
+            if (mTaskIdSetKernel >= 0) {
+                mService.removeCallback(mTaskIdSetKernel, mCallback);
+            }
         }
 
         // Unbind from our service
@@ -273,9 +284,6 @@ public class SwitcherListFragment extends Fragment implements
         // Save a reference to the service so we can interact with it
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
-
-        // Register callback
-        mService.registerCallback(mCallback);
 
         for (Runnable runnable : mExecOnConnect) {
             runnable.run();
@@ -386,36 +394,24 @@ public class SwitcherListFragment extends Fragment implements
         mTaskIdsToRemove.clear();
 
         if (mTaskIdGetRomsState < 0) {
+            setLoadingSpinnerVisibility(true);
+
             // Load ROMs state asynchronously
-            setLoadingSpinnerVisibility(true);
             mTaskIdGetRomsState = mService.getRomsState();
-        } else if (mService.getCachedTaskState(mTaskIdGetRomsState) == TaskState.FINISHED) {
-            // If ROMs state has already been loaded, then get the results from the service
-            RomInformation[] roms = mService.getResultRomsStateRomsList(mTaskIdGetRomsState);
-            RomInformation currentRom = mService.getResultRomsStateCurrentRom(mTaskIdGetRomsState);
-            String activeRomId = mService.getResultRomsStateActiveRomId(mTaskIdGetRomsState);
-            KernelStatus kernelStatus = mService.getResultRomsStateKernelStatus(mTaskIdGetRomsState);
-
-            onGotRomsState(roms, currentRom, activeRomId, kernelStatus);
+            mService.addCallback(mTaskIdGetRomsState, mCallback);
+            mService.enqueueTaskId(mTaskIdGetRomsState);
         } else {
-            // Still loading
-            setLoadingSpinnerVisibility(true);
+            setLoadingSpinnerVisibility(mIsLoading);
+
+            mService.addCallback(mTaskIdGetRomsState, mCallback);
         }
 
-        if (mTaskIdSwitchRom >= 0 &&
-                mService.getCachedTaskState(mTaskIdSwitchRom) == TaskState.FINISHED) {
-            String romId = mService.getResultSwitchRomRomId(mTaskIdSwitchRom);
-            SwitchRomResult result = mService.getResultSwitchRomResult(mTaskIdSwitchRom);
-
-            onSwitchedRom(romId, result);
+        if (mTaskIdSwitchRom >= 0) {
+            mService.addCallback(mTaskIdSwitchRom, mCallback);
         }
 
-        if (mTaskIdSetKernel >= 0 &&
-                mService.getCachedTaskState(mTaskIdSetKernel) == TaskState.FINISHED) {
-            String romId = mService.getResultSetKernelRomId(mTaskIdSetKernel);
-            SetKernelResult result = mService.getResultSetKernelResult(mTaskIdSetKernel);
-
-            onSetKernel(romId, result);
+        if (mTaskIdSetKernel >= 0) {
+            mService.addCallback(mTaskIdSetKernel, mCallback);
         }
     }
 
@@ -457,6 +453,8 @@ public class SwitcherListFragment extends Fragment implements
         // ID to -1 and wait for the natural reload in onServiceConnected().
         if (mService != null) {
             mTaskIdGetRomsState = mService.getRomsState();
+            mService.addCallback(mTaskIdGetRomsState, mCallback);
+            mService.enqueueTaskId(mTaskIdGetRomsState);
         } else {
             mTaskIdGetRomsState = -1;
         }
@@ -490,6 +488,8 @@ public class SwitcherListFragment extends Fragment implements
         outState.putString(EXTRA_ACTIVE_ROM_ID, mActiveRomId);
         outState.putBoolean(EXTRA_SHOWED_SET_KERNEL_WARNING, mShowedSetKernelWarning);
         outState.putBoolean(EXTRA_HAVE_PERMISSIONS_RESULT, mHavePermissionsResult);
+
+        outState.putBoolean(EXTRA_IS_LOADING, mIsLoading);
     }
 
     /**
@@ -531,6 +531,7 @@ public class SwitcherListFragment extends Fragment implements
      * @param visible Visibility
      */
     private void setLoadingSpinnerVisibility(boolean visible) {
+        mIsLoading = visible;
         mSwipeRefresh.setRefreshing(visible);
     }
 
@@ -779,6 +780,8 @@ public class SwitcherListFragment extends Fragment implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(romId, forceChecksumsUpdate);
+        mService.addCallback(mTaskIdSwitchRom, mCallback);
+        mService.enqueueTaskId(mTaskIdSwitchRom);
     }
 
     private void setKernel(RomInformation info) {
@@ -790,6 +793,8 @@ public class SwitcherListFragment extends Fragment implements
         d.show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(info.getId());
+        mService.addCallback(mTaskIdSetKernel, mCallback);
+        mService.enqueueTaskId(mTaskIdSetKernel);
     }
 
     @Override
