@@ -257,10 +257,11 @@ public class MbtoolConnection implements Closeable {
 
         String mbtool = PatcherUtils.getTargetDirectory(context)
                 + "/binaries/android/" + abi + "/mbtool";
+        mbtool = mbtool.replace("'", "'\"'\"'");
 
-        boolean ret = CommandUtils.runRootCommand("mount -o remount,rw /") == 0
+        return CommandUtils.runRootCommand("mount -o remount,rw /") == 0
                 && CommandUtils.runRootCommand("mv /mbtool /mbtool.bak || :") == 0
-                && CommandUtils.runRootCommand("cp " + mbtool + " /mbtool") == 0
+                && CommandUtils.runRootCommand("cp '" + mbtool + "' /mbtool") == 0
                 && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
                 && CommandUtils.runRootCommand("mount -o remount,ro / || :") == 0
                 && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
