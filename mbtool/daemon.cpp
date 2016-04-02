@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <proc/readproc.h>
@@ -54,6 +55,11 @@
 
 namespace mb
 {
+
+static int pipe_fds[2];
+static bool send_ok_to_pipe = false;
+
+static autoclose::file log_fp(nullptr, std::fclose);
 
 static bool verify_credentials(uid_t uid)
 {
@@ -196,6 +202,16 @@ static bool run_daemon(void)
         return false;
     }
 
+    // Let parent process know that we're ready if we're forking the daemon
+    if (send_ok_to_pipe) {
+        ssize_t n = write(pipe_fds[1], "", 1);
+        close(pipe_fds[1]);
+        if (n < 0) {
+            LOGE("Failed to send OK to parent process");
+            return false;
+        }
+    }
+
     // Eat zombies!
     // SIG_IGN reaps zombie processes (it's not just a dummy function)
     struct sigaction sa;
@@ -241,64 +257,139 @@ static bool run_daemon(void)
     return true;
 }
 
-__attribute__((noreturn))
-static void run_daemon_fork(void)
+static bool redirect_stdio_to_dev_null()
 {
-    pid_t pid = fork();
-    if (pid < 0) {
-        LOGE("Failed to fork: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    } else if (pid > 0) {
-        _exit(EXIT_SUCCESS);
-    }
-
-    if (setsid() < 0) {
-        LOGE("Failed to become session leader: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
-
-    signal(SIGHUP, SIG_IGN);
-
-    pid = fork();
-    if (pid < 0) {
-        LOGE("Failed to fork: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    } else if (pid > 0) {
-        _exit(EXIT_SUCCESS);
-    }
-
-    if (chdir("/") < 0) {
-        LOGE("Failed to change cwd to /: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
-
-    umask(0);
-
-    LOGD("Started daemon in background");
+    bool ret = true;
 
     int fd = open("/dev/null", O_RDWR);
     if (fd < 0) {
         LOGE("Failed to open /dev/null: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
+        return false;
     }
     if (dup2(fd, STDIN_FILENO) < 0) {
         LOGE("Failed to reopen stdin: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
+        ret = false;
     }
     if (dup2(fd, STDOUT_FILENO) < 0) {
         LOGE("Failed to reopen stdout: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
+        ret = false;
     }
     if (dup2(fd, STDERR_FILENO) < 0) {
         LOGE("Failed to reopen stderr: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
+        ret = false;
     }
     if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
         close(fd);
     }
 
-    run_daemon();
-    _exit(EXIT_SUCCESS);
+    return ret;
+}
+
+static bool daemon_init()
+{
+    if (chdir("/") < 0) {
+        LOGE("Failed to change cwd to /: %s", strerror(errno));
+        return false;
+    }
+
+    umask(0);
+
+    if (!redirect_stdio_to_dev_null()) {
+        return false;
+    }
+
+    // Set up logging
+    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
+        LOGE("Failed to create parent directory of %s: %s",
+             MULTIBOOT_LOG_DAEMON, strerror(errno));
+        return false;
+    }
+
+    log_fp = autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w");
+    if (!log_fp) {
+        LOGE("Failed to open log file %s: %s",
+             MULTIBOOT_LOG_DAEMON, strerror(errno));
+        return false;
+    }
+
+    fix_multiboot_permissions();
+
+    // mbtool logging
+    log::log_set_logger(std::make_shared<log::StdioLogger>(log_fp.get(), true));
+
+    LOGD("Initialized daemon");
+
+    return true;
+}
+
+__attribute__((noreturn))
+static void run_daemon_fork(void)
+{
+    pid_t pid = fork();
+    if (pid < 0) {
+        fprintf(stderr, "Failed to fork: %s\n", strerror(errno));
+        _exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        int status;
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                fprintf(stderr, "Failed to waitpid(): %s\n", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+        _exit(EXIT_SUCCESS);
+    }
+
+    // Become session and process group leader
+    if (setsid() < 0) {
+        fprintf(stderr, "Failed to become session leader: %s\n",
+                strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+
+    // Ignore hangup signal
+    signal(SIGHUP, SIG_IGN);
+
+    // Create pipe for the daemon to tell us it is listening for connections
+    send_ok_to_pipe = true;
+    if (pipe(pipe_fds) < 0) {
+        fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
+
+    pid = fork();
+    if (pid < 0) {
+        fprintf(stderr, "Failed to fork: %s\n", strerror(errno));
+        _exit(EXIT_FAILURE);
+    } else if (pid > 0) {
+        // Close write end of pipe
+        close(pipe_fds[1]);
+
+        fprintf(stderr, "Waiting for daemon to start...");
+
+        // Wait for OK from child
+        char dummy;
+        ssize_t n = read(pipe_fds[0], &dummy, 1);
+        // Close read end of pipe
+        close(pipe_fds[0]);
+
+        if (n < 0) {
+            fprintf(stderr, " Failed: %s\n", strerror(errno));
+            _exit(EXIT_FAILURE);
+        } else if (n != 1) {
+            fprintf(stderr, " Failed\n");
+            _exit(EXIT_FAILURE);
+        }
+
+        fprintf(stderr, " OK\n");
+        _exit(EXIT_SUCCESS);
+    }
+
+    // Close read end of the pipe
+    close(pipe_fds[0]);
+
+    _exit((daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static bool patch_sepolicy_daemon()
@@ -397,8 +488,8 @@ int daemon_main(int argc, char *argv[])
     // meh ...
     if (getppid() == 1) {
         if (!util::set_property("ro.multiboot.version", get_mbtool_version())) {
-            std::printf("Failed to set 'ro.multiboot.version' to '%s'\n",
-                        get_mbtool_version());
+            LOGW("Failed to set 'ro.multiboot.version' to '%s'\n",
+                 get_mbtool_version());
         }
     }
 
@@ -414,7 +505,7 @@ int daemon_main(int argc, char *argv[])
                         && strstr(info->cmdline[1], "daemon") // And it's a daemon process
                         && info->tid != curpid) {             // And we're not killing ourself
                     // Kill the daemon process
-                    std::printf("Killing PID %d\n", info->tid);
+                    LOGV("Killing PID %d\n", info->tid);
                     kill(info->tid, SIGTERM);
                 }
 
@@ -428,29 +519,10 @@ int daemon_main(int argc, char *argv[])
         usleep(500000);
     }
 
-    // Set up logging
-    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
-        fprintf(stderr, "Failed to create parent directory of %s: %s\n",
-                MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w"));
-    if (!fp) {
-        fprintf(stderr, "Failed to open log file %s: %s\n",
-                MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    fix_multiboot_permissions();
-
-    // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
-
     if (fork_flag) {
         run_daemon_fork();
     } else {
-        return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
+        return (daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 }
 
