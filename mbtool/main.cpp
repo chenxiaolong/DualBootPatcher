@@ -42,6 +42,8 @@
 #include "version.h"
 
 #include "mblog/logging.h"
+#include "mbutil/process.h"
+#include "mbutil/string.h"
 
 
 int main_multicall(int argc, char *argv[]);
@@ -171,16 +173,35 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // This works because argv is NULL-terminated
+    char **argv_copy = mb::util::dup_cstring_list(argv);
+    if (!argv_copy) {
+        fprintf(stderr, "Failed to copy arguments: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    if (!mb::util::set_process_title_init(argc, argv)) {
+        fprintf(stderr, "set_process_title_init() failed: %s\n",
+                strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     umask(0);
 
     if (!setlocale(LC_ALL, "C")) {
         fprintf(stderr, "Failed to set default locale\n");
     }
 
+    int ret;
+
     char *no_multicall = getenv("MBTOOL_NO_MULTICALL");
     if (no_multicall && strcmp(no_multicall, "true") == 0) {
-        return main_normal(argc, argv);
+        ret = main_normal(argc, argv_copy);
     } else {
-        return main_multicall(argc, argv);
+        ret = main_multicall(argc, argv_copy);
     }
+
+    mb::util::free_cstring_list(argv_copy);
+
+    return ret;
 }

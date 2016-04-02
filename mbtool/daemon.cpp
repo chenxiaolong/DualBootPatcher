@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -36,6 +36,7 @@
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/finally.h"
+#include "mbutil/process.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -120,6 +121,9 @@ static bool client_connection(int fd)
         LOGE("Failed to get socket credentials: %s", strerror(errno));
         return ret = false;
     }
+
+    util::set_process_title_v(
+            nullptr, "mbtool connection from pid: %u", cred.pid);
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
@@ -231,6 +235,14 @@ static bool run_daemon(void)
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
+            // Change the process name so --replace doesn't kill existing
+            // connections
+            if (!util::set_process_title_v(
+                    nullptr, "mbtool connection initializing")) {
+                LOGE("Failed to set process title: %s", strerror(errno));
+                _exit(127);
+            }
+
             // Restore default SIGCHLD handler
             struct sigaction sa;
             sa.sa_handler = SIG_DFL;
@@ -499,14 +511,27 @@ int daemon_main(int argc, char *argv[])
             pid_t curpid = getpid();
 
             while (proc_t *info = readproc(proc, nullptr)) {
-                if (strcmp(info->cmd, "mbtool") == 0          // This is mbtool
-                        && info->cmdline                      // And we can see the command line
-                        && info->cmdline[1]                   // And argc > 1
-                        && strstr(info->cmdline[1], "daemon") // And it's a daemon process
-                        && info->tid != curpid) {             // And we're not killing ourself
-                    // Kill the daemon process
-                    LOGV("Killing PID %d\n", info->tid);
-                    kill(info->tid, SIGTERM);
+                // NOTE: Can't check 'strcmp(info->cmd, "mbtool") == 0' (which
+                // is the basename of /proc/<pid>/cmd) because the binary is not
+                // always called "mbtool". For example, when run via SignedExec,
+                // it's just called "binary".
+
+                // If we can read the cmdline and argc >= 2
+                if (info->cmdline && info->cmdline[0] && info->cmdline[1]) {
+                    const char *name = strrchr(info->cmdline[0], '/');
+                    if (name) {
+                        ++name;
+                    } else {
+                        name = info->cmdline[0];
+                    }
+
+                    if (strcmp(name, "mbtool") == 0               // This is mbtool
+                            && strstr(info->cmdline[1], "daemon") // And it's a daemon process
+                            && info->tid != curpid) {             // And we're not killing ourself
+                        // Kill the daemon process
+                        LOGV("Killing PID %d\n", info->tid);
+                        kill(info->tid, SIGTERM);
+                    }
                 }
 
                 freeproc(info);
