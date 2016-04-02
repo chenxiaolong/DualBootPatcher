@@ -38,6 +38,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterfaceV3;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecCompletion;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -286,11 +288,15 @@ public class MbtoolConnection implements Closeable {
                 File.separator + "mbtool.sig");
 
         for (int i = SIGNED_EXEC_MAX_PROTOCOL_VERSION; i >= SIGNED_EXEC_MIN_PROTOCOL_VERSION; i--) {
+            LocalSocket socket = null;
+            InputStream socketIS = null;
+            OutputStream socketOS = null;
+
             try {
                 // Try connecting to the socket
-                LocalSocket socket = initConnectToSocket();
-                InputStream socketIS = socket.getInputStream();
-                OutputStream socketOS = socket.getOutputStream();
+                socket = initConnectToSocket();
+                socketIS = socket.getInputStream();
+                socketOS = socket.getOutputStream();
 
                 // mbtool will immediately send a message telling us whether the app signature is
                 // allowed or denied
@@ -338,6 +344,10 @@ public class MbtoolConnection implements Closeable {
             } catch (MbtoolCommandException e) {
                 // Keep trying
                 Log.w(TAG, "mbtool command error", e);
+            } finally {
+                IOUtils.closeQuietly(socketIS);
+                IOUtils.closeQuietly(socketOS);
+                IOUtils.closeQuietly(socket);
             }
         }
 
