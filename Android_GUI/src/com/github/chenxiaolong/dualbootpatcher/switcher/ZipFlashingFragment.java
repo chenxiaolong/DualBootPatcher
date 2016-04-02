@@ -184,11 +184,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             public void onClick(View view) {
                 // Show file chooser
                 Intent intent = FileUtils.getFileOpenIntent(getActivity());
-                if (intent == null) {
-                    FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
-                } else {
-                    startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
-                }
+                startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
             }
         });
 

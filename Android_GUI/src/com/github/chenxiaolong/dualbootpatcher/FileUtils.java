@@ -18,8 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -32,8 +30,6 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
-import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 
 import org.apache.commons.io.IOUtils;
 
@@ -205,17 +201,6 @@ public class FileUtils {
         }
 
         return buildNeuteredSafSaveIntent(context, defaultName);
-    }
-
-    public static void showMissingFileChooserDialog(Context context, FragmentManager fm) {
-        Fragment prev = fm.findFragmentByTag("no_file_chooser");
-
-        if (prev == null) {
-            GenericConfirmDialog dialog = GenericConfirmDialog.newInstanceFromActivity(-1,
-                    context.getString(R.string.filemanager_missing_title),
-                    context.getString(R.string.filemanager_missing_desc), null);
-            dialog.show(fm, "no_file_chooser");
-        }
     }
 
     public static void extractAsset(Context context, String src, File dest) {
