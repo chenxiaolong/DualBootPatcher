@@ -30,6 +30,7 @@ set(MBUTIL_SOURCES
     src/loopdev.cpp
     src/mount.cpp
     src/path.cpp
+    src/process.cpp
     src/properties.cpp
     src/selinux.cpp
     src/socket.cpp

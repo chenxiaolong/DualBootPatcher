@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -218,6 +218,43 @@ std::string hex_string(unsigned char *data, size_t size)
     }
 
     return result;
+}
+
+char ** dup_cstring_list(const char * const *list)
+{
+    char **copy = nullptr;
+
+    size_t items;
+    for (items = 0; list[items]; ++items);
+    size_t size = (items + 1) * sizeof(list[0]);
+
+    copy = (char **) malloc(size);
+    if (!copy) {
+        return nullptr;
+    }
+    memset(copy, 0, size);
+
+    for (size_t i = 0; i < items; ++i) {
+        copy[i] = strdup(list[i]);
+        if (!copy[i]) {
+            free_cstring_list(copy);
+            return nullptr;
+        }
+    }
+    copy[items] = nullptr;
+
+    return copy;
+}
+
+void free_cstring_list(char **list)
+{
+    // Free environ copy
+    if (list) {
+        for (char **ptr = list; *ptr; ++ptr) {
+            free(*ptr);
+        }
+        free(list);
+    }
 }
 
 }
