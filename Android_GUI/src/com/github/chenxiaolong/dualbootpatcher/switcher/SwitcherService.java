@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTas
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWithRootTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask;
@@ -221,6 +222,15 @@ public class SwitcherService extends ThreadPoolService {
     public int getRomDetails(RomInformation romInfo) {
         int taskId = sNewTaskId.getAndIncrement();
         GetRomDetailsTask task = new GetRomDetailsTask(taskId, this, romInfo);
+        addTask(taskId, task);
+        return taskId;
+    }
+
+    // Update mbtool with root
+
+    public int updateMbtoolWithRoot() {
+        int taskId = sNewTaskId.getAndIncrement();
+        UpdateMbtoolWithRootTask task = new UpdateMbtoolWithRootTask(taskId, this);
         addTask(taskId, task);
         return taskId;
     }

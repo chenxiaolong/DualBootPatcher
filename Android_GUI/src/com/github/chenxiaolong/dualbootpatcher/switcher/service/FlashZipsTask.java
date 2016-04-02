@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +19,22 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SignedExecCompletion;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SignedExecOutputCallback;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecCompletion;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecOutputListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -38,7 +44,9 @@ import java.util.EnumSet;
 
 import mbtool.daemon.v3.SignedExecResult;
 
-public final class FlashZipsTask extends BaseServiceTask implements SignedExecOutputCallback {
+public final class FlashZipsTask extends BaseServiceTask implements SignedExecOutputListener {
+    private static final String TAG = FlashZipsTask.class.getSimpleName();
+
     private static final boolean DEBUG_USE_ALTERNATE_MBTOOL = false;
     private static final String ALTERNATE_MBTOOL_PATH = "/data/local/tmp/mbtool_recovery";
     private static final String ALTERNATE_MBTOOL_SIG_PATH = "/data/local/tmp/mbtool_recovery.sig";
@@ -55,7 +63,7 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
     private int mTotal = -1;
     private int mFailed = -1;
 
-    public interface FlashZipsTaskListener extends BaseServiceTaskListener {
+    public interface FlashZipsTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onFlashedZips(int taskId, int totalActions, int failedActions);
 
         void onCommandOutput(int taskId, String line);
@@ -70,11 +78,15 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
     public void execute() {
         int succeeded = 0;
 
-        try {
-            printBoldText(Color.YELLOW, "Connecting to mbtool...\n");
+        MbtoolConnection conn = null;
 
-            MbtoolSocket socket = MbtoolSocket.getInstance();
-            socket.connect(getContext());
+        try {
+            printBoldText(Color.YELLOW, "Connecting to mbtool...");
+
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            printBoldText(Color.YELLOW, " connected\n");
 
             for (PendingAction pa : mPendingActions) {
                 if (pa.type != PendingAction.Type.INSTALL_ZIP) {
@@ -135,7 +147,7 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
                 printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
                         + TextUtils.join(", ", args) + "]\n");
 
-                SignedExecCompletion completion = socket.signedExec(getContext(),
+                SignedExecCompletion completion = iface.signedExec(
                         zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
                         "rom-installer", args, this);
 
@@ -168,9 +180,18 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
                 zipInstallerSig.delete();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "mbtool communication error", e);
             printBoldText(Color.RED, "mbtool connection error: " + e.getMessage() + "\n");
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            printBoldText(Color.RED, "mbtool error: " + e.getMessage() + "\n");
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+            printBoldText(Color.RED, "mbtool command error: " + e.getMessage() + "\n");
         } finally {
+            IOUtils.closeQuietly(conn);
+
             printSeparator();
 
             String frac = succeeded + "/" + mPendingActions.length;
@@ -235,6 +256,15 @@ public final class FlashZipsTask extends BaseServiceTask implements SignedExecOu
             @Override
             public void call(BaseServiceTaskListener listener) {
                 ((FlashZipsTaskListener) listener).onFlashedZips(getTaskId(), mTotal, mFailed);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
             }
         });
     }

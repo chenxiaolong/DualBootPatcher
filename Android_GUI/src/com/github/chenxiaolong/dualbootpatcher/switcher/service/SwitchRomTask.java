@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,14 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 import android.content.Context;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 
@@ -36,7 +42,7 @@ public final class SwitchRomTask extends BaseServiceTask {
 
     private SwitchRomResult mResult;
 
-    public interface SwitchRomTaskListener extends BaseServiceTaskListener {
+    public interface SwitchRomTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onSwitchedRom(int taskId, String romId, SwitchRomResult result);
     }
 
@@ -51,11 +57,22 @@ public final class SwitchRomTask extends BaseServiceTask {
         Log.d(TAG, "Switching to " + mRomId + " (force=" + mForceChecksumsUpdate + ")");
 
         SwitchRomResult result = SwitchRomResult.FAILED;
+        MbtoolConnection conn = null;
+
         try {
-            result = MbtoolSocket.getInstance().switchRom(
-                    getContext(), mRomId, mForceChecksumsUpdate);
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            result = iface.switchRom(getContext(), mRomId, mForceChecksumsUpdate);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+        } finally {
+            IOUtils.closeQuietly(conn);
         }
 
         synchronized (mStateLock) {
@@ -81,6 +98,15 @@ public final class SwitchRomTask extends BaseServiceTask {
             @Override
             public void call(BaseServiceTaskListener listener) {
                 ((SwitchRomTaskListener) listener).onSwitchedRom(getTaskId(), mRomId, mResult);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((SwitchRomTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
             }
         });
     }

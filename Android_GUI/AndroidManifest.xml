@@ -89,6 +89,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".socket.MbtoolErrorActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/TransparentActivityTheme">
+        </activity>
 
         <receiver android:name=".appsharing.AppSharingEventReceiver">
             <intent-filter>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,8 +56,10 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
@@ -72,6 +74,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.Ve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -514,9 +518,24 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         @Override
         public LoaderResult loadInBackground() {
+            RomInformation currentRom = null;
+
+            MbtoolConnection conn = null;
+
+            try {
+                conn = new MbtoolConnection(getContext());
+                MbtoolInterface iface = conn.getInterface();
+
+                currentRom = RomUtils.getCurrentRom(getContext(), iface);
+            } catch (Exception e) {
+                // Ignore
+            } finally {
+                IOUtils.closeQuietly(conn);
+            }
+
             mResult = new LoaderResult();
             mResult.builtinRoms = RomUtils.getBuiltinRoms(getContext());
-            mResult.currentRom = RomUtils.getCurrentRom(getContext());
+            mResult.currentRom = currentRom;
             return mResult;
         }
     }

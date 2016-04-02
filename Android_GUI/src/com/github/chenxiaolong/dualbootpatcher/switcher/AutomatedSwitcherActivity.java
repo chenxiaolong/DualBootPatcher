@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,9 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmAutomatedSwitchRomDialog
         .ConfirmAutomatedSwitchRomDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
@@ -55,6 +57,8 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
 
     public static final String RESULT_CODE = "code";
     public static final String RESULT_MESSAGE = "message";
+
+    private static final int REQUEST_MBTOOL_ERROR = 1234;
 
     private SharedPreferences mPrefs;
 
@@ -168,6 +172,20 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         mService = null;
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+        case REQUEST_MBTOOL_ERROR:
+            if (data != null && resultCode == RESULT_OK) {
+                finish();
+            }
+            break;
+        default:
+            super.onActivityResult(requestCode, resultCode, data);
+            break;
+        }
+    }
+
     private void removeCachedTaskId(int taskId) {
         if (mService != null) {
             mService.removeCachedTask(taskId);
@@ -266,6 +284,19 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
                     }
                 });
             }
+        }
+
+        @Override
+        public void onMbtoolConnectionFailed(int taskId, final Reason reason) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(
+                            AutomatedSwitcherActivity.this, MbtoolErrorActivity.class);
+                    intent.putExtra(MbtoolErrorActivity.EXTRA_REASON, reason);
+                    startActivityForResult(intent, REQUEST_MBTOOL_ERROR);
+                }
+            });
         }
     }
 }

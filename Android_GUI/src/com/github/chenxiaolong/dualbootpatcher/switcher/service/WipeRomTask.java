@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,14 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 import android.content.Context;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.WipeResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.WipeResult;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 
@@ -37,7 +43,7 @@ public final class WipeRomTask extends BaseServiceTask {
     private short[] mTargetsSucceeded;
     private short[] mTargetsFailed;
 
-    public interface WipeRomTaskListener extends BaseServiceTaskListener {
+    public interface WipeRomTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onWipedRom(int taskId, String romId, short[] succeeded, short[] failed);
     }
 
@@ -49,15 +55,26 @@ public final class WipeRomTask extends BaseServiceTask {
 
     @Override
     public void execute() {
+        MbtoolConnection conn = null;
+
         try {
-            WipeResult result = MbtoolSocket.getInstance().wipeRom(
-                    getContext(), mRomId, mTargets);
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            WipeResult result = iface.wipeRom(mRomId, mTargets);
             synchronized (mStateLock) {
                 mTargetsSucceeded = result.succeeded;
                 mTargetsFailed = result.failed;
             }
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+        } finally {
+            IOUtils.closeQuietly(conn);
         }
 
         synchronized (mStateLock) {
@@ -84,6 +101,15 @@ public final class WipeRomTask extends BaseServiceTask {
             public void call(BaseServiceTaskListener listener) {
                 ((WipeRomTaskListener) listener).onWipedRom(
                         getTaskId(), mRomId, mTargetsSucceeded, mTargetsFailed);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((WipeRomTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
             }
         });
     }

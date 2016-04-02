@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,8 +56,10 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
         .ConfirmChecksumIssueDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomCardAdapter.RomCardActionListener;
@@ -139,6 +141,7 @@ public class SwitcherListFragment extends Fragment implements
 
     private static final int REQUEST_FLASH_ZIP = 2345;
     private static final int REQUEST_ROM_DETAILS = 3456;
+    private static final int REQUEST_MBTOOL_ERROR = 4567;
 
     private boolean mPerformingAction;
 
@@ -606,8 +609,18 @@ public class SwitcherListFragment extends Fragment implements
                 }
             }
             break;
+        case REQUEST_MBTOOL_ERROR:
+            if (data != null && resultCode == Activity.RESULT_OK) {
+                boolean canRetry = data.getBooleanExtra(
+                        MbtoolErrorActivity.EXTRA_RESULT_CAN_RETRY, false);
+                if (canRetry) {
+                    reloadRomsState();
+                }
+            }
+            break;
         default:
             super.onActivityResult(requestCode, resultCode, data);
+            break;
         }
     }
 
@@ -846,6 +859,18 @@ public class SwitcherListFragment extends Fragment implements
                     }
                 });
             }
+        }
+
+        @Override
+        public void onMbtoolConnectionFailed(int taskId, final Reason reason) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(getActivity(), MbtoolErrorActivity.class);
+                    intent.putExtra(MbtoolErrorActivity.EXTRA_REASON, reason);
+                    startActivityForResult(intent, REQUEST_MBTOOL_ERROR);
+                }
+            });
         }
     }
 }

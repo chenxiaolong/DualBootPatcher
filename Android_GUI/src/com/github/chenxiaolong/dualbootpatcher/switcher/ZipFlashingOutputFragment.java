@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ import android.view.ViewGroup;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
 
@@ -248,6 +250,18 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
                     }
                 });
             }
+        }
+
+        @Override
+        public void onMbtoolConnectionFailed(int taskId, final Reason reason) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(getActivity(), MbtoolErrorActivity.class);
+                    intent.putExtra(MbtoolErrorActivity.EXTRA_REASON, reason);
+                    startActivity(intent);
+                }
+            });
         }
     }
 }

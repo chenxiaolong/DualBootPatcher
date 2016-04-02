@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,14 @@ import android.content.Context;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.PackageCounts;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.PackageCounts;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 
@@ -52,7 +58,8 @@ public final class GetRomDetailsTask extends BaseServiceTask {
     private int mUpdatedPackages;
     private int mUserPackages;
 
-    public interface GetRomDetailsTaskListener extends BaseServiceTaskListener {
+    public interface GetRomDetailsTaskListener extends BaseServiceTaskListener,
+            MbtoolErrorListener {
         void onRomDetailsGotSystemSize(int taskId, RomInformation romInfo,
                                        boolean success, long size);
 
@@ -76,44 +83,77 @@ public final class GetRomDetailsTask extends BaseServiceTask {
 
     @Override
     public void execute() {
-        MbtoolSocket socket = MbtoolSocket.getInstance();
+        MbtoolConnection conn = null;
 
-        // Packages counts
-        boolean packagesCountsSuccess = false;
-        int systemPackages = 0;
-        int updatedPackages = 0;
-        int userPackages = 0;
         try {
-            PackageCounts pc = socket.getPackagesCounts(getContext(), mRomInfo.getId());
-            if (pc != null) {
-                packagesCountsSuccess = true;
-                systemPackages = pc.systemPackages;
-                updatedPackages = pc.systemUpdatePackages;
-                userPackages = pc.nonSystemPackages;
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            // Packages counts
+            try {
+                getPackagesCounts(iface);
+            } catch (MbtoolCommandException e) {
+                Log.w(TAG, "mbtool command error", e);
+            }
+
+            // System size
+            try {
+                getSystemSize(iface);
+            } catch (MbtoolCommandException e) {
+                Log.w(TAG, "mbtool command error", e);
+            }
+
+            // Cache size
+            try {
+                getCacheSize(iface);
+            } catch (MbtoolCommandException e) {
+                Log.w(TAG, "mbtool command error", e);
+            }
+
+            // Data size
+            try {
+                getDataSize(iface);
+            } catch (MbtoolCommandException e) {
+                Log.w(TAG, "mbtool command error", e);
             }
         } catch (IOException e) {
-            Log.e(TAG, "mbtool connection error", e);
+            Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } finally {
+            IOUtils.closeQuietly(conn);
         }
 
+        // Finished
         synchronized (mStateLock) {
-            mPackagesCountsSuccess = packagesCountsSuccess;
+            sendOnRomDetailsFinished();
+            mFinished = true;
+        }
+    }
+
+    private void getPackagesCounts(MbtoolInterface iface)
+            throws MbtoolException, IOException, MbtoolCommandException {
+        PackageCounts pc = iface.getPackagesCounts(mRomInfo.getId());
+        int systemPackages = pc.systemPackages;
+        int updatedPackages = pc.systemUpdatePackages;
+        int userPackages = pc.nonSystemPackages;
+
+        synchronized (mStateLock) {
+            mPackagesCountsSuccess = true;
             mSystemPackages = systemPackages;
             mUpdatedPackages = updatedPackages;
             mUserPackages = userPackages;
             sendOnRomDetailsGotPackagesCounts();
             mHavePackagesCounts = true;
         }
+    }
 
-        // System size
-        boolean systemSizeSuccess = false;
-        long systemSize = -1;
-        try {
-            systemSize = socket.pathGetDirectorySize(getContext(),
-                    mRomInfo.getSystemPath(), new String[]{ "multiboot" });
-            systemSizeSuccess = systemSize >= 0;
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool connection error", e);
-        }
+    private void getSystemSize(MbtoolInterface iface)
+            throws MbtoolException, IOException, MbtoolCommandException {
+        long systemSize = iface.pathGetDirectorySize(
+                mRomInfo.getSystemPath(), new String[]{ "multiboot" });
+        boolean systemSizeSuccess = systemSize >= 0;
 
         synchronized (mStateLock) {
             mSystemSizeSuccess = systemSizeSuccess;
@@ -121,17 +161,13 @@ public final class GetRomDetailsTask extends BaseServiceTask {
             sendOnRomDetailsGotSystemSize();
             mHaveSystemSize = true;
         }
+    }
 
-        // Cache size
-        boolean cacheSizeSuccess = false;
-        long cacheSize = -1;
-        try {
-            cacheSize = socket.pathGetDirectorySize(getContext(),
-                    mRomInfo.getCachePath(), new String[]{ "multiboot" });
-            cacheSizeSuccess = cacheSize >= 0;
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool connection error", e);
-        }
+    private void getCacheSize(MbtoolInterface iface)
+            throws MbtoolException, IOException, MbtoolCommandException {
+        long cacheSize = iface.pathGetDirectorySize(
+                mRomInfo.getCachePath(), new String[]{ "multiboot" });
+        boolean cacheSizeSuccess = cacheSize >= 0;
 
         synchronized (mStateLock) {
             mCacheSizeSuccess = cacheSizeSuccess;
@@ -139,29 +175,19 @@ public final class GetRomDetailsTask extends BaseServiceTask {
             sendOnRomDetailsGotCacheSize();
             mHaveCacheSize = true;
         }
+    }
 
-        // Data size
-        boolean dataSizeSuccess = false;
-        long dataSize = -1;
-        try {
-            dataSize = socket.pathGetDirectorySize(getContext(),
-                    mRomInfo.getDataPath(), new String[]{"multiboot", "media"});
-            dataSizeSuccess = dataSize >= 0;
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool connection error", e);
-        }
+    private void getDataSize(MbtoolInterface iface)
+            throws MbtoolException, IOException, MbtoolCommandException {
+        long dataSize = iface.pathGetDirectorySize(
+                mRomInfo.getDataPath(), new String[]{"multiboot", "media"});
+        boolean dataSizeSuccess = dataSize >= 0;
 
         synchronized (mStateLock) {
             mDataSizeSuccess = dataSizeSuccess;
             mDataSize = dataSize;
             sendOnRomDetailsGotDataSize();
             mHaveDataSize = true;
-        }
-
-        // Finished
-        synchronized (mStateLock) {
-            sendOnRomDetailsFinished();
-            mFinished = true;
         }
     }
 
@@ -234,6 +260,15 @@ public final class GetRomDetailsTask extends BaseServiceTask {
             @Override
             public void call(BaseServiceTaskListener listener) {
                 ((GetRomDetailsTaskListener) listener).onRomDetailsFinished(getTaskId(), mRomInfo);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((GetRomDetailsTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
             }
         });
     }

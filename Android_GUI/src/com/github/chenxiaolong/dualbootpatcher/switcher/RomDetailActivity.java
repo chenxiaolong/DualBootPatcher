@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -58,10 +57,12 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorCallback;
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorTransformation;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -165,6 +166,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             RomDetailActivity.class.getCanonicalName() + ".confirm.unknown_boot_partition";
 
     private static final int REQUEST_IMAGE = 1234;
+    private static final int REQUEST_MBTOOL_ERROR = 2345;
 
     // Argument extras
     public static final String EXTRA_ROM_INFO = "rom_info";
@@ -556,13 +558,19 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onActivityResult(int request, int result, Intent data) {
         switch (request) {
         case REQUEST_IMAGE:
-            if (data != null && result == Activity.RESULT_OK) {
+            if (data != null && result == RESULT_OK) {
                 new CacheRomThumbnailTask(getApplicationContext(), mRomInfo, data.getData(), this).execute();
             }
             break;
+        case REQUEST_MBTOOL_ERROR:
+            if (data != null && result == RESULT_OK) {
+                finish();
+            }
+            break;
+        default:
+            super.onActivityResult(request, result, data);
+            break;
         }
-
-        super.onActivityResult(request, result, data);
     }
 
     private void onSelectedEditName() {
@@ -1173,6 +1181,18 @@ public class RomDetailActivity extends AppCompatActivity implements
         @Override
         public void onRomDetailsFinished(int taskId, RomInformation romInfo) {
             // Ignore
+        }
+
+        @Override
+        public void onMbtoolConnectionFailed(int taskId, final Reason reason) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(RomDetailActivity.this, MbtoolErrorActivity.class);
+                    intent.putExtra(MbtoolErrorActivity.EXTRA_REASON, reason);
+                    startActivityForResult(intent, REQUEST_MBTOOL_ERROR);
+                }
+            });
         }
     }
 }
