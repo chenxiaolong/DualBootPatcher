@@ -105,13 +105,6 @@ static bool verify_credentials(uid_t uid)
 
 static bool client_connection(int fd)
 {
-    bool ret = true;
-    auto fail = util::finally([&] {
-        if (!ret) {
-            LOGE("Killing connection");
-        }
-    });
-
     LOGD("Accepted connection from %d", fd);
 
     struct ucred cred;
@@ -119,7 +112,7 @@ static bool client_connection(int fd)
 
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
         LOGE("Failed to get socket credentials: %s", strerror(errno));
-        return ret = false;
+        return false;
     }
 
     util::set_process_title_v(
@@ -129,41 +122,43 @@ static bool client_connection(int fd)
     LOGD("Client UID: %u", cred.uid);
     LOGD("Client GID: %u", cred.gid);
 
+    auto disconnect_msg = util::finally([&]{
+        LOGD("Disconnecting connection from PID: %u", cred.pid);
+    });
+
     if (verify_credentials(cred.uid)) {
         if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
             LOGE("Failed to send credentials allowed message");
-            return ret = false;
+            return false;
         }
     } else {
         if (!util::socket_write_string(fd, RESPONSE_DENY)) {
             LOGE("Failed to send credentials denied message");
         }
-        return ret = false;
+        return false;
     }
 
     int32_t version;
     if (!util::socket_read_int32(fd, &version)) {
         LOGE("Failed to get interface version");
-        return ret = false;
+        return false;
     }
 
     if (version == 2) {
         LOGE("Protocol version 2 is no longer supported");
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
-        return ret = false;
+        return false;
     } else if (version == 3) {
         if (!util::socket_write_string(fd, RESPONSE_OK)) {
             return false;
         }
 
-        if (!connection_version_3(fd)) {
-            LOGE("[Version 3] Communication error");
-        }
+        connection_version_3(fd);
         return true;
     } else {
         LOGE("Unsupported interface version: %d", version);
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
-        return ret = false;
+        return false;
     }
 
     return true;
