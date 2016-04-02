@@ -275,13 +275,13 @@ public class MbtoolConnection implements Closeable {
         String abi = getAbi();
 
         File mbtool = new File(PatcherUtils.getTargetDirectory(context) +
-                File.separator + "data" +
                 File.separator + "binaries" +
+                File.separator + "android" +
                 File.separator + abi +
                 File.separator + "mbtool");
         File mbtoolSig = new File(PatcherUtils.getTargetDirectory(context) +
-                File.separator + "data" +
                 File.separator + "binaries" +
+                File.separator + "android" +
                 File.separator + abi +
                 File.separator + "mbtool.sig");
 
