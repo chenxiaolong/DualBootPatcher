@@ -265,15 +265,6 @@ public class MbtoolConnection implements Closeable {
                 && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
                 && CommandUtils.runRootCommand("mount -o remount,ro / || :") == 0
                 && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
-
-        // Give mbtool a little bit of time to start listening on the socket
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return ret;
     }
 
     public static boolean replaceViaSignedExec(Context context) {
