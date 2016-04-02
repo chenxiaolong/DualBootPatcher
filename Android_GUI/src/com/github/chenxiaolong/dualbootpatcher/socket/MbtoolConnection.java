@@ -311,10 +311,12 @@ public class MbtoolConnection implements Closeable {
                     throw new IllegalStateException("Failed to create interface for version: " + i);
                 }
 
-                // Use signed exec to replace mbtool
+                // Use signed exec to replace mbtool. This purposely sets argv[0] to "mbtool" and
+                // argv[1] to "daemon" instead of just setting argv[0] to "daemon" because --replace
+                // kills processes with cmdlines matching the former case.
                 SignedExecCompletion completion = iface.signedExec(
                         mbtool.getAbsolutePath(), mbtoolSig.getAbsolutePath(),
-                        "daemon", new String[] { "--replace", "--daemonize" }, null);
+                        "mbtool", new String[] { "daemon", "--replace", "--daemonize" }, null);
 
                 switch (completion.result) {
                 case SignedExecResult.PROCESS_EXITED:
