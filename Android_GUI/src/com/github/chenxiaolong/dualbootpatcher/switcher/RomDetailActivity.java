@@ -31,7 +31,6 @@ import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -45,7 +44,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
@@ -53,6 +51,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
@@ -1010,21 +1009,11 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private Snackbar createSnackbar(String text, int duration) {
-        Snackbar snackbar = Snackbar.make(mCoordinator, text, duration);
-        snackbarSetTextColor(snackbar);
-        return snackbar;
+        return SnackbarUtils.createSnackbar(this, mCoordinator, text, duration);
     }
 
     private Snackbar createSnackbar(@StringRes int resId, int duration) {
-        Snackbar snackbar = Snackbar.make(mCoordinator, resId, duration);
-        snackbarSetTextColor(snackbar);
-        return snackbar;
-    }
-
-    private void snackbarSetTextColor(Snackbar snackbar) {
-        View view = snackbar.getView();
-        TextView textView = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-        textView.setTextColor(ContextCompat.getColor(this, R.color.text_color_primary));
+        return SnackbarUtils.createSnackbar(this, mCoordinator, resId, duration);
     }
 
     private String targetsToString(short[] targets) {
