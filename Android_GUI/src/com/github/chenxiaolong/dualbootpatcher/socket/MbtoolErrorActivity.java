@@ -29,6 +29,9 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
+        .GenericConfirmDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
@@ -41,7 +44,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWith
 import java.util.ArrayList;
 
 public class MbtoolErrorActivity extends AppCompatActivity implements ServiceConnection,
-        GenericYesNoDialogListener {
+        GenericYesNoDialogListener, GenericConfirmDialogListener {
     private static final String DIALOG_TAG =
             MbtoolErrorActivity.class.getCanonicalName() + ".dialog";
 
@@ -181,13 +184,13 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
             break;
         case SIGNATURE_CHECK_FAIL:
             dialog = GenericYesNoDialog.newInstanceFromActivity(0, null,
-                    getString(R.string.mbtool_error_signature_check_fail),
+                    getString(R.string.mbtool_dialog_signature_check_fail),
                     getString(R.string.proceed), getString(R.string.cancel));
             break;
         case INTERFACE_NOT_SUPPORTED:
         case VERSION_TOO_OLD:
             dialog = GenericYesNoDialog.newInstanceFromActivity(0, null,
-                    getString(R.string.mbtool_error_version_too_old),
+                    getString(R.string.mbtool_dialog_version_too_old),
                     getString(R.string.proceed), getString(R.string.cancel));
             break;
         default:
@@ -207,6 +210,17 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
             dialog.dismiss();
         }
 
+        if (!success) {
+            dialog = GenericConfirmDialog.newInstanceFromActivity(
+                    0, null, getString(R.string.mbtool_dialog_update_failed),
+                    getString(R.string.ok));
+            dialog.show(getFragmentManager(), DIALOG_TAG);
+        } else {
+            exit(true);
+        }
+    }
+
+    private void exit(boolean success) {
         Intent intent = new Intent();
         intent.putExtra(EXTRA_RESULT_CAN_RETRY, success);
         setResult(RESULT_OK, intent);
@@ -222,6 +236,15 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
             dialog.show(getFragmentManager(), DIALOG_TAG);
 
             startMbtoolUpdate();
+        } else {
+            finish();
+        }
+    }
+
+    @Override
+    public void onConfirmOk(int id) {
+        if (id == 0) {
+            exit(false);
         } else {
             finish();
         }

@@ -497,14 +497,17 @@
     <!-- Progress dialog message shown when updating mbtool (with root) -->
     <string name="mbtool_dialog_updating_mbtool">Updating mbtool…\n(This will require root)</string>
     <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
-    <string name="mbtool_error_signature_check_fail">mbtool rejected the connection from this app.
+    <string name="mbtool_dialog_signature_check_fail">mbtool rejected the connection from this app.
         This can happen if an unofficial build of the app is used or if the app was maliciously
         modified. If you continue anyway, mbtool will be killed and the bundled mbtool will be run
         using root.</string>
     <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->
-    <string name="mbtool_error_version_too_old">The current mbtool version is too old. It must be
+    <string name="mbtool_dialog_version_too_old">The current mbtool version is too old. It must be
         updated for certain functionality to work, such as switching ROMs. This will require root
         access.</string>
+    <!-- Confirm dialog message shown when updating mbtool failed -->
+    <string name="mbtool_dialog_update_failed">Failed to update mbtool. Many operations, such as
+        switching ROMs will not work.</string>
 
     <!-- Word/phrase for Search (used in action bars) -->
     <string name="search">Search</string>
