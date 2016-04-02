@@ -249,6 +249,9 @@ static bool run_daemon(void)
                 _exit(127);
             }
 
+            // Don't need the listening socket fd
+            close(fd);
+
             bool ret = client_connection(client_fd);
             close(client_fd);
             _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
