@@ -20,8 +20,10 @@ endif()
 
 if(NOT ANDROID)
     # Qt5
-    find_package(Qt5Core 5.3 REQUIRED)
-    find_package(Qt5Widgets 5.3 REQUIRED)
+    if (${MBP_BUILD_TARGET} STREQUAL desktop)
+        find_package(Qt5Core 5.3 REQUIRED)
+        find_package(Qt5Widgets 5.3 REQUIRED)
+    endif()
 
     # GTest
     if(MBP_ENABLE_TESTS)
