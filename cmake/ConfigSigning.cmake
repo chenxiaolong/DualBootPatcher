@@ -74,7 +74,8 @@ endif()
 
 if(NOT MBP_SIGN_CONFIG_PATH)
     message(FATAL_ERROR
-            "A code signing configuration file must be provided. "
+            "MBP_SIGN_CONFIG_PATH must be set to the path of the "
+            "code signing configuration file. "
             "See cmake/SigningConfig.prop.in for more details")
 endif()
 
