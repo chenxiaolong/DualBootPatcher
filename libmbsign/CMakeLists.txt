@@ -1,4 +1,5 @@
 if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL desktop
         AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
     return()
 endif()
