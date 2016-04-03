@@ -251,6 +251,11 @@ bool Installer::create_chroot()
     run_command({ "mount", "/data" });
     run_command({ "mount", "-o", "ro", "/efs" });
 
+    // Remount as writable (needed for in-app flashing)
+    log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_cache_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_data_partition().c_str(), "", MS_REMOUNT, "");
+
     // Make sure everything really is mounted
     if (!log_is_mounted("/system")
             || !log_is_mounted("/cache")
