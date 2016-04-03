@@ -35,6 +35,7 @@ else()
         set(ENABLE_CAT OFF CACHE INTERNAL "Enable cat building")
         set(ENABLE_TEST OFF CACHE INTERNAL "Enable unit and regression tests")
         set(ENABLE_INSTALL OFF CACHE INTERNAL "Enable installing of libraries")
+        set(ENABLE_INSTALL_DOCS OFF CACHE INTERNAL "Enable installation of docs")
 
         set(ZLIB_INCLUDE_DIR ${MBP_ZLIB_INCLUDES})
         set(ZLIB_LIBRARY ${MBP_ZLIB_LIBRARIES})
