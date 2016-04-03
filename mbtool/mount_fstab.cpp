@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -56,6 +56,7 @@
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
+#include "signature.h"
 #include "initwrapper/devices.h"
 
 
@@ -369,6 +370,19 @@ static bool mount_exfat_fuse(const std::string &source,
                              const std::string &target)
 {
     uid_t uid = get_media_rw_uid();
+
+    // Check signatures
+    SigVerifyResult result;
+    result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid fsck.exfat signature");
+        return false;
+    }
+    result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mount.exfat signature");
+        return false;
+    }
 
     // Run filesystem checks
     util::run_command_cb({
