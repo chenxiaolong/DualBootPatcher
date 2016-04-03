@@ -31,8 +31,22 @@
 
 #include "mblog/logging.h"
 
-#undef BUFSIZE
-#define BUFSIZE 1024 * 8
+#define BUFSIZE                 1024 * 8
+
+#define MAGIC                   "!MBSIGN!"
+#define MAGIC_SIZE              8
+
+#define VERSION_1_SHA512_DGST   1u
+#define VERSION_LATEST          VERSION_1_SHA512_DGST
+
+// NOTE: All integers are stored in little endian form
+struct SigHeader
+{
+    char magic[MAGIC_SIZE];
+    uint32_t version;
+    uint32_t flags;
+    uint32_t unused;
+};
 
 namespace mb
 {
@@ -321,16 +335,16 @@ EVP_PKEY * load_public_key_from_file(const char *file, int format,
  *
  * \param bio_data_in Input stream for data
  * \param bio_sig_out Output stream for signature
- * \param md_type Message digest algorithm
  * \param pkey Private key
  *
  * \return Whether the signing operation was successful
  */
-bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
-               const EVP_MD *md_type, EVP_PKEY *pkey)
+bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
 {
-    assert(bio_data_in && bio_sig_out && md_type && pkey);
+    assert(bio_data_in && bio_sig_out && pkey);
 
+    unsigned int version = VERSION_LATEST;
+    const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
     EVP_PKEY_CTX *pctx = nullptr;
 #ifdef OPENSSL_IS_BORINGSSL
@@ -342,6 +356,13 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
     unsigned char *buf = nullptr;
     size_t len;
     int n;
+
+    if (version == VERSION_1_SHA512_DGST) {
+        md_type = EVP_sha512();
+    } else {
+        LOGE("Invalid signature file version");
+        return false;
+    }
 
 #ifdef OPENSSL_IS_BORINGSSL
     EVP_MD_CTX_init(&ctx);
@@ -405,6 +426,18 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
         goto error;
     }
 
+    // Write header
+    SigHeader hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
+    hdr.version = version;
+
+    if (BIO_write(bio_sig_out, &hdr, sizeof(hdr)) != sizeof(hdr)) {
+        LOGE("Failed to write header to signature BIO stream");
+        openssl_log_errors();
+        goto error;
+    }
+
     if (BIO_write(bio_sig_out, buf, len) != (int) len) {
         LOGE("Failed to write signature to signature BIO stream");
         openssl_log_errors();
@@ -434,7 +467,6 @@ error:
  *
  * \param bio_data_in Input stream for data
  * \param bio_sig_in Input stream for signature
- * \param md_type Message digest algorithm
  * \param pkey Public key
  * \param result_out Output pointer for result of verification operation
  *
@@ -442,11 +474,12 @@ error:
  *         indicate whether the signature is valid)
  */
 bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
-                 const EVP_MD *md_type, EVP_PKEY *pkey,
-                 bool *result_out)
+                 EVP_PKEY *pkey, bool *result_out)
 {
-    assert(bio_data_in && bio_sig_in && md_type && pkey && result_out);
+    assert(bio_data_in && bio_sig_in && pkey && result_out);
 
+    SigHeader hdr;
+    const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
     EVP_PKEY_CTX *pctx = nullptr;
 #ifdef OPENSSL_IS_BORINGSSL
@@ -476,6 +509,29 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 #endif
+
+    // Read header from signature file
+    if (BIO_read(bio_sig_in, &hdr, sizeof(hdr)) != sizeof(hdr)) {
+        LOGE("Failed to read header from signature BIO stream");
+        openssl_log_errors();
+        goto error;
+    }
+
+    // Verify header
+    if (memcmp(hdr.magic, MAGIC, MAGIC_SIZE) != 0) {
+        LOGE("Invalid magic in signature file");
+        openssl_log_errors();
+        goto error;
+    }
+
+    // Verify version
+    if (hdr.version == VERSION_1_SHA512_DGST) {
+        md_type = EVP_sha512();
+    } else {
+        LOGE("Invalid version in signature file: %u", hdr.version);
+        openssl_log_errors();
+        goto error;
+    }
 
     if (!EVP_DigestVerifyInit(mctx, &pctx, md_type, nullptr, pkey)) {
         LOGE("Failed to set message digest context");

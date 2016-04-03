@@ -88,8 +88,7 @@ int main(int argc, char *argv[])
         goto error;
     }
 
-    ret = mb::sign::sign_data(bio_data_in, bio_sig_out,
-                              EVP_sha512(), private_key);
+    ret = mb::sign::sign_data(bio_data_in, bio_sig_out, private_key);
 
     EVP_PKEY_free(private_key);
 

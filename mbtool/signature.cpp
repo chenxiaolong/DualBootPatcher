@@ -115,8 +115,7 @@ static SigVerifyResult verify_signature_with_key(const char *path,
         goto error;
     }
 
-    ret = mb::sign::verify_data(bio_data_in, bio_sig_in,
-                                EVP_sha512(), public_key, &valid);
+    ret = mb::sign::verify_data(bio_data_in, bio_sig_in, public_key, &valid);
 
     BIO_free(bio_data_in);
     BIO_free(bio_sig_in);

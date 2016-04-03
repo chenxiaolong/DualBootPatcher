@@ -42,10 +42,9 @@ MB_EXPORT EVP_PKEY * load_public_key(BIO *bio_key, int format,
 MB_EXPORT EVP_PKEY * load_public_key_from_file(const char *file, int format,
                                                const char *pass);
 MB_EXPORT bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
-                         const EVP_MD *md_type, EVP_PKEY *pkey);
+                         EVP_PKEY *pkey);
 MB_EXPORT bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
-                           const EVP_MD *md_type, EVP_PKEY *pkey,
-                           bool *result_out);
+                           EVP_PKEY *pkey, bool *result_out);
 
 }
 }
