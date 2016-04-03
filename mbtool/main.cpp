@@ -21,7 +21,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/stat.h>
+#include <unistd.h>
 
 #ifdef RECOVERY
 #include "backup.h"
@@ -168,7 +170,7 @@ int main_normal(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    if (unshare(CLONE_NEWNS) < 0) {
+    if (geteuid() == 0 && unshare(CLONE_NEWNS) < 0) {
         fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
