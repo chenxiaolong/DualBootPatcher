@@ -22,9 +22,11 @@
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
+#include <mntent.h>
 #include <sys/stat.h>
 
 #include "mblog/logging.h"
+#include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
@@ -213,39 +215,40 @@ void Roms::add_data_roms()
 
 void Roms::add_extsd_roms()
 {
-    for (const std::string &mount_point : extsd_mount_points) {
-        std::string search_dir(mount_point);
-        search_dir += "/multiboot";
+    std::string mount_point = get_extsd_partition();
+    if (mount_point.empty()) {
+        return;
+    }
 
-        DIR *dp = opendir(search_dir.c_str());
-        if (!dp ) {
+    std::string search_dir(mount_point);
+    search_dir += "/multiboot";
+
+    DIR *dp = opendir(search_dir.c_str());
+    if (!dp) {
+        return;
+    }
+
+    auto close_dp = util::finally([&]{
+        closedir(dp);
+    });
+
+    struct stat sb;
+
+    struct dirent *ent;
+    while ((ent = readdir(dp))) {
+        if (strcmp(ent->d_name, "extsd-slot-") == 0
+                || !util::starts_with(ent->d_name, "extsd-slot-")) {
             continue;
         }
 
-        auto close_dp = util::finally([&]{
-            closedir(dp);
-        });
+        std::string image(search_dir);
+        image += "/";
+        image += ent->d_name;
+        image += "/system.img";
 
-        struct stat sb;
-
-        struct dirent *ent;
-        while ((ent = readdir(dp))) {
-            if (strcmp(ent->d_name, "extsd-slot-") == 0
-                    || !util::starts_with(ent->d_name, "extsd-slot-")) {
-                continue;
-            }
-
-            std::string image(search_dir);
-            image += "/";
-            image += ent->d_name;
-            image += "/system.img";
-
-            if (stat(image.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-                roms.push_back(create_rom_extsd_slot(ent->d_name + 11));
-            }
+        if (stat(image.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
+            roms.push_back(create_rom_extsd_slot(ent->d_name + 11));
         }
-
-        break;
     }
 }
 
@@ -421,26 +424,49 @@ std::string Roms::get_data_partition()
 
 std::string Roms::get_extsd_partition()
 {
-    // Loop through the list of paths. If the path is a mount point, then select
-    // that path. Otherwise, choose the first path that exists.
-    std::vector<std::string> maybe;
-
+    // Try hard-coded mount points first
     struct stat sb;
     for (const std::string &mount_point : extsd_mount_points) {
         if (stat(mount_point.c_str(), &sb) == 0) {
             if (util::is_mounted(mount_point)) {
                 return mount_point;
-            } else {
-                maybe.push_back(mount_point);
             }
         }
     }
 
-    if (maybe.empty()) {
-        return std::string();
-    } else {
-        return maybe[0];
+    static const char *prefix_mnt = "/mnt/media_rw/";
+    static const char *prefix_storage = "/storage/";
+
+    // Look for mounted MMC partitions
+    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+    if (fp) {
+        struct mntent ent;
+        char buf[1024];
+        struct stat sb;
+
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            // Skip useless mounts
+            if (!util::starts_with(ent.mnt_dir, prefix_mnt)) {
+                continue;
+            }
+
+            if (stat(ent.mnt_fsname, &sb) < 0) {
+                LOGW("%s: Failed to stat: %s", ent.mnt_fsname, strerror(errno));
+                continue;
+            }
+
+            if (major(sb.st_rdev) == 179) {
+                std::string path(prefix_storage);
+                path += ent.mnt_dir + strlen(prefix_mnt);
+
+                if (util::is_mounted(path)) {
+                    return path;
+                }
+            }
+        }
     }
+
+    return std::string();
 }
 
 std::string Roms::get_mountpoint(Rom::Source source)
