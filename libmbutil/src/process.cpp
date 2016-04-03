@@ -147,7 +147,7 @@ bool set_process_title_v(size_t *exceeded_out, const char *fmt, ...)
         return false;
     }
 
-    size_t n = ret >= sizeof(buf) ? sizeof(buf) - 1 : ret;
+    size_t n = (size_t) ret >= sizeof(buf) ? sizeof(buf) - 1 : ret;
     size_t n_set;
     if (!set_process_title(buf, n, &n_set)) {
         return false;
