@@ -69,8 +69,8 @@
 
 // Local
 #include "image.h"
-#include "main.h"
 #include "multiboot.h"
+#include "signature.h"
 #include "switcher.h"
 #include "wipe.h"
 
@@ -93,13 +93,14 @@
 //#define DEBUG_UPDATER_WRAPPER_ARGS "-f" // Comma-separated strings
 
 
+#define HELPER_TOOL             "/update-binary-tool"
+#define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
+#define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
+#define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
+#define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
+
 namespace mb {
 
-const std::string Installer::HELPER_TOOL = "/update-binary-tool";
-const std::string Installer::UPDATE_BINARY =
-        "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
-const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::CANCELLED = "cancelled";
 
 
@@ -249,6 +250,11 @@ bool Installer::create_chroot()
     run_command({ "mount", "/cache" });
     run_command({ "mount", "/data" });
     run_command({ "mount", "-o", "ro", "/efs" });
+
+    // Remount as writable (needed for in-app flashing)
+    log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_cache_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_data_partition().c_str(), "", MS_REMOUNT, "");
 
     // Make sure everything really is mounted
     if (!log_is_mounted("/system")
@@ -498,13 +504,30 @@ bool Installer::mount_efs() const
 bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
-        { UPDATE_BINARY + ".orig", _temp + "/updater"       },
-        { MULTIBOOT_BBWRAPPER,     _temp + "/bb-wrapper.sh" },
-        { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     },
+        { UPDATE_BINARY_ORIG,          _temp + "/updater"           },
+        { UPDATE_BINARY,               _temp + "/mbtool"            },
+        { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
+        { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
+        { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
+        { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
     };
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
+        return false;
+    }
+
+    SigVerifyResult result;
+    result = verify_signature((_temp + "/mbtool").c_str(),
+                              (_temp + "/mbtool.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mbtool signature");
+        return false;
+    }
+    result = verify_signature((_temp + "/bb-wrapper.sh").c_str(),
+                              (_temp + "/bb-wrapper.sh.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid busybox wrapper signature");
         return false;
     }
 
@@ -831,6 +854,7 @@ bool Installer::run_real_updater()
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
 
             execvpe(argv_c[0], const_cast<char * const *>(argv_c.data()), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
             _exit(127);
         } else {
             if (!_passthrough) {
@@ -1356,7 +1380,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     // Copy ourself for the real update-binary to use
-    util::copy_file(mb_self_get_path(), in_chroot(HELPER_TOOL),
+    util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
@@ -1700,7 +1724,7 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        int fd_source = open(temp_boot_img.c_str(), O_RDONLY);
+        int fd_source = open(temp_boot_img.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd_source < 0) {
             LOGE("Failed to open %s: %s",
                  temp_boot_img.c_str(), strerror(errno));
@@ -1709,7 +1733,7 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_source = util::finally([&] { close(fd_source); });
 
-        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY);
+        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY | O_CLOEXEC);
         if (fd_boot < 0) {
             LOGE("Failed to open %s: %s",
                  _boot_block_dev.c_str(), strerror(errno));
@@ -1718,7 +1742,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_boot = util::finally([&] { close(fd_boot); });
 
-        int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
+        int fd_backup = open(path.c_str(),
+                             O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0775);
         if (fd_backup < 0) {
             LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
             return ProceedState::Fail;

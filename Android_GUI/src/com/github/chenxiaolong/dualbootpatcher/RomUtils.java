@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.StatBuf;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.StatBuf;
 import com.squareup.picasso.Picasso;
 
 import org.apache.commons.io.Charsets;
@@ -241,44 +243,36 @@ public class RomUtils {
     }
 
     @Nullable
-    public static RomInformation getCurrentRom(Context context) {
-        try {
-            String id = MbtoolSocket.getInstance().getBootedRomId(context);
-            Log.d(TAG, "mbtool says current ROM ID is: " + id);
+    public static RomInformation getCurrentRom(Context context, MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
+        String id = iface.getBootedRomId();
+        Log.d(TAG, "mbtool says current ROM ID is: " + id);
 
-            for (RomInformation rom : getRoms(context)) {
-                if (rom.getId().equals(id)) {
-                    return rom;
-                }
+        for (RomInformation rom : getRoms(context, iface)) {
+            if (rom.getId().equals(id)) {
+                return rom;
             }
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
         }
 
         return null;
     }
 
     @NonNull
-    public synchronized static RomInformation[] getRoms(Context context) {
-        RomInformation[] roms = new RomInformation[0];
+    public synchronized static RomInformation[] getRoms(Context context, MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
+        RomInformation[] roms = iface.getInstalledRoms();
 
-        try {
-            roms = MbtoolSocket.getInstance().getInstalledRoms(context);
+        for (RomInformation rom : roms) {
+            rom.setThumbnailPath(Environment.getExternalStorageDirectory()
+                    + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
+            rom.setWallpaperPath(Environment.getExternalStorageDirectory()
+                    + "/MultiBoot/" + rom.getId() + "/wallpaper.webp");
+            rom.setConfigPath(Environment.getExternalStorageDirectory()
+                    + "/MultiBoot/" + rom.getId() + "/config.json");
+            rom.setImageResId(R.drawable.rom_android);
+            rom.setDefaultName(getDefaultName(context, rom));
 
-            for (RomInformation rom : roms) {
-                rom.setThumbnailPath(Environment.getExternalStorageDirectory()
-                        + "/MultiBoot/" + rom.getId() + "/thumbnail.webp");
-                rom.setWallpaperPath(Environment.getExternalStorageDirectory()
-                        + "/MultiBoot/" + rom.getId() + "/wallpaper.webp");
-                rom.setConfigPath(Environment.getExternalStorageDirectory()
-                        + "/MultiBoot/" + rom.getId() + "/config.json");
-                rom.setImageResId(R.drawable.rom_android);
-                rom.setDefaultName(getDefaultName(context, rom));
-
-                loadConfig(rom);
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
+            loadConfig(rom);
         }
 
         return roms;
@@ -351,22 +345,16 @@ public class RomUtils {
         return SystemPropertiesProxy.get(context, "ro.patcher.device", Build.DEVICE);
     }
 
-    private static boolean usesLiveWallpaper(Context context, RomInformation info) {
+    private static boolean usesLiveWallpaper(RomInformation info, MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
         String wallpaperInfoPath = info.getDataPath() + "/system/users/0/wallpaper_info.xml";
 
-        MbtoolSocket socket = MbtoolSocket.getInstance();
         int id = -1;
 
         try {
-            id = socket.fileOpen(context, wallpaperInfoPath, new short[]{ FileOpenFlag.RDONLY }, 0);
-            if (id < 0) {
-                return false;
-            }
+            id = iface.fileOpen(wallpaperInfoPath, new short[]{ FileOpenFlag.RDONLY }, 0);
 
-            StatBuf sb = socket.fileStat(context, id);
-            if (sb == null) {
-                return false;
-            }
+            StatBuf sb = iface.fileStat(id);
 
             // Check file size
             if (sb.st_size < 0 || sb.st_size > 1024) {
@@ -377,27 +365,22 @@ public class RomUtils {
             byte[] data = new byte[(int) sb.st_size];
             int nWritten = 0;
             while (nWritten < data.length) {
-                ByteBuffer newData = socket.fileRead(context, id, 10240);
-                if (newData == null) {
-                    return false;
-                }
+                ByteBuffer newData = iface.fileRead(id, 10240);
 
                 int nRead = newData.limit() - newData.position();
                 newData.get(data, nWritten, nRead);
                 nWritten += nRead;
             }
 
-            socket.fileClose(context, id);
+            iface.fileClose(id);
             id = -1;
 
             String xml = new String(data, Charsets.UTF_8);
             return xml.contains("component=");
-        } catch (IOException e) {
-            return false;
         } finally {
             if (id >= 0) {
                 try {
-                    socket.fileClose(context, id);
+                    iface.fileClose(id);
                 } catch (IOException e) {
                     // Ignore
                 }
@@ -412,8 +395,10 @@ public class RomUtils {
         USES_LIVE_WALLPAPER
     }
 
-    public static CacheWallpaperResult cacheWallpaper(Context context, RomInformation info) {
-        if (usesLiveWallpaper(context, info)) {
+    public static CacheWallpaperResult cacheWallpaper(Context context, RomInformation info,
+                                                      MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
+        if (usesLiveWallpaper(info, iface)) {
             // We can't render a snapshot of a live wallpaper
             return CacheWallpaperResult.USES_LIVE_WALLPAPER;
         }
@@ -422,20 +407,13 @@ public class RomUtils {
         File wallpaperCacheFile = new File(info.getWallpaperPath());
         FileOutputStream fos = null;
 
-        MbtoolSocket socket = MbtoolSocket.getInstance();
         int id = -1;
 
         try {
-            id = socket.fileOpen(context, wallpaperPath, new short[]{}, 0);
-            if (id < 0) {
-                return CacheWallpaperResult.FAILED;
-            }
+            id = iface.fileOpen(wallpaperPath, new short[]{}, 0);
 
             // Check if we need to re-cache the file
-            StatBuf sb = socket.fileStat(context, id);
-            if (sb == null) {
-                return CacheWallpaperResult.FAILED;
-            }
+            StatBuf sb = iface.fileStat(id);
 
             if (wallpaperCacheFile.exists()
                     && wallpaperCacheFile.lastModified() / 1000 > sb.st_mtime) {
@@ -452,17 +430,14 @@ public class RomUtils {
             byte[] data = new byte[(int) sb.st_size];
             int nWritten = 0;
             while (nWritten < data.length) {
-                ByteBuffer newData = socket.fileRead(context, id, 10240);
-                if (newData == null) {
-                    return CacheWallpaperResult.FAILED;
-                }
+                ByteBuffer newData = iface.fileRead(id, 10240);
 
                 int nRead = newData.limit() - newData.position();
                 newData.get(data, nWritten, nRead);
                 nWritten += nRead;
             }
 
-            socket.fileClose(context, id);
+            iface.fileClose(id);
             id = -1;
 
             fos = new FileOutputStream(wallpaperCacheFile);
@@ -484,13 +459,10 @@ public class RomUtils {
 
             Log.d(TAG, "Wallpaper for " + info.getId() + " has been cached");
             return CacheWallpaperResult.UPDATED;
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to cache wallpaper for " + info.getId(), e);
-            return CacheWallpaperResult.FAILED;
         } finally {
             if (id >= 0) {
                 try {
-                    socket.fileClose(context, id);
+                    iface.fileClose(id);
                 } catch (IOException e) {
                     // Ignore
                 }

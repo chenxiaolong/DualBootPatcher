@@ -1,0 +1,36 @@
+namespace mbtool.daemon.v3;
+
+// This is not meant to replace root. It will only execute binaries that are
+// signed by the private keys with matching certs in validcerts.cpp. None of the
+// mbtool commands are interactive, so this does not handle stdin, does not open
+// a PTY, etc. stdout and stderr lines will be returned.
+
+table SignedExecRequest {
+    // Path to binary
+    binary_path : string;
+    // Path to signature for binary
+    signature_path : string;
+    // Arguments
+    args : [string];
+    // argv[0] (optional)
+    arg0 : string;
+}
+
+table SignedExecOutputResponse {
+    // Output line (including newline)
+    line : string;
+}
+
+enum SignedExecResult : short {
+    PROCESS_EXITED,
+    PROCESS_KILLED_BY_SIGNAL,
+    INVALID_SIGNATURE,
+    OTHER_ERROR
+}
+
+table SignedExecResponse {
+    result : SignedExecResult;
+    error_msg : string;
+    exit_status : int;
+    term_sig : int;
+}

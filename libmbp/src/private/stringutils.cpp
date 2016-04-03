@@ -247,7 +247,9 @@ std::string StringUtils::toPrintable(const unsigned char *data, std::size_t size
     output.reserve(4 * size);
 
     for (std::size_t i = 0; i < size; ++i) {
-        if (isprint(data[i])) {
+        if (data[i] == '\\') {
+            output += "\\\\";
+        } else if (isprint(data[i])) {
             output += static_cast<char>(data[i]);
         } else if (data[i] == '\a') {
             output += "\\a";

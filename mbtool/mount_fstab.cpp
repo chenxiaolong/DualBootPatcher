@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -56,6 +56,7 @@
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
+#include "signature.h"
 #include "initwrapper/devices.h"
 
 
@@ -289,7 +290,7 @@ static bool write_generated_fstab(const std::vector<util::fstab_rec *> &recs,
                                   const std::string &path, mode_t mode)
 {
     // Generate new fstab without /system, /cache, or /data entries
-    autoclose::file out(autoclose::fopen(path.c_str(), "wb"));
+    autoclose::file out(autoclose::fopen(path.c_str(), "wbe"));
     if (!out) {
         LOGE("Failed to open %s for writing: %s",
              path.c_str(), strerror(errno));
@@ -369,6 +370,19 @@ static bool mount_exfat_fuse(const std::string &source,
                              const std::string &target)
 {
     uid_t uid = get_media_rw_uid();
+
+    // Check signatures
+    SigVerifyResult result;
+    result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid fsck.exfat signature");
+        return false;
+    }
+    result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mount.exfat signature");
+        return false;
+    }
 
     // Run filesystem checks
     util::run_command_cb({
@@ -742,7 +756,7 @@ static bool disable_fsck(const char *fsck_binary)
     path += "/";
     path += filename;
 
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
+    autoclose::file fp(autoclose::fopen(path.c_str(), "wbe"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
@@ -1019,7 +1033,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {
         LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom->id.c_str());
-        autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "a"));
+        autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "ae"));
         if (fp) {
             fprintf(fp.get(), "\nro.multiboot.romid=%s\n", rom->id.c_str());
         }

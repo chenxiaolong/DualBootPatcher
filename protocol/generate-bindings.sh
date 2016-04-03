@@ -17,6 +17,7 @@ files=(
     v3/path_selinux_get_label.fbs
     v3/path_selinux_set_label.fbs
     v3/path_get_directory_size.fbs
+    v3/signed_exec.fbs
     v3/mb_get_version.fbs
     v3/mb_get_installed_roms.fbs
     v3/mb_get_booted_rom_id.fbs

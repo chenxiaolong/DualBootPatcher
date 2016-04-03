@@ -51,10 +51,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_INTERNAL_PREBUILTS_DIR=${MBP_PREBUILTS_DIR}
-            -DMBP_SIGN_JAVA_KEYSTORE_PATH=${MBP_SIGN_JAVA_KEYSTORE_PATH}
-            -DMBP_SIGN_JAVA_KEYSTORE_PASSWORD=${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}
-            -DMBP_SIGN_JAVA_KEY_ALIAS=${MBP_SIGN_JAVA_KEY_ALIAS}
-            -DMBP_SIGN_JAVA_KEY_PASSWORD=${MBP_SIGN_JAVA_KEY_PASSWORD}
+            -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
         )
 
@@ -80,8 +77,6 @@ if(MBP_TOP_LEVEL_BUILD)
 
         message(STATUS "Recursive CMake build for Android system components (${abi}):")
         foreach(_option ${INTERNAL_ANDROID_SYSTEM_OPTIONS})
-            string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
-                   _option "${_option}")
             message(STATUS "  ${_option}")
         endforeach()
 
@@ -96,14 +91,30 @@ if(MBP_TOP_LEVEL_BUILD)
             VERBATIM
         )
 
+        set(result_files
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse)
+        set(sig_files "")
+        foreach(file ${result_files})
+            list(APPEND sig_files "${file}.sig")
+        endforeach()
+
+        add_sign_files_target(
+            sign_android-system_${abi}
+            ${result_files}
+        )
+        add_dependencies(
+            sign_android-system_${abi}
+            android-system_${abi}
+        )
+
         ExternalProject_Get_Property(android-system_${abi} BINARY_DIR)
         list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
 
         install(
-            FILES ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
-                  ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse
+            FILES ${result_files} ${sig_files}
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )
@@ -112,8 +123,6 @@ if(MBP_TOP_LEVEL_BUILD)
         if(${MBP_BUILD_TARGET} STREQUAL android)
             message(STATUS "Recursive CMake build for Android app components (${abi}):")
             foreach(_option ${INTERNAL_ANDROID_APP_OPTIONS})
-                string(REGEX REPLACE "([^=]*PASSWORD[^=]*=).*" "\\1<REDACTED>"
-                       _option "${_option}")
                 message(STATUS "  ${_option}")
             endforeach()
 

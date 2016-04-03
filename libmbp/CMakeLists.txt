@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
@@ -117,7 +113,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             C_STANDARD_REQUIRED 1
         )
     endif()
-else()
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
     # Build shared library
 
     add_library(mbp-shared SHARED ${MBP_SOURCES})

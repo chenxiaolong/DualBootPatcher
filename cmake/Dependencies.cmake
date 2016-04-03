@@ -13,14 +13,17 @@ if(MBP_TOP_LEVEL_BUILD)
     endif()
 endif()
 
-if(NOT MBP_TARGET_NEEDS_BUILDS)
+# Don't need dependencies for Android top-level build
+if(${MBP_BUILD_TARGET} STREQUAL android)
     return()
 endif()
 
 if(NOT ANDROID)
     # Qt5
-    find_package(Qt5Core 5.3 REQUIRED)
-    find_package(Qt5Widgets 5.3 REQUIRED)
+    if (${MBP_BUILD_TARGET} STREQUAL desktop)
+        find_package(Qt5Core 5.3 REQUIRED)
+        find_package(Qt5Widgets 5.3 REQUIRED)
+    endif()
 
     # GTest
     if(MBP_ENABLE_TESTS)
@@ -73,17 +76,20 @@ if(NOT ANDROID)
     endif()
 endif()
 
-include(cmake/dependencies/zlib.cmake)
-include(cmake/dependencies/liblzma.cmake)
-include(cmake/dependencies/lz4.cmake)
-include(cmake/dependencies/lzo.cmake)
-include(cmake/dependencies/libarchive.cmake)
-include(cmake/dependencies/jansson.cmake)
-include(cmake/dependencies/libsepol.cmake)
+if(NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
+    include(cmake/dependencies/zlib.cmake)
+    include(cmake/dependencies/liblzma.cmake)
+    include(cmake/dependencies/lz4.cmake)
+    include(cmake/dependencies/lzo.cmake)
+    include(cmake/dependencies/libarchive.cmake)
+    include(cmake/dependencies/jansson.cmake)
+    include(cmake/dependencies/libsepol.cmake)
+    include(cmake/dependencies/fuse.cmake)
+    include(cmake/dependencies/procps-ng.cmake)
+    include(cmake/dependencies/minizip.cmake)
+endif()
+
 include(cmake/dependencies/openssl.cmake)
-include(cmake/dependencies/fuse.cmake)
-include(cmake/dependencies/procps-ng.cmake)
-include(cmake/dependencies/minizip.cmake)
 
 if(NOT ANDROID)
     # Restore CMAKE_FIND_LIBRARY_SUFFIXES

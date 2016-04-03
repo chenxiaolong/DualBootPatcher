@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <proc/readproc.h>
@@ -35,6 +36,7 @@
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/finally.h"
+#include "mbutil/process.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -54,6 +56,11 @@
 
 namespace mb
 {
+
+static int pipe_fds[2];
+static bool send_ok_to_pipe = false;
+
+static autoclose::file log_fp(nullptr, std::fclose);
 
 static bool verify_credentials(uid_t uid)
 {
@@ -98,13 +105,6 @@ static bool verify_credentials(uid_t uid)
 
 static bool client_connection(int fd)
 {
-    bool ret = true;
-    auto fail = util::finally([&] {
-        if (!ret) {
-            LOGE("Killing connection");
-        }
-    });
-
     LOGD("Accepted connection from %d", fd);
 
     struct ucred cred;
@@ -112,48 +112,53 @@ static bool client_connection(int fd)
 
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) < 0) {
         LOGE("Failed to get socket credentials: %s", strerror(errno));
-        return ret = false;
+        return false;
     }
+
+    util::set_process_title_v(
+            nullptr, "mbtool connection from pid: %u", cred.pid);
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
     LOGD("Client GID: %u", cred.gid);
 
+    auto disconnect_msg = util::finally([&]{
+        LOGD("Disconnecting connection from PID: %u", cred.pid);
+    });
+
     if (verify_credentials(cred.uid)) {
         if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
             LOGE("Failed to send credentials allowed message");
-            return ret = false;
+            return false;
         }
     } else {
         if (!util::socket_write_string(fd, RESPONSE_DENY)) {
             LOGE("Failed to send credentials denied message");
         }
-        return ret = false;
+        return false;
     }
 
     int32_t version;
     if (!util::socket_read_int32(fd, &version)) {
         LOGE("Failed to get interface version");
-        return ret = false;
+        return false;
     }
 
     if (version == 2) {
         LOGE("Protocol version 2 is no longer supported");
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
-        return ret = false;
+        return false;
     } else if (version == 3) {
         if (!util::socket_write_string(fd, RESPONSE_OK)) {
             return false;
         }
 
-        if (!connection_version_3(fd)) {
-            LOGE("[Version 3] Communication error");
-        }
+        connection_version_3(fd);
         return true;
     } else {
         LOGE("Unsupported interface version: %d", version);
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
-        return ret = false;
+        return false;
     }
 
     return true;
@@ -196,6 +201,16 @@ static bool run_daemon(void)
         return false;
     }
 
+    // Let parent process know that we're ready if we're forking the daemon
+    if (send_ok_to_pipe) {
+        ssize_t n = write(pipe_fds[1], "", 1);
+        close(pipe_fds[1]);
+        if (n < 0) {
+            LOGE("Failed to send OK to parent process");
+            return false;
+        }
+    }
+
     // Eat zombies!
     // SIG_IGN reaps zombie processes (it's not just a dummy function)
     struct sigaction sa;
@@ -215,6 +230,28 @@ static bool run_daemon(void)
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
+            // Change the process name so --replace doesn't kill existing
+            // connections
+            if (!util::set_process_title_v(
+                    nullptr, "mbtool connection initializing")) {
+                LOGE("Failed to set process title: %s", strerror(errno));
+                _exit(127);
+            }
+
+            // Restore default SIGCHLD handler
+            struct sigaction sa;
+            sa.sa_handler = SIG_DFL;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            if (sigaction(SIGCHLD, &sa, 0) < 0) {
+                LOGE("Failed to set default SIGCHLD handler: %s",
+                     strerror(errno));
+                _exit(127);
+            }
+
+            // Don't need the listening socket fd
+            close(fd);
+
             bool ret = client_connection(client_fd);
             close(client_fd);
             _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -230,59 +267,139 @@ static bool run_daemon(void)
     return true;
 }
 
+static bool redirect_stdio_to_dev_null()
+{
+    bool ret = true;
+
+    int fd = open("/dev/null", O_RDWR);
+    if (fd < 0) {
+        LOGE("Failed to open /dev/null: %s", strerror(errno));
+        return false;
+    }
+    if (dup2(fd, STDIN_FILENO) < 0) {
+        LOGE("Failed to reopen stdin: %s", strerror(errno));
+        ret = false;
+    }
+    if (dup2(fd, STDOUT_FILENO) < 0) {
+        LOGE("Failed to reopen stdout: %s", strerror(errno));
+        ret = false;
+    }
+    if (dup2(fd, STDERR_FILENO) < 0) {
+        LOGE("Failed to reopen stderr: %s", strerror(errno));
+        ret = false;
+    }
+    if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO) {
+        close(fd);
+    }
+
+    return ret;
+}
+
+static bool daemon_init()
+{
+    if (chdir("/") < 0) {
+        LOGE("Failed to change cwd to /: %s", strerror(errno));
+        return false;
+    }
+
+    umask(0);
+
+    if (!redirect_stdio_to_dev_null()) {
+        return false;
+    }
+
+    // Set up logging
+    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
+        LOGE("Failed to create parent directory of %s: %s",
+             MULTIBOOT_LOG_DAEMON, strerror(errno));
+        return false;
+    }
+
+    log_fp = autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w");
+    if (!log_fp) {
+        LOGE("Failed to open log file %s: %s",
+             MULTIBOOT_LOG_DAEMON, strerror(errno));
+        return false;
+    }
+
+    fix_multiboot_permissions();
+
+    // mbtool logging
+    log::log_set_logger(std::make_shared<log::StdioLogger>(log_fp.get(), true));
+
+    LOGD("Initialized daemon");
+
+    return true;
+}
+
 __attribute__((noreturn))
 static void run_daemon_fork(void)
 {
     pid_t pid = fork();
     if (pid < 0) {
-        LOGE("Failed to fork: %s", strerror(errno));
+        fprintf(stderr, "Failed to fork: %s\n", strerror(errno));
         _exit(EXIT_FAILURE);
     } else if (pid > 0) {
+        int status;
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                fprintf(stderr, "Failed to waitpid(): %s\n", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
         _exit(EXIT_SUCCESS);
     }
 
+    // Become session and process group leader
     if (setsid() < 0) {
-        LOGE("Failed to become session leader: %s", strerror(errno));
+        fprintf(stderr, "Failed to become session leader: %s\n",
+                strerror(errno));
         _exit(EXIT_FAILURE);
     }
 
+    // Ignore hangup signal
     signal(SIGHUP, SIG_IGN);
+
+    // Create pipe for the daemon to tell us it is listening for connections
+    send_ok_to_pipe = true;
+    if (pipe(pipe_fds) < 0) {
+        fprintf(stderr, "Failed to create pipe: %s\n", strerror(errno));
+        _exit(EXIT_FAILURE);
+    }
 
     pid = fork();
     if (pid < 0) {
-        LOGE("Failed to fork: %s", strerror(errno));
+        fprintf(stderr, "Failed to fork: %s\n", strerror(errno));
         _exit(EXIT_FAILURE);
     } else if (pid > 0) {
+        // Close write end of pipe
+        close(pipe_fds[1]);
+
+        fprintf(stderr, "Waiting for daemon to start...");
+
+        // Wait for OK from child
+        char dummy;
+        ssize_t n = read(pipe_fds[0], &dummy, 1);
+        // Close read end of pipe
+        close(pipe_fds[0]);
+
+        if (n < 0) {
+            fprintf(stderr, " Failed: %s\n", strerror(errno));
+            _exit(EXIT_FAILURE);
+        } else if (n != 1) {
+            fprintf(stderr, " Failed\n");
+            _exit(EXIT_FAILURE);
+        }
+
+        fprintf(stderr, " OK\n");
         _exit(EXIT_SUCCESS);
     }
 
-    if (chdir("/") < 0) {
-        LOGE("Failed to change cwd to /: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
+    // Close read end of the pipe
+    close(pipe_fds[0]);
 
-    umask(0);
-
-    LOGD("Started daemon in background");
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    if (open("/dev/null", O_RDONLY) < 0) {
-        LOGE("Failed to reopen stdin: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
-    if (open("/dev/null", O_WRONLY) < 0) {
-        LOGE("Failed to reopen stdout: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
-    if (open("/dev/null", O_RDWR) < 0) {
-        LOGE("Failed to reopen stderr: %s", strerror(errno));
-        _exit(EXIT_FAILURE);
-    }
-
-    run_daemon();
-    _exit(EXIT_SUCCESS);
+    _exit((daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static bool patch_sepolicy_daemon()
@@ -381,8 +498,8 @@ int daemon_main(int argc, char *argv[])
     // meh ...
     if (getppid() == 1) {
         if (!util::set_property("ro.multiboot.version", get_mbtool_version())) {
-            std::printf("Failed to set 'ro.multiboot.version' to '%s'\n",
-                        get_mbtool_version());
+            LOGW("Failed to set 'ro.multiboot.version' to '%s'\n",
+                 get_mbtool_version());
         }
     }
 
@@ -392,14 +509,27 @@ int daemon_main(int argc, char *argv[])
             pid_t curpid = getpid();
 
             while (proc_t *info = readproc(proc, nullptr)) {
-                if (strcmp(info->cmd, "mbtool") == 0          // This is mbtool
-                        && info->cmdline                      // And we can see the command line
-                        && info->cmdline[1]                   // And argc > 1
-                        && strstr(info->cmdline[1], "daemon") // And it's a daemon process
-                        && info->tid != curpid) {             // And we're not killing ourself
-                    // Kill the daemon process
-                    std::printf("Killing PID %d\n", info->tid);
-                    kill(info->tid, SIGTERM);
+                // NOTE: Can't check 'strcmp(info->cmd, "mbtool") == 0' (which
+                // is the basename of /proc/<pid>/cmd) because the binary is not
+                // always called "mbtool". For example, when run via SignedExec,
+                // it's just called "binary".
+
+                // If we can read the cmdline and argc >= 2
+                if (info->cmdline && info->cmdline[0] && info->cmdline[1]) {
+                    const char *name = strrchr(info->cmdline[0], '/');
+                    if (name) {
+                        ++name;
+                    } else {
+                        name = info->cmdline[0];
+                    }
+
+                    if (strcmp(name, "mbtool") == 0               // This is mbtool
+                            && strstr(info->cmdline[1], "daemon") // And it's a daemon process
+                            && info->tid != curpid) {             // And we're not killing ourself
+                        // Kill the daemon process
+                        LOGV("Killing PID %d\n", info->tid);
+                        kill(info->tid, SIGTERM);
+                    }
                 }
 
                 freeproc(info);
@@ -412,29 +542,10 @@ int daemon_main(int argc, char *argv[])
         usleep(500000);
     }
 
-    // Set up logging
-    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
-        fprintf(stderr, "Failed to create parent directory of %s: %s\n",
-                MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w"));
-    if (!fp) {
-        fprintf(stderr, "Failed to open log file %s: %s\n",
-                MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    fix_multiboot_permissions();
-
-    // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
-
     if (fork_flag) {
         run_daemon_fork();
     } else {
-        return run_daemon() ? EXIT_SUCCESS : EXIT_FAILURE;
+        return (daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 }
 

@@ -329,7 +329,7 @@ static void create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wb"));
+    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -1135,7 +1135,7 @@ int appsync_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "w"));
+    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "we"));
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));

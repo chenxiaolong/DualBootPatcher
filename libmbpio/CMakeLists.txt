@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 include_directories(external/android-libc)
 
 set(MBP_IO_SOURCES
@@ -54,26 +50,30 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
     )
 endif()
 
-add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+if(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+    add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
 
-target_compile_definitions(
-    mbpio-static
-    PRIVATE
-    #-DDMB_DYNAMIC_LINK
-    -DMB_LIBRARY
-)
+    target_compile_definitions(
+        mbpio-static
+        PRIVATE
+        #-DDMB_DYNAMIC_LINK
+        -DMB_LIBRARY
+    )
 
-set_target_properties(
-    mbpio-static
-    PROPERTIES
-    POSITION_INDEPENDENT_CODE 1
-)
-
-if(NOT MSVC)
     set_target_properties(
         mbpio-static
         PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED 1
+        POSITION_INDEPENDENT_CODE 1
     )
+
+    if(NOT MSVC)
+        set_target_properties(
+            mbpio-static
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
 endif()

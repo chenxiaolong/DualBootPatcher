@@ -42,10 +42,6 @@ public:
 
 
 protected:
-    static const std::string HELPER_TOOL;
-    static const std::string UPDATE_BINARY;
-    static const std::string MULTIBOOT_BBWRAPPER;
-    static const std::string MULTIBOOT_INFO_PROP;
     static const std::string CANCELLED;
 
     enum class ProceedState {

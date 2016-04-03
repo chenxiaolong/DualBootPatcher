@@ -1,4 +1,4 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
+if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     return()
 endif()
 
@@ -6,8 +6,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include_directories(${MBP_JANSSON_INCLUDES})
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBCRYPTO_INCLUDES})
 include_directories(${MBP_LIBSEPOL_INCLUDES})
+include_directories(${MBP_OPENSSL_INCLUDES})
 include_directories(${MBP_PROCPS_NG_INCLUDES})
 include_directories(${CMAKE_SOURCE_DIR}/external)
 include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
@@ -80,6 +80,7 @@ set(MBTOOL_BASE_SOURCES
     romconfig.cpp
     roms.cpp
     sepolpatch.cpp
+    signature.cpp
     switcher.cpp
     uevent_dump.cpp
     wipe.cpp
@@ -179,6 +180,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool
         miniadbd-static
         mbutil-static
+        mbsign-static
         mblog-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
@@ -187,6 +189,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbtool_recovery
         miniadbd-static
         mbutil-static
+        mbsign-static
         mblog-static
         mbp-static
         mbpio-static

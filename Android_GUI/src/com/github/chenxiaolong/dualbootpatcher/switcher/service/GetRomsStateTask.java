@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,59 +22,120 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.KernelStatus;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
+import java.io.IOException;
 
 public final class GetRomsStateTask extends BaseServiceTask {
     private static final String TAG = GetRomsStateTask.class.getSimpleName();
 
-    private final GetRomsStateTaskListener mListener;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
-    public RomInformation[] mRoms;
-    public RomInformation mCurrentRom;
-    public String mActiveRomId;
-    public KernelStatus mKernelStatus;
+    private RomInformation[] mRoms;
+    private RomInformation mCurrentRom;
+    private String mActiveRomId;
+    private KernelStatus mKernelStatus;
 
-    public interface GetRomsStateTaskListener extends BaseServiceTaskListener {
+    public interface GetRomsStateTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onGotRomsState(int taskId, RomInformation[] roms, RomInformation currentRom,
                             String activeRomId, KernelStatus kernelStatus);
     }
 
-    public GetRomsStateTask(int taskId, Context context, GetRomsStateTaskListener listener) {
+    public GetRomsStateTask(int taskId, Context context) {
         super(taskId, context);
-        mListener = listener;
     }
 
     @Override
     public void execute() {
-        mRoms = RomUtils.getRoms(getContext());
-        mCurrentRom = RomUtils.getCurrentRom(getContext());
+        RomInformation[] roms = null;
+        RomInformation currentRom = null;
+        String activeRomId = null;
+        KernelStatus kernelStatus = KernelStatus.UNKNOWN;
 
-        long start = System.currentTimeMillis();
-        obtainBootPartitionInfo();
-        long end = System.currentTimeMillis();
+        MbtoolConnection conn = null;
 
-        Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
-        Log.d(TAG, "Current boot partition ROM ID: " + mActiveRomId);
-        Log.d(TAG, "Kernel status: " + mKernelStatus.name());
+        try {
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
 
-        mListener.onGotRomsState(getTaskId(), mRoms, mCurrentRom, mActiveRomId, mKernelStatus);
+            roms = RomUtils.getRoms(getContext(), iface);
+            currentRom = RomUtils.getCurrentRom(getContext(), iface);
+
+            long start = System.currentTimeMillis();
+
+            File tmpImageFile = new File(getContext().getCacheDir() + File.separator + "boot.img");
+            if (SwitcherUtils.copyBootPartition(getContext(), iface, tmpImageFile)) {
+                try {
+                    activeRomId = SwitcherUtils.getBootImageRomId(tmpImageFile);
+                    kernelStatus = SwitcherUtils.compareRomBootImage(mCurrentRom, tmpImageFile);
+                } finally {
+                    tmpImageFile.delete();
+                }
+            }
+
+            long end = System.currentTimeMillis();
+
+            Log.d(TAG, "It took " + (end - start) + " milliseconds to complete boot image checks");
+            Log.d(TAG, "Current boot partition ROM ID: " + activeRomId);
+            Log.d(TAG, "Kernel status: " + kernelStatus.name());
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+        } finally {
+            IOUtils.closeQuietly(conn);
+        }
+
+        synchronized (mStateLock) {
+            mRoms = roms;
+            mCurrentRom = currentRom;
+            mActiveRomId = activeRomId;
+            mKernelStatus = kernelStatus;
+            sendOnGotRomsState();
+            mFinished = true;
+        }
     }
 
-    private void obtainBootPartitionInfo() {
-        mActiveRomId = null;
-        mKernelStatus = KernelStatus.UNKNOWN;
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
 
-        File tmpImageFile = new File(getContext().getCacheDir() + File.separator + "boot.img");
-        if (SwitcherUtils.copyBootPartition(getContext(), tmpImageFile)) {
-            try {
-                mActiveRomId = SwitcherUtils.getBootImageRomId(getContext(), tmpImageFile);
-                mKernelStatus = SwitcherUtils.compareRomBootImage(mCurrentRom, tmpImageFile);
-            } finally {
-                tmpImageFile.delete();
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnGotRomsState();
             }
         }
+    }
+
+    private void sendOnGotRomsState() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((GetRomsStateTaskListener) listener).onGotRomsState(
+                        getTaskId(), mRoms, mCurrentRom, mActiveRomId, mKernelStatus);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((GetRomsStateTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
+            }
+        });
     }
 }

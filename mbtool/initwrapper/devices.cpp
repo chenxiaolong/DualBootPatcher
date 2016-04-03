@@ -419,7 +419,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
         if (strcmp(type, "mtd") == 0) {
             snprintf(mtd_name_path, sizeof(mtd_name_path),
                      "/sys/devices/virtual/%s/%s/name", type, device.c_str());
-            mtd_fd = open(mtd_name_path, O_RDONLY);
+            mtd_fd = open(mtd_name_path, O_RDONLY | O_CLOEXEC);
             if (mtd_fd < 0) {
 #if UEVENT_LOGGING
                 LOGE("Unable to open %s for reading", mtd_name_path);

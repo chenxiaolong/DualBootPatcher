@@ -8,10 +8,7 @@ Contents
     * [`MBP_BUILD_TARGET`](#mbp_build_target)
     * [`MBP_BUILD_TYPE`](#mbp_build_type)
 * [Signing](#signing)
-    * [`MBP_SIGN_JAVA_KEYSTORE_PATH`](#mbp_sign_java_keystore_path)
-    * [`MBP_SIGN_JAVA_KEYSTORE_PASSWORD`](#mbp_sign_java_keystore_password)
-    * [`MBP_SIGN_JAVA_KEY_ALIAS`](#mbp_sign_java_key_alias)
-    * [`MBP_SIGN_JAVA_KEY_PASSWORD`](#mbp_sign_java_key_password)
+    * [`MBP_SIGN_CONFIG_PATH`](#mbp_sign_config_path)
 * [Android options](#miscellaneous-options)
     * [`MBP_ANDROID_DEBUG`](#mbp_android_debug)
     * [`MBP_ANDROID_NDK_PARALLEL_PROCESSES`](#mbp_android_ndk_parallel_processes)
@@ -88,55 +85,15 @@ Signing
 
 The following options specify the parameters for signing the Android APK. The options are also required in non-debug desktop builds because mbtool uses the certificate to verify the source of the socket connection for its daemon.
 
-**WARNING:** Your passwords specified by these options *will* be cached in the build directory. Keep that in mind if the build directory is shared with other users. The cached values can be removed by rerunning CMake with the `-UMBP_SIGN_\*` option.
+**NOTE:** The signing config must exist for the project to build. The paths and passwords are *not* cached by CMake.
 
 ---
 
-#### `MBP_SIGN_JAVA_KEYSTORE_PATH`
+#### `MBP_SIGN_CONFIG_PATH`
 
 ##### Description:
 
-Path to the Java keystore file to use for signing.
-
-##### Required:
-
-Only in non-debug builds.
-
----
-
-#### `MBP_SIGN_JAVA_KEYSTORE_PASSWORD`
-
-##### Description:
-
-Java keystore file's password.
-
-**NOTE:** Be careful when providing this value on the command line as the shell may escape special characters.
-
-##### Required:
-
-Only in non-debug builds.
-
----
-
-#### `MBP_SIGN_JAVA_KEY_ALIAS`
-
-##### Description:
-
-Key alias of the private key to use for signing.
-
-##### Required:
-
-Only in non-debug builds.
-
----
-
-#### `MBP_SIGN_JAVA_KEY_PASSWORD`
-
-##### Description:
-
-Password for the private key.
-
-**NOTE:** Be careful when providing this value on the command line as the shell may escape special characters.
+Path to the signing config file containing the keystore path, keystore passphrase, key alias, and key passphrase to use for signing. See `cmake/SigningConfig.prop.in` for a sample config file. If a signing config is not provided for a debug build, then one will be generated automatically for the default Android SDK debug signing keystore.
 
 ##### Required:
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,6 +53,10 @@ import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingChangeShared
         .AppSharingChangeSharedDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+
+import org.apache.commons.io.IOUtils;
 
 import java.text.Collator;
 import java.util.ArrayList;
@@ -320,12 +324,27 @@ public class AppListFragment extends Fragment implements
         public LoaderResult loadInBackground() {
             long start = System.currentTimeMillis(), stop;
 
-            // Get shared apps from the config file
-            RomInformation info = RomUtils.getCurrentRom(getContext());
+            RomInformation info;
+            RomInformation[] roms;
+
+            MbtoolConnection conn = null;
+            try {
+                conn = new MbtoolConnection(getContext());
+                MbtoolInterface iface = conn.getInterface();
+
+                info = RomUtils.getCurrentRom(getContext(), iface);
+                roms = RomUtils.getRoms(getContext(), iface);
+            } catch (Exception e) {
+                return null;
+            } finally {
+                IOUtils.closeQuietly(conn);
+            }
+
             if (info == null) {
                 return null;
             }
 
+            // Get shared apps from the config file
             RomConfig config = RomConfig.getConfig(info.getConfigPath());
 
             if (!config.isIndivAppSharingEnabled()) {
@@ -335,7 +354,7 @@ public class AppListFragment extends Fragment implements
 
             HashMap<String, SharedItems> sharedPkgs = config.getIndivAppSharingPackages();
             HashMap<String, HashMap<String, SharedItems>> sharedPkgsMap =
-                    getSharedPkgsForOtherRoms(info);
+                    getSharedPkgsForOtherRoms(roms, info);
 
             PackageManager pm = getContext().getPackageManager();
             List<ApplicationInfo> apps = pm.getInstalledApplications(0);
@@ -385,11 +404,10 @@ public class AppListFragment extends Fragment implements
             return mResult;
         }
 
-        private HashMap<String, HashMap<String, SharedItems>> getSharedPkgsForOtherRoms
-                (RomInformation currentRom) {
+        private HashMap<String, HashMap<String, SharedItems>> getSharedPkgsForOtherRoms(
+                RomInformation[] roms, RomInformation currentRom) {
             HashMap<String, HashMap<String, SharedItems>> sharedPkgsMap = new HashMap<>();
 
-            RomInformation[] roms = RomUtils.getRoms(getContext());
             for (RomInformation rom : roms) {
                 if (rom.getId().equals(currentRom.getId())) {
                     continue;

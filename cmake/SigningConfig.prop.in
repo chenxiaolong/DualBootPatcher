@@ -1,0 +1,25 @@
+# The code signing variables must now be provided via this configuration file.
+# The old method of passing these variables directly to the cmake command is no
+# longer supported as it causes the password to be saved in multiple places
+# within the build directory.
+#
+# The format of this configuration file is very simple. Each line is in the
+# form:
+#
+#     <key>=<value>
+#
+# Empty lines and comments (lines beginning with "#") are ignored.
+#
+# ---
+
+# Path to the Java keystore containing the signing key
+keystore=@REPLACE_ME_KEYSTORE_PATH@
+
+# Global passphrase for the keystore
+keystore_passphrase=@REPLACE_ME_KEYSTORE_PASSPHRASE@
+
+# Key alias for the signing key
+key_alias=@REPLACE_ME_KEY_ALIAS@
+
+# Passphrase for the signing key
+key_passphrase=@REPLACE_ME_KEY_PASSPHRASE@

@@ -1,7 +1,3 @@
-if(NOT MBP_TARGET_NEEDS_BUILDS)
-    return()
-endif()
-
 if(MBP_ENABLE_TESTS)
     include_directories(${GTEST_INCLUDE_DIRS})
 endif()
@@ -35,7 +31,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-else()
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     # Build shared library
 
     add_library(mbsparse-shared SHARED ${MBSPARSE_SOURCES})

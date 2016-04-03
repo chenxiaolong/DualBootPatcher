@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,10 @@ import com.github.chenxiaolong.dualbootpatcher.RomConfig;
 import com.github.chenxiaolong.dualbootpatcher.RomConfig.SharedItems;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+
+import org.apache.commons.io.IOUtils;
 
 import java.util.HashMap;
 
@@ -45,7 +49,22 @@ public class AppSharingService extends IntentService {
     }
 
     private void onPackageRemoved(final String pkg) {
-        RomInformation info = RomUtils.getCurrentRom(AppSharingService.this);
+        RomInformation info;
+
+        MbtoolConnection conn = null;
+
+        try {
+            conn = new MbtoolConnection(this);
+            MbtoolInterface iface = conn.getInterface();
+
+            info = RomUtils.getCurrentRom(this, iface);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated", e);
+            return;
+        } finally {
+            IOUtils.closeQuietly(conn);
+        }
+
         if (info == null) {
             Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated");
             return;
