@@ -519,7 +519,7 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices->push_back(device);
-    
+
     // Samsung Galaxy Star
     device = new Device();
     device->setId("mint");
@@ -610,6 +610,19 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
 static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
 {
     Device *device;
+
+    // Samsung Galaxy Tab 3 8.0 (Wifi)
+    device = new Device();
+    device->setId("lt01wifi");
+    device->setCodenames({ "lt01wifi", "lt01wifixx" });
+    device->setName("Samsung Galaxy Tab 3 8.0 (Wifi)");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    devices->push_back(device);
 
     // Samsung Galaxy Tab 3 10.1
     device = new Device();
