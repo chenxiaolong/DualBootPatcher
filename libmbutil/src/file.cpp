@@ -135,7 +135,8 @@ bool file_write_data(const std::string &path,
     return true;
 }
 
-bool file_find_one_of(const std::string &path, std::vector<std::string> items) {
+bool file_find_one_of(const std::string &path, std::vector<std::string> items)
+{
     struct stat sb;
     void *map = MAP_FAILED;
     int fd = -1;
