@@ -21,7 +21,11 @@
 
 #include <memory>
 
-#include <errno.h>
+#include <cerrno>
+#include <cstring>
+
+#include <fcntl.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
 
@@ -167,6 +171,37 @@ error:
     archive_write_free(out);
 
     return false;
+}
+
+bool find_string_in_file(const char *path, const char *str, int *result)
+{
+    struct stat sb;
+    void *map = MAP_FAILED;
+    int fd = -1;
+
+    if ((fd = open(path, O_RDONLY)) < 0) {
+        LOGE("%s: Failed to open file: %s", path, strerror(errno));
+        return false;
+    }
+
+    if (fstat(fd, &sb) < 0) {
+        LOGE("%s: Failed to stat: %s", path, strerror(errno));
+        close(fd);
+        return false;
+    }
+
+    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        LOGE("%s: Failed to mmap: %s", path, strerror(errno));
+        close(fd);
+        return false;
+    }
+
+    *result = memmem(map, sb.st_size, str, strlen(str)) ? 1 : 0;
+
+    close(fd);
+    munmap(map, sb.st_size);
+    return true;
 }
 
 void mblog_set_logcat()

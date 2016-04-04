@@ -31,6 +31,8 @@ bool is_same_file(const char *path1, const char *path2);
 
 bool extract_archive(const char *filename, const char *target);
 
+bool find_string_in_file(const char *path, const char *str, int *result);
+
 void mblog_set_logcat();
 
 }
