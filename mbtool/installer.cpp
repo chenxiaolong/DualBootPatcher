@@ -1325,6 +1325,10 @@ Installer::ProceedState Installer::install_stage_get_install_type()
 
     display_msg("ROM ID: " + _rom->id);
 
+    if (_rom->id == "primary") {
+        _copy_to_temp_image = true;
+    }
+
     _system_path = _rom->full_system_path();
     _cache_path = _rom->full_cache_path();
     _data_path = _rom->full_data_path();
