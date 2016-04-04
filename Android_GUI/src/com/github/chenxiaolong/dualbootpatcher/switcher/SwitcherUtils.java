@@ -49,6 +49,8 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import mbtool.daemon.v3.FileOpenFlag;
+
 public class SwitcherUtils {
     public static final String TAG = SwitcherUtils.class.getSimpleName();
 
@@ -57,7 +59,30 @@ public class SwitcherUtils {
     private static final String PROP_INSTALLER_VERSION = "mbtool.installer.version";
     private static final String PROP_INSTALL_LOCATION = "mbtool.installer.install-location";
 
-    public static String getBootPartition(Context context) {
+    private static boolean pathExists(MbtoolInterface iface, String path)
+            throws IOException, MbtoolException {
+        int id = -1;
+
+        try {
+            id = iface.fileOpen(path, new short[]{FileOpenFlag.RDONLY}, 0);
+            return true;
+        } catch (MbtoolCommandException e) {
+            // Ignore
+        } finally {
+            if (id >= 0) {
+                try {
+                    iface.fileClose(id);
+                } catch (MbtoolCommandException e) {
+                    // Ignore
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static String getBootPartition(Context context, MbtoolInterface iface)
+            throws IOException, MbtoolException {
         String realCodename = RomUtils.getDeviceCodename(context);
         String bootBlockDev = null;
 
@@ -75,7 +100,7 @@ public class SwitcherUtils {
             if (matches) {
                 String[] bootBlockDevs = d.getBootBlockDevs();
                 for (String blockDev : bootBlockDevs) {
-                    if (new File(blockDev).exists()) {
+                    if (pathExists(iface, blockDev)) {
                         bootBlockDev = blockDev;
                         break;
                     }
@@ -345,7 +370,7 @@ public class SwitcherUtils {
 
     public static boolean copyBootPartition(Context context, MbtoolInterface iface,
                                             File targetFile) throws IOException, MbtoolException {
-        String bootPartition = getBootPartition(context);
+        String bootPartition = getBootPartition(context, iface);
         if (bootPartition == null) {
             Log.e(TAG, "Failed to determine boot partition");
             return false;

@@ -531,7 +531,7 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
     public synchronized SwitchRomResult switchRom(Context context, String id,
                                                   boolean forceChecksumsUpdate)
             throws IOException, MbtoolException, MbtoolCommandException {
-        String bootBlockDev = SwitcherUtils.getBootPartition(context);
+        String bootBlockDev = SwitcherUtils.getBootPartition(context, this);
         if (bootBlockDev == null) {
             Log.e(TAG, "Failed to determine boot partition");
             return SwitchRomResult.UNKNOWN_BOOT_PARTITION;
@@ -591,7 +591,7 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
     @NonNull
     public synchronized SetKernelResult setKernel(Context context, String id)
             throws IOException, MbtoolException, MbtoolCommandException {
-        String bootBlockDev = SwitcherUtils.getBootPartition(context);
+        String bootBlockDev = SwitcherUtils.getBootPartition(context, this);
         if (bootBlockDev == null) {
             Log.e(TAG, "Failed to determine boot partition");
             return SetKernelResult.UNKNOWN_BOOT_PARTITION;
