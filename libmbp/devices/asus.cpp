@@ -28,10 +28,10 @@ void addAsusDevices(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // ASUS ZenFone 2
+    // ASUS ZenFone 2 [ZE551ML/ZE550ML]
     device = new Device();
     device->setId("Z00A");
-    device->setCodenames({ "Z00A" });
+    device->setCodenames({ "Z00A", "Z008" });
     device->setName("ASUS ZenFone 2");
     device->setArchitecture(ARCH_X86);
     device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR, BLOCK_BASE_DIR });
@@ -46,6 +46,7 @@ void addAsusDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY_2, BLOCK_RECOVERY,
                                    "/dev/block/mmcblk0p2" });
     devices->push_back(device);
+
 }
 
 }
