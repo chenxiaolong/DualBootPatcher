@@ -161,7 +161,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
             // Samsung Galaxy S 3 Neo (qcom)
         device = new Device();
         device->setId("s3ve3g");
-        device->setCodenames({ "s3ve3g", "s3ve3gds",
+        device->setCodenames({ "s3ve3g", "s3ve3gds", "s3ve3gdd",
                                "s3ve3jv" });
         device->setName("Samsung Galaxy S3 Neo (Qcom)");
         device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
