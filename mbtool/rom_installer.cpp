@@ -480,6 +480,11 @@ int rom_installer_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        fprintf(stderr, "Failed to remount / as writable\n");
+        return EXIT_FAILURE;
+    }
+
 
     // Since many stock ROMs, most notably TouchWiz, don't allow setting SELinux
     // to be globally permissive, we'll do the next best thing: modify the
