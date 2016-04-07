@@ -8,13 +8,10 @@
 
 set(URL_BASE "https://snapshots.noobdev.io/repo/prebuilts")
 
-set(PREBUILTS_ARCHIVE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/prebuilts")
-
-if(MBP_TOP_LEVEL_BUILD)
-    set(PREBUILTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/prebuilts")
-else()
-    set(PREBUILTS_DIR "${MBP_INTERNAL_PREBUILTS_DIR}")
-endif()
+set(MBP_PREBUILTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/prebuilts"
+    CACHE PATH "Prebuilts download directory")
+set(MBP_PREBUILTS_BINARY_DIR "${CMAKE_BINARY_DIR}/thirdparty/prebuilts"
+    CACHE PATH "Extracted prebuilts directory")
 
 set(MBP_PREBUILTS_DIR "${PREBUILTS_DIR}" PARENT_SCOPE)
 
@@ -57,29 +54,29 @@ macro(get_prebuilt pkgname pkgver abi hash)
     file(
         DOWNLOAD
         ${URL_BASE}/${pkgname}-${pkgver}-${arch}.pkg.tar.xz
-        ${PREBUILTS_ARCHIVE_DIR}/${pkgname}-${pkgver}-${arch}.pkg.tar.xz
+        ${MBP_PREBUILTS_DIR}/${pkgname}-${pkgver}-${arch}.pkg.tar.xz
         EXPECTED_HASH ${hash}
         TLS_VERIFY ON
         SHOW_PROGRESS
     )
 
     # Extract the archive
-    if(NOT EXISTS ${PREBUILTS_DIR}/${pkgname}/${pkgver}/${abi}/.PKGINFO)
+    if(NOT EXISTS ${MBP_PREBUILTS_BINARY_DIR}/${pkgname}/${pkgver}/${abi}/.PKGINFO)
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${PREBUILTS_DIR}/${pkgname}/${pkgver}/${abi}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}/${pkgname}/${pkgver}/${abi}
         )
 
         message(STATUS "Extracting ${pkgname}-${pkgver} (${abi}) ...")
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${PREBUILTS_ARCHIVE_DIR}/${pkgname}-${pkgver}-${arch}.pkg.tar.xz
-            WORKING_DIRECTORY ${PREBUILTS_DIR}/${pkgname}/${pkgver}/${abi}
+            COMMAND ${CMAKE_COMMAND} -E tar xf ${MBP_PREBUILTS_DIR}/${pkgname}-${pkgver}-${arch}.pkg.tar.xz
+            WORKING_DIRECTORY ${MBP_PREBUILTS_BINARY_DIR}/${pkgname}/${pkgver}/${abi}
         )
     endif()
 endmacro()
 
 
 execute_process(
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PREBUILTS_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}
 )
 
 
@@ -98,12 +95,12 @@ if(MBP_TOP_LEVEL_BUILD)
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
         add_sign_files_target(
             sign_prebuilt_exfat_${abi}
-            ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
+            ${MBP_PREBUILTS_BINARY_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
         )
 
         install(
-            FILES ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
-                  ${PREBUILTS_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat.sig
+            FILES ${MBP_PREBUILTS_BINARY_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat
+                  ${MBP_PREBUILTS_BINARY_DIR}/exfat/${EXFAT_VER}/${abi}/bin/mount.exfat.sig
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )
@@ -126,8 +123,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=983231de624ab6e207fe11d78ac257ec01622ab75cb96480811646d562d5fdc04446beac743a3e71309b5ce4bc8bd2bc980808f13ac2b284e6483ea635416bf8)
     get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=a4d240f7aec7aef643b294e5e90f5218fe11f7fde028aefd257da234b0e563a939ff8b578616dafb9ee0840836cc2a3bd47657b855bff2f4dae6c806173d27b4)
 else()
-    set(THIRD_PARTY_LIBARCHIVE_DIR "${PREBUILTS_DIR}/libarchive/${LIBARCHIVE_VER}" PARENT_SCOPE)
-    set(THIRD_PARTY_LIBARCHIVE_LOWAPI_DIR "${PREBUILTS_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LIBARCHIVE_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LIBARCHIVE_LOWAPI_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -142,7 +139,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=827d284e74787091f1403f8bb9a61ee2e0ab4930eb1da24a0ad564caadf413ac7e2d3501489b2c35cca2a0978fa347e0cbf7bf76b42a31098d31fffba80a9ca9)
     get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=004b629ce9ffa43cd88c23d87b927c6d80dcf4de8b750cd40532e00100e1e13387c0982f2af3c3a3593ed32b83aba66b7a7849bc08d1f210e556a192c2948615)
 else()
-    set(THIRD_PARTY_LIBICONV_DIR "${PREBUILTS_DIR}/libiconv/${LIBICONV_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LIBICONV_DIR "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}" PARENT_SCOPE)
 endif()
 
 ###############################################################################
@@ -157,7 +154,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=2a4008a8f89a0bce25a7c5c293733cafdee54effda563c6a92f75cb607d65abc47e9c7e900ed2f026991af80a2120faeebf44ad8993521993f24cf9f44bd839b)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=c2f5607f913dd4b76abeef6536e108f15dc5daec779f85f3d22588d76950cf7c188e7cda465d0007e5720050667d37a1a4e08e5f0766ee81db26785b9035f52f)
 else()
-    set(THIRD_PARTY_LIBLZMA_DIR "${PREBUILTS_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LIBLZMA_DIR "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -172,7 +169,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(lzo ${LZO_VER} x86         SHA512=2bef29b8413410c6426a9d4ad103f0040e6e1d6b018b8ea7aedf730e79624e12d2da8ab68486c1eb1de23db0b96d8388213128c240a53e4fda4a1fec20650c70)
     get_prebuilt(lzo ${LZO_VER} x86_64      SHA512=d04a86dd68f190115f220019c0e2f315f78b7c098246052137a2b3fe94759c0015010ba4242f19002fc919ee3687946ae15e77d83e9d516feb110b0dbc6cfb60)
 else()
-    set(THIRD_PARTY_LZO_DIR "${PREBUILTS_DIR}/lzo/${LZO_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LZO_DIR "${MBP_PREBUILTS_BINARY_DIR}/lzo/${LZO_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -187,7 +184,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=4047ddb609ff1b228c8075c70347fab91119e3d5324cfe03eb616ebb6238f3ac9b77b6fdfad79eedb3f0faf81fb1ddd0a7dfd1e0d9012059fa2bed025ac8e5a1)
     get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=51129cf86be6c5f0b50262be15f3113fc08123df00e12d3474d5fb38c95ea5d0b6ddf5c83ca752d076ddc56920901174bbf2e9a29a3b8072eac3d60259f51334)
 else()
-    set(THIRD_PARTY_LZ4_DIR "${PREBUILTS_DIR}/lz4/${LZ4_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LZ4_DIR "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -202,7 +199,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(jansson ${JANSSON_VER} x86         SHA512=00739bbd7d27045fda4a51118c1559fd279cc3a16a425d1f91cfa898a5c5d63bb246fde3fb9e0d1eb57bea547c512cdc75be94093166940176348aecbe249ef9)
     get_prebuilt(jansson ${JANSSON_VER} x86_64      SHA512=9a6759dc9444026c9b4370f61ea7b46f0f4c35dcb2b9aa16666241b0743ee44f0829fc57be25528ca14a08ce596b13d9beaf28cf3108f9a84b5296106bf1d407)
 else()
-    set(THIRD_PARTY_JANSSON_DIR "${PREBUILTS_DIR}/jansson/${JANSSON_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_JANSSON_DIR "${MBP_PREBUILTS_BINARY_DIR}/jansson/${JANSSON_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -217,7 +214,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=f987eb915cc5e2917199a94908fbb1cb87cf9eed84af2db8e15afddcd0dd2c1a495f8605f6129c48f5818f10bebbf5320090c1d482d39c1c74a09b43b96342cb)
     get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=ff064e46281ce1458e174525bedfe610cd2ffe9e3b4c581f5201d48ce6ee57337e1b50937d94c9e156d985f15e79abba3bde92e4511372c1fca51233a63fa242)
 else()
-    set(THIRD_PARTY_LIBSEPOL_DIR "${PREBUILTS_DIR}/libsepol/${LIBSEPOL_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_LIBSEPOL_DIR "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -232,7 +229,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=72695bed3ed19f779f6dda21bcd604a5e24861e7bda103b2db1d7d807081ff25a201ee3fbfcfec40c006d8a72967ee4e3c7af88a31be8eef857b251c1c8f24df)
     get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=646d1c9a9ca358ddb6d1382aa09a35036a31b6825b66964630e5b71f242aa5447585c55192b2e8d76ea5b15e58067b11739506c0d0d4695955338c1ec3424a4d)
 else()
-    set(THIRD_PARTY_BORINGSSL_DIR "${PREBUILTS_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_BORINGSSL_DIR "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -247,7 +244,7 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(fuse ${FUSE_VER} x86         SHA512=7506a27e44e510dc2f868b91c9494609fec91f1cf834390b66aa58ae9257beb898f65f9c1b37b886f948d80d65feb0b153197f22bced5dbae199ba00020c7d6e)
     get_prebuilt(fuse ${FUSE_VER} x86_64      SHA512=66912456e71687c8c37d3c193ac6a075248f2245628bc553e94edd1f39b655a7da6b8c6e284c9dee0fcc7a959f3c19ecf38bc42f76713f50d29498e81c15c0c7)
 else()
-    set(THIRD_PARTY_FUSE_DIR "${PREBUILTS_DIR}/fuse/${FUSE_VER}" PARENT_SCOPE)
+    set(THIRD_PARTY_FUSE_DIR "${MBP_PREBUILTS_BINARY_DIR}/fuse/${FUSE_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -262,26 +259,26 @@ if(MBP_TOP_LEVEL_BUILD)
     file(
         DOWNLOAD
         https://snapshots.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-        ${PREBUILTS_ARCHIVE_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
+        ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
         EXPECTED_HASH MD5=38489848300b3ac68297142ae943cfb5
         EXPECTED_HASH SHA512=3eb49e02b0372669f4683aa4003f97a285ba2106ed2e847c022f9db2c5a92b8be3611f1409d5fcb75c0789b03df8faeeb453e3625d26c28f2c4c842daedc1e77
         TLS_VERIFY ON
         SHOW_PROGRESS
     )
 
-    if(NOT EXISTS ${PREBUILTS_DIR}/procps-ng)
+    if(NOT EXISTS ${MBP_PREBUILTS_BINARY_DIR}/procps-ng)
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${PREBUILTS_DIR}/procps-ng
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
         )
 
         message(STATUS "Extracting procps-ng for Android ...")
         execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${PREBUILTS_ARCHIVE_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-            WORKING_DIRECTORY ${PREBUILTS_DIR}/procps-ng
+            COMMAND ${CMAKE_COMMAND} -E tar xf ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
+            WORKING_DIRECTORY ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
         )
     endif()
 else()
-    set(THIRD_PARTY_PROCPS_NG_DIR "${PREBUILTS_DIR}/procps-ng" PARENT_SCOPE)
+    set(THIRD_PARTY_PROCPS_NG_DIR "${MBP_PREBUILTS_BINARY_DIR}/procps-ng" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -311,15 +308,15 @@ if(MBP_TOP_LEVEL_BUILD)
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
         add_sign_files_target(
             sign_prebuilt_e2fsprogs_${abi}
-            ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
-            ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
+            ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
+            ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
         )
 
         install(
-            FILES ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
-                  ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck.sig
-                  ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
-                  ${PREBUILTS_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs.sig
+            FILES ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck
+                  ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/e2fsck.sig
+                  ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs
+                  ${MBP_PREBUILTS_BINARY_DIR}/e2fsprogs/${E2FSPROGS_VER}/${abi}/bin/resize2fs.sig
             DESTINATION ${DATA_INSTALL_DIR}/binaries/android/${abi}/
             COMPONENT Libraries
         )

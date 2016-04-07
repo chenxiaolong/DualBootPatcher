@@ -11,7 +11,7 @@ if(MBP_TOP_LEVEL_BUILD)
         -DMBP_BUILD_TARGET=signtool
         -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
         -DMBP_ENABLE_TESTS=OFF
-        -DMBP_INTERNAL_PREBUILTS_DIR=${MBP_PREBUILTS_DIR}
+        -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
     )
 
     message(STATUS "Recursive CMake build for signtool:")
