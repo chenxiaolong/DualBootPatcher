@@ -34,4 +34,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         VERBATIM
     )
+
+    add_custom_target(
+        apk-install adb install -r build/outputs/apk/Android_GUI-${MBP_BUILD_TYPE}.apk
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        VERBATIM
+    )
+    add_dependencies(apk-install apk)
 endif()
