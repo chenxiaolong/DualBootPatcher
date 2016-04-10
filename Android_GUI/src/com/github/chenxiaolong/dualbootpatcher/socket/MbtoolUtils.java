@@ -31,14 +31,14 @@ public class MbtoolUtils {
     static {
         if (BuildConfig.BUILD_TYPE.equals("ci")) {
             // Snapshot builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r2419"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r2447"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.0.0.r2155"));
-            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r2439"));
+            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r2447"));
         } else {
             // Debug/release builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.14"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.15"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.99.13"));
-            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.14"));
+            sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.15"));
         }
     }
 
