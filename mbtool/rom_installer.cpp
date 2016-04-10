@@ -394,6 +394,11 @@ static void rom_installer_usage(bool error)
 
 int rom_installer_main(int argc, char *argv[])
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 

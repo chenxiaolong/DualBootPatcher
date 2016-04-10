@@ -170,11 +170,6 @@ int main_normal(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    if (geteuid() == 0 && unshare(CLONE_NEWNS) < 0) {
-        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
     // This works because argv is NULL-terminated
     char **argv_copy = mb::util::dup_cstring_list(argv);
     if (!argv_copy) {

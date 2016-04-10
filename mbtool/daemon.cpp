@@ -230,6 +230,11 @@ static bool run_daemon(void)
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
+            if (unshare(CLONE_NEWNS) < 0) {
+                LOGE("unshare() failed: %s", strerror(errno));
+                _exit(127);
+            }
+
             // Change the process name so --replace doesn't kill existing
             // connections
             if (!util::set_process_title_v(
@@ -447,6 +452,11 @@ static void daemon_usage(bool error)
 
 int daemon_main(int argc, char *argv[])
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     int opt;
     bool fork_flag = false;
     bool replace_flag = false;
