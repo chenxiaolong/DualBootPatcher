@@ -682,7 +682,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    static const char *temp_dir = "/mnt/mbtool_exec_tmp";
+    static const char *temp_dir = "/mbtool_exec_tmp";
 
     std::string target_binary;
     std::string target_sig;
@@ -708,12 +708,25 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         }
     });
 
-    if (mkdir(temp_dir, 0700) < 0 && errno != EEXIST) {
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        result = v3::SignedExecResult_OTHER_ERROR;
+        error_msg = util::format("Failed to remount / as rw: %s",
+                                 strerror(errno));
+        LOGE("%s", error_msg.c_str());
+        goto done;
+    }
+
+    if ((mkdir(temp_dir, 0000) < 0 && errno != EEXIST)
+            || chmod(temp_dir, 0000) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
         error_msg = util::format("Failed to create temp directory: %s",
                                  strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
+    }
+
+    if (mount("", "/", "", MS_REMOUNT | MS_RDONLY, "") < 0) {
+        LOGW("Failed to remount / as ro: %s", strerror(errno));
     }
 
     if (mount("tmpfs", temp_dir, "tmpfs", 0, "mode=000,uid=0,gid=0") < 0) {
