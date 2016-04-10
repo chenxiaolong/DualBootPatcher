@@ -41,6 +41,8 @@
 
 #define DEFAULT_SEPOLICY_FILE   "/sepolicy"
 
+#define OPEN_ATTEMPTS           5
+
 
 namespace mb
 {
@@ -163,10 +165,19 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
     void *map;
     int fd;
 
-    fd = open(path.c_str(), O_RDONLY);
-    if (fd < 0) {
-        LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
-        return false;
+    for (int i = 0; i < OPEN_ATTEMPTS; ++i) {
+        fd = open(path.c_str(), O_RDONLY);
+        if (fd < 0) {
+            LOGE("[%d/%d] %s: Failed to open sepolicy: %s",
+                 i + 1, OPEN_ATTEMPTS, path.c_str(), strerror(errno));
+            if (errno == EBUSY) {
+                usleep(500 * 1000);
+                continue;
+            } else {
+                return false;
+            }
+        }
+        break;
     }
 
     auto close_fd = finally([&] {
@@ -174,13 +185,13 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
     });
 
     if (fstat(fd, &sb) < 0) {
-        LOGE("Failed to stat %s: %s", path.c_str(), strerror(errno));
+        LOGE("%s: Failed to stat sepolicy: %s", path.c_str(), strerror(errno));
         return false;
     }
 
     map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (map == MAP_FAILED) {
-        LOGE("Failed to mmap %s: %s", path.c_str(), strerror(errno));
+        LOGE("%s: Failed to mmap sepolicy: %s", path.c_str(), strerror(errno));
         return false;
     }
 
@@ -227,10 +238,19 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
         free(data);
     });
 
-    fd = open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
-    if (fd < 0) {
-        LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
-        return false;
+    for (int i = 0; i < OPEN_ATTEMPTS; ++i) {
+        fd = open(path.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
+        if (fd < 0) {
+            LOGE("[%d/%d] %s: Failed to open sepolicy: %s",
+                 i + 1, OPEN_ATTEMPTS, path.c_str(), strerror(errno));
+            if (errno == EBUSY) {
+                usleep(500 * 1000);
+                continue;
+            } else {
+                return false;
+            }
+        }
+        break;
     }
 
     auto close_fd = finally([&] {
@@ -238,7 +258,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     });
 
     if (write(fd, data, len) < 0) {
-        LOGE("Failed to write to %s: %s", path.c_str(), strerror(errno));
+        LOGE("%s: Failed to write sepolicy: %s", path.c_str(), strerror(errno));
         return false;
     }
 
