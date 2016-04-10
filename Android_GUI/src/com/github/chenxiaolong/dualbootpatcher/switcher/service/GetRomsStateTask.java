@@ -76,8 +76,10 @@ public final class GetRomsStateTask extends BaseServiceTask {
             File tmpImageFile = new File(getContext().getCacheDir() + File.separator + "boot.img");
             if (SwitcherUtils.copyBootPartition(getContext(), iface, tmpImageFile)) {
                 try {
+                    Log.d(TAG, "Getting active ROM ID");
                     activeRomId = SwitcherUtils.getBootImageRomId(tmpImageFile);
-                    kernelStatus = SwitcherUtils.compareRomBootImage(mCurrentRom, tmpImageFile);
+                    Log.d(TAG, "Comparing saved boot image to current boot image");
+                    kernelStatus = SwitcherUtils.compareRomBootImage(currentRom, tmpImageFile);
                 } finally {
                     tmpImageFile.delete();
                 }

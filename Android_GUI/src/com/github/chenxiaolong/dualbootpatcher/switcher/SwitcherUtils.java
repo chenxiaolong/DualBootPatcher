@@ -338,11 +338,13 @@ public class SwitcherUtils {
 
     public static KernelStatus compareRomBootImage(RomInformation rom, File bootImageFile) {
         if (rom == null) {
+            Log.w(TAG, "Could not get boot image status due to null RomInformation");
             return KernelStatus.UNKNOWN;
         }
 
         File savedImageFile = new File(RomUtils.getBootImagePath(rom.getId()));
         if (!savedImageFile.isFile()) {
+            Log.d(TAG, "Boot image is not set for ROM ID: " + rom.getId());
             return KernelStatus.UNSET;
         }
 
