@@ -423,7 +423,18 @@ static bool mount_exfat_fuse(const std::string &source,
 static bool mount_exfat_kernel(const std::string &source,
                                const std::string &target)
 {
-    int ret = mount(source.c_str(), target.c_str(), "exfat", 0, "");
+    uid_t uid = get_media_rw_uid();
+    std::string args = util::format(
+            "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
+            uid, uid, 0007, 0007);
+    // For Motorola: utf8
+    int flags = MS_NODEV
+            | MS_NOSUID
+            | MS_DIRSYNC
+            | MS_NOEXEC;
+    // For Motorola: MS_RELATIME
+
+    int ret = mount(source.c_str(), target.c_str(), "exfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source.c_str(), "exfat", target.c_str(), strerror(errno));
