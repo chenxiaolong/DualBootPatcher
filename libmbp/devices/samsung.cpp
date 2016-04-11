@@ -537,18 +537,23 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // Samsung Galaxy Note 8.0 (Wifi)
+    // Samsung Galaxy Note 8.0 (Wifi/3G)
     device = new Device();
-    device->setId("konawifi");
-    device->setCodenames({ "konawifi", "konawifixx" });
-    device->setName("Samsung Galaxy Note 8.0 (Wifi)");
+    device->setId("kona");
+    device->setCodenames({
+        // Wifi variant
+        "konawifi", "konawifixx",
+        // 3G variant
+        "kona3g", "kona3gxx"
+    });
+    device->setName("Samsung Galaxy Note 8.0 (Wifi/3G)");
     device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p9" });
     device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p8" });
     device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p12" });
     device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p5" });
     device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p6" });
-    device->setExtraBlockDevs({ DWMMC_RADIO });
+    device->setExtraBlockDevs({ DWMMC_RADIO, "/dev/block/mmcblk0p7" });
     devices->push_back(device);
 
     // Samsung Galaxy Note 10.1
