@@ -611,6 +611,24 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
 {
     Device *device;
 
+    // Samsung Galaxy Tab 2 10.1 (Wifi/3G)
+    device = new Device();
+    device->setId("espresso10");
+    device->setCodenames({
+        // Wifi variant
+        "espresso10wifi", "espresso10wifixx",
+        // 3G variant
+        "espresso10rf", "espresso10rfxx", "espresso3g"
+    });
+    device->setName("Samsung Galaxy Tab 2 10.1 (Wifi/3G)");
+    device->setBlockDevBaseDirs({ OMAP_BASE_DIR });
+    device->setSystemBlockDevs({ OMAP_FACTORYFS, "/dev/block/mmcblk0p9" });
+    device->setCacheBlockDevs({ OMAP_CACHE, "/dev/block/mmcblk0p7" });
+    device->setDataBlockDevs({ OMAP_DATAFS, "/dev/block/mmcblk0p10" });
+    device->setBootBlockDevs({ OMAP_KERNEL, "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ OMAP_RECOVERY, "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
+
     // Samsung Galaxy Tab 3 8.0 (Wifi)
     device = new Device();
     device->setId("lt01wifi");

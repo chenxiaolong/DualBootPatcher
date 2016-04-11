@@ -204,3 +204,11 @@
 #define SOC0_RECOVERY           SOC0_BASE_DIR "/recovery"
 #define SOC0_SYSTEM             SOC0_BASE_DIR "/system"
 #define SOC0_USERDATA           SOC0_BASE_DIR "/userdata"
+
+// Block device paths used by the TI OMAP platform
+#define OMAP_BASE_DIR           "/dev/block/platform/omap/omap_hsmmc.1/by-name"
+#define OMAP_CACHE              OMAP_BASE_DIR "/CACHE"
+#define OMAP_DATAFS             OMAP_BASE_DIR "/DATAFS"
+#define OMAP_FACTORYFS          OMAP_BASE_DIR "/FACTORYFS"
+#define OMAP_KERNEL             OMAP_BASE_DIR "/KERNEL"
+#define OMAP_RECOVERY           OMAP_BASE_DIR "/RECOVERY"
