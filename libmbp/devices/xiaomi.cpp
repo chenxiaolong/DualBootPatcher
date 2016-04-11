@@ -41,6 +41,25 @@ void addXiaomiDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p25" });
     devices->push_back(device);
 
+    // Xiaomi Redmi Note 2
+    device = new Device();
+    device->setId("hermes");
+    device->setCodenames({ "hermes" });
+    device->setName("Xiaomi Redmi Note 2");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR, MTK_BASE_DIR });
+    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, MTK_SYSTEM,
+                                 "/dev/block/mmcblk0p15" });
+    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, MTK_CACHE,
+                                "/dev/block/mmcblk0p16" });
+    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, MTK_USERDATA,
+                               "/dev/block/mmcblk0p17" });
+    device->setBootBlockDevs({ BOOTDEVICE_BOOT, MTK_BOOT,
+                               "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, MTK_RECOVERY,
+                                   "/dev/block/mmcblk0p8" });
+    devices->push_back(device);
+
     // Xiaomi Redmi Note 3 (MTK)
     device = new Device();
     device->setId("hennessy");
