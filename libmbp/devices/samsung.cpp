@@ -417,11 +417,18 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 
-    // Samsung Galaxy S 7 Edge (Exynos)
+    // Samsung Galaxy S 7 Flat/Edge (Exynos)
     device = new Device();
-    device->setId("hero2lte");
-    device->setCodenames({ "hero2lte", "hero2ltexx", "hero2ltebmc" });
-    device->setName("Samsung Galaxy S 7 Edge (Exynos)");
+    device->setId("herolte");
+    device->setCodenames({
+        // Regular variant
+        "herolte", "heroltexx", "heroltebmc",
+        "heroltektt", "heroltelgt", "herolteskt",
+        // Edge variant
+        "hero2lte", "hero2ltexx", "hero2ltebmc",
+        "hero2ltektt", "hero2ltelgt", "hero2lteskt"
+    });
+    device->setName("Samsung Galaxy S 7 Flat/Edge (Exynos)");
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ UFS_155A0000_BASE_DIR });
     device->setSystemBlockDevs({ UFS_155A0000_SYSTEM, "/dev/block/sda14" });
