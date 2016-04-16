@@ -45,7 +45,7 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     // Motorola Moto G (2014)
     device = new Device();
     device->setId("titan");
-    device->setCodenames({ "titan" });
+    device->setCodenames({ "titan", "titan_udstv" });
     device->setName("Motorola Moto G (2014)");
     device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR, QCOM_BASE_DIR });
     device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, QCOM_SYSTEM,
