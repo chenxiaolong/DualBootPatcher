@@ -157,7 +157,7 @@ static void addGalaxyNoteSeriesPhones(std::vector<Device *> *devices)
 static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
-    
+
     // Samsung Galaxy S 3 Neo (qcom)
     device = new Device();
     device->setId("s3ve3g");
@@ -170,7 +170,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
-    
+
     // Samsung Galaxy Grand 2 (Qcom)
     device = new Device();
     device->setId("ms013g");
@@ -340,7 +340,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices->push_back(device);
-    
+
     // Samsung Galaxy S 5 mini (Qcom)
     device = new Device();
     device->setId("kmini3g");
@@ -387,7 +387,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
-        
+
     // Samsung Galaxy S 5 Broadband LTE-A
     device = new Device();
     device->setId("lentislte");
