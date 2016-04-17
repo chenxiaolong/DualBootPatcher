@@ -58,6 +58,14 @@ void addXiaomiDevices(std::vector<Device *> *devices)
                                "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, MTK_RECOVERY,
                                    "/dev/block/mmcblk0p8" });
+    device->setExtraBlockDevs({
+        // Directly written by updater-script
+        MTK_LK, "/dev/block/mmcblk0p6",
+        MTK_LOGO, "/dev/block/mmcblk0p11",
+        // From reverse engineering the update-binary, it appears that
+        // /dev/block/mmcblk0boot0 is the "preloader" partition
+        "/dev/block/mmcblk0boot0"
+    });
     devices->push_back(device);
 
     // Xiaomi Redmi Note 3 (MTK)
