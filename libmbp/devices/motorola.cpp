@@ -45,19 +45,14 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     // Motorola Moto G (2014)
     device = new Device();
     device->setId("titan");
-    device->setCodenames({ "titan", "titan_udstv" });
+    device->setCodenames({ "titan_umts", "titan_umtsds", "titan_umts", "titan_udstv", "xt1063", "xt1068", "xt1064", "xt1069" });
     device->setName("Motorola Moto G (2014)");
     device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR, QCOM_BASE_DIR });
-    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, QCOM_SYSTEM,
-                                 "/dev/block/mmcblk0p36" });
-    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, QCOM_CACHE,
-                                "/dev/block/mmcblk0p35" });
-    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, QCOM_USERDATA,
-                               "/dev/block/mmcblk0p38" });
-    device->setBootBlockDevs({ BOOTDEVICE_BOOT, QCOM_BOOT,
-                               "/dev/block/mmcblk0p31" });
-    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, QCOM_RECOVERY,
-                                   "/dev/block/mmcblk0p32" });
+    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, QCOM_SYSTEM, "/dev/block/mmcblk0p36" });
+    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, QCOM_CACHE, "/dev/block/mmcblk0p35" });
+    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, QCOM_USERDATA, "/dev/block/mmcblk0p38" });
+    device->setBootBlockDevs({ BOOTDEVICE_BOOT, QCOM_BOOT, "/dev/block/mmcblk0p31" });
+    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices->push_back(device);
 
     // Motorola Moto G (2015)
