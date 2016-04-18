@@ -86,13 +86,26 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     devices->push_back(device);
 
-    // Motorola Moto E (2nd gen)
+    // Motorola Moto E (2nd gen 3G)
+    device = new Device();
+    device->setId("otus");
+    device->setCodenames({ "otus", "otus_ds", "otus", "xt1505", "xt1506", "xt1511" });
+    device->setName("Motorola Moto E (2nd gen 3G)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p39" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p40" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p41" });    
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p32" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p33" });
+    devices.push_back(device);
+
+    // Motorola Moto E (2nd gen 4G)
     device = new Device();
     device->setId("surnia");
     device->setCodenames({ "surnia", "surnia_cdma", "surnia_boost", "surnia_verizon",
                            "surnia_cricket", "surnia_retus", "surnia_tefla", "xt1514",
                            "xt1521", "xt1523", "xt1524", "xt1526", "xt1527" });
-    device->setName("Motorola Moto E (2nd gen)");
+    device->setName("Motorola Moto E (2nd gen 4G)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p42" });
