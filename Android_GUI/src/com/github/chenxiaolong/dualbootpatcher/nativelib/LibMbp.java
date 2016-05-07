@@ -141,6 +141,8 @@ public class LibMbp {
         static native boolean mbp_cpiofile_exists(CCpioFile cpio, String filename);
         static native boolean mbp_cpiofile_remove(CCpioFile cpio, String filename);
         static native Pointer mbp_cpiofile_filenames(CCpioFile cpio);
+        static native boolean mbp_cpiofile_is_symlink(CCpioFile cpio, String filename);
+        static native Pointer mbp_cpiofile_symlink_path(CCpioFile cpio, String filename);
         static native boolean mbp_cpiofile_contents(CCpioFile cpio, String filename, PointerByReference dataReturn, /* size_t */ IntByReference size);
         static native boolean mbp_cpiofile_set_contents(CCpioFile cpio, String filename, Pointer data, /* size_t */ int size);
         static native boolean mbp_cpiofile_add_symlink(CCpioFile cpio, String source, String target);
@@ -159,6 +161,10 @@ public class LibMbp {
         static native void mbp_device_set_name(CDevice device, String name);
         static native Pointer mbp_device_architecture(CDevice device);
         static native void mbp_device_set_architecture(CDevice device, String arch);
+        static native long mbp_device_flags(CDevice device);
+        static native void mbp_device_set_flags(CDevice device, long flags);
+        static native Pointer mbp_device_ramdisk_patcher(CDevice device);
+        static native void mbp_device_set_ramdisk_patcher(CDevice device, String id);
         static native Pointer mbp_device_block_dev_base_dirs(CDevice device);
         static native void mbp_device_set_block_dev_base_dirs(CDevice device, StringArray dirs);
         static native Pointer mbp_device_system_block_devs(CDevice device);
@@ -961,6 +967,25 @@ public class LibMbp {
             return getStringArrayAndFree(p);
         }
 
+        public boolean isSymlink(String name) {
+            validate(mCCpioFile, CpioFile.class, "isSymlink", name);
+            ensureNotNull(name);
+
+            return CWrapper.mbp_cpiofile_is_symlink(mCCpioFile, name);
+        }
+
+        public String getSymlinkPath(String name) {
+            validate(mCCpioFile, CpioFile.class, "getSymlinkPath", name);
+            ensureNotNull(name);
+
+            Pointer p = CWrapper.mbp_cpiofile_symlink_path(mCCpioFile, name);
+            if (p == null) {
+                return null;
+            }
+
+            return getStringAndFree(p);
+        }
+
         public byte[] getContents(String name) {
             validate(mCCpioFile, CpioFile.class, "getContents", name);
             ensureNotNull(name);
@@ -1161,6 +1186,30 @@ public class LibMbp {
             ensureNotNull(arch);
 
             CWrapper.mbp_device_set_architecture(mCDevice, arch);
+        }
+
+        public long getFlags() {
+            validate(mCDevice, Device.class, "getFlags");
+            return CWrapper.mbp_device_flags(mCDevice);
+        }
+
+        public void setFlags(long flags) {
+            validate(mCDevice, Device.class, "setFlags", flags);
+
+            CWrapper.mbp_device_set_flags(mCDevice, flags);
+        }
+
+        public String getRamdiskPatcher() {
+            validate(mCDevice, Device.class, "getRamdiskPatcher");
+            Pointer p = CWrapper.mbp_device_ramdisk_patcher(mCDevice);
+            return getStringAndFree(p);
+        }
+
+        public void setRamdiskPatcher(String id) {
+            validate(mCDevice, Device.class, "setRamdiskPatcher", id);
+            ensureNotNull(id);
+
+            CWrapper.mbp_device_set_ramdisk_patcher(mCDevice, id);
         }
 
         public String[] getBlockDevBaseDirs() {

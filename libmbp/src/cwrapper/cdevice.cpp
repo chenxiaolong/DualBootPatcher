@@ -177,6 +177,30 @@ void mbp_device_set_architecture(CDevice *device, const char *arch)
     d->setArchitecture(arch);
 }
 
+uint64_t mbp_device_flags(const CDevice *device)
+{
+    CCAST(device);
+    return d->flags();
+}
+
+void mbp_device_set_flags(CDevice *device, uint64_t flags)
+{
+    CAST(device);
+    d->setFlags(flags);
+}
+
+char * mbp_device_ramdisk_patcher(const CDevice *device)
+{
+    CCAST(device);
+    return string_to_cstring(d->ramdiskPatcher());
+}
+
+void mbp_device_set_ramdisk_patcher(CDevice *device, const char *id)
+{
+    CAST(device);
+    d->setRamdiskPatcher(id);
+}
+
 char ** mbp_device_block_dev_base_dirs(const CDevice *device)
 {
     CCAST(device);
