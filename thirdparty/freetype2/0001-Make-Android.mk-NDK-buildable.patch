@@ -1,0 +1,41 @@
+From dc57fb4f507bb2501e32c3b8f9b2ef9159394cf9 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sat, 21 May 2016 15:28:01 -0400
+Subject: [PATCH] Make Android.mk NDK-buildable
+
+---
+ Android.mk | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index b2b780b..b947e7d 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -6,6 +6,13 @@ endif
+ 
+ ifeq ($(USE_FREETYPE),2.6.0)
+ LOCAL_PATH:= $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE            := libpng
++LOCAL_SRC_FILES         := common_$(TARGET_ARCH_ABI)/libpng/lib/libpng.so
++LOCAL_EXPORT_C_INCLUDES := common_$(TARGET_ARCH_ABI)/libpng/include
++include $(PREBUILT_SHARED_LIBRARY)
++
+ include $(CLEAR_VARS)
+ 
+ # compile in ARM mode, since the glyph loader/renderer is a hotspot
+@@ -38,9 +45,7 @@ LOCAL_SRC_FILES:= \
+     src/pshinter/pshinter.c
+ 
+ LOCAL_C_INCLUDES += \
+-    $(LOCAL_PATH)/include \
+-    external/libpng \
+-    external/zlib
++    $(LOCAL_PATH)/include
+ 
+ LOCAL_CFLAGS += -W -Wall
+ LOCAL_CFLAGS += -fPIC -DPIC
+-- 
+2.8.2
+
