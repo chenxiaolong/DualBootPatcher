@@ -1,14 +1,14 @@
-From 24d3024f09ee43a403491a60135aa97f2cdb2af1 Mon Sep 17 00:00:00 2001
+From 11298e661ac2be5edf7d4e9fa4dcd945da6dfe23 Mon Sep 17 00:00:00 2001
 From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
 Date: Sat, 21 May 2016 14:53:17 -0400
 Subject: [PATCH] Make Android.mk NDK-buildable
 
 ---
- Android.mk | 62 ++++++++++----------------------------------------------------
- 1 file changed, 10 insertions(+), 52 deletions(-)
+ Android.mk | 63 ++++++++++----------------------------------------------------
+ 1 file changed, 10 insertions(+), 53 deletions(-)
 
 diff --git a/Android.mk b/Android.mk
-index 959b73c..014970f 100644
+index 959b73c..d553a57 100644
 --- a/Android.mk
 +++ b/Android.mk
 @@ -1,8 +1,5 @@
@@ -69,7 +69,7 @@ index 959b73c..014970f 100644
  # For the device (shared)
  # =====================================================
  
-@@ -76,23 +42,15 @@ include $(CLEAR_VARS)
+@@ -76,23 +42,14 @@ include $(CLEAR_VARS)
  LOCAL_CLANG := true
  LOCAL_SRC_FILES := $(common_SRC_FILES)
  LOCAL_CFLAGS += $(common_CFLAGS) -ftrapv
@@ -87,9 +87,8 @@ index 959b73c..014970f 100644
 +endif
  LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 -LOCAL_SHARED_LIBRARIES := libz
-+LOCAL_LDLIBS := -lz
  LOCAL_MODULE:= libpng
- include $(BUILD_SHARED_LIBRARY)
+-include $(BUILD_SHARED_LIBRARY)
 -
 -# For testing
 -# =====================================================
@@ -101,6 +100,7 @@ index 959b73c..014970f 100644
 -LOCAL_SHARED_LIBRARIES:= libpng libz
 -LOCAL_MODULE_TAGS := debug
 -include $(BUILD_EXECUTABLE)
++include $(BUILD_STATIC_LIBRARY)
 -- 
 2.8.2
 
