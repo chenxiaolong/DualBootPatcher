@@ -74,7 +74,6 @@ set(MBTOOL_BASE_SOURCES
     switcher.cpp
     uevent_dump.cpp
     wipe.cpp
-    external/android_reboot.c
     external/legacy_property_service.cpp
     initwrapper/cutils/uevent.cpp
     initwrapper/devices.cpp
