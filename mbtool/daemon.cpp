@@ -103,7 +103,7 @@ static bool verify_credentials(uid_t uid)
     return false;
 }
 
-static bool client_connection(int fd)
+static bool client_connection(int fd, bool allow_root_client)
 {
     LOGD("Accepted connection from %d", fd);
 
@@ -126,7 +126,14 @@ static bool client_connection(int fd)
         LOGD("Disconnecting connection from PID: %u", cred.pid);
     });
 
-    if (verify_credentials(cred.uid)) {
+    if (allow_root_client && cred.uid == 0 && cred.gid == 0) {
+        LOGV("Received connection from client with root UID and GID");
+        LOGW("WARNING: Cannot verify signature of root client process");
+        if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
+            LOGE("Failed to send credentials allowed message");
+            return false;
+        }
+    } else if (verify_credentials(cred.uid)) {
         if (!util::socket_write_string(fd, RESPONSE_ALLOW)) {
             LOGE("Failed to send credentials allowed message");
             return false;
@@ -164,7 +171,7 @@ static bool client_connection(int fd)
     return true;
 }
 
-static bool run_daemon(void)
+static bool run_daemon(bool allow_root_client)
 {
     int fd;
     struct sockaddr_un addr;
@@ -257,7 +264,7 @@ static bool run_daemon(void)
             // Don't need the listening socket fd
             close(fd);
 
-            bool ret = client_connection(client_fd);
+            bool ret = client_connection(client_fd, allow_root_client);
             close(client_fd);
             _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
         }
@@ -338,7 +345,7 @@ static bool daemon_init()
 }
 
 __attribute__((noreturn))
-static void run_daemon_fork(void)
+static void run_daemon_fork(bool allow_root_client)
 {
     pid_t pid = fork();
     if (pid < 0) {
@@ -404,7 +411,8 @@ static void run_daemon_fork(void)
     // Close read end of the pipe
     close(pipe_fds[0]);
 
-    _exit((daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE);
+    _exit((daemon_init() && run_daemon(allow_root_client))
+            ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 static bool patch_sepolicy_daemon()
@@ -447,7 +455,10 @@ static void daemon_usage(bool error)
             "Options:\n"
             "  -d, --daemonize  Fork to background\n"
             "  -r, --replace    Kill existing daemon (if any) before starting\n"
-            "  -h, --help       Display this help message\n");
+            "  -h, --help       Display this help message\n"
+            "  --allow-root-client\n"
+            "                   Allow clients with root UID and GID to connect\n"
+            "                   without signature verification\n");
 }
 
 int daemon_main(int argc, char *argv[])
@@ -460,11 +471,17 @@ int daemon_main(int argc, char *argv[])
     int opt;
     bool fork_flag = false;
     bool replace_flag = false;
+    bool allow_root_client = false;
+
+    enum {
+        OPT_ALLOW_ROOT_CLIENT = 1000
+    };
 
     static struct option long_options[] = {
-        {"daemonize", no_argument, 0, 'd'},
-        {"replace",   no_argument, 0, 'r'},
-        {"help",      no_argument, 0, 'h'},
+        {"daemonize",         no_argument, 0, 'd'},
+        {"replace",           no_argument, 0, 'r'},
+        {"help",              no_argument, 0, 'h'},
+        {"allow-root-client", no_argument, 0, OPT_ALLOW_ROOT_CLIENT},
         {0, 0, 0, 0}
     };
 
@@ -483,6 +500,10 @@ int daemon_main(int argc, char *argv[])
         case 'h':
             daemon_usage(0);
             return EXIT_SUCCESS;
+
+        case OPT_ALLOW_ROOT_CLIENT:
+            allow_root_client = true;
+            break;
 
         default:
             daemon_usage(1);
@@ -552,9 +573,10 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (fork_flag) {
-        run_daemon_fork();
+        run_daemon_fork(allow_root_client);
     } else {
-        return (daemon_init() && run_daemon()) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return (daemon_init() && run_daemon(allow_root_client))
+                ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 }
 
