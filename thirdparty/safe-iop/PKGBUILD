@@ -1,0 +1,56 @@
+# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=safe-iop
+pkgver=6.0.1_r43
+pkgrel=1
+pkgdesc="Safe integer operation library for C"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/external/safe-iop"
+license=(custom)
+source=("git+https://android.googlesource.com/platform/external/safe-iop#tag=android-${pkgver}")
+sha512sums=('SKIP')
+
+prepare() {
+    cd safe-iop
+    sed -i '/testsuite/d' Android.mk
+}
+
+build() {
+    cd safe-iop
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=clang3.6 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd safe-iop
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/lib/
+    install -m644 "obj/local/${abi}/libsafe_iop.a" "${pkgdir}"/lib/
+    install -dm755 "${pkgdir}"/include/
+    install -m644 include/safe_iop.h "${pkgdir}"/include/
+}
