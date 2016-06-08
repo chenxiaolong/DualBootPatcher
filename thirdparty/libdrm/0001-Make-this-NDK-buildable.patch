@@ -1,0 +1,49 @@
+From dd411049dad826fc0bb86c5f1662a64c3f86c8ec Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sun, 22 May 2016 23:33:37 -0400
+Subject: [PATCH] Make this NDK buildable
+
+---
+ Android.mk | 29 -----------------------------
+ 1 file changed, 29 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 966514d..ae60033 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -38,32 +38,3 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/include/drm
+ LOCAL_CFLAGS := $(common_CFLAGS)
+ LOCAL_MODULE := libdrm
+ include $(BUILD_STATIC_LIBRARY)
+-
+-# Dynamic library for the device
+-include $(CLEAR_VARS)
+-LOCAL_MODULE_TAGS := optional
+-LOCAL_SRC_FILES := $(LIBDRM_FILES)
+-LOCAL_EXPORT_C_INCLUDE_DIRS += $(LOCAL_PATH) $(LOCAL_PATH)/include/drm
+-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include/drm
+-LOCAL_CFLAGS := $(common_CFLAGS)
+-
+-LOCAL_COPY_HEADERS := \
+-	$(LIBDRM_H_FILES) \
+-	$(LIBDRM_INCLUDE_H_FILES) \
+-	$(LIBDRM_INCLUDE_VMWGFX_H_FILES)
+-LOCAL_COPY_HEADERS_TO := libdrm
+-
+-LOCAL_MODULE := libdrm
+-include $(BUILD_SHARED_LIBRARY)
+-
+-SUBDIRS := \
+-	nouveau \
+-	radeon \
+-	rockchip \
+-	tegra \
+-	libkms \
+-	tests/modetest \
+-	tests/planetest
+-
+-mkfiles := $(patsubst %,$(LIBDRM_TOP)/%/Android.mk,$(SUBDIRS))
+-include $(mkfiles)
+-- 
+2.8.2
+
