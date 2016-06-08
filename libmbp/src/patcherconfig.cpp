@@ -23,10 +23,11 @@
 
 #include <cassert>
 
+#include "mbcommon/version.h"
+
 #include "mbp/device.h"
 #include "mbp/patcherinterface.h"
 #include "mbp/private/fileutils.h"
-#include "mbp/version.h"
 
 // Devices
 #include "devices/asus.h"
@@ -88,7 +89,7 @@ PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
 
-    m_impl->version = LIBMBP_VERSION;
+    m_impl->version = mb::version();
 }
 
 PatcherConfig::~PatcherConfig()
