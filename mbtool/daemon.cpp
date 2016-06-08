@@ -31,6 +31,7 @@
 
 #include <proc/readproc.h>
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/autoclose/file.h"
@@ -46,7 +47,6 @@
 #include "packages.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
-#include "version.h"
 
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
@@ -507,9 +507,8 @@ int daemon_main(int argc, char *argv[])
     // 2nd child reparent to init, and then calling execve("/mbtool", ...), but
     // meh ...
     if (getppid() == 1) {
-        if (!util::set_property("ro.multiboot.version", get_mbtool_version())) {
-            LOGW("Failed to set 'ro.multiboot.version' to '%s'\n",
-                 get_mbtool_version());
+        if (!util::set_property("ro.multiboot.version", version())) {
+            LOGW("Failed to set 'ro.multiboot.version' to '%s'", version());
         }
     }
 

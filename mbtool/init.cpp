@@ -32,6 +32,7 @@
 #include <sys/poll.h>
 #include <unistd.h>
 
+#include "mbcommon/version.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/dir.h"
@@ -54,7 +55,6 @@
 #include "multiboot.h"
 #include "reboot.h"
 #include "sepolpatch.h"
-#include "version.h"
 
 #define BOOT_ADB_INSTEAD_OF_INIT 0
 
@@ -692,7 +692,7 @@ int init_main(int argc, char *argv[])
     }
 
     LOGV("Booting up with version %s (%s)",
-         get_mbtool_version(), get_git_version());
+         version(), git_version());
 
     // Start probing for devices
     device_init(false);

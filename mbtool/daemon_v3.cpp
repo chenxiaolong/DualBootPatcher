@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
@@ -43,7 +44,6 @@
 #include "roms.h"
 #include "signature.h"
 #include "switcher.h"
-#include "version.h"
 #include "wipe.h"
 
 // flatbuffers
@@ -933,7 +933,7 @@ static bool v3_mb_get_version(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Get version
-    auto version = builder.CreateString(get_mbtool_version());
+    auto version = builder.CreateString(mb::version());
     auto response = v3::CreateMbGetVersionResponse(builder, version);
 
     // Wrap response

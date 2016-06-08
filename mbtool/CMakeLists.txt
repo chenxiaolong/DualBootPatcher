@@ -35,16 +35,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers)
 #   cd /tmp/
 set(DEBUGGING FALSE)
 
-# Generate version.cpp
-include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
-git_describe(GIT_VERSION --dirty --always --tags)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
-    @ONLY
-)
-
 # Generate validcerts.cpp
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
@@ -90,7 +80,6 @@ set(MBTOOL_BASE_SOURCES
     initwrapper/devices.cpp
     initwrapper/util.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
@@ -182,6 +171,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbutil-static
         mbsign-static
         mblog-static
+        mbcommon-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
     )
@@ -193,6 +183,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbp-static
         mbpio-static
+        mbcommon-static
         minizip
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}

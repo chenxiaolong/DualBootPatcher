@@ -39,6 +39,7 @@
 
 #include <jansson.h>
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/autoclose/file.h"
@@ -61,7 +62,6 @@
 #include "packages.h"
 #include "romconfig.h"
 #include "roms.h"
-#include "version.h"
 
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
@@ -1147,7 +1147,7 @@ int appsync_main(int argc, char *argv[])
     // mbtool logging
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
 
-    LOGI("=== APPSYNC VERSION %s ===", get_mbtool_version());
+    LOGI("=== APPSYNC VERSION %s ===", version());
 
     LOGI("Creating /data/.layout_version");
     create_layout_version();
