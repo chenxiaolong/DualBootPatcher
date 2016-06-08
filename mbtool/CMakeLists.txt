@@ -129,10 +129,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
 
     # Ugly, but I don't want to deviate too much from upstream to fix it
-    set_target_properties(
+    target_compile_options(
         miniadbd-static
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter"
+        PRIVATE
+        -Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter
     )
 
     set_target_properties(
