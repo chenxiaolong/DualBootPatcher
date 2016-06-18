@@ -38,7 +38,6 @@
 #include "mbutil/directory.h"
 #include "mbutil/finally.h"
 #include "mbutil/process.h"
-#include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 
@@ -522,16 +521,6 @@ int daemon_main(int argc, char *argv[])
 
     // Allow untrusted_app to connect to our daemon
     patch_sepolicy_daemon();
-
-    // Set version property if we're the system mbtool (i.e. launched by init)
-    // Possible to override this with another program by double forking, letting
-    // 2nd child reparent to init, and then calling execve("/mbtool", ...), but
-    // meh ...
-    if (getppid() == 1) {
-        if (!util::set_property("ro.multiboot.version", version())) {
-            LOGW("Failed to set 'ro.multiboot.version' to '%s'", version());
-        }
-    }
 
     if (replace_flag) {
         PROCTAB *proc = openproc(PROC_FILLCOM | PROC_FILLSTAT);

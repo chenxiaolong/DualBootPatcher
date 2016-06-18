@@ -460,6 +460,37 @@ static bool strip_manual_mounts()
     return true;
 }
 
+static bool add_version_to_default_prop()
+{
+    autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
+    if (!fp) {
+        if (errno == ENOENT) {
+            return true;
+        } else {
+            LOGE("%s: Failed to open file: %s",
+                 DEFAULT_PROP_PATH, strerror(errno));
+            return false;
+        }
+    }
+
+    // Add newline if the last character isn't already one
+    if (std::fseek(fp.get(), -1, SEEK_END) == 0) {
+        char lastchar;
+        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar == '\n') {
+            fputs("\n", fp.get());
+        }
+    } else if (std::fseek(fp.get(), 0, SEEK_END) < 0) {
+        LOGE("%s: Failed to seek to end of file: %s",
+             DEFAULT_PROP_PATH, strerror(errno));
+        return false;
+    }
+
+    // Write version property
+    fprintf(fp.get(), "ro.multiboot.version=%s\n", version());
+
+    return true;
+}
+
 static bool fix_arter97()
 {
     const char *path = "/init.mount.sh";
@@ -727,6 +758,7 @@ int init_main(int argc, char *argv[])
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();
+    add_version_to_default_prop();
 
     struct stat sb;
     if (stat("/sepolicy", &sb) == 0) {
