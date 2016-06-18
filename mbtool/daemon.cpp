@@ -457,7 +457,9 @@ static void daemon_usage(bool error)
             "  -h, --help       Display this help message\n"
             "  --allow-root-client\n"
             "                   Allow clients with root UID and GID to connect\n"
-            "                   without signature verification\n");
+            "                   without signature verification\n"
+            "  --no-patch-sepolicy\n"
+            "                   Skip procedures for modifying the SELinux policy\n");
 }
 
 int daemon_main(int argc, char *argv[])
@@ -471,9 +473,11 @@ int daemon_main(int argc, char *argv[])
     bool fork_flag = false;
     bool replace_flag = false;
     bool allow_root_client = false;
+    bool patch_sepolicy = true;
 
     enum {
-        OPT_ALLOW_ROOT_CLIENT = 1000
+        OPT_ALLOW_ROOT_CLIENT = 1000,
+        OPT_NO_PATCH_SEPOLICY = 1001
     };
 
     static struct option long_options[] = {
@@ -481,6 +485,7 @@ int daemon_main(int argc, char *argv[])
         {"replace",           no_argument, 0, 'r'},
         {"help",              no_argument, 0, 'h'},
         {"allow-root-client", no_argument, 0, OPT_ALLOW_ROOT_CLIENT},
+        {"no-patch-sepolicy", no_argument, 0, OPT_NO_PATCH_SEPOLICY},
         {0, 0, 0, 0}
     };
 
@@ -504,6 +509,10 @@ int daemon_main(int argc, char *argv[])
             allow_root_client = true;
             break;
 
+        case OPT_NO_PATCH_SEPOLICY:
+            patch_sepolicy = false;
+            break;
+
         default:
             daemon_usage(1);
             return EXIT_FAILURE;
@@ -516,11 +525,13 @@ int daemon_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Patch SELinux policy to make init permissive
-    patch_loaded_sepolicy();
+    if (patch_sepolicy) {
+        // Patch SELinux policy to make init permissive
+        patch_loaded_sepolicy();
 
-    // Allow untrusted_app to connect to our daemon
-    patch_sepolicy_daemon();
+        // Allow untrusted_app to connect to our daemon
+        patch_sepolicy_daemon();
+    }
 
     if (replace_flag) {
         PROCTAB *proc = openproc(PROC_FILLCOM | PROC_FILLSTAT);
