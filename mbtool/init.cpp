@@ -491,53 +491,6 @@ static bool add_version_to_default_prop()
     return true;
 }
 
-static bool fix_arter97()
-{
-    const char *path = "/init.mount.sh";
-    const char *path_new = "/init.mount.sh.new";
-    const char *fstab = "/fstab.samsungexynos7420";
-
-    struct stat sb;
-    if (stat(path, &sb) < 0 || stat(fstab, &sb) < 0) {
-        return true;
-    }
-
-    autoclose::file fp(autoclose::fopen(path, "r"));
-    if (!fp) {
-        LOGE("Failed to open %s for reading: %s", path, strerror(errno));
-        return false;
-    }
-
-    autoclose::file fp_new(autoclose::fopen(path_new, "w"));
-    if (!fp_new) {
-        LOGE("Failed to open %s for writing: %s", path_new, strerror(errno));
-        return false;
-    }
-
-    // Strip everything from /init.mount.sh except for the shebang line
-    {
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = util::finally([&]{
-            free(line);
-        });
-
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            fputs(line, fp_new.get());
-            break;
-        }
-    }
-
-    fp.reset();
-    fp_new.reset();
-
-    replace_file(path, path_new);
-
-    return true;
-}
-
 static bool symlink_base_dir()
 {
     std::string encoded;
@@ -762,7 +715,6 @@ int init_main(int argc, char *argv[])
     util::chown("/cache", "system", "cache", 0);
     util::chown("/data", "system", "system", 0);
 
-    fix_arter97();
 
     // Mount fstab and write new redacted version
     if (!mount_fstab(fstab, true)) {
