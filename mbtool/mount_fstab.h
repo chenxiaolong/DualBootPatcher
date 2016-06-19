@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -25,6 +25,5 @@ namespace mb
 {
 
 bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab);
-int mount_fstab_main(int argc, char *argv[]);
 
 }

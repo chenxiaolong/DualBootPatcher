@@ -1055,14 +1055,4 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     return true;
 }
 
-int mount_fstab_main(int argc, char *argv[])
-{
-    (void) argc;
-    (void) argv;
-
-    printf("mount_fstab has been deprecated and removed. "
-           "The initwrapper should be used instead\n.");
-    return EXIT_SUCCESS;
-}
-
 }
