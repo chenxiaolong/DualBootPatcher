@@ -25,8 +25,10 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+
 #include <dirent.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
 #include <sys/poll.h>
@@ -66,10 +68,8 @@
 namespace mb
 {
 
-static void init_usage(bool error)
+static void init_usage(FILE *stream)
 {
-    FILE *stream = error ? stderr : stdout;
-
     fprintf(stream,
             "Usage: init"
             "\n"
@@ -693,16 +693,34 @@ static bool emergency_reboot()
 
 int init_main(int argc, char *argv[])
 {
+    // Some devices actually receive arguments, so ignore them during boot
     if (getppid() != 0) {
-        for (int i = 1; i < argc; ++i) {
-            if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-                init_usage(true);
+        static struct option long_options[] = {
+            {"help", no_argument, 0, 'h'},
+            {0, 0, 0, 0}
+        };
+
+        int opt;
+        int long_index = 0;
+
+        while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+            switch (opt) {
+            case 'h':
+                init_usage(stdout);
                 return EXIT_SUCCESS;
+
+            default:
+                init_usage(stderr);
+                return EXIT_FAILURE;
             }
         }
-    }
 
-    umask(0);
+        // There should be no other arguments
+        if (argc - optind != 0) {
+            init_usage(stderr);
+            return EXIT_FAILURE;
+        }
+    }
 
     mkdir("/dev", 0755);
     mkdir("/proc", 0755);
