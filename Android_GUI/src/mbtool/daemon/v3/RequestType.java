@@ -28,8 +28,9 @@ public final class RequestType {
   public static final byte MbGetPackagesCountRequest = 21;
   public static final byte RebootRequest = 22;
   public static final byte SignedExecRequest = 23;
+  public static final byte ShutdownRequest = 24;
 
-  private static final String[] names = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", "SignedExecRequest", };
+  private static final String[] names = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", "SignedExecRequest", "ShutdownRequest", };
 
   public static String name(int e) { return names[e]; }
 };

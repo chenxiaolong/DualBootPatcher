@@ -31,8 +31,9 @@ public final class ResponseType {
   public static final byte RebootResponse = 24;
   public static final byte SignedExecOutputResponse = 25;
   public static final byte SignedExecResponse = 26;
+  public static final byte ShutdownResponse = 27;
 
-  private static final String[] names = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", };
+  private static final String[] names = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", };
 
   public static String name(int e) { return names[e]; }
 };
