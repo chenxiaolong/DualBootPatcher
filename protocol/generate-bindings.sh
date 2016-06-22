@@ -26,6 +26,7 @@ files=(
     v3/mb_wipe_rom.fbs
     v3/mb_get_packages_count.fbs
     v3/reboot.fbs
+    v3/shutdown.fbs
     request.fbs
     response.fbs
 )

@@ -21,6 +21,7 @@ include "v3/mb_set_kernel.fbs";
 include "v3/mb_wipe_rom.fbs";
 include "v3/mb_get_packages_count.fbs";
 include "v3/reboot.fbs";
+include "v3/shutdown.fbs";
 
 namespace mbtool.daemon.v3;
 
@@ -57,7 +58,8 @@ union ResponseType {
     MbGetPackagesCountResponse,
     RebootResponse,
     SignedExecOutputResponse,
-    SignedExecResponse
+    SignedExecResponse,
+    ShutdownResponse
 }
 
 table Response {
