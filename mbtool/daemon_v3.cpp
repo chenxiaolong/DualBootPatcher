@@ -69,6 +69,7 @@
 #include "protocol/mb_wipe_rom_generated.h"
 #include "protocol/mb_get_packages_count_generated.h"
 #include "protocol/reboot_generated.h"
+#include "protocol/shutdown_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
@@ -1210,6 +1211,39 @@ static bool v3_reboot(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
+static bool v3_shutdown(int fd, const v3::Request *msg)
+{
+    auto request = (v3::ShutdownRequest *) msg->request();
+
+    fb::FlatBufferBuilder builder;
+
+    // The client probably won't get the chance to see the success message, but
+    // we'll still send it for the sake of symmetry
+    bool success = false;
+    switch (request->type()) {
+    case v3::ShutdownType_INIT:
+        success = shutdown_via_init();
+        break;
+    case v3::ShutdownType_DIRECT:
+        success = shutdown_directly();
+        break;
+    default:
+        LOGE("Invalid shutdown type: %d", request->type());
+        return v3_send_response_invalid(fd);
+    }
+
+    // Create response
+    auto response = v3::CreateShutdownResponse(builder, success);
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_ShutdownResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
 typedef bool (*request_handler_fn)(int, const v3::Request *);
 
 struct RequestMap
@@ -1242,6 +1276,7 @@ static RequestMap request_map[] = {
     { v3::RequestType_MbWipeRomRequest, v3_mb_wipe_rom },
     { v3::RequestType_MbGetPackagesCountRequest, v3_mb_get_packages_count },
     { v3::RequestType_RebootRequest, v3_reboot },
+    { v3::RequestType_ShutdownRequest, v3_shutdown },
     { v3::RequestType_NONE, nullptr }
 };
 
