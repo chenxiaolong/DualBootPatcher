@@ -29,18 +29,22 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
-#include <sys/poll.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "mbcommon/version.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
+#include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/cmdline.h"
 #include "mbutil/chown.h"
+#include "mbutil/cmdline.h"
+#include "mbutil/command.h"
+#include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
@@ -53,12 +57,15 @@
 
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
+#include "daemon.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
 #include "sepolpatch.h"
+#include "signature.h"
 
 #define BOOT_ADB_INSTEAD_OF_INIT 0
+#define RUN_ADB_DURING_BOOT_MENU 0
 
 #if BOOT_ADB_INSTEAD_OF_INIT
 #include "miniadbd.h"
@@ -67,6 +74,11 @@
 
 namespace mb
 {
+
+static pid_t daemon_pid = -1;
+#if RUN_ADB_DURING_BOOT_MENU
+static pid_t adb_pid = -1;
+#endif
 
 static void init_usage(FILE *stream)
 {
@@ -83,6 +95,139 @@ static void init_usage(FILE *stream)
             "expected to be located at /init.orig in the ramdisk. mbtool will\n"
             "remove the /init -> /mbtool symlink and rename /init.orig to /init.\n"
             "/init will then be launched with no arguments.\n");
+}
+
+static bool start_daemon()
+{
+    if (daemon_pid >= 0) {
+        return true;
+    }
+
+    LOGV("Starting daemon...");
+
+    daemon_pid = fork();
+    if (daemon_pid == 0) {
+        execl("/proc/self/exe",
+              "daemon",
+              "--allow-root-client",
+              "--no-patch-sepolicy",
+              nullptr);
+        LOGE("Failed to exec daemon: %s", strerror(errno));
+        _exit(127);
+    } else if (daemon_pid > 0) {
+        LOGV("Started daemon (pid: %d)", daemon_pid);
+        return true;
+    } else {
+        LOGE("Failed to fork: %s", strerror(errno));
+        return false;
+    }
+}
+
+static bool stop_daemon()
+{
+    if (daemon_pid < 0) {
+        return true;
+    }
+
+    LOGV("Stopping daemon...");
+
+    // Clear pid when returning
+    auto clear_pid = util::finally([]{
+        daemon_pid = -1;
+    });
+
+    kill(daemon_pid, SIGTERM);
+
+    int status;
+
+    do {
+        if (waitpid(daemon_pid, &status, 0) < 0) {
+            LOGE("Failed to waitpid(): %s", strerror(errno));
+            return false;
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    if (WIFEXITED(status)) {
+        LOGV("daemon process (pid: %d) exited with status: %d",
+             daemon_pid, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        LOGV("daemon process (pid: %d) killed by signal: %d",
+             daemon_pid, WTERMSIG(status));
+    }
+
+    return true;
+}
+
+#if RUN_ADB_DURING_BOOT_MENU
+static bool start_adb()
+{
+    if (adb_pid >= 0) {
+        return true;
+    }
+
+    LOGV("Starting adb...");
+
+    adb_pid = fork();
+    if (adb_pid == 0) {
+        execl("/proc/self/exe",
+              "miniadbd",
+              nullptr);
+        LOGE("Failed to exec adb: %s", strerror(errno));
+        _exit(127);
+    } else if (adb_pid > 0) {
+        LOGV("Started adb (pid: %d)", adb_pid);
+        return true;
+    } else {
+        LOGE("Failed to fork: %s", strerror(errno));
+        return false;
+    }
+}
+
+static bool stop_adb()
+{
+    if (adb_pid < 0) {
+        return true;
+    }
+
+    LOGV("Stopping adb...");
+
+    // Clear pid when returning
+    auto clear_pid = util::finally([]{
+        adb_pid = -1;
+    });
+
+    kill(adb_pid, SIGTERM);
+
+    int status;
+
+    do {
+        if (waitpid(adb_pid, &status, 0) < 0) {
+            LOGE("Failed to waitpid(): %s", strerror(errno));
+            return false;
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    if (WIFEXITED(status)) {
+        LOGV("adb process (pid: %d) exited with status: %d",
+             adb_pid, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        LOGV("adb process (pid: %d) killed by signal: %d",
+             adb_pid, WTERMSIG(status));
+    }
+
+    return true;
+}
+#endif
+
+static std::string get_rom_id()
+{
+    std::string rom_id;
+
+    if (!util::file_first_line("/romid", &rom_id)) {
+        return std::string();
+    }
+
+    return rom_id;
 }
 
 static std::string find_fstab()
@@ -460,7 +605,7 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static bool add_version_to_default_prop()
+static bool add_props_to_default_prop()
 {
     autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
     if (!fp) {
@@ -476,7 +621,7 @@ static bool add_version_to_default_prop()
     // Add newline if the last character isn't already one
     if (std::fseek(fp.get(), -1, SEEK_END) == 0) {
         char lastchar;
-        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar == '\n') {
+        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar != '\n') {
             fputs("\n", fp.get());
         }
     } else if (std::fseek(fp.get(), 0, SEEK_END) < 0) {
@@ -486,7 +631,9 @@ static bool add_version_to_default_prop()
     }
 
     // Write version property
-    fprintf(fp.get(), "ro.multiboot.version=%s\n", version());
+    fprintf(fp.get(), PROP_MULTIBOOT_VERSION "=%s\n", version());
+    // Write ROM ID property
+    fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
     return true;
 }
@@ -520,6 +667,175 @@ static bool symlink_base_dir()
     }
 
     return false;
+}
+
+static bool extract_zip(const char *source, const char *target)
+{
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    if (!in) {
+        LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    if (!out) {
+        LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
+        return false;
+    }
+
+    archive_read_support_format_zip(in.get());
+
+    // Set up disk writer parameters. We purposely don't extract any file
+    // metadata
+    int flags = ARCHIVE_EXTRACT_SECURE_SYMLINKS
+            | ARCHIVE_EXTRACT_SECURE_NODOTDOT;
+
+    archive_write_disk_set_standard_lookup(out.get());
+    archive_write_disk_set_options(out.get(), flags);
+
+    if (archive_read_open_filename(in.get(), source, 10240) != ARCHIVE_OK) {
+        LOGE("%s: Failed to open file: %s",
+             source, archive_error_string(in.get()));
+        return false;
+    }
+
+    archive_entry *entry;
+    int ret;
+    std::string target_path;
+
+    while (true) {
+        ret = archive_read_next_header(in.get(), &entry);
+        if (ret == ARCHIVE_EOF) {
+            break;
+        } else if (ret == ARCHIVE_RETRY) {
+            LOGW("%s: Retrying header read", source);
+            continue;
+        } else if (ret != ARCHIVE_OK) {
+            LOGE("%s: Failed to read header: %s",
+                 source, archive_error_string(in.get()));
+            return false;
+        }
+
+        const char *path = archive_entry_pathname(entry);
+        if (!path || !*path) {
+            LOGE("%s: Header has null or empty filename", source);
+            return false;
+        }
+
+        if (strcmp(path, "exec") != 0) {
+            LOGV("Skipping: %s", path);
+            continue;
+        }
+
+        LOGV("Extracting: %s", path);
+
+        // Build path
+        target_path = target;
+        if (target_path.back() != '/' && *path != '/') {
+            target_path += '/';
+        }
+        target_path += path;
+
+        archive_entry_set_pathname(entry, target_path.c_str());
+
+        // Extract file
+        ret = archive_read_extract2(in.get(), entry, out.get());
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", archive_entry_pathname(entry),
+                 archive_error_string(in.get()));
+            return false;
+        }
+    }
+
+    if (archive_read_close(in.get()) != ARCHIVE_OK) {
+        LOGE("%s: Failed to close file: %s",
+             source, archive_error_string(in.get()));
+        return false;
+    }
+
+    return true;
+}
+
+static bool launch_boot_menu()
+{
+    struct stat sb;
+
+    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
+        std::string skip_rom;
+        util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
+
+        std::string rom_id = get_rom_id();
+
+        if (remove(BOOT_UI_SKIP_PATH) < 0) {
+            LOGW("%s: Failed to remove: %s",
+                 BOOT_UI_SKIP_PATH, strerror(errno));
+            LOGW("Boot UI won't run again!");
+        }
+
+        if (skip_rom == rom_id) {
+            LOGV("Performing one-time skipping of Boot UI");
+            return true;
+        } else {
+            LOGW("Skip file is not for: %s", rom_id.c_str());
+            LOGW("Not skipping boot UI");
+        }
+    }
+
+    if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
+        LOGV("Boot UI is missing. Skipping...");
+        return true;
+    }
+
+    // Verify boot UI signature
+    SigVerifyResult result;
+    result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
+        return false;
+    }
+
+    if (!extract_zip(BOOT_UI_ZIP_PATH, BOOT_UI_PATH)) {
+        LOGE("%s: Failed to extract zip", BOOT_UI_ZIP_PATH);
+        return false;
+    }
+
+    auto clean_up = util::finally([]{
+        if (!util::delete_recursive(BOOT_UI_PATH)) {
+            LOGW("%s: Failed to recursively delete: %s",
+                 BOOT_UI_PATH, strerror(errno));
+        }
+    });
+
+    if (chmod(BOOT_UI_EXEC_PATH, 0500) < 0) {
+        LOGE("%s: Failed to chmod: %s", BOOT_UI_EXEC_PATH, strerror(errno));
+        return false;
+    }
+
+    start_daemon();
+#if RUN_ADB_DURING_BOOT_MENU
+    start_adb();
+#endif
+
+    int ret = util::run_command({ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH });
+    if (ret < 0) {
+        LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
+    } else if (WIFEXITED(ret)) {
+        LOGV("Boot UI exited with status: %d", WEXITSTATUS(ret));
+    } else if (WIFSIGNALED(ret)) {
+        LOGE("Boot UI killed by signal: %d", WTERMSIG(ret));
+    }
+
+    // NOTE: Always continue regardless of how the boot UI exits. If the current
+    // ROM should be booted, the UI simply exits. If the UI crashes or doesn't
+    // work for whatever reason, the current ROM should still be booted. If the
+    // user switches to another ROM, then the boot UI will instruct the daemon
+    // to switch ROMs and reboot (ie. the UI will not exit).
+
+    stop_daemon();
+#if RUN_ADB_DURING_BOOT_MENU
+    stop_adb();
+#endif
+
+    return true;
 }
 
 #define KLOG_CLOSE         0
@@ -675,6 +991,7 @@ int init_main(int argc, char *argv[])
         }
     }
 
+    // Mount base directories
     mkdir("/dev", 0755);
     mkdir("/proc", 0755);
     mkdir("/sys", 0755);
@@ -685,9 +1002,14 @@ int init_main(int argc, char *argv[])
     mount("devpts", "/dev/pts", "devpts", 0, nullptr);
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
+
+    // Mount selinuxfs
     util::selinux_mount();
 
+    // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();
+
+    // Log to kmsg
     log::log_set_logger(std::make_shared<log::KmsgLogger>());
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 8) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
@@ -702,6 +1024,8 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir();
 
+    // Find fstab file. Continues anyway if fstab file can't be found since
+    // mount_fstab() will try some generic fstab entries, which might work.
     std::string fstab = find_fstab();
     if (fstab.empty()) {
         LOGW("Failed to find a suitable fstab file. Continuing anyway...");
@@ -709,27 +1033,57 @@ int init_main(int argc, char *argv[])
         util::create_empty_file(fstab);
     }
 
+    // Create mount points
     mkdir("/system", 0755);
     mkdir("/cache", 0770);
     mkdir("/data", 0771);
     util::chown("/cache", "system", "cache", 0);
     util::chown("/data", "system", "system", 0);
 
+    // Get ROM ID from /romid
+    std::string rom_id = get_rom_id();
+    std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
+    if (!rom) {
+        LOGE("Unknown ROM ID: %s", rom_id.c_str());
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
 
-    // Mount fstab and write new redacted version
-    if (!mount_fstab(fstab, true)) {
+    LOGV("ROM ID is: %s", rom_id.c_str());
+
+    // This needs to be done before the boot menu runs so that the daemon can
+    // get the ROM ID;
+    add_props_to_default_prop();
+
+    // Mount fstab file
+    // TODO: Skip /data until it is decrypted
+    int flags = MOUNT_FLAG_REWRITE_FSTAB /* | MOUNT_FLAG_SKIP_DATA */;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
         return EXIT_FAILURE;
     }
 
-    LOGE("Successfully mounted fstab");
+    LOGV("Successfully mounted fstab");
 
+    if (!launch_boot_menu()) {
+        LOGE("Failed to run boot menu");
+        // Continue anyway since boot menu might not run on every device
+    }
+
+    // Mount ROM (bind mount directory or mount images, etc.)
+    if (!mount_rom(rom)) {
+        LOGE("Failed to mount ROM directories and images");
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
+
+    // Make runtime ramdisk modifications
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();
-    add_version_to_default_prop();
 
+    // Patch SELinux policy
     struct stat sb;
     if (stat("/sepolicy", &sb) == 0) {
         if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
@@ -742,7 +1096,7 @@ int init_main(int argc, char *argv[])
     // Kill uevent thread and close uevent socket
     device_close();
 
-    // Remove mbtool init symlink and restore original
+    // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
 

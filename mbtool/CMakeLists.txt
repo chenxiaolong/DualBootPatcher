@@ -173,6 +173,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbcommon-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
+        ${MBP_LIBARCHIVE_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
     )
     target_link_libraries(
         mbtool_recovery

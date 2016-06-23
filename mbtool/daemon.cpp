@@ -44,6 +44,7 @@
 #include "daemon_v3.h"
 #include "multiboot.h"
 #include "packages.h"
+#include "roms.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
 
@@ -326,7 +327,7 @@ static bool daemon_init()
         return false;
     }
 
-    log_fp = autoclose::fopen(MULTIBOOT_LOG_DAEMON, "w");
+    log_fp = autoclose::fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
     if (!log_fp) {
         LOGE("Failed to open log file %s: %s",
              MULTIBOOT_LOG_DAEMON, strerror(errno));
