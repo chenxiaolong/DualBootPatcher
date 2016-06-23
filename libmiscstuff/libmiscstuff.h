@@ -19,20 +19,29 @@
 
 #pragma once
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include "mbcommon/common.h"
+
+#ifdef __cplusplus
+#include <cinttypes>
+#include <cstdbool>
 
 extern "C" {
+#else
+#include <inttypes.h>
+#include <stdbool.h>
+#endif
 
-int64_t get_mnt_total_size(const char *mountpoint);
-int64_t get_mnt_avail_size(const char *mountpoint);
+MB_EXPORT int64_t get_mnt_total_size(const char *mountpoint);
+MB_EXPORT int64_t get_mnt_avail_size(const char *mountpoint);
 
-bool is_same_file(const char *path1, const char *path2);
+MB_EXPORT bool is_same_file(const char *path1, const char *path2);
 
-bool extract_archive(const char *filename, const char *target);
+MB_EXPORT bool extract_archive(const char *filename, const char *target);
 
-bool find_string_in_file(const char *path, const char *str, int *result);
+MB_EXPORT bool find_string_in_file(const char *path, const char *str, int *result);
 
-void mblog_set_logcat();
+MB_EXPORT void mblog_set_logcat();
 
+#ifdef __cplusplus
 }
+#endif
