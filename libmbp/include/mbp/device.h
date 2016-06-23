@@ -30,6 +30,8 @@
 #define ARCH_X86                "x86"
 #define ARCH_X86_64             "x86_64"
 
+#define TW_THEME_PORTRAIT_HDPI  "portrait_hdpi"
+
 namespace mbp
 {
 
@@ -100,6 +102,8 @@ public:
         std::string inputWhitelist;
 
         std::vector<std::string> graphicsBackends;
+
+        std::string theme = TW_THEME_PORTRAIT_HDPI;
     };
 
     Device();
