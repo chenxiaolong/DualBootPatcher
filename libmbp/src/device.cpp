@@ -42,6 +42,8 @@ public:
     std::vector<std::string> bootDevs;
     std::vector<std::string> recoveryDevs;
     std::vector<std::string> extraDevs;
+
+    TwOptions twOptions;
 };
 /*! \endcond */
 
@@ -202,6 +204,16 @@ std::vector<std::string> Device::extraBlockDevs() const
 void Device::setExtraBlockDevs(std::vector<std::string> blockDevs)
 {
     m_impl->extraDevs = std::move(blockDevs);
+}
+
+const Device::TwOptions * Device::twOptions() const
+{
+    return &m_impl->twOptions;
+}
+
+Device::TwOptions * Device::twOptions()
+{
+    return &m_impl->twOptions;
 }
 
 }
