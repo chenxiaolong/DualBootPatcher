@@ -105,5 +105,32 @@ bool reboot_directly(const std::string &reboot_arg)
     return true;
 }
 
+bool shutdown_via_init()
+{
+    if (!util::shutdown_via_init()) {
+        return false;
+    }
+
+    // Obviously shouldn't return
+    while (1) {
+        pause();
+    }
+
+    return true;
+}
+
+bool shutdown_directly()
+{
+    if (!util::shutdown_via_syscall()) {
+        return false;
+    }
+
+    // Obviously shouldn't return
+    while (1) {
+        pause();
+    }
+
+    return true;
+}
 
 }
