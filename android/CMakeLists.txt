@@ -1,7 +1,7 @@
 if(MBP_TOP_LEVEL_BUILD)
     include(ExternalProject)
 
-    set(ANDROID_TOOLCHAIN_VERSION clang3.6)
+    set(ANDROID_TOOLCHAIN_VERSION clang)
     set(ANDROID_ABIS armeabi-v7a arm64-v8a x86 x86_64)
 
     function(get_toolchain_name toolchain_var abi)
