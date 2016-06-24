@@ -45,8 +45,11 @@ endif()
 # Require at least Android NDK r11
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
-    if(ANDROID_NDK_RELEASE_NUM LESS 12000)
-        message(FATAL_ERROR "Only android-ndk r12 or newer is supported")
+    if(ANDROID_NDK_RELEASE_NUM LESS 11000)
+        message(FATAL_ERROR "Only android-ndk r11 or newer is supported")
+    elseif(ANDROID_NDK_RELEASE_NUM GREATER 12000 OR
+           ANDROID_NDK_RELEASE_NUM EQUAL 12000)
+        message(FATAL_ERROR "android-ndk r12 is broken for compiling static executables")
     endif()
 endif()
 
