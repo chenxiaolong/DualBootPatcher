@@ -265,6 +265,8 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p20" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p21" });
     device->setExtraBlockDevs({ QCOM_ABOOT });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
     devices->push_back(device);
 
     // Samsung Galaxy S 4 (Exynos)
