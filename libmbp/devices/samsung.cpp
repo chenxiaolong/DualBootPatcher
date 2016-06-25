@@ -266,6 +266,9 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p21" });
     device->setExtraBlockDevs({ QCOM_ABOOT });
     device->twOptions()->supported = true;
+    device->twOptions()->flags =
+            Device::FLAG_TW_PREFER_LCD_BACKLIGHT
+            | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
     device->twOptions()->graphicsBackends = { "fbdev" };
     devices->push_back(device);
 
