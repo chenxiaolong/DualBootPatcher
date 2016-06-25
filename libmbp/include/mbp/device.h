@@ -60,6 +60,7 @@ public:
         FLAG_TW_NO_CPU_TEMP                     = 0x2000ull,
         FLAG_TW_QCOM_RTC_FIX                    = 0x4000ull,
         FLAG_TW_HAS_DOWNLOAD_MODE               = 0x8000ull,
+        FLAG_TW_PREFER_LCD_BACKLIGHT            = 0x10000ull,
     };
 
     enum class TwPixelFormat
