@@ -65,7 +65,6 @@
 #include "signature.h"
 
 #define BOOT_ADB_INSTEAD_OF_INIT 0
-#define RUN_ADB_DURING_BOOT_MENU 0
 
 #if BOOT_ADB_INSTEAD_OF_INIT
 #include "miniadbd.h"
@@ -76,9 +75,6 @@ namespace mb
 {
 
 static pid_t daemon_pid = -1;
-#if RUN_ADB_DURING_BOOT_MENU
-static pid_t adb_pid = -1;
-#endif
 
 static void init_usage(FILE *stream)
 {
@@ -95,6 +91,29 @@ static void init_usage(FILE *stream)
             "expected to be located at /init.orig in the ramdisk. mbtool will\n"
             "remove the /init -> /mbtool symlink and rename /init.orig to /init.\n"
             "/init will then be launched with no arguments.\n");
+}
+
+static int wait_for_pid(const char *name, pid_t pid)
+{
+    int status;
+
+    do {
+        if (waitpid(pid, &status, 0) < 0) {
+            LOGE("%s (pid: %d): Failed to waitpid(): %s",
+                 name, pid, strerror(errno));
+            return -1;
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    if (WIFEXITED(status)) {
+        LOGV("%s (pid: %d): Exited with status: %d",
+             name, pid, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        LOGV("%s (pid: %d): Killed by signal: %d",
+             name, pid, WTERMSIG(status));
+    }
+
+    return status;
 }
 
 static bool start_daemon()
@@ -138,86 +157,8 @@ static bool stop_daemon()
 
     kill(daemon_pid, SIGTERM);
 
-    int status;
-
-    do {
-        if (waitpid(daemon_pid, &status, 0) < 0) {
-            LOGE("Failed to waitpid(): %s", strerror(errno));
-            return false;
-        }
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-    if (WIFEXITED(status)) {
-        LOGV("daemon process (pid: %d) exited with status: %d",
-             daemon_pid, WEXITSTATUS(status));
-    } else if (WIFSIGNALED(status)) {
-        LOGV("daemon process (pid: %d) killed by signal: %d",
-             daemon_pid, WTERMSIG(status));
-    }
-
-    return true;
+    return wait_for_pid("daemon", daemon_pid) != -1;
 }
-
-#if RUN_ADB_DURING_BOOT_MENU
-static bool start_adb()
-{
-    if (adb_pid >= 0) {
-        return true;
-    }
-
-    LOGV("Starting adb...");
-
-    adb_pid = fork();
-    if (adb_pid == 0) {
-        execl("/proc/self/exe",
-              "miniadbd",
-              nullptr);
-        LOGE("Failed to exec adb: %s", strerror(errno));
-        _exit(127);
-    } else if (adb_pid > 0) {
-        LOGV("Started adb (pid: %d)", adb_pid);
-        return true;
-    } else {
-        LOGE("Failed to fork: %s", strerror(errno));
-        return false;
-    }
-}
-
-static bool stop_adb()
-{
-    if (adb_pid < 0) {
-        return true;
-    }
-
-    LOGV("Stopping adb...");
-
-    // Clear pid when returning
-    auto clear_pid = util::finally([]{
-        adb_pid = -1;
-    });
-
-    kill(adb_pid, SIGTERM);
-
-    int status;
-
-    do {
-        if (waitpid(adb_pid, &status, 0) < 0) {
-            LOGE("Failed to waitpid(): %s", strerror(errno));
-            return false;
-        }
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-    if (WIFEXITED(status)) {
-        LOGV("adb process (pid: %d) exited with status: %d",
-             adb_pid, WEXITSTATUS(status));
-    } else if (WIFSIGNALED(status)) {
-        LOGV("adb process (pid: %d) killed by signal: %d",
-             adb_pid, WTERMSIG(status));
-    }
-
-    return true;
-}
-#endif
 
 static std::string get_rom_id()
 {
@@ -811,9 +752,6 @@ static bool launch_boot_menu()
     }
 
     start_daemon();
-#if RUN_ADB_DURING_BOOT_MENU
-    start_adb();
-#endif
 
     int ret = util::run_command({ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH });
     if (ret < 0) {
@@ -831,9 +769,6 @@ static bool launch_boot_menu()
     // to switch ROMs and reboot (ie. the UI will not exit).
 
     stop_daemon();
-#if RUN_ADB_DURING_BOOT_MENU
-    stop_adb();
-#endif
 
     return true;
 }
@@ -1101,17 +1036,21 @@ int init_main(int argc, char *argv[])
     rename("/init.orig", "/init");
 
 #if BOOT_ADB_INSTEAD_OF_INIT
-    // Don't spam the kernel log
-    adb_log_mask = ADB_SERV;
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Don't spam the kernel log
+        adb_log_mask = ADB_SERV;
 
-    char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-    int ret = miniadbd_main(1, adb_argv);
-    if (ret != EXIT_SUCCESS) {
-        LOGE("Failed to start miniadbd");
+        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
+        _exit(miniadbd_main(1, adb_argv));
+    } else if (pid >= 0) {
+        LOGV("miniadbd is running as pid %d; kill it to continue boot", pid);
+        wait_for_pid("miniadbd", pid);
+    } else {
+        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
     }
-    emergency_reboot();
-    return EXIT_FAILURE;
-#else
+#endif
+
     // Unmount partitions
     util::selinux_unmount();
     umount("/dev/pts");
@@ -1130,7 +1069,6 @@ int init_main(int argc, char *argv[])
     LOGE("Failed to exec real init: %s", strerror(errno));
     emergency_reboot();
     return EXIT_FAILURE;
-#endif
 }
 
 }
