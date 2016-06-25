@@ -139,6 +139,68 @@ if(MBP_TOP_LEVEL_BUILD)
             ExternalProject_Get_Property(android-app_${abi} BINARY_DIR)
             list(APPEND RECURSIVE_CLEAN_DIRS ${BINARY_DIR})
         endif()
+
+        set(ARCHIVE_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/bootui.zip)
+        set(ARCHIVE_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/bootui/${abi}/temp)
+
+        add_custom_target(
+            bootui-tempdir_${abi} ALL
+            ${CMAKE_COMMAND} -E remove_directory ${ARCHIVE_TEMP_DIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${ARCHIVE_TEMP_DIR}
+            COMMENT "Create boot UI temporary directory (${abi})"
+            VERBATIM
+        )
+
+        add_custom_target(
+            bootui-archive_${abi} ALL
+
+            # Copy main binary
+            ${CMAKE_COMMAND}
+                -E copy
+                ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbbootui
+                ${ARCHIVE_TEMP_DIR}/exec
+
+            # Copy themes
+            COMMAND ${CMAKE_COMMAND}
+                -E copy_directory
+                ${CMAKE_SOURCE_DIR}/mbbootui/theme
+                ${ARCHIVE_TEMP_DIR}/theme
+
+            # Create archive
+            COMMAND ${CMAKE_COMMAND}
+                -E tar cvf ${ARCHIVE_OUTPUT} --format=zip --
+                exec
+                theme
+
+            # Delete temporary directory
+            COMMAND ${CMAKE_COMMAND}
+                -E remove_directory ${ARCHIVE_TEMP_DIR}
+
+            WORKING_DIRECTORY ${ARCHIVE_TEMP_DIR}
+            COMMENT "Create boot UI archive (${abi})"
+            VERBATIM
+        )
+
+        add_dependencies(
+            bootui-archive_${abi}
+            bootui-tempdir_${abi}
+            android-system_${abi}
+        )
+
+        add_sign_files_target(
+            sign_bootui-archive_${abi}
+            ${ARCHIVE_OUTPUT}
+        )
+        add_dependencies(
+            sign_bootui-archive_${abi}
+            bootui-archive_${abi}
+        )
+
+        install(
+            FILES ${ARCHIVE_OUTPUT} ${ARCHIVE_OUTPUT}.sig
+            DESTINATION ${DATA_INSTALL_DIR}/bootui/${abi}/
+            COMPONENT Libraries
+        )
     endforeach()
 
     # Create clean target
