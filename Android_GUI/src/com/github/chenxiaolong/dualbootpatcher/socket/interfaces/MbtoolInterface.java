@@ -267,6 +267,30 @@ public interface MbtoolInterface {
     void rebootViaMbtool(String arg) throws IOException, MbtoolException, MbtoolCommandException;
 
     /**
+     * Shuts down the device via init.
+     *
+     * NOTE: May result in an unclean shutdown as Android's init will simply kill all processes,
+     * attempt to unmount filesystems, and then shut down.
+     *
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void shutdownViaInit() throws IOException, MbtoolException, MbtoolCommandException;
+
+    /**
+     * Shuts down the device via mbtool.
+     *
+     * NOTE: May result in an unclean shutdown as mbtool will simply kill all processes, attempt to
+     * unmount filesystems, and then shut down.
+     *
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void shutdownViaMbtool() throws IOException, MbtoolException, MbtoolCommandException;
+
+    /**
      * Copy a file using mbtool.
      *
      * @param source Absolute source path
