@@ -149,7 +149,12 @@ void TWFunc::Fixup_Time_On_Boot()
         // Like, ats_1 is for modem and ats_2 is for TOD (time of day?).
         // Look at file time_genoff.h in CodeAurora, qcom-opensource/time-services
 
-        static const char *paths[] = { "/data/system/time/", "/data/time/"  };
+        static const char *paths[] = {
+            "/raw/data/system/time/",
+            "/raw/data/time/",
+            "/data/system/time/",
+            "/data/time/"
+        };
 
         FILE *f;
         DIR *d;
