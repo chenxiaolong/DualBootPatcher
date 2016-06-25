@@ -41,7 +41,9 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p31" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p32" });
     device->twOptions()->supported = true;
-    device->twOptions()->flags = Device::FLAG_TW_IGNORE_MAJOR_AXIS_0;
+    device->twOptions()->flags =
+            Device::FLAG_TW_IGNORE_MAJOR_AXIS_0
+            | Device::FLAG_TW_QCOM_RTC_FIX;
     device->twOptions()->graphicsBackends = { "overlay_msm_old", "fbdev" };
     devices->push_back(device);
 
