@@ -1010,8 +1010,8 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
 
     // Log to kmsg
-    log::log_set_logger(std::make_shared<log::KmsgLogger>());
-    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 8) < 0) {
+    log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }
 
