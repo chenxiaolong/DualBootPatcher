@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 
 import mbtool.daemon.v3.FileOpenFlag;
 import mbtool.daemon.v3.FileSeekWhence;
+import mbtool.daemon.v3.PathDeleteFlag;
 
 public interface MbtoolInterface {
     /**
@@ -300,6 +301,18 @@ public interface MbtoolInterface {
      * @throws MbtoolCommandException
      */
     void pathCopy(String source, String target) throws IOException, MbtoolException,
+            MbtoolCommandException;
+
+    /**
+     * Delete a path using mbtool.
+     *
+     * @param path Path to delete
+     * @param flag {@link PathDeleteFlag}
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void pathDelete(String path, short flag) throws IOException, MbtoolException,
             MbtoolCommandException;
 
     /**

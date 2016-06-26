@@ -76,6 +76,8 @@ import mbtool.daemon.v3.PathChmodRequest;
 import mbtool.daemon.v3.PathChmodResponse;
 import mbtool.daemon.v3.PathCopyRequest;
 import mbtool.daemon.v3.PathCopyResponse;
+import mbtool.daemon.v3.PathDeleteRequest;
+import mbtool.daemon.v3.PathDeleteResponse;
 import mbtool.daemon.v3.PathGetDirectorySizeRequest;
 import mbtool.daemon.v3.PathGetDirectorySizeResponse;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
@@ -149,6 +151,9 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
             break;
         case ResponseType.PathCopyResponse:
             table = new PathCopyResponse();
+            break;
+        case ResponseType.PathDeleteResponse:
+            table = new PathDeleteResponse();
             break;
         case ResponseType.PathSELinuxGetLabelResponse:
             table = new PathSELinuxGetLabelResponse();
@@ -734,6 +739,27 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
         if (!response.success()) {
             throw new MbtoolCommandException(
                     "Failed to copy from " + source + " to " + target + ": " + response.errorMsg());
+        }
+    }
+
+    public synchronized void pathDelete(String path, short flag) throws IOException,
+            MbtoolException, MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        int fbPath = builder.createString(path);
+        PathDeleteRequest.startPathDeleteRequest(builder);
+        PathDeleteRequest.addPath(builder, fbPath);
+        PathDeleteRequest.addFlag(builder, flag);
+        int fbRequest = PathDeleteRequest.endPathDeleteRequest(builder);
+
+        // Send request
+        PathDeleteResponse response = (PathDeleteResponse)
+                sendRequest(builder, fbRequest, RequestType.PathDeleteRequest,
+                        ResponseType.PathDeleteResponse);
+
+        if (!response.success()) {
+            throw new MbtoolCommandException(
+                    "Failed to delete " + path + ": " + response.errorMsg());
         }
     }
 
