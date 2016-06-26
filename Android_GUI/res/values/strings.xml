@@ -424,7 +424,7 @@
     <string name="force_updating_ramdisk">Force updating ramdisk</string>
 
     <!-- Title for the section in the settings to manage the Boot UI -->
-    <string name="rom_settings_boot_ui_title">Boot UI</string>
+    <string name="rom_settings_boot_ui_title">Boot UI (EXPERIMENTAL)</string>
     <!-- Title for the preference to install the Boot UI -->
     <string name="rom_settings_boot_ui_install_title">Install Boot UI</string>
     <!-- Title for the preference to update the Boot UI -->
