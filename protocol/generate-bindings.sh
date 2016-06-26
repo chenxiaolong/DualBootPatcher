@@ -14,6 +14,7 @@ files=(
     v3/file_selinux_set_label.fbs
     v3/path_chmod.fbs
     v3/path_copy.fbs
+    v3/path_delete.fbs
     v3/path_selinux_get_label.fbs
     v3/path_selinux_set_label.fbs
     v3/path_get_directory_size.fbs

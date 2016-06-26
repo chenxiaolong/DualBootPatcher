@@ -1,0 +1,20 @@
+namespace mbtool.daemon.v3;
+
+enum PathDeleteFlag : short {
+    REMOVE,
+    UNLINK,
+    RMDIR,
+    RECURSIVE
+}
+
+table PathDeleteRequest {
+    // Path to open
+    path : string;
+    // Delete flag
+    flag : PathDeleteFlag = REMOVE;
+}
+
+table PathDeleteResponse {
+    success : bool;
+    error_msg : string;
+}
