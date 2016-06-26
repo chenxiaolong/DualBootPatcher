@@ -12,11 +12,6 @@ include_directories(${MBP_ZLIB_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/mbp/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/mbp/version.h
-    @ONLY
-)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(MBP_CORE_SOURCES
@@ -156,6 +151,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         mbp-shared
         mbpio-static
         mblog-shared
+        mbcommon-shared
         minizip
         ${ADDITIONAL_LIBRARIES}
         ${LIBARCHIVE_LIBRARIES}

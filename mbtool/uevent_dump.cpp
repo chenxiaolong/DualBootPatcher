@@ -22,10 +22,10 @@
 #include <cstdlib>
 #include <getopt.h>
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 
 #include "initwrapper/devices.h"
-#include "version.h"
 
 namespace mb
 {
@@ -71,7 +71,7 @@ int uevent_dump_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    LOGV("mbtool version %s (%s)", get_mbtool_version(), get_git_version());
+    LOGV("mbtool version %s (%s)", version(), git_version());
 
     // Start probing for devices
     device_init(true);

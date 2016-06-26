@@ -25,19 +25,26 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+
 #include <dirent.h>
 #include <fcntl.h>
+#include <getopt.h>
+#include <signal.h>
 #include <sys/klog.h>
 #include <sys/mount.h>
-#include <sys/poll.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/version.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
+#include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/cmdline.h"
 #include "mbutil/chown.h"
+#include "mbutil/cmdline.h"
+#include "mbutil/command.h"
+#include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
@@ -50,11 +57,12 @@
 
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
+#include "daemon.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
 #include "sepolpatch.h"
-#include "version.h"
+#include "signature.h"
 
 #define BOOT_ADB_INSTEAD_OF_INIT 0
 
@@ -66,10 +74,10 @@
 namespace mb
 {
 
-static void init_usage(bool error)
-{
-    FILE *stream = error ? stderr : stdout;
+static pid_t daemon_pid = -1;
 
+static void init_usage(FILE *stream)
+{
     fprintf(stream,
             "Usage: init"
             "\n"
@@ -83,6 +91,99 @@ static void init_usage(bool error)
             "expected to be located at /init.orig in the ramdisk. mbtool will\n"
             "remove the /init -> /mbtool symlink and rename /init.orig to /init.\n"
             "/init will then be launched with no arguments.\n");
+}
+
+static int wait_for_pid(const char *name, pid_t pid)
+{
+    int status;
+
+    do {
+        if (waitpid(pid, &status, 0) < 0) {
+            LOGE("%s (pid: %d): Failed to waitpid(): %s",
+                 name, pid, strerror(errno));
+            return -1;
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    if (WIFEXITED(status)) {
+        LOGV("%s (pid: %d): Exited with status: %d",
+             name, pid, WEXITSTATUS(status));
+    } else if (WIFSIGNALED(status)) {
+        LOGV("%s (pid: %d): Killed by signal: %d",
+             name, pid, WTERMSIG(status));
+    }
+
+    return status;
+}
+
+static bool start_daemon()
+{
+    if (daemon_pid >= 0) {
+        return true;
+    }
+
+    LOGV("Starting daemon...");
+
+    daemon_pid = fork();
+    if (daemon_pid == 0) {
+        execl("/proc/self/exe",
+              "daemon",
+              "--allow-root-client",
+              "--no-patch-sepolicy",
+              "--sigstop-when-ready",
+              nullptr);
+        LOGE("Failed to exec daemon: %s", strerror(errno));
+        _exit(127);
+    } else if (daemon_pid > 0) {
+        LOGV("Started daemon (pid: %d)", daemon_pid);
+        LOGV("Waiting for SIGSTOP ready signal");
+
+        // Wait for SIGSTOP to indicate that the daemon is ready
+        int status;
+        if (waitpid(daemon_pid, &status, WUNTRACED) < 0) {
+            LOGW("Failed to waidpid for daemon's SIGSTOP: %s",
+                 strerror(errno));
+        } else if (!WIFSTOPPED(status)) {
+            LOGW("waitpid returned non-SIGSTOP status");
+        } else {
+            LOGV("Daemon sent SIGSTOP; sending SIGCONT");
+            kill(daemon_pid, SIGCONT);
+        }
+
+        return true;
+    } else {
+        LOGE("Failed to fork: %s", strerror(errno));
+        return false;
+    }
+}
+
+static bool stop_daemon()
+{
+    if (daemon_pid < 0) {
+        return true;
+    }
+
+    LOGV("Stopping daemon...");
+
+    // Clear pid when returning
+    auto clear_pid = util::finally([]{
+        daemon_pid = -1;
+    });
+
+    kill(daemon_pid, SIGTERM);
+
+    return wait_for_pid("daemon", daemon_pid) != -1;
+}
+
+static std::string get_rom_id()
+{
+    std::string rom_id;
+
+    if (!util::file_first_line("/romid", &rom_id)) {
+        return std::string();
+    }
+
+    return rom_id;
 }
 
 static std::string find_fstab()
@@ -460,49 +561,35 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static bool fix_arter97()
+static bool add_props_to_default_prop()
 {
-    const char *path = "/init.mount.sh";
-    const char *path_new = "/init.mount.sh.new";
-    const char *fstab = "/fstab.samsungexynos7420";
-
-    struct stat sb;
-    if (stat(path, &sb) < 0 || stat(fstab, &sb) < 0) {
-        return true;
-    }
-
-    autoclose::file fp(autoclose::fopen(path, "r"));
+    autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
     if (!fp) {
-        LOGE("Failed to open %s for reading: %s", path, strerror(errno));
-        return false;
-    }
-
-    autoclose::file fp_new(autoclose::fopen(path_new, "w"));
-    if (!fp_new) {
-        LOGE("Failed to open %s for writing: %s", path_new, strerror(errno));
-        return false;
-    }
-
-    // Strip everything from /init.mount.sh except for the shebang line
-    {
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = util::finally([&]{
-            free(line);
-        });
-
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            fputs(line, fp_new.get());
-            break;
+        if (errno == ENOENT) {
+            return true;
+        } else {
+            LOGE("%s: Failed to open file: %s",
+                 DEFAULT_PROP_PATH, strerror(errno));
+            return false;
         }
     }
 
-    fp.reset();
-    fp_new.reset();
+    // Add newline if the last character isn't already one
+    if (std::fseek(fp.get(), -1, SEEK_END) == 0) {
+        char lastchar;
+        if (std::fread(&lastchar, 1, 1, fp.get()) == 1 && lastchar != '\n') {
+            fputs("\n", fp.get());
+        }
+    } else if (std::fseek(fp.get(), 0, SEEK_END) < 0) {
+        LOGE("%s: Failed to seek to end of file: %s",
+             DEFAULT_PROP_PATH, strerror(errno));
+        return false;
+    }
 
-    replace_file(path, path_new);
+    // Write version property
+    fprintf(fp.get(), PROP_MULTIBOOT_VERSION "=%s\n", version());
+    // Write ROM ID property
+    fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
     return true;
 }
@@ -536,6 +623,169 @@ static bool symlink_base_dir()
     }
 
     return false;
+}
+
+static bool extract_zip(const char *source, const char *target)
+{
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    if (!in) {
+        LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
+        return false;
+    }
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    if (!out) {
+        LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
+        return false;
+    }
+
+    archive_read_support_format_zip(in.get());
+
+    // Set up disk writer parameters. We purposely don't extract any file
+    // metadata
+    int flags = ARCHIVE_EXTRACT_SECURE_SYMLINKS
+            | ARCHIVE_EXTRACT_SECURE_NODOTDOT;
+
+    archive_write_disk_set_standard_lookup(out.get());
+    archive_write_disk_set_options(out.get(), flags);
+
+    if (archive_read_open_filename(in.get(), source, 10240) != ARCHIVE_OK) {
+        LOGE("%s: Failed to open file: %s",
+             source, archive_error_string(in.get()));
+        return false;
+    }
+
+    archive_entry *entry;
+    int ret;
+    std::string target_path;
+
+    while (true) {
+        ret = archive_read_next_header(in.get(), &entry);
+        if (ret == ARCHIVE_EOF) {
+            break;
+        } else if (ret == ARCHIVE_RETRY) {
+            LOGW("%s: Retrying header read", source);
+            continue;
+        } else if (ret != ARCHIVE_OK) {
+            LOGE("%s: Failed to read header: %s",
+                 source, archive_error_string(in.get()));
+            return false;
+        }
+
+        const char *path = archive_entry_pathname(entry);
+        if (!path || !*path) {
+            LOGE("%s: Header has null or empty filename", source);
+            return false;
+        }
+
+        if (strcmp(path, "exec") != 0) {
+            LOGV("Skipping: %s", path);
+            continue;
+        }
+
+        LOGV("Extracting: %s", path);
+
+        // Build path
+        target_path = target;
+        if (target_path.back() != '/' && *path != '/') {
+            target_path += '/';
+        }
+        target_path += path;
+
+        archive_entry_set_pathname(entry, target_path.c_str());
+
+        // Extract file
+        ret = archive_read_extract2(in.get(), entry, out.get());
+        if (ret != ARCHIVE_OK) {
+            LOGE("%s: %s", archive_entry_pathname(entry),
+                 archive_error_string(in.get()));
+            return false;
+        }
+    }
+
+    if (archive_read_close(in.get()) != ARCHIVE_OK) {
+        LOGE("%s: Failed to close file: %s",
+             source, archive_error_string(in.get()));
+        return false;
+    }
+
+    return true;
+}
+
+static bool launch_boot_menu()
+{
+    struct stat sb;
+
+    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
+        std::string skip_rom;
+        util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
+
+        std::string rom_id = get_rom_id();
+
+        if (remove(BOOT_UI_SKIP_PATH) < 0) {
+            LOGW("%s: Failed to remove: %s",
+                 BOOT_UI_SKIP_PATH, strerror(errno));
+            LOGW("Boot UI won't run again!");
+        }
+
+        if (skip_rom == rom_id) {
+            LOGV("Performing one-time skipping of Boot UI");
+            return true;
+        } else {
+            LOGW("Skip file is not for: %s", rom_id.c_str());
+            LOGW("Not skipping boot UI");
+        }
+    }
+
+    if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
+        LOGV("Boot UI is missing. Skipping...");
+        return true;
+    }
+
+    // Verify boot UI signature
+    SigVerifyResult result;
+    result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
+        return false;
+    }
+
+    if (!extract_zip(BOOT_UI_ZIP_PATH, BOOT_UI_PATH)) {
+        LOGE("%s: Failed to extract zip", BOOT_UI_ZIP_PATH);
+        return false;
+    }
+
+    auto clean_up = util::finally([]{
+        if (!util::delete_recursive(BOOT_UI_PATH)) {
+            LOGW("%s: Failed to recursively delete: %s",
+                 BOOT_UI_PATH, strerror(errno));
+        }
+    });
+
+    if (chmod(BOOT_UI_EXEC_PATH, 0500) < 0) {
+        LOGE("%s: Failed to chmod: %s", BOOT_UI_EXEC_PATH, strerror(errno));
+        return false;
+    }
+
+    start_daemon();
+
+    int ret = util::run_command({ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH });
+    if (ret < 0) {
+        LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
+    } else if (WIFEXITED(ret)) {
+        LOGV("Boot UI exited with status: %d", WEXITSTATUS(ret));
+    } else if (WIFSIGNALED(ret)) {
+        LOGE("Boot UI killed by signal: %d", WTERMSIG(ret));
+    }
+
+    // NOTE: Always continue regardless of how the boot UI exits. If the current
+    // ROM should be booted, the UI simply exits. If the UI crashes or doesn't
+    // work for whatever reason, the current ROM should still be booted. If the
+    // user switches to another ROM, then the boot UI will instruct the daemon
+    // to switch ROMs and reboot (ie. the UI will not exit).
+
+    stop_daemon();
+
+    return true;
 }
 
 #define KLOG_CLOSE         0
@@ -662,17 +912,36 @@ static bool emergency_reboot()
 
 int init_main(int argc, char *argv[])
 {
+    // Some devices actually receive arguments, so ignore them during boot
     if (getppid() != 0) {
-        for (int i = 1; i < argc; ++i) {
-            if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-                init_usage(true);
+        static struct option long_options[] = {
+            {"help", no_argument, 0, 'h'},
+            {0, 0, 0, 0}
+        };
+
+        int opt;
+        int long_index = 0;
+
+        while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+            switch (opt) {
+            case 'h':
+                init_usage(stdout);
                 return EXIT_SUCCESS;
+
+            default:
+                init_usage(stderr);
+                return EXIT_FAILURE;
             }
+        }
+
+        // There should be no other arguments
+        if (argc - optind != 0) {
+            init_usage(stderr);
+            return EXIT_FAILURE;
         }
     }
 
-    umask(0);
-
+    // Mount base directories
     mkdir("/dev", 0755);
     mkdir("/proc", 0755);
     mkdir("/sys", 0755);
@@ -683,16 +952,21 @@ int init_main(int argc, char *argv[])
     mount("devpts", "/dev/pts", "devpts", 0, nullptr);
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
+
+    // Mount selinuxfs
     util::selinux_mount();
 
+    // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();
-    log::log_set_logger(std::make_shared<log::KmsgLogger>());
-    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 8) < 0) {
+
+    // Log to kmsg
+    log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+    if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }
 
     LOGV("Booting up with version %s (%s)",
-         get_mbtool_version(), get_git_version());
+         version(), git_version());
 
     // Start probing for devices
     device_init(false);
@@ -700,6 +974,8 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir();
 
+    // Find fstab file. Continues anyway if fstab file can't be found since
+    // mount_fstab() will try some generic fstab entries, which might work.
     std::string fstab = find_fstab();
     if (fstab.empty()) {
         LOGW("Failed to find a suitable fstab file. Continuing anyway...");
@@ -707,27 +983,57 @@ int init_main(int argc, char *argv[])
         util::create_empty_file(fstab);
     }
 
+    // Create mount points
     mkdir("/system", 0755);
     mkdir("/cache", 0770);
     mkdir("/data", 0771);
     util::chown("/cache", "system", "cache", 0);
     util::chown("/data", "system", "system", 0);
 
-    fix_arter97();
+    // Get ROM ID from /romid
+    std::string rom_id = get_rom_id();
+    std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
+    if (!rom) {
+        LOGE("Unknown ROM ID: %s", rom_id.c_str());
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
 
-    // Mount fstab and write new redacted version
-    if (!mount_fstab(fstab, true)) {
+    LOGV("ROM ID is: %s", rom_id.c_str());
+
+    // This needs to be done before the boot menu runs so that the daemon can
+    // get the ROM ID;
+    add_props_to_default_prop();
+
+    // Mount fstab file
+    // TODO: Skip /data until it is decrypted
+    int flags = MOUNT_FLAG_REWRITE_FSTAB /* | MOUNT_FLAG_SKIP_DATA */;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
         return EXIT_FAILURE;
     }
 
-    LOGE("Successfully mounted fstab");
+    LOGV("Successfully mounted fstab");
 
+    if (!launch_boot_menu()) {
+        LOGE("Failed to run boot menu");
+        // Continue anyway since boot menu might not run on every device
+    }
+
+    // Mount ROM (bind mount directory or mount images, etc.)
+    if (!mount_rom(rom)) {
+        LOGE("Failed to mount ROM directories and images");
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
+
+    // Make runtime ramdisk modifications
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();
 
+    // Patch SELinux policy
     struct stat sb;
     if (stat("/sepolicy", &sb) == 0) {
         if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
@@ -740,22 +1046,26 @@ int init_main(int argc, char *argv[])
     // Kill uevent thread and close uevent socket
     device_close();
 
-    // Remove mbtool init symlink and restore original
+    // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
 
 #if BOOT_ADB_INSTEAD_OF_INIT
-    // Don't spam the kernel log
-    adb_log_mask = ADB_SERV;
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Don't spam the kernel log
+        adb_log_mask = ADB_SERV;
 
-    char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-    int ret = miniadbd_main(1, adb_argv);
-    if (ret != EXIT_SUCCESS) {
-        LOGE("Failed to start miniadbd");
+        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
+        _exit(miniadbd_main(1, adb_argv));
+    } else if (pid >= 0) {
+        LOGV("miniadbd is running as pid %d; kill it to continue boot", pid);
+        wait_for_pid("miniadbd", pid);
+    } else {
+        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
     }
-    emergency_reboot();
-    return EXIT_FAILURE;
-#else
+#endif
+
     // Unmount partitions
     util::selinux_unmount();
     umount("/dev/pts");
@@ -774,7 +1084,6 @@ int init_main(int argc, char *argv[])
     LOGE("Failed to exec real init: %s", strerror(errno));
     emergency_reboot();
     return EXIT_FAILURE;
-#endif
 }
 
 }

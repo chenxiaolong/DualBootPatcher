@@ -1,0 +1,62 @@
+# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=libdrm
+pkgver=6.0.1_r43
+pkgrel=1
+pkgdesc="Userspace interface to kernel DRM services"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/external/libdrm"
+license=(custom)
+source=("git+https://android.googlesource.com/platform/external/libdrm#tag=android-${pkgver}"
+        "0001-Make-this-NDK-buildable.patch")
+sha512sums=('SKIP'
+            'f7baac8d54b6c1cdacfa23cd18948d4f4747f3016bc1179edf1d4a74da2a9bc54467819c9af2bfadd356a24c0faff9c4be6fdc5868b5d53687573b2b721058cc')
+
+prepare() {
+    cd libdrm
+    patch -p1 -i "${srcdir}/0001-Make-this-NDK-buildable.patch"
+}
+
+build() {
+    cd libdrm
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=4.9 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd libdrm
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/lib/
+    cp -a "obj/local/${abi}/libdrm.a" "${pkgdir}"/lib/
+    install -dm755 "${pkgdir}"/include/
+    cp -a \
+        include/drm \
+        xf86drm.h \
+        xf86drmMode.h \
+        "${pkgdir}"/include/
+}

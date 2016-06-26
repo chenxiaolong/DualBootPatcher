@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mntent.h>
+#include "mntent.h"
 #if 0
 #include <bits/uClibc_mutex.h>
 #else

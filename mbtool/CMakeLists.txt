@@ -35,16 +35,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers)
 #   cd /tmp/
 set(DEBUGGING FALSE)
 
-# Generate version.cpp
-include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
-git_describe(GIT_VERSION --dirty --always --tags)
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
-    @ONLY
-)
-
 # Generate validcerts.cpp
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
@@ -84,13 +74,11 @@ set(MBTOOL_BASE_SOURCES
     switcher.cpp
     uevent_dump.cpp
     wipe.cpp
-    external/android_reboot.c
     external/legacy_property_service.cpp
     initwrapper/cutils/uevent.cpp
     initwrapper/devices.cpp
     initwrapper/util.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
 )
 
@@ -141,10 +129,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
 
     # Ugly, but I don't want to deviate too much from upstream to fix it
-    set_target_properties(
+    target_compile_options(
         miniadbd-static
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter"
+        PRIVATE
+        -Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter
     )
 
     set_target_properties(
@@ -182,8 +170,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbutil-static
         mbsign-static
         mblog-static
+        mbcommon-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
+        ${MBP_LIBARCHIVE_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
     )
     target_link_libraries(
         mbtool_recovery
@@ -193,6 +184,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbp-static
         mbpio-static
+        mbcommon-static
         minizip
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}

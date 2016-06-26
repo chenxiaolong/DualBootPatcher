@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<recovery>
+    <details>
+        <resolution width="1080" height="1920" />
+        <author>Andrew Gunnerson</author>
+        <title>DualBootPatcher</title>
+        <description>splash screen</description>
+        <themeversion>1</themeversion>
+    </details>
+
+    <resources>
+        <font name="font_title" filename="RobotoCondensed-Regular.ttf" size="80" />
+        <font name="font_subtitle" filename="RobotoCondensed-Regular.ttf" size="52" />
+        <image name="splashlogo" filename="splashlogo" retainaspect="1" />
+    </resources>
+
+    <variables>
+        <variable name="background_color" value="#222222" />
+        <variable name="text_color" value="#777777" />
+    </variables>
+
+    <pages>
+        <page name="splash">
+            <background color="%background_color%" />
+
+            <image>
+                <image resource="splashlogo" />
+                <placement x="540" y="900" placement="4" />
+            </image>
+
+            <text color="%text_color%">
+                <font resource="font_title" />
+                <placement x="540" y="1200" placement="5" />
+                <text>DualBootPatcher</text>
+            </text>
+
+            <text color="%text_color%">
+                <font resource="font_subtitle" />
+                <placement x="540" y="1300" placement="5" />
+                <text>%tw_version%</text>
+            </text>
+        </page>
+    </pages>
+</recovery>
+

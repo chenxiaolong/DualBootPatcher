@@ -25,6 +25,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.Pend
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask
         .BaseServiceTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask.BootUIAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask;
@@ -231,6 +233,15 @@ public class SwitcherService extends ThreadPoolService {
     public int updateMbtoolWithRoot() {
         int taskId = sNewTaskId.getAndIncrement();
         UpdateMbtoolWithRootTask task = new UpdateMbtoolWithRootTask(taskId, this);
+        addTask(taskId, task);
+        return taskId;
+    }
+
+    // Do stuff with the boot UI
+
+    public int bootUIAction(BootUIAction action) {
+        int taskId = sNewTaskId.getAndIncrement();
+        BootUIActionTask task = new BootUIActionTask(taskId, this, action);
         addTask(taskId, task);
         return taskId;
     }

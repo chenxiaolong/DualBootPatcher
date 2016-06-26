@@ -388,9 +388,6 @@
     <string name="a_s_settings_version_too_old">mbtool must be updated to take advantage of the
         app sharing features. Please update the ramdisk.</string>
 
-    <!-- Title for preference category for boot options -->
-    <string name="rom_settings_booting_title">Booting options</string>
-
     <!-- Preference for updating the ramdisk -->
     <string name="update_ramdisk_title">Update ramdisk</string>
 
@@ -426,6 +423,31 @@
     <!-- Toast popup message shown when the user forces a ramdisk update -->
     <string name="force_updating_ramdisk">Force updating ramdisk</string>
 
+    <!-- Title for the section in the settings to manage the Boot UI -->
+    <string name="rom_settings_boot_ui_title">Boot UI</string>
+    <!-- Title for the preference to install the Boot UI -->
+    <string name="rom_settings_boot_ui_install_title">Install Boot UI</string>
+    <!-- Title for the preference to update the Boot UI -->
+    <string name="rom_settings_boot_ui_update_title">Update Boot UI</string>
+    <!-- Title for the preference to uninstall the Boot UI -->
+    <string name="rom_settings_boot_ui_uninstall_title">Uninstall Boot UI</string>
+    <!-- Summary for the Update Boot UI preference to indicate that an update is available -->
+    <string name="rom_settings_boot_ui_update_available">Update available: %s</string>
+    <!-- Summary for the Update Boot UI preference to indicate that the Boot UI is up to date -->
+    <string name="rom_settings_boot_ui_up_to_date">Up to date</string>
+    <!-- Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed -->
+    <string name="rom_settings_boot_ui_not_installed">Not installed</string>
+    <!-- Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device -->
+    <string name="rom_settings_boot_ui_not_supported">Not supported on this device</string>
+    <!-- Toast message to indicate that the Boot UI was successfully installed -->
+    <string name="rom_settings_boot_ui_install_success">Successfully installed Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI failed to install -->
+    <string name="rom_settings_boot_ui_install_failure">Failed to install Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI was successfully uninstalled -->
+    <string name="rom_settings_boot_ui_uninstall_success">Successfully uninstalled Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI failed to uninstall -->
+    <string name="rom_settings_boot_ui_uninstall_failure">Failed to uninstall Boot UI</string>
+
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>
     <!-- Title for the preference to show the exit button in the navigation drawer -->
@@ -454,7 +476,7 @@
     <string name="rom_settings_parallel_patching_title">Parallel patching operations</string>
     <!-- Description for the preference to set the number of parallel patching operations -->
     <string name="rom_settings_parallel_patching_desc">When multiple files are in the patching
-        queue, process them %s at a time.</string>
+        queue, process them %d at a time.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>

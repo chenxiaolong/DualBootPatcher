@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <paths.h>
 
+#include "mbcommon/common.h"
+
 
 /* File listing canonical interesting mount points.  */
 #define	MNTTAB		_PATH_MNTTAB	/* Deprecated alias.  */
@@ -71,7 +73,7 @@ struct mntent
 
 /* Prepare to begin reading and/or writing mount table entries from the
    beginning of FILE.  MODE is as for `fopen'.  */
-extern FILE *setmntent (const char *__file, const char *__mode) __THROW;
+MB_EXPORT extern FILE *setmntent (const char *__file, const char *__mode) __THROW;
 #if 0
 libc_hidden_proto(setmntent)
 #endif
@@ -79,14 +81,14 @@ libc_hidden_proto(setmntent)
 /* Read one mount table entry from STREAM.  Returns a pointer to storage
    reused on the next call, or null for EOF or error (use feof/ferror to
    check).  */
-extern struct mntent *getmntent (FILE *__stream) __THROW;
+MB_EXPORT extern struct mntent *getmntent (FILE *__stream) __THROW;
 
 //#ifdef __USE_MISC
 /* Reentrant version of the above function.  */
-extern struct mntent *getmntent_r (FILE *__restrict __stream,
-				   struct mntent *__restrict __result,
-				   char *__restrict __buffer,
-				   int __bufsize) __THROW;
+MB_EXPORT extern struct mntent *getmntent_r (FILE *__restrict __stream,
+					     struct mntent *__restrict __result,
+					     char *__restrict __buffer,
+					     int __bufsize) __THROW;
 #if 0
 libc_hidden_proto(getmntent_r)
 #endif
@@ -94,19 +96,19 @@ libc_hidden_proto(getmntent_r)
 
 /* Write the mount table entry described by MNT to STREAM.
    Return zero on success, nonzero on failure.  */
-extern int addmntent (FILE *__restrict __stream,
-		      const struct mntent *__restrict __mnt) __THROW;
+MB_EXPORT extern int addmntent (FILE *__restrict __stream,
+				const struct mntent *__restrict __mnt) __THROW;
 
 /* Close a stream opened with `setmntent'.  */
-extern int endmntent (FILE *__stream) __THROW;
+MB_EXPORT extern int endmntent (FILE *__stream) __THROW;
 #if 0
 libc_hidden_proto(endmntent)
 #endif
 
 /* Search MNT->mnt_opts for an option matching OPT.
    Returns the address of the substring, or null if none found.  */
-extern char *hasmntopt (const struct mntent *__mnt,
-			const char *__opt) __THROW;
+MB_EXPORT extern char *hasmntopt (const struct mntent *__mnt,
+				  const char *__opt) __THROW;
 
 
 __END_DECLS

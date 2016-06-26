@@ -31,7 +31,7 @@ namespace log
 class MB_EXPORT KmsgLogger : public BaseLogger
 {
 public:
-    KmsgLogger();
+    KmsgLogger(bool force_error_prio);
 
     virtual ~KmsgLogger();
 
@@ -40,6 +40,7 @@ public:
 private:
     int _fd;
     char _buf[KMSG_BUF_SIZE];
+    bool _force_error_prio;
 };
 
 }

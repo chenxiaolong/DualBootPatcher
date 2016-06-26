@@ -32,11 +32,13 @@ set(MBUTIL_SOURCES
     src/path.cpp
     src/process.cpp
     src/properties.cpp
+    src/reboot.cpp
     src/selinux.cpp
     src/socket.cpp
     src/string.cpp
     src/time.cpp
     src/vibrate.cpp
+    external/android_reboot.c
     external/mntent.c
 )
 

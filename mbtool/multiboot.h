@@ -42,8 +42,19 @@
 #define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
 #define PROP_BLOCK_DEV_CACHE_PATHS      "ro.patcher.blockdevs.cache"
 #define PROP_BLOCK_DEV_DATA_PATHS       "ro.patcher.blockdevs.data"
+#define PROP_BLOCK_DEV_BOOT_PATHS       "ro.patcher.blockdevs.boot"
 #define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
 #define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
+#define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
+
+#define PROP_MULTIBOOT_VERSION          "ro.multiboot.version"
+#define PROP_MULTIBOOT_ROM_ID           "ro.multiboot.romid"
+
+// Boot UI
+#define BOOT_UI_SKIP_PATH               "/raw/cache/multiboot/bootui/skip"
+#define BOOT_UI_ZIP_PATH                "/raw/cache/multiboot/bootui.zip"
+#define BOOT_UI_PATH                    "/mbbootui"
+#define BOOT_UI_EXEC_PATH               BOOT_UI_PATH "/exec"
 
 // Installer
 #define CHROOT_SYSTEM_LOOP_DEV          "/mb/loop.system"

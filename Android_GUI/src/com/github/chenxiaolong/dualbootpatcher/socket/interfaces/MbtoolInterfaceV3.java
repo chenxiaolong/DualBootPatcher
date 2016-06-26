@@ -76,6 +76,8 @@ import mbtool.daemon.v3.PathChmodRequest;
 import mbtool.daemon.v3.PathChmodResponse;
 import mbtool.daemon.v3.PathCopyRequest;
 import mbtool.daemon.v3.PathCopyResponse;
+import mbtool.daemon.v3.PathDeleteRequest;
+import mbtool.daemon.v3.PathDeleteResponse;
 import mbtool.daemon.v3.PathGetDirectorySizeRequest;
 import mbtool.daemon.v3.PathGetDirectorySizeResponse;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
@@ -89,6 +91,9 @@ import mbtool.daemon.v3.Request;
 import mbtool.daemon.v3.RequestType;
 import mbtool.daemon.v3.Response;
 import mbtool.daemon.v3.ResponseType;
+import mbtool.daemon.v3.ShutdownRequest;
+import mbtool.daemon.v3.ShutdownResponse;
+import mbtool.daemon.v3.ShutdownType;
 import mbtool.daemon.v3.SignedExecOutputResponse;
 import mbtool.daemon.v3.SignedExecRequest;
 import mbtool.daemon.v3.SignedExecResponse;
@@ -147,6 +152,9 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
         case ResponseType.PathCopyResponse:
             table = new PathCopyResponse();
             break;
+        case ResponseType.PathDeleteResponse:
+            table = new PathDeleteResponse();
+            break;
         case ResponseType.PathSELinuxGetLabelResponse:
             table = new PathSELinuxGetLabelResponse();
             break;
@@ -185,6 +193,9 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
             break;
         case ResponseType.RebootResponse:
             table = new RebootResponse();
+            break;
+        case ResponseType.ShutdownResponse:
+            table = new ShutdownResponse();
             break;
         default:
             throw new MbtoolException(Reason.PROTOCOL_ERROR,
@@ -673,6 +684,42 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
         }
     }
 
+    public synchronized void shutdownViaInit() throws IOException, MbtoolException,
+            MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        ShutdownRequest.startShutdownRequest(builder);
+        ShutdownRequest.addType(builder, ShutdownType.INIT);
+        int fbRequest = ShutdownRequest.endShutdownRequest(builder);
+
+        // Send request
+        ShutdownResponse response = (ShutdownResponse)
+                sendRequest(builder, fbRequest, RequestType.ShutdownRequest,
+                        ResponseType.ShutdownResponse);
+
+        if (!response.success()) {
+            throw new MbtoolCommandException("Failed to shut down via init");
+        }
+    }
+
+    public synchronized void shutdownViaMbtool() throws IOException, MbtoolException,
+            MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        ShutdownRequest.startShutdownRequest(builder);
+        ShutdownRequest.addType(builder, ShutdownType.DIRECT);
+        int fbRequest = ShutdownRequest.endShutdownRequest(builder);
+
+        // Send request
+        ShutdownResponse response = (ShutdownResponse)
+                sendRequest(builder, fbRequest, RequestType.ShutdownRequest,
+                        ResponseType.ShutdownResponse);
+
+        if (!response.success()) {
+            throw new MbtoolCommandException("Failed to shut down directly via mbtool");
+        }
+    }
+
     public synchronized void pathCopy(String source, String target) throws IOException,
             MbtoolException, MbtoolCommandException {
         // Create request
@@ -692,6 +739,27 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
         if (!response.success()) {
             throw new MbtoolCommandException(
                     "Failed to copy from " + source + " to " + target + ": " + response.errorMsg());
+        }
+    }
+
+    public synchronized void pathDelete(String path, short flag) throws IOException,
+            MbtoolException, MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        int fbPath = builder.createString(path);
+        PathDeleteRequest.startPathDeleteRequest(builder);
+        PathDeleteRequest.addPath(builder, fbPath);
+        PathDeleteRequest.addFlag(builder, flag);
+        int fbRequest = PathDeleteRequest.endPathDeleteRequest(builder);
+
+        // Send request
+        PathDeleteResponse response = (PathDeleteResponse)
+                sendRequest(builder, fbRequest, RequestType.PathDeleteRequest,
+                        ResponseType.PathDeleteResponse);
+
+        if (!response.success()) {
+            throw new MbtoolCommandException(
+                    "Failed to delete " + path + ": " + response.errorMsg());
         }
     }
 
