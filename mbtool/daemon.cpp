@@ -59,6 +59,8 @@ namespace mb
 
 static int pipe_fds[2];
 static bool send_ok_to_pipe = false;
+static bool sigstop_when_ready = false;
+static bool allow_root_client = false;
 
 static autoclose::file log_fp(nullptr, std::fclose);
 
@@ -103,7 +105,7 @@ static bool verify_credentials(uid_t uid)
     return false;
 }
 
-static bool client_connection(int fd, bool allow_root_client)
+static bool client_connection(int fd)
 {
     LOGD("Accepted connection from %d", fd);
 
@@ -171,7 +173,7 @@ static bool client_connection(int fd, bool allow_root_client)
     return true;
 }
 
-static bool run_daemon(bool allow_root_client)
+static bool run_daemon()
 {
     int fd;
     struct sockaddr_un addr;
@@ -216,6 +218,8 @@ static bool run_daemon(bool allow_root_client)
             LOGE("Failed to send OK to parent process");
             return false;
         }
+    } else if (sigstop_when_ready) {
+        kill(getpid(), SIGSTOP);
     }
 
     // Eat zombies!
@@ -264,7 +268,7 @@ static bool run_daemon(bool allow_root_client)
             // Don't need the listening socket fd
             close(fd);
 
-            bool ret = client_connection(client_fd, allow_root_client);
+            bool ret = client_connection(client_fd);
             close(client_fd);
             _exit(ret ? EXIT_SUCCESS : EXIT_FAILURE);
         }
@@ -345,7 +349,7 @@ static bool daemon_init()
 }
 
 __attribute__((noreturn))
-static void run_daemon_fork(bool allow_root_client)
+static void run_daemon_fork()
 {
     pid_t pid = fork();
     if (pid < 0) {
@@ -411,7 +415,7 @@ static void run_daemon_fork(bool allow_root_client)
     // Close read end of the pipe
     close(pipe_fds[0]);
 
-    _exit((daemon_init() && run_daemon(allow_root_client))
+    _exit((daemon_init() && run_daemon())
             ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
@@ -460,7 +464,10 @@ static void daemon_usage(bool error)
             "                   Allow clients with root UID and GID to connect\n"
             "                   without signature verification\n"
             "  --no-patch-sepolicy\n"
-            "                   Skip procedures for modifying the SELinux policy\n");
+            "                   Skip procedures for modifying the SELinux policy\n"
+            "  --sigstop-when-ready\n"
+            "                   Send SIGSTOP to daemon process when it has been\n"
+            "                   fully initialized\n");
 }
 
 int daemon_main(int argc, char *argv[])
@@ -473,20 +480,21 @@ int daemon_main(int argc, char *argv[])
     int opt;
     bool fork_flag = false;
     bool replace_flag = false;
-    bool allow_root_client = false;
     bool patch_sepolicy = true;
 
     enum {
         OPT_ALLOW_ROOT_CLIENT = 1000,
-        OPT_NO_PATCH_SEPOLICY = 1001
+        OPT_NO_PATCH_SEPOLICY = 1001,
+        OPT_SIGSTOP_WHEN_READY = 1002,
     };
 
     static struct option long_options[] = {
-        {"daemonize",         no_argument, 0, 'd'},
-        {"replace",           no_argument, 0, 'r'},
-        {"help",              no_argument, 0, 'h'},
-        {"allow-root-client", no_argument, 0, OPT_ALLOW_ROOT_CLIENT},
-        {"no-patch-sepolicy", no_argument, 0, OPT_NO_PATCH_SEPOLICY},
+        {"daemonize",          no_argument, 0, 'd'},
+        {"replace",            no_argument, 0, 'r'},
+        {"help",               no_argument, 0, 'h'},
+        {"allow-root-client",  no_argument, 0, OPT_ALLOW_ROOT_CLIENT},
+        {"no-patch-sepolicy",  no_argument, 0, OPT_NO_PATCH_SEPOLICY},
+        {"sigstop-when-ready", no_argument, 0, OPT_SIGSTOP_WHEN_READY},
         {0, 0, 0, 0}
     };
 
@@ -512,6 +520,10 @@ int daemon_main(int argc, char *argv[])
 
         case OPT_NO_PATCH_SEPOLICY:
             patch_sepolicy = false;
+            break;
+
+        case OPT_SIGSTOP_WHEN_READY:
+            sigstop_when_ready = true;
             break;
 
         default:
@@ -574,9 +586,9 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (fork_flag) {
-        run_daemon_fork(allow_root_client);
+        run_daemon_fork();
     } else {
-        return (daemon_init() && run_daemon(allow_root_client))
+        return (daemon_init() && run_daemon())
                 ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 }
