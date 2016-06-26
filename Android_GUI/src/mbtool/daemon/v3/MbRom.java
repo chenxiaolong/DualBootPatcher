@@ -27,19 +27,19 @@ public final class MbRom extends Table {
   public ByteBuffer buildAsByteBuffer() { return __vector_as_bytebuffer(14, 1); }
 
   public static int createMbRom(FlatBufferBuilder builder,
-      int id,
-      int system_path,
-      int cache_path,
-      int data_path,
-      int version,
-      int build) {
+      int idOffset,
+      int system_pathOffset,
+      int cache_pathOffset,
+      int data_pathOffset,
+      int versionOffset,
+      int buildOffset) {
     builder.startObject(6);
-    MbRom.addBuild(builder, build);
-    MbRom.addVersion(builder, version);
-    MbRom.addDataPath(builder, data_path);
-    MbRom.addCachePath(builder, cache_path);
-    MbRom.addSystemPath(builder, system_path);
-    MbRom.addId(builder, id);
+    MbRom.addBuild(builder, buildOffset);
+    MbRom.addVersion(builder, versionOffset);
+    MbRom.addDataPath(builder, data_pathOffset);
+    MbRom.addCachePath(builder, cache_pathOffset);
+    MbRom.addSystemPath(builder, system_pathOffset);
+    MbRom.addId(builder, idOffset);
     return MbRom.endMbRom(builder);
   }
 

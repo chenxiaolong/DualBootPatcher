@@ -20,9 +20,9 @@ public final class FileWriteRequest extends Table {
 
   public static int createFileWriteRequest(FlatBufferBuilder builder,
       int id,
-      int data) {
+      int dataOffset) {
     builder.startObject(2);
-    FileWriteRequest.addData(builder, data);
+    FileWriteRequest.addData(builder, dataOffset);
     FileWriteRequest.addId(builder, id);
     return FileWriteRequest.endFileWriteRequest(builder);
   }

@@ -180,7 +180,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
     if (stat("/sys/fs/selinux", &sb) == 0) {
         if (!patch_sepolicy()) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
-            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY);
+            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {
                 write(fd, "0", 1);
                 close(fd);
@@ -196,16 +196,16 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 
 void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 {
-    if (ret == ProceedState::Fail) {
-        if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
-            LOGE("Failed to copy log file: %s", strerror(errno));
-        }
+    (void) ret;
 
-        fix_multiboot_permissions();
-
-        display_msg("The log file was saved as MultiBoot.log on the "
-                    "internal storage.");
+    if (!util::copy_file("/tmp/recovery.log", MULTIBOOT_LOG_INSTALLER, 0)) {
+        LOGE("Failed to copy log file: %s", strerror(errno));
     }
+
+    fix_multiboot_permissions();
+
+    display_msg("The log file was saved as MultiBoot.log on the "
+                "internal storage.");
 }
 
 static void update_binary_usage(int error)
@@ -223,6 +223,11 @@ static void update_binary_usage(int error)
 
 int update_binary_main(int argc, char *argv[])
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 

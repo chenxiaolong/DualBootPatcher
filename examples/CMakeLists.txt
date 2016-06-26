@@ -7,8 +7,8 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         libmbp_test
-        mbp
-        mbpio
+        mbp-shared
+        mbpio-static
     )
 
     if(NOT MSVC)
@@ -28,9 +28,9 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         desparse
-        mbpio
-        mbsparse
-        mblog
+        mbpio-static
+        mbsparse-shared
+        mblog-shared
     )
 
     if(NOT MSVC)

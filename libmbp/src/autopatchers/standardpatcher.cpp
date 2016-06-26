@@ -371,22 +371,37 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         }
 
         EdifyTokenString *token = (EdifyTokenString *)(*it);
-        const std::string str = token->string();
         const std::string unescaped = token->unescapedString();
 
-        foundReboot = StringUtils::ends_with(unescaped, "reboot");
-        foundMount = StringUtils::ends_with(unescaped, "mount");
-        foundUmount = StringUtils::ends_with(unescaped, "umount");
-        foundFormatSh = StringUtils::ends_with(unescaped, "/format.sh");
-        foundMke2fs = StringUtils::ends_with(unescaped, "/mke2fs");
+        if (StringUtils::ends_with(unescaped, "reboot")) {
+            foundReboot = true;
+        }
+        if (StringUtils::ends_with(unescaped, "mount")) {
+            foundMount = true;
+        }
+        if (StringUtils::ends_with(unescaped, "umount")) {
+            foundUmount = true;
+        }
+        if (StringUtils::ends_with(unescaped, "/format.sh")) {
+            foundFormatSh = true;
+        }
+        if (StringUtils::ends_with(unescaped, "/mke2fs")) {
+            foundMke2fs = true;
+        }
 
-        isSystem = str.find("/system") != std::string::npos
-                || findItemsInString(str, systemDevs);
-        isCache = str.find("/cache") != std::string::npos
-                || findItemsInString(str, cacheDevs);
-        isData = str.find("/data") != std::string::npos
-                || str.find("/userdata") != std::string::npos
-                || findItemsInString(str, dataDevs);
+        if (unescaped.find("/system") != std::string::npos
+                || findItemsInString(unescaped, systemDevs)) {
+            isSystem = true;
+        }
+        if (unescaped.find("/cache") != std::string::npos
+                || findItemsInString(unescaped, cacheDevs)) {
+            isCache = true;
+        }
+        if (unescaped.find("/data") != std::string::npos
+                || unescaped.find("/userdata") != std::string::npos
+                || findItemsInString(unescaped, dataDevs)) {
+            isData = true;
+        }
     }
 
     if (foundReboot) {
@@ -440,9 +455,6 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
  * \param funcName Function name token
  * \param leftParen Left parenthesis token
  * \param rightParen Right parenthesis token
- * \param systemDevs List of system partition block devices
- * \param cacheDevs List of cache partition block devices
- * \param dataDevs List of data partition block devices
  *
  * \return Iterator pointing to position immediately after the right parenthesis
  */

@@ -33,7 +33,9 @@
 
 // libmbutil
 #include "mbutil/command.h"
+#include "mbutil/copy.h"
 #include "mbutil/mount.h"
+#include "mbutil/properties.h"
 
 // minizip
 #include <archive.h>
@@ -43,8 +45,8 @@
 #define DEBUG_SKIP_FLASH_CSC    0
 #define DEBUG_SKIP_FLASH_BOOT   0
 
-#define SYSTEM_SPARSE_FILE      "system.img.ext4"
-#define CACHE_SPARSE_FILE       "cache.img.ext4"
+#define SYSTEM_SPARSE_FILE      "system.img.sparse"
+#define CACHE_SPARSE_FILE       "cache.img.sparse"
 #define BOOT_IMAGE_FILE         "boot.img"
 #define BLOCK_DEVS_FILE         "block_devs.prop"
 #define FUSE_SPARSE_FILE        "fuse-sparse"
@@ -55,6 +57,8 @@
 #define TEMP_CSC_ZIP_FILE       TEMP_CACHE_MOUNT_DIR "/recovery/sec_csc.zip"
 #define TEMP_FUSE_SPARSE_FILE   "/tmp/fuse-sparse"
 
+#define EFS_SALES_CODE_FILE     "/efs/imei/mps_code.dat"
+
 #define PROP_SYSTEM_DEV         "system"
 #define PROP_BOOT_DEV           "boot"
 
@@ -62,6 +66,7 @@ static int interface;
 static int output_fd;
 static const char *zip_file;
 
+static char sales_code[10];
 static char system_block_dev[1024];
 static char boot_block_dev[1024];
 
@@ -183,6 +188,38 @@ static bool la_skip_to(archive *a, const char *filename, archive_entry **entry)
     return false;
 }
 
+static bool load_sales_code()
+{
+    int fd = open64(EFS_SALES_CODE_FILE, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        error("%s: Failed to open file: %s",
+              EFS_SALES_CODE_FILE, strerror(errno));
+        return false;
+    } else {
+        ssize_t n = read(fd, sales_code, sizeof(sales_code) - 1);
+        close(fd);
+        if (n < 0) {
+            error("%s: Failed to read file: %s",
+                  EFS_SALES_CODE_FILE, strerror(errno));
+            return false;
+        }
+        sales_code[n] = '\0';
+
+        char *newline = strchr(sales_code, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
+    }
+
+    if (!*sales_code) {
+        error("Sales code is empty");
+        return false;
+    }
+
+    info("EFS partition says sales code is: %s", sales_code);
+    return true;
+}
+
 static bool load_block_devs()
 {
     system_block_dev[0] = '\0';
@@ -276,7 +313,23 @@ static bool load_block_devs()
     }
 
     info("System block device: %s", system_block_dev);
-    info("Cache block device: %s", boot_block_dev);
+    info("Boot block device: %s", boot_block_dev);
+
+    struct stat sb;
+    if (stat(system_block_dev, &sb) < 0) {
+        error("%s: Failed to stat: %s", system_block_dev, strerror(errno));
+        return false;
+    } else if (!S_ISBLK(sb.st_mode)) {
+        error("%s: Not a block device", system_block_dev);
+        return false;
+    }
+    if (stat(boot_block_dev, &sb) < 0) {
+        error("%s: Failed to stat: %s", boot_block_dev, strerror(errno));
+        return false;
+    } else if (!S_ISBLK(sb.st_mode)) {
+        error("%s: Not a block device", boot_block_dev);
+        return false;
+    }
 
     return true;
 }
@@ -375,7 +428,7 @@ static bool extract_sparse_file(const char *zip_filename,
         do {
             if ((nwritten = write(fd, out_ptr, n)) < 0) {
                 error("%s: Failed to write: %s",
-                      system_block_dev, strerror(errno));
+                      out_filename, strerror(errno));
                 goto error_fd_opened;
             }
 
@@ -457,7 +510,7 @@ static bool extract_raw_file(const char *zip_filename,
         do {
             if ((nwritten = write(fd, out_ptr, n)) < 0) {
                 error("%s: Failed to write: %s",
-                      system_block_dev, strerror(errno));
+                      out_filename, strerror(errno));
                 goto error_fd_opened;
             }
 
@@ -481,6 +534,74 @@ error_la_allocated:
     archive_read_free(a);
 error:
     return false;
+}
+
+static bool copy_dir_if_exists(const char *source_dir,
+                               const char *target_dir)
+{
+    struct stat sb;
+    if (stat(source_dir, &sb) < 0) {
+        if (errno == ENOENT) {
+            info("Skipping %s -> %s copy as source doesn't exist",
+                 source_dir, target_dir);
+            return true;
+        } else {
+            error("%s: Failed to stat: %s", source_dir, strerror(errno));
+            return false;
+        }
+    }
+
+    if (!S_ISDIR(sb.st_mode)) {
+        error("%s: Source path is not a directory", source_dir);
+        return false;
+    }
+
+    bool ret = mb::util::copy_dir(source_dir, target_dir,
+                                  mb::util::COPY_ATTRIBUTES
+                                | mb::util::COPY_XATTRS
+                                | mb::util::COPY_EXCLUDE_TOP_LEVEL);
+    if (!ret) {
+        error("Failed to copy %s to %s: %s",
+              source_dir, target_dir, strerror(errno));
+    }
+
+    return ret;
+}
+
+static bool apply_multi_csc()
+{
+    info("Applying Multi-CSC");
+
+    static const char *common_system = "/system/csc/common/system";
+    char sales_code_system[100];
+    char sales_code_csc_contents[100];
+
+    snprintf(sales_code_system, sizeof(sales_code_system),
+             "/system/csc/%s/system", sales_code);
+    snprintf(sales_code_csc_contents, sizeof(sales_code_csc_contents),
+             "/system/csc/%s/csc_contents", sales_code);
+
+    // TODO: TouchWiz hard links files that go in /system/app
+
+    if (!copy_dir_if_exists(common_system, "/system")
+            || !copy_dir_if_exists(sales_code_system, "/system")) {
+        return false;
+    }
+
+    if (remove("/system/csc_contents") < 0 && errno != ENOENT) {
+        error("%s: Failed to remove: %s",
+              "/system/csc_contents", strerror(errno));
+        return false;
+    }
+    if (symlink(sales_code_csc_contents, "/system/csc_contents") < 0) {
+        error("Failed to symlink %s to %s: %s",
+              sales_code_csc_contents, "/system/csc_contents", strerror(errno));
+        return false;
+    }
+
+    info("Successfully applied multi-CSC");
+
+    return true;
 }
 
 static bool flash_csc_zip()
@@ -657,6 +778,11 @@ static bool flash_csc()
         goto error_system_mounted;
     }
 
+    if (!apply_multi_csc()) {
+        error("Failed to apply Multi-CSC");
+        goto error_system_mounted;
+    }
+
     umount_system();
     mb::util::umount(TEMP_CACHE_MOUNT_DIR);
     umount(TEMP_CACHE_MOUNT_FILE);
@@ -688,6 +814,11 @@ static bool flash_zip()
     ui_print("------ EXPERIMENTAL ------");
     ui_print("Patched Odin image flasher");
     ui_print("------ EXPERIMENTAL ------");
+
+    // Load sales code from EFS partition
+    if (!load_sales_code()) {
+        return false;
+    }
 
     // Load block device info
     if (!load_block_devs()) {

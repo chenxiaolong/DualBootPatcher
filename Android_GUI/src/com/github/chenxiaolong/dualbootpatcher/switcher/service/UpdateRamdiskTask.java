@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,25 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SetKernelResult;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
+import com.google.common.base.Charsets;
+import com.sun.jna.ptr.IntByReference;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 
 public final class UpdateRamdiskTask extends BaseServiceTask {
     private static final String TAG = UpdateRamdiskTask.class.getSimpleName();
@@ -49,20 +60,21 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
     /** Suffix for boot image backup */
     private static final String BOOT_IMAGE_BACKUP_SUFFIX = ".before-ramdisk-update.img";
 
-    public final RomInformation mRomInfo;
-    private final UpdateRamdiskTaskListener mListener;
+    private final RomInformation mRomInfo;
 
-    public boolean mSuccess;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
-    public interface UpdateRamdiskTaskListener extends BaseServiceTaskListener {
+    private boolean mSuccess;
+
+    public interface UpdateRamdiskTaskListener extends BaseServiceTaskListener,
+            MbtoolErrorListener {
         void onUpdatedRamdisk(int taskId, RomInformation romInfo, boolean success);
     }
 
-    public UpdateRamdiskTask(int taskId, Context context, RomInformation romInfo,
-                             UpdateRamdiskTaskListener listener) {
+    public UpdateRamdiskTask(int taskId, Context context, RomInformation romInfo) {
         super(taskId, context);
         mRomInfo = romInfo;
-        mListener = listener;
     }
 
     /**
@@ -123,8 +135,50 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
         }
     }
 
-    private boolean repatchBootImage(File file, int wasType, boolean hasRomIdFile) {
-        if (wasType == Type.LOKI || !hasRomIdFile) {
+    private enum UsesExfat {
+        YES, NO, UNKNOWN
+    }
+
+    private UsesExfat voldUsesFuseExfat(MbtoolInterface iface)
+            throws IOException, MbtoolException {
+        // Only do this for the current ROM since we might not have access to the files of other
+        // ROMs (eg. if the ROM uses a system image)
+        File tempVold = new File(getContext().getCacheDir() + "/vold");
+        tempVold.delete();
+
+        try {
+            RomInformation currentRom = RomUtils.getCurrentRom(getContext(), iface);
+            if (currentRom != null && currentRom.getId().equals(mRomInfo.getId())) {
+                iface.pathCopy("/system/bin/vold", tempVold.getAbsolutePath());
+                iface.pathChmod(tempVold.getAbsolutePath(), 0644);
+
+                // Set SELinux context
+                try {
+                    String label = iface.pathSelinuxGetLabel(tempVold.getParent(), false);
+                    iface.pathSelinuxSetLabel(tempVold.getAbsolutePath(), label, false);
+                } catch (MbtoolCommandException e) {
+                    Log.w(TAG, "Failed to set SELinux label of temp vold copy", e);
+                }
+
+                IntByReference result = new IntByReference();
+                if (LibMiscStuff.INSTANCE.find_string_in_file(
+                        tempVold.getAbsolutePath(), "/system/bin/mount.exfat", result)) {
+                    return result.getValue() != 0 ? UsesExfat.YES : UsesExfat.NO;
+                }
+            }
+        } catch (MbtoolCommandException e) {
+            Log.e(TAG, "Failed to determine if vold uses fuse-exfat", e);
+        } finally {
+            tempVold.delete();
+        }
+
+        return UsesExfat.UNKNOWN;
+    }
+
+    private boolean repatchBootImage(MbtoolInterface iface, File file, int wasType,
+                                     boolean hasRomIdFile, UsesExfat usesExfat)
+            throws IOException, MbtoolException {
+        if (wasType == Type.LOKI || !hasRomIdFile || usesExfat != UsesExfat.UNKNOWN) {
             BootImage bi = new BootImage();
             CpioFile cpio = new CpioFile();
 
@@ -141,31 +195,54 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                     File abootFile = new File(
                             getContext().getCacheDir() + File.separator + "aboot.img");
 
-                    MbtoolSocket socket = MbtoolSocket.getInstance();
-
                     // Copy aboot partition to the temporary file
-                    if (!socket.pathCopy(getContext(), ABOOT_PARTITION, abootFile.getPath()) ||
-                            !socket.pathChmod(getContext(), abootFile.getPath(), 0644)) {
+                    try {
+                        iface.pathCopy(ABOOT_PARTITION, abootFile.getAbsolutePath());
+                        iface.pathChmod(abootFile.getAbsolutePath(), 0644);
+                    } catch (MbtoolCommandException e) {
                         Log.e(TAG, "Failed to copy aboot partition to temporary file");
                         return false;
                     }
 
-                    byte[] abootImage =
-                            org.apache.commons.io.FileUtils.readFileToByteArray(abootFile);
+                    byte[] abootImage;
+                    try {
+                        abootImage = org.apache.commons.io.FileUtils.readFileToByteArray(abootFile);
+                    } catch (IOException e) {
+                        Log.e(TAG, "Failed to read temporary aboot dump", e);
+                        return false;
+                    }
                     bi.setAbootImage(abootImage);
 
                     abootFile.delete();
                 }
-                if (!hasRomIdFile) {
+                if (!hasRomIdFile || usesExfat != UsesExfat.UNKNOWN) {
                     if (!cpio.load(bi.getRamdiskImage())) {
                         logLibMbpError(cpio.getError());
                         return false;
                     }
-                    cpio.remove("romid");
-                    if (!cpio.addFile(mRomInfo.getId().getBytes(
-                            Charset.forName("UTF-8")), "romid", 0644)) {
-                        logLibMbpError(cpio.getError());
-                        return false;
+                    if (!hasRomIdFile) {
+                        cpio.remove("romid");
+                        if (!cpio.addFile(mRomInfo.getId().getBytes(
+                                Charset.forName("UTF-8")), "romid", 0644)) {
+                            logLibMbpError(cpio.getError());
+                            return false;
+                        }
+                    }
+                    if (usesExfat != UsesExfat.UNKNOWN) {
+                        byte[] contents = cpio.getContents("default.prop");
+                        if (contents != null) {
+                            ArrayList<String> lines = new ArrayList<>();
+                            for (String line : new String(contents, Charsets.UTF_8).split("\n")) {
+                                if (!line.startsWith("ro.patcher.use_fuse_exfat=")) {
+                                    lines.add(line);
+                                }
+                            }
+                            lines.add("ro.patcher.use_fuse_exfat=" +
+                                    (usesExfat == UsesExfat.YES ? "true" : "false"));
+                            cpio.setContents("default.prop",
+                                    StringUtils.join(lines, "\n").getBytes(Charsets.UTF_8));
+
+                        }
                     }
                     bi.setRamdiskImage(cpio.createData());
                 }
@@ -174,9 +251,6 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                     logLibMbpError(bi.getError());
                     return false;
                 }
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to make changes to boot image", e);
-                return false;
             } finally {
                 bi.destroy();
                 cpio.destroy();
@@ -191,18 +265,13 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
      *
      * @return True if the operation succeeded or was not needed
      */
-    private boolean switchRomIfNeeded() {
-        RomInformation currentRom = RomUtils.getCurrentRom(getContext());
+    private boolean switchRomIfNeeded(MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
+        RomInformation currentRom = RomUtils.getCurrentRom(getContext(), iface);
         if (currentRom != null && currentRom.getId().equals(mRomInfo.getId())) {
-            try {
-                SwitchRomResult result =
-                        MbtoolSocket.getInstance().switchRom(getContext(), mRomInfo.getId(), true);
-                if (result != SwitchRomResult.SUCCEEDED) {
-                    Log.e(TAG, "Failed to reflash boot image");
-                    return false;
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "mbtool communication error", e);
+            SwitchRomResult result = iface.switchRom(getContext(), mRomInfo.getId(), true);
+            if (result != SwitchRomResult.SUCCEEDED) {
+                Log.e(TAG, "Failed to reflash boot image");
                 return false;
             }
         }
@@ -214,25 +283,21 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
      *
      * @return True if the operation succeeded or was not needed
      */
-    private boolean setKernelIfNeeded() {
-        RomInformation currentRom = RomUtils.getCurrentRom(getContext());
+    private boolean setKernelIfNeeded(MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
+        RomInformation currentRom = RomUtils.getCurrentRom(getContext(), iface);
         if (currentRom != null && currentRom.getId().equals(mRomInfo.getId())) {
-            try {
-                SetKernelResult result =
-                        MbtoolSocket.getInstance().setKernel(getContext(), mRomInfo.getId());
-                if (result != SetKernelResult.SUCCEEDED) {
-                    Log.e(TAG, "Failed to reflash boot image");
-                    return false;
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "mbtool communication error", e);
+            SetKernelResult result = iface.setKernel(getContext(), mRomInfo.getId());
+            if (result != SetKernelResult.SUCCEEDED) {
+                Log.e(TAG, "Failed to reflash boot image");
                 return false;
             }
         }
         return true;
     }
 
-    private boolean updateRamdisk() {
+    private boolean updateRamdisk(MbtoolInterface iface)
+            throws IOException, MbtoolException, MbtoolCommandException {
         synchronized (UpdateRamdiskTask.class) {
             Log.d(TAG, "Starting to update ramdisk for " + mRomInfo.getId() + " to "
                     + BuildConfig.VERSION_NAME);
@@ -247,7 +312,7 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                 File bootImageFile = new File(bootImage);
 
                 // Make sure the kernel exists
-                if (!bootImageFile.exists() && !setKernelIfNeeded()) {
+                if (!bootImageFile.exists() && !setKernelIfNeeded(iface)) {
                     Log.e(TAG, "The kernel has not been backed up");
                     return false;
                 }
@@ -301,11 +366,14 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                     cpio.destroy();
                 }
 
+                UsesExfat usesExfat = voldUsesFuseExfat(iface);
+
                 Log.d(TAG, "Original boot image type: " + wasType);
                 Log.d(TAG, "Original boot image had /romid file in ramdisk: " + hasRomIdFile);
+                Log.d(TAG, "vold uses fuse exfat: " + usesExfat.name());
 
                 // Make changes to the boot image if necessary
-                if (!repatchBootImage(tmpKernelFile, wasType, hasRomIdFile)) {
+                if (!repatchBootImage(iface, tmpKernelFile, wasType, hasRomIdFile, usesExfat)) {
                     return false;
                 }
 
@@ -320,7 +388,7 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                 tmpKernelFile.delete();
 
                 // Reflash boot image if we're updating the ramdisk for the current ROM
-                if (!switchRomIfNeeded()) {
+                if (!switchRomIfNeeded(iface)) {
                     return false;
                 }
 
@@ -336,7 +404,61 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
 
     @Override
     public void execute() {
-        mSuccess = updateRamdisk();
-        mListener.onUpdatedRamdisk(getTaskId(), mRomInfo, mSuccess);
+        boolean success = false;
+
+        MbtoolConnection conn = null;
+
+        try {
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            success = updateRamdisk(iface);
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+        } finally {
+            IOUtils.closeQuietly(conn);
+        }
+
+        synchronized (mStateLock) {
+            mSuccess = success;
+            sendOnUpdatedRamdisk();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnUpdatedRamdisk();
+            }
+        }
+    }
+
+    private void sendOnUpdatedRamdisk() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((UpdateRamdiskTaskListener) listener).onUpdatedRamdisk(
+                        getTaskId(), mRomInfo, mSuccess);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((UpdateRamdiskTaskListener) listener).onMbtoolConnectionFailed(
+                        getTaskId(), reason);
+            }
+        });
     }
 }

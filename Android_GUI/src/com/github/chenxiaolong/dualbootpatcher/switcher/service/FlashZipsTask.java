@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,78 +18,75 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
+import android.text.TextUtils;
+import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.CommandResult;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandListener;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandParams;
-import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootCommandRunner;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecCompletion;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecOutputListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-public final class FlashZipsTask extends BaseServiceTask {
+import mbtool.daemon.v3.SignedExecResult;
+
+public final class FlashZipsTask extends BaseServiceTask implements SignedExecOutputListener {
+    private static final String TAG = FlashZipsTask.class.getSimpleName();
+
+    private static final boolean DEBUG_USE_ALTERNATE_MBTOOL = false;
+    private static final String ALTERNATE_MBTOOL_PATH = "/data/local/tmp/mbtool_recovery";
+    private static final String ALTERNATE_MBTOOL_SIG_PATH = "/data/local/tmp/mbtool_recovery.sig";
+
     private static final String UPDATE_BINARY = "META-INF/com/google/android/update-binary";
+    private static final String UPDATE_BINARY_SIG = UPDATE_BINARY + ".sig";
 
     private final PendingAction[] mPendingActions;
-    private final FlashZipsTaskListener mListener;
 
-    public final Object mLinesLock = new Object();
-    public ArrayList<String> mLines = new ArrayList<>();
-    public int mTotal = -1;
-    public int mFailed = -1;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
-    public interface FlashZipsTaskListener extends BaseServiceTaskListener {
+    private ArrayList<String> mLines = new ArrayList<>();
+    private int mTotal = -1;
+    private int mFailed = -1;
+
+    public interface FlashZipsTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onFlashedZips(int taskId, int totalActions, int failedActions);
 
         void onCommandOutput(int taskId, String line);
     }
 
-    public FlashZipsTask(int taskId, Context context, PendingAction[] pendingActions,
-                         FlashZipsTaskListener listener) {
+    public FlashZipsTask(int taskId, Context context, PendingAction[] pendingActions) {
         super(taskId, context);
         mPendingActions = pendingActions;
-        mListener = listener;
-    }
-
-    public String[] getLines() {
-        synchronized (mLinesLock) {
-            return mLines.toArray(new String[mLines.size()]);
-        }
     }
 
     @Override
     public void execute() {
-        boolean remountedRoot = false;
-        boolean remountedSystem = false;
-
         int succeeded = 0;
 
+        MbtoolConnection conn = null;
+
         try {
-            if (!CommandUtils.requestRootAccess()) {
-                printBoldText(Color.RED, "Failed to obtain root privileges\n");
-                return;
-            }
+            printBoldText(Color.YELLOW, "Connecting to mbtool...");
 
-            if (!remountFs("/", true)) {
-                printBoldText(Color.RED, "Failed to remount / as rw\n");
-                return;
-            }
-            remountedRoot = true;
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
 
-            if (!remountFs("/system", true)) {
-                printBoldText(Color.RED, "Failed to remount /system as rw\n");
-                return;
-            }
-            remountedSystem = true;
+            printBoldText(Color.YELLOW, " connected\n");
 
             for (PendingAction pa : mPendingActions) {
                 if (pa.type != PendingAction.Type.INSTALL_ZIP) {
@@ -105,59 +102,95 @@ public final class FlashZipsTask extends BaseServiceTask {
                 // Extract mbtool from the zip file
                 File zipInstaller = new File(
                         getContext().getCacheDir() + File.separator + "rom-installer");
+                File zipInstallerSig = new File(
+                        getContext().getCacheDir() + File.separator + "rom-installer.sig");
                 zipInstaller.delete();
+                zipInstallerSig.delete();
 
-                printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
-                if (!FileUtils.zipExtractFile(pa.zipFile, UPDATE_BINARY, zipInstaller.getPath())) {
-                    printBoldText(Color.RED, "Failed to extract update-binary\n");
-                    return;
-                }
-
-                // Copy to /
-                if (runRootCommand("rm -f /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to remove old /rom-installer\n");
-                    return;
-                }
-                if (runRootCommand("cp " + zipInstaller.getPath() + " /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to copy new /rom-installer\n");
-                    return;
-                }
-                if (runRootCommand("chmod 755 /rom-installer") != 0) {
-                    printBoldText(Color.RED, "Failed to chmod /rom-installer\n");
-                    return;
-                }
-
-                int ret = runRootCommand("/rom-installer --romid " +
-                        CommandUtils.quoteArg(pa.romId) + " " +
-                        CommandUtils.quoteArg(pa.zipFile));
-
-                zipInstaller.delete();
-
-                if (ret < 0) {
-                    printBoldText(Color.RED, "\nFailed to run command\n");
-                    return;
+                if (DEBUG_USE_ALTERNATE_MBTOOL) {
+                    printBoldText(Color.YELLOW, "[DEBUG] Copying alternate mbtool binary: "
+                            + ALTERNATE_MBTOOL_PATH + "\n");
+                    try {
+                        org.apache.commons.io.FileUtils.copyFile(
+                                new File(ALTERNATE_MBTOOL_PATH), zipInstaller);
+                    } catch (IOException e) {
+                        printBoldText(Color.RED, "Failed to copy alternate mbtool binary\n");
+                        return;
+                    }
+                    printBoldText(Color.YELLOW, "[DEBUG] Copying alternate mbtool signature: "
+                            + ALTERNATE_MBTOOL_SIG_PATH + "\n");
+                    try {
+                        org.apache.commons.io.FileUtils.copyFile(
+                                new File(ALTERNATE_MBTOOL_SIG_PATH), zipInstallerSig);
+                    } catch (IOException e) {
+                        printBoldText(Color.RED, "Failed to copy alternate mbtool signature\n");
+                        return;
+                    }
                 } else {
-                    printBoldText(ret == 0 ? Color.GREEN : Color.RED,
-                            "\nCommand returned: " + ret + "\n");
+                    printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
 
-                    if (ret == 0) {
+                    if (!FileUtils.zipExtractFile(pa.zipFile, UPDATE_BINARY,
+                            zipInstaller.getPath())) {
+                        printBoldText(Color.RED, "Failed to extract update-binary\n");
+                        return;
+                    }
+                    printBoldText(Color.YELLOW, "Extracting mbtool signature from the zip file\n");
+                    if (!FileUtils.zipExtractFile(pa.zipFile, UPDATE_BINARY_SIG,
+                            zipInstallerSig.getPath())) {
+                        printBoldText(Color.RED, "Failed to extract update-binary.sig\n");
+                        return;
+                    }
+                }
+
+                String[] args = new String[] { "--romid", pa.romId, pa.zipFile };
+
+                printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
+                        + TextUtils.join(", ", args) + "]\n");
+
+                SignedExecCompletion completion = iface.signedExec(
+                        zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
+                        "rom-installer", args, this);
+
+                switch (completion.result) {
+                case SignedExecResult.PROCESS_EXITED:
+                    printBoldText(completion.exitStatus == 0 ? Color.GREEN : Color.RED,
+                            "\nCommand returned: " + completion.exitStatus + "\n");
+                    if (completion.exitStatus == 0) {
                         succeeded++;
                     } else {
                         return;
                     }
+                    break;
+                case SignedExecResult.PROCESS_KILLED_BY_SIGNAL:
+                    printBoldText(Color.RED, "\nProcess killed by signal: "
+                            + completion.termSig + "\n");
+                    return;
+                case SignedExecResult.INVALID_SIGNATURE:
+                    printBoldText(Color.RED, "\nThe mbtool binary has an invalid signature. This"
+                            + " can happen if an unofficial app was used to patch the file or if"
+                            + " the zip was maliciously modified. The file was NOT flashed.\n");
+                    return;
+                case SignedExecResult.OTHER_ERROR:
+                default:
+                    printBoldText(Color.RED, "\nError: " + completion.errorMsg + "\n");
+                    return;
                 }
-            }
-        } finally {
-            if (remountedRoot || remountedSystem) {
-                printSeparator();
-            }
 
-            if (remountedRoot && !remountFs("/", false)) {
-                printBoldText(Color.RED, "Failed to remount / as ro\n");
+                zipInstaller.delete();
+                zipInstallerSig.delete();
             }
-            if (remountedSystem && !remountFs("/system", false)) {
-                printBoldText(Color.RED, "Failed to remount /system as ro\n");
-            }
+        } catch (IOException e) {
+            Log.e(TAG, "mbtool communication error", e);
+            printBoldText(Color.RED, "mbtool connection error: " + e.getMessage() + "\n");
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            printBoldText(Color.RED, "mbtool error: " + e.getMessage() + "\n");
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+            printBoldText(Color.RED, "mbtool command error: " + e.getMessage() + "\n");
+        } finally {
+            IOUtils.closeQuietly(conn);
 
             printSeparator();
 
@@ -165,17 +198,25 @@ public final class FlashZipsTask extends BaseServiceTask {
 
             printBoldText(Color.CYAN, "Successfully completed " + frac + " actions\n");
 
-            mTotal = mPendingActions.length;
-            mFailed = mPendingActions.length - succeeded;
-            mListener.onFlashedZips(getTaskId(), mTotal, mFailed);
+            synchronized (mStateLock) {
+                mTotal = mPendingActions.length;
+                mFailed = mPendingActions.length - succeeded;
+                sendOnFlashedZips();
+                mFinished = true;
+            }
         }
     }
 
+    @Override
+    public void onOutputLine(String line) {
+        onCommandOutput(line);
+    }
+
     private void onCommandOutput(String line) {
-        synchronized (mLinesLock) {
+        synchronized (mStateLock) {
             mLines.add(line);
+            sendOnCommandOutput(line);
         }
-        mListener.onCommandOutput(getTaskId(), line);
     }
 
     private void printBoldText(Color color, String text) {
@@ -187,42 +228,44 @@ public final class FlashZipsTask extends BaseServiceTask {
         printBoldText(Color.WHITE, StringUtils.repeat('-', 16) + "\n");
     }
 
-    private boolean remountFs(String mountpoint, boolean rw) {
-        printBoldText(Color.YELLOW, "Mounting " + mountpoint + " as " +
-                (rw ? "writable" : "read-only") + "\n");
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
 
-        if (rw) {
-            return runRootCommand("mount -o remount,rw " + mountpoint) == 0;
-        } else {
-            return runRootCommand("mount -o remount,ro " + mountpoint) == 0;
+        synchronized (mStateLock) {
+            for (String line : mLines) {
+                sendOnCommandOutput(line);
+            }
+            if (mFinished) {
+                sendOnFlashedZips();
+            }
         }
     }
 
-    private int runRootCommand(String command) {
-        printBoldText(Color.YELLOW, "Running command: " + command + "\n");
-
-        RootCommandParams params = new RootCommandParams();
-        params.command = command;
-        params.listener = new RootCommandListener() {
+    private void sendOnCommandOutput(final String line) {
+        forEachListener(new CallbackRunnable() {
             @Override
-            public void onNewOutputLine(String line) {
-                onCommandOutput(line + "\n");
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onCommandOutput(getTaskId(), line);
             }
+        });
+    }
 
+    private void sendOnFlashedZips() {
+        forEachListener(new CallbackRunnable() {
             @Override
-            public void onCommandCompletion(CommandResult result) {
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onFlashedZips(getTaskId(), mTotal, mFailed);
             }
-        };
+        });
+    }
 
-        RootCommandRunner cmd = new RootCommandRunner(params);
-        cmd.start();
-        CommandUtils.waitForRootCommand(cmd);
-        CommandResult result = cmd.getResult();
-
-        if (result == null) {
-            return -1;
-        } else {
-            return result.exitCode;
-        }
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((FlashZipsTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
+            }
+        });
     }
 }

@@ -90,7 +90,7 @@ bool patch_loaded_sepolicy()
 {
     int is_enforcing = 0;
 
-    autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rb"));
+    autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rbe"));
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't

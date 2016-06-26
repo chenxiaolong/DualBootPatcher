@@ -1,47 +1,56 @@
-include(ExternalProject)
+include_directories(${MBP_FUSE_INCLUDES})
+include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
-# Generate Android.mk
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-    @ONLY
-)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    add_definitions(-DSTRICTZIPUNZIP)
+    add_definitions(-D_FILE_OFFSET_BITS=64)
 
-ExternalProject_Add(
-    odinupdater
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out/
-    BUILD_COMMAND ${NDK_BUILD}
-                  -C <SOURCE_DIR>
-                  NDK_PROJECT_PATH=.
-                  NDK_APPLICATION_MK=Application.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out
-                  NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.mk
-                  ${NDK_ARGS}
-    INSTALL_COMMAND ""
-)
+    add_executable(odinupdater odinupdater.cpp)
+    add_executable(fuse-sparse fuse-sparse.cpp)
 
-# Always rebuild since files may have changed
-ExternalProject_Add_Step(
-    odinupdater
-    forcerebuild
-    DEPENDEES update
-    DEPENDERS configure
-    ALWAYS 1
-    COMMAND ""
-)
+    set_target_properties(
+        odinupdater
+        fuse-sparse
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+    )
 
-add_dependencies(
-    odinupdater
-    mblog-static-android
-    mbpio-static-android
-    mbsparse-static-android
-    mbutil-static-android
-)
+    if(NOT MSVC)
+        set_target_properties(
+            odinupdater
+            fuse-sparse
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
 
-install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out/
-    DESTINATION ${DATA_INSTALL_DIR}/binaries/android
-    COMPONENT Libraries
-)
+    set_target_properties(
+        odinupdater
+        fuse-sparse
+        PROPERTIES
+        LINK_FLAGS "-static"
+    )
+
+    target_link_libraries(
+        odinupdater
+        mbsparse-static
+        mbutil-static
+        mblog-static
+        ${MBP_LIBARCHIVE_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
+    )
+    target_link_libraries(
+        fuse-sparse
+        mbpio-static
+        mbsparse-static
+        mblog-static
+        ${MBP_FUSE_LIBRARIES}
+    )
+
+    install(
+        TARGETS odinupdater fuse-sparse
+        RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
+        COMPONENT Applications
+    )
+endif()

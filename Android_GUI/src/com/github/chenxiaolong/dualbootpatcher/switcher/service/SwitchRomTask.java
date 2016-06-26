@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,44 +20,94 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 import android.content.Context;
 import android.util.Log;
 
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket.SwitchRomResult;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 
 public final class SwitchRomTask extends BaseServiceTask {
     private static final String TAG = SwitchRomTask.class.getSimpleName();
 
-    public final String mRomId;
+    private final String mRomId;
     private final boolean mForceChecksumsUpdate;
-    private final SwitchRomTaskListener mListener;
 
-    public SwitchRomResult mResult;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
 
-    public interface SwitchRomTaskListener extends BaseServiceTaskListener {
+    private SwitchRomResult mResult;
+
+    public interface SwitchRomTaskListener extends BaseServiceTaskListener, MbtoolErrorListener {
         void onSwitchedRom(int taskId, String romId, SwitchRomResult result);
     }
 
-    public SwitchRomTask(int taskId, Context context, String romId, boolean forceChecksumsUpdate,
-                         SwitchRomTaskListener listener) {
+    public SwitchRomTask(int taskId, Context context, String romId, boolean forceChecksumsUpdate) {
         super(taskId, context);
         mRomId = romId;
         mForceChecksumsUpdate = forceChecksumsUpdate;
-        mListener = listener;
     }
 
     @Override
     public void execute() {
         Log.d(TAG, "Switching to " + mRomId + " (force=" + mForceChecksumsUpdate + ")");
 
-        mResult = SwitchRomResult.FAILED;
+        SwitchRomResult result = SwitchRomResult.FAILED;
+        MbtoolConnection conn = null;
+
         try {
-            mResult = MbtoolSocket.getInstance().switchRom(
-                    getContext(), mRomId, mForceChecksumsUpdate);
+            conn = new MbtoolConnection(getContext());
+            MbtoolInterface iface = conn.getInterface();
+
+            result = iface.switchRom(getContext(), mRomId, mForceChecksumsUpdate);
         } catch (IOException e) {
             Log.e(TAG, "mbtool communication error", e);
+        } catch (MbtoolException e) {
+            Log.e(TAG, "mbtool error", e);
+            sendOnMbtoolError(e.getReason());
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "mbtool command error", e);
+        } finally {
+            IOUtils.closeQuietly(conn);
         }
 
-        mListener.onSwitchedRom(getTaskId(), mRomId, mResult);
+        synchronized (mStateLock) {
+            mResult = result;
+            sendOnSwitchedRom();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnSwitchedRom();
+            }
+        }
+    }
+
+    private void sendOnSwitchedRom() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((SwitchRomTaskListener) listener).onSwitchedRom(getTaskId(), mRomId, mResult);
+            }
+        });
+    }
+
+    private void sendOnMbtoolError(final Reason reason) {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((SwitchRomTaskListener) listener).onMbtoolConnectionFailed(getTaskId(), reason);
+            }
+        });
     }
 }

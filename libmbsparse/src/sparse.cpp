@@ -28,6 +28,8 @@
 // For std::min()
 #include <algorithm>
 
+#include <vector>
+
 #include <cassert>
 #include <cinttypes>
 #include <cstdint>
@@ -274,7 +276,13 @@ static void dumpChunkHeader(ChunkHeader *header)
 static bool readFully(SparseCtx *ctx, void *buf, std::size_t size)
 {
     uint64_t bytesRead;
-    if (!ctx->read(buf, size, &bytesRead) || bytesRead != size) {
+    if (!ctx->read(buf, size, &bytesRead)) {
+        ERROR("Sparse read callback returned failure");
+        return false;
+    }
+    if (bytesRead != size) {
+        ERROR("Requested %" PRIu64 " bytes, but only read %" PRIu64 " bytes",
+              (uint64_t) size, bytesRead);
         return false;
     }
     return true;

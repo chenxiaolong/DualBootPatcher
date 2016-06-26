@@ -20,11 +20,11 @@ public final class PathGetDirectorySizeResponse extends Table {
 
   public static int createPathGetDirectorySizeResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
+      int error_msgOffset,
       long size) {
     builder.startObject(3);
     PathGetDirectorySizeResponse.addSize(builder, size);
-    PathGetDirectorySizeResponse.addErrorMsg(builder, error_msg);
+    PathGetDirectorySizeResponse.addErrorMsg(builder, error_msgOffset);
     PathGetDirectorySizeResponse.addSuccess(builder, success);
     return PathGetDirectorySizeResponse.endPathGetDirectorySizeResponse(builder);
   }

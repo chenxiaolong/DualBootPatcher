@@ -1,5 +1,5 @@
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -21,12 +21,14 @@
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
-    <style name="AppBaseTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppBaseTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
             backward-compatibility can go here.
         -->
+        <item name="colorAccent">@color/accent_light</item>
+        <item name="android:textColor">@color/text_color_light</item>
     </style>
 
     <!-- Application theme. -->
@@ -34,8 +36,6 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:textColor">@color/text_color</item>
     </style>
 
     <style name="DrawerActivityTheme" parent="AppTheme">
@@ -55,6 +55,7 @@
         <item name="android:textColorPrimary">@color/text_color_primary</item>
         <item name="android:textColorSecondary">@color/text_color_primary</item>
         <item name="android:actionMenuTextColor">@color/text_color_primary</item>
+        <item name="popupTheme">@style/ThemeOverlay.AppCompat.Light</item>
     </style>
 
     <style name="toolbar" parent="Widget.AppCompat.Toolbar">
@@ -62,10 +63,13 @@
     </style>
 
     <!-- Separator -->
-    <style name="separator">
+    <style name="separator_base">
         <item name="android:layout_width">fill_parent</item>
         <item name="android:layout_height">@dimen/separator_height</item>
-        <item name="android:background">@color/separator</item>
+    </style>
+
+    <style name="separator" parent="separator_base">
+        <item name="android:background">@color/separator_light</item>
     </style>
 
     <!-- Card styles -->
@@ -85,45 +89,45 @@
         <item name="android:textSize">@dimen/card_v7_primary_text_size</item>
     </style>
 
-    <style name="card_v7_secondary_text">
-        <item name="android:textColor">@android:color/secondary_text_light</item>
+    <style name="card_v7_secondary_text_base">
         <item name="android:textSize">@dimen/card_v7_secondary_text_size</item>
     </style>
 
-    <style name="card_v7_section_title">
-        <item name="android:textColor">@color/card_v7_text_color_dim</item>
+    <style name="card_v7_secondary_text" parent="card_v7_secondary_text_base">
+        <item name="android:textColor">@color/card_v7_text_color_dim_light</item>
+    </style>
+
+    <style name="card_v7_section_title_base">
+    </style>
+
+    <style name="card_v7_section_title" parent="card_v7_section_title_base">
+        <item name="android:textColor">@color/card_v7_text_color_dim_light</item>
     </style>
 
     <style name="card_v7_title">
         <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/standardtext</item>
         <item name="android:layout_marginTop">2dp</item>
     </style>
 
     <style name="card_v7_message">
         <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/standardtext</item>
     </style>
 
     <style name="card_v7_message_italicized">
         <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/standardtext</item>
         <item name="android:textStyle">italic</item>
     </style>
 
     <style name="free_space_main_title">
         <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/standardtext</item>
     </style>
 
     <style name="free_space_title">
         <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/standardtext</item>
     </style>
 
     <style name="free_space_size_text">
         <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@color/standardtext</item>
     </style>
 
     <!-- Patcher cards -->
@@ -134,7 +138,6 @@
 
     <style name="patcher_card_label">
         <item name="android:textSize">16sp</item>
-        <!-- <item name="android:textColor">@color/standardtext</item> -->
         <item name="android:layout_marginTop">@dimen/patcher_card_label_margin</item>
         <item name="android:layout_marginBottom">@dimen/patcher_card_label_margin</item>
     </style>
@@ -158,9 +161,12 @@
         <item name="android:textSize">@dimen/rom_detail_info_item_primary_text_size</item>
     </style>
 
-    <style name="rom_detail_info_item_secondary_text">
-        <item name="android:textColor">@android:color/secondary_text_light</item>
+    <style name="rom_detail_info_item_secondary_text_base">
         <item name="android:textSize">@dimen/rom_detail_info_item_secondary_text_size</item>
+    </style>
+
+    <style name="rom_detail_info_item_secondary_text" parent="rom_detail_info_item_secondary_text_base">
+        <item name="android:textColor">@color/card_v7_text_color_dim_light</item>
     </style>
 
 </resources>

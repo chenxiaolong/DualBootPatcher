@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,7 +19,9 @@
 
 #include "mbutil/fts.h"
 
+#include <cerrno>
 #include <cstring>
+
 #include <sys/stat.h>
 
 #include "mbutil/string.h"

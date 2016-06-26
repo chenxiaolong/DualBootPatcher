@@ -21,16 +21,22 @@
 
     <color name="primary">#ff1e88e5</color>
     <color name="primary_dark">#ff1976d2</color>
-    <color name="accent">#ff0d47a1</color>
+    <color name="accent_light">#ff0d47a1</color>
+    <color name="accent_dark">#ff1E88E5</color>
     <color name="text_color_primary">#d9ffffff</color>
-    <color name="text_color">#d9000000</color>
+    <color name="text_color_light">#d9000000</color>
+    <color name="text_color_dark">#d9ffffff</color>
 
-    <color name="separator">#ffdddddd</color>
+    <color name="separator_light">#ffdddddd</color>
+    <color name="separator_dark">#ff222222</color>
 
-    <color name="navigation_background">#ffffffff</color>
-    <color name="nav_item_text_color">#de000000</color>
+    <color name="snackbar_background_light">@color/background_material_dark</color>
+    <color name="snackbar_text_light">#d9ffffff</color>
+    <color name="snackbar_background_dark">@color/background_material_light</color>
+    <color name="snackbar_text_dark">#d9000000</color>
 
-    <color name="card_v7_text_color_dim">#80000000</color>
+    <color name="card_v7_text_color_dim_light">#80000000</color>
+    <color name="card_v7_text_color_dim_dark">#80ffffff</color>
 
     <!-- Floating action button -->
     <color name="fab_pink">#ffd81b60</color>

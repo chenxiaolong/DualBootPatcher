@@ -5,52 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -61,34 +15,49 @@ struct FileStatRequest;
 struct FileStatResponse;
 
 struct StructStat FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint64_t st_dev() const { return GetField<uint64_t>(4, 0); }
-  uint64_t st_ino() const { return GetField<uint64_t>(6, 0); }
-  uint32_t st_mode() const { return GetField<uint32_t>(8, 0); }
-  uint64_t st_nlink() const { return GetField<uint64_t>(10, 0); }
-  uint32_t st_uid() const { return GetField<uint32_t>(12, 0); }
-  uint32_t st_gid() const { return GetField<uint32_t>(14, 0); }
-  uint64_t st_rdev() const { return GetField<uint64_t>(16, 0); }
-  uint64_t st_size() const { return GetField<uint64_t>(18, 0); }
-  uint64_t st_blksize() const { return GetField<uint64_t>(20, 0); }
-  uint64_t st_blocks() const { return GetField<uint64_t>(22, 0); }
-  uint64_t st_atime() const { return GetField<uint64_t>(24, 0); }
-  uint64_t st_mtime() const { return GetField<uint64_t>(26, 0); }
-  uint64_t st_ctime() const { return GetField<uint64_t>(28, 0); }
+  enum {
+    VT_ST_DEV = 4,
+    VT_ST_INO = 6,
+    VT_ST_MODE = 8,
+    VT_ST_NLINK = 10,
+    VT_ST_UID = 12,
+    VT_ST_GID = 14,
+    VT_ST_RDEV = 16,
+    VT_ST_SIZE = 18,
+    VT_ST_BLKSIZE = 20,
+    VT_ST_BLOCKS = 22,
+    VT_ST_ATIME = 24,
+    VT_ST_MTIME = 26,
+    VT_ST_CTIME = 28
+  };
+  uint64_t st_dev() const { return GetField<uint64_t>(VT_ST_DEV, 0); }
+  uint64_t st_ino() const { return GetField<uint64_t>(VT_ST_INO, 0); }
+  uint32_t st_mode() const { return GetField<uint32_t>(VT_ST_MODE, 0); }
+  uint64_t st_nlink() const { return GetField<uint64_t>(VT_ST_NLINK, 0); }
+  uint32_t st_uid() const { return GetField<uint32_t>(VT_ST_UID, 0); }
+  uint32_t st_gid() const { return GetField<uint32_t>(VT_ST_GID, 0); }
+  uint64_t st_rdev() const { return GetField<uint64_t>(VT_ST_RDEV, 0); }
+  uint64_t st_size() const { return GetField<uint64_t>(VT_ST_SIZE, 0); }
+  uint64_t st_blksize() const { return GetField<uint64_t>(VT_ST_BLKSIZE, 0); }
+  uint64_t st_blocks() const { return GetField<uint64_t>(VT_ST_BLOCKS, 0); }
+  uint64_t st_atime() const { return GetField<uint64_t>(VT_ST_ATIME, 0); }
+  uint64_t st_mtime() const { return GetField<uint64_t>(VT_ST_MTIME, 0); }
+  uint64_t st_ctime() const { return GetField<uint64_t>(VT_ST_CTIME, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint64_t>(verifier, 4 /* st_dev */) &&
-           VerifyField<uint64_t>(verifier, 6 /* st_ino */) &&
-           VerifyField<uint32_t>(verifier, 8 /* st_mode */) &&
-           VerifyField<uint64_t>(verifier, 10 /* st_nlink */) &&
-           VerifyField<uint32_t>(verifier, 12 /* st_uid */) &&
-           VerifyField<uint32_t>(verifier, 14 /* st_gid */) &&
-           VerifyField<uint64_t>(verifier, 16 /* st_rdev */) &&
-           VerifyField<uint64_t>(verifier, 18 /* st_size */) &&
-           VerifyField<uint64_t>(verifier, 20 /* st_blksize */) &&
-           VerifyField<uint64_t>(verifier, 22 /* st_blocks */) &&
-           VerifyField<uint64_t>(verifier, 24 /* st_atime */) &&
-           VerifyField<uint64_t>(verifier, 26 /* st_mtime */) &&
-           VerifyField<uint64_t>(verifier, 28 /* st_ctime */) &&
+           VerifyField<uint64_t>(verifier, VT_ST_DEV) &&
+           VerifyField<uint64_t>(verifier, VT_ST_INO) &&
+           VerifyField<uint32_t>(verifier, VT_ST_MODE) &&
+           VerifyField<uint64_t>(verifier, VT_ST_NLINK) &&
+           VerifyField<uint32_t>(verifier, VT_ST_UID) &&
+           VerifyField<uint32_t>(verifier, VT_ST_GID) &&
+           VerifyField<uint64_t>(verifier, VT_ST_RDEV) &&
+           VerifyField<uint64_t>(verifier, VT_ST_SIZE) &&
+           VerifyField<uint64_t>(verifier, VT_ST_BLKSIZE) &&
+           VerifyField<uint64_t>(verifier, VT_ST_BLOCKS) &&
+           VerifyField<uint64_t>(verifier, VT_ST_ATIME) &&
+           VerifyField<uint64_t>(verifier, VT_ST_MTIME) &&
+           VerifyField<uint64_t>(verifier, VT_ST_CTIME) &&
            verifier.EndTable();
   }
 };
@@ -96,19 +65,19 @@ struct StructStat FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct StructStatBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_st_dev(uint64_t st_dev) { fbb_.AddElement<uint64_t>(4, st_dev, 0); }
-  void add_st_ino(uint64_t st_ino) { fbb_.AddElement<uint64_t>(6, st_ino, 0); }
-  void add_st_mode(uint32_t st_mode) { fbb_.AddElement<uint32_t>(8, st_mode, 0); }
-  void add_st_nlink(uint64_t st_nlink) { fbb_.AddElement<uint64_t>(10, st_nlink, 0); }
-  void add_st_uid(uint32_t st_uid) { fbb_.AddElement<uint32_t>(12, st_uid, 0); }
-  void add_st_gid(uint32_t st_gid) { fbb_.AddElement<uint32_t>(14, st_gid, 0); }
-  void add_st_rdev(uint64_t st_rdev) { fbb_.AddElement<uint64_t>(16, st_rdev, 0); }
-  void add_st_size(uint64_t st_size) { fbb_.AddElement<uint64_t>(18, st_size, 0); }
-  void add_st_blksize(uint64_t st_blksize) { fbb_.AddElement<uint64_t>(20, st_blksize, 0); }
-  void add_st_blocks(uint64_t st_blocks) { fbb_.AddElement<uint64_t>(22, st_blocks, 0); }
-  void add_st_atime(uint64_t st_atime) { fbb_.AddElement<uint64_t>(24, st_atime, 0); }
-  void add_st_mtime(uint64_t st_mtime) { fbb_.AddElement<uint64_t>(26, st_mtime, 0); }
-  void add_st_ctime(uint64_t st_ctime) { fbb_.AddElement<uint64_t>(28, st_ctime, 0); }
+  void add_st_dev(uint64_t st_dev) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_DEV, st_dev, 0); }
+  void add_st_ino(uint64_t st_ino) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_INO, st_ino, 0); }
+  void add_st_mode(uint32_t st_mode) { fbb_.AddElement<uint32_t>(StructStat::VT_ST_MODE, st_mode, 0); }
+  void add_st_nlink(uint64_t st_nlink) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_NLINK, st_nlink, 0); }
+  void add_st_uid(uint32_t st_uid) { fbb_.AddElement<uint32_t>(StructStat::VT_ST_UID, st_uid, 0); }
+  void add_st_gid(uint32_t st_gid) { fbb_.AddElement<uint32_t>(StructStat::VT_ST_GID, st_gid, 0); }
+  void add_st_rdev(uint64_t st_rdev) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_RDEV, st_rdev, 0); }
+  void add_st_size(uint64_t st_size) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_SIZE, st_size, 0); }
+  void add_st_blksize(uint64_t st_blksize) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_BLKSIZE, st_blksize, 0); }
+  void add_st_blocks(uint64_t st_blocks) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_BLOCKS, st_blocks, 0); }
+  void add_st_atime(uint64_t st_atime) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_ATIME, st_atime, 0); }
+  void add_st_mtime(uint64_t st_mtime) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_MTIME, st_mtime, 0); }
+  void add_st_ctime(uint64_t st_ctime) { fbb_.AddElement<uint64_t>(StructStat::VT_ST_CTIME, st_ctime, 0); }
   StructStatBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   StructStatBuilder &operator=(const StructStatBuilder &);
   flatbuffers::Offset<StructStat> Finish() {
@@ -149,10 +118,13 @@ inline flatbuffers::Offset<StructStat> CreateStructStat(flatbuffers::FlatBufferB
 }
 
 struct FileStatRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  int32_t id() const { return GetField<int32_t>(4, 0); }
+  enum {
+    VT_ID = 4
+  };
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* id */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
            verifier.EndTable();
   }
 };
@@ -160,7 +132,7 @@ struct FileStatRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileStatRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(4, id, 0); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileStatRequest::VT_ID, id, 0); }
   FileStatRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileStatRequestBuilder &operator=(const FileStatRequestBuilder &);
   flatbuffers::Offset<FileStatRequest> Finish() {
@@ -177,15 +149,20 @@ inline flatbuffers::Offset<FileStatRequest> CreateFileStatRequest(flatbuffers::F
 }
 
 struct FileStatResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
-  const StructStat *stat() const { return GetPointer<const StructStat *>(8); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6,
+    VT_STAT = 8
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  const StructStat *stat() const { return GetPointer<const StructStat *>(VT_STAT); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* stat */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_STAT) &&
            verifier.VerifyTable(stat()) &&
            verifier.EndTable();
   }
@@ -194,9 +171,9 @@ struct FileStatResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileStatResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
-  void add_stat(flatbuffers::Offset<StructStat> stat) { fbb_.AddOffset(8, stat); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileStatResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileStatResponse::VT_ERROR_MSG, error_msg); }
+  void add_stat(flatbuffers::Offset<StructStat> stat) { fbb_.AddOffset(FileStatResponse::VT_STAT, stat); }
   FileStatResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileStatResponseBuilder &operator=(const FileStatResponseBuilder &);
   flatbuffers::Offset<FileStatResponse> Finish() {
@@ -206,7 +183,7 @@ struct FileStatResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
    flatbuffers::Offset<StructStat> stat = 0) {
   FileStatResponseBuilder builder_(_fbb);

@@ -113,7 +113,8 @@ std::unordered_map<std::string, std::string> RomInstaller::get_properties()
 {
     static std::vector<std::string> needed_props{
         "ro.product.device",
-        "ro.build.product"
+        "ro.build.product",
+        "ro.bootloader"
     };
 
     std::unordered_map<std::string, std::string> props(_recovery_props);
@@ -297,7 +298,7 @@ static bool backup_sepolicy(const std::string backup_path)
 
 static bool restore_sepolicy(const std::string &backup_path)
 {
-    int fd = open(backup_path.c_str(), O_RDONLY);
+    int fd = open(backup_path.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         fprintf(stderr, "Failed to open backup SELinux policy file: %s\n",
                 strerror(errno));
@@ -393,6 +394,11 @@ static void rom_installer_usage(bool error)
 
 int rom_installer_main(int argc, char *argv[])
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
@@ -476,6 +482,11 @@ int rom_installer_main(int argc, char *argv[])
 
     if (geteuid() != 0) {
         fprintf(stderr, "rom-installer must be run as root\n");
+        return EXIT_FAILURE;
+    }
+
+    if (mount("", "/", "", MS_REMOUNT, "") < 0) {
+        fprintf(stderr, "Failed to remount / as writable\n");
         return EXIT_FAILURE;
     }
 

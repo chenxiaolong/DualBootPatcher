@@ -42,7 +42,7 @@ static int remount_ro_done(void)
     int match;
     int found_rw_fs = 0;
 
-    f = fopen("/proc/mounts", "r");
+    f = fopen("/proc/mounts", "re");
     if (!f) {
         /* If we can't read /proc/mounts, just give up */
         return 1;
@@ -86,7 +86,7 @@ static void remount_ro(void)
     /* Trigger the remount of the filesystems as read-only,
      * which also marks them clean.
      */
-    fd = open("/proc/sysrq-trigger", O_WRONLY);
+    fd = open("/proc/sysrq-trigger", O_WRONLY | O_CLOEXEC);
     if (fd < 0) {
         return;
     }

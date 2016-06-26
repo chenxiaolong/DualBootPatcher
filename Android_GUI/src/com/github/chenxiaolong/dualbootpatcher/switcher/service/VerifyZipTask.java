@@ -26,29 +26,56 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.Verificati
 public final class VerifyZipTask extends BaseServiceTask {
     private static final String TAG = VerifyZipTask.class.getSimpleName();
 
-    public final String mPath;
-    private final VerifyZipTaskListener mListener;
+    private final String mPath;
 
-    public VerificationResult mResult;
-    public String mRomId;
+    private final Object mStateLock = new Object();
+    private boolean mFinished;
+
+    private VerificationResult mResult;
+    private String mRomId;
 
     public interface VerifyZipTaskListener extends BaseServiceTaskListener {
         void onVerifiedZip(int taskId, String path, VerificationResult result, String romId);
     }
 
-    public VerifyZipTask(int taskId, Context context, String path, VerifyZipTaskListener listener) {
+    public VerifyZipTask(int taskId, Context context, String path) {
         super(taskId, context);
         mPath = path;
-        mListener = listener;
     }
 
     @Override
     public void execute() {
         Log.d(TAG, "Verifying zip file: " + mPath);
 
-        mResult = SwitcherUtils.verifyZipMbtoolVersion(mPath);
-        mRomId = SwitcherUtils.getTargetInstallLocation(mPath);
+        VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(mPath);
+        String romId = SwitcherUtils.getTargetInstallLocation(mPath);
 
-        mListener.onVerifiedZip(getTaskId(), mPath, mResult, mRomId);
+        synchronized (mStateLock) {
+            mResult = result;
+            mRomId = romId;
+            sendOnVerifiedZip();
+            mFinished = true;
+        }
+    }
+
+    @Override
+    protected void onListenerAdded(BaseServiceTaskListener listener) {
+        super.onListenerAdded(listener);
+
+        synchronized (mStateLock) {
+            if (mFinished) {
+                sendOnVerifiedZip();
+            }
+        }
+    }
+
+    private void sendOnVerifiedZip() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((VerifyZipTaskListener) listener).onVerifiedZip(
+                        getTaskId(), mPath, mResult, mRomId);
+            }
+        });
     }
 }

@@ -27,6 +27,10 @@
 #include <cinttypes>
 #include <cstring>
 
+#ifdef __ANDROID__
+#include <cerrno>
+#endif
+
 // libarcihve
 #include <archive.h>
 #include <archive_entry.h>
@@ -41,6 +45,7 @@
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/private/fileutils.h"
 #include "mbp/private/miniziputils.h"
+#include "mbp/private/stringutils.h"
 
 // minizip
 #include "minizip/zip.h"
@@ -67,6 +72,9 @@ public:
 
     unsigned char laBuf[10240];
     io::File laFile;
+#ifdef __ANDROID__
+    int fd = -1;
+#endif
 
     // Callbacks
     ProgressUpdatedCallback progressCb;
@@ -169,9 +177,57 @@ bool OdinPatcher::patchFile(ProgressUpdatedCallback progressCb,
     return ret;
 }
 
+#ifdef __ANDROID__
+static bool convertToInt(const char *str, int *out)
+{
+    char *end;
+    errno = 0;
+    long num = strtol(str, &end, 10);
+    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
+            || *str == '\0' || *end != '\0') {
+        return false;
+    }
+    *out = (int) num;
+    return true;
+}
+#endif
+
+struct CopySpec {
+    std::string source;
+    std::string target;
+};
+
 bool OdinPatcher::Impl::patchTar()
 {
+#ifdef __ANDROID__
+    static const char *prefix = "/proc/self/fd/";
+    fd = -1;
+    if (StringUtils::starts_with(info->inputPath(), prefix)) {
+        std::string fdStr = info->inputPath().substr(strlen(prefix));
+        if (!convertToInt(fdStr.c_str(), &fd)) {
+            LOGE("Invalid fd: %s", fdStr.c_str());
+            error = ErrorCode::FileOpenError;
+            return false;
+        }
+        LOGD("Input path '%s' is a file descriptor: %d",
+             info->inputPath().c_str(), fd);
+    }
+#endif
+
     // Get file size for progress information
+#ifdef __ANDROID__
+    if (fd > 0) {
+        off64_t offset = lseek64(fd, 0, SEEK_END);
+        if (offset < 0 || lseek64(fd, 0, SEEK_SET) < 0) {
+            LOGE("%s: Failed to seek fd: %s", info->inputPath().c_str(),
+                 strerror(errno));
+            error = ErrorCode::FileSeekError;
+            return false;
+        }
+        maxBytes = offset;
+    } else {
+#endif
+
     io::File file;
     if (!file.open(info->inputPath(), io::File::OpenRead)) {
         LOGE("%s: Failed to open: %s", info->inputPath().c_str(),
@@ -193,6 +249,10 @@ bool OdinPatcher::Impl::patchTar()
     }
     file.close();
 
+#ifdef __ANDROID__
+    }
+#endif
+
     updateProgress(bytes, maxBytes);
 
     if (!openInputArchive()) {
@@ -208,63 +268,54 @@ bool OdinPatcher::Impl::patchTar()
         return false;
     }
 
+    std::vector<CopySpec> toCopy{
+        {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/odinupdater",
+            "META-INF/com/google/android/update-binary.orig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/odinupdater.sig",
+            "META-INF/com/google/android/update-binary.orig.sig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/fuse-sparse",
+            "fuse-sparse"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/fuse-sparse.sig",
+            "fuse-sparse.sig"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery",
+            "META-INF/com/google/android/update-binary"
+        }, {
+            pc->dataDirectory() + "/binaries/android/"
+                    + info->device()->architecture() + "/mbtool_recovery.sig",
+            "META-INF/com/google/android/update-binary.sig"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh",
+            "multiboot/bb-wrapper.sh"
+        }, {
+            pc->dataDirectory() + "/scripts/bb-wrapper.sh.sig",
+            "multiboot/bb-wrapper.sh.sig"
+        }
+    };
+
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
     ErrorCode result;
 
-    if (cancelled) return false;
+    for (const CopySpec &spec : toCopy) {
+        if (cancelled) return false;
 
-    updateDetails("META-INF/com/google/android/update-binary.orig");
+        updateDetails(spec.target);
 
-    // Add odinupdater
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary.orig",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("fuse-sparse");
-
-    // Add fuse-sparse
-    result = MinizipUtils::addFile(
-            zf, "fuse-sparse",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("META-INF/com/google/android/update-binary");
-
-    // Add mbtool_recovery
-    result = MinizipUtils::addFile(
-            zf, "META-INF/com/google/android/update-binary",
-            pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
-    }
-
-    if (cancelled) return false;
-
-    updateDetails("multiboot/bb-wrapper.sh");
-
-    // Add bb-wrapper.sh
-    result = MinizipUtils::addFile(
-            zf, "multiboot/bb-wrapper.sh",
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh");
-    if (result != ErrorCode::NoError) {
-        error = result;
-        return false;
+        result = MinizipUtils::addFile(zf, spec.target, spec.source);
+        if (result != ErrorCode::NoError) {
+            error = result;
+            return false;
+        }
     }
 
     if (cancelled) return false;
@@ -363,8 +414,8 @@ bool OdinPatcher::Impl::processContents()
             }
 
             continue;
-        } else if (strcmp(name, "cache.img.ext4") != 0
-                && strcmp(name, "system.img.ext4") != 0) {
+        } else if (!StringUtils::starts_with(name, "cache.img")
+                && !StringUtils::starts_with(name, "system.img")) {
             LOGD("Skipping %s", name);
             if (archive_read_data_skip(aInput) != ARCHIVE_OK) {
                 LOGE("libarchive: Failed to skip data: %s",
@@ -377,6 +428,12 @@ bool OdinPatcher::Impl::processContents()
 
         LOGD("Handling %s", name);
 
+        std::string zipName(name);
+        if (StringUtils::ends_with(name, ".ext4")) {
+            zipName.erase(zipName.size() - 5);
+        }
+        zipName += ".sparse";
+
         // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
         int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
 
@@ -386,7 +443,7 @@ bool OdinPatcher::Impl::processContents()
         // Open file in output zip
         mzRet = zipOpenNewFileInZip2_64(
             zf,                    // file
-            name,                  // filename
+            zipName.c_str(),       // filename
             &zi,                   // zip_fileinfo
             nullptr,               // extrafield_local
             0,                     // size_extrafield_local
@@ -413,7 +470,8 @@ bool OdinPatcher::Impl::processContents()
             mzRet = zipWriteInFileInZip(zf, buf, nRead);
             if (mzRet != ZIP_OK) {
                 LOGE("minizip: Failed to write %s in output zip: %s",
-                     name, MinizipUtils::zipErrorString(mzRet).c_str());
+                     zipName.c_str(),
+                     MinizipUtils::zipErrorString(mzRet).c_str());
                 error = ErrorCode::ArchiveWriteDataError;
                 zipCloseFileInZip(zf);
                 return false;
@@ -563,17 +621,40 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
     Impl *impl = static_cast<Impl *>(userdata);
     *buffer = impl->laBuf;
     uint64_t bytesRead;
-    bool ret = impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead);
+    bool ret = true;
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        ssize_t n = read(impl->fd, impl->laBuf, sizeof(impl->laBuf));
+        if (n < 0) {
+            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+                 strerror(errno));
+            ret = false;
+        } else {
+            bytesRead = n;
+        }
+    } else {
+#endif
+        ret = impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead);
+        if (!ret && impl->laFile.error() == io::File::ErrorEndOfFile) {
+            ret = true;
+        }
+        if (!ret) {
+            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+                 impl->laFile.errorString().c_str());
+        }
+#ifdef __ANDROID__
+    }
+#endif
+
     if (ret) {
         impl->bytes += bytesRead;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileReadError;
     }
-    return (ret || impl->laFile.error() == io::File::ErrorEndOfFile)
-            ? (la_ssize_t) bytesRead : -1;
+
+    return ret ? (la_ssize_t) bytesRead : -1;
 }
 
 la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
@@ -581,15 +662,33 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
-    bool ret = impl->laFile.seek(request, io::File::SeekCurrent);
+    bool ret = true;
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        if (lseek64(impl->fd, request, SEEK_CUR) < 0) {
+            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+                 strerror(errno));
+            ret = false;
+        }
+    } else {
+#endif
+        if (!impl->laFile.seek(request, io::File::SeekCurrent)) {
+            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+                impl->laFile.errorString().c_str());
+            ret = false;
+        }
+#ifdef __ANDROID__
+    }
+#endif
+
     if (ret) {
         impl->bytes += request;
         impl->updateProgress(impl->bytes, impl->maxBytes);
     } else {
-        LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
         impl->error = ErrorCode::FileSeekError;
     }
+
     return ret ? request : -1;
 }
 
@@ -597,6 +696,13 @@ int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        return 0;
+    }
+#endif
+
     bool ret = impl->laFile.open(impl->info->inputPath(), io::File::OpenRead);
     if (!ret) {
         LOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
@@ -610,6 +716,13 @@ int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
+
+#ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        return 0;
+    }
+#endif
+
     bool ret = impl->laFile.close();
     if (!ret) {
         LOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),

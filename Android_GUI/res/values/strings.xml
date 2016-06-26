@@ -437,6 +437,8 @@
     <!-- Description for the initial screen preference -->
     <string name="rom_settings_initial_screen_desc">First screen to show when opening the
         app.</string>
+    <!-- Title for the preference to use the dark theme -->
+    <string name="rom_settings_use_dark_theme">Use dark theme</string>
     <!-- Title for the preference to enable receiving intents from third party applications -->
     <string name="rom_settings_allow_intents_title">Allow receiving intents</string>
     <!-- Description for the preference to enable receiving intents from third party applications -->
@@ -448,6 +450,11 @@
     <string name="rom_settings_show_reboot_confirm_desc">Show Android\'s reboot dialog instead of
         directly rebooting. This allows for rebooting to recovery in ROMs that have advanced reboot
         menus.</string>
+    <!-- Title for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_title">Parallel patching operations</string>
+    <!-- Description for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_desc">When multiple files are in the patching
+        queue, process them %s at a time.</string>
 
     <!-- Title for the dialog box explaining individual application sharing -->
     <string name="indiv_app_sharing_intro_dialog_title">Individual app sharing</string>
@@ -484,6 +491,23 @@
     <!-- Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled -->
     <string name="third_party_intents_not_allowed">Denied intent from third party application. To
         allow other apps to send intents, enable the option in the DualBootPatcher settings.</string>
+
+    <!-- Progress dialog message shown when starting mbtool (with root) -->
+    <string name="mbtool_dialog_starting_mbtool">Starting mbtool…\n(This will require root)</string>
+    <!-- Progress dialog message shown when updating mbtool (with root) -->
+    <string name="mbtool_dialog_updating_mbtool">Updating mbtool…\n(This will require root)</string>
+    <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
+    <string name="mbtool_dialog_signature_check_fail">mbtool rejected the connection from this app.
+        This can happen if an unofficial build of the app is used or if the app was maliciously
+        modified. If you continue anyway, mbtool will be killed and the bundled mbtool will be run
+        using root.</string>
+    <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->
+    <string name="mbtool_dialog_version_too_old">The current mbtool version is too old. It must be
+        updated for certain functionality to work, such as switching ROMs. This will require root
+        access.</string>
+    <!-- Confirm dialog message shown when updating mbtool failed -->
+    <string name="mbtool_dialog_update_failed">Failed to update mbtool. Many operations, such as
+        switching ROMs will not work.</string>
 
     <!-- Word/phrase for Search (used in action bars) -->
     <string name="search">Search</string>

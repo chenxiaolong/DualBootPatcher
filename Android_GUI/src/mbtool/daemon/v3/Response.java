@@ -18,9 +18,9 @@ public final class Response extends Table {
 
   public static int createResponse(FlatBufferBuilder builder,
       byte response_type,
-      int response) {
+      int responseOffset) {
     builder.startObject(2);
-    Response.addResponse(builder, response);
+    Response.addResponse(builder, responseOffset);
     Response.addResponseType(builder, response_type);
     return Response.endResponse(builder);
   }

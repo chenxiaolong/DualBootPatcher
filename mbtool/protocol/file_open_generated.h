@@ -5,25 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -39,7 +20,9 @@ enum FileOpenFlag {
   FileOpenFlag_RDONLY = 3,
   FileOpenFlag_RDWR = 4,
   FileOpenFlag_TRUNC = 5,
-  FileOpenFlag_WRONLY = 6
+  FileOpenFlag_WRONLY = 6,
+  FileOpenFlag_MIN = FileOpenFlag_APPEND,
+  FileOpenFlag_MAX = FileOpenFlag_WRONLY
 };
 
 inline const char **EnumNamesFileOpenFlag() {
@@ -50,16 +33,21 @@ inline const char **EnumNamesFileOpenFlag() {
 inline const char *EnumNameFileOpenFlag(FileOpenFlag e) { return EnumNamesFileOpenFlag()[static_cast<int>(e)]; }
 
 struct FileOpenRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *path() const { return GetPointer<const flatbuffers::String *>(4); }
-  const flatbuffers::Vector<int16_t> *flags() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(6); }
-  uint32_t perms() const { return GetField<uint32_t>(8, 0); }
+  enum {
+    VT_PATH = 4,
+    VT_FLAGS = 6,
+    VT_PERMS = 8
+  };
+  const flatbuffers::String *path() const { return GetPointer<const flatbuffers::String *>(VT_PATH); }
+  const flatbuffers::Vector<int16_t> *flags() const { return GetPointer<const flatbuffers::Vector<int16_t> *>(VT_FLAGS); }
+  uint32_t perms() const { return GetField<uint32_t>(VT_PERMS, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* path */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* flags */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_FLAGS) &&
            verifier.Verify(flags()) &&
-           VerifyField<uint32_t>(verifier, 8 /* perms */) &&
+           VerifyField<uint32_t>(verifier, VT_PERMS) &&
            verifier.EndTable();
   }
 };
@@ -67,9 +55,9 @@ struct FileOpenRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileOpenRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) { fbb_.AddOffset(4, path); }
-  void add_flags(flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags) { fbb_.AddOffset(6, flags); }
-  void add_perms(uint32_t perms) { fbb_.AddElement<uint32_t>(8, perms, 0); }
+  void add_path(flatbuffers::Offset<flatbuffers::String> path) { fbb_.AddOffset(FileOpenRequest::VT_PATH, path); }
+  void add_flags(flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags) { fbb_.AddOffset(FileOpenRequest::VT_FLAGS, flags); }
+  void add_perms(uint32_t perms) { fbb_.AddElement<uint32_t>(FileOpenRequest::VT_PERMS, perms, 0); }
   FileOpenRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileOpenRequestBuilder &operator=(const FileOpenRequestBuilder &);
   flatbuffers::Offset<FileOpenRequest> Finish() {
@@ -90,15 +78,20 @@ inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequest(flatbuffers::F
 }
 
 struct FileOpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
-  int32_t id() const { return GetField<int32_t>(8, 0); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6,
+    VT_ID = 8
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<int32_t>(verifier, 8 /* id */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
            verifier.EndTable();
   }
 };
@@ -106,9 +99,9 @@ struct FileOpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileOpenResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(8, id, 0); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileOpenResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileOpenResponse::VT_ERROR_MSG, error_msg); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileOpenResponse::VT_ID, id, 0); }
   FileOpenResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileOpenResponseBuilder &operator=(const FileOpenResponseBuilder &);
   flatbuffers::Offset<FileOpenResponse> Finish() {
@@ -118,7 +111,7 @@ struct FileOpenResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileOpenResponse> CreateFileOpenResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
    int32_t id = 0) {
   FileOpenResponseBuilder builder_(_fbb);

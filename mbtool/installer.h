@@ -23,8 +23,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "roms.h"
+#include "mbp/device.h"
+#include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
+
+#include "roms.h"
 
 namespace mb
 {
@@ -39,10 +42,6 @@ public:
 
 
 protected:
-    static const std::string HELPER_TOOL;
-    static const std::string UPDATE_BINARY;
-    static const std::string MULTIBOOT_BBWRAPPER;
-    static const std::string MULTIBOOT_INFO_PROP;
     static const std::string CANCELLED;
 
     enum class ProceedState {
@@ -76,7 +75,8 @@ protected:
     int _output_fd;
     bool _passthrough;
 
-    std::string _device;
+    mbp::PatcherConfig _pc;
+    const mbp::Device *_device = nullptr;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
@@ -91,7 +91,9 @@ protected:
 
     std::string _temp_image_path;
     bool _has_block_image;
+    bool _copy_to_temp_image;
     bool _is_aroma;
+    bool _use_fuse_exfat;
 
     std::vector<std::string> _associated_loop_devs;
 
@@ -110,6 +112,7 @@ private:
 
     bool create_chroot();
     bool destroy_chroot() const;
+    bool mount_efs() const;
 
     bool extract_multiboot_files();
     bool set_up_busybox_wrapper();

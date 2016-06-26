@@ -19,9 +19,9 @@ public final class FileSELinuxSetLabelRequest extends Table {
 
   public static int createFileSELinuxSetLabelRequest(FlatBufferBuilder builder,
       int id,
-      int label) {
+      int labelOffset) {
     builder.startObject(2);
-    FileSELinuxSetLabelRequest.addLabel(builder, label);
+    FileSELinuxSetLabelRequest.addLabel(builder, labelOffset);
     FileSELinuxSetLabelRequest.addId(builder, id);
     return FileSELinuxSetLabelRequest.endFileSELinuxSetLabelRequest(builder);
   }

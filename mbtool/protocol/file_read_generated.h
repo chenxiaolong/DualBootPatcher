@@ -5,34 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -42,12 +14,16 @@ struct FileReadRequest;
 struct FileReadResponse;
 
 struct FileReadRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  int32_t id() const { return GetField<int32_t>(4, 0); }
-  uint64_t count() const { return GetField<uint64_t>(6, 0); }
+  enum {
+    VT_ID = 4,
+    VT_COUNT = 6
+  };
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
+  uint64_t count() const { return GetField<uint64_t>(VT_COUNT, 0); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* id */) &&
-           VerifyField<uint64_t>(verifier, 6 /* count */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyField<uint64_t>(verifier, VT_COUNT) &&
            verifier.EndTable();
   }
 };
@@ -55,8 +31,8 @@ struct FileReadRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileReadRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(4, id, 0); }
-  void add_count(uint64_t count) { fbb_.AddElement<uint64_t>(6, count, 0); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileReadRequest::VT_ID, id, 0); }
+  void add_count(uint64_t count) { fbb_.AddElement<uint64_t>(FileReadRequest::VT_COUNT, count, 0); }
   FileReadRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileReadRequestBuilder &operator=(const FileReadRequestBuilder &);
   flatbuffers::Offset<FileReadRequest> Finish() {
@@ -75,17 +51,23 @@ inline flatbuffers::Offset<FileReadRequest> CreateFileReadRequest(flatbuffers::F
 }
 
 struct FileReadResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
-  uint64_t bytes_read() const { return GetField<uint64_t>(8, 0); }
-  const flatbuffers::Vector<uint8_t> *data() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(10); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6,
+    VT_BYTES_READ = 8,
+    VT_DATA = 10
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  uint64_t bytes_read() const { return GetField<uint64_t>(VT_BYTES_READ, 0); }
+  const flatbuffers::Vector<uint8_t> *data() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(VT_DATA); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<uint64_t>(verifier, 8 /* bytes_read */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* data */) &&
+           VerifyField<uint64_t>(verifier, VT_BYTES_READ) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_DATA) &&
            verifier.Verify(data()) &&
            verifier.EndTable();
   }
@@ -94,10 +76,10 @@ struct FileReadResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct FileReadResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
-  void add_bytes_read(uint64_t bytes_read) { fbb_.AddElement<uint64_t>(8, bytes_read, 0); }
-  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) { fbb_.AddOffset(10, data); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileReadResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileReadResponse::VT_ERROR_MSG, error_msg); }
+  void add_bytes_read(uint64_t bytes_read) { fbb_.AddElement<uint64_t>(FileReadResponse::VT_BYTES_READ, bytes_read, 0); }
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data) { fbb_.AddOffset(FileReadResponse::VT_DATA, data); }
   FileReadResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileReadResponseBuilder &operator=(const FileReadResponseBuilder &);
   flatbuffers::Offset<FileReadResponse> Finish() {
@@ -107,7 +89,7 @@ struct FileReadResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileReadResponse> CreateFileReadResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
    uint64_t bytes_read = 0,
    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {

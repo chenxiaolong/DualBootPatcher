@@ -33,6 +33,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// Linux
+#include <linux/loop.h>
+
 // Legacy properties
 #include "external/legacy_property_service.h"
 
@@ -45,6 +48,7 @@
 #include "mbp/patcherconfig.h"
 
 // libmbutil
+#include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
@@ -55,6 +59,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
+#include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -64,8 +69,8 @@
 
 // Local
 #include "image.h"
-#include "main.h"
 #include "multiboot.h"
+#include "signature.h"
 #include "switcher.h"
 #include "wipe.h"
 
@@ -88,13 +93,14 @@
 //#define DEBUG_UPDATER_WRAPPER_ARGS "-f" // Comma-separated strings
 
 
+#define HELPER_TOOL             "/update-binary-tool"
+#define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
+#define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
+#define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
+#define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
+
 namespace mb {
 
-const std::string Installer::HELPER_TOOL = "/update-binary-tool";
-const std::string Installer::UPDATE_BINARY =
-        "META-INF/com/google/android/update-binary";
-const std::string Installer::MULTIBOOT_BBWRAPPER = "multiboot/bb-wrapper.sh";
-const std::string Installer::MULTIBOOT_INFO_PROP = "multiboot/info.prop";
 const std::string Installer::CANCELLED = "cancelled";
 
 
@@ -243,6 +249,12 @@ bool Installer::create_chroot()
     run_command({ "mount", "/system" });
     run_command({ "mount", "/cache" });
     run_command({ "mount", "/data" });
+    run_command({ "mount", "-o", "ro", "/efs" });
+
+    // Remount as writable (needed for in-app flashing)
+    log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_cache_partition().c_str(), "", MS_REMOUNT, "");
+    log_mount("", Roms::get_data_partition().c_str(), "", MS_REMOUNT, "");
 
     // Make sure everything really is mounted
     if (!log_is_mounted("/system")
@@ -272,7 +284,8 @@ bool Installer::create_chroot()
             || log_mkdir(in_chroot("/tmp").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/data").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/cache").c_str(), 0755) < 0
-            || log_mkdir(in_chroot("/system").c_str(), 0755) < 0) {
+            || log_mkdir(in_chroot("/system").c_str(), 0755) < 0
+            || log_mkdir(in_chroot("/efs").c_str(), 0755) < 0) {
         return false;
     }
 
@@ -324,6 +337,20 @@ bool Installer::create_chroot()
         return false;
     }
 
+    // Create a few loopback devices since some installers expect them to exist,
+    // but don't create them. They are not necessary for mbtool to work.
+    if (log_mkdir(in_chroot("/dev/block").c_str(), 0755) < 0
+            || log_mknod(in_chroot("/dev/block/loop0").c_str(), S_IFBLK | 0644, makedev(7, 0)) < 0
+            || log_mknod(in_chroot("/dev/block/loop1").c_str(), S_IFBLK | 0644, makedev(7, 1)) < 0
+            || log_mknod(in_chroot("/dev/block/loop2").c_str(), S_IFBLK | 0644, makedev(7, 2)) < 0
+            || log_mknod(in_chroot("/dev/block/loop3").c_str(), S_IFBLK | 0644, makedev(7, 3)) < 0
+            || log_mknod(in_chroot("/dev/block/loop4").c_str(), S_IFBLK | 0644, makedev(7, 4)) < 0
+            || log_mknod(in_chroot("/dev/block/loop5").c_str(), S_IFBLK | 0644, makedev(7, 5)) < 0
+            || log_mknod(in_chroot("/dev/block/loop6").c_str(), S_IFBLK | 0644, makedev(7, 6)) < 0
+            || log_mknod(in_chroot("/dev/block/loop7").c_str(), S_IFBLK | 0644, makedev(7, 7)) < 0) {
+        return false;
+    }
+
     // We need /dev/input/* and /dev/graphics/* for AROMA
 #if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
@@ -347,6 +374,10 @@ bool Installer::create_chroot()
     }
 #endif
 
+    if (!mount_efs()) {
+        return false;
+    }
+
     util::create_empty_file(in_chroot("/.chroot"));
 
     return true;
@@ -354,9 +385,24 @@ bool Installer::create_chroot()
 
 bool Installer::destroy_chroot() const
 {
+    // Disassociate loop devices that the ROM installer may have assigned
+    // (grr, SuperSU...)
+    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    if (dp) {
+        std::string path;
+        struct dirent *ent;
+        while ((ent = readdir(dp.get()))) {
+            path = in_chroot("/dev/block/");
+            path += ent->d_name;
+            util::loopdev_remove_device(path.c_str());
+        }
+        dp.reset();
+    }
+
     log_umount(in_chroot("/system").c_str());
     log_umount(in_chroot("/cache").c_str());
     log_umount(in_chroot("/data").c_str());
+    log_umount(in_chroot("/efs").c_str());
 
     log_umount(in_chroot("/dev/pts").c_str());
     log_umount(in_chroot("/dev").c_str());
@@ -374,6 +420,81 @@ bool Installer::destroy_chroot() const
 
     util::delete_recursive(_chroot);
 
+    if (log_is_mounted("/efs")) {
+        log_umount("/efs");
+    }
+
+    return true;
+}
+
+bool Installer::mount_efs() const
+{
+    std::string manufacturer;
+    std::string brand;
+    util::get_property("ro.product.manufacturer", &manufacturer, "");
+    util::get_property("ro.product.brand", &brand, "");
+
+    if (strcasecmp(manufacturer.c_str(), "samsung") != 0
+            && strcasecmp(brand.c_str(), "samsung") != 0) {
+        LOGD("Not mounting EFS partition because this is not a Samsung device");
+        return true;
+    }
+
+    LOGD("This is a Samsung device; mounting EFS partition in chroot");
+
+    struct stat sb;
+
+    // Mount /efs as read-only if it exists
+    if (log_is_mounted("/efs")) {
+        if (log_mount("/efs", in_chroot("/efs").c_str(), "",
+                      MS_BIND | MS_RDONLY, "") < 0) {
+            return false;
+        }
+        LOGD("Bind mounted /efs to chroot as read-only");
+    } else if (stat("/etc/recovery.fstab", &sb) == 0) {
+        LOGD("Found /etc/recovery.fstab");
+
+        std::string efs_dev;
+
+        if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            LOGD("Looking for /efs entry in TWRP-format fstab");
+
+            std::vector<util::twrp_fstab_rec> recs =
+                    util::read_twrp_fstab("/etc/recovery.fstab");
+            for (const util::twrp_fstab_rec &rec : recs) {
+                if (util::path_compare(rec.mount_point, "/efs") == 0
+                        || util::path_compare(rec.mount_point, "/efs1") == 0) {
+                    LOGD("Found /efs fstab entry");
+                    for (const std::string &dev : rec.blk_devices) {
+                        if (stat(dev.c_str(), &sb) == 0) {
+                            efs_dev = dev.c_str();
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        } else {
+            LOGE("Looking for /efs entry in non-TWRP-format fstab");
+
+            std::vector<util::fstab_rec> recs =
+                    util::read_fstab("/etc/recovery.fstab");
+            for (const util::fstab_rec &rec : recs) {
+                if (util::path_compare(rec.mount_point, "/efs") == 0) {
+                    LOGD("Found /efs fstab entry");
+                    efs_dev = rec.blk_device;
+                    break;
+                }
+            }
+        }
+
+        if (!efs_dev.empty() && stat(efs_dev.c_str(), &sb) == 0
+                && log_mount(efs_dev.c_str(), in_chroot("/efs").c_str(),
+                             "ext4", MS_RDONLY, "") < 0) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -383,13 +504,30 @@ bool Installer::destroy_chroot() const
 bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
-        { UPDATE_BINARY + ".orig", _temp + "/updater"       },
-        { MULTIBOOT_BBWRAPPER,     _temp + "/bb-wrapper.sh" },
-        { MULTIBOOT_INFO_PROP,     _temp + "/info.prop"     },
+        { UPDATE_BINARY_ORIG,          _temp + "/updater"           },
+        { UPDATE_BINARY,               _temp + "/mbtool"            },
+        { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
+        { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
+        { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
+        { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
     };
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
+        return false;
+    }
+
+    SigVerifyResult result;
+    result = verify_signature((_temp + "/mbtool").c_str(),
+                              (_temp + "/mbtool.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mbtool signature");
+        return false;
+    }
+    result = verify_signature((_temp + "/bb-wrapper.sh").c_str(),
+                              (_temp + "/bb-wrapper.sh.sig").c_str());
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid busybox wrapper signature");
         return false;
     }
 
@@ -716,6 +854,7 @@ bool Installer::run_real_updater()
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
 
             execvpe(argv_c[0], const_cast<char * const *>(argv_c.data()), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
             _exit(127);
         } else {
             if (!_passthrough) {
@@ -929,15 +1068,23 @@ Installer::ProceedState Installer::install_stage_initialize()
     std::vector<util::exists_info> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
-        { "system.img", false }
+        { "system.img", false },
+        { "system.img.sparse", false },
     };
     if (!util::archive_exists(_zip_file, info)) {
         LOGE("Failed to read zip file");
     } else {
         _has_block_image = false;
+        _copy_to_temp_image = false;
         for (auto const &item : info) {
             if (item.exists) {
                 _has_block_image = true;
+                // Flashing an Odin image discards the system image anyway, so
+                // there's no point in copying the data.
+                // TODO: libmbp should be setting this option in info.prop
+                if (item.path != "system.img.sparse") {
+                    _copy_to_temp_image = true;
+                }
                 break;
             }
         }
@@ -991,12 +1138,12 @@ Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
 
-    mbp::PatcherConfig pc;
-    LOGD("libmbp version: %s", pc.version().c_str());
+    LOGD("libmbp version: %s", _pc.version().c_str());
 
     std::string prop_product_device;
     std::string prop_build_product;
     std::string prop_patcher_device;
+    std::string install_prop_device;
 
     // Verify device
     if (_prop.find("mbtool.installer.device") == _prop.end()) {
@@ -1004,7 +1151,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    _device = _prop["mbtool.installer.device"];
+    install_prop_device = _prop["mbtool.installer.device"];
 
     util::get_property("ro.product.device", &prop_product_device, "");
     util::get_property("ro.build.product", &prop_build_product, "");
@@ -1013,7 +1160,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
     LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
-    LOGD("Target device = %s", _device.c_str());
+    LOGD("Target device = %s", install_prop_device.c_str());
 
     if (!prop_patcher_device.empty()) {
         _detected_device = prop_patcher_device;
@@ -1038,119 +1185,122 @@ Installer::ProceedState Installer::install_stage_check_device()
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
 
-    bool found_device = false;
-
-    for (const mbp::Device *d : pc.devices()) {
-        if (d->id() != _device) {
-            // Haven't found device
-            continue;
+    for (const mbp::Device *d : _pc.devices()) {
+        if (d->id() == install_prop_device) {
+            _device = d;
+            break;
         }
-
-        found_device = true;
-
-        // Verify codename
-        if (skip_codename_check) {
-            display_msg("Skipping device check as requested by info.prop");
-        } else {
-            auto codenames = d->codenames();
-            auto it = std::find_if(codenames.begin(), codenames.end(),
-                                   [&](const std::string &codename) {
-                return _detected_device == codename;
-            });
-
-            if (it == codenames.end()) {
-                display_msg("Patched zip is for:");
-                for (const std::string &codename : d->codenames()) {
-                    display_msg("- %s", codename.c_str());
-                }
-                display_msg("This device is '%s'", _detected_device.c_str());
-
-                return ProceedState::Fail;
-            }
-        }
-
-        // Copy boot partition block devices to the chroot
-        auto devs = d->bootBlockDevs();
-        if (devs.empty()) {
-            display_msg("Could not determine the boot block device");
-            return ProceedState::Fail;
-        }
-
-        _boot_block_dev = devs[0];
-        LOGD("Boot block device: %s", _boot_block_dev.c_str());
-
-        // Recovery block devices
-        auto recovery_devs = d->recoveryBlockDevs();
-        if (recovery_devs.empty()) {
-            display_msg("Could not determine the recovery block device");
-            return ProceedState::Fail;
-        }
-
-        _recovery_block_dev = recovery_devs[0];
-        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
-
-        // System block devices
-        auto system_devs = d->systemBlockDevs();
-        if (system_devs.empty()) {
-            display_msg("Could not determine the system block device");
-            return ProceedState::Fail;
-        }
-
-        _system_block_dev = system_devs[0];
-        LOGD("System block device: %s", _system_block_dev.c_str());
-
-        // Copy any other required block devices to the chroot
-        auto extra_devs = d->extraBlockDevs();
-
-        devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
-        devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
-
-        for (auto const &dev : devs) {
-            std::string dev_path(_chroot);
-            dev_path += "/";
-            dev_path += dev;
-
-            if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of %s",
-                     dev_path.c_str());
-            }
-
-            // Follow symlinks just in case the symlink source isn't in the list
-            if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                              | util::COPY_XATTRS
-                                              | util::COPY_FOLLOW_SYMLINKS)) {
-                LOGE("Failed to copy %s. Continuing anyway", dev.c_str());
-            } else {
-                LOGD("Copied %s to the chroot", dev.c_str());
-            }
-        }
-
-        // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
-        for (auto const &dev : system_devs) {
-            std::string dev_path(_chroot);
-            dev_path += "/";
-            dev_path += dev;
-
-            if (!util::mkdir_parent(dev_path, 0755)) {
-                LOGE("Failed to create parent directory of %s",
-                     dev_path.c_str());
-            }
-
-            if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
-                LOGE("Failed to symlink %s to %s: %s. Continuing anyway",
-                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
-            } else {
-                LOGD("Symlinked %s to %s in the chroot",
-                     CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
-            }
-        }
-
-        break;
     }
 
-    if (!found_device) {
-        display_msg("Invalid device ID: " + _device);
+    if (!_device) {
+        display_msg("Invalid device ID: " + install_prop_device);
         return ProceedState::Fail;
+    }
+
+    // Verify codename
+    if (skip_codename_check) {
+        display_msg("Skipping device check as requested by info.prop");
+    } else {
+        auto codenames = _device->codenames();
+        auto it = std::find_if(codenames.begin(), codenames.end(),
+                               [&](const std::string &codename) {
+            return _detected_device == codename;
+        });
+
+        if (it == codenames.end()) {
+            display_msg("Patched zip is for:");
+            for (const std::string &codename : _device->codenames()) {
+                display_msg("- %s", codename.c_str());
+            }
+            display_msg("This device is '%s'", _detected_device.c_str());
+
+            return ProceedState::Fail;
+        }
+    }
+
+    auto find_existing_path = [](const std::string &path) {
+        return access(path.c_str(), R_OK) == 0;
+    };
+
+    // Find boot blockdev path
+    auto boot_devs = _device->bootBlockDevs();
+    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                           find_existing_path);
+    if (it == boot_devs.end()) {
+        display_msg("Could not determine the boot block device");
+        return ProceedState::Fail;
+    } else {
+        _boot_block_dev = *it;
+        LOGD("Boot block device: %s", _boot_block_dev.c_str());
+    }
+
+    // Find recovery blockdev path
+    auto recovery_devs = _device->recoveryBlockDevs();
+    it = std::find_if(recovery_devs.begin(), recovery_devs.end(),
+                      find_existing_path);
+    if (it == recovery_devs.end()) {
+        LOGW("Could not determine the recovery block device");
+        // Non-fatal
+    } else {
+        _recovery_block_dev = *it;
+        LOGD("Recovery block device: %s", _recovery_block_dev.c_str());
+    }
+
+    // Find system blockdev path
+    auto system_devs = _device->systemBlockDevs();
+    it = std::find_if(system_devs.begin(), system_devs.end(),
+                      find_existing_path);
+    if (it == system_devs.end()) {
+        display_msg("Could not determine the system block device");
+        return ProceedState::Fail;
+    } else {
+        _system_block_dev = *it;
+        LOGD("System block device: %s", _system_block_dev.c_str());
+    }
+
+    // Other block devices to copy
+    auto extra_devs = _device->extraBlockDevs();
+
+    std::vector<std::string> devs;
+    devs.insert(devs.end(), boot_devs.begin(), boot_devs.end());
+    devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
+    devs.insert(devs.end(), extra_devs.begin(), extra_devs.end());
+
+    // Copy block devices to the chroot
+    for (auto const &dev : devs) {
+        std::string dev_path(in_chroot(dev));
+
+        if (!util::mkdir_parent(dev_path, 0755)) {
+            LOGW("Failed to create parent directory of %s",
+                 dev_path.c_str());
+        }
+
+        // Follow symlinks just in case the symlink source isn't in the list
+        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
+                                          | util::COPY_XATTRS
+                                          | util::COPY_FOLLOW_SYMLINKS)) {
+            LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
+        } else {
+            LOGD("Copied %s to the chroot", dev.c_str());
+        }
+    }
+
+    // Symlink CHROOT_SYSTEM_LOOP_DEV to system block devs
+    for (auto const &dev : system_devs) {
+        std::string dev_path(in_chroot(dev));
+
+        if (!util::mkdir_parent(dev_path, 0755)) {
+            LOGW("Failed to create parent directory of %s",
+                 dev_path.c_str());
+        }
+
+        if (symlink(CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str()) < 0) {
+            LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
+                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
+        } else {
+            LOGD("Symlinked %s to %s in the chroot",
+                 CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
+        }
     }
 
     return on_checked_device();
@@ -1174,6 +1324,10 @@ Installer::ProceedState Installer::install_stage_get_install_type()
     }
 
     display_msg("ROM ID: " + _rom->id);
+
+    if (_rom->id == "primary") {
+        _copy_to_temp_image = true;
+    }
 
     _system_path = _rom->full_system_path();
     _cache_path = _rom->full_cache_path();
@@ -1230,7 +1384,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     }
 
     // Copy ourself for the real update-binary to use
-    util::copy_file(mb_self_get_path(), in_chroot(HELPER_TOOL),
+    util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
@@ -1242,6 +1396,13 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
+    // Copy /etc/fstab
+    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+
+    // Copy /etc/recovery.fstab
+    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
     return on_set_up_chroot();
 }
@@ -1284,8 +1445,6 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Create temporary system image if needed
     if (!_rom->system_is_image && (_has_block_image || _rom->id == "primary")) {
-        display_msg("Copying system to temporary image");
-
         // Try /data/.system.img.tmp and if /data doesn't have enough space,
         // then try [External SD]/.system.img.tmp
 
@@ -1315,11 +1474,15 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
             }
         }
 
-        // Copy current /system files to the image
-        if (!system_image_copy(_system_path, _temp_image_path, false)) {
-            display_msg("Failed to copy %s to %s",
-                        _system_path.c_str(), _temp_image_path.c_str());
-            return ProceedState::Fail;
+        if (_copy_to_temp_image) {
+            display_msg("Copying system to temporary image");
+
+            // Copy current /system files to the image
+            if (!system_image_copy(_system_path, _temp_image_path, false)) {
+                display_msg("Failed to copy %s to %s",
+                            _system_path.c_str(), _temp_image_path.c_str());
+                return ProceedState::Fail;
+            }
         }
 
         system_is_image = true;
@@ -1382,6 +1545,19 @@ Installer::ProceedState Installer::install_stage_installation()
     }
 #endif
 
+    // Determine if fuse-exfat should be used. We can't detect this at boot time
+    // since vold is not yet available. We used to detect whether fuse-exfat
+    // should be used by checking for the presence of "EXFAT   " or "exfat" in
+    // /init. That would work because only ROMs that use fuse-exfat link init to
+    // libblkid. However, there were exceptions to that, such as with the Moto
+    // X Pure, which uses the exfat kernel module in all ROMs. This is a more
+    // robust solution since the "/system/bin/mount.exfat" string only exists
+    // #ifndef CONFIG_KERNEL_HAVE_EXFAT
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
+    std::string vold_path(in_chroot("/system/bin/vold"));
+    _use_fuse_exfat = util::file_find_one_of(vold_path, {
+        "/system/bin/mount.exfat"
+    });
 
     hook_ret = on_post_install(updater_ret);
     if (hook_ret != ProceedState::Continue) return hook_ret;
@@ -1487,14 +1663,19 @@ Installer::ProceedState Installer::install_stage_finish()
         // Set ro.patcher.device=<device ID> in /default.prop
         std::vector<unsigned char> default_prop;
         if (cpio.contents("default.prop", &default_prop)) {
+            // Device codename
             std::string prop("\nro.patcher.device=");
             prop += _detected_device;
-            prop.push_back('\n');
+            prop += '\n';
+            // Whether to use fuse-exfat
+            prop += "ro.patcher.use_fuse_exfat=";
+            prop += _use_fuse_exfat ? "true" : "false";
+            prop += '\n';
 
             default_prop.insert(default_prop.end(), prop.begin(), prop.end());
             if (!cpio.setContents("default.prop", std::move(default_prop))) {
                 LOGE("Failed to modify /default.prop in the ramdisk");
-                display_msg("Failed to add device ID to ramdisk");
+                display_msg("Failed to modify /default.prop in the ramdisk");
                 return ProceedState::Fail;
             }
         }
@@ -1547,7 +1728,7 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        int fd_source = open(temp_boot_img.c_str(), O_RDONLY);
+        int fd_source = open(temp_boot_img.c_str(), O_RDONLY | O_CLOEXEC);
         if (fd_source < 0) {
             LOGE("Failed to open %s: %s",
                  temp_boot_img.c_str(), strerror(errno));
@@ -1556,7 +1737,7 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_source = util::finally([&] { close(fd_source); });
 
-        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY);
+        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY | O_CLOEXEC);
         if (fd_boot < 0) {
             LOGE("Failed to open %s: %s",
                  _boot_block_dev.c_str(), strerror(errno));
@@ -1565,7 +1746,8 @@ Installer::ProceedState Installer::install_stage_finish()
 
         auto close_fd_boot = util::finally([&] { close(fd_boot); });
 
-        int fd_backup = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0775);
+        int fd_backup = open(path.c_str(),
+                             O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0775);
         if (fd_backup < 0) {
             LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
             return ProceedState::Fail;

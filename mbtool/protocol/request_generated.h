@@ -27,6 +27,7 @@
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 #include "reboot_generated.h"
+#include "signed_exec_generated.h"
 
 namespace mbtool {
 namespace daemon {
@@ -144,6 +145,15 @@ struct PathGetDirectorySizeResponse;
 namespace mbtool {
 namespace daemon {
 namespace v3 {
+struct SignedExecRequest;
+struct SignedExecOutputResponse;
+struct SignedExecResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
 struct MbGetVersionRequest;
 struct MbGetVersionResponse;
 }  // namespace v3
@@ -236,11 +246,14 @@ enum RequestType {
   RequestType_MbSetKernelRequest = 19,
   RequestType_MbWipeRomRequest = 20,
   RequestType_MbGetPackagesCountRequest = 21,
-  RequestType_RebootRequest = 22
+  RequestType_RebootRequest = 22,
+  RequestType_SignedExecRequest = 23,
+  RequestType_MIN = RequestType_NONE,
+  RequestType_MAX = RequestType_SignedExecRequest
 };
 
 inline const char **EnumNamesRequestType() {
-  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", nullptr };
+  static const char *names[] = { "NONE", "FileChmodRequest", "FileCloseRequest", "FileOpenRequest", "FileReadRequest", "FileSeekRequest", "FileStatRequest", "FileWriteRequest", "FileSELinuxGetLabelRequest", "FileSELinuxSetLabelRequest", "PathChmodRequest", "PathCopyRequest", "PathSELinuxGetLabelRequest", "PathSELinuxSetLabelRequest", "PathGetDirectorySizeRequest", "MbGetVersionRequest", "MbGetInstalledRomsRequest", "MbGetBootedRomIdRequest", "MbSwitchRomRequest", "MbSetKernelRequest", "MbWipeRomRequest", "MbGetPackagesCountRequest", "RebootRequest", "SignedExecRequest", nullptr };
   return names;
 }
 
@@ -249,12 +262,16 @@ inline const char *EnumNameRequestType(RequestType e) { return EnumNamesRequestT
 inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *union_obj, RequestType type);
 
 struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  RequestType request_type() const { return static_cast<RequestType>(GetField<uint8_t>(4, 0)); }
-  const void *request() const { return GetPointer<const void *>(6); }
+  enum {
+    VT_REQUEST_TYPE = 4,
+    VT_REQUEST = 6
+  };
+  RequestType request_type() const { return static_cast<RequestType>(GetField<uint8_t>(VT_REQUEST_TYPE, 0)); }
+  const void *request() const { return GetPointer<const void *>(VT_REQUEST); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* request_type */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* request */) &&
+           VerifyField<uint8_t>(verifier, VT_REQUEST_TYPE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_REQUEST) &&
            VerifyRequestType(verifier, request(), request_type()) &&
            verifier.EndTable();
   }
@@ -263,8 +280,8 @@ struct Request FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct RequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_request_type(RequestType request_type) { fbb_.AddElement<uint8_t>(4, static_cast<uint8_t>(request_type), 0); }
-  void add_request(flatbuffers::Offset<void> request) { fbb_.AddOffset(6, request); }
+  void add_request_type(RequestType request_type) { fbb_.AddElement<uint8_t>(Request::VT_REQUEST_TYPE, static_cast<uint8_t>(request_type), 0); }
+  void add_request(flatbuffers::Offset<void> request) { fbb_.AddOffset(Request::VT_REQUEST, request); }
   RequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RequestBuilder &operator=(const RequestBuilder &);
   flatbuffers::Offset<Request> Finish() {
@@ -307,6 +324,7 @@ inline bool VerifyRequestType(flatbuffers::Verifier &verifier, const void *union
     case RequestType_MbWipeRomRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbWipeRomRequest *>(union_obj));
     case RequestType_MbGetPackagesCountRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetPackagesCountRequest *>(union_obj));
     case RequestType_RebootRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::RebootRequest *>(union_obj));
+    case RequestType_SignedExecRequest: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecRequest *>(union_obj));
     default: return false;
   }
 }

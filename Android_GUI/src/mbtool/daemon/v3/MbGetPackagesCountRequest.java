@@ -17,9 +17,9 @@ public final class MbGetPackagesCountRequest extends Table {
   public ByteBuffer romIdAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
 
   public static int createMbGetPackagesCountRequest(FlatBufferBuilder builder,
-      int rom_id) {
+      int rom_idOffset) {
     builder.startObject(1);
-    MbGetPackagesCountRequest.addRomId(builder, rom_id);
+    MbGetPackagesCountRequest.addRomId(builder, rom_idOffset);
     return MbGetPackagesCountRequest.endMbGetPackagesCountRequest(builder);
   }
 

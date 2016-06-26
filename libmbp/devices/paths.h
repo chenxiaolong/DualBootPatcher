@@ -73,14 +73,23 @@
 #define F9824900_SOC0_SYSTEM    F9824900_SOC0_BASE_DIR "/system"
 #define F9824900_SOC0_USERDATA  F9824900_SOC0_BASE_DIR "/userdata"
 
+// Block device paths used by the Exynos 8890
+#define UFS_155A0000_BASE_DIR   "/dev/block/platform/155a0000.ufs/by-name"
+#define UFS_155A0000_BOOT       UFS_155A0000_BASE_DIR "/BOOT"
+#define UFS_155A0000_CACHE      UFS_155A0000_BASE_DIR "/CACHE"
+#define UFS_155A0000_RADIO      UFS_155A0000_BASE_DIR "/RADIO"
+#define UFS_155A0000_RECOVERY   UFS_155A0000_BASE_DIR "/RECOVERY"
+#define UFS_155A0000_SYSTEM     UFS_155A0000_BASE_DIR "/SYSTEM"
+#define UFS_155A0000_USERDATA   UFS_155A0000_BASE_DIR "/USERDATA"
+
 // Block device paths used by the Exynos 7420
-#define UFS_BASE_DIR            "/dev/block/platform/15570000.ufs/by-name"
-#define UFS_BOOT                UFS_BASE_DIR "/BOOT"
-#define UFS_CACHE               UFS_BASE_DIR "/CACHE"
-#define UFS_RADIO               UFS_BASE_DIR "/RADIO"
-#define UFS_RECOVERY            UFS_BASE_DIR "/RECOVERY"
-#define UFS_SYSTEM              UFS_BASE_DIR "/SYSTEM"
-#define UFS_USERDATA            UFS_BASE_DIR "/USERDATA"
+#define UFS_15570000_BASE_DIR   "/dev/block/platform/15570000.ufs/by-name"
+#define UFS_15570000_BOOT       UFS_15570000_BASE_DIR "/BOOT"
+#define UFS_15570000_CACHE      UFS_15570000_BASE_DIR "/CACHE"
+#define UFS_15570000_RADIO      UFS_15570000_BASE_DIR "/RADIO"
+#define UFS_15570000_RECOVERY   UFS_15570000_BASE_DIR "/RECOVERY"
+#define UFS_15570000_SYSTEM     UFS_15570000_BASE_DIR "/SYSTEM"
+#define UFS_15570000_USERDATA   UFS_15570000_BASE_DIR "/USERDATA"
 
 // Block device paths used by the Exynos 5422
 #define DWMMC0_12200000_BASE_DIR   "/dev/block/platform/12200000.dwmmc0/by-name"
@@ -121,17 +130,42 @@
 #define DWMMC0_SYSTEM           DWMMC0_BASE_DIR "/SYSTEM"
 #define DWMMC0_USERDATA         DWMMC0_BASE_DIR "/USERDATA"
 
+// Block device paths used by the Exynos 7580
+#define DWMMC0_13540000_BASE_DIR   "/dev/block/platform/13540000.dwmmc0/by-name"
+#define DWMMC0_13540000_BOOT       DWMMC0_13540000_BASE_DIR "/BOOT"
+#define DWMMC0_13540000_CACHE      DWMMC0_13540000_BASE_DIR "/CACHE"
+#define DWMMC0_13540000_CDMA_RADIO DWMMC0_13540000_BASE_DIR "/CDMA-RADIO"
+#define DWMMC0_13540000_RADIO      DWMMC0_13540000_BASE_DIR "/RADIO"
+#define DWMMC0_13540000_RECOVERY   DWMMC0_13540000_BASE_DIR "/RECOVERY"
+#define DWMMC0_13540000_SYSTEM     DWMMC0_13540000_BASE_DIR "/SYSTEM"
+#define DWMMC0_13540000_USERDATA   DWMMC0_13540000_BASE_DIR "/USERDATA"
+
 // Block device paths used by Mediatek devices
 #define MTK_BASE_DIR            "/dev/block/platform/mtk-msdc.0/by-name"
 #define MTK_BOOT                MTK_BASE_DIR "/boot"
 #define MTK_CACHE               MTK_BASE_DIR "/cache"
+#define MTK_LK                  MTK_BASE_DIR "/lk"
 #define MTK_LOGO                MTK_BASE_DIR "/logo"
 #define MTK_PARA                MTK_BASE_DIR "/para"
 #define MTK_RECOVERY            MTK_BASE_DIR "/recovery"
 #define MTK_SYSTEM              MTK_BASE_DIR "/system"
 #define MTK_TEE1                MTK_BASE_DIR "/tee1"
+#define MTK_TEE2                MTK_BASE_DIR "/tee2"
 #define MTK_UBOOT               MTK_BASE_DIR "/uboot"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
+
+#define MTK_11230000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/"
+#define MTK_11230000_BOOT       MTK_11230000_BASE_DIR "/boot"
+#define MTK_11230000_CACHE      MTK_11230000_BASE_DIR "/cache"
+#define MTK_11230000_LK         MTK_11230000_BASE_DIR "/lk"
+#define MTK_11230000_LOGO       MTK_11230000_BASE_DIR "/logo"
+#define MTK_11230000_PARA       MTK_11230000_BASE_DIR "/para"
+#define MTK_11230000_RECOVERY   MTK_11230000_BASE_DIR "/recovery"
+#define MTK_11230000_SYSTEM     MTK_11230000_BASE_DIR "/system"
+#define MTK_11230000_TEE1       MTK_11230000_BASE_DIR "/tee1"
+#define MTK_11230000_TEE2       MTK_11230000_BASE_DIR "/tee2"
+#define MTK_11230000_UBOOT      MTK_11230000_BASE_DIR "/uboot"
+#define MTK_11230000_USERDATA   MTK_11230000_BASE_DIR "/userdata"
 
 // Block device paths used by devices with Tegra 3 SOCs
 #define TEGRA3_BASE_DIR         "/dev/block/platform/sdhci-tegra.3/by-name"
@@ -162,3 +196,19 @@
 #define INTEL_PCI_SYSTEM        INTEL_PCI_BASE_DIR "/SYSTEM"
 #define INTEL_PCI_SYSTEM_2      INTEL_PCI_BASE_DIR "/system"
 #define INTEL_PCI_USERDATA      INTEL_PCI_BASE_DIR "/USERDATA"
+
+// Block device paths with no platform name (used by the 2015 Moto G)
+#define SOC0_BASE_DIR           "/dev/block/platform/soc.0/by-name"
+#define SOC0_BOOT               SOC0_BASE_DIR "/boot"
+#define SOC0_CACHE              SOC0_BASE_DIR "/cache"
+#define SOC0_RECOVERY           SOC0_BASE_DIR "/recovery"
+#define SOC0_SYSTEM             SOC0_BASE_DIR "/system"
+#define SOC0_USERDATA           SOC0_BASE_DIR "/userdata"
+
+// Block device paths used by the TI OMAP platform
+#define OMAP_BASE_DIR           "/dev/block/platform/omap/omap_hsmmc.1/by-name"
+#define OMAP_CACHE              OMAP_BASE_DIR "/CACHE"
+#define OMAP_DATAFS             OMAP_BASE_DIR "/DATAFS"
+#define OMAP_FACTORYFS          OMAP_BASE_DIR "/FACTORYFS"
+#define OMAP_KERNEL             OMAP_BASE_DIR "/KERNEL"
+#define OMAP_RECOVERY           OMAP_BASE_DIR "/RECOVERY"

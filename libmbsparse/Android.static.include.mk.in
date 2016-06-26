@@ -1,6 +1,0 @@
-MBSPARSE_DIR := @CMAKE_CURRENT_BINARY_DIR@/mbsparse-static-android-prefix/tmp/local
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := prebuilt-libmbsparse-static
-LOCAL_SRC_FILES         := $(MBSPARSE_DIR)/$(TARGET_ARCH_ABI)/libmbsparse-static.a
-include $(PREBUILT_STATIC_LIBRARY)

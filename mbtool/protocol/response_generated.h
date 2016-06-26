@@ -5,7 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "request_generated.h"
 #include "file_chmod_generated.h"
 #include "file_close_generated.h"
 #include "file_open_generated.h"
@@ -28,6 +27,7 @@
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 #include "reboot_generated.h"
+#include "signed_exec_generated.h"
 
 namespace mbtool {
 namespace daemon {
@@ -145,6 +145,15 @@ struct PathGetDirectorySizeResponse;
 namespace mbtool {
 namespace daemon {
 namespace v3 {
+struct SignedExecRequest;
+struct SignedExecOutputResponse;
+struct SignedExecResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
 struct MbGetVersionRequest;
 struct MbGetVersionResponse;
 }  // namespace v3
@@ -207,13 +216,6 @@ struct RebootResponse;
 }  // namespace v3
 }  // namespace daemon
 }  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct Request;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -248,11 +250,15 @@ enum ResponseType {
   ResponseType_MbSetKernelResponse = 21,
   ResponseType_MbWipeRomResponse = 22,
   ResponseType_MbGetPackagesCountResponse = 23,
-  ResponseType_RebootResponse = 24
+  ResponseType_RebootResponse = 24,
+  ResponseType_SignedExecOutputResponse = 25,
+  ResponseType_SignedExecResponse = 26,
+  ResponseType_MIN = ResponseType_NONE,
+  ResponseType_MAX = ResponseType_SignedExecResponse
 };
 
 inline const char **EnumNamesResponseType() {
-  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", nullptr };
+  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", nullptr };
   return names;
 }
 
@@ -307,12 +313,16 @@ inline flatbuffers::Offset<Unsupported> CreateUnsupported(flatbuffers::FlatBuffe
 }
 
 struct Response FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  ResponseType response_type() const { return static_cast<ResponseType>(GetField<uint8_t>(4, 0)); }
-  const void *response() const { return GetPointer<const void *>(6); }
+  enum {
+    VT_RESPONSE_TYPE = 4,
+    VT_RESPONSE = 6
+  };
+  ResponseType response_type() const { return static_cast<ResponseType>(GetField<uint8_t>(VT_RESPONSE_TYPE, 0)); }
+  const void *response() const { return GetPointer<const void *>(VT_RESPONSE); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* response_type */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* response */) &&
+           VerifyField<uint8_t>(verifier, VT_RESPONSE_TYPE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_RESPONSE) &&
            VerifyResponseType(verifier, response(), response_type()) &&
            verifier.EndTable();
   }
@@ -321,8 +331,8 @@ struct Response FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct ResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_response_type(ResponseType response_type) { fbb_.AddElement<uint8_t>(4, static_cast<uint8_t>(response_type), 0); }
-  void add_response(flatbuffers::Offset<void> response) { fbb_.AddOffset(6, response); }
+  void add_response_type(ResponseType response_type) { fbb_.AddElement<uint8_t>(Response::VT_RESPONSE_TYPE, static_cast<uint8_t>(response_type), 0); }
+  void add_response(flatbuffers::Offset<void> response) { fbb_.AddOffset(Response::VT_RESPONSE, response); }
   ResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   ResponseBuilder &operator=(const ResponseBuilder &);
   flatbuffers::Offset<Response> Finish() {
@@ -367,6 +377,8 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *unio
     case ResponseType_MbWipeRomResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbWipeRomResponse *>(union_obj));
     case ResponseType_MbGetPackagesCountResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::MbGetPackagesCountResponse *>(union_obj));
     case ResponseType_RebootResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::RebootResponse *>(union_obj));
+    case ResponseType_SignedExecOutputResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecOutputResponse *>(union_obj));
+    case ResponseType_SignedExecResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecResponse *>(union_obj));
     default: return false;
   }
 }

@@ -144,19 +144,45 @@ static void addGalaxyNoteSeriesPhones(std::vector<Device *> *devices)
     device->setCodenames({ "noblelte", "nobleltespr" });
     device->setName("Samsung Galaxy Note 5 (Sprint)");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda16" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda17" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda19" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda7" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda8" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda16" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda17" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda19" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda7" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda8" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 }
 
 static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
+
+    // Samsung Galaxy S 3 Neo (qcom)
+    device = new Device();
+    device->setId("s3ve3g");
+    device->setCodenames({ "s3ve3g", "s3ve3gds", "s3ve3gdd", "s3ve3jv" });
+    device->setName("Samsung Galaxy S3 Neo (Qcom)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices->push_back(device);
+
+    // Samsung Galaxy Grand 2 (Qcom)
+    device = new Device();
+    device->setId("ms013g");
+    device->setCodenames({ "ms013g", "ms01lte" });
+    device->setName("Samsung Galaxy Grand 2");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices->push_back(device);
 
     // Samsung Galaxy S 3 (Qcom)
     device = new Device();
@@ -200,6 +226,18 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p8" });
     device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p9" });
     device->setExtraBlockDevs({ DWMMC_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 3 Mini
+    device = new Device();
+    device->setId("golden");
+    device->setCodenames({ "golden" });
+    device->setName("Samsung Galaxy S 3 Mini");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p21" });
     devices->push_back(device);
 
     // Samsung Galaxy S 4 (Qcom)
@@ -293,7 +331,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device = new Device();
     device->setId("klte");
     device->setCodenames({ "klte", "kltecan", "kltedv", "kltespr", "kltetmo",
-                           "klteusc", "kltevzw", "kltexx" });
+                           "klteusc", "kltevzw", "kltexx", "kltekdi" });
     device->setName("Samsung Galaxy S 5 (Qcom)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
@@ -301,6 +339,19 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p15" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 5 mini (Qcom)
+    device = new Device();
+    device->setId("kmini3g");
+    device->setCodenames({ "kmini3g" });
+    device->setName("Samsung Galaxy S5 Mini (Qcom)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
 
     // Samsung Galaxy S 5 (Exynos)
@@ -321,6 +372,20 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
                                    "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_12200000_RADIO,
                                 DWMMC0_12200000_CDMA_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 5 mini lte (Exynos)
+    device = new Device();
+    device->setId("kminilte");
+    device->setCodenames({ "kminilte", "kminiltexx" });
+    device->setName("Samsung Galaxy S 5 Mini lte (Exynos)");
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 5 Broadband LTE-A
@@ -361,13 +426,13 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda15" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda16" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda17" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda5" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda6" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda15" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda16" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 6 Flat/Edge (Sprint)
@@ -381,13 +446,13 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     });
     device->setName("Samsung Galaxy S 6 Flat/Edge (Sprint)");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda18" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda19" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda21" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda8" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda9" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda18" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda19" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda21" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda8" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda9" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
     devices->push_back(device);
 
     // Samsung Galaxy S 6 Edge+
@@ -396,13 +461,66 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setCodenames({ "zenlte", "zenltexx" });
     device->setName("Samsung Galaxy S 6 Edge+");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setBlockDevBaseDirs({ UFS_BASE_DIR });
-    device->setSystemBlockDevs({ UFS_SYSTEM, "/dev/block/sda14" });
-    device->setCacheBlockDevs({ UFS_CACHE, "/dev/block/sda15" });
-    device->setDataBlockDevs({ UFS_USERDATA, "/dev/block/sda17" });
-    device->setBootBlockDevs({ UFS_BOOT, "/dev/block/sda5" });
-    device->setRecoveryBlockDevs({ UFS_RECOVERY, "/dev/block/sda6" });
-    device->setExtraBlockDevs({ UFS_RADIO });
+    device->setBlockDevBaseDirs({ UFS_15570000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_15570000_SYSTEM, "/dev/block/sda14" });
+    device->setCacheBlockDevs({ UFS_15570000_CACHE, "/dev/block/sda15" });
+    device->setDataBlockDevs({ UFS_15570000_USERDATA, "/dev/block/sda17" });
+    device->setBootBlockDevs({ UFS_15570000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_15570000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_15570000_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy S 7 Flat/Edge (Exynos)
+    device = new Device();
+    device->setId("herolte");
+    device->setCodenames({
+        // Regular variant
+        "herolte", "heroltexx", "heroltebmc",
+        "heroltektt", "heroltelgt", "herolteskt",
+        // Edge variant
+        "hero2lte", "hero2ltexx", "hero2ltebmc",
+        "hero2ltektt", "hero2ltelgt", "hero2lteskt"
+    });
+    device->setName("Samsung Galaxy S 7 Flat/Edge (Exynos)");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ UFS_155A0000_BASE_DIR });
+    device->setSystemBlockDevs({ UFS_155A0000_SYSTEM, "/dev/block/sda14" });
+    device->setCacheBlockDevs({ UFS_155A0000_CACHE, "/dev/block/sda15" });
+    device->setDataBlockDevs({ UFS_155A0000_USERDATA, "/dev/block/sda18" });
+    device->setBootBlockDevs({ UFS_155A0000_BOOT, "/dev/block/sda5" });
+    device->setRecoveryBlockDevs({ UFS_155A0000_RECOVERY, "/dev/block/sda6" });
+    device->setExtraBlockDevs({ UFS_155A0000_RADIO, "/dev/block/sda8" });
+    devices->push_back(device);
+}
+
+static void addGalaxyJSeriesPhones(std::vector<Device *> *devices)
+{
+    Device *device;
+
+    // Samsung Galaxy J7 (Exynos)
+    device = new Device();
+    device->setId("j7e");
+    device->setCodenames({
+        // LTE variant
+        "j7elte", "j7eltexx",
+        // 3G variant
+        "j7e3g", "j7e3gxx"
+    });
+    device->setName("Samsung Galaxy J7 (Exynos)");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setBlockDevBaseDirs({ DWMMC0_13540000_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_13540000_SYSTEM,
+                                 "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_13540000_CACHE,
+                                "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ DWMMC0_13540000_USERDATA,
+                               "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ DWMMC0_13540000_BOOT,
+                               "/dev/block/mmcblk0p10" });
+    device->setRecoveryBlockDevs({ DWMMC0_13540000_RECOVERY,
+                                   "/dev/block/mmcblk0p11" });
+    device->setExtraBlockDevs({ DWMMC0_13540000_CDMA_RADIO,
+                                DWMMC0_13540000_RADIO });
     devices->push_back(device);
 }
 
@@ -421,6 +539,19 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p23" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+    devices->push_back(device);
+
+    // Samsung Galaxy Grand 2
+    device = new Device();
+    device->setId("ms013g");
+    device->setCodenames({ "ms013g" });
+    device->setName("Samsung Galaxy Grand 2");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p23" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
     devices->push_back(device);
 
     // Samsung Galaxy Mega 6.3 (Intl)
@@ -448,24 +579,41 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p13" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
     devices->push_back(device);
+
+    // Samsung Galaxy Star
+    device = new Device();
+    device->setId("mint");
+    device->setCodenames({ "mint", "mint2g"});
+    device->setName("Samsung Galaxy Star");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p21" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
 }
 
 static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // Samsung Galaxy Note 8.0 (Wifi)
+    // Samsung Galaxy Note 8.0 (Wifi/3G)
     device = new Device();
-    device->setId("konawifi");
-    device->setCodenames({ "konawifi", "konawifixx" });
-    device->setName("Samsung Galaxy Note 8.0 (Wifi)");
+    device->setId("kona");
+    device->setCodenames({
+        // Wifi variant
+        "konawifi", "konawifixx",
+        // 3G variant
+        "kona3g", "kona3gxx"
+    });
+    device->setName("Samsung Galaxy Note 8.0 (Wifi/3G)");
     device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p9" });
     device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p8" });
     device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p12" });
     device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p5" });
     device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p6" });
-    device->setExtraBlockDevs({ DWMMC_RADIO });
+    device->setExtraBlockDevs({ DWMMC_RADIO, "/dev/block/mmcblk0p7" });
     devices->push_back(device);
 
     // Samsung Galaxy Note 10.1
@@ -482,11 +630,11 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC_RADIO });
     devices->push_back(device);
 
-    // Samsung Galaxy Note 10.1 (2014 Edition)
+    // Samsung Galaxy Note 10.1 Wifi (2014 Edition)
     device = new Device();
     device->setId("lt03wifi");
     device->setCodenames({ "lt03wifi", "lt03wifiue" });
-    device->setName("Samsung Galaxy Note 10.1 (2014 Edition)");
+    device->setName("Samsung Galaxy Note 10.1 Wifi (2014 Edition)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
     device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
@@ -495,11 +643,73 @@ static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
+
+    // Samsung Galaxy Note 10.1 3G (2014 Edition)
+    device = new Device();
+    device->setId("lt033g");
+    device->setCodenames({ "lt033g", "lt033gxx" });
+    device->setName("Samsung Galaxy Note 10.1 3G (2014 Edition)");
+    device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC0_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC0_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC0_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC0_RECOVERY, "/dev/block/mmcblk0p10" });
+    device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
+    devices->push_back(device);
+
+    // Samsung Galaxy Note 10.1 LTE (2014 Edition)
+    device = new Device();
+    device->setId("lt03lte");
+    device->setCodenames({ "lt03lte", "lt03ltexx" });
+    device->setName("Samsung Galaxy Note 10.1 LTE (2014 Edition)");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p15" });
+    devices->push_back(device);
 }
 
 static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
 {
     Device *device;
+
+    // Samsung Galaxy Tab 2 7.0/10.1 (Wifi/3G)
+    device = new Device();
+    device->setId("espresso10");
+    device->setCodenames({
+        // 7.0" Wifi variant
+        "espressowifi", "espressowifixx",
+        // 7.0" 3G variant
+        "espressorf", "espressorfxx",
+        // 10.1" Wifi variant
+        "espresso10wifi", "espresso10wifixx",
+        // 10.1" 3G variant
+        "espresso10rf", "espresso10rfxx", "espresso3g"
+    });
+    device->setName("Samsung Galaxy Tab 2 7.0/10.1 (Wifi/3G)");
+    device->setBlockDevBaseDirs({ OMAP_BASE_DIR });
+    device->setSystemBlockDevs({ OMAP_FACTORYFS, "/dev/block/mmcblk0p9" });
+    device->setCacheBlockDevs({ OMAP_CACHE, "/dev/block/mmcblk0p7" });
+    device->setDataBlockDevs({ OMAP_DATAFS, "/dev/block/mmcblk0p10" });
+    device->setBootBlockDevs({ OMAP_KERNEL, "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ OMAP_RECOVERY, "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
+
+    // Samsung Galaxy Tab 3 8.0 (Wifi)
+    device = new Device();
+    device->setId("lt01wifi");
+    device->setCodenames({ "lt01wifi", "lt01wifixx" });
+    device->setName("Samsung Galaxy Tab 3 8.0 (Wifi)");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p21" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/mmcblk0p10" });
+    devices->push_back(device);
 
     // Samsung Galaxy Tab 3 10.1
     device = new Device();
@@ -586,7 +796,9 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
         // 8.4" variant (LTE)
         "klimtlte", "klimtltexx",
         // 10.5" variant (wifi)
-        "chagallwifi", "chagallwifixx"
+        "chagallwifi", "chagallwifixx",
+        // 10.5" variant (LTE)
+        "chagalllte", "chagallltexx"
     });
     device->setName("Samsung Galaxy Tab S 8.4/10.5");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
@@ -653,6 +865,7 @@ void addSamsungDevices(std::vector<Device *> *devices)
 {
     addGalaxySSeriesPhones(devices);
     addGalaxyNoteSeriesPhones(devices);
+    addGalaxyJSeriesPhones(devices);
     addOtherSeriesPhones(devices);
     addGalaxyTabSeriesTablets(devices);
     addGalaxyNoteSeriesTablets(devices);

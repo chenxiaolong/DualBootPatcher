@@ -27,7 +27,7 @@ public final class FileChmodRequest extends Table {
 
   public static void startFileChmodRequest(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addId(FlatBufferBuilder builder, int id) { builder.addInt(0, id, 0); }
-  public static void addMode(FlatBufferBuilder builder, long mode) { builder.addInt(1, (int)(mode & 0xFFFFFFFFL), 0); }
+  public static void addMode(FlatBufferBuilder builder, long mode) { builder.addInt(1, (int)mode, 0); }
   public static int endFileChmodRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

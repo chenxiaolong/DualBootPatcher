@@ -19,11 +19,11 @@ public final class PathCopyRequest extends Table {
   public ByteBuffer targetAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
 
   public static int createPathCopyRequest(FlatBufferBuilder builder,
-      int source,
-      int target) {
+      int sourceOffset,
+      int targetOffset) {
     builder.startObject(2);
-    PathCopyRequest.addTarget(builder, target);
-    PathCopyRequest.addSource(builder, source);
+    PathCopyRequest.addTarget(builder, targetOffset);
+    PathCopyRequest.addSource(builder, sourceOffset);
     return PathCopyRequest.endPathCopyRequest(builder);
   }
 

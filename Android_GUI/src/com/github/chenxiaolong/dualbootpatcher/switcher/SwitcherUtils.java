@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,12 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolSocket;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
+import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -46,6 +49,8 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import mbtool.daemon.v3.FileOpenFlag;
+
 public class SwitcherUtils {
     public static final String TAG = SwitcherUtils.class.getSimpleName();
 
@@ -54,7 +59,30 @@ public class SwitcherUtils {
     private static final String PROP_INSTALLER_VERSION = "mbtool.installer.version";
     private static final String PROP_INSTALL_LOCATION = "mbtool.installer.install-location";
 
-    public static String getBootPartition(Context context) {
+    private static boolean pathExists(MbtoolInterface iface, String path)
+            throws IOException, MbtoolException {
+        int id = -1;
+
+        try {
+            id = iface.fileOpen(path, new short[]{FileOpenFlag.RDONLY}, 0);
+            return true;
+        } catch (MbtoolCommandException e) {
+            // Ignore
+        } finally {
+            if (id >= 0) {
+                try {
+                    iface.fileClose(id);
+                } catch (MbtoolCommandException e) {
+                    // Ignore
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static String getBootPartition(Context context, MbtoolInterface iface)
+            throws IOException, MbtoolException {
         String realCodename = RomUtils.getDeviceCodename(context);
         String bootBlockDev = null;
 
@@ -72,7 +100,7 @@ public class SwitcherUtils {
             if (matches) {
                 String[] bootBlockDevs = d.getBootBlockDevs();
                 for (String blockDev : bootBlockDevs) {
-                    if (new File(blockDev).exists()) {
+                    if (pathExists(iface, blockDev)) {
                         bootBlockDev = blockDev;
                         break;
                     }
@@ -164,7 +192,14 @@ public class SwitcherUtils {
             e.printStackTrace();
             return VerificationResult.ERROR_VERSION_TOO_OLD;
         } finally {
-            IOUtils.closeQuietly(zf);
+            //IOUtils.closeQuietly(zf);
+            if (zf != null) {
+                try {
+                    zf.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
         }
     }
 
@@ -199,7 +234,14 @@ public class SwitcherUtils {
             e.printStackTrace();
             return null;
         } finally {
-            IOUtils.closeQuietly(zf);
+            //IOUtils.closeQuietly(zf);
+            if (zf != null) {
+                try {
+                    zf.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
         }
     }
 
@@ -211,12 +253,11 @@ public class SwitcherUtils {
      * neither are present, the boot image is assumed to be associated with an unpatched primary ROM
      * and thus "primary" will be returned.
      *
-     * @param context Context
      * @param file Boot image file
      * @return String containing the ROM ID or null if an error occurs within libmbp.
      */
     @Nullable
-    public static String getBootImageRomId(Context context, File file) {
+    public static String getBootImageRomId(File file) {
         BootImage bi = new BootImage();
         CpioFile cf = new CpioFile();
 
@@ -273,11 +314,16 @@ public class SwitcherUtils {
         new Thread() {
             @Override
             public void run() {
+                MbtoolConnection conn = null;
                 try {
-                    MbtoolSocket.getInstance().restartViaFramework(context, confirm);
-                } catch (IOException e) {
-                    // Ignore
-                    Log.e(TAG, "mbtool communication error", e);
+                    conn = new MbtoolConnection(context);
+                    MbtoolInterface iface = conn.getInterface();
+
+                    iface.rebootViaFramework(confirm);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to reboot via framework", e);
+                } finally {
+                    IOUtils.closeQuietly(conn);
                 }
             }
         }.start();
@@ -292,11 +338,13 @@ public class SwitcherUtils {
 
     public static KernelStatus compareRomBootImage(RomInformation rom, File bootImageFile) {
         if (rom == null) {
+            Log.w(TAG, "Could not get boot image status due to null RomInformation");
             return KernelStatus.UNKNOWN;
         }
 
         File savedImageFile = new File(RomUtils.getBootImagePath(rom.getId()));
         if (!savedImageFile.isFile()) {
+            Log.d(TAG, "Boot image is not set for ROM ID: " + rom.getId());
             return KernelStatus.UNSET;
         }
 
@@ -322,39 +370,47 @@ public class SwitcherUtils {
         }
     }
 
-    public static boolean copyBootPartition(Context context, File targetFile) {
-        String bootPartition = getBootPartition(context);
+    public static boolean copyBootPartition(Context context, MbtoolInterface iface,
+                                            File targetFile) throws IOException, MbtoolException {
+        String bootPartition = getBootPartition(context, iface);
         if (bootPartition == null) {
             Log.e(TAG, "Failed to determine boot partition");
             return false;
         }
 
-        MbtoolSocket socket = MbtoolSocket.getInstance();
-
         try {
-            if (!socket.pathCopy(context, bootPartition, targetFile.getAbsolutePath())) {
-                Log.e(TAG, "Failed to copy boot partition to " + targetFile);
-                return false;
-            }
-            if (!socket.pathChmod(context, targetFile.getAbsolutePath(), 0644)) {
-                Log.e(TAG, "Failed to chmod " + targetFile);
-                return false;
-            }
-
-            // Ensure SELinux label doesn't prevent reading from the file
-            String label = socket.pathSelinuxGetLabel(
-                    context, targetFile.getParentFile().getAbsolutePath(), false);
-            if (label != null) {
-                // Ignore errors and hope for the best
-                socket.pathSelinuxSetLabel(context, targetFile.getAbsolutePath(), label, false);
-            } else {
-                Log.w(TAG, "Failed to get SELinux label of " + targetFile);
-            }
-
-            return true;
-        } catch (IOException e) {
-            Log.e(TAG, "mbtool communication error", e);
+            iface.pathCopy(bootPartition, targetFile.getAbsolutePath());
+        } catch (MbtoolCommandException e) {
+            Log.e(TAG, "Failed to copy boot partition to " + targetFile, e);
             return false;
         }
+
+        try {
+            iface.pathChmod(targetFile.getAbsolutePath(), 0644);
+        } catch (MbtoolCommandException e) {
+            Log.e(TAG, "Failed to chmod " + targetFile, e);
+            return false;
+        }
+
+        // Ensure SELinux label doesn't prevent reading from the file
+        File parent = targetFile.getParentFile();
+        String label = null;
+        try {
+            label = iface.pathSelinuxGetLabel(parent.getAbsolutePath(), false);
+        } catch (MbtoolCommandException e) {
+            Log.w(TAG, "Failed to get SELinux label of " + parent, e);
+            // Ignore errors and hope for the best
+        }
+
+        if (label != null) {
+            try {
+                iface.pathSelinuxSetLabel(targetFile.getAbsolutePath(), label, false);
+            } catch (MbtoolCommandException e) {
+                Log.w(TAG, "Failed to set SELinux label of " + targetFile, e);
+                // Ignore errors and hope for the best
+            }
+        }
+
+        return true;
     }
 }

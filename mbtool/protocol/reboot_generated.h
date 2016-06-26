@@ -5,198 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "mb_get_booted_rom_id_generated.h"
-#include "mb_get_installed_roms_generated.h"
-#include "mb_get_packages_count_generated.h"
-#include "mb_get_version_generated.h"
-#include "mb_set_kernel_generated.h"
-#include "mb_switch_rom_generated.h"
-#include "mb_wipe_rom_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-#include "path_get_directory_size_generated.h"
-#include "path_selinux_get_label_generated.h"
-#include "path_selinux_set_label_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetVersionRequest;
-struct MbGetVersionResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbRom;
-struct MbGetInstalledRomsRequest;
-struct MbGetInstalledRomsResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetBootedRomIdRequest;
-struct MbGetBootedRomIdResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbSwitchRomRequest;
-struct MbSwitchRomResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbSetKernelRequest;
-struct MbSetKernelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbWipeRomRequest;
-struct MbWipeRomResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetPackagesCountRequest;
-struct MbGetPackagesCountResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -208,7 +16,9 @@ struct RebootResponse;
 enum RebootType {
   RebootType_FRAMEWORK = 0,
   RebootType_INIT = 1,
-  RebootType_DIRECT = 2
+  RebootType_DIRECT = 2,
+  RebootType_MIN = RebootType_FRAMEWORK,
+  RebootType_MAX = RebootType_DIRECT
 };
 
 inline const char **EnumNamesRebootType() {
@@ -219,15 +29,20 @@ inline const char **EnumNamesRebootType() {
 inline const char *EnumNameRebootType(RebootType e) { return EnumNamesRebootType()[static_cast<int>(e)]; }
 
 struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *arg() const { return GetPointer<const flatbuffers::String *>(4); }
-  RebootType type() const { return static_cast<RebootType>(GetField<int16_t>(6, 0)); }
-  uint8_t confirm() const { return GetField<uint8_t>(8, 0); }
+  enum {
+    VT_ARG = 4,
+    VT_TYPE = 6,
+    VT_CONFIRM = 8
+  };
+  const flatbuffers::String *arg() const { return GetPointer<const flatbuffers::String *>(VT_ARG); }
+  RebootType type() const { return static_cast<RebootType>(GetField<int16_t>(VT_TYPE, 0)); }
+  bool confirm() const { return GetField<uint8_t>(VT_CONFIRM, 0) != 0; }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* arg */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ARG) &&
            verifier.Verify(arg()) &&
-           VerifyField<int16_t>(verifier, 6 /* type */) &&
-           VerifyField<uint8_t>(verifier, 8 /* confirm */) &&
+           VerifyField<int16_t>(verifier, VT_TYPE) &&
+           VerifyField<uint8_t>(verifier, VT_CONFIRM) &&
            verifier.EndTable();
   }
 };
@@ -235,9 +50,9 @@ struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct RebootRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_arg(flatbuffers::Offset<flatbuffers::String> arg) { fbb_.AddOffset(4, arg); }
-  void add_type(RebootType type) { fbb_.AddElement<int16_t>(6, static_cast<int16_t>(type), 0); }
-  void add_confirm(uint8_t confirm) { fbb_.AddElement<uint8_t>(8, confirm, 0); }
+  void add_arg(flatbuffers::Offset<flatbuffers::String> arg) { fbb_.AddOffset(RebootRequest::VT_ARG, arg); }
+  void add_type(RebootType type) { fbb_.AddElement<int16_t>(RebootRequest::VT_TYPE, static_cast<int16_t>(type), 0); }
+  void add_confirm(bool confirm) { fbb_.AddElement<uint8_t>(RebootRequest::VT_CONFIRM, static_cast<uint8_t>(confirm), 0); }
   RebootRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RebootRequestBuilder &operator=(const RebootRequestBuilder &);
   flatbuffers::Offset<RebootRequest> Finish() {
@@ -249,7 +64,7 @@ struct RebootRequestBuilder {
 inline flatbuffers::Offset<RebootRequest> CreateRebootRequest(flatbuffers::FlatBufferBuilder &_fbb,
    flatbuffers::Offset<flatbuffers::String> arg = 0,
    RebootType type = RebootType_FRAMEWORK,
-   uint8_t confirm = 0) {
+   bool confirm = false) {
   RebootRequestBuilder builder_(_fbb);
   builder_.add_arg(arg);
   builder_.add_type(type);
@@ -258,10 +73,13 @@ inline flatbuffers::Offset<RebootRequest> CreateRebootRequest(flatbuffers::FlatB
 }
 
 struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
+  enum {
+    VT_SUCCESS = 4
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            verifier.EndTable();
   }
 };
@@ -269,7 +87,7 @@ struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct RebootResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(RebootResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   RebootResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RebootResponseBuilder &operator=(const RebootResponseBuilder &);
   flatbuffers::Offset<RebootResponse> Finish() {
@@ -279,7 +97,7 @@ struct RebootResponseBuilder {
 };
 
 inline flatbuffers::Offset<RebootResponse> CreateRebootResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0) {
+   bool success = false) {
   RebootResponseBuilder builder_(_fbb);
   builder_.add_success(success);
   return builder_.Finish();

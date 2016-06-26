@@ -17,6 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string>
 #include <unordered_map>
 #include <vector>
 

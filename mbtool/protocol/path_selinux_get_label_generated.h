@@ -5,107 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -115,13 +14,17 @@ struct PathSELinuxGetLabelRequest;
 struct PathSELinuxGetLabelResponse;
 
 struct PathSELinuxGetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *path() const { return GetPointer<const flatbuffers::String *>(4); }
-  uint8_t follow_symlinks() const { return GetField<uint8_t>(6, 0); }
+  enum {
+    VT_PATH = 4,
+    VT_FOLLOW_SYMLINKS = 6
+  };
+  const flatbuffers::String *path() const { return GetPointer<const flatbuffers::String *>(VT_PATH); }
+  bool follow_symlinks() const { return GetField<uint8_t>(VT_FOLLOW_SYMLINKS, 0) != 0; }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* path */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
-           VerifyField<uint8_t>(verifier, 6 /* follow_symlinks */) &&
+           VerifyField<uint8_t>(verifier, VT_FOLLOW_SYMLINKS) &&
            verifier.EndTable();
   }
 };
@@ -129,8 +32,8 @@ struct PathSELinuxGetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
 struct PathSELinuxGetLabelRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_path(flatbuffers::Offset<flatbuffers::String> path) { fbb_.AddOffset(4, path); }
-  void add_follow_symlinks(uint8_t follow_symlinks) { fbb_.AddElement<uint8_t>(6, follow_symlinks, 0); }
+  void add_path(flatbuffers::Offset<flatbuffers::String> path) { fbb_.AddOffset(PathSELinuxGetLabelRequest::VT_PATH, path); }
+  void add_follow_symlinks(bool follow_symlinks) { fbb_.AddElement<uint8_t>(PathSELinuxGetLabelRequest::VT_FOLLOW_SYMLINKS, static_cast<uint8_t>(follow_symlinks), 0); }
   PathSELinuxGetLabelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PathSELinuxGetLabelRequestBuilder &operator=(const PathSELinuxGetLabelRequestBuilder &);
   flatbuffers::Offset<PathSELinuxGetLabelRequest> Finish() {
@@ -141,7 +44,7 @@ struct PathSELinuxGetLabelRequestBuilder {
 
 inline flatbuffers::Offset<PathSELinuxGetLabelRequest> CreatePathSELinuxGetLabelRequest(flatbuffers::FlatBufferBuilder &_fbb,
    flatbuffers::Offset<flatbuffers::String> path = 0,
-   uint8_t follow_symlinks = 0) {
+   bool follow_symlinks = false) {
   PathSELinuxGetLabelRequestBuilder builder_(_fbb);
   builder_.add_path(path);
   builder_.add_follow_symlinks(follow_symlinks);
@@ -149,15 +52,20 @@ inline flatbuffers::Offset<PathSELinuxGetLabelRequest> CreatePathSELinuxGetLabel
 }
 
 struct PathSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
-  const flatbuffers::String *label() const { return GetPointer<const flatbuffers::String *>(8); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6,
+    VT_LABEL = 8
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  const flatbuffers::String *label() const { return GetPointer<const flatbuffers::String *>(VT_LABEL); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* label */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_LABEL) &&
            verifier.Verify(label()) &&
            verifier.EndTable();
   }
@@ -166,9 +74,9 @@ struct PathSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
 struct PathSELinuxGetLabelResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
-  void add_label(flatbuffers::Offset<flatbuffers::String> label) { fbb_.AddOffset(8, label); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(PathSELinuxGetLabelResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(PathSELinuxGetLabelResponse::VT_ERROR_MSG, error_msg); }
+  void add_label(flatbuffers::Offset<flatbuffers::String> label) { fbb_.AddOffset(PathSELinuxGetLabelResponse::VT_LABEL, label); }
   PathSELinuxGetLabelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PathSELinuxGetLabelResponseBuilder &operator=(const PathSELinuxGetLabelResponseBuilder &);
   flatbuffers::Offset<PathSELinuxGetLabelResponse> Finish() {
@@ -178,7 +86,7 @@ struct PathSELinuxGetLabelResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
    flatbuffers::Offset<flatbuffers::String> label = 0) {
   PathSELinuxGetLabelResponseBuilder builder_(_fbb);

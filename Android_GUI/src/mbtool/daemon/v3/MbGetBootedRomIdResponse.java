@@ -17,9 +17,9 @@ public final class MbGetBootedRomIdResponse extends Table {
   public ByteBuffer romIdAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
 
   public static int createMbGetBootedRomIdResponse(FlatBufferBuilder builder,
-      int rom_id) {
+      int rom_idOffset) {
     builder.startObject(1);
-    MbGetBootedRomIdResponse.addRomId(builder, rom_id);
+    MbGetBootedRomIdResponse.addRomId(builder, rom_idOffset);
     return MbGetBootedRomIdResponse.endMbGetBootedRomIdResponse(builder);
   }
 

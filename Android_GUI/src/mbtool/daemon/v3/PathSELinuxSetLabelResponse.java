@@ -19,9 +19,9 @@ public final class PathSELinuxSetLabelResponse extends Table {
 
   public static int createPathSELinuxSetLabelResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    PathSELinuxSetLabelResponse.addErrorMsg(builder, error_msg);
+    PathSELinuxSetLabelResponse.addErrorMsg(builder, error_msgOffset);
     PathSELinuxSetLabelResponse.addSuccess(builder, success);
     return PathSELinuxSetLabelResponse.endPathSELinuxSetLabelResponse(builder);
   }

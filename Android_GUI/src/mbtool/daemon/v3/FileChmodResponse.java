@@ -19,9 +19,9 @@ public final class FileChmodResponse extends Table {
 
   public static int createFileChmodResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    FileChmodResponse.addErrorMsg(builder, error_msg);
+    FileChmodResponse.addErrorMsg(builder, error_msgOffset);
     FileChmodResponse.addSuccess(builder, success);
     return FileChmodResponse.endFileChmodResponse(builder);
   }

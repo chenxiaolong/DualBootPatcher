@@ -19,11 +19,11 @@ public final class MbSetKernelRequest extends Table {
   public ByteBuffer bootBlockdevAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
 
   public static int createMbSetKernelRequest(FlatBufferBuilder builder,
-      int rom_id,
-      int boot_blockdev) {
+      int rom_idOffset,
+      int boot_blockdevOffset) {
     builder.startObject(2);
-    MbSetKernelRequest.addBootBlockdev(builder, boot_blockdev);
-    MbSetKernelRequest.addRomId(builder, rom_id);
+    MbSetKernelRequest.addBootBlockdev(builder, boot_blockdevOffset);
+    MbSetKernelRequest.addRomId(builder, rom_idOffset);
     return MbSetKernelRequest.endMbSetKernelRequest(builder);
   }
 

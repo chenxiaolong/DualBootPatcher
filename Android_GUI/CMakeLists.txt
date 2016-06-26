@@ -1,22 +1,10 @@
 if(${MBP_BUILD_TARGET} STREQUAL android)
     if(${MBP_BUILD_TYPE} STREQUAL release)
-        set(_RELEASE_SIGN_JAVA_KEYSTORE_PATH
-            "${MBP_SIGN_JAVA_KEYSTORE_PATH}")
-        set(_RELEASE_SIGN_JAVA_KEYSTORE_PASSWORD
-            "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}")
-        set(_RELEASE_SIGN_JAVA_KEY_ALIAS
-            "${MBP_SIGN_JAVA_KEY_ALIAS}")
-        set(_RELEASE_SIGN_JAVA_KEY_PASSWORD
-            "${MBP_SIGN_JAVA_KEY_PASSWORD}")
+        set(_RELEASE_SIGN_CONFIG_PATH "${MBP_SIGN_CONFIG_PATH}")
+    elseif(${MBP_BUILD_TYPE} STREQUAL debug)
+        set(_DEBUG_SIGN_CONFIG_PATH "${MBP_SIGN_CONFIG_PATH}")
     elseif(${MBP_BUILD_TYPE} STREQUAL ci)
-        set(_CI_SIGN_JAVA_KEYSTORE_PATH
-            "${MBP_SIGN_JAVA_KEYSTORE_PATH}")
-        set(_CI_SIGN_JAVA_KEYSTORE_PASSWORD
-            "${MBP_SIGN_JAVA_KEYSTORE_PASSWORD}")
-        set(_CI_SIGN_JAVA_KEY_ALIAS
-            "${MBP_SIGN_JAVA_KEY_ALIAS}")
-        set(_CI_SIGN_JAVA_KEY_PASSWORD
-            "${MBP_SIGN_JAVA_KEY_PASSWORD}")
+        set(_CI_SIGN_CONFIG_PATH "${MBP_SIGN_CONFIG_PATH}")
     endif()
 
     configure_file(
@@ -46,4 +34,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         VERBATIM
     )
+
+    add_custom_target(
+        apk-install adb install -r build/outputs/apk/Android_GUI-${MBP_BUILD_TYPE}.apk
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        VERBATIM
+    )
+    add_dependencies(apk-install apk)
 endif()

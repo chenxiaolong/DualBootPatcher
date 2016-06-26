@@ -19,9 +19,9 @@ public final class PathCopyResponse extends Table {
 
   public static int createPathCopyResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    PathCopyResponse.addErrorMsg(builder, error_msg);
+    PathCopyResponse.addErrorMsg(builder, error_msgOffset);
     PathCopyResponse.addSuccess(builder, success);
     return PathCopyResponse.endPathCopyResponse(builder);
   }

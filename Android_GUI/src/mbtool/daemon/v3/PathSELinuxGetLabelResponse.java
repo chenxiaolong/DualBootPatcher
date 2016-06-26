@@ -21,11 +21,11 @@ public final class PathSELinuxGetLabelResponse extends Table {
 
   public static int createPathSELinuxGetLabelResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
-      int label) {
+      int error_msgOffset,
+      int labelOffset) {
     builder.startObject(3);
-    PathSELinuxGetLabelResponse.addLabel(builder, label);
-    PathSELinuxGetLabelResponse.addErrorMsg(builder, error_msg);
+    PathSELinuxGetLabelResponse.addLabel(builder, labelOffset);
+    PathSELinuxGetLabelResponse.addErrorMsg(builder, error_msgOffset);
     PathSELinuxGetLabelResponse.addSuccess(builder, success);
     return PathSELinuxGetLabelResponse.endPathSELinuxGetLabelResponse(builder);
   }

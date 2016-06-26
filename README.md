@@ -1,4 +1,4 @@
-[![Build Status](https://jenkins.noobdev.io/job/DualBoot_Patcher/badge/icon)](https://jenkins.noobdev.io/job/DualBoot_Patcher/)
+[![Build Status](https://jenkins.noobdev.io/job/DualBootPatcher/badge/icon)](https://jenkins.noobdev.io/job/DualBootPatcher/)
 
 Multi Boot Patcher
 ==================

@@ -18,10 +18,10 @@ public final class PathSELinuxGetLabelRequest extends Table {
   public boolean followSymlinks() { int o = __offset(6); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
 
   public static int createPathSELinuxGetLabelRequest(FlatBufferBuilder builder,
-      int path,
+      int pathOffset,
       boolean follow_symlinks) {
     builder.startObject(2);
-    PathSELinuxGetLabelRequest.addPath(builder, path);
+    PathSELinuxGetLabelRequest.addPath(builder, pathOffset);
     PathSELinuxGetLabelRequest.addFollowSymlinks(builder, follow_symlinks);
     return PathSELinuxGetLabelRequest.endPathSELinuxGetLabelRequest(builder);
   }

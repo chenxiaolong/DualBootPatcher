@@ -19,6 +19,8 @@
 
 #include "mblog/logging.h"
 
+#include <string>
+
 #include <cerrno>
 
 #include "mblog/stdio_logger.h"

@@ -327,9 +327,12 @@ public class PatchFileFragment extends Fragment implements
             executeNeedsService(new Runnable() {
                 @Override
                 public void run() {
-                    for (PatchFileItem item : mItems) {
+                    for (int i = 0; i < mItems.size(); i++) {
+                        PatchFileItem item = mItems.get(i);
                         if (item.state == PatchFileState.QUEUED) {
+                            item.state = PatchFileState.PENDING;
                             mService.startPatching(item.taskId);
+                            mAdapter.notifyItemChanged(i);
                         }
                     }
                 }
@@ -339,9 +342,17 @@ public class PatchFileFragment extends Fragment implements
             executeNeedsService(new Runnable() {
                 @Override
                 public void run() {
-                    for (PatchFileItem item : mItems) {
-                        if (item.state == PatchFileState.IN_PROGRESS) {
+                    // Cancel the tasks in reverse order since there's a chance that the next task
+                    // will start when the previous one is cancelled
+                    for (int i = mItems.size() - 1; i >= 0; i--) {
+                        PatchFileItem item = mItems.get(i);
+                        if (item.state == PatchFileState.IN_PROGRESS
+                                || item.state == PatchFileState.PENDING) {
                             mService.cancelPatching(item.taskId);
+                            if (item.state == PatchFileState.PENDING) {
+                                item.state = PatchFileState.QUEUED;
+                                mAdapter.notifyItemChanged(i);
+                            }
                         }
                     }
                 }
@@ -1014,8 +1025,8 @@ public class PatchFileFragment extends Fragment implements
         }
 
         @Override
-        public void onPatcherFinished(final int taskId, final boolean cancelled, final boolean ret,
-                                      final int errorCode) {
+        public void onPatcherFinished(final int taskId, final PatchFileState state,
+                                      final boolean ret, final int errorCode) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -1023,11 +1034,7 @@ public class PatchFileFragment extends Fragment implements
                         int itemIndex = mItemsMap.get(taskId);
                         PatchFileItem item = mItems.get(itemIndex);
 
-                        if (cancelled) {
-                            item.state = PatchFileState.CANCELLED;
-                        } else {
-                            item.state = PatchFileState.COMPLETED;
-                        }
+                        item.state = state;
                         item.details = getString(R.string.details_done);
                         item.successful = ret;
                         item.errorCode = errorCode;

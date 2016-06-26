@@ -5,143 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "mb_get_version_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-#include "path_get_directory_size_generated.h"
-#include "path_selinux_get_label_generated.h"
-#include "path_selinux_set_label_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetVersionRequest;
-struct MbGetVersionResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -152,25 +15,33 @@ struct MbGetInstalledRomsRequest;
 struct MbGetInstalledRomsResponse;
 
 struct MbRom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *id() const { return GetPointer<const flatbuffers::String *>(4); }
-  const flatbuffers::String *system_path() const { return GetPointer<const flatbuffers::String *>(6); }
-  const flatbuffers::String *cache_path() const { return GetPointer<const flatbuffers::String *>(8); }
-  const flatbuffers::String *data_path() const { return GetPointer<const flatbuffers::String *>(10); }
-  const flatbuffers::String *version() const { return GetPointer<const flatbuffers::String *>(12); }
-  const flatbuffers::String *build() const { return GetPointer<const flatbuffers::String *>(14); }
+  enum {
+    VT_ID = 4,
+    VT_SYSTEM_PATH = 6,
+    VT_CACHE_PATH = 8,
+    VT_DATA_PATH = 10,
+    VT_VERSION = 12,
+    VT_BUILD = 14
+  };
+  const flatbuffers::String *id() const { return GetPointer<const flatbuffers::String *>(VT_ID); }
+  const flatbuffers::String *system_path() const { return GetPointer<const flatbuffers::String *>(VT_SYSTEM_PATH); }
+  const flatbuffers::String *cache_path() const { return GetPointer<const flatbuffers::String *>(VT_CACHE_PATH); }
+  const flatbuffers::String *data_path() const { return GetPointer<const flatbuffers::String *>(VT_DATA_PATH); }
+  const flatbuffers::String *version() const { return GetPointer<const flatbuffers::String *>(VT_VERSION); }
+  const flatbuffers::String *build() const { return GetPointer<const flatbuffers::String *>(VT_BUILD); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* id */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ID) &&
            verifier.Verify(id()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* system_path */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_SYSTEM_PATH) &&
            verifier.Verify(system_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* cache_path */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_CACHE_PATH) &&
            verifier.Verify(cache_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* data_path */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_DATA_PATH) &&
            verifier.Verify(data_path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 12 /* version */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_VERSION) &&
            verifier.Verify(version()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 14 /* build */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_BUILD) &&
            verifier.Verify(build()) &&
            verifier.EndTable();
   }
@@ -179,12 +50,12 @@ struct MbRom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct MbRomBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(flatbuffers::Offset<flatbuffers::String> id) { fbb_.AddOffset(4, id); }
-  void add_system_path(flatbuffers::Offset<flatbuffers::String> system_path) { fbb_.AddOffset(6, system_path); }
-  void add_cache_path(flatbuffers::Offset<flatbuffers::String> cache_path) { fbb_.AddOffset(8, cache_path); }
-  void add_data_path(flatbuffers::Offset<flatbuffers::String> data_path) { fbb_.AddOffset(10, data_path); }
-  void add_version(flatbuffers::Offset<flatbuffers::String> version) { fbb_.AddOffset(12, version); }
-  void add_build(flatbuffers::Offset<flatbuffers::String> build) { fbb_.AddOffset(14, build); }
+  void add_id(flatbuffers::Offset<flatbuffers::String> id) { fbb_.AddOffset(MbRom::VT_ID, id); }
+  void add_system_path(flatbuffers::Offset<flatbuffers::String> system_path) { fbb_.AddOffset(MbRom::VT_SYSTEM_PATH, system_path); }
+  void add_cache_path(flatbuffers::Offset<flatbuffers::String> cache_path) { fbb_.AddOffset(MbRom::VT_CACHE_PATH, cache_path); }
+  void add_data_path(flatbuffers::Offset<flatbuffers::String> data_path) { fbb_.AddOffset(MbRom::VT_DATA_PATH, data_path); }
+  void add_version(flatbuffers::Offset<flatbuffers::String> version) { fbb_.AddOffset(MbRom::VT_VERSION, version); }
+  void add_build(flatbuffers::Offset<flatbuffers::String> build) { fbb_.AddOffset(MbRom::VT_BUILD, build); }
   MbRomBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbRomBuilder &operator=(const MbRomBuilder &);
   flatbuffers::Offset<MbRom> Finish() {
@@ -234,10 +105,13 @@ inline flatbuffers::Offset<MbGetInstalledRomsRequest> CreateMbGetInstalledRomsRe
 }
 
 struct MbGetInstalledRomsResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::Vector<flatbuffers::Offset<MbRom>> *roms() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<MbRom>> *>(4); }
+  enum {
+    VT_ROMS = 4
+  };
+  const flatbuffers::Vector<flatbuffers::Offset<MbRom>> *roms() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<MbRom>> *>(VT_ROMS); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* roms */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROMS) &&
            verifier.Verify(roms()) &&
            verifier.VerifyVectorOfTables(roms()) &&
            verifier.EndTable();
@@ -247,7 +121,7 @@ struct MbGetInstalledRomsResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers:
 struct MbGetInstalledRomsResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_roms(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<MbRom>>> roms) { fbb_.AddOffset(4, roms); }
+  void add_roms(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<MbRom>>> roms) { fbb_.AddOffset(MbGetInstalledRomsResponse::VT_ROMS, roms); }
   MbGetInstalledRomsResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbGetInstalledRomsResponseBuilder &operator=(const MbGetInstalledRomsResponseBuilder &);
   flatbuffers::Offset<MbGetInstalledRomsResponse> Finish() {

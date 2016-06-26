@@ -1,10 +1,14 @@
-include(ExternalProject)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-include_directories(${MBP_ZLIB_INCLUDES})
+if(${MBP_BUILD_TARGET} STREQUAL android-app)
+    include_directories(${MBP_LIBARCHIVE_LOWAPI_INCLUDES})
+else()
+    include_directories(${MBP_LIBARCHIVE_INCLUDES})
+endif()
+include_directories(${MBP_LZ4_INCLUDES})
+include_directories(${MBP_LZO_INCLUDES})
 include_directories(${MBP_LIBLZMA_INCLUDES})
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
+include_directories(${MBP_ZLIB_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
 
@@ -79,93 +83,60 @@ set(MBP_SOURCES
     ${MBP_DEVICE_SOURCES}
 )
 
-set(MBP_ANDROID_SOURCES
-    ${MBP_SOURCES}
-)
-
 if(WIN32)
     list(APPEND MBP_SOURCES
         src/private/win32.cpp
     )
 endif()
 
-# Wordaround semicolon separated list issue
-set(MBP_SOURCES_STR "")
-foreach(_source ${MBP_ANDROID_SOURCES})
-    set(MBP_SOURCES_STR "${MBP_SOURCES_STR} ${_source}")
-endforeach()
+# minizip type safety
+add_definitions(-DSTRICTZIPUNZIP)
 
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.common.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.common.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.shared.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.shared.include.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.include.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.include.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.shared.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.shared.mk
-    @ONLY
-)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Android.static.mk.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
-    @ONLY
-)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    # Build static library
 
-# If we're building for Android, then compile with ndk-build since it can easily
-# handle building for multiple architectures
-if(${MBP_BUILD_TARGET} STREQUAL android)
-    ExternalProject_Add(
-        mbp-shared-android
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out.shared/
-        BUILD_COMMAND ${NDK_BUILD}
-                      -C <SOURCE_DIR>
-                      NDK_PROJECT_PATH=.
-                      NDK_APPLICATION_MK=Application.shared.mk
-                      NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out.shared
-                      NDK_OUT=<TMP_DIR>
-                      APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.shared.mk
-                      ${NDK_ARGS}
-        INSTALL_COMMAND ""
-    )
+    add_library(mbp-static STATIC ${MBP_SOURCES})
 
-    # Always rebuild since files may have changed
-    ExternalProject_Add_Step(
-        mbp-shared-android
-        forcerebuild
-        DEPENDEES update
-        DEPENDERS configure
-        ALWAYS 1
-        COMMAND ""
-    )
-
-    add_dependencies(
-        mbp-shared-android
-        mbpio-static-android
-    )
-else()
-    # For desktop machines, we'll build with cmake
-
-    add_definitions(
-        -DMB_DYNAMIC_LINK
+    target_compile_definitions(
+        mbp-static
+        PRIVATE
         -DMB_LIBRARY
-        -DSTRICTZIPUNZIP
     )
-
-    add_library(mbp SHARED ${MBP_SOURCES})
 
     if(NOT MSVC)
-        set_target_properties(mbp PROPERTIES
+        set_target_properties(
+            mbp-static
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+            C_STANDARD 99
+            C_STANDARD_REQUIRED 1
+        )
+    endif()
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+    # Build shared library
+
+    add_library(mbp-shared SHARED ${MBP_SOURCES})
+
+    target_compile_definitions(
+        mbp-shared
+        PRIVATE
+        -DMB_DYNAMIC_LINK
+        -DMB_LIBRARY
+    )
+
+    set_target_properties(
+        mbp-shared
+        PROPERTIES
+        POSITION_INDEPENDENT_CODE 1
+        OUTPUT_NAME mbp
+    )
+
+    if(NOT MSVC)
+        set_target_properties(
+            mbp-shared
+            PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
             C_STANDARD 99
@@ -173,60 +144,36 @@ else()
         )
     endif()
 
-    target_link_libraries(mbp
-        mbpio
-        mblog
-        ${MBP_ZLIB_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_LIBARCHIVE_LIBRARIES}
+    if(${MBP_BUILD_TARGET} STREQUAL android-app)
+        set(LIBARCHIVE_LIBRARIES ${MBP_LIBARCHIVE_LOWAPI_LIBRARIES})
+        set(ADDITIONAL_LIBRARIES c_compat)
+    else()
+        set(LIBARCHIVE_LIBRARIES ${MBP_LIBARCHIVE_LIBRARIES})
+        set(ADDITIONAL_LIBRARIES)
+    endif()
+
+    target_link_libraries(
+        mbp-shared
+        mbpio-static
+        mblog-shared
         minizip
+        ${ADDITIONAL_LIBRARIES}
+        ${LIBARCHIVE_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
+        ${MBP_LZ4_LIBRARIES}
+        ${MBP_LZO_LIBRARIES}
+        ${MBP_LIBLZMA_LIBRARIES}
     )
 
-    if(UNIX)
-        target_link_libraries(mbp pthread)
+    if(UNIX AND NOT ANDROID)
+        target_link_libraries(mbp-shared pthread)
     endif()
 
     # Install library
     install(
-        TARGETS mbp
+        TARGETS mbp-shared
         LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
     )
 endif()
-
-
-################################################################################
-# libmbp-static for Android
-################################################################################
-
-ExternalProject_Add(
-    mbp-static-android
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/out.static/
-    BUILD_COMMAND ${NDK_BUILD}
-                  -C <SOURCE_DIR>
-                  NDK_PROJECT_PATH=.
-                  NDK_APPLICATION_MK=Application.static.mk
-                  NDK_APP_LIBS_OUT=${CMAKE_CURRENT_BINARY_DIR}/out.static
-                  NDK_OUT=<TMP_DIR>
-                  APP_BUILD_SCRIPT=${CMAKE_CURRENT_BINARY_DIR}/Android.static.mk
-                  ${NDK_ARGS}
-    INSTALL_COMMAND ""
-)
-
-# Always rebuild since files may have changed
-ExternalProject_Add_Step(
-    mbp-static-android
-    forcerebuild
-    DEPENDEES update
-    DEPENDERS configure
-    ALWAYS 1
-    COMMAND ""
-)
-
-add_dependencies(
-    mbp-static-android
-    mbpio-static-android
-    mblog-static-android
-)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -56,6 +56,7 @@
 #include "reboot.h"
 #include "roms.h"
 #include "sepolpatch.h"
+#include "signature.h"
 #include "initwrapper/devices.h"
 
 
@@ -289,7 +290,7 @@ static bool write_generated_fstab(const std::vector<util::fstab_rec *> &recs,
                                   const std::string &path, mode_t mode)
 {
     // Generate new fstab without /system, /cache, or /data entries
-    autoclose::file out(autoclose::fopen(path.c_str(), "wb"));
+    autoclose::file out(autoclose::fopen(path.c_str(), "wbe"));
     if (!out) {
         LOGE("Failed to open %s for writing: %s",
              path.c_str(), strerror(errno));
@@ -370,6 +371,19 @@ static bool mount_exfat_fuse(const std::string &source,
 {
     uid_t uid = get_media_rw_uid();
 
+    // Check signatures
+    SigVerifyResult result;
+    result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid fsck.exfat signature");
+        return false;
+    }
+    result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("Invalid mount.exfat signature");
+        return false;
+    }
+
     // Run filesystem checks
     util::run_command_cb({
         "/sbin/fsck.exfat",
@@ -409,7 +423,18 @@ static bool mount_exfat_fuse(const std::string &source,
 static bool mount_exfat_kernel(const std::string &source,
                                const std::string &target)
 {
-    int ret = mount(source.c_str(), target.c_str(), "exfat", 0, "");
+    uid_t uid = get_media_rw_uid();
+    std::string args = util::format(
+            "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
+            uid, uid, 0007, 0007);
+    // For Motorola: utf8
+    int flags = MS_NODEV
+            | MS_NOSUID
+            | MS_DIRSYNC
+            | MS_NOEXEC;
+    // For Motorola: MS_RELATIME
+
+    int ret = mount(source.c_str(), target.c_str(), "exfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source.c_str(), "exfat", target.c_str(), strerror(errno));
@@ -467,20 +492,34 @@ static bool try_extsd_mount(const std::string &block_dev)
     // filesystem. We don't link in blkid, so we'll use a trial and error
     // approach.
 
-    // Ugly hack: CM's vold uses fuse-exfat regardless if the exfat kernel
-    // module is available. CM's init binary has the "exfat" and "EXFAT   "
-    // due to the linking of libblkid. We'll use that fact to determine whether
-    // we're on CM or not.
-    if (util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" })) {
-        if (mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
-            return true;
+    bool use_fuse_exfat =
+            util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
+    std::string value;
+    if (util::file_get_property(
+            DEFAULT_PROP_PATH, "ro.patcher.use_fuse_exfat", &value, "false")) {
+        LOGD("%s contains fuse-exfat override: %s",
+             DEFAULT_PROP_PATH, value.c_str());
+        if (value == "true") {
+            use_fuse_exfat = true;
+        } else if (value == "false") {
+            use_fuse_exfat = false;
+        } else {
+            LOGW("Invalid 'ro.patcher.use_fuse_exfat' value: '%s'",
+                 value.c_str());
         }
     } else {
-        if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
-            return true;
-        }
+        LOGW("%s: Failed to read properties: %s",
+             DEFAULT_PROP_PATH, strerror(errno));
     }
 
+    LOGD("Using fuse-exfat: %d", use_fuse_exfat);
+
+    if (use_fuse_exfat && mount_exfat_fuse(block_dev, EXTSD_MOUNT_POINT)) {
+        return true;
+    }
+    if (mount_exfat_kernel(block_dev, EXTSD_MOUNT_POINT)) {
+        return true;
+    }
     if (mount_vfat(block_dev, EXTSD_MOUNT_POINT)) {
         return true;
     }
@@ -728,7 +767,7 @@ static bool disable_fsck(const char *fsck_binary)
     path += "/";
     path += filename;
 
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
+    autoclose::file fp(autoclose::fopen(path.c_str(), "wbe"));
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), strerror(errno));
@@ -1005,7 +1044,7 @@ bool mount_fstab(const std::string &fstab_path, bool overwrite_fstab)
     // Set property for the Android app to use
     if (!util::set_property("ro.multiboot.romid", rom->id)) {
         LOGE("Failed to set 'ro.multiboot.romid' to '%s'", rom->id.c_str());
-        autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "a"));
+        autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "ae"));
         if (fp) {
             fprintf(fp.get(), "\nro.multiboot.romid=%s\n", rom->id.c_str());
         }

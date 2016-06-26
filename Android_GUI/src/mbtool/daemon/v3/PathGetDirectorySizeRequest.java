@@ -19,11 +19,11 @@ public final class PathGetDirectorySizeRequest extends Table {
   public int exclusionsLength() { int o = __offset(6); return o != 0 ? __vector_len(o) : 0; }
 
   public static int createPathGetDirectorySizeRequest(FlatBufferBuilder builder,
-      int path,
-      int exclusions) {
+      int pathOffset,
+      int exclusionsOffset) {
     builder.startObject(2);
-    PathGetDirectorySizeRequest.addExclusions(builder, exclusions);
-    PathGetDirectorySizeRequest.addPath(builder, path);
+    PathGetDirectorySizeRequest.addExclusions(builder, exclusionsOffset);
+    PathGetDirectorySizeRequest.addPath(builder, pathOffset);
     return PathGetDirectorySizeRequest.endPathGetDirectorySizeRequest(builder);
   }
 

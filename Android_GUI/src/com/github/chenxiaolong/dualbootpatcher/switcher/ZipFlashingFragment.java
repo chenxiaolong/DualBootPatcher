@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,8 +56,10 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
@@ -68,11 +70,12 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.Rom
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.TaskState;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -184,11 +187,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             public void onClick(View view) {
                 // Show file chooser
                 Intent intent = FileUtils.getFileOpenIntent(getActivity());
-                if (intent == null) {
-                    FileUtils.showMissingFileChooserDialog(getActivity(), getFragmentManager());
-                } else {
-                    startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
-                }
+                startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
             }
         });
 
@@ -250,7 +249,9 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            mService.unregisterCallback(mCallback);
+            if (mTaskIdVerifyZip >= 0) {
+                mService.removeCallback(mTaskIdVerifyZip, mCallback);
+            }
         }
 
         // Unbind from our service
@@ -268,20 +269,14 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         ThreadPoolServiceBinder binder = (ThreadPoolServiceBinder) service;
         mService = (SwitcherService) binder.getService();
 
-        // Register callback
-        mService.registerCallback(mCallback);
-
         // Remove old task IDs
         for (int taskId : mTaskIdsToRemove) {
             mService.removeCachedTask(taskId);
         }
         mTaskIdsToRemove.clear();
 
-        if (mTaskIdVerifyZip >= 0 &&
-                mService.getCachedTaskState(mTaskIdVerifyZip) == TaskState.FINISHED) {
-            VerificationResult result = mService.getResultVerifyZipResult(mTaskIdVerifyZip);
-            String romId = mService.getResultVerifyZipRomId(mTaskIdVerifyZip);
-            onVerifiedZip(romId, result);
+        if (mTaskIdVerifyZip >= 0) {
+            mService.addCallback(mTaskIdVerifyZip, mCallback);
         }
 
         if (mVerifyZipOnServiceConnected) {
@@ -407,6 +402,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
     private void verifyZip() {
         mTaskIdVerifyZip = mService.verifyZip(mSelectedFile);
+        mService.addCallback(mTaskIdVerifyZip, mCallback);
+        mService.enqueueTaskId(mTaskIdVerifyZip);
     }
 
     @Override
@@ -521,9 +518,24 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         @Override
         public LoaderResult loadInBackground() {
+            RomInformation currentRom = null;
+
+            MbtoolConnection conn = null;
+
+            try {
+                conn = new MbtoolConnection(getContext());
+                MbtoolInterface iface = conn.getInterface();
+
+                currentRom = RomUtils.getCurrentRom(getContext(), iface);
+            } catch (Exception e) {
+                // Ignore
+            } finally {
+                IOUtils.closeQuietly(conn);
+            }
+
             mResult = new LoaderResult();
             mResult.builtinRoms = RomUtils.getBuiltinRoms(getContext());
-            mResult.currentRom = RomUtils.getCurrentRom(getContext());
+            mResult.currentRom = currentRom;
             return mResult;
         }
     }

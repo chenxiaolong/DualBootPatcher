@@ -28,18 +28,39 @@ public class SnackbarUtils {
     public static Snackbar createSnackbar(Context context, View view, String text, int duration) {
         Snackbar snackbar = Snackbar.make(view, text, duration);
         snackbarSetTextColor(context, snackbar);
+        snackbarSetBackgroundColor(context, snackbar);
         return snackbar;
     }
 
     public static Snackbar createSnackbar(Context context, View view, @StringRes int resId, int duration) {
         Snackbar snackbar = Snackbar.make(view, resId, duration);
         snackbarSetTextColor(context, snackbar);
+        snackbarSetBackgroundColor(context, snackbar);
         return snackbar;
     }
 
     private static void snackbarSetTextColor(Context context, Snackbar snackbar) {
+        int colorResId;
+        if (MainApplication.getUseDarkTheme()) {
+            colorResId = R.color.snackbar_text_dark;
+        } else {
+            colorResId = R.color.snackbar_text_light;
+        }
+
         View view = snackbar.getView();
         TextView textView = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
-        textView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary));
+        textView.setTextColor(ContextCompat.getColor(context, colorResId));
+    }
+
+    private static void snackbarSetBackgroundColor(Context context, Snackbar snackbar) {
+        int colorResId;
+        if (MainApplication.getUseDarkTheme()) {
+            colorResId = R.color.snackbar_background_dark;
+        } else {
+            colorResId = R.color.snackbar_background_light;
+        }
+
+        View view = snackbar.getView();
+        view.setBackgroundColor(ContextCompat.getColor(context, colorResId));
     }
 }

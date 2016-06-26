@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -48,6 +48,9 @@ std::vector<std::string> tokenize(const std::string &str,
                                   const std::string &delims);
 
 std::string hex_string(unsigned char *data, size_t size);
+
+char ** dup_cstring_list(const char * const *list);
+void free_cstring_list(char **list);
 
 }
 }

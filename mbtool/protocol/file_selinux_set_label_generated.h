@@ -5,80 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -88,12 +14,16 @@ struct FileSELinuxSetLabelRequest;
 struct FileSELinuxSetLabelResponse;
 
 struct FileSELinuxSetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  int32_t id() const { return GetField<int32_t>(4, 0); }
-  const flatbuffers::String *label() const { return GetPointer<const flatbuffers::String *>(6); }
+  enum {
+    VT_ID = 4,
+    VT_LABEL = 6
+  };
+  int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
+  const flatbuffers::String *label() const { return GetPointer<const flatbuffers::String *>(VT_LABEL); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* id */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* label */) &&
+           VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_LABEL) &&
            verifier.Verify(label()) &&
            verifier.EndTable();
   }
@@ -102,8 +32,8 @@ struct FileSELinuxSetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers:
 struct FileSELinuxSetLabelRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(int32_t id) { fbb_.AddElement<int32_t>(4, id, 0); }
-  void add_label(flatbuffers::Offset<flatbuffers::String> label) { fbb_.AddOffset(6, label); }
+  void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileSELinuxSetLabelRequest::VT_ID, id, 0); }
+  void add_label(flatbuffers::Offset<flatbuffers::String> label) { fbb_.AddOffset(FileSELinuxSetLabelRequest::VT_LABEL, label); }
   FileSELinuxSetLabelRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileSELinuxSetLabelRequestBuilder &operator=(const FileSELinuxSetLabelRequestBuilder &);
   flatbuffers::Offset<FileSELinuxSetLabelRequest> Finish() {
@@ -122,12 +52,16 @@ inline flatbuffers::Offset<FileSELinuxSetLabelRequest> CreateFileSELinuxSetLabel
 }
 
 struct FileSELinuxSetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(6); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_ERROR_MSG = 6
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* error_msg */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            verifier.EndTable();
   }
@@ -136,8 +70,8 @@ struct FileSELinuxSetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
 struct FileSELinuxSetLabelResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(6, error_msg); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(FileSELinuxSetLabelResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileSELinuxSetLabelResponse::VT_ERROR_MSG, error_msg); }
   FileSELinuxSetLabelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileSELinuxSetLabelResponseBuilder &operator=(const FileSELinuxSetLabelResponseBuilder &);
   flatbuffers::Offset<FileSELinuxSetLabelResponse> Finish() {
@@ -147,7 +81,7 @@ struct FileSELinuxSetLabelResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileSELinuxSetLabelResponse> CreateFileSELinuxSetLabelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   FileSELinuxSetLabelResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);

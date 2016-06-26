@@ -21,6 +21,7 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.ptr.IntByReference;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +53,8 @@ public class LibMiscStuff {
         boolean is_same_file(String path1, String path2);
 
         boolean extract_archive(String filename, String target);
+
+        boolean find_string_in_file(String path, String str, IntByReference result);
 
         void mblog_set_logcat();
     }

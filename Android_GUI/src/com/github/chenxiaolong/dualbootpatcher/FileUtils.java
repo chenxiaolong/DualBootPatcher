@@ -18,8 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -32,8 +30,6 @@ import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
-import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 
 import org.apache.commons.io.IOUtils;
 
@@ -145,12 +141,24 @@ public class FileUtils {
         return !FORCE_NEUTERED_SAF && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
     }
 
+    public static boolean isOxygenOS(Context context) {
+        String value = SystemPropertiesProxy.get(context, "ro.build.version.ota");
+        if (value == null) {
+            value = SystemPropertiesProxy.get(context, "ro.build.ota.versionname");
+        }
+        return value != null && value.contains("OnePlus2Oxygen");
+    }
+
     @NonNull
     public static Intent getFileOpenIntent(Context context) {
         Intent intent;
 
         if (useNativeSaf()) {
-            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            if (isOxygenOS(context)) {
+                intent = new Intent(Intent.ACTION_GET_CONTENT);
+            } else {
+                intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            }
             intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         } else {
@@ -164,35 +172,35 @@ public class FileUtils {
         return intent;
     }
 
-    @NonNull
-    public static Intent getFileSaveIntent(Context context, String defaultName) {
-        Intent intent;
-
-        if (useNativeSaf()) {
-            intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-            intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
-        } else {
-            intent = new Intent(context, DocumentsActivity.class);
-            intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
-        }
-
+    private static Intent buildNativeSafSaveIntent(String defaultName) {
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_TITLE, defaultName);
-
         return intent;
     }
 
-    public static void showMissingFileChooserDialog(Context context, FragmentManager fm) {
-        Fragment prev = fm.findFragmentByTag("no_file_chooser");
+    private static Intent buildNeuteredSafSaveIntent(Context context, String defaultName) {
+        Intent intent = new Intent(context, DocumentsActivity.class);
+        intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_TITLE, defaultName);
+        return intent;
+    }
 
-        if (prev == null) {
-            GenericConfirmDialog dialog = GenericConfirmDialog.newInstanceFromActivity(-1,
-                    context.getString(R.string.filemanager_missing_title),
-                    context.getString(R.string.filemanager_missing_desc), null);
-            dialog.show(fm, "no_file_chooser");
+    @NonNull
+    public static Intent getFileSaveIntent(Context context, String defaultName) {
+        if (useNativeSaf()) {
+            Intent intent = buildNativeSafSaveIntent(defaultName);
+            if (canHandleIntent(context.getPackageManager(), intent)) {
+                return intent;
+            }
         }
+
+        return buildNeuteredSafSaveIntent(context, defaultName);
     }
 
     public static void extractAsset(Context context, String src, File dest) {
@@ -250,7 +258,13 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            IOUtils.closeQuietly(zf);
+            //IOUtils.closeQuietly(zf);
+            try {
+                if (zf != null) {
+                    zf.close();
+                }
+            } catch (IOException e) {
+            }
             IOUtils.closeQuietly(fos);
         }
 

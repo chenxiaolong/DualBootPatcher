@@ -25,8 +25,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <fcntl.h>
 #include <getopt.h>
+#include <poll.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
@@ -327,7 +329,7 @@ static void create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wb"));
+    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -737,6 +739,175 @@ static void handle_command(const std::vector<std::string> &args)
     }
 }
 
+static bool handle_installd_event(int client_fd, int installd_fd,
+                                  bool is_async)
+{
+    // Use the same buffer size as installd
+    char buf[COMMAND_BUF_SIZE];
+
+    uint64_t time_start, time_stop;
+    uint64_t time_start_installd, time_stop_installd;
+    uint64_t time_start_send, time_stop_send;
+
+    int async_id;
+
+    time_start = util::current_time_ms();
+
+    time_start_installd = util::current_time_ms();
+    if (!receive_message(
+            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+        LOGE("Failed to receive reply from installd");
+        return false;
+    }
+    time_stop_installd = util::current_time_ms();
+
+    std::vector<std::string> args = parse_args(buf);
+    LOGD("Received async (probably) reply: %s", args_to_string(args).c_str());
+
+    time_start_send = util::current_time_ms();
+    if (!send_message(client_fd, buf, is_async, async_id)) {
+        LOGE("Failed to send reply to client");
+        return false;
+    }
+    time_stop_send = util::current_time_ms();
+
+    time_stop = util::current_time_ms();
+
+    LOGD("Command stats:");
+    LOGD("- Time to send result back to client:  %" PRIu64 "ms",
+         time_stop_send - time_start_send);
+    LOGD("- Time to receive reply from installd: %" PRIu64 "ms",
+         time_stop_installd - time_start_installd);
+    LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
+         time_stop - time_start);
+    LOGD("---");
+
+    return true;
+}
+
+static bool handle_android_event(int client_fd, int installd_fd,
+                                 bool can_appsync, bool is_async)
+{
+    // Use the same buffer size as installd
+    char buf[COMMAND_BUF_SIZE];
+
+    uint64_t time_start, time_stop;
+    uint64_t time_start_installd, time_stop_installd;
+    uint64_t time_start_hook = 0, time_stop_hook = 0;
+    uint64_t time_start_send, time_stop_send;
+
+    int async_id;
+
+    if (!receive_message(client_fd, buf, sizeof(buf), is_async, &async_id)) {
+        LOGE("Failed to receive request from client");
+        return false;
+    }
+
+    time_start = util::current_time_ms();
+
+    std::vector<std::string> args = parse_args(buf);
+
+    bool log_result = true;
+
+    if (args.empty()) {
+        LOGE("Invalid command (empty message)");
+    } else {
+        const std::string &cmd = args[0];
+
+        if (cmd == "ping"
+                || cmd == "freecache") {
+            LOGD("Received unimportant command: [%s, ...]", cmd.c_str());
+        } else if (cmd == "aapt"
+                || cmd == "aapt_with_common") {
+            LOGD("Received CyanogenMod-specific command: %s",
+                 args_to_string(args).c_str());
+        } else if (cmd == "rmrcl"
+                || cmd == "asyncDexopt"
+                || cmd == "changeDexOwner") {
+            LOGD("Received Touchwiz-specific command: %s",
+                 args_to_string(args).c_str());
+            if (cmd == "asyncDexopt") {
+                LOGD("Expecting future installd reply for 'asyncDexopt'");
+            }
+        } else if (cmd == "getsize") {
+            // Get size is so annoying we don't want it to show... EVER!
+            log_result = false;
+        } else if (cmd == "install"
+                || cmd == "dexopt"
+                || cmd == "markbootcomplete"
+                || cmd == "movedex"
+                || cmd == "rmdex"
+                || cmd == "remove"
+                || cmd == "rename"
+                || cmd == "fixuid"
+                || cmd == "rmcache"
+                || cmd == "rmcodecache"
+                || cmd == "rmuserdata"
+                || cmd == "movefiles"
+                || cmd == "linklib"
+                || cmd == "mkuserdata"
+                || cmd == "mkuserconfig"
+                || cmd == "rmuser"
+                || cmd == "idmap"
+                || cmd == "restorecondata"
+                || cmd == "patchoat") {
+            LOGD("Received command: %s", args_to_string(args).c_str());
+
+            if (can_appsync) {
+                time_start_hook = util::current_time_ms();
+                handle_command(args);
+                time_stop_hook = util::current_time_ms();
+            }
+        } else {
+            LOGW("Unrecognized command: %s", args_to_string(args).c_str());
+        }
+    }
+
+    time_start_installd = util::current_time_ms();
+    if (!send_message(installd_fd, buf, is_async, async_id)) {
+        LOGE("Failed to send request to installd");
+        return false;
+    }
+    if (!receive_message(
+            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+        LOGE("Failed to receive reply from installd");
+        return false;
+    }
+    time_stop_installd = util::current_time_ms();
+
+    args = parse_args(buf);
+
+    if (log_result) {
+        LOGD("Sending reply: %s", args_to_string(args).c_str());
+    }
+
+    time_start_send = util::current_time_ms();
+    if (!send_message(client_fd, buf, is_async, async_id)) {
+        LOGE("Failed to send reply to client");
+        return false;
+    }
+    time_stop_send = util::current_time_ms();
+
+    time_stop = util::current_time_ms();
+
+    if (log_result) {
+        LOGD("Command stats:");
+        LOGD("- Time to send result back to client:  %" PRIu64 "ms",
+             time_stop_send - time_start_send);
+        LOGD("- Time to complete installd command:   %" PRIu64 "ms",
+             time_stop_installd - time_start_installd);
+        if (can_appsync) {
+            LOGD("- Time to hook installd command:       %" PRIu64 "ms",
+                 time_stop_hook - time_start_hook);
+        }
+        LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
+             time_stop - time_start);
+        LOGD("---");
+    }
+
+    return true;
+}
+
 /**
  * \brief Main function for capturing and relaying the daemon commands
  *
@@ -790,124 +961,32 @@ static bool proxy_process(int fd, bool can_appsync)
                 INSTALLD_PATH, { "failed to read transaction id" });
         LOGD("installd is CyanogenMod async version: %d", is_async);
 
-        // Use the same buffer size as installd
-        char buf[COMMAND_BUF_SIZE];
-
         LOGD("---");
 
+        struct pollfd fds[2];
+        memset(fds, 0, sizeof(fds));
+
+        fds[0].fd = client_fd;
+        fds[0].events = POLLIN;
+        fds[1].fd = installd_fd;
+        fds[1].events = POLLIN;
+
         while (true) {
-            uint64_t time_start, time_stop;
-            uint64_t time_start_installd, time_stop_installd;
-            uint64_t time_start_hook = 0, time_stop_hook = 0;
-            uint64_t time_start_send, time_stop_send;
+            fds[0].revents = 0;
+            fds[1].revents = 1;
 
-            int async_id;
-
-            if (!receive_message(
-                    client_fd, buf, sizeof(buf), is_async, &async_id)) {
-                LOGE("Failed to receive request from client");
+            if (poll(fds, 2, -1) < 0) {
+                LOGE("Failed to poll() fds: %s", strerror(errno));
                 break;
             }
 
-            time_start = util::current_time_ms();
-
-            std::vector<std::string> args = parse_args(buf);
-
-            bool log_result = true;
-
-            if (args.empty()) {
-                LOGE("Invalid command (empty message)");
-            } else {
-                const std::string &cmd = args[0];
-
-                if (cmd == "ping"
-                        || cmd == "freecache") {
-                    LOGD("Received unimportant command: [%s, ...]",
-                         cmd.c_str());
-                } else if (cmd == "aapt"
-                        || cmd == "aapt_with_common") {
-                    LOGD("Received CyanogenMod-specific command: %s",
-                         args_to_string(args).c_str());
-                } else if (cmd == "rmrcl"
-                        || cmd == "asyncDexopt"
-                        || cmd == "changeDexOwner") {
-                    LOGD("Received Touchwiz-specific command: %s",
-                         args_to_string(args).c_str());
-                } else if (cmd == "getsize") {
-                    // Get size is so annoying we don't want it to show... EVER!
-                    log_result = false;
-                } else if (cmd == "install"
-                        || cmd == "dexopt"
-                        || cmd == "markbootcomplete"
-                        || cmd == "movedex"
-                        || cmd == "rmdex"
-                        || cmd == "remove"
-                        || cmd == "rename"
-                        || cmd == "fixuid"
-                        || cmd == "rmcache"
-                        || cmd == "rmcodecache"
-                        || cmd == "rmuserdata"
-                        || cmd == "movefiles"
-                        || cmd == "linklib"
-                        || cmd == "mkuserdata"
-                        || cmd == "mkuserconfig"
-                        || cmd == "rmuser"
-                        || cmd == "idmap"
-                        || cmd == "restorecondata"
-                        || cmd == "patchoat") {
-                    LOGD("Received command: %s", args_to_string(args).c_str());
-
-                    if (can_appsync) {
-                        time_start_hook = util::current_time_ms();
-                        handle_command(args);
-                        time_stop_hook = util::current_time_ms();
-                    }
-                } else {
-                    LOGW("Unrecognized command: %s",
-                         args_to_string(args).c_str());
-                }
-            }
-
-            time_start_installd = util::current_time_ms();
-            if (!send_message(installd_fd, buf, is_async, async_id)) {
-                LOGE("Failed to send request to installd");
-                return false;
-            }
-            if (!receive_message(
-                    installd_fd, buf, sizeof(buf), is_async, &async_id)) {
-                LOGE("Failed to receive reply from installd");
-                return false;
-            }
-            time_stop_installd = util::current_time_ms();
-
-            args = parse_args(buf);
-
-            if (log_result) {
-                LOGD("Sending reply: %s", args_to_string(args).c_str());
-            }
-
-            time_start_send = util::current_time_ms();
-            if (!send_message(client_fd, buf, is_async, async_id)) {
-                LOGE("Failed to send reply to client");
+            if (fds[0].revents & POLLIN && !handle_android_event(
+                    client_fd, installd_fd, can_appsync, is_async)) {
                 break;
             }
-            time_stop_send = util::current_time_ms();
-
-            time_stop = util::current_time_ms();
-
-            if (log_result) {
-                LOGD("Command stats:");
-                LOGD("- Time to send result back to client:  %" PRIu64 "ms",
-                     time_stop_send - time_start_send);
-                LOGD("- Time to complete installd command:   %" PRIu64 "ms",
-                     time_stop_installd - time_start_installd);
-                if (can_appsync) {
-                    LOGD("- Time to hook installd command:       %" PRIu64 "ms",
-                         time_stop_hook - time_start_hook);
-                }
-                LOGD("- Time to complete entire proxy logic: %" PRIu64 "ms",
-                     time_stop - time_start);
-                LOGD("---");
+            if (fds[1].revents & POLLIN && !handle_installd_event(
+                    client_fd, installd_fd, is_async)) {
+                break;
             }
         }
     }
@@ -1056,7 +1135,7 @@ int appsync_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "w"));
+    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "we"));
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));

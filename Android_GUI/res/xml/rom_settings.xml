@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,24 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">
-        <com.afollestad.materialdialogs.prefs.MaterialListPreference
+        <!-- com.afollestad.materialdialogs.prefs.MaterialListPreference -->
+        <ListPreference
             android:entries="@array/initial_screen_values"
             android:entryValues="@array/initial_screen_entry_values"
             android:key="initial_screen"
             android:persistent="true"
             android:summary="@string/rom_settings_initial_screen_desc"
             android:title="@string/rom_settings_initial_screen_title" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_dark_theme"
+            android:title="@string/rom_settings_use_dark_theme" />
+        <!-- com.afollestad.materialdialogs.prefs.MaterialEditTextPreference -->
+        <EditTextPreference
+            android:key="parallel_patching_threads"
+            android:title="@string/rom_settings_parallel_patching_title"
+            android:persistent="false"
+            android:inputType="number" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="allow_3rd_party_intents"

@@ -5,162 +5,6 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-#include "file_chmod_generated.h"
-#include "file_close_generated.h"
-#include "file_open_generated.h"
-#include "file_read_generated.h"
-#include "file_seek_generated.h"
-#include "file_selinux_get_label_generated.h"
-#include "file_selinux_set_label_generated.h"
-#include "file_stat_generated.h"
-#include "file_write_generated.h"
-#include "mb_get_booted_rom_id_generated.h"
-#include "mb_get_installed_roms_generated.h"
-#include "mb_get_version_generated.h"
-#include "path_chmod_generated.h"
-#include "path_copy_generated.h"
-#include "path_get_directory_size_generated.h"
-#include "path_selinux_get_label_generated.h"
-#include "path_selinux_set_label_generated.h"
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetVersionRequest;
-struct MbGetVersionResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbRom;
-struct MbGetInstalledRomsRequest;
-struct MbGetInstalledRomsResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetBootedRomIdRequest;
-struct MbGetBootedRomIdResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
 
 namespace mbtool {
 namespace daemon {
@@ -173,7 +17,9 @@ enum MbSwitchRomResult {
   MbSwitchRomResult_SUCCEEDED = 0,
   MbSwitchRomResult_FAILED = 1,
   MbSwitchRomResult_CHECKSUM_NOT_FOUND = 2,
-  MbSwitchRomResult_CHECKSUM_INVALID = 3
+  MbSwitchRomResult_CHECKSUM_INVALID = 3,
+  MbSwitchRomResult_MIN = MbSwitchRomResult_SUCCEEDED,
+  MbSwitchRomResult_MAX = MbSwitchRomResult_CHECKSUM_INVALID
 };
 
 inline const char **EnumNamesMbSwitchRomResult() {
@@ -184,20 +30,26 @@ inline const char **EnumNamesMbSwitchRomResult() {
 inline const char *EnumNameMbSwitchRomResult(MbSwitchRomResult e) { return EnumNamesMbSwitchRomResult()[static_cast<int>(e)]; }
 
 struct MbSwitchRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(4); }
-  const flatbuffers::String *boot_blockdev() const { return GetPointer<const flatbuffers::String *>(6); }
-  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *blockdev_base_dirs() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(8); }
-  uint8_t force_update_checksums() const { return GetField<uint8_t>(10, 0); }
+  enum {
+    VT_ROM_ID = 4,
+    VT_BOOT_BLOCKDEV = 6,
+    VT_BLOCKDEV_BASE_DIRS = 8,
+    VT_FORCE_UPDATE_CHECKSUMS = 10
+  };
+  const flatbuffers::String *rom_id() const { return GetPointer<const flatbuffers::String *>(VT_ROM_ID); }
+  const flatbuffers::String *boot_blockdev() const { return GetPointer<const flatbuffers::String *>(VT_BOOT_BLOCKDEV); }
+  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *blockdev_base_dirs() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(VT_BLOCKDEV_BASE_DIRS); }
+  bool force_update_checksums() const { return GetField<uint8_t>(VT_FORCE_UPDATE_CHECKSUMS, 0) != 0; }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* rom_id */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ROM_ID) &&
            verifier.Verify(rom_id()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* boot_blockdev */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_BOOT_BLOCKDEV) &&
            verifier.Verify(boot_blockdev()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* blockdev_base_dirs */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_BLOCKDEV_BASE_DIRS) &&
            verifier.Verify(blockdev_base_dirs()) &&
            verifier.VerifyVectorOfStrings(blockdev_base_dirs()) &&
-           VerifyField<uint8_t>(verifier, 10 /* force_update_checksums */) &&
+           VerifyField<uint8_t>(verifier, VT_FORCE_UPDATE_CHECKSUMS) &&
            verifier.EndTable();
   }
 };
@@ -205,10 +57,10 @@ struct MbSwitchRomRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct MbSwitchRomRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(4, rom_id); }
-  void add_boot_blockdev(flatbuffers::Offset<flatbuffers::String> boot_blockdev) { fbb_.AddOffset(6, boot_blockdev); }
-  void add_blockdev_base_dirs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs) { fbb_.AddOffset(8, blockdev_base_dirs); }
-  void add_force_update_checksums(uint8_t force_update_checksums) { fbb_.AddElement<uint8_t>(10, force_update_checksums, 0); }
+  void add_rom_id(flatbuffers::Offset<flatbuffers::String> rom_id) { fbb_.AddOffset(MbSwitchRomRequest::VT_ROM_ID, rom_id); }
+  void add_boot_blockdev(flatbuffers::Offset<flatbuffers::String> boot_blockdev) { fbb_.AddOffset(MbSwitchRomRequest::VT_BOOT_BLOCKDEV, boot_blockdev); }
+  void add_blockdev_base_dirs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs) { fbb_.AddOffset(MbSwitchRomRequest::VT_BLOCKDEV_BASE_DIRS, blockdev_base_dirs); }
+  void add_force_update_checksums(bool force_update_checksums) { fbb_.AddElement<uint8_t>(MbSwitchRomRequest::VT_FORCE_UPDATE_CHECKSUMS, static_cast<uint8_t>(force_update_checksums), 0); }
   MbSwitchRomRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbSwitchRomRequestBuilder &operator=(const MbSwitchRomRequestBuilder &);
   flatbuffers::Offset<MbSwitchRomRequest> Finish() {
@@ -221,7 +73,7 @@ inline flatbuffers::Offset<MbSwitchRomRequest> CreateMbSwitchRomRequest(flatbuff
    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
    flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0,
    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0,
-   uint8_t force_update_checksums = 0) {
+   bool force_update_checksums = false) {
   MbSwitchRomRequestBuilder builder_(_fbb);
   builder_.add_blockdev_base_dirs(blockdev_base_dirs);
   builder_.add_boot_blockdev(boot_blockdev);
@@ -231,12 +83,16 @@ inline flatbuffers::Offset<MbSwitchRomRequest> CreateMbSwitchRomRequest(flatbuff
 }
 
 struct MbSwitchRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  uint8_t success() const { return GetField<uint8_t>(4, 0); }
-  MbSwitchRomResult result() const { return static_cast<MbSwitchRomResult>(GetField<int16_t>(6, 0)); }
+  enum {
+    VT_SUCCESS = 4,
+    VT_RESULT = 6
+  };
+  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  MbSwitchRomResult result() const { return static_cast<MbSwitchRomResult>(GetField<int16_t>(VT_RESULT, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, 4 /* success */) &&
-           VerifyField<int16_t>(verifier, 6 /* result */) &&
+           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<int16_t>(verifier, VT_RESULT) &&
            verifier.EndTable();
   }
 };
@@ -244,8 +100,8 @@ struct MbSwitchRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table 
 struct MbSwitchRomResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(uint8_t success) { fbb_.AddElement<uint8_t>(4, success, 0); }
-  void add_result(MbSwitchRomResult result) { fbb_.AddElement<int16_t>(6, static_cast<int16_t>(result), 0); }
+  void add_success(bool success) { fbb_.AddElement<uint8_t>(MbSwitchRomResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_result(MbSwitchRomResult result) { fbb_.AddElement<int16_t>(MbSwitchRomResponse::VT_RESULT, static_cast<int16_t>(result), 0); }
   MbSwitchRomResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbSwitchRomResponseBuilder &operator=(const MbSwitchRomResponseBuilder &);
   flatbuffers::Offset<MbSwitchRomResponse> Finish() {
@@ -255,7 +111,7 @@ struct MbSwitchRomResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbSwitchRomResponse> CreateMbSwitchRomResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   uint8_t success = 0,
+   bool success = false,
    MbSwitchRomResult result = MbSwitchRomResult_SUCCEEDED) {
   MbSwitchRomResponseBuilder builder_(_fbb);
   builder_.add_result(result);

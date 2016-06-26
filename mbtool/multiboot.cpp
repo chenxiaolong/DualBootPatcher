@@ -44,7 +44,7 @@ public:
     {
     }
 
-    virtual int on_changed_path()
+    virtual int on_changed_path() override
     {
         // We'll set attrs and xattrs after visiting children
         if (_curr->fts_level == 0) {

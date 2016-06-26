@@ -1,0 +1,24 @@
+# Required parameters:
+# - SIGN_FILES: List of files to sign
+
+cmake_minimum_required(VERSION 3.1)
+
+include("@CMAKE_SOURCE_DIR@/cmake/SigningConfigReader.cmake")
+read_signing_config(MBP_SIGN_JAVA_ "@MBP_SIGN_CONFIG_PATH@")
+
+set(ENV{MBSIGN_PASSPHRASE} "${MBP_SIGN_JAVA_KEYSTORE_PASSPHRASE}")
+
+foreach(file ${SIGN_FILES})
+    message(STATUS "Signing: ${file}")
+    execute_process(
+        COMMAND
+        "@SIGNTOOL_COMMAND@"
+        "@PKCS12_KEYSTORE_PATH@"
+        "${file}"
+        "${file}.sig"
+        RESULT_VARIABLE ret
+    )
+    if(NOT ret EQUAL 0)
+        message(FATAL_ERROR "Failed to sign: ${file}")
+    endif()
+endforeach()

@@ -11,8 +11,8 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
 
     target_link_libraries(
         bootimgtool
-        mbp
-        mbpio
+        mbp-shared
+        mbpio-static
     )
 
     if(NOT MSVC)

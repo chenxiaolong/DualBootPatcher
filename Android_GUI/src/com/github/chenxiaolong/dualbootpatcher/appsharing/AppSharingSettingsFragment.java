@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,8 +45,12 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
+import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+
+import org.apache.commons.io.IOUtils;
 
 public class AppSharingSettingsFragment extends PreferenceFragment implements
         OnPreferenceChangeListener, OnPreferenceClickListener,
@@ -307,7 +311,21 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
 
         @Override
         public NeededInfo loadInBackground() {
-            RomInformation currentRom = RomUtils.getCurrentRom(getContext());
+            RomInformation currentRom;
+
+            MbtoolConnection conn = null;
+
+            try {
+                conn = new MbtoolConnection(getContext());
+                MbtoolInterface iface = conn.getInterface();
+
+                currentRom = RomUtils.getCurrentRom(getContext(), iface);
+            } catch (Exception e) {
+                return null;
+            } finally {
+                IOUtils.closeQuietly(conn);
+            }
+
             if (currentRom == null) {
                 return null;
             }

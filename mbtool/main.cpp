@@ -17,13 +17,13 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
-
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/stat.h>
+#include <unistd.h>
 
 #ifdef RECOVERY
 #include "backup.h"
@@ -38,14 +38,14 @@
 #include "miniadbd.h"
 #include "mount_fstab.h"
 #include "sepolpatch.h"
+#include "signature.h"
 #include "uevent_dump.h"
 #endif
 #include "version.h"
 
 #include "mblog/logging.h"
-
-
-const char *main_argv0 = nullptr;
+#include "mbutil/process.h"
+#include "mbutil/string.h"
 
 
 int main_multicall(int argc, char *argv[]);
@@ -79,6 +79,7 @@ struct tool tools[] = {
     { "miniadbd", mb::miniadbd_main },
     { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
+    { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
 #endif
     { nullptr, nullptr }
@@ -169,7 +170,18 @@ int main_normal(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    main_argv0 = argv[0];
+    // This works because argv is NULL-terminated
+    char **argv_copy = mb::util::dup_cstring_list(argv);
+    if (!argv_copy) {
+        fprintf(stderr, "Failed to copy arguments: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    if (!mb::util::set_process_title_init(argc, argv)) {
+        fprintf(stderr, "set_process_title_init() failed: %s\n",
+                strerror(errno));
+        return EXIT_FAILURE;
+    }
 
     umask(0);
 
@@ -177,15 +189,16 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to set default locale\n");
     }
 
+    int ret;
+
     char *no_multicall = getenv("MBTOOL_NO_MULTICALL");
     if (no_multicall && strcmp(no_multicall, "true") == 0) {
-        return main_normal(argc, argv);
+        ret = main_normal(argc, argv_copy);
     } else {
-        return main_multicall(argc, argv);
+        ret = main_multicall(argc, argv_copy);
     }
-}
 
-const char * mb_self_get_path(void)
-{
-    return main_argv0;
+    mb::util::free_cstring_list(argv_copy);
+
+    return ret;
 }

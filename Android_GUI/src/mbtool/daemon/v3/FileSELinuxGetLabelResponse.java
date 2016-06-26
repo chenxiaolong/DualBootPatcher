@@ -21,11 +21,11 @@ public final class FileSELinuxGetLabelResponse extends Table {
 
   public static int createFileSELinuxGetLabelResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg,
-      int label) {
+      int error_msgOffset,
+      int labelOffset) {
     builder.startObject(3);
-    FileSELinuxGetLabelResponse.addLabel(builder, label);
-    FileSELinuxGetLabelResponse.addErrorMsg(builder, error_msg);
+    FileSELinuxGetLabelResponse.addLabel(builder, labelOffset);
+    FileSELinuxGetLabelResponse.addErrorMsg(builder, error_msgOffset);
     FileSELinuxGetLabelResponse.addSuccess(builder, success);
     return FileSELinuxGetLabelResponse.endFileSELinuxGetLabelResponse(builder);
   }

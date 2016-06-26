@@ -18,17 +18,17 @@ public final class PathChmodRequest extends Table {
   public long mode() { int o = __offset(6); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0; }
 
   public static int createPathChmodRequest(FlatBufferBuilder builder,
-      int path,
+      int pathOffset,
       long mode) {
     builder.startObject(2);
     PathChmodRequest.addMode(builder, mode);
-    PathChmodRequest.addPath(builder, path);
+    PathChmodRequest.addPath(builder, pathOffset);
     return PathChmodRequest.endPathChmodRequest(builder);
   }
 
   public static void startPathChmodRequest(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addPath(FlatBufferBuilder builder, int pathOffset) { builder.addOffset(0, pathOffset, 0); }
-  public static void addMode(FlatBufferBuilder builder, long mode) { builder.addInt(1, (int)(mode & 0xFFFFFFFFL), 0); }
+  public static void addMode(FlatBufferBuilder builder, long mode) { builder.addInt(1, (int)mode, 0); }
   public static int endPathChmodRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

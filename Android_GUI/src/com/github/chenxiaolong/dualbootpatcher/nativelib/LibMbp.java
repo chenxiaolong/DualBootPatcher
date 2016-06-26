@@ -290,7 +290,7 @@ public class LibMbp {
         if (ptr == null) {
             sb.append("null");
         } else {
-            sb.append(ptr.getPointer().getNativeLong(0));
+            sb.append(ptr.getPointer());
         }
         sb.append(") ");
         sb.append(clazz.getSimpleName());
@@ -361,8 +361,8 @@ public class LibMbp {
         }
 
         public void destroy() {
-            validate(mCBootImage, BootImage.class, "destroy");
             synchronized (sInstances) {
+                validate(mCBootImage, BootImage.class, "destroy");
                 if (mCBootImage != null && decrementRefCount(sInstances, mCBootImage)) {
                     validate(mCBootImage, BootImage.class, "(Destroyed)");
                     CWrapper.mbp_bootimage_destroy(mCBootImage);
@@ -846,14 +846,14 @@ public class LibMbp {
         }
 
         public void destroy() {
-            validate(mCCpioFile, CpioFile.class, "destroy");
             synchronized (sInstances) {
+                validate(mCCpioFile, CpioFile.class, "destroy");
                 if (mCCpioFile != null && decrementRefCount(sInstances, mCCpioFile)) {
                     validate(mCCpioFile, CpioFile.class, "(Destroyed)");
                     CWrapper.mbp_cpiofile_destroy(mCCpioFile);
                 }
+                mCCpioFile = null;
             }
-            mCCpioFile = null;
         }
 
         @Override
@@ -1039,18 +1039,18 @@ public class LibMbp {
                 incrementRefCount(sInstances, mCDevice);
             }
             mDestroyable = destroyable;
-            validate(mCDevice, Device.class, "(Constructor)");
+            validate(mCDevice, Device.class, "(Constructor)", destroyable);
         }
 
         public void destroy() {
-            validate(mCDevice, Device.class, "destroy");
             synchronized (sInstances) {
+                validate(mCDevice, Device.class, "destroy", mDestroyable);
                 if (mCDevice != null && decrementRefCount(sInstances, mCDevice) && mDestroyable) {
                     validate(mCDevice, Device.class, "(Destroyed)");
                     CWrapper.mbp_device_destroy(mCDevice);
                 }
+                mCDevice = null;
             }
-            mCDevice = null;
         }
 
         @Override
@@ -1278,14 +1278,14 @@ public class LibMbp {
         }
 
         public void destroy() {
-            validate(mCFileInfo, FileInfo.class, "destroy");
             synchronized (sInstances) {
+                validate(mCFileInfo, FileInfo.class, "destroy");
                 if (mCFileInfo != null && decrementRefCount(sInstances, mCFileInfo)) {
                     validate(mCFileInfo, FileInfo.class, "(Destroyed)");
                     CWrapper.mbp_fileinfo_destroy(mCFileInfo);
                 }
+                mCFileInfo = null;
             }
-            mCFileInfo = null;
         }
 
         @Override
@@ -1417,8 +1417,8 @@ public class LibMbp {
         }
 
         public void destroy() {
-            validate(mCPatcherConfig, PatcherConfig.class, "destroy");
             synchronized (sInstances) {
+                validate(mCPatcherConfig, PatcherConfig.class, "destroy");
                 if (mCPatcherConfig != null && decrementRefCount(sInstances, mCPatcherConfig)) {
                     validate(mCPatcherConfig, PatcherConfig.class, "(Destroyed)");
                     CWrapper.mbp_config_destroy(mCPatcherConfig);

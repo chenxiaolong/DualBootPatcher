@@ -19,9 +19,9 @@ public final class FileSELinuxSetLabelResponse extends Table {
 
   public static int createFileSELinuxSetLabelResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msg) {
+      int error_msgOffset) {
     builder.startObject(2);
-    FileSELinuxSetLabelResponse.addErrorMsg(builder, error_msg);
+    FileSELinuxSetLabelResponse.addErrorMsg(builder, error_msgOffset);
     FileSELinuxSetLabelResponse.addSuccess(builder, success);
     return FileSELinuxSetLabelResponse.endFileSELinuxSetLabelResponse(builder);
   }

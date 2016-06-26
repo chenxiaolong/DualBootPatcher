@@ -70,6 +70,24 @@ void addOnePlusDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
                                    "/dev/block/mmcblk0p36" });
     devices->push_back(device);
+
+    // OnePlus X
+    device = new Device();
+    device->setId("onyx");
+    device->setCodenames({ "OnePlus", "ONE", "onyx" });
+    device->setName("OnePlus X");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "/dev/block/mmcblk0p27" });
+    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
+                                "/dev/block/mmcblk0p15" });
+    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/mmcblk0p28" });
+    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/mmcblk0p16" });
+    devices->push_back(device);
 }
 
 }

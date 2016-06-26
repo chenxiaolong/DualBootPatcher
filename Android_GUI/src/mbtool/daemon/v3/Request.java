@@ -18,9 +18,9 @@ public final class Request extends Table {
 
   public static int createRequest(FlatBufferBuilder builder,
       byte request_type,
-      int request) {
+      int requestOffset) {
     builder.startObject(2);
-    Request.addRequest(builder, request);
+    Request.addRequest(builder, requestOffset);
     Request.addRequestType(builder, request_type);
     return Request.endRequest(builder);
   }

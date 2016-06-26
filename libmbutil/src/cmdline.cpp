@@ -20,6 +20,8 @@
 #include "mbutil/cmdline.h"
 
 #include <vector>
+
+#include <cerrno>
 #include <cstring>
 
 #include "mblog/logging.h"
