@@ -173,6 +173,7 @@ public class LibMbp {
         static native void mbp_device_set_recovery_block_devs(CDevice device, StringArray block_devs);
         static native Pointer mbp_device_extra_block_devs(CDevice device);
         static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
+        static native boolean mbp_device_boot_ui_supported(CDevice device);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -1252,6 +1253,12 @@ public class LibMbp {
             ensureNotNull(blockDevs);
 
             CWrapper.mbp_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
+        }
+
+        public boolean isBootUISupported() {
+            validate(mCDevice, Device.class, "isBootUISupported");
+
+            return CWrapper.mbp_device_boot_ui_supported(mCDevice);
         }
     }
 
