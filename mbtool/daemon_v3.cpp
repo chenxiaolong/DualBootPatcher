@@ -32,6 +32,7 @@
 #include "mblog/logging.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
+#include "mbutil/delete.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/properties.h"
@@ -58,6 +59,7 @@
 #include "protocol/file_write_generated.h"
 #include "protocol/path_chmod_generated.h"
 #include "protocol/path_copy_generated.h"
+#include "protocol/path_delete_generated.h"
 #include "protocol/path_selinux_get_label_generated.h"
 #include "protocol/path_selinux_set_label_generated.h"
 #include "protocol/path_get_directory_size_generated.h"
@@ -495,6 +497,56 @@ static bool v3_path_copy(int fd, const v3::Request *msg)
     // Wrap response
     v3::ResponseBuilder rb(builder);
     rb.add_response_type(v3::ResponseType_PathCopyResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_path_delete(int fd, const v3::Request *msg)
+{
+    auto request = (v3::PathDeleteRequest *) msg->request();
+    if (!request->path()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    bool ret;
+    int saved_errno;
+
+    switch (request->flag()) {
+    case v3::PathDeleteFlag_REMOVE:
+        ret = remove(request->path()->c_str()) == 0;
+        saved_errno = errno;
+        break;
+    case v3::PathDeleteFlag_UNLINK:
+        ret = unlink(request->path()->c_str()) == 0;
+        saved_errno = errno;
+        break;
+    case v3::PathDeleteFlag_RMDIR:
+        ret = unlink(request->path()->c_str()) == 0;
+        saved_errno = errno;
+        break;
+    case v3::PathDeleteFlag_RECURSIVE:
+        ret = util::delete_recursive(request->path()->c_str());
+        saved_errno = errno;
+        break;
+    default:
+        return v3_send_response_invalid(fd);
+    }
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::PathDeleteResponse> response;
+
+    if (ret) {
+        response = v3::CreatePathDeleteResponse(builder, true);
+    } else {
+        auto error = builder.CreateString(strerror(saved_errno));
+        response = v3::CreatePathDeleteResponse(builder, false, error);
+    }
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_PathDeleteResponse);
     rb.add_response(response.Union());
     builder.Finish(rb.Finish());
 
@@ -1264,6 +1316,7 @@ static RequestMap request_map[] = {
     { v3::RequestType_FileWriteRequest, v3_file_write },
     { v3::RequestType_PathChmodRequest, v3_path_chmod },
     { v3::RequestType_PathCopyRequest, v3_path_copy },
+    { v3::RequestType_PathDeleteRequest, v3_path_delete },
     { v3::RequestType_PathSELinuxGetLabelRequest, v3_path_selinux_get_label },
     { v3::RequestType_PathSELinuxSetLabelRequest, v3_path_selinux_set_label },
     { v3::RequestType_PathGetDirectorySizeRequest, v3_path_get_directory_size },
