@@ -130,11 +130,26 @@ static bool start_daemon()
               "daemon",
               "--allow-root-client",
               "--no-patch-sepolicy",
+              "--sigstop-when-ready",
               nullptr);
         LOGE("Failed to exec daemon: %s", strerror(errno));
         _exit(127);
     } else if (daemon_pid > 0) {
         LOGV("Started daemon (pid: %d)", daemon_pid);
+        LOGV("Waiting for SIGSTOP ready signal");
+
+        // Wait for SIGSTOP to indicate that the daemon is ready
+        int status;
+        if (waitpid(daemon_pid, &status, WUNTRACED) < 0) {
+            LOGW("Failed to waidpid for daemon's SIGSTOP: %s",
+                 strerror(errno));
+        } else if (!WIFSTOPPED(status)) {
+            LOGW("waitpid returned non-SIGSTOP status");
+        } else {
+            LOGV("Daemon sent SIGSTOP; sending SIGCONT");
+            kill(daemon_pid, SIGCONT);
+        }
+
         return true;
     } else {
         LOGE("Failed to fork: %s", strerror(errno));
