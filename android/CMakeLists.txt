@@ -166,11 +166,18 @@ if(MBP_TOP_LEVEL_BUILD)
                 ${CMAKE_SOURCE_DIR}/mbbootui/theme
                 ${ARCHIVE_TEMP_DIR}/theme
 
+            # Copy info.prop
+            COMMAND ${CMAKE_COMMAND}
+                 -E copy
+                 ${CMAKE_BINARY_DIR}/mbbootui/info.prop
+                 ${ARCHIVE_TEMP_DIR}/info.prop
+
             # Create archive
             COMMAND ${CMAKE_COMMAND}
                 -E tar cvf ${ARCHIVE_OUTPUT} --format=zip --
                 exec
                 theme
+                info.prop
 
             # Delete temporary directory
             COMMAND ${CMAKE_COMMAND}

@@ -1,3 +1,14 @@
+if(MBP_TOP_LEVEL_BUILD)
+    include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
+    git_describe(GIT_VERSION --dirty --always --tags)
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/info.prop.in
+        ${CMAKE_CURRENT_BINARY_DIR}/info.prop
+        @ONLY
+    )
+endif()
+
 if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     return()
 endif()
