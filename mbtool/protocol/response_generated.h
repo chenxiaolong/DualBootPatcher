@@ -23,6 +23,7 @@
 #include "mb_wipe_rom_generated.h"
 #include "path_chmod_generated.h"
 #include "path_copy_generated.h"
+#include "path_delete_generated.h"
 #include "path_get_directory_size_generated.h"
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
@@ -116,6 +117,14 @@ namespace daemon {
 namespace v3 {
 struct PathCopyRequest;
 struct PathCopyResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
+struct PathDeleteRequest;
+struct PathDeleteResponse;
 }  // namespace v3
 }  // namespace daemon
 }  // namespace mbtool
@@ -263,12 +272,13 @@ enum ResponseType {
   ResponseType_SignedExecOutputResponse = 25,
   ResponseType_SignedExecResponse = 26,
   ResponseType_ShutdownResponse = 27,
+  ResponseType_PathDeleteResponse = 28,
   ResponseType_MIN = ResponseType_NONE,
-  ResponseType_MAX = ResponseType_ShutdownResponse
+  ResponseType_MAX = ResponseType_PathDeleteResponse
 };
 
 inline const char **EnumNamesResponseType() {
-  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", nullptr };
+  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", "PathDeleteResponse", nullptr };
   return names;
 }
 
@@ -390,6 +400,7 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *unio
     case ResponseType_SignedExecOutputResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecOutputResponse *>(union_obj));
     case ResponseType_SignedExecResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::SignedExecResponse *>(union_obj));
     case ResponseType_ShutdownResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::ShutdownResponse *>(union_obj));
+    case ResponseType_PathDeleteResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathDeleteResponse *>(union_obj));
     default: return false;
   }
 }
