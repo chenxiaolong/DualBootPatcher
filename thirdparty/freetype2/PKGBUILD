@@ -1,0 +1,87 @@
+# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_prebuilts='https://snapshots.noobdev.io/repo/prebuilts'
+_ver_libpng=6.0.1_r43-2
+
+pkgname=freetype2
+pkgver=6.0.1_r43
+pkgrel=2
+pkgdesc="TrueType font rendering library"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/external/freetype"
+license=(GPL)
+source=("git+https://android.googlesource.com/platform/external/freetype#tag=android-${pkgver}"
+        0001-Make-Android.mk-NDK-buildable.patch)
+_source_template=("${_prebuilts}/libpng-${_ver_libpng}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/libpng-${_ver_libpng}-@ARCH@.pkg.tar.xz.sig")
+source_armv7=("${_source_template[@]/@ARCH@/armv7}")
+source_aarch64=("${_source_template[@]/@ARCH@/aarch64}")
+source_x86=("${_source_template[@]/@ARCH@/x86}")
+source_x86_64=("${_source_template[@]/@ARCH@/x86_64}")
+noextract=("libpng-${_ver_libpng}-${CARCH}.pkg.tar.xz")
+validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
+
+prepare() {
+    cd freetype
+    patch -p1 -i "${srcdir}/0001-Make-Android.mk-NDK-buildable.patch"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    mkdir -p "common_${abi}"
+    cd "common_${abi}"
+
+    mkdir -p libpng
+    bsdtar -xf "${srcdir}/libpng-${_ver_libpng}-${CARCH}.pkg.tar.xz" -C libpng
+}
+
+build() {
+    cd freetype
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=clang3.6 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd freetype
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/lib/
+    install -m644 "obj/local/${abi}/libft2.a" "${pkgdir}"/lib/
+    install -dm755 "${pkgdir}"/include/
+    cp -a include/. "${pkgdir}"/include/
+}
+
+sha512sums=('SKIP'
+            '3cc94c0a1f4f7eeb6772327fa224ac948ef23f569fe9e06c4c72bb7c99b77887311bdea5342040a011ddd1d16f129c6532257183462536e3c697e9f4dc045117')
+sha512sums_armv7=('c5baec277537952b9458525463a00f51d9e18684053e225632b8f07ea98030e38909d1c29a8a56df58a7f746d8fc2fb412bbc234d2eaa4c33392e6733477c4e0'
+                  'SKIP')
+sha512sums_aarch64=('42beba8b70cfe30e3a9222b5acfd9d6519a51d1032245d8fd98605f8bff5814e12d4dd8cfceb8eaaa99b53540f1b907c86accf799b254a12359b7287d9ff3b94'
+                    'SKIP')
+sha512sums_x86=('0ac4f9f87897d9678c84e5961957af3b66068eaaf0c986ef58a3ccdfa7a1eb706080039ab2d3d98cd4720da9ec148c03f83e88240e32a0b003bfed479f040ddb'
+                'SKIP')
+sha512sums_x86_64=('0c42204d4d3834108b4820ec4a57d48f237373c9ca8bf67a79ad477994af147e01ff851f0855bae2138f7d8a60493bda42daaa6ca35c607a854c1c01c1a80d38'
+                   'SKIP')

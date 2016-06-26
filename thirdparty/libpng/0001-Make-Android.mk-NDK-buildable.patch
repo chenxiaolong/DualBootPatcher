@@ -1,0 +1,106 @@
+From 11298e661ac2be5edf7d4e9fa4dcd945da6dfe23 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sat, 21 May 2016 14:53:17 -0400
+Subject: [PATCH] Make Android.mk NDK-buildable
+
+---
+ Android.mk | 63 ++++++++++----------------------------------------------------
+ 1 file changed, 10 insertions(+), 53 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index 959b73c..d553a57 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -1,8 +1,5 @@
+ LOCAL_PATH:= $(call my-dir)
+ 
+-# We need to build this for both the device (as a shared library)
+-# and the host (as a static library for tools to use).
+-
+ common_SRC_FILES := \
+ 	png.c \
+ 	pngerror.c \
+@@ -20,8 +17,8 @@ common_SRC_FILES := \
+ 	pngwtran.c \
+ 	pngwutil.c \
+ 
+-ifeq ($(ARCH_ARM_HAVE_NEON),true)
+-my_cflags_arm := -DPNG_ARM_NEON_OPT=2
++ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
++	my_cflags_arm := -DPNG_ARM_NEON_OPT=2
+ endif
+ 
+ my_cflags_arm64 := -DPNG_ARM_NEON_OPT=2
+@@ -38,37 +35,6 @@ my_src_files_arm := \
+ 
+ common_CFLAGS := -std=gnu89 #-fvisibility=hidden ## -fomit-frame-pointer
+ 
+-# For the host
+-# =====================================================
+-
+-include $(CLEAR_VARS)
+-LOCAL_SRC_FILES := $(common_SRC_FILES)
+-LOCAL_CFLAGS += $(common_CFLAGS)
+-LOCAL_ASFLAGS += $(common_ASFLAGS)
+-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
+-LOCAL_STATIC_LIBRARIES := libz
+-LOCAL_MODULE:= libpng
+-include $(BUILD_HOST_STATIC_LIBRARY)
+-
+-
+-# For the device (static)
+-# =====================================================
+-
+-include $(CLEAR_VARS)
+-LOCAL_CLANG := true
+-LOCAL_SRC_FILES := $(common_SRC_FILES)
+-LOCAL_CFLAGS += $(common_CFLAGS) -ftrapv
+-LOCAL_CFLAGS_arm := $(my_cflags_arm)
+-LOCAL_ASFLAGS += $(common_ASFLAGS)
+-LOCAL_SRC_FILES_arm := $(my_src_files_arm)
+-LOCAL_CFLAGS_arm64 := $(my_cflags_arm64)
+-LOCAL_SRC_FILES_arm64 := $(my_src_files_arm)
+-LOCAL_ADDRESS_SANITIZER := false
+-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
+-LOCAL_SHARED_LIBRARIES := libz
+-LOCAL_MODULE:= libpng
+-include $(BUILD_STATIC_LIBRARY)
+-
+ # For the device (shared)
+ # =====================================================
+ 
+@@ -76,23 +42,14 @@ include $(CLEAR_VARS)
+ LOCAL_CLANG := true
+ LOCAL_SRC_FILES := $(common_SRC_FILES)
+ LOCAL_CFLAGS += $(common_CFLAGS) -ftrapv
+-LOCAL_CFLAGS_arm := $(my_cflags_arm)
+ LOCAL_ASFLAGS += $(common_ASFLAGS)
+-LOCAL_SRC_FILES_arm := $(my_src_files_arm)
+-LOCAL_CFLAGS_arm64 := $(my_cflags_arm64)
+-LOCAL_SRC_FILES_arm64 := $(my_src_files_arm)
++ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
++	LOCAL_SRC_FILES += $(my_src_files_arm)
++	LOCAL_CFLAGS += $(my_cflags_arm)
++else ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
++	LOCAL_SRC_FILES += $(my_src_files_arm)
++	LOCAL_CFLAGS += $(my_cflags_arm64)
++endif
+ LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
+-LOCAL_SHARED_LIBRARIES := libz
+ LOCAL_MODULE:= libpng
+-include $(BUILD_SHARED_LIBRARY)
+-
+-# For testing
+-# =====================================================
+-
+-include $(CLEAR_VARS)
+-LOCAL_CLANG := true
+-LOCAL_SRC_FILES:= pngtest.c
+-LOCAL_MODULE := pngtest
+-LOCAL_SHARED_LIBRARIES:= libpng libz
+-LOCAL_MODULE_TAGS := debug
+-include $(BUILD_EXECUTABLE)
++include $(BUILD_STATIC_LIBRARY)
+-- 
+2.8.2
+

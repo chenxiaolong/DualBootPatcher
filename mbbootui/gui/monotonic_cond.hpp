@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,22 +17,20 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.h"
+#pragma once
 
-#define MBP_VERSION "@MBP_VERSION@"
-#define GIT_VERSION "@GIT_VERSION@"
+#include <pthread.h>
 
-namespace mb
+class MonotonicCond
 {
+public:
+    MonotonicCond();
+    ~MonotonicCond();
 
-const char * get_mbtool_version()
-{
-    return MBP_VERSION;
-}
+    operator pthread_cond_t * ();
 
-const char * get_git_version()
-{
-    return GIT_VERSION;
-}
-
-}
+private:
+    bool m_initialized;
+    pthread_condattr_t m_condattr;
+    pthread_cond_t m_cond;
+};

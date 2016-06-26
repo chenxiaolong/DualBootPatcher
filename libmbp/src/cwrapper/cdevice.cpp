@@ -261,4 +261,10 @@ void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs)
     d->setExtraBlockDevs(cstring_array_to_vector(block_devs));
 }
 
+bool mbp_device_boot_ui_supported(const CDevice *device)
+{
+    CCAST(device);
+    return d->twOptions()->supported;
+}
+
 }

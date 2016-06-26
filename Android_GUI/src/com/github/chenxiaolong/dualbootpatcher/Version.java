@@ -55,7 +55,7 @@ public class Version implements Comparable<Version> {
         Matcher m = p.matcher(versionString);
 
         if (!m.matches()) {
-            throw new VersionParseException("Invalid version number");
+            throw new VersionParseException("Invalid version number: " + versionString);
         }
 
         mMajorVer = Integer.parseInt(m.group(1));

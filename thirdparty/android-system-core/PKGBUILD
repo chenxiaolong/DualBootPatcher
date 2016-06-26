@@ -1,0 +1,108 @@
+# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+_prebuilts='https://snapshots.noobdev.io/repo/prebuilts'
+_ver_safe_iop=6.0.1_r43-1
+
+pkgname=android-system-core
+pkgver=6.0.1_r43
+pkgrel=2
+pkgdesc="Libraries from AOSP's system/core sources"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/system/core"
+license=(Apache)
+source=("git+https://android.googlesource.com/platform/system/core#tag=android-${pkgver}"
+        0001-Make-this-NDK-buildable.patch)
+_source_template=("${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz"
+                  "${_prebuilts}/safe-iop-${_ver_safe_iop}-@ARCH@.pkg.tar.xz.sig")
+source_armv7=("${_source_template[@]/@ARCH@/armv7}")
+source_aarch64=("${_source_template[@]/@ARCH@/aarch64}")
+source_x86=("${_source_template[@]/@ARCH@/x86}")
+source_x86_64=("${_source_template[@]/@ARCH@/x86_64}")
+noextract=("safe-iop-${_ver_safe_iop}-${CARCH}.pkg.tar.xz")
+validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
+
+prepare() {
+    cd core
+    patch -p1 -i "${srcdir}/0001-Make-this-NDK-buildable.patch"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    mkdir -p "common_${abi}"
+    cd "common_${abi}"
+
+    mkdir -p safe-iop
+    bsdtar -xf "${srcdir}/safe-iop-${_ver_safe_iop}-${CARCH}.pkg.tar.xz" -C safe-iop
+}
+
+build() {
+    cd core
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    local pkg
+    for pkg in libcutils libutils liblog libpixelflinger; do
+        pushd "${pkg}"
+
+        rm -rf obj
+
+        ndk-build \
+            NDK_PROJECT_PATH=. \
+            NDK_TOOLCHAIN_VERSION=clang3.6 \
+            APP_BUILD_SCRIPT=Android.mk \
+            APP_ABI="${abi}" \
+            APP_PLATFORM=android-21 \
+            APP_STL=gnustl_static \
+            APP_CFLAGS="-DHAVE_ANDROID_OS -DOS_PATH_SEPARATOR=\\'/\\'" \
+            "${MAKEFLAGS}"
+
+        popd
+    done
+}
+
+package() {
+    cd core
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/lib/
+    install -m644 \
+        "libcutils/obj/local/${abi}/libcutils.a" \
+        "libutils/obj/local/${abi}/libutils.a" \
+        "liblog/obj/local/${abi}/liblog.a" \
+        "libpixelflinger/obj/local/${abi}/libpixelflinger.a" \
+        "${pkgdir}"/lib/
+    install -dm755 "${pkgdir}"/include/
+    cp -a \
+        include/cutils \
+        include/utils \
+        include/log \
+        libpixelflinger/include/pixelflinger \
+        "${pkgdir}"/include/
+}
+
+sha512sums=('SKIP'
+            '53080161eeb259251f575656754158d04bb620629bfb0724b26859827d4abea9c405f40ee1774874a64936d3e0761d8e12b24834025c21b0ae912dd194c5423d')
+sha512sums_armv7=('cf4705a7928f4ae70e92d94f47bbc7d01bb9a9eef707cfade62c6d7198be559325bcea528bcc67b6e93654e69e8e76c015981df55d30a712fa0ec8f4de4edd9b'
+                  'SKIP')
+sha512sums_aarch64=('b6d2bc283a359f7b97ff34eb8c3d1b74081ec7e8f51abf0f56eb98af0507da9ac73ae83e078eca7ed1935b0ebafd27b02914c4dd68730f7b72f475dd4050c689'
+                    'SKIP')
+sha512sums_x86=('5a75f2ac7f816fee629c697f0bca6a1b14e6b306b1a45260afff6740dc3b96370d2894a4eb90811880536b015b49c1affa5d349b1afa3cc00a870b3d7e0b5711'
+                'SKIP')
+sha512sums_x86_64=('f46430623bb0146ff85c30cb696a29348a0330e5434b5486626ca6504c1a99cb970087725dcd04f6c164129c0772c180e6aa81abef043b077725d93f2d46ed61'
+                   'SKIP')

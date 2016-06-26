@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 
 import mbtool.daemon.v3.FileOpenFlag;
 import mbtool.daemon.v3.FileSeekWhence;
+import mbtool.daemon.v3.PathDeleteFlag;
 
 public interface MbtoolInterface {
     /**
@@ -267,6 +268,30 @@ public interface MbtoolInterface {
     void rebootViaMbtool(String arg) throws IOException, MbtoolException, MbtoolCommandException;
 
     /**
+     * Shuts down the device via init.
+     *
+     * NOTE: May result in an unclean shutdown as Android's init will simply kill all processes,
+     * attempt to unmount filesystems, and then shut down.
+     *
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void shutdownViaInit() throws IOException, MbtoolException, MbtoolCommandException;
+
+    /**
+     * Shuts down the device via mbtool.
+     *
+     * NOTE: May result in an unclean shutdown as mbtool will simply kill all processes, attempt to
+     * unmount filesystems, and then shut down.
+     *
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void shutdownViaMbtool() throws IOException, MbtoolException, MbtoolCommandException;
+
+    /**
      * Copy a file using mbtool.
      *
      * @param source Absolute source path
@@ -276,6 +301,18 @@ public interface MbtoolInterface {
      * @throws MbtoolCommandException
      */
     void pathCopy(String source, String target) throws IOException, MbtoolException,
+            MbtoolCommandException;
+
+    /**
+     * Delete a path using mbtool.
+     *
+     * @param path Path to delete
+     * @param flag {@link PathDeleteFlag}
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void pathDelete(String path, short flag) throws IOException, MbtoolException,
             MbtoolCommandException;
 
     /**

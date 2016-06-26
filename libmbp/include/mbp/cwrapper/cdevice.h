@@ -56,6 +56,8 @@ MB_EXPORT void mbp_device_set_recovery_block_devs(CDevice *device, const char **
 MB_EXPORT char ** mbp_device_extra_block_devs(const CDevice *device);
 MB_EXPORT void mbp_device_set_extra_block_devs(CDevice *device, const char **block_devs);
 
+MB_EXPORT bool mbp_device_boot_ui_supported(const CDevice *device);
+
 #ifdef __cplusplus
 }
 #endif

@@ -6,14 +6,19 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         mntent.c
     )
 
-    add_definitions(-fvisibility=default)
-
     add_library(miscstuff SHARED ${MISCSTUFF_SOURCES})
 
     set_target_properties(
         miscstuff
         PROPERTIES
         POSITION_INDEPENDENT_CODE 1
+    )
+
+    target_compile_definitions(
+        miscstuff
+        PRIVATE
+        -DMB_DYNAMIC_LINK
+        -DMB_LIBRARY
     )
 
     if(NOT MSVC)

@@ -40,6 +40,7 @@ bool relative_path(const std::string &path, const std::string &start,
                    std::string *out);
 int path_compare(const std::string &path1, const std::string &path2);
 bool wait_for_path(const char *path, unsigned int timeout_ms);
+bool path_exists(const char *path, bool follow_symlinks);
 
 }
 }

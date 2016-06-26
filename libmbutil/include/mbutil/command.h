@@ -29,7 +29,6 @@ namespace util
 
 typedef void (*OutputCb) (const std::string &line, void *data);
 
-int run_shell_command(const std::string &command);
 int run_command(const std::vector<std::string> &argv);
 int run_command_cb(const std::vector<std::string> &argv,
                    OutputCb cb, void *data);

@@ -1,0 +1,6 @@
+if(ANDROID)
+    set(MBP_LIBPNG_INCLUDES
+        ${THIRD_PARTY_LIBPNG_DIR}/${ANDROID_ABI}/include)
+    set(MBP_LIBPNG_LIBRARIES
+        ${THIRD_PARTY_LIBPNG_DIR}/${ANDROID_ABI}/lib/libpng.a)
+endif()

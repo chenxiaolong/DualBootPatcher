@@ -9,6 +9,7 @@ include "v3/file_selinux_get_label.fbs";
 include "v3/file_selinux_set_label.fbs";
 include "v3/path_chmod.fbs";
 include "v3/path_copy.fbs";
+include "v3/path_delete.fbs";
 include "v3/path_selinux_get_label.fbs";
 include "v3/path_selinux_set_label.fbs";
 include "v3/path_get_directory_size.fbs";
@@ -21,6 +22,7 @@ include "v3/mb_set_kernel.fbs";
 include "v3/mb_wipe_rom.fbs";
 include "v3/mb_get_packages_count.fbs";
 include "v3/reboot.fbs";
+include "v3/shutdown.fbs";
 
 namespace mbtool.daemon.v3;
 
@@ -47,7 +49,9 @@ union RequestType {
     MbWipeRomRequest,
     MbGetPackagesCountRequest,
     RebootRequest,
-    SignedExecRequest
+    SignedExecRequest,
+    ShutdownRequest,
+    PathDeleteRequest,
 }
 
 table Request {

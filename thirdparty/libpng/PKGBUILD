@@ -1,0 +1,58 @@
+# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=libpng
+pkgver=6.0.1_r43
+pkgrel=2
+pkgdesc="A collection of routines used to create PNG format graphics"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://android.googlesource.com/platform/external/libpng"
+license=(custom)
+source=("git+https://android.googlesource.com/platform/external/libpng#tag=android-${pkgver}"
+        "0001-Make-Android.mk-NDK-buildable.patch")
+sha512sums=('SKIP'
+            'fdea4761a601bc356763cecb8316b02cf803e638d19f89fdf82db53ba6b5243ca74132f95cded16331a625db0a0fa0183adf4c15ba404b63fbc21fb1701fb735')
+
+prepare() {
+    cd "${pkgname}"
+    patch -p1 -i "${srcdir}"/0001-Make-Android.mk-NDK-buildable.patch
+}
+
+build() {
+    cd "${pkgname}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    ndk-build \
+        NDK_PROJECT_PATH=. \
+        NDK_TOOLCHAIN_VERSION=clang3.6 \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI="${abi}" \
+        APP_PLATFORM=android-21 \
+        "${MAKEFLAGS}"
+}
+
+package() {
+    cd "${pkgname}"
+
+    local abi
+    abi=$(android_get_abi_name)
+
+    install -dm755 "${pkgdir}"/lib/
+    cp -a "obj/local/${abi}/libpng.a" "${pkgdir}"/lib/
+    install -dm755 "${pkgdir}"/include/
+    install -m644 png.h pngconf.h pnglibconf.h "${pkgdir}"/include/
+}

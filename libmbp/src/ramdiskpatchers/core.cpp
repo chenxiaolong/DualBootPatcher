@@ -216,6 +216,10 @@ bool CoreRP::addBlockDevProps()
     encoded += encode_list(device->dataBlockDevs());
     lines.push_back(encoded);
 
+    encoded = "ro.patcher.blockdevs.boot=";
+    encoded += encode_list(device->bootBlockDevs());
+    lines.push_back(encoded);
+
     encoded = "ro.patcher.blockdevs.recovery=";
     encoded += encode_list(device->recoveryBlockDevs());
     lines.push_back(encoded);

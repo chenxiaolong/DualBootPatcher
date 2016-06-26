@@ -36,13 +36,12 @@
 #include "daemon.h"
 #include "init.h"
 #include "miniadbd.h"
-#include "mount_fstab.h"
 #include "sepolpatch.h"
 #include "signature.h"
 #include "uevent_dump.h"
 #endif
-#include "version.h"
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/process.h"
 #include "mbutil/string.h"
@@ -77,7 +76,6 @@ struct tool tools[] = {
     { "daemon", mb::daemon_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
-    { "mount_fstab", mb::mount_fstab_main },
     { "sepolpatch", mb::sepolpatch_main },
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
@@ -100,8 +98,8 @@ static void mbtool_usage(int error)
             "To see the usage and other help text for a tool, pass --help to\n"
             "the tool.\n\n"
             "Available tools:\n",
-            mb::get_mbtool_version(),
-            mb::get_git_version());
+            mb::version(),
+            mb::git_version());
     for (int i = 0; tools[i].name; ++i) {
         if (strcmp(tools[i].name, "mbtool") != 0) {
             fprintf(stream, "  %s\n", tools[i].name);
