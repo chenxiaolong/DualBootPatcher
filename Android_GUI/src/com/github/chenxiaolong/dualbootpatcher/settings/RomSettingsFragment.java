@@ -37,6 +37,7 @@ import com.github.chenxiaolong.dualbootpatcher.MainApplication;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.Version;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
@@ -54,7 +55,8 @@ import java.util.ArrayList;
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
     public static final String TAG = RomSettingsFragment.class.getSimpleName();
 
-    private static final String PROGRESS_DIALOG_TAG = "boot_ui_progres_dialog";
+    private static final String PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog";
+    private static final String CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog";
 
     private static final String EXTRA_TASK_ID_GET_VERSION = "task_id_get_version";
     private static final String EXTRA_TASK_ID_INSTALL = "task_id_install";
@@ -281,7 +283,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         mTaskIdInstall = -1;
 
         GenericProgressDialog d = (GenericProgressDialog)
-                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_BOOT_UI);
         if (d != null) {
             d.dismiss();
         }
@@ -291,6 +293,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         Toast.makeText(getActivity(),
                 success ? R.string.rom_settings_boot_ui_install_success :
                         R.string.rom_settings_boot_ui_install_failure, Toast.LENGTH_LONG).show();
+
+        if (success) {
+            GenericConfirmDialog d2 = GenericConfirmDialog.newInstanceFromFragment(
+                    null, 0, null, getString(R.string.rom_settings_boot_ui_update_ramdisk_msg),
+                    getString(R.string.ok));
+            d2.show(getFragmentManager(), CONFIRM_DIALOG_BOOT_UI);
+        }
     }
 
     private void onUninstalled(boolean success) {
@@ -298,7 +307,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         mTaskIdUninstall = -1;
 
         GenericProgressDialog d = (GenericProgressDialog)
-                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_BOOT_UI);
         if (d != null) {
             d.dismiss();
         }
@@ -318,7 +327,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             mService.enqueueTaskId(mTaskIdInstall);
 
             GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
+            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         } else if (preference == mBootUIUninstallPref) {
             mTaskIdUninstall = mService.bootUIAction(BootUIAction.UNINSTALL);
@@ -326,7 +335,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             mService.enqueueTaskId(mTaskIdUninstall);
 
             GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
+            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         }
 

@@ -447,6 +447,10 @@
     <string name="rom_settings_boot_ui_uninstall_success">Successfully uninstalled Boot UI</string>
     <!-- Toast message to indicate that the Boot UI failed to uninstall -->
     <string name="rom_settings_boot_ui_uninstall_failure">Failed to uninstall Boot UI</string>
+    <!-- Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated -->
+    <string name="rom_settings_boot_ui_update_ramdisk_msg">The Boot UI has been successfully
+        installed.\n\nPlease ensure that the ramdisk has been updated in every ROM. Otherwise, the
+        Boot UI will not run during boot.</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>
