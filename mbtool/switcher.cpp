@@ -305,7 +305,7 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
     LOGD("Force update checksums: %d", force_update_checksums);
 
     // Path for all of the images
-    std::string multiboot_path(MULTIBOOT_DIR);
+    std::string multiboot_path(get_raw_path(MULTIBOOT_DIR));
     multiboot_path += "/";
     multiboot_path += id;
 
@@ -433,7 +433,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     LOGD("Attempting to set the kernel for %s", id.c_str());
 
     // Path for all of the images
-    std::string multiboot_path(MULTIBOOT_DIR);
+    std::string multiboot_path(get_raw_path(MULTIBOOT_DIR));
     multiboot_path += "/";
     multiboot_path += id;
 

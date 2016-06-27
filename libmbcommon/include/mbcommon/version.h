@@ -19,10 +19,12 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
 
-const char * get_mbtool_version();
-const char * get_git_version();
+MB_EXPORT const char * version();
+MB_EXPORT const char * git_version();
 
 }

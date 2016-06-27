@@ -36,32 +36,6 @@ namespace mb
 namespace util
 {
 
-int run_shell_command(const std::string &command)
-{
-    // If /sbin/sh exists (eg. in recovery), then fork and run that. Otherwise,
-    // just call system().
-
-    LOGD("Running shell command: \"%s\"", command.c_str());
-
-    struct stat sb;
-    if (stat("/sbin/sh", &sb) == 0) {
-        int status;
-        pid_t pid;
-        if ((pid = fork()) >= 0) {
-            if (pid == 0) {
-                execlp("/sbin/sh", "sh", "-c", command.c_str(), nullptr);
-                _exit(127);
-            } else {
-                pid = waitpid(pid, &status, 0);
-            }
-        }
-
-        return pid == -1 ? -1 : status;
-    } else {
-        return system(command.c_str());
-    }
-}
-
 int run_command(const std::vector<std::string> &argv)
 {
     if (argv.empty()) {

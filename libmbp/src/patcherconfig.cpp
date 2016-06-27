@@ -23,10 +23,11 @@
 
 #include <cassert>
 
+#include "mbcommon/version.h"
+
 #include "mbp/device.h"
 #include "mbp/patcherinterface.h"
 #include "mbp/private/fileutils.h"
-#include "mbp/version.h"
 
 // Devices
 #include "devices/asus.h"
@@ -40,6 +41,7 @@
 #include "devices/samsung.h"
 #include "devices/sony.h"
 #include "devices/xiaomi.h"
+#include "devices/pantech.h"
 
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
@@ -88,7 +90,7 @@ PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
     m_impl->loadDefaultDevices();
 
-    m_impl->version = LIBMBP_VERSION;
+    m_impl->version = mb::version();
 }
 
 PatcherConfig::~PatcherConfig()
@@ -210,6 +212,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addOnePlusDevices(&devices);
     addSonyDevices(&devices);
     addXiaomiDevices(&devices);
+    addPantechDevices(&devices);
 }
 
 /*!

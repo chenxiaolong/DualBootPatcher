@@ -96,16 +96,17 @@ void addNexusDevices(std::vector<Device *> *devices)
     device->setName("Google/Huawei Nexus 6P");
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR });
-    device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM,
+    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, F9824900_SOC0_SYSTEM,
                                  "/dev/block/mmcblk0p43" });
-    device->setCacheBlockDevs({ F9824900_SOC0_CACHE,
+    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, F9824900_SOC0_CACHE,
                                 "/dev/block/mmcblk0p38" });
-    device->setDataBlockDevs({ F9824900_SOC0_USERDATA,
+    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, F9824900_SOC0_USERDATA,
                                "/dev/block/mmcblk0p44" });
-    device->setBootBlockDevs({ F9824900_SOC0_BOOT,
+    device->setBootBlockDevs({ BOOTDEVICE_BOOT, F9824900_SOC0_BOOT,
                                "/dev/block/mmcblk0p34" });
-    device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY,
+    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, F9824900_SOC0_RECOVERY,
                                    "/dev/block/mmcblk0p35" });
+    // vendor is 37 if you need it
     devices->push_back(device);
 
     // Google/ASUS Nexus 7 (2012 Wifi)

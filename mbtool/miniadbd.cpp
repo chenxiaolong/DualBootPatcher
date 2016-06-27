@@ -33,12 +33,11 @@
 
 #include "external/legacy_property_service.h"
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
-
-#include "version.h"
 
 
 namespace mb
@@ -71,7 +70,7 @@ static bool initialize_adb()
 {
     bool ret = true;
 
-    const char *version = get_mbtool_version();
+    const char *version = mb::version();
     ret = write_file("/sys/class/android_usb/android0/enable", "0", 1) && ret;
     ret = write_file("/sys/class/android_usb/android0/idVendor", "18D1", 4) && ret;
     ret = write_file("/sys/class/android_usb/android0/idProduct", "4EE7", 4) && ret;

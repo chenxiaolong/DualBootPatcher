@@ -65,5 +65,12 @@ bool format_time(const std::string &format, std::string *out)
     return true;
 }
 
+std::string format_time(const std::string &format)
+{
+    std::string result;
+    format_time(format, &result);
+    return result;
+}
+
 }
 }

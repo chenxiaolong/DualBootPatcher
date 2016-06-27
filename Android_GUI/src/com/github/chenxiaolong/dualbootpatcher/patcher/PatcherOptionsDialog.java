@@ -308,7 +308,7 @@ public class PatcherOptionsDialog extends DialogFragment {
         for (Device device : PatcherUtils.sPC.getDevices()) {
             mDevices.add(device);
             mDevicesNames.add(String.format("%s - %s", device.getId(), device.getName()));
-            if (device.getId().equals("hero2lte")) {
+            if (device.getId().equals("hero2lte") || device.getId().equals("herolte")) {
                 Device rrd = getRickRollDevice();
                 mDevices.add(rrd);
                 mDevicesNames.add(String.format("%s - %s", rrd.getId(), rrd.getName()));

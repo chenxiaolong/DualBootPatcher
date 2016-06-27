@@ -43,7 +43,8 @@ namespace log
 #define KMSG_LEVEL_EMERG    "<0>"
 #define KMSG_LEVEL_DEFAULT  "<d>"
 
-KmsgLogger::KmsgLogger()
+KmsgLogger::KmsgLogger(bool force_error_prio)
+    : _force_error_prio(force_error_prio)
 {
     static int open_mode = O_WRONLY | O_NOCTTY | O_CLOEXEC;
     static const char *kmsg = "/dev/kmsg";
@@ -75,24 +76,30 @@ void KmsgLogger::log(LogLevel prio, const char *fmt, va_list ap)
         return;
     }
 
-    const char *kprio = KMSG_LEVEL_DEFAULT;
+    const char *kprio;
 
-    switch (prio) {
-    case LogLevel::Error:
+    if (_force_error_prio) {
         kprio = KMSG_LEVEL_ERROR;
-        break;
-    case LogLevel::Warning:
-        kprio = KMSG_LEVEL_WARNING;
-        break;
-    case LogLevel::Info:
-        kprio = KMSG_LEVEL_INFO;
-        break;
-    case LogLevel::Debug:
-        kprio = KMSG_LEVEL_DEBUG;
-        break;
-    case LogLevel::Verbose:
+    } else {
         kprio = KMSG_LEVEL_DEFAULT;
-        break;
+
+        switch (prio) {
+        case LogLevel::Error:
+            kprio = KMSG_LEVEL_ERROR;
+            break;
+        case LogLevel::Warning:
+            kprio = KMSG_LEVEL_WARNING;
+            break;
+        case LogLevel::Info:
+            kprio = KMSG_LEVEL_INFO;
+            break;
+        case LogLevel::Debug:
+            kprio = KMSG_LEVEL_DEBUG;
+            break;
+        case LogLevel::Verbose:
+            kprio = KMSG_LEVEL_DEFAULT;
+            break;
+        }
     }
 
     char new_fmt[64];

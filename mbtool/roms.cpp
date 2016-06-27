@@ -79,17 +79,20 @@ std::string Rom::full_data_path()
 
 std::string Rom::boot_image_path()
 {
-    return util::format(MULTIBOOT_DIR "/%s/boot.img", id.c_str());
+    return get_raw_path(util::format(
+            MULTIBOOT_DIR "/%s/boot.img", id.c_str()));
 }
 
 std::string Rom::config_path()
 {
-    return util::format(MULTIBOOT_DIR "/%s/config.json", id.c_str());
+    return get_raw_path(util::format(
+            MULTIBOOT_DIR "/%s/config.json", id.c_str()));
 }
 
 std::string Rom::thumbnail_path()
 {
-    return util::format(MULTIBOOT_DIR "/%s/thumbnail.webp", id.c_str());
+    return get_raw_path(util::format(
+            MULTIBOOT_DIR "/%s/thumbnail.webp", id.c_str()));
 }
 
 std::shared_ptr<Rom> Roms::create_rom_primary()
@@ -299,7 +302,13 @@ std::shared_ptr<Rom> Roms::get_current_rom()
 
     // This is set if mbtool is handling the boot process
     std::string prop_id;
-    util::get_property("ro.multiboot.romid", &prop_id, std::string());
+    util::get_property(PROP_MULTIBOOT_ROM_ID, &prop_id, std::string());
+    // This is necessary for the daemon to get a correct result before Android
+    // boots (eg. for the boot UI)
+    if (prop_id.empty()) {
+        util::file_get_property(DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID,
+                                &prop_id, std::string());
+    }
 
     if (!prop_id.empty()) {
         auto rom = roms.find_by_id(prop_id);
@@ -315,7 +324,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     bool has_raw_system = stat("/raw-system", &sb) == 0;
     if (!has_raw && !has_raw_system) {
         // Cache the result
-        util::set_property("ro.multiboot.romid", "primary");
+        util::set_property(PROP_MULTIBOOT_ROM_ID, "primary");
 
         return roms.find_by_id("primary");
     }

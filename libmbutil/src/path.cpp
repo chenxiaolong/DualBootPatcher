@@ -342,5 +342,11 @@ bool wait_for_path(const char *path, unsigned int timeout_ms)
     return ret == 0;
 }
 
+bool path_exists(const char *path, bool follow_symlinks)
+{
+    struct stat sb;
+    return (follow_symlinks ? stat : lstat)(path, &sb) == 0;
+}
+
 }
 }

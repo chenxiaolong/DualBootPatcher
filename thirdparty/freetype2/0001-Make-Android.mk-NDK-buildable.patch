@@ -1,0 +1,56 @@
+From eb470ddbf923033c6602aaac7acd8934ddfbfaa1 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Sat, 21 May 2016 15:28:01 -0400
+Subject: [PATCH] Make Android.mk NDK-buildable
+
+---
+ Android.mk | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/Android.mk b/Android.mk
+index b2b780b..3e8b864 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -6,6 +6,13 @@ endif
+ 
+ ifeq ($(USE_FREETYPE),2.6.0)
+ LOCAL_PATH:= $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_MODULE            := libpng
++LOCAL_SRC_FILES         := common_$(TARGET_ARCH_ABI)/libpng/lib/libpng.a
++LOCAL_EXPORT_C_INCLUDES := common_$(TARGET_ARCH_ABI)/libpng/include
++include $(PREBUILT_STATIC_LIBRARY)
++
+ include $(CLEAR_VARS)
+ 
+ # compile in ARM mode, since the glyph loader/renderer is a hotspot
+@@ -38,16 +45,14 @@ LOCAL_SRC_FILES:= \
+     src/pshinter/pshinter.c
+ 
+ LOCAL_C_INCLUDES += \
+-    $(LOCAL_PATH)/include \
+-    external/libpng \
+-    external/zlib
++    $(LOCAL_PATH)/include
+ 
+ LOCAL_CFLAGS += -W -Wall
+ LOCAL_CFLAGS += -fPIC -DPIC
+ LOCAL_CFLAGS += "-DDARWIN_NO_CARBON"
+ LOCAL_CFLAGS += "-DFT2_BUILD_LIBRARY"
+ 
+-LOCAL_SHARED_LIBRARIES += libpng libz
++LOCAL_STATIC_LIBRARIES += libpng libz
+ 
+ # the following is for testing only, and should not be used in final builds
+ # of the product
+@@ -57,5 +62,5 @@ LOCAL_CFLAGS += -O2
+ 
+ LOCAL_MODULE:= libft2
+ 
+-include $(BUILD_SHARED_LIBRARY)
++include $(BUILD_STATIC_LIBRARY)
+ endif
+-- 
+2.8.2
+

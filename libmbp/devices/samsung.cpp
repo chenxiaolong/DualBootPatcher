@@ -265,12 +265,24 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p20" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p21" });
     device->setExtraBlockDevs({ QCOM_ABOOT });
+    device->twOptions()->supported = true;
+    device->twOptions()->flags =
+            Device::FLAG_TW_PREFER_LCD_BACKLIGHT
+            | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->graphicsBackends = { "fbdev" };
     devices->push_back(device);
 
     // Samsung Galaxy S 4 (Exynos)
     device = new Device();
     device->setId("i9500");
-    device->setCodenames({ "ja3g", "jalte", "jaltektt", "jalteskt" });
+    device->setCodenames({
+        // i9500
+        "ja3g", "jalte",
+        // SHV-E300S/K
+        "jaltektt", "jalteskt",
+        // For OpenRecovery (TWRP)
+        "i9500"
+    });
     device->setName("Samsung Galaxy S 4 (Exynos)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
@@ -590,6 +602,18 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ "/dev/block/mmcblk0p25" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
+    
+    // Samsung Galaxy V (Ace 4 Lite)
+    device = new Device();
+    device->setId("vivalto3g");
+    device->setCodenames({ "vivalto3g", "vivalto3gvn", "vivalto3gub"});
+    device->setName("Samsung Galaxy V (Ace 4 Lite)");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p17" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p11" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p12" });
     devices->push_back(device);
 }
 

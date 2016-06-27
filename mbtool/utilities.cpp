@@ -28,6 +28,7 @@
 #include "minizip/zip.h"
 #include "minizip/ioandroid.h"
 
+#include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbp/patcherconfig.h"
@@ -43,7 +44,6 @@
 #include "romconfig.h"
 #include "roms.h"
 #include "switcher.h"
-#include "version.h"
 #include "wipe.h"
 
 namespace mb
@@ -191,7 +191,7 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     }
 
     util::replace_all(&str_data, "\t", "\\t");
-    util::replace_all(&str_data, "@MBTOOL_VERSION@", get_mbtool_version());
+    util::replace_all(&str_data, "@MBTOOL_VERSION@", version());
     util::replace_all(&str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
     util::replace_all(&str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
     util::replace_all(&str_data, "@FIRST_INDEX@", util::format("%d", 2 + 1));
