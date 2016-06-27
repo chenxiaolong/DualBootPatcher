@@ -23,25 +23,23 @@
 
 namespace mbp
 {
+    void addPantechDevices(std::vector<Device *> *devices)
+    {
+        Device *device;
 
-	void addPantechDevices(std::vector<Device *> *devices)
-	{
-		Device *device;
-
-		// PANTECH VEGA IRON 2
-		device = new Device();
-		device->setId("ef63");
-		device->setCodenames({ "ef63s", "ef63l", "ef63k" });
-		device->setName("VEGA IRON 2");
-		device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
-		device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p15" });
-		device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p17" });
-		device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
-		device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
-		device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
-		device->setExtraBlockDevs({ QCOM_TZ, "/dev/block/mmcblk0p8" });
-		devices->push_back(device);
-
-	}
+        // PANTECH VEGA IRON 2
+        device = new Device();
+        device->setId("ef63");
+        device->setCodenames({ "ef63s", "ef63l", "ef63k" });
+        device->setName("VEGA IRON 2");
+        device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+        device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p15" });
+        device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p17" });
+        device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p29" });
+        device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
+        device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p14" });
+        device->setExtraBlockDevs({ QCOM_TZ, "/dev/block/mmcblk0p8" });
+        devices->push_back(device);
+    }
 }
 

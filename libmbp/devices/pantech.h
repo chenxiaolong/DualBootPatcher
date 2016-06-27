@@ -26,7 +26,7 @@
 namespace mbp
 {
 
-	void addPantechDevices(std::vector<Device *> *devices);
+void addPantechDevices(std::vector<Device *> *devices);
 
 }
 
