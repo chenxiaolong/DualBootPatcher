@@ -275,7 +275,14 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     // Samsung Galaxy S 4 (Exynos)
     device = new Device();
     device->setId("i9500");
-    device->setCodenames({ "ja3g", "jalte", "jaltektt", "jalteskt" });
+    device->setCodenames({ 
+		// i9500
+		"ja3g", "jalte", 
+		// SHV-E300S/K
+		"jaltektt", "jalteskt",
+		// For OpenRecovery (TWRP)
+		"i9500"
+	});
     device->setName("Samsung Galaxy S 4 (Exynos)");
     device->setBlockDevBaseDirs({ DWMMC0_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_SYSTEM, "/dev/block/mmcblk0p20" });
