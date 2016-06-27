@@ -106,6 +106,12 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
     device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    device->twOptions()->supported = true;
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX | Device::FLAG_TW_NO_CPU_TEMP | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->brightnessPath = "/sys/class/leds/lcd-backlight/brightness";
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 
     // LG L5
