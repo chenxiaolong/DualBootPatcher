@@ -1,5 +1,9 @@
-/*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+/*release-keys
+ro.build.flavor=zenltezc-user
+ro.product.model=SM-G9280
+ro.product.brand=samsung
+ro.product.name=zenltezc
+ro.product.device=zenltechn * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
