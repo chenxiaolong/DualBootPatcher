@@ -169,20 +169,17 @@
 - name: Motorola Moto E 4G (2nd Gen)
   id: surnia
   codenames:
-    - surnia
     - surnia_cdma
-    - surnia_boost
-    - surnia_verizon
     - surnia_umts
-    - surnia_cricket
-    - surnia_retus
-    - surnia_tefla
-    - xt1514
-    - xt1521
-    - xt1523
-    - xt1524
-    - xt1526
-    - xt1527
+    - surnia_udstv
+    - surnia_uds
+    - XT1514
+    - XT1521
+    - XT1523
+    - XT1524
+    - XT1526
+    - XT1527
+    - XT1529
   architecture: armeabi-v7a
 
   block_devs:
