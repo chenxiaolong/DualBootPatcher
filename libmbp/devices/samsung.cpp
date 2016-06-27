@@ -603,6 +603,18 @@ static void addOtherSeriesPhones(std::vector<Device *> *devices)
     device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
     devices->push_back(device);
+    
+    // Samsung Galaxy V (Ace 4 Lite)
+    device = new Device();
+    device->setId("vivalto3g");
+    device->setCodenames({ "vivalto3g", "vivalto3gvn", "vivalto3gub"});
+    device->setName("Samsung Galaxy V (Ace 4 Lite)");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p18" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p17" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p11" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p12" });
+    devices->push_back(device);
 }
 
 static void addGalaxyNoteSeriesTablets(std::vector<Device *> *devices)
