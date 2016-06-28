@@ -102,9 +102,7 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     // Motorola Moto E (2nd gen 4G)
     device = new Device();
     device->setId("surnia");
-    device->setCodenames({ "surnia", "surnia_cdma", "surnia_boost", "surnia_verizon",
-                           "surnia_cricket", "surnia_retus", "surnia_tefla", "xt1514",
-                           "xt1521", "xt1523", "xt1524", "xt1526", "xt1527" });
+    device->setCodenames({ "surnia_cdma", "surnia_umts", "surnia_udstv", "surnia_uds", "XT1529", "XT1527", "XT1526", "XT1524", "XT1523", "XT1521", "XT1514"});
     device->setName("Motorola Moto E (2nd gen 4G)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p41" });
