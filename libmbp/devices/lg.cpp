@@ -119,10 +119,6 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         | Device::FLAG_TW_PREFER_LCD_BACKLIGHT;
     device->twOptions()->graphicsBackends = { "fbdev" };
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
-    device->twOptions()->brightnessPath =
-        "/sys/class/leds/lcd-backlight/brightness";
-    device->twOptions()->maxBrightness = 255;
-    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 
     // LG L5
