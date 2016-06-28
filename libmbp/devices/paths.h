@@ -154,7 +154,7 @@
 #define MTK_UBOOT               MTK_BASE_DIR "/uboot"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
 
-#define MTK_11230000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/"
+#define MTK_11230000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name"
 #define MTK_11230000_BOOT       MTK_11230000_BASE_DIR "/boot"
 #define MTK_11230000_CACHE      MTK_11230000_BASE_DIR "/cache"
 #define MTK_11230000_LK         MTK_11230000_BASE_DIR "/lk"
