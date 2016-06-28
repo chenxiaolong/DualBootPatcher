@@ -32,7 +32,7 @@ void addJiayuDevices(std::vector<Device *> *devices)
     device = new Device();
     device->setId("h560");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setCodenames({ "h560", "s3_h560", "Jiayu_S3", "Jiayu-S3","JY_S3", "JY-S3"});
+    device->setCodenames({ "h560", "s3_h560", "Jiayu_S3", "Jiayu-S3", "JY_S3", "JY-S3"});
     device->setName("Jiayu S3");
     device->setBlockDevBaseDirs({ MTK_BASE_DIR, MTK_11230000_BASE_DIR });
     device->setSystemBlockDevs({ MTK_SYSTEM, MTK_11230000_SYSTEM,
