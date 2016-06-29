@@ -28,11 +28,11 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // LG G2
+    // LG Optimus G2
     device = new Device();
     device->setId("lgg2");
     device->setCodenames({ "g2", "d800", "d801", "ls980", "vs980" });
-    device->setName("LG G2");
+    device->setName("LG Optimus G2");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p35" });
@@ -42,11 +42,11 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_TZ });
     devices->push_back(device);
 
-    // LG G2 (d802)
+    // LG Optimus G2 (d802)
     device = new Device();
     device->setId("lgg2_d802");
     device->setCodenames({ "g2", "d802", "d802t" });
-    device->setName("LG G2 (d802)");
+    device->setName("LG Optimus G2 (d802)");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p30" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p31" });
@@ -56,12 +56,12 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_TZ });
     devices->push_back(device);
 
-    // LG G3
+    // LG Optimus G3
     device = new Device();
     device->setId("lgg3");
     device->setCodenames({ "g3", "d850", "d851", "d852", "d855", "f400",
                            "f400k", "ls990", "vs985" });
-    device->setName("LG G3");
+    device->setName("LG Optimus G3");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p40" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p41" });
@@ -71,12 +71,12 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_MODEM });
     devices->push_back(device);
 
-    // LG G4
+    // LG Optimus G4
     device = new Device();
     device->setId("lgg4");
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setCodenames({ "p1", "h815" });
-    device->setName("LG G4");
+    device->setName("LG Optimus G4");
     device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
     device->setSystemBlockDevs({ F9824900_SYSTEM, BOOTDEVICE_SYSTEM,
                                  "/dev/block/mmcblk0p47" });
@@ -116,7 +116,7 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // LG L5
+    // LG Optimus L5
     device = new Device();
     device->setId("m4");
     device->setCodenames({
@@ -125,11 +125,11 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         // Variant Names
         "e610", "e612", "e617",
         "E610", "E612", "E617" });
-    device->setName("LG L5");
+    device->setName("LG Optimus L5");
     CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
-    // LG L7
+    // LG Optimus L7
     device = new Device();
     device->setId("u0");
     device->setCodenames({
@@ -138,11 +138,11 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         // Variant Names
         "p700", "p705", "p708",
         "P700", "P705", "P708" });
-    device->setName("LG L7");
+    device->setName("LG Optimus L7");
     CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
-    // LG L1 II
+    // LG Optimus L1 II
     device = new Device();
     device->setId("v1");
     device->setCodenames({
@@ -151,11 +151,11 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         // Variant Names
         "e410", "e411", "e415", "e420",
         "E410", "E411", "E415", "E420" });
-    device->setName("LG L1 II");
+    device->setName("LG Optimus L1 II");
     CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
-    // LG L3 II
+    // LG Optimus L3 II
     device = new Device();
     device->setId("vee3");
     device->setCodenames({
@@ -164,11 +164,11 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         // Variant Names
         "e425", "e430", "e431", "e435",
         "E425", "E430", "E431", "E435" });
-    device->setName("LG L3 II");
+    device->setName("LG Optimus L3 II");
     CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
-    // LG L7 II
+    // LG Optimus L7 II
     device = new Device();
     device->setId("vee7");
     device->setCodenames({
@@ -177,7 +177,7 @@ static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         // Variant Names
         "p710", "p712", "p713", "p714", "p715", "p716",
         "P710", "P712", "P713", "P714", "P715", "P716" });
-    device->setName("LG L7 II");
+    device->setName("LG Optimus L7 II");
     CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 }
