@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -26,6 +26,6 @@
 namespace mbp
 {
 
-    void addGoogleDevices(std::vector<Device *> *devices);
+void addGoogleDevices(std::vector<Device *> *devices);
 
 }

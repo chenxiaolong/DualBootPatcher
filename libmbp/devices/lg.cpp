@@ -60,7 +60,7 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     device = new Device();
     device->setId("lgg3");
     device->setCodenames({ "g3", "d850", "d851", "d852", "d855", "f400",
-                           "f400k", "ls990", "vs985" });
+        "f400k", "ls990", "vs985" });
     device->setName("LG Optimus G3");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p40" });
@@ -79,15 +79,15 @@ static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     device->setName("LG Optimus G4");
     device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
     device->setSystemBlockDevs({ F9824900_SYSTEM, BOOTDEVICE_SYSTEM,
-                                 "/dev/block/mmcblk0p47" });
+        "/dev/block/mmcblk0p47" });
     device->setCacheBlockDevs({ F9824900_CACHE, BOOTDEVICE_CACHE,
-                                "/dev/block/mmcblk0p49" });
+        "/dev/block/mmcblk0p49" });
     device->setDataBlockDevs({ F9824900_USERDATA, BOOTDEVICE_USERDATA,
-                               "/dev/block/mmcblk0p50" });
+        "/dev/block/mmcblk0p50" });
     device->setBootBlockDevs({ F9824900_BOOT, BOOTDEVICE_BOOT,
-                               "/dev/block/mmcblk0p38" });
+        "/dev/block/mmcblk0p38" });
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
-                                   "/dev/block/mmcblk0p39" });
+        "/dev/block/mmcblk0p39" });
     devices->push_back(device);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -23,21 +23,23 @@
 
 namespace mbp
 {
-    void addGoogleDevices(std::vector<Device *> *devices)
-    {
-        Device *device;
 
-        // Android One
-        device = new Device();
-        device->setId("sprout");
-        device->setCodenames({ "sprout", "sprout_b", "sprout4", "sprout8"});
-        device->setName("Android One");
-        device->setBlockDevBaseDirs({ MTK_BASE_DIR });
-        device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p14" });
-        device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p15" });
-        device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p16" });
-        device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
-        device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
-        devices->push_back(device);
-    }
+void addGoogleDevices(std::vector<Device *> *devices)
+{
+    Device *device;
+
+    // Google Android One
+    device = new Device();
+    device->setId("sprout");
+    device->setCodenames({ "sprout", "sprout_b", "sprout4", "sprout8"});
+    device->setName("Google Android One");
+    device->setBlockDevBaseDirs({ MTK_BASE_DIR });
+    device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p14" });
+    device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p15" });
+    device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p16" });
+    device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
+    device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
+    devices->push_back(device);
+}
+
 }

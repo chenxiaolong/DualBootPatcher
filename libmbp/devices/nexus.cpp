@@ -52,7 +52,7 @@ void addNexusDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p19" });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_IMGDATA, QCOM_MISC, QCOM_MODEM,
-                                QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
+        QCOM_RPM, QCOM_SBL1, QCOM_SDI, QCOM_TZ });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices->push_back(device);
 
@@ -63,17 +63,17 @@ void addNexusDevices(std::vector<Device *> *devices)
     device->setCodenames({ "bullhead" });
     device->setName("Google/LG Nexus 5X");
     device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR,
-                                  BOOTDEVICE_BASE_DIR });
+        BOOTDEVICE_BASE_DIR });
     device->setSystemBlockDevs({ F9824900_SOC0_SYSTEM, BOOTDEVICE_SYSTEM,
-                                 "/dev/block/mmcblk0p41" });
+        "/dev/block/mmcblk0p41" });
     device->setCacheBlockDevs({ F9824900_SOC0_CACHE, BOOTDEVICE_CACHE,
-                                "/dev/block/mmcblk0p40" });
+        "/dev/block/mmcblk0p40" });
     device->setDataBlockDevs({ F9824900_SOC0_USERDATA, BOOTDEVICE_USERDATA,
-                               "/dev/block/mmcblk0p45" });
+        "/dev/block/mmcblk0p45" });
     device->setBootBlockDevs({ F9824900_SOC0_BOOT, BOOTDEVICE_BOOT,
-                               "/dev/block/mmcblk0p37" });
+        "/dev/block/mmcblk0p37" });
     device->setRecoveryBlockDevs({ F9824900_SOC0_RECOVERY, BOOTDEVICE_RECOVERY,
-                                   "/dev/block/mmcblk0p38" });
+        "/dev/block/mmcblk0p38" });
     devices->push_back(device);
 
     // Google/Motorola Nexus 6
@@ -97,16 +97,16 @@ void addNexusDevices(std::vector<Device *> *devices)
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ F9824900_SOC0_BASE_DIR });
     device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, F9824900_SOC0_SYSTEM,
-                                 "/dev/block/mmcblk0p43" });
+        "/dev/block/mmcblk0p43" });
     device->setCacheBlockDevs({ BOOTDEVICE_CACHE, F9824900_SOC0_CACHE,
-                                "/dev/block/mmcblk0p38" });
+        "/dev/block/mmcblk0p38" });
     device->setDataBlockDevs({ BOOTDEVICE_USERDATA, F9824900_SOC0_USERDATA,
-                               "/dev/block/mmcblk0p44" });
+        "/dev/block/mmcblk0p44" });
     device->setBootBlockDevs({ BOOTDEVICE_BOOT, F9824900_SOC0_BOOT,
-                               "/dev/block/mmcblk0p34" });
+        "/dev/block/mmcblk0p34" });
     device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, F9824900_SOC0_RECOVERY,
-                                   "/dev/block/mmcblk0p35" });
-    // vendor is 37 if you need it
+        "/dev/block/mmcblk0p35" });
+    // vendor is 37, if you need it
     devices->push_back(device);
 
     // Google/ASUS Nexus 7 (2012 Wifi)
