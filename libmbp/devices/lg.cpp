@@ -91,58 +91,87 @@ void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     devices->push_back(device);
 }
 
+void BlockDevsLg7x27a()
+{
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14",
+        "/dev/block/platform/msm_sdcc.3/by-num/p14" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16",
+        "/dev/block/platform/msm_sdcc.3/by-num/p16" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p20",
+        "/dev/block/platform/msm_sdcc.3/by-num/p20" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p9",
+        "/dev/block/platform/msm_sdcc.3/by-num/p9" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17",
+        "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+}
+
 void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // LG L3 II
-    device = new Device();
-    device->setId("vee3");
-    device->setCodenames({ "vee3", "vee3ds", "e425", "e430", "e431", "e435",
-                           "E425", "E430", "E431", "E435" });
-    device->setName("LG L3 II");
-    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
-    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
-    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
-    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
-    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
-    devices->push_back(device);
-
     // LG L5
     device = new Device();
     device->setId("m4");
-    device->setCodenames({ "m4", "e610", "e612", "e617", "E610", "E612", "E617" });
+    device->setCodenames({
+        // Main Codename
+        "m4",
+        // Variant Names
+        "e610", "e612", "e617",
+        "E610", "E612", "E617" });
     device->setName("LG L5");
-    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
-    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
-    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
-    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
-    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    BlockDevsLg7x27a();
     devices->push_back(device);
 
     // LG L7
     device = new Device();
     device->setId("u0");
-    device->setCodenames({ "u0", "p700", "p705", "p708", "P700", "P705", "P708" });
+    device->setCodenames({
+        // Main Codename
+        "u0",
+        // Variant Names
+        "p700", "p705", "p708",
+        "P700", "P705", "P708" });
     device->setName("LG L7");
-    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
-    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
-    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
-    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
-    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    BlockDevsLg7x27a();
+    devices->push_back(device);
+
+    // LG L1 II
+    device = new Device();
+    device->setId("v1");
+    device->setCodenames({
+        // Main Codename
+        "v1", "v1ds",
+        // Variant Names
+        "e410", "e411", "e415", "e420",
+        "E410", "E411", "E415", "E420" });
+    device->setName("LG L1 II");
+    BlockDevsLg7x27a();
+    devices->push_back(device);
+
+    // LG L3 II
+    device = new Device();
+    device->setId("vee3");
+    device->setCodenames({
+        // Main Codename
+        "vee3", "vee3ds",
+        // Variant Names
+        "e425", "e430", "e431", "e435",
+        "E425", "E430", "E431", "E435" });
+    device->setName("LG L3 II");
+    BlockDevsLg7x27a();
     devices->push_back(device);
 
     // LG L7 II
     device = new Device();
     device->setId("vee7");
-    device->setCodenames({ "vee7", "vee7ds", "p710", "p712", "p713", "p714", "p715", "p716",
-                           "P710", "P712", "P713", "P714", "P715", "P716" });
+    device->setCodenames({
+        // Main Codename
+        "vee7", "vee7ds",
+        // Variant Names
+        "p710", "p712", "p713", "p714", "p715", "p716",
+        "P710", "P712", "P713", "P714", "P715", "P716" });
     device->setName("LG L7 II");
-    device->setSystemBlockDevs({ "/dev/block/mmcblk0p14", "/dev/block/platform/msm_sdcc.3/by-num/p14" });
-    device->setCacheBlockDevs({ "/dev/block/mmcblk0p16", "/dev/block/platform/msm_sdcc.3/by-num/p16" });
-    device->setDataBlockDevs({ "/dev/block/mmcblk0p20", "/dev/block/platform/msm_sdcc.3/by-num/p20" });
-    device->setBootBlockDevs({ "/dev/block/mmcblk0p9", "/dev/block/platform/msm_sdcc.3/by-num/p9" });
-    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17", "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    BlockDevsLg7x27a();
     devices->push_back(device);
 }
 
