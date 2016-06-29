@@ -97,7 +97,7 @@ int gr_textEx_scaleW(int x, int y, const char *s, void* pFont, int max_width, in
             // Adjust font size down until the text fits
             void *new_font = gr_ttf_scaleFont(vfont, max_width, measured_width);
             if (!new_font) {
-                printf("gr_textEx_scaleW new_font is NULL\n");
+                fprintf(stdout, "gr_textEx_scaleW new_font is NULL\n");
                 return 0;
             }
             measured_width = gr_ttf_measureEx(s, new_font);
@@ -350,7 +350,7 @@ int gr_init(void)
         }
 
         // Everything is okay (hopefully)
-        printf("%s: Successfully initialized backend\n", backend);
+        fprintf(stdout, "%s: Successfully initialized backend\n", backend);
         break;
     }
 
@@ -376,7 +376,7 @@ int gr_init(void)
     gr_flip();
 
     if (tw_flags & TW_FLAG_SCREEN_BLANK_ON_BOOT) {
-        printf("TW_SCREEN_BLANK_ON_BOOT := true\n");
+        fprintf(stdout, "TW_SCREEN_BLANK_ON_BOOT := true\n");
         gr_fb_blank(true);
         gr_fb_blank(false);
     }
