@@ -42,6 +42,7 @@ namespace mbp
         device->twOptions()->supported = true;
         device->twOptions()->flags =
                 Device::FLAG_TW_QCOM_RTC_FIX | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
+        device->twOptions()->graphicsBackends = { "overlay" };
         device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
         device->twOptions()->brightnessPath = "/sys/class/leds/lcd-backlight/brightness";
         device->twOptions()->maxBrightness = 255;
