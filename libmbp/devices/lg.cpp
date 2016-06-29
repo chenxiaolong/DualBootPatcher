@@ -24,7 +24,7 @@
 namespace mbp
 {
 
-void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
+static void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
@@ -91,7 +91,7 @@ void addLgOptimusGSeriesPhones(std::vector<Device *> *devices)
     devices->push_back(device);
 }
 
-void BlockDevsLg7x27a()
+static void CommonLgOptimusLSeries7x27a(Device *device)
 {
     device->setSystemBlockDevs({ "/dev/block/mmcblk0p14",
         "/dev/block/platform/msm_sdcc.3/by-num/p14" });
@@ -103,9 +103,16 @@ void BlockDevsLg7x27a()
         "/dev/block/platform/msm_sdcc.3/by-num/p9" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p17",
         "/dev/block/platform/msm_sdcc.3/by-num/p17" });
+    device->twOptions()->supported = true;
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX
+        | Device::FLAG_TW_NO_CPU_TEMP
+        | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
+        | Device::FLAG_TW_PREFER_LCD_BACKLIGHT;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
 }
 
-void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
+static void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
 {
     Device *device;
 
@@ -119,7 +126,7 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         "e610", "e612", "e617",
         "E610", "E612", "E617" });
     device->setName("LG L5");
-    BlockDevsLg7x27a();
+    CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
     // LG L7
@@ -132,7 +139,7 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         "p700", "p705", "p708",
         "P700", "P705", "P708" });
     device->setName("LG L7");
-    BlockDevsLg7x27a();
+    CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
     // LG L1 II
@@ -145,7 +152,7 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         "e410", "e411", "e415", "e420",
         "E410", "E411", "E415", "E420" });
     device->setName("LG L1 II");
-    BlockDevsLg7x27a();
+    CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
     // LG L3 II
@@ -158,7 +165,7 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         "e425", "e430", "e431", "e435",
         "E425", "E430", "E431", "E435" });
     device->setName("LG L3 II");
-    BlockDevsLg7x27a();
+    CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 
     // LG L7 II
@@ -171,7 +178,7 @@ void addLgOptimusLSeriesPhones(std::vector<Device *> *devices)
         "p710", "p712", "p713", "p714", "p715", "p716",
         "P710", "P712", "P713", "P714", "P715", "P716" });
     device->setName("LG L7 II");
-    BlockDevsLg7x27a();
+    CommonLgOptimusLSeries7x27a(device);;
     devices->push_back(device);
 }
 
