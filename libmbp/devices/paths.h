@@ -212,3 +212,11 @@
 #define OMAP_FACTORYFS          OMAP_BASE_DIR "/FACTORYFS"
 #define OMAP_KERNEL             OMAP_BASE_DIR "/KERNEL"
 #define OMAP_RECOVERY           OMAP_BASE_DIR "/RECOVERY"
+
+// Block device paths used by the OnePlus 3
+#define UFSHC_624000_BASE_DIR   "/dev/block/platform/soc/624000.ufshc/by-name"
+#define UFSHC_624000_BOOT       UFSHC_624000_BASE_DIR "/boot"
+#define UFSHC_624000_CACHE      UFSHC_624000_BASE_DIR "/cache"
+#define UFSHC_624000_RECOVERY   UFSHC_624000_BASE_DIR "/recovery"
+#define UFSHC_624000_SYSTEM     UFSHC_624000_BASE_DIR "/system"
+#define UFSHC_624000_USERDATA   UFSHC_624000_BASE_DIR "/userdata"
