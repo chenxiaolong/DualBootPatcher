@@ -106,6 +106,32 @@ void addOnePlusDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
         "/dev/block/mmcblk0p16" });
     devices->push_back(device);
+    
+    // OnePlus Three
+    device = new Device();
+    device->setId("OnePlus3");
+    device->setArchitecture(ARCH_ARM64_V8A);
+    device->setCodenames({ "OnePlus3", "A3003" });
+    device->setName("OnePlus Three");
+    device->setBlockDevBaseDirs({ 624000_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ 624000_SYSTEM, BOOTDEVICE_SYSTEM,
+                                 "dev/block/sde20" });
+    device->setCacheBlockDevs({ 624000_CACHE, BOOTDEVICE_CACHE,
+                                "dev/block/sda3" });
+    device->setDataBlockDevs({ 624000_USERDATA, BOOTDEVICE_USERDATA,
+                               "/dev/block/sda15" });
+    device->setBootBlockDevs({ 624000_BOOT, BOOTDEVICE_BOOT,
+                               "/dev/block/sde18" });
+    device->setRecoveryBlockDevs({ 624000_RECOVERY, BOOTDEVICE_RECOVERY,
+                                   "/dev/block/sde21" });
+    device->setExtraBlockDevs({
+        624000_ABOOT, "/dev/block/sde15",
+        624000_LOGO, "/dev/block/sde17",
+        624000_MODEM, "/dev/block/sde11",
+        624000_RPM, "/dev/block/sde1",
+        624000_TZ, "/dev/block/sde3"
+    });
+    devices->push_back(device);
 }
 
 }
