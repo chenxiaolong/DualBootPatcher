@@ -26,6 +26,6 @@
 namespace mbp
 {
 
-    void addGoogleDevices(std::vector<Device *> *devices);
+void addGoogleDevices(std::vector<Device *> *devices);
 
 }

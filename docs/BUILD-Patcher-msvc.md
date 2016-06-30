@@ -1,5 +1,5 @@
-Building for Windows
-====================
+Building Patcher for Windows
+============================
 
 DualBootPatcher can be natively compiled on Windows using Visual Studio 2013. I've only tested with the Ultimate edition, but I don't see why the community edition wouldn't work.
 
