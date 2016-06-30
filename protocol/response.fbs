@@ -10,6 +10,7 @@ include "v3/file_selinux_set_label.fbs";
 include "v3/path_chmod.fbs";
 include "v3/path_copy.fbs";
 include "v3/path_delete.fbs";
+include "v3/path_mkdir.fbs";
 include "v3/path_selinux_get_label.fbs";
 include "v3/path_selinux_set_label.fbs";
 include "v3/path_get_directory_size.fbs";
@@ -61,7 +62,8 @@ union ResponseType {
     SignedExecOutputResponse,
     SignedExecResponse,
     ShutdownResponse,
-    PathDeleteResponse
+    PathDeleteResponse,
+    PathMkdirResponse,
 }
 
 table Response {
