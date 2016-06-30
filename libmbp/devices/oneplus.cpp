@@ -56,17 +56,18 @@ void addOnePlusDevices(std::vector<Device *> *devices)
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setCodenames({ "OnePlus2" });
     device->setName("OnePlus Two");
-    device->setBlockDevBaseDirs({ F9824900_BASE_DIR, BOOTDEVICE_BASE_DIR });
-    device->setSystemBlockDevs({ F9824900_SYSTEM, BOOTDEVICE_SYSTEM,
-        "/dev/block/mmcblk0p42" });
-    device->setCacheBlockDevs({ F9824900_CACHE, BOOTDEVICE_CACHE,
-        "/dev/block/mmcblk0p41" });
-    device->setDataBlockDevs({ F9824900_USERDATA, BOOTDEVICE_USERDATA,
-        "/dev/block/mmcblk0p43" });
-    device->setBootBlockDevs({ F9824900_BOOT, BOOTDEVICE_BOOT,
-        "/dev/block/mmcblk0p35" });
-    device->setRecoveryBlockDevs({ F9824900_RECOVERY, BOOTDEVICE_RECOVERY,
-        "/dev/block/mmcblk0p36" });
+    device->setBlockDevBaseDirs({ F9824900_BASE_DIR, F9824900_SOC0_BASE_DIR,
+        BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ F9824900_SYSTEM, F9824900_SOC0_SYSTEM,
+        BOOTDEVICE_SYSTEM, "/dev/block/mmcblk0p42" });
+    device->setCacheBlockDevs({ F9824900_CACHE, F9824900_SOC0_CACHE,
+        BOOTDEVICE_CACHE, "/dev/block/mmcblk0p41" });
+    device->setDataBlockDevs({ F9824900_USERDATA, F9824900_SOC0_USERDATA,
+        BOOTDEVICE_USERDATA, "/dev/block/mmcblk0p43" });
+    device->setBootBlockDevs({ F9824900_BOOT, F9824900_SOC0_BOOT,
+        BOOTDEVICE_BOOT, "/dev/block/mmcblk0p35" });
+    device->setRecoveryBlockDevs({ F9824900_RECOVERY, F9824900_SOC0_RECOVERY,
+        BOOTDEVICE_RECOVERY, "/dev/block/mmcblk0p36" });
     devices->push_back(device);
 
     // OnePlus X
