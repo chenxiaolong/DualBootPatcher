@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -49,15 +49,15 @@ void addXiaomiDevices(std::vector<Device *> *devices)
     device->setArchitecture(ARCH_ARM64_V8A);
     device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR, MTK_BASE_DIR });
     device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, MTK_SYSTEM,
-                                 "/dev/block/mmcblk0p15" });
+        "/dev/block/mmcblk0p15" });
     device->setCacheBlockDevs({ BOOTDEVICE_CACHE, MTK_CACHE,
-                                "/dev/block/mmcblk0p16" });
+        "/dev/block/mmcblk0p16" });
     device->setDataBlockDevs({ BOOTDEVICE_USERDATA, MTK_USERDATA,
-                               "/dev/block/mmcblk0p17" });
+        "/dev/block/mmcblk0p17" });
     device->setBootBlockDevs({ BOOTDEVICE_BOOT, MTK_BOOT,
-                               "/dev/block/mmcblk0p7" });
+        "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, MTK_RECOVERY,
-                                   "/dev/block/mmcblk0p8" });
+        "/dev/block/mmcblk0p8" });
     device->setExtraBlockDevs({
         // Directly written by updater-script
         MTK_LK, "/dev/block/mmcblk0p6",

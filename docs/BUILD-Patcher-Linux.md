@@ -1,14 +1,14 @@
-Building for Linux
-==================
+Building Patcher for Linux
+==========================
 
 The following packages are needed for compiling:
 
 - cmake
+- qt5
 - libarchive (optional)
 - lz4 (optional)
 - lzo2 (optional)
 - xz (optional)
-- qt5
 - zlib (optional)
 
 System build (installation to /usr/local)

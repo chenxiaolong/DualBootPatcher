@@ -1,5 +1,5 @@
-Building for Windows with mingw-w64
-===================================
+Building Patcher for Windows with mingw-w64
+===========================================
 
 DualBootPatcher can be natively compiled on Windows or cross-compiled from Linux using mingw-w64.
 

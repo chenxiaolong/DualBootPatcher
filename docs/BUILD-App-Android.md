@@ -1,7 +1,7 @@
-Building for Android
-====================
+Building Application for Android
+================================
 
-The following packages are needed for compiling for Android:
+The following packages are needed for compiling apk for Android:
 
 - Android SDK
 - Android NDK
