@@ -225,8 +225,10 @@ public final class BootUIActionTask extends BaseServiceTask {
         String mountPoint = getCacheMountPoint(iface);
         String targetZipPath = mountPoint + BOOTUI_ZIP_PATH;
         String targetSigPath = mountPoint + BOOTUI_SIG_PATH;
+        File parent = new File(targetZipPath).getParentFile();
 
         try {
+            iface.pathMkdir(parent.getAbsolutePath(), 0755, true);
             iface.pathCopy(zipPath, targetZipPath);
             iface.pathCopy(sigPath, targetSigPath);
             iface.pathChmod(targetZipPath, 0644);
