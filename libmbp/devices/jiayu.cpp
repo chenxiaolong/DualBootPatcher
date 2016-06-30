@@ -55,18 +55,20 @@ void addJiayuDevices(std::vector<Device *> *devices)
         MTK_UBOOT, MTK_11230000_UBOOT });
     device->twOptions()->supported = true;
     device->twOptions()->flags =
-          Device::FLAG_TW_IGNORE_MAJOR_AXIS_0
-        | Device::FLAG_TW_PREFER_LCD_BACKLIGHT
+          Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
+        | Device::FLAG_TW_IGNORE_MAJOR_AXIS_0
         | Device::FLAG_TW_QCOM_RTC_FIX
-        | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
-        | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+        | Device::FLAG_TW_HAS_DOWNLOAD_MODE
+        | Device::FLAG_TW_PREFER_LCD_BACKLIGHT;
     device->twOptions()->graphicsBackends = { "fbdev" };
     device->twOptions()->pixelFormat =
-        Device::TwPixelFormat::RGBX_8888;
+        Device::TwPixelFormat::RGBA_8888;
+    device->twOptions()->forcePixelFormat =
+        Device::TwForcePixelFormat::NONE;
     device->twOptions()->brightnessPath =
         "/sys/class/leds/lcd-backlight/brightness";
     device->twOptions()->maxBrightness = 255;
-    device->twOptions()->defaultBrightness = 160;
+    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 }
 
