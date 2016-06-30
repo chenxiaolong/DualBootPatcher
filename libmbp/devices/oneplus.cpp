@@ -68,6 +68,10 @@ void addOnePlusDevices(std::vector<Device *> *devices)
         BOOTDEVICE_BOOT, "/dev/block/mmcblk0p35" });
     device->setRecoveryBlockDevs({ F9824900_RECOVERY, F9824900_SOC0_RECOVERY,
         BOOTDEVICE_RECOVERY, "/dev/block/mmcblk0p36" });
+    device->setExtraBlockDevs({
+        // TrustZone
+        BOOTDEVICE_TZ, F9824900_TZ, F9824900_SOC0_TZ, "/dev/block/mmcblk0p29"
+    });
     devices->push_back(device);
 
     // OnePlus 3

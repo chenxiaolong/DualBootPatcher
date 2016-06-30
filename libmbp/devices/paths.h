@@ -35,6 +35,7 @@
 #define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
 #define BOOTDEVICE_RECOVERY     BOOTDEVICE_BASE_DIR "/recovery"
 #define BOOTDEVICE_SYSTEM       BOOTDEVICE_BASE_DIR "/system"
+#define BOOTDEVICE_TZ           BOOTDEVICE_BASE_DIR "/tz"
 #define BOOTDEVICE_USERDATA     BOOTDEVICE_BASE_DIR "/userdata"
 
 // Block device paths used by Qualcomm SOCs (Snapdragon 805 and lower)
@@ -63,6 +64,7 @@
 #define F9824900_CACHE          F9824900_BASE_DIR "/cache"
 #define F9824900_RECOVERY       F9824900_BASE_DIR "/recovery"
 #define F9824900_SYSTEM         F9824900_BASE_DIR "/system"
+#define F9824900_TZ             F9824900_BASE_DIR "/tz"
 #define F9824900_USERDATA       F9824900_BASE_DIR "/userdata"
 
 // Block device paths used by the Snapdragon 808 and 810 in Android >= 6.0
@@ -71,6 +73,7 @@
 #define F9824900_SOC0_CACHE     F9824900_SOC0_BASE_DIR "/cache"
 #define F9824900_SOC0_RECOVERY  F9824900_SOC0_BASE_DIR "/recovery"
 #define F9824900_SOC0_SYSTEM    F9824900_SOC0_BASE_DIR "/system"
+#define F9824900_SOC0_TZ        F9824900_SOC0_BASE_DIR "/tz"
 #define F9824900_SOC0_USERDATA  F9824900_SOC0_BASE_DIR "/userdata"
 
 // Block device paths used by the Exynos 8890
