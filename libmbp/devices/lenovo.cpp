@@ -52,6 +52,14 @@ void addLenovoDevices(std::vector<Device *> *devices)
         MTK_TEE1, MTK_11230000_TEE1,
         MTK_TEE2, MTK_11230000_TEE2,
         MTK_UBOOT, MTK_11230000_UBOOT });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
+                               | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
+    device->twOptions()->cpuTempPath = "/sys/class/thermal/thermal_zone1/temp";
     devices->push_back(device);
 
     // Lenovo Vibe Z2 Pro
