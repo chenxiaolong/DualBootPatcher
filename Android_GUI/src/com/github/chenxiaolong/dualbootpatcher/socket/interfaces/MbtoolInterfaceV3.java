@@ -80,6 +80,8 @@ import mbtool.daemon.v3.PathDeleteRequest;
 import mbtool.daemon.v3.PathDeleteResponse;
 import mbtool.daemon.v3.PathGetDirectorySizeRequest;
 import mbtool.daemon.v3.PathGetDirectorySizeResponse;
+import mbtool.daemon.v3.PathMkdirRequest;
+import mbtool.daemon.v3.PathMkdirResponse;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxGetLabelResponse;
 import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
@@ -154,6 +156,9 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
             break;
         case ResponseType.PathDeleteResponse:
             table = new PathDeleteResponse();
+            break;
+        case ResponseType.PathMkdirResponse:
+            table = new PathMkdirResponse();
             break;
         case ResponseType.PathSELinuxGetLabelResponse:
             table = new PathSELinuxGetLabelResponse();
@@ -781,6 +786,28 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
         if (!response.success()) {
             throw new MbtoolCommandException(
                     "Failed to chmod " + filename + ": " + response.errorMsg());
+        }
+    }
+
+    public synchronized void pathMkdir(String path, int mode, boolean recursive) throws IOException,
+            MbtoolException, MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        int fbFilename = builder.createString(path);
+        PathMkdirRequest.startPathMkdirRequest(builder);
+        PathMkdirRequest.addPath(builder, fbFilename);
+        PathMkdirRequest.addMode(builder, mode);
+        PathMkdirRequest.addRecursive(builder, recursive);
+        int fbRequest = PathMkdirRequest.endPathMkdirRequest(builder);
+
+        // Send request
+        PathMkdirResponse response = (PathMkdirResponse)
+                sendRequest(builder, fbRequest, RequestType.PathMkdirRequest,
+                        ResponseType.PathMkdirResponse);
+
+        if (!response.success()) {
+            throw new MbtoolCommandException(
+                    path + ": Failed to mkdir: " + response.errorMsg());
         }
     }
 

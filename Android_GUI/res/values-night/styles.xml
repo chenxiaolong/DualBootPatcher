@@ -27,6 +27,7 @@
         -->
         <item name="colorAccent">@color/accent_dark</item>
         <item name="android:textColor">@color/text_color_dark</item>
+        <item name="android:textColorPrimary">@color/text_color_dark</item>
     </style>
 
     <style name="ToolbarTheme" parent="AppTheme">

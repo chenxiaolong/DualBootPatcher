@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -36,17 +36,16 @@ void addAsusDevices(std::vector<Device *> *devices)
     device->setArchitecture(ARCH_X86);
     device->setBlockDevBaseDirs({ INTEL_PCI_BASE_DIR, BLOCK_BASE_DIR });
     device->setSystemBlockDevs({ INTEL_PCI_SYSTEM_2, BLOCK_SYSTEM,
-                                 "/dev/block/mmcblk0p18" });
+        "/dev/block/mmcblk0p18" });
     device->setCacheBlockDevs({ INTEL_PCI_CACHE_2, BLOCK_CACHE,
-                                "/dev/block/mmcblk0p15" });
+        "/dev/block/mmcblk0p15" });
     device->setDataBlockDevs({ INTEL_PCI_DATA_2, BLOCK_DATA,
-                               "/dev/block/mmcblk0p19" });
+        "/dev/block/mmcblk0p19" });
     device->setBootBlockDevs({ INTEL_PCI_BOOT_2, BLOCK_BOOT,
-                               "/dev/block/mmcblk0p1" });
+        "/dev/block/mmcblk0p1" });
     device->setRecoveryBlockDevs({ INTEL_PCI_RECOVERY_2, BLOCK_RECOVERY,
-                                   "/dev/block/mmcblk0p2" });
+        "/dev/block/mmcblk0p2" });
     devices->push_back(device);
-
 }
 
 }

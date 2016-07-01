@@ -33,6 +33,7 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
+#include "mbutil/directory.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/properties.h"
@@ -60,6 +61,7 @@
 #include "protocol/path_chmod_generated.h"
 #include "protocol/path_copy_generated.h"
 #include "protocol/path_delete_generated.h"
+#include "protocol/path_mkdir_generated.h"
 #include "protocol/path_selinux_get_label_generated.h"
 #include "protocol/path_selinux_set_label_generated.h"
 #include "protocol/path_get_directory_size_generated.h"
@@ -547,6 +549,46 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
     // Wrap response
     v3::ResponseBuilder rb(builder);
     rb.add_response_type(v3::ResponseType_PathDeleteResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_path_mkdir(int fd, const v3::Request *msg)
+{
+    auto request = (v3::PathMkdirRequest *) msg->request();
+    if (!request->path()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    // Don't allow setting setuid or setgid permissions
+    uint32_t mode = request->mode();
+    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    if (masked != mode) {
+        return v3_send_response_invalid(fd);
+    }
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::PathMkdirResponse> response;
+
+    bool ret;
+    if (request->recursive()) {
+        ret = util::mkdir_recursive(request->path()->c_str(), mode);
+    } else {
+        ret = mkdir(request->path()->c_str(), mode) == 0;
+    }
+
+    if (!ret) {
+        auto error = builder.CreateString(strerror(errno));
+        response = v3::CreatePathMkdirResponse(builder, false, error);
+    } else {
+        response = v3::CreatePathMkdirResponse(builder, true);
+    }
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_PathMkdirResponse);
     rb.add_response(response.Union());
     builder.Finish(rb.Finish());
 
@@ -1317,6 +1359,7 @@ static RequestMap request_map[] = {
     { v3::RequestType_PathChmodRequest, v3_path_chmod },
     { v3::RequestType_PathCopyRequest, v3_path_copy },
     { v3::RequestType_PathDeleteRequest, v3_path_delete },
+    { v3::RequestType_PathMkdirRequest, v3_path_mkdir },
     { v3::RequestType_PathSELinuxGetLabelRequest, v3_path_selinux_get_label },
     { v3::RequestType_PathSELinuxSetLabelRequest, v3_path_selinux_set_label },
     { v3::RequestType_PathGetDirectorySizeRequest, v3_path_get_directory_size },
