@@ -28,11 +28,11 @@ void addPantechDevices(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // Pantech Vega Iron 2 (EF63X)
+    // Pantech Vega Iron 2
     device = new Device();
     device->setId("A910");
     device->setCodenames({ "ef63s", "ef63l", "ef63k" });
-    device->setName("Pantech Vega Iron 2 (EF63X)");
+    device->setName("Pantech Vega Iron 2");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p15" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p17" });
@@ -46,11 +46,11 @@ void addPantechDevices(std::vector<Device *> *devices)
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
     devices->push_back(device);
 
-    // Pantech Vega Iron 2 (EF52X)
+    // Pantech Vega Iron
     device = new Device();
     device->setId("A870");
     device->setCodenames({ "ef52s", "ef52l", "ef52k" });
-    device->setName("Pantech Vega Iron 2 (EF52X)");
+    device->setName("Pantech Vega Iron");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p14" });
     device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p16" });
