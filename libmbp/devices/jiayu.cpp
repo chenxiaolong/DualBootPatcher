@@ -46,13 +46,21 @@ void addJiayuDevices(std::vector<Device *> *devices)
         "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, MTK_11230000_RECOVERY,
         "/dev/block/mmcblk0p8" });
-    device->setExtraBlockDevs({ "/dev/block/mmcblk0boot0",
+    device->setExtraBlockDevs({
         MTK_LK, MTK_11230000_LK,
         MTK_LOGO, MTK_11230000_LOGO,
         MTK_PARA, MTK_11230000_PARA,
         MTK_TEE1, MTK_11230000_TEE1,
         MTK_TEE2, MTK_11230000_TEE2,
         MTK_UBOOT, MTK_11230000_UBOOT });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
+                               | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
+    device->twOptions()->cpuTempPath = "/sys/class/thermal/thermal_zone1/temp";
     devices->push_back(device);
 }
 
