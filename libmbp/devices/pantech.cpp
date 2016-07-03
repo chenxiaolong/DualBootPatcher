@@ -43,7 +43,10 @@ void addPantechDevices(std::vector<Device *> *devices)
     device->twOptions()->supported = true;
     device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX
         | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
+    device->twOptions()->graphicsBackends = { "overlay_msm_old" };
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 175;
     devices->push_back(device);
 
     // Pantech Vega Iron
@@ -61,7 +64,10 @@ void addPantechDevices(std::vector<Device *> *devices)
     device->twOptions()->supported = true;
     device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX
         | Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
+    device->twOptions()->graphicsBackends = { "overlay_msm_old" };
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 175;
     devices->push_back(device);
 }
 
