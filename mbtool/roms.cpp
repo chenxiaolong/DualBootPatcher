@@ -19,6 +19,8 @@
 
 #include "roms.h"
 
+#include <algorithm>
+
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
@@ -184,6 +186,12 @@ void Roms::add_builtin()
     }
 }
 
+static bool cmp_rom_id(const std::shared_ptr<Rom> &a,
+                       const std::shared_ptr<Rom> &b)
+{
+    return a->id < b->id;
+}
+
 void Roms::add_data_roms()
 {
     std::string system = get_raw_path("/data/multiboot");
@@ -199,6 +207,8 @@ void Roms::add_data_roms()
 
     struct stat sb;
 
+    std::vector<std::shared_ptr<Rom>> temp_roms;
+
     struct dirent *ent;
     while ((ent = readdir(dp))) {
         if (strcmp(ent->d_name, "data-slot-") == 0
@@ -211,9 +221,13 @@ void Roms::add_data_roms()
         fullpath += ent->d_name;
 
         if (stat(fullpath.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-            roms.push_back(create_rom_data_slot(ent->d_name + 10));
+            temp_roms.push_back(create_rom_data_slot(ent->d_name + 10));
         }
     }
+
+    // Sort by ID
+    std::sort(temp_roms.begin(), temp_roms.end(), &cmp_rom_id);
+    std::move(temp_roms.begin(), temp_roms.end(), std::back_inserter(roms));
 }
 
 void Roms::add_extsd_roms()
@@ -237,6 +251,8 @@ void Roms::add_extsd_roms()
 
     struct stat sb;
 
+    std::vector<std::shared_ptr<Rom>> temp_roms;
+
     struct dirent *ent;
     while ((ent = readdir(dp))) {
         if (strcmp(ent->d_name, "extsd-slot-") == 0
@@ -250,9 +266,12 @@ void Roms::add_extsd_roms()
         image += "/system.img";
 
         if (stat(image.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
-            roms.push_back(create_rom_extsd_slot(ent->d_name + 11));
+            temp_roms.push_back(create_rom_extsd_slot(ent->d_name + 11));
         }
     }
+
+    std::sort(temp_roms.begin(), temp_roms.end(), &cmp_rom_id);
+    std::move(temp_roms.begin(), temp_roms.end(), std::back_inserter(roms));
 }
 
 void Roms::add_installed()

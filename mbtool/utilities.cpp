@@ -82,14 +82,23 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
         return false;
     }
 
-    auto block_devs = device->bootBlockDevs();
-    if (block_devs.empty()) {
-        LOGE("No boot partitions defined");
+    std::string block_dev;
+    struct stat sb;
+
+    for (auto const &path : device->bootBlockDevs()) {
+        if (stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode)) {
+            block_dev = path;
+            break;
+        }
+    }
+
+    if (block_dev.empty()) {
+        LOGE("All specified boot partition paths could not be found");
         return false;
     }
 
     SwitchRomResult ret = switch_rom(
-            rom_id, block_devs[0], device->blockDevBaseDirs(), force);
+            rom_id, block_dev, device->blockDevBaseDirs(), force);
     switch (ret) {
     case SwitchRomResult::SUCCEEDED:
         LOGD("SUCCEEDED");
