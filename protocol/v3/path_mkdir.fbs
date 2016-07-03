@@ -1,0 +1,12 @@
+namespace mbtool.daemon.v3;
+
+table PathMkdirRequest {
+    path : string;
+    mode : uint;
+    recursive : bool;
+}
+
+table PathMkdirResponse {
+    success : bool;
+    error_msg : string;
+}

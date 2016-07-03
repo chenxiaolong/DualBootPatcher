@@ -72,6 +72,7 @@ set(MBP_DEVICE_SOURCES
     devices/sony.cpp
     devices/xiaomi.cpp
     devices/pantech.cpp
+    devices/jiayu.cpp
 )
 
 set(MBP_SOURCES

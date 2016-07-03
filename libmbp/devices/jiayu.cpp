@@ -17,23 +17,24 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "devices/lenovo.h"
+#include "devices/jiayu.h"
 
 #include "devices/paths.h"
 
 namespace mbp
 {
 
-void addLenovoDevices(std::vector<Device *> *devices)
+void addJiayuDevices(std::vector<Device *> *devices)
 {
     Device *device;
 
-    // Lenovo K3 Note
+    // Jiayu S3
     device = new Device();
-    device->setId("k50");
+    device->setId("h560");
     device->setArchitecture(ARCH_ARM64_V8A);
-    device->setCodenames({ "K50", "K50a40", "K50t5", "K50-T5", "aio_otfp" });
-    device->setName("Lenovo K3 Note");
+    device->setCodenames({ "h560", "s3_h560", "Jiayu_S3", "Jiayu-S3", "JY_S3",
+        "JY-S3"});
+    device->setName("Jiayu S3");
     device->setBlockDevBaseDirs({ MTK_BASE_DIR, MTK_11230000_BASE_DIR });
     device->setSystemBlockDevs({ MTK_SYSTEM, MTK_11230000_SYSTEM,
         "/dev/block/mmcblk0p17" });
@@ -45,7 +46,7 @@ void addLenovoDevices(std::vector<Device *> *devices)
         "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, MTK_11230000_RECOVERY,
         "/dev/block/mmcblk0p8" });
-    device->setExtraBlockDevs({ "/dev/block/mmcblk0boot0",
+    device->setExtraBlockDevs({
         MTK_LK, MTK_11230000_LK,
         MTK_LOGO, MTK_11230000_LOGO,
         MTK_PARA, MTK_11230000_PARA,
@@ -60,42 +61,6 @@ void addLenovoDevices(std::vector<Device *> *devices)
     device->twOptions()->maxBrightness = 255;
     device->twOptions()->defaultBrightness = 162;
     device->twOptions()->cpuTempPath = "/sys/class/thermal/thermal_zone1/temp";
-    devices->push_back(device);
-
-    // Lenovo Vibe Z2 Pro
-    device = new Device();
-    device->setId("K920");
-    device->setCodenames({ "kingdom_row", "kingdomt" });
-    device->setName("Lenovo Vibe Z2 Pro");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
-        "/dev/block/mmcblk0p21" });
-    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
-        "/dev/block/mmcblk0p20" });
-    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
-        "/dev/block/mmcblk0p23" });
-    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
-        "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
-        "/dev/block/mmcblk0p10" });
-    devices->push_back(device);
-
-    // Lenovo ZUK Z1
-    device = new Device();
-    device->setId("Z1");
-    device->setCodenames({ "Z1" });
-    device->setName("Lenovo ZUK Z1");
-    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
-    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
-        "/dev/block/mmcblk0p22" });
-    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
-        "/dev/block/mmcblk0p21" });
-    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
-        "/dev/block/mmcblk0p23" });
-    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
-        "/dev/block/mmcblk0p9" });
-    device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
-        "/dev/block/mmcblk0p10" });
     devices->push_back(device);
 }
 

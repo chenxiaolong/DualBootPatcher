@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -35,6 +35,7 @@
 #define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
 #define BOOTDEVICE_RECOVERY     BOOTDEVICE_BASE_DIR "/recovery"
 #define BOOTDEVICE_SYSTEM       BOOTDEVICE_BASE_DIR "/system"
+#define BOOTDEVICE_TZ           BOOTDEVICE_BASE_DIR "/tz"
 #define BOOTDEVICE_USERDATA     BOOTDEVICE_BASE_DIR "/userdata"
 
 // Block device paths used by Qualcomm SOCs (Snapdragon 805 and lower)
@@ -63,6 +64,7 @@
 #define F9824900_CACHE          F9824900_BASE_DIR "/cache"
 #define F9824900_RECOVERY       F9824900_BASE_DIR "/recovery"
 #define F9824900_SYSTEM         F9824900_BASE_DIR "/system"
+#define F9824900_TZ             F9824900_BASE_DIR "/tz"
 #define F9824900_USERDATA       F9824900_BASE_DIR "/userdata"
 
 // Block device paths used by the Snapdragon 808 and 810 in Android >= 6.0
@@ -71,6 +73,7 @@
 #define F9824900_SOC0_CACHE     F9824900_SOC0_BASE_DIR "/cache"
 #define F9824900_SOC0_RECOVERY  F9824900_SOC0_BASE_DIR "/recovery"
 #define F9824900_SOC0_SYSTEM    F9824900_SOC0_BASE_DIR "/system"
+#define F9824900_SOC0_TZ        F9824900_SOC0_BASE_DIR "/tz"
 #define F9824900_SOC0_USERDATA  F9824900_SOC0_BASE_DIR "/userdata"
 
 // Block device paths used by the Exynos 8890
@@ -154,7 +157,7 @@
 #define MTK_UBOOT               MTK_BASE_DIR "/uboot"
 #define MTK_USERDATA            MTK_BASE_DIR "/userdata"
 
-#define MTK_11230000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/"
+#define MTK_11230000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name"
 #define MTK_11230000_BOOT       MTK_11230000_BASE_DIR "/boot"
 #define MTK_11230000_CACHE      MTK_11230000_BASE_DIR "/cache"
 #define MTK_11230000_LK         MTK_11230000_BASE_DIR "/lk"
@@ -212,3 +215,11 @@
 #define OMAP_FACTORYFS          OMAP_BASE_DIR "/FACTORYFS"
 #define OMAP_KERNEL             OMAP_BASE_DIR "/KERNEL"
 #define OMAP_RECOVERY           OMAP_BASE_DIR "/RECOVERY"
+
+// Block device paths used by the OnePlus 3
+#define UFSHC_624000_BASE_DIR   "/dev/block/platform/soc/624000.ufshc/by-name"
+#define UFSHC_624000_BOOT       UFSHC_624000_BASE_DIR "/boot"
+#define UFSHC_624000_CACHE      UFSHC_624000_BASE_DIR "/cache"
+#define UFSHC_624000_RECOVERY   UFSHC_624000_BASE_DIR "/recovery"
+#define UFSHC_624000_SYSTEM     UFSHC_624000_BASE_DIR "/system"
+#define UFSHC_624000_USERDATA   UFSHC_624000_BASE_DIR "/userdata"

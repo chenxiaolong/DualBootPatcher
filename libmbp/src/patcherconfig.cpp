@@ -42,6 +42,7 @@
 #include "devices/sony.h"
 #include "devices/xiaomi.h"
 #include "devices/pantech.h"
+#include "devices/jiayu.h"
 
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
@@ -213,6 +214,7 @@ void PatcherConfig::Impl::loadDefaultDevices()
     addSonyDevices(&devices);
     addXiaomiDevices(&devices);
     addPantechDevices(&devices);
+    addJiayuDevices(&devices);
 }
 
 /*!

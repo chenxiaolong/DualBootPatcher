@@ -328,6 +328,19 @@ public interface MbtoolInterface {
             MbtoolCommandException;
 
     /**
+     * Create a directory using mbtool.
+     *
+     * @param filename Absolute path
+     * @param mode Unix permissions number (will be AND'ed with 0777 by mbtool for security reasons)
+     * @param recursive Whether to create directories recursively
+     * @throws IOException When any socket communication error occurs
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    void pathMkdir(String path, int mode, boolean recursive) throws IOException, MbtoolException,
+            MbtoolCommandException;
+
+    /**
      * Wipe a ROM.
      *
      * @param romId ROM ID to wipe

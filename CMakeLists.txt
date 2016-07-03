@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.1)
 project(DualBootPatcher CXX C)
 set(MBP_VERSION_MAJOR 8)
 set(MBP_VERSION_MINOR 99)
-set(MBP_VERSION_PATCH 16)
+set(MBP_VERSION_PATCH 17)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
 # Build target and type

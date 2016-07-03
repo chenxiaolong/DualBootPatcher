@@ -26,6 +26,6 @@
 namespace mbp
 {
 
-void addLgDevices(std::vector<Device *> *devices);
+void addJiayuDevices(std::vector<Device *> *devices);
 
 }
