@@ -149,7 +149,7 @@ public class FileUtils {
         if (value == null) {
             value = SystemPropertiesProxy.get(context, "ro.build.ota.versionname");
         }
-        return value != null && value.contains("OnePlus2Oxygen");
+        return value != null && value.contains("OnePlus") && value.contains("Oxygen");
     }
 
     private static boolean isOpenDocumentBroken(Context context) {
