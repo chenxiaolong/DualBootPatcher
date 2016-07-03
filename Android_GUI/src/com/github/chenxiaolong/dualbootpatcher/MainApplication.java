@@ -39,9 +39,7 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mRefWatcher = LeakCanary.install(this);
-        if (!FileUtils.useNativeSaf()) {
-            DocumentsApplication.install(this);
-        }
+        DocumentsApplication.install(this);
 
         SharedPreferences prefs = getSharedPreferences("settings", 0);
         boolean useDarkTheme = prefs.getBoolean("use_dark_theme", false);
@@ -52,9 +50,7 @@ public class MainApplication extends Application {
     @Override
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
-        if (!FileUtils.useNativeSaf()) {
-            DocumentsApplication.onTrimMemory(level);
-        }
+        DocumentsApplication.onTrimMemory(level);
     }
 
     public static boolean getUseDarkTheme() {
