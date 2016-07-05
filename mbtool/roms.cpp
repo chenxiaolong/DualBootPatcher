@@ -517,17 +517,23 @@ std::string Roms::get_mountpoint(Rom::Source source)
 //       get_system_partition(), get_cache_partition(), and get_data_partition()
 std::string get_raw_path(const std::string &path)
 {
-    struct stat sb;
-    if (stat("/raw", &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        std::string result("/raw");
-        if (!path.empty() && path[0] != '/') {
-            result += "/";
-        }
-        result += path;
-        return result;
+    std::string result;
+
+    // This is faster than doing util::path_split()...
+    if (path == "/system" || util::starts_with(path, "/system/")) {
+        result = Roms::get_system_partition();
+        result += path.substr(7);
+    } else if (path == "/cache" || util::starts_with(path, "/cache/")) {
+        result = Roms::get_cache_partition();
+        result += path.substr(6);
+    } else if (path == "/data" || util::starts_with(path, "/data/")) {
+        result = Roms::get_data_partition();
+        result += path.substr(5);
     } else {
-        return path;
+        result = path;
     }
+
+    return result;
 }
 
 }
