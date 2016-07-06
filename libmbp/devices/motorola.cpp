@@ -173,7 +173,7 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     // Motorola Droid Turbo 1st
     device = new Device();
     device->setId("quark");
-    device->setCodenames({ "quark","quark_lra","quark_umts","quark_verizon","xt1225","xt1250","xt1254" });
+    device->setCodenames({ "quark", "quark_lra", "quark_umts", "quark_verizon", "xt1225", "xt1250", "xt1254" });
     device->setName("Motorola Droid Turbo");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p40" });
