@@ -46,7 +46,8 @@ void addJiayuDevices(std::vector<Device *> *devices)
         "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, MTK_11230000_RECOVERY,
         "/dev/block/mmcblk0p8" });
-    device->setExtraBlockDevs({
+    device->setExtraBlockDevs({ MTK_METADATA, MTK_11230000_METADATA,
+        MTK_NVRAM, MTK_11230000_NVRAM,
         MTK_LK, MTK_11230000_LK,
         MTK_LOGO, MTK_11230000_LOGO,
         MTK_PARA, MTK_11230000_PARA,
