@@ -21,6 +21,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
@@ -300,6 +301,11 @@ public final class BootUIActionTask extends BaseServiceTask {
             sendOnMbtoolError(e.getReason());
         } finally {
             IOUtils.closeQuietly(conn);
+
+            // Save log
+            if (mAction != BootUIAction.GET_VERSION) {
+                LogUtils.dump("boot-ui-install.log");
+            }
         }
 
         synchronized (mStateLock) {

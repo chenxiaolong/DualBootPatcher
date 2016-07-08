@@ -71,6 +71,22 @@ static void addLgGSeriesPhones(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_MODEM });
     devices->push_back(device);
 
+    // LG G3 S
+    device = new Device();
+    device->setId("lgg3s");
+    device->setCodenames({ "jag3gds" });
+    device->setName("LG G3 S");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p32" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p33" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p34" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p16" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p17" });
+    device->twOptions()->supported = true;
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    devices->push_back(device);
+
     // LG G4
     device = new Device();
     device->setId("lgg4");
