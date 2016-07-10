@@ -280,109 +280,6 @@ static std::string get_rom_id()
     return rom_id;
 }
 
-static std::string find_fstab()
-{
-    autoclose::dir dir(autoclose::opendir("/"));
-    if (!dir) {
-        return std::string();
-    }
-
-    std::vector<std::string> fallback;
-
-    struct dirent *ent;
-    while ((ent = readdir(dir.get()))) {
-        // Look for *.rc files
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !util::ends_with(ent->d_name, ".rc")) {
-            continue;
-        }
-
-        std::string path("/");
-        path += ent->d_name;
-
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
-        if (!fp) {
-            continue;
-        }
-
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = util::finally([&]{
-            free(line);
-        });
-
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            char *ptr = strstr(line, "mount_all");
-            if (!ptr) {
-                continue;
-            }
-            ptr += 9;
-
-            // Find the argument to mount_all
-            while (isspace(*ptr)) {
-                ++ptr;
-            }
-
-            // Strip everything after next whitespace
-            for (char *p = ptr; *p; ++p) {
-                if (isspace(*p)) {
-                    *p = '\0';
-                    break;
-                }
-            }
-
-            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
-                LOGV("Skipping goldfish fstab file: %s", ptr);
-                continue;
-            }
-
-            // Check if we need to strip "/." and ".gen" to remain compatible
-            // with boot images patched by an older version of libmbp
-            char *slash_ptr = strstr(ptr, "/.");
-            if (slash_ptr && util::ends_with(slash_ptr, ".gen")) {
-                ptr = slash_ptr + 2;
-                ptr[strlen(ptr) - 4] = '\0';
-            }
-
-            std::string fstab(ptr);
-
-            // Replace ${ro.hardware}
-            if (fstab.find("${ro.hardware}") != std::string::npos) {
-                std::string hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
-                util::replace_all(&fstab, "${ro.hardware}", hardware);
-            }
-
-            LOGD("Trying fstab: %s", fstab.c_str());
-
-            // Check if fstab exists
-            struct stat sb;
-            if (stat(fstab.c_str(), &sb) < 0) {
-                LOGE("Failed to stat fstab %s: %s",
-                     fstab.c_str(), strerror(errno));
-                continue;
-            }
-
-            // If the fstab file is for charger mode, add to fallback
-            if (fstab.find("charger") != std::string::npos) {
-                LOGE("Adding charger fstab to fallback fstabs: %s",
-                     fstab.c_str());
-                fallback.push_back(fstab);
-                continue;
-            }
-
-            return fstab;
-        }
-    }
-
-    if (!fallback.empty()) {
-        return fallback[0];
-    }
-    return std::string();
-}
-
 // Operating on paths instead of fd's should be safe enough since, at this
 // point, we're the only process alive on the system.
 static bool replace_file(const char *replace, const char *with)
@@ -1071,11 +968,18 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir();
 
-    // Find fstab file. Continues anyway if fstab file can't be found since
-    // mount_fstab() will try some generic fstab entries, which might work.
-    std::string fstab = find_fstab();
-    if (fstab.empty()) {
-        LOGW("Failed to find a suitable fstab file. Continuing anyway...");
+    // mbtool no longer searches for the fstab file and just assumes that it is
+    // /fstab.${ro.hardware} since this is what vold uses as well.
+    std::string fstab("/fstab.");
+    std::string hardware;
+    util::get_property("ro.hardware", &hardware, "");
+    fstab += hardware;
+
+    LOGV("fstab file: %s", fstab.c_str());
+
+    if (access(fstab.c_str(), R_OK) < 0) {
+        LOGW("%s: Failed to access file: %s", fstab.c_str(), strerror(errno));
+        LOGW("Continuing anyway...");
         fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
         util::create_empty_file(fstab);
     }
