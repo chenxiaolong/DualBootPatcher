@@ -980,8 +980,12 @@ int init_main(int argc, char *argv[])
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
 
-    // Mount selinuxfs
-    util::selinux_mount();
+    // Create mount points
+    mkdir("/system", 0755);
+    mkdir("/cache", 0770);
+    mkdir("/data", 0771);
+    util::chown("/cache", "system", "cache", 0);
+    util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();
@@ -1025,13 +1029,6 @@ int init_main(int argc, char *argv[])
     // of this option.
     fstab_replace_forceencrypt(fstab.c_str());
 
-    // Create mount points
-    mkdir("/system", 0755);
-    mkdir("/cache", 0770);
-    mkdir("/data", 0771);
-    util::chown("/cache", "system", "cache", 0);
-    util::chown("/data", "system", "system", 0);
-
     // Get ROM ID from /romid
     std::string rom_id = get_rom_id();
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
@@ -1062,6 +1059,9 @@ int init_main(int argc, char *argv[])
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
     }
+
+    // Mount selinuxfs
+    util::selinux_mount();
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
