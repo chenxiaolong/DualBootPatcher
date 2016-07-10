@@ -34,6 +34,7 @@
 #else
 #include "appsync.h"
 #include "daemon.h"
+#include "decrypt.h"
 #include "init.h"
 #include "miniadbd.h"
 #include "sepolpatch.h"
@@ -76,6 +77,7 @@ struct tool tools[] = {
     { "adbd", mb::miniadbd_main },
     { "appsync", mb::appsync_main },
     { "daemon", mb::daemon_main },
+    { "decrypt", mb::decrypt_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
     { "sepolpatch", mb::sepolpatch_main },
