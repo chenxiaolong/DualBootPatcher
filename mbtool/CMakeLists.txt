@@ -75,6 +75,7 @@ set(MBTOOL_BASE_SOURCES
     uevent_dump.cpp
     wipe.cpp
     external/legacy_property_service.cpp
+    external/property_service.cpp
     initwrapper/cutils/uevent.cpp
     initwrapper/devices.cpp
     initwrapper/util.cpp

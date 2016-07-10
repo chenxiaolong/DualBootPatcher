@@ -55,6 +55,8 @@
 #include "mbutil/string.h"
 #include "mbutil/vibrate.h"
 
+#include "external/property_service.h"
+
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "daemon.h"
@@ -969,6 +971,9 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
+    // initialize properties
+    properties_setup();
+
     // Start probing for devices
     device_init(false);
 
@@ -1046,6 +1051,9 @@ int init_main(int argc, char *argv[])
 
     // Kill uevent thread and close uevent socket
     device_close();
+
+    // Kill properties service and clean up
+    properties_cleanup();
 
     // Remove mbtool init symlink and restore original binary
     unlink("/init");
