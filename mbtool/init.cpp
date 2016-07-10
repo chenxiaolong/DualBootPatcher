@@ -178,6 +178,97 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
+static util::CmdlineIterAction set_kernel_properties_cb(const char *name,
+                                                        const char *value,
+                                                        void *userdata)
+{
+    (void) userdata;
+
+    if (util::starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
+        char buf[PROP_NAME_MAX];
+        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name + 12);
+        if (n >= 0 && n < (int) sizeof(buf)) {
+            property_set(buf, value);
+        }
+    }
+
+    return util::CmdlineIterAction::Continue;
+}
+
+static bool set_kernel_properties()
+{
+    util::kernel_cmdline_iter(&set_kernel_properties_cb, nullptr);
+
+    struct {
+        const char *src_prop;
+        const char *dst_prop;
+        const char *default_value;
+    } prop_map[] = {
+        { "ro.boot.serialno",   "ro.serialno",   ""        },
+        { "ro.boot.mode",       "ro.bootmode",   "unknown" },
+        { "ro.boot.baseband",   "ro.baseband",   "unknown" },
+        { "ro.boot.bootloader", "ro.bootloader", "unknown" },
+        { "ro.boot.hardware",   "ro.hardware",   "unknown" },
+        { "ro.boot.revision",   "ro.revision",   "0"       },
+        { nullptr,              nullptr,         nullptr   },
+    };
+
+    for (auto it = prop_map; it ->src_prop; ++it) {
+        char value[PROP_VALUE_MAX];
+        int ret = property_get(it->src_prop, value);
+        property_set(it->dst_prop, (ret > 0) ? value : it->default_value);
+    }
+
+    return true;
+}
+
+static bool properties_setup()
+{
+    char tmp[32];
+    int fd, sz;
+
+    if (!property_init()) {
+        LOGW("Failed to initialize properties area");
+    }
+
+    // Set ro.boot.* properties from the kernel command line
+    if (!set_kernel_properties()) {
+        LOGW("Failed to set kernel cmdline properties");
+    }
+
+    // Load /default.prop
+    property_load_boot_defaults();
+
+    // Start properties service (to allow other processes to set properties)
+    if (!start_property_service()) {
+        LOGW("Failed to start properties service");
+    }
+
+    get_property_workspace(&fd, &sz);
+    sprintf(tmp, "%d,%d", fd, sz);
+
+    // Clear FD_CLOEXEC since we want child processes to be able to set
+    // properties
+    fcntl(fd, F_SETFD, 0);
+
+    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+    return true;
+}
+
+static bool properties_cleanup()
+{
+    if (!stop_property_service()) {
+        LOGW("Failed to stop properties service");
+    }
+
+    if (!property_cleanup()) {
+        LOGW("Failed to clean up properties area");
+    }
+
+    return true;
+}
+
 static std::string get_rom_id()
 {
     std::string rom_id;
