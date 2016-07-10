@@ -890,7 +890,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
     }
 
     // Partitions are mounted in /raw
-    if (mkdir("/raw", 0755) < 0) {
+    if (mkdir("/raw", 0755) < 0 && errno != EEXIST) {
         LOGE("Failed to create /raw: %s", strerror(errno));
         return false;
     }
