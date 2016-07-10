@@ -33,6 +33,7 @@
 
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
+#include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
@@ -61,6 +62,7 @@ static int pipe_fds[2];
 static bool send_ok_to_pipe = false;
 static bool sigstop_when_ready = false;
 static bool allow_root_client = false;
+static bool log_to_kmsg = false;
 
 static autoclose::file log_fp(nullptr, std::fclose);
 
@@ -325,23 +327,30 @@ static bool daemon_init()
     }
 
     // Set up logging
-    if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775) && errno != EEXIST) {
-        LOGE("Failed to create parent directory of %s: %s",
-             MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return false;
+    if (log_to_kmsg) {
+        log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+    } else {
+        if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
+                && errno != EEXIST) {
+            LOGE("Failed to create parent directory of %s: %s",
+                 MULTIBOOT_LOG_DAEMON, strerror(errno));
+            return false;
+        }
+
+        log_fp = autoclose::fopen(
+                get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
+        if (!log_fp) {
+            LOGE("Failed to open log file %s: %s",
+                 MULTIBOOT_LOG_DAEMON, strerror(errno));
+            return false;
+        }
+
+        fix_multiboot_permissions();
+
+        // mbtool logging
+        log::log_set_logger(
+                std::make_shared<log::StdioLogger>(log_fp.get(), true));
     }
-
-    log_fp = autoclose::fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
-    if (!log_fp) {
-        LOGE("Failed to open log file %s: %s",
-             MULTIBOOT_LOG_DAEMON, strerror(errno));
-        return false;
-    }
-
-    fix_multiboot_permissions();
-
-    // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(log_fp.get(), true));
 
     LOGD("Initialized daemon");
 
@@ -467,7 +476,8 @@ static void daemon_usage(bool error)
             "                   Skip procedures for modifying the SELinux policy\n"
             "  --sigstop-when-ready\n"
             "                   Send SIGSTOP to daemon process when it has been\n"
-            "                   fully initialized\n");
+            "                   fully initialized\n"
+            "  --log-to-kmsg    Send log output to kernel log instead of file\n");
 }
 
 int daemon_main(int argc, char *argv[])
@@ -486,6 +496,7 @@ int daemon_main(int argc, char *argv[])
         OPT_ALLOW_ROOT_CLIENT = 1000,
         OPT_NO_PATCH_SEPOLICY = 1001,
         OPT_SIGSTOP_WHEN_READY = 1002,
+        OPT_LOG_TO_KMSG = 1003,
     };
 
     static struct option long_options[] = {
@@ -495,6 +506,7 @@ int daemon_main(int argc, char *argv[])
         {"allow-root-client",  no_argument, 0, OPT_ALLOW_ROOT_CLIENT},
         {"no-patch-sepolicy",  no_argument, 0, OPT_NO_PATCH_SEPOLICY},
         {"sigstop-when-ready", no_argument, 0, OPT_SIGSTOP_WHEN_READY},
+        {"log-to-kmsg",        no_argument, 0, OPT_LOG_TO_KMSG},
         {0, 0, 0, 0}
     };
 
@@ -524,6 +536,10 @@ int daemon_main(int argc, char *argv[])
 
         case OPT_SIGSTOP_WHEN_READY:
             sigstop_when_ready = true;
+            break;
+
+        case OPT_LOG_TO_KMSG:
+            log_to_kmsg = true;
             break;
 
         default:
