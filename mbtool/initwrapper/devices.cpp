@@ -41,7 +41,7 @@
 
 #define DEVPATH_LEN 96
 
-#define UEVENT_LOGGING 1
+#define UEVENT_LOGGING 0
 
 static char bootdevice[PROP_VALUE_MAX];
 static int device_fd = -1;
