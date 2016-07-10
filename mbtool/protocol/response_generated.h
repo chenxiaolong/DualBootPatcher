@@ -5,6 +5,8 @@
 
 #include "flatbuffers/flatbuffers.h"
 
+#include "crypto_decrypt_generated.h"
+#include "crypto_get_pw_type_generated.h"
 #include "file_chmod_generated.h"
 #include "file_close_generated.h"
 #include "file_open_generated.h"
@@ -32,6 +34,22 @@
 #include "shutdown_generated.h"
 #include "signed_exec_generated.h"
 
+namespace mbtool {
+namespace daemon {
+namespace v3 {
+struct CryptoDecryptRequest;
+struct CryptoDecryptResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
+namespace mbtool {
+namespace daemon {
+namespace v3 {
+struct CryptoGetPwTypeRequest;
+struct CryptoGetPwTypeResponse;
+}  // namespace v3
+}  // namespace daemon
+}  // namespace mbtool
 namespace mbtool {
 namespace daemon {
 namespace v3 {
@@ -283,12 +301,14 @@ enum ResponseType {
   ResponseType_ShutdownResponse = 27,
   ResponseType_PathDeleteResponse = 28,
   ResponseType_PathMkdirResponse = 29,
+  ResponseType_CryptoDecryptResponse = 30,
+  ResponseType_CryptoGetPwTypeResponse = 31,
   ResponseType_MIN = ResponseType_NONE,
-  ResponseType_MAX = ResponseType_PathMkdirResponse
+  ResponseType_MAX = ResponseType_CryptoGetPwTypeResponse
 };
 
 inline const char **EnumNamesResponseType() {
-  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", "PathDeleteResponse", "PathMkdirResponse", nullptr };
+  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", "PathDeleteResponse", "PathMkdirResponse", "CryptoDecryptResponse", "CryptoGetPwTypeResponse", nullptr };
   return names;
 }
 
@@ -412,6 +432,8 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *unio
     case ResponseType_ShutdownResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::ShutdownResponse *>(union_obj));
     case ResponseType_PathDeleteResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathDeleteResponse *>(union_obj));
     case ResponseType_PathMkdirResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathMkdirResponse *>(union_obj));
+    case ResponseType_CryptoDecryptResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::CryptoDecryptResponse *>(union_obj));
+    case ResponseType_CryptoGetPwTypeResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::CryptoGetPwTypeResponse *>(union_obj));
     default: return false;
   }
 }
