@@ -1,0 +1,16 @@
+namespace mbtool.daemon.v3;
+
+enum CryptoPwType : short {
+    DEFAULT,
+    PASSWORD,
+    PATTERN,
+    PIN,
+    UNKNOWN
+}
+
+table CryptoGetPwTypeRequest {
+}
+
+table CryptoGetPwTypeResponse {
+    type : CryptoPwType;
+}

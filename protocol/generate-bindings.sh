@@ -3,6 +3,8 @@
 cd "$(dirname "${0}")"
 
 files=(
+    v3/crypto_decrypt.fbs
+    v3/crypto_get_pw_type.fbs
     v3/file_chmod.fbs
     v3/file_close.fbs
     v3/file_open.fbs
