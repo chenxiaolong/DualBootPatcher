@@ -48,6 +48,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
+#include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -616,6 +617,41 @@ static bool symlink_base_dir()
     return false;
 }
 
+static bool fstab_replace_forceencrypt(const char *path)
+{
+    std::string new_path(path);
+    new_path += ".new";
+
+    std::vector<util::fstab_rec> recs = util::read_fstab(path);
+    if (recs.empty()) {
+        LOGE("%s: Failed to read fstab file", path);
+        return false;
+    }
+
+    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             new_path.c_str(), strerror(errno));
+        return false;
+    }
+
+    for (auto &rec : recs) {
+        if (rec.vold_args.find("forceencrypt") != std::string::npos) {
+            util::replace_all(&rec.vold_args, "forceencrypt", "encryptable");
+
+            fprintf(fp.get(), "%s %s %s %s %s\n", rec.blk_device.c_str(),
+                    rec.mount_point.c_str(), rec.fs_type.c_str(),
+                    rec.mount_args.c_str(), rec.vold_args.c_str());
+        } else {
+            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
+        }
+    }
+
+    fp.reset();
+
+    return replace_file(path, new_path.c_str());
+}
+
 static bool extract_zip(const char *source, const char *target)
 {
     autoclose::archive in(archive_read_new(), archive_read_free);
@@ -983,6 +1019,11 @@ int init_main(int argc, char *argv[])
         fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
         util::create_empty_file(fstab);
     }
+
+    // Replace forceencrypt in fstab file since vold will need to process it if
+    // /data is encrypted. mbtool's mount code doesn't care about the presence
+    // of this option.
+    fstab_replace_forceencrypt(fstab.c_str());
 
     // Create mount points
     mkdir("/system", 0755);
