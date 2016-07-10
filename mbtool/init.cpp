@@ -1044,9 +1044,11 @@ int init_main(int argc, char *argv[])
     // get the ROM ID;
     add_props_to_default_prop();
 
-    // Mount fstab file
-    // TODO: Skip /data until it is decrypted
-    int flags = MOUNT_FLAG_REWRITE_FSTAB /* | MOUNT_FLAG_SKIP_DATA */;
+    int flags = MOUNT_FLAG_REWRITE_FSTAB
+            | MOUNT_FLAG_MOUNT_SYSTEM
+            | MOUNT_FLAG_MOUNT_CACHE
+            | MOUNT_FLAG_MOUNT_DATA
+            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();

@@ -789,17 +789,17 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
         LOGD("fstab: %s", it->orig_line.c_str());
 
         if (util::path_compare(it->mount_point, "/system") == 0
-                && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+                && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGD("-> /system entry");
             recs->system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
-                && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+                && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGD("-> /cache entry");
             recs->cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
-                && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+                && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGD("-> /data entry");
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
@@ -807,7 +807,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
-                && !(flags & MOUNT_FLAG_SKIP_EXTERNAL_SD)) {
+                && (flags & MOUNT_FLAG_MOUNT_EXTERNAL_SD)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
             recs->extsd.push_back(*it);
@@ -825,21 +825,21 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
     if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
-        if (recs->system.empty() && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+        if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGW("No /system fstab entries found. Adding generic entries");
             auto entries = generic_fstab_system_entries();
             for (util::fstab_rec &rec : entries) {
                 recs->system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+        if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
             auto entries = generic_fstab_cache_entries();
             for (util::fstab_rec &rec : entries) {
                 recs->cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+        if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGW("No /data fstab entries found. Adding generic entries");
             auto entries = generic_fstab_data_entries();
             for (util::fstab_rec &rec : entries) {
