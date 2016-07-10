@@ -41,6 +41,7 @@
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
+#include "decrypt.h"
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
@@ -49,6 +50,8 @@
 #include "wipe.h"
 
 // flatbuffers
+#include "protocol/crypto_decrypt_generated.h"
+#include "protocol/crypto_get_pw_type_generated.h"
 #include "protocol/file_chmod_generated.h"
 #include "protocol/file_close_generated.h"
 #include "protocol/file_open_generated.h"
@@ -107,6 +110,62 @@ static bool v3_send_response_unsupported(int fd)
     auto response = v3::CreateResponse(builder, v3::ResponseType_Unsupported,
                                        v3::CreateUnsupported(builder).Union());
     builder.Finish(response);
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
+{
+    auto request = (v3::CryptoDecryptRequest *) msg->request();
+    if (!request->password()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoDecryptResponse> response;
+
+    bool ret = decrypt_userdata(request->password()->c_str());
+
+    response = v3::CreateCryptoDecryptResponse(builder, ret);
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_CryptoDecryptResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_crypto_get_pw_type(int fd, const v3::Request *msg)
+{
+    (void) msg;
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoGetPwTypeResponse> response;
+
+    v3::CryptoPwType v3_pw_type = v3::CryptoPwType_UNKNOWN;
+
+    const char *pw_type = decrypt_get_pw_type();
+    if (pw_type) {
+        if (strcmp(pw_type, CRYPTFS_PW_TYPE_DEFAULT) == 0) {
+            v3_pw_type = v3::CryptoPwType_DEFAULT;
+        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PASSWORD) == 0) {
+            v3_pw_type = v3::CryptoPwType_PASSWORD;
+        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PATTERN) == 0) {
+            v3_pw_type = v3::CryptoPwType_PATTERN;
+        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PIN) == 0) {
+            v3_pw_type = v3::CryptoPwType_PIN;
+        }
+    }
+
+    response = v3::CreateCryptoGetPwTypeResponse(builder, v3_pw_type);
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_CryptoGetPwTypeResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
     return v3_send_response(fd, builder);
 }
 
@@ -1347,6 +1406,8 @@ struct RequestMap
 };
 
 static RequestMap request_map[] = {
+    { v3::RequestType_CryptoDecryptRequest, v3_crypto_decrypt },
+    { v3::RequestType_CryptoGetPwTypeRequest, v3_crypto_get_pw_type },
     { v3::RequestType_FileChmodRequest, v3_file_chmod },
     { v3::RequestType_FileCloseRequest, v3_file_close },
     { v3::RequestType_FileOpenRequest, v3_file_open },
