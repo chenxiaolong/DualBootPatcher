@@ -73,6 +73,7 @@ set(MBTOOL_BASE_SOURCES
     signature.cpp
     switcher.cpp
     uevent_dump.cpp
+    voldclient.cpp
     voldwrapper.cpp
     wipe.cpp
     external/legacy_property_service.cpp
