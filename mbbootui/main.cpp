@@ -51,6 +51,8 @@
 
 #define APPEND_TO_LOG               1
 
+#define MAX_LOG_SIZE                (1024 * 1024) /* 1MiB */
+
 #define MBBOOTUI_BASE_PATH          "/raw/cache/multiboot/bootui"
 #define MBBOOTUI_LOG_PATH           MBBOOTUI_BASE_PATH "/exec.log"
 #define MBBOOTUI_SCREENSHOTS_PATH   MBBOOTUI_BASE_PATH "/screenshots";
@@ -483,6 +485,12 @@ int main(int argc, char *argv[])
         LOGE("%s: Failed to create directory: %s",
              MBBOOTUI_BASE_PATH, strerror(errno));
         return EXIT_FAILURE;
+    }
+
+    // Rotate log if it is too large
+    struct stat sb;
+    if (stat(MBBOOTUI_LOG_PATH, &sb) == 0 && sb.st_size > MAX_LOG_SIZE) {
+        rename(MBBOOTUI_LOG_PATH, MBBOOTUI_LOG_PATH ".prev");
     }
 
     if (!no_log_file && !redirect_output_to_file(MBBOOTUI_LOG_PATH, 0600)) {
