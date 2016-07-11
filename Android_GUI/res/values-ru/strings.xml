@@ -6,8 +6,10 @@
   <string name="app_name_debug">Dual Boot Patcher (отладка)</string>
   <!--Name of the app built in snapshot mode-->
   <string name="app_name_snapshot">Dual Boot Patcher (закладка)</string>
+  
   <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
   <string name="wait_until_finished">Подождите до окончания всех работ.</string>
+  
   <!--Indicate the version of the app on the about screen-->
   <string name="version">Версия %s</string>
   <!--GitHub source code web page URL-->
@@ -21,8 +23,10 @@
   <string name="link_licenses">Лицензии</string>
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">Огромные благодарности всем кто помог реализовать этот проект!</string>
+  
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">Выберите ROM</string>
   <!--Navigation drawer item for patching a zip file-->
@@ -30,62 +34,94 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Свободное Место</string>
   <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Настройки</string>
   <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">Перенос приложений</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Перегрузить</string>
   <!--Navigation drawer item for showing the about screen-->
   <string name="title_about">О Программе</string>
   <!--Nagivation drawer item for exiting the app-->
   <string name="title_exit">Выход</string>
+  
   <!--Accessibility text for opening the app drawer-->
   <string name="drawer_open">Открыть ящик навигации</string>
   <!--Accessibility text for closing the app drawer-->
   <string name="drawer_close">Закрыть ящик навигации</string>
+  
   <!--Default name for the primary ROM-->
-  <string name="primary">Главный</string>
+  <string name="primary">Основной</string>
   <!--Default name for the secondary ROM-->
   <string name="secondary">Второстепенный</string>
   <!--Default name for the multi-slot ROMs-->
   <string name="multislot">Позиция # %s</string>
   <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (Data)</string>
   <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (внешняя sdcard)</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Не удалось определить версию ROM-а</string>
+  
   <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">Переключить ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Настройка ядра</string>
   <!--Message shown when switching ROMs succeeds-->
   <string name="choose_rom_success">Переключение удачно</string>
   <!--Message shown when switching ROMs failed-->
   <string name="choose_rom_failure">Ошибка при переключении</string>
   <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">Контрольные суммы не совпадают</string>
   <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">Контрольные суммы отсутствуют</string>
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Ядро установленно удачно</string>
   <!--Message shown when setting the kernel fails-->
   <string name="set_kernel_failure">Ошибка при установки ядра</string>
+  
   <!--Message shown when another application tries to switch the ROM via an intent-->
+  
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
+  
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  
   <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Версия неизвестна</string>
   <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Сборка неизвестна</string>
+  
   <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Пропатчить ramdisk</string>
   <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Применить патч ядра</string>
   <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">Сделать р.к. прошивки</string>
   <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Создать ярлык на рабочем столе</string>
   <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">Переименовать</string>
   <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">Заменить образ</string>
   <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">Отменить</string>
   <!--ROM menu item for wiping the ROM-->
+   <string name="rom_menu_wipe_rom">Очистить</string>
+   
   <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">%s добавлен на рабочий стол.</string>
+  
   <!--Dialog shown when adding an icon to the home screen asking whether the device should
          automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">Перезагрузить устройство после выбора ROM?</string>
+  
   <!--Target for wiping ROM's /system-->
   <!--Target for wiping ROM's /cache-->
   <!--Target for wiping ROM's /data-->
   <!--Target for wiping ROM's dalvik cache-->
   <!--Target for wiping ROM's multiboot files-->
+  
   <!--Title of dialog box asking for which targets to wipe-->
   <!--Title of progress dialog shown when wiping targets-->
   <!--Toast message indicating successfully wiped targets-->
@@ -93,22 +129,29 @@
   <!--Toast message indicating that the wipe process failed to start-->
   <!--Toast message shown if the user did not select any target to wipe-->
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Эмблема ROM-а</string>
+  
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
   <string name="switcher_ask_set_kernel_title">Установить ядро?</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
   <string name="switcher_ask_set_kernel_desc">Текущее ядро будет сохранено как\nядро для # %s</string>
+  
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Переименовать %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Введите новие имя для %s. Очистите чтобы оставить\nимя по умолчанию. Нажмите на иконку чтобы её изменить.</string>
+  <string name="rename_rom_desc">Введите новое имя для %s. Очистите чтобы уставить\nимя по умолчанию. Нажмите на иконку чтобы изменить.</string>
+  
   <!--Dialog message shown when the kernel has not been set-->
   <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
   <!--Positive dialog button shown for the above two messages-->
   <!--Negative dialog button shown for the above two messages-->
+  
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  
   <!--ZIP flash activity title-->
   <!--Title of pending action card for installing a zip file-->
   <!--Subtitle text in pending action card showing the selected filename-->
@@ -124,31 +167,54 @@
   <!--Dialog button for keeping the current installation location-->
   <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
+  
   <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Слот</string>
   <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Версия Android</string>
   <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Сборка</string>
   <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">Статус патча mbtool</string>
   <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">Приложения</string>
   <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s системных, %2$s обновленных,
+        %3$s пользовательских</string>
   <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">Раздел System</string>
   <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Раздел Cache</string>
   <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Раздел Data</string>
   <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">Размер System</string>
   <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Размер Cache</string>
   <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Размер Data</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Подсчет…</string>
+  
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  
   <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Устройство:</string>
   <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Конфигурация разделов:</string>
   <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Описание:</string>
+  
   <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
   <!--Subtitle shown in patch file card when patching succeeded-->
   <!--Subtitle shown in patch file card when patching failed-->
   <!--Subtitle shown in patch file card when file is waiting to be patched-->
   <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
   <!--Subtitle shown in patch file card when patching has been cancelled-->
+  
   <!--Patcher options dialog title-->
+  
   <!--Name for primary ROM upgrade installation location-->
   <!--Description for primary ROM upgrade installation location-->
   <!--Description for all other installation locations-->
@@ -158,14 +224,18 @@
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
   <!--Name for the data-slot installation location-->
   <!--Name for the extsd-slot installation location-->
+  
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Файловый менеджер не найден</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Файловый менеджер не установлен на этом устройстве.\nПожалуйста установите менеджер для выбора файлов.</string>
+  
   <!--Text for the details card indicating that the patching is done-->
   <string name="details_done">Завершено</string>
+  
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s файлов</string>
+  
   <!--Title for total size of partition-->
   <string name="free_space_total_size">Обший размер:</string>
   <!--Title for occupied space on partition-->
@@ -179,16 +249,22 @@
   <!--Format string for mebibytes-->
   <!--Format string for kibibytes-->
   <!--Format string for bytes-->
+  
   <!--Title for the individual application sharing section of the ROM settings-->
+  
   <!--Title for the preference to share individual applications-->
   <string name="a_s_settings_indiv_app_sharing_title">Совместно владеть приложениями</string>
   <!--Description for the preference to share individual applications-->
   <string name="a_s_settings_indiv_app_sharing_desc">Совместно владеть приложениями со всеми ROM-ами\n(перезагрузка обязательна).</string>
   <!--Title for the preference to manage shared apps for individual app sharing-->
   <!--Description for the preference to manage shared apps for individual app sharing-->
+  
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  
   <!--Title for preference category for boot options-->
+  
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Обновить виртуальный диск</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -205,6 +281,7 @@
   <string name="update_ramdisk_failure_desc">Произошла ошибка при обновлении виртуального диска.\nСовместное владение приложениями не будет работать.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <!--Toast popup message shown when the user forces a ramdisk update-->
+  
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Прошиватель</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
