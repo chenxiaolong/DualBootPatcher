@@ -68,9 +68,9 @@
 #include "sepolpatch.h"
 #include "signature.h"
 
-#define BOOT_ADB_INSTEAD_OF_INIT 0
+#define RUN_ADB_BEFORE_EXEC_OR_REBOOT 0
 
-#if BOOT_ADB_INSTEAD_OF_INIT
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
 #include "miniadbd.h"
 #include "miniadbd/adb_log.h"
 #endif
@@ -908,8 +908,36 @@ static bool dump_kernel_log(const char *file)
     return true;
 }
 
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+static void run_adb()
+{
+    // Mount /system if we can so we can use adb shell
+    if (!util::is_mounted("/system") && util::is_mounted("/raw/system")) {
+        mount("/raw/system", "/system", "", MS_BIND, "");
+    }
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Don't spam the kernel log
+        adb_log_mask = ADB_SERV;
+
+        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
+        _exit(miniadbd_main(1, adb_argv));
+    } else if (pid >= 0) {
+        LOGV("miniadbd is running as pid %d; kill it to continue", pid);
+        wait_for_pid("miniadbd", pid);
+    } else {
+        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
+    }
+}
+#endif
+
 static bool emergency_reboot()
 {
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+    run_adb();
+#endif
+
     util::vibrate(100, 150);
     util::vibrate(100, 150);
     util::vibrate(100, 150);
@@ -1188,20 +1216,8 @@ int init_main(int argc, char *argv[])
     unlink("/init");
     rename("/init.orig", "/init");
 
-#if BOOT_ADB_INSTEAD_OF_INIT
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Don't spam the kernel log
-        adb_log_mask = ADB_SERV;
-
-        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-        _exit(miniadbd_main(1, adb_argv));
-    } else if (pid >= 0) {
-        LOGV("miniadbd is running as pid %d; kill it to continue boot", pid);
-        wait_for_pid("miniadbd", pid);
-    } else {
-        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
-    }
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+    run_adb();
 #endif
 
     // Unmount partitions
