@@ -30,6 +30,7 @@
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
+#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -331,6 +332,15 @@ static void load_device_config()
     tw_graphics_backends_length = gfx_backends.size();
 }
 
+static void load_other_config()
+{
+    // Get Android version (needed for pattern input)
+    std::string value;
+    mb::util::file_get_property("/raw/system/build.prop",
+                                "ro.build.version.sdk", &value, "0");
+    mb::util::str_to_snum(value.c_str(), 10, &tw_android_sdk_version);
+}
+
 static void log_startup()
 {
     LOGV("----------------------------------------");
@@ -415,6 +425,8 @@ static void log_startup()
             LOGV("  - %s", tw_graphics_backends[i]);
         }
     }
+
+    LOGV("- tw_android_sdk_version:       %d", tw_android_sdk_version);
 }
 
 static void usage(FILE *stream)
@@ -499,6 +511,7 @@ int main(int argc, char *argv[])
 
     // Load device configuration options
     load_device_config();
+    load_other_config();
 
     log_startup();
 
