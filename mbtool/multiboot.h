@@ -50,6 +50,11 @@
 #define PROP_MULTIBOOT_VERSION          "ro.multiboot.version"
 #define PROP_MULTIBOOT_ROM_ID           "ro.multiboot.romid"
 
+#define PROP_CRYPTO_STATE               "state.multiboot.crypto"
+#define CRYPTO_STATE_ENCRYPTED          "encrypted"
+#define CRYPTO_STATE_DECRYPTED          "decrypted"
+#define CRYPTO_STATE_ERROR              "error"
+
 // Boot UI
 #define BOOT_UI_SKIP_PATH               "/raw/cache/multiboot/bootui/skip"
 #define BOOT_UI_ZIP_PATH                "/raw/cache/multiboot/bootui.zip"

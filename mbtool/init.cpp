@@ -61,6 +61,7 @@
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "daemon.h"
+#include "decrypt.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
@@ -652,6 +653,40 @@ static bool fstab_replace_forceencrypt(const char *path)
     return replace_file(path, new_path.c_str());
 }
 
+static bool fstab_replace_block_dev(const char *path, const char *mount_point,
+                                    const char *new_block_dev)
+{
+    std::string new_path(path);
+    new_path += ".new";
+
+    std::vector<util::fstab_rec> recs = util::read_fstab(path);
+    if (recs.empty()) {
+        LOGE("%s: Failed to read fstab file", path);
+        return false;
+    }
+
+    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             new_path.c_str(), strerror(errno));
+        return false;
+    }
+
+    for (auto const &rec : recs) {
+        if (mount_point == rec.mount_point) {
+            fprintf(fp.get(), "%s %s %s %s %s\n", new_block_dev,
+                    rec.mount_point.c_str(), rec.fs_type.c_str(),
+                    rec.mount_args.c_str(), rec.vold_args.c_str());
+        } else {
+            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
+        }
+    }
+
+    fp.reset();
+
+    return replace_file(path, new_path.c_str());
+}
+
 static bool extract_zip(const char *source, const char *target)
 {
     autoclose::archive in(archive_read_new(), archive_read_free);
@@ -1044,10 +1079,10 @@ int init_main(int argc, char *argv[])
     // get the ROM ID;
     add_props_to_default_prop();
 
+    // Mount system, cache, and external SD from fstab file
     int flags = MOUNT_FLAG_REWRITE_FSTAB
             | MOUNT_FLAG_MOUNT_SYSTEM
             | MOUNT_FLAG_MOUNT_CACHE
-            | MOUNT_FLAG_MOUNT_DATA
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, flags)) {
         LOGE("Failed to mount fstab");
@@ -1055,11 +1090,67 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    LOGV("Successfully mounted fstab");
+    LOGV("Successfully mounted fstab (excluding /data)");
+
+    bool has_encryption = false;
+
+    // Try mounting data
+    flags = MOUNT_FLAG_REWRITE_FSTAB
+            | MOUNT_FLAG_MOUNT_DATA;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+        LOGW("Failed to mount data, it might be encrypted");
+        has_encryption = true;
+    }
+
+    property_set(PROP_CRYPTO_STATE,
+                 has_encryption
+                 ? CRYPTO_STATE_ENCRYPTED
+                 : CRYPTO_STATE_DECRYPTED);
+
+    if (has_encryption && !decrypt_init()) {
+        LOGE("Failed to initialize decryption operation");
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
 
     if (!launch_boot_menu()) {
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
+    }
+
+    // Check if the data partition was successfully decrypted
+    if (has_encryption) {
+        if (!decrypt_cleanup()) {
+            LOGE("Failed to clean up decryption operation");
+            emergency_reboot();
+            return EXIT_FAILURE;
+        }
+
+        char value[PROP_VALUE_MAX];
+        if (property_get(PROP_CRYPTO_STATE, value) <= 0
+                || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
+            LOGE("Failed to decrypt device");
+            emergency_reboot();
+            return EXIT_FAILURE;
+        }
+
+        // Get block device property set by vold
+        if (property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
+            // Assume first devmapper device on older versions of Android
+            strcpy(value, "/dev/block/dm-0");
+        }
+
+        // Rewrite fstab with the devmapper device for /data
+        fstab_replace_block_dev(fstab.c_str(), "/data", value);
+
+        // Try mounting data again
+        flags = MOUNT_FLAG_REWRITE_FSTAB
+                | MOUNT_FLAG_MOUNT_DATA;
+        if (!mount_fstab(fstab.c_str(), rom, flags)) {
+            LOGE("Failed to mount data. Decryption probably failed");
+            emergency_reboot();
+            return EXIT_FAILURE;
+        }
     }
 
     // Mount selinuxfs
