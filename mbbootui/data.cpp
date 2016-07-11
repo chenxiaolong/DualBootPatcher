@@ -370,6 +370,7 @@ void DataManager::SetDefaultValues()
     mPersist.SetValue(TW_TIME_ZONE_GUIDST, "1");
     mData.SetValue(TW_ACTION_BUSY, "0");
     mData.SetValue(TW_IS_ENCRYPTED, "0");
+    mData.SetValue(TW_CRYPTO_PASSWORD, "0");
     mData.SetValue("tw_terminal_state", "0");
     mData.SetValue("tw_background_thread_running", "0");
     mPersist.SetValue(TW_MILITARY_TIME, "0");

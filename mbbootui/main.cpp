@@ -62,6 +62,11 @@
 
 #define PROP_PATCHER_DEVICE         "ro.patcher.device"
 
+#define PROP_CRYPTO_STATE           "state.multiboot.crypto"
+#define CRYPTO_STATE_ENCRYPTED      "encrypted"
+#define CRYPTO_STATE_DECRYPTED      "decrypted"
+#define CRYPTO_STATE_ERROR          "error"
+
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
 static mbp::PatcherConfig pc;
@@ -531,6 +536,67 @@ int main(int argc, char *argv[])
 
     LOGV("Loading resources...");
     gui_loadResources();
+
+    LOGV("Checking for encryption...");
+    std::string crypto_state;
+    mb::util::get_property(PROP_CRYPTO_STATE, &crypto_state,
+                           CRYPTO_STATE_DECRYPTED);
+
+    if (crypto_state == CRYPTO_STATE_ENCRYPTED) {
+        LOGV("Data appears to be encrypted");
+
+        int is_encrypted = 1;
+
+        // Ask mbtool for password type
+        std::string pw_type;
+        if (!mbtool_interface->crypto_get_pw_type(&pw_type)) {
+            LOGE("Failed to ask mbtool for the crypto password type");
+            return EXIT_FAILURE;
+        }
+
+        // If password type is unknown, assume "password"
+        if (pw_type.empty()) {
+            LOGW("Crypto password type is unknown. Assuming 'password'");
+            pw_type = "password";
+        }
+
+        // Try default password
+        if (pw_type == "default") {
+            bool ret;
+            if (!mbtool_interface->crypto_decrypt("default_password", &ret)) {
+                LOGE("Failed to ask mbtool to decrypt userdata");
+                return EXIT_FAILURE;
+            }
+
+            if (ret) {
+                LOGV("Successfully decrypted device with default password");
+                is_encrypted = 0;
+            } else {
+                LOGW("Failed to decrypt device with default password despite "
+                     "password type being 'default'");
+                pw_type = "password";
+            }
+        }
+
+        DataManager::SetValue(TW_IS_ENCRYPTED, is_encrypted);
+        DataManager::SetValue(TW_CRYPTO_PWTYPE, pw_type);
+        DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+        DataManager::SetValue("tw_crypto_display", "");
+
+        if (is_encrypted) {
+            LOGV("Showing decrypt page first due to encrypted device");
+            gui_startPage("decrypt", 1, 1);
+        }
+
+        if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
+            LOGE("Decrypt page exited, but device is still encrypted");
+            mb::util::set_property(PROP_CRYPTO_STATE, CRYPTO_STATE_ERROR);
+            return EXIT_FAILURE;
+        } else {
+            LOGV("Decrypt page exited and device was successfully decrypted");
+            mb::util::set_property(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
+        }
+    }
 
     LOGV("Loading user settings...");
     DataManager::ReadSettingsFile();
