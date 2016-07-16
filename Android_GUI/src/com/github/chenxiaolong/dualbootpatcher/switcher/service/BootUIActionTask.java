@@ -19,10 +19,16 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
+import com.github.chenxiaolong.dualbootpatcher.RomUtils;
+import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.dualbootpatcher.Version;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -49,7 +55,10 @@ public final class BootUIActionTask extends BaseServiceTask {
     private static final String RAW_CACHE_MOUNT_POINT = "/raw/cache";
 
     private static final String BOOTUI_ZIP_PATH = "/multiboot/bootui.zip";
-    private static final String BOOTUI_SIG_PATH = "/multiboot/bootui.zip.sig";
+    private static final String BOOTUI_ZIP_SIG_PATH = "/multiboot/bootui.zip.sig";
+    private static final String CRYPTO_SETUP_PATH = "/multiboot/crypto/setup";
+    private static final String CRYPTO_SETUP_SIG_PATH = "/multiboot/crypto/setup.sig";
+    private static final String CRYPTO_FSTAB_PATH = "/multiboot/crypto/fstab";
 
     private static final String PROPERTIES_FILE = "info.prop";
     private static final String PROP_VERSION = "bootui.version";
@@ -130,6 +139,7 @@ public final class BootUIActionTask extends BaseServiceTask {
      * @throws IOException
      * @throws MbtoolException
      */
+    @Nullable
     private Version getCurrentVersion(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
         String zipPath = mountPoint + BOOTUI_ZIP_PATH;
@@ -195,6 +205,31 @@ public final class BootUIActionTask extends BaseServiceTask {
         }
     }
 
+    @Nullable
+    private byte[] getFstabFromBootImage(String path) {
+        String hardware = SystemPropertiesProxy.get(getContext(), "ro.hardware", "");
+        String fstabPath = "fstab." + hardware;
+
+        BootImage bi = new BootImage();
+        CpioFile cf = new CpioFile();
+        try {
+            if (!bi.load(path)) {
+                return null;
+            }
+
+            if (!cf.load(bi.getRamdiskImage())) {
+                return null;
+            }
+
+            bi.destroy();
+
+            return cf.getContents(fstabPath);
+        } finally {
+            cf.destroy();
+            bi.destroy();
+        }
+    }
+
     /**
      * Install or update boot UI
      *
@@ -207,6 +242,18 @@ public final class BootUIActionTask extends BaseServiceTask {
         // Need to grab latest boot UI from the data archive
         PatcherUtils.initializePatcher(getContext());
 
+        Device device = PatcherUtils.getCurrentDevice(getContext(), PatcherUtils.sPC);
+        if (device == null) {
+            Log.e(TAG, "Failed to determine current device");
+            return false;
+        }
+
+        // Uninstall first, so we don't get any leftover files
+        Log.d(TAG, "Uninstalling before installing/updating");
+        if (!uninstall(iface)) {
+            return false;
+        }
+
         String abi;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             abi = Build.SUPPORTED_ABIS[0];
@@ -214,31 +261,72 @@ public final class BootUIActionTask extends BaseServiceTask {
             abi = Build.CPU_ABI;
         }
 
-        String zipPath = PatcherUtils.getTargetDirectory(getContext())
-                + File.separator + "bootui"
-                + File.separator + abi
-                + File.separator + "bootui.zip";
-        String sigPath = PatcherUtils.getTargetDirectory(getContext())
-                + File.separator + "bootui"
-                + File.separator + abi
-                + File.separator + "bootui.zip.sig";
+        // Source paths
+        String sourceZipPath = PatcherUtils.getTargetDirectory(getContext())
+                + File.separator + "bootui"  + File.separator + abi + File.separator + "bootui.zip";
+        String sourceZipSigPath = sourceZipPath + ".sig";
+        String sourceSetupPath = null;
+        String sourceSetupSigPath = null;
 
+        String path;
+        if (device.isCryptoSupported() && (path = device.getCryptoSetupPath()) != null) {
+            sourceSetupPath = PatcherUtils.getTargetDirectory(getContext())
+                    + File.separator + path.replace('/', File.separatorChar);
+            sourceSetupSigPath = sourceSetupPath + ".sig";
+        }
+
+        // Target paths
         String mountPoint = getCacheMountPoint(iface);
         String targetZipPath = mountPoint + BOOTUI_ZIP_PATH;
-        String targetSigPath = mountPoint + BOOTUI_SIG_PATH;
-        File parent = new File(targetZipPath).getParentFile();
+        String targetZipSigPath = mountPoint + BOOTUI_ZIP_SIG_PATH;
+        String targetSetupPath = mountPoint + CRYPTO_SETUP_PATH;
+        String targetSetupSigPath = mountPoint + CRYPTO_SETUP_SIG_PATH;
+        String targetFstabPath = mountPoint + CRYPTO_FSTAB_PATH;
+        File bootUiParent = new File(targetZipPath).getParentFile();
+        File cryptoParent = new File(targetSetupPath).getParentFile();
+
 
         try {
-            iface.pathMkdir(parent.getAbsolutePath(), 0755, true);
-            iface.pathCopy(zipPath, targetZipPath);
-            iface.pathCopy(sigPath, targetSigPath);
+            // Boot UI
+            iface.pathMkdir(bootUiParent.getAbsolutePath(), 0755, true);
+            iface.pathCopy(sourceZipPath, targetZipPath);
+            iface.pathCopy(sourceZipSigPath, targetZipSigPath);
             iface.pathChmod(targetZipPath, 0644);
-            iface.pathChmod(targetSigPath, 0644);
-            return true;
+            iface.pathChmod(targetZipSigPath, 0644);
+
+            if (device.isCryptoSupported()) {
+                iface.pathMkdir(cryptoParent.getAbsolutePath(), 0755, true);
+                iface.pathCopy(sourceSetupPath, targetSetupPath);
+                iface.pathCopy(sourceSetupSigPath, targetSetupSigPath);
+                iface.pathChmod(targetSetupPath, 0644);
+                iface.pathChmod(targetSetupSigPath, 0644);
+            }
         } catch (MbtoolCommandException e) {
-            Log.e(TAG, "Failed to install/update boot UI", e);
+            Log.e(TAG, "Failed to install/update boot UI or crypto scripts", e);
             return false;
         }
+
+        if (device.isCryptoSupported()) {
+            // Get fstab from primary ROM's boot image
+            String bootImage = RomUtils.getBootImagePath("primary");
+            byte[] fstab = getFstabFromBootImage(bootImage);
+            if (fstab == null) {
+                Log.e(TAG, "Failed to get fstab file from the primary ROM's boot image");
+                return false;
+            }
+
+            try {
+                int id = iface.fileOpen(targetFstabPath, new short[] {
+                        FileOpenFlag.CREAT, FileOpenFlag.WRONLY, FileOpenFlag.EXCL }, 0644);
+                iface.fileWrite(id, fstab);
+                iface.fileClose(id);
+            } catch (MbtoolCommandException e) {
+                Log.e(TAG, "Failed to install/update crypto fstab file", e);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -251,20 +339,23 @@ public final class BootUIActionTask extends BaseServiceTask {
      */
     private boolean uninstall(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
-        String zipPath = mountPoint + BOOTUI_ZIP_PATH;
-        String sigPath = mountPoint + BOOTUI_SIG_PATH;
 
-        // Ignore errors for now since mbtool doesn't expose the errno value for us to check for
-        // ENOENT
-        try {
-            iface.pathDelete(zipPath, PathDeleteFlag.UNLINK);
-        } catch (MbtoolCommandException e) {
-            // Ignore
-        }
-        try {
-            iface.pathDelete(sigPath, PathDeleteFlag.UNLINK);
-        } catch (MbtoolCommandException e) {
-            // Ignore
+        String[] toDelete = new String[] {
+                mountPoint + BOOTUI_ZIP_PATH,
+                mountPoint + BOOTUI_ZIP_SIG_PATH,
+                mountPoint + CRYPTO_SETUP_PATH,
+                mountPoint + CRYPTO_SETUP_SIG_PATH,
+                mountPoint + CRYPTO_FSTAB_PATH
+        };
+
+        for (String path : toDelete) {
+            // Ignore errors for now since mbtool doesn't expose the errno value for us to check for
+            // ENOENT
+            try {
+                iface.pathDelete(path, PathDeleteFlag.UNLINK);
+            } catch (MbtoolCommandException e) {
+                // Ignore
+            }
         }
 
         return true;
@@ -287,7 +378,9 @@ public final class BootUIActionTask extends BaseServiceTask {
                     version = getCurrentVersion(iface);
                     break;
                 case INSTALL:
-                    success = install(iface);
+                    if (!(success = install(iface))) {
+                        uninstall(iface);
+                    }
                     break;
                 case UNINSTALL:
                     success = uninstall(iface);
