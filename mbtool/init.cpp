@@ -690,6 +690,40 @@ static bool fstab_replace_block_dev(const char *path, const char *mount_point,
     return replace_file(path, new_path.c_str());
 }
 
+bool mount_userdata()
+{
+    std::string rom_id = get_rom_id();
+    std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
+    if (!rom) {
+        return false;
+    }
+
+    std::string fstab("/fstab.");
+    std::string hardware;
+    util::get_property("ro.hardware", &hardware, "");
+    fstab += hardware;
+
+    char value[PROP_VALUE_MAX];
+
+    // Get block device property set by vold
+    if (property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
+        // Assume first devmapper device on older versions of Android
+        strcpy(value, "/dev/block/dm-0");
+    }
+
+    // Rewrite fstab with the devmapper device for /data
+    fstab_replace_block_dev(fstab.c_str(), "/data", value);
+
+    // Try mounting data again
+    int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+        LOGE("Failed to mount data. Decryption probably failed");
+        return false;
+    }
+
+    return true;
+}
+
 static bool extract_zip(const char *source, const char *target)
 {
     unzFile uf;
@@ -1153,20 +1187,8 @@ int init_main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        // Get block device property set by vold
-        if (property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
-            // Assume first devmapper device on older versions of Android
-            strcpy(value, "/dev/block/dm-0");
-        }
-
-        // Rewrite fstab with the devmapper device for /data
-        fstab_replace_block_dev(fstab.c_str(), "/data", value);
-
-        // Try mounting data again
-        flags = MOUNT_FLAG_REWRITE_FSTAB
-                | MOUNT_FLAG_MOUNT_DATA;
-        if (!mount_fstab(fstab.c_str(), rom, flags)) {
-            LOGE("Failed to mount data. Decryption probably failed");
+        if (!util::is_mounted("/raw/data")) {
+            LOGE("/raw/data did not get mounted");
             emergency_reboot();
             return EXIT_FAILURE;
         }

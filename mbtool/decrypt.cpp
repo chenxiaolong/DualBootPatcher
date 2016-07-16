@@ -43,6 +43,7 @@
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
+#include "init.h"
 #include "signature.h"
 #include "voldclient.h"
 
@@ -566,7 +567,7 @@ bool decrypt_userdata(const char *password)
     if (util::str_to_snum(event.message.c_str(), 10, &ret)) {
         if (ret == 0) {
             LOGD("Vold successully decrypted device");
-            return true;
+            return mount_userdata();
         } else if (ret < 0) {
             LOGE("Vold failed to decrypt device");
         } else {
@@ -576,7 +577,6 @@ bool decrypt_userdata(const char *password)
         LOGE("Invalid message in vold event");
     }
 
-    // Do something
     return false;
 }
 

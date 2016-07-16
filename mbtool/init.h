@@ -22,6 +22,7 @@
 namespace mb
 {
 
+bool mount_userdata();
 int init_main(int argc, char *argv[]);
 
 }
