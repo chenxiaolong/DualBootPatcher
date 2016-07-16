@@ -35,10 +35,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "minizip/ioandroid.h"
+#include "minizip/ioapi_buf.h"
+#include "minizip/unzip.h"
+
 #include "mbcommon/version.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
@@ -689,84 +692,72 @@ static bool fstab_replace_block_dev(const char *path, const char *mount_point,
 
 static bool extract_zip(const char *source, const char *target)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    if (!in) {
-        LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
-        return false;
-    }
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
-    if (!out) {
-        LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
-        return false;
-    }
+    unzFile uf;
+    zlib_filefunc64_def zFunc;
+    ourbuffer_t iobuf;
 
-    archive_read_support_format_zip(in.get());
+    memset(&zFunc, 0, sizeof(zFunc));
+    memset(&iobuf, 0, sizeof(iobuf));
 
-    // Set up disk writer parameters. We purposely don't extract any file
-    // metadata
-    int flags = ARCHIVE_EXTRACT_SECURE_SYMLINKS
-            | ARCHIVE_EXTRACT_SECURE_NODOTDOT;
+    fill_android_filefunc64(&iobuf.filefunc64);
+    fill_buffer_filefunc64(&zFunc, &iobuf);
 
-    archive_write_disk_set_standard_lookup(out.get());
-    archive_write_disk_set_options(out.get(), flags);
-
-    if (archive_read_open_filename(in.get(), source, 10240) != ARCHIVE_OK) {
-        LOGE("%s: Failed to open file: %s",
-             source, archive_error_string(in.get()));
+    uf = unzOpen2_64(source, &zFunc);
+    if (!uf) {
+        LOGE("%s: Failed to open zip", source);
         return false;
     }
 
-    archive_entry *entry;
-    int ret;
-    std::string target_path;
+    auto close_zip = util::finally([&]{
+        unzClose(uf);
+    });
 
-    while (true) {
-        ret = archive_read_next_header(in.get(), &entry);
-        if (ret == ARCHIVE_EOF) {
-            break;
-        } else if (ret == ARCHIVE_RETRY) {
-            LOGW("%s: Retrying header read", source);
-            continue;
-        } else if (ret != ARCHIVE_OK) {
-            LOGE("%s: Failed to read header: %s",
-                 source, archive_error_string(in.get()));
-            return false;
-        }
-
-        const char *path = archive_entry_pathname(entry);
-        if (!path || !*path) {
-            LOGE("%s: Header has null or empty filename", source);
-            return false;
-        }
-
-        if (strcmp(path, "exec") != 0) {
-            LOGV("Skipping: %s", path);
-            continue;
-        }
-
-        LOGV("Extracting: %s", path);
-
-        // Build path
-        target_path = target;
-        if (target_path.back() != '/' && *path != '/') {
-            target_path += '/';
-        }
-        target_path += path;
-
-        archive_entry_set_pathname(entry, target_path.c_str());
-
-        // Extract file
-        ret = archive_read_extract2(in.get(), entry, out.get());
-        if (ret != ARCHIVE_OK) {
-            LOGE("%s: %s", archive_entry_pathname(entry),
-                 archive_error_string(in.get()));
-            return false;
-        }
+    if (unzLocateFile(uf, "exec", nullptr) != UNZ_OK) {
+        LOGE("%s: Failed to find 'exec' in zip", source);
+        return false;
     }
 
-    if (archive_read_close(in.get()) != ARCHIVE_OK) {
-        LOGE("%s: Failed to close file: %s",
-             source, archive_error_string(in.get()));
+    if (unzOpenCurrentFile(uf) != UNZ_OK) {
+        LOGE("%s: Failed to open file in zip", source);
+        return false;
+    }
+
+    auto close_inner_file = util::finally([&]{
+        unzCloseCurrentFile(uf);
+    });
+
+    std::string target_file(target);
+    target_file += "/exec";
+
+    util::mkdir_recursive(target, 0755);
+
+    FILE *fp = fopen(target_file.c_str(), "wb");
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             target_file.c_str(), strerror(errno));
+        return false;
+    }
+
+    char buf[8192];
+    int bytes_read;
+
+    while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
+        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+        if (bytes_written == 0) {
+            bool ret = !ferror(fp);
+            fclose(fp);
+            return ret;
+        }
+    }
+    if (bytes_read != 0) {
+        LOGE("%s: Failed before reaching inner file's EOF", source);
+        fclose(fp);
+        return false;
+    }
+
+    if (fclose(fp) < 0) {
+        LOGE("%s: Error when closing file: %s",
+             target_file.c_str(), strerror(errno));
         return false;
     }
 
