@@ -43,6 +43,7 @@
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
+#include "signature.h"
 #include "voldclient.h"
 
 #define CRYPTO_SETUP_PATH               "/raw/cache/multiboot/crypto/setup"
@@ -275,6 +276,13 @@ static bool start_setup_script()
     if (stat(CRYPTO_SETUP_PATH, &sb) < 0) {
         LOGI("Setup script is missing. Assuming it's not necessary");
         return true;
+    }
+
+    SigVerifyResult result;
+    result = verify_signature(CRYPTO_SETUP_PATH, CRYPTO_SETUP_PATH ".sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", CRYPTO_SETUP_PATH);
+        return false;
     }
 
     if (setup_pid >= 0) {
