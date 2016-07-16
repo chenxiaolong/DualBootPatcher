@@ -139,6 +139,7 @@ static bool start_daemon()
               "--no-patch-sepolicy",
               "--sigstop-when-ready",
               "--log-to-kmsg",
+              "--no-unshare",
               nullptr);
         LOGE("Failed to exec daemon: %s", strerror(errno));
         _exit(127);
