@@ -107,6 +107,13 @@ public:
         std::string theme = TW_THEME_PORTRAIT_HDPI;
     };
 
+    struct CryptoOptions
+    {
+        bool supported = false;
+
+        std::string setupPath;
+    };
+
     Device();
     ~Device();
 
@@ -145,6 +152,9 @@ public:
 
     const TwOptions * twOptions() const;
     TwOptions * twOptions();
+
+    const CryptoOptions * cryptoOptions() const;
+    CryptoOptions * cryptoOptions();
 
 private:
     class Impl;

@@ -58,6 +58,9 @@ MB_EXPORT void mbp_device_set_extra_block_devs(CDevice *device, const char **blo
 
 MB_EXPORT bool mbp_device_boot_ui_supported(const CDevice *device);
 
+MB_EXPORT bool mbp_device_crypto_supported(const CDevice *device);
+MB_EXPORT char * mbp_device_crypto_setup_path(const CDevice *device);
+
 #ifdef __cplusplus
 }
 #endif

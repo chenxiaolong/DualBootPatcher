@@ -125,7 +125,7 @@ void mbp_device_set_codenames(CDevice *device, const char **names)
  *
  * \sa Device::name()
  */
-char *mbp_device_name(const CDevice *device)
+char * mbp_device_name(const CDevice *device)
 {
     CCAST(device);
     return string_to_cstring(d->name());
@@ -157,7 +157,7 @@ void mbp_device_set_name(CDevice *device, const char *name)
  *
  * \sa Device::architecture()
  */
-char *mbp_device_architecture(const CDevice *device)
+char * mbp_device_architecture(const CDevice *device)
 {
     CCAST(device);
     return string_to_cstring(d->architecture());
@@ -265,6 +265,18 @@ bool mbp_device_boot_ui_supported(const CDevice *device)
 {
     CCAST(device);
     return d->twOptions()->supported;
+}
+
+bool mbp_device_crypto_supported(const CDevice *device)
+{
+    CCAST(device);
+    return d->cryptoOptions()->supported;
+}
+
+char * mbp_device_crypto_setup_path(const CDevice *device)
+{
+    CCAST(device);
+    return string_to_cstring(d->cryptoOptions()->setupPath);
 }
 
 }
