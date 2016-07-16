@@ -799,21 +799,16 @@ static bool extract_zip(const char *source, const char *target)
     return true;
 }
 
-static bool launch_boot_menu()
+static bool launch_boot_menu(bool has_encryption)
 {
     struct stat sb;
 
-    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
+    // Boot UI must always run if the device is encrypted
+    if (!has_encryption && stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
         std::string skip_rom;
         util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
 
         std::string rom_id = get_rom_id();
-
-        if (remove(BOOT_UI_SKIP_PATH) < 0) {
-            LOGW("%s: Failed to remove: %s",
-                 BOOT_UI_SKIP_PATH, strerror(errno));
-            LOGW("Boot UI won't run again!");
-        }
 
         if (skip_rom == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
@@ -822,6 +817,12 @@ static bool launch_boot_menu()
             LOGW("Skip file is not for: %s", rom_id.c_str());
             LOGW("Not skipping boot UI");
         }
+    }
+
+    if (remove(BOOT_UI_SKIP_PATH) < 0 && errno != ENOENT) {
+        LOGW("%s: Failed to remove file: %s",
+             BOOT_UI_SKIP_PATH, strerror(errno));
+        LOGW("Boot UI won't run again!");
     }
 
     if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
@@ -1167,7 +1168,7 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!launch_boot_menu()) {
+    if (!launch_boot_menu(has_encryption)) {
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
     }
