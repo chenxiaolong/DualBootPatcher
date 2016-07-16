@@ -45,7 +45,8 @@
 
 #include "voldclient.h"
 
-#define SETUP_SCRIPT_PATH               "/crypto-setup"
+#define CRYPTO_SETUP_PATH               "/raw/cache/multiboot/crypto/setup"
+#define CRYPTO_FSTAB_PATH               "/raw/cache/multiboot/crypto/fstab"
 
 #define CHROOT_PATH                     "/crypto-chroot"
 
@@ -207,8 +208,14 @@ static bool create_chroot()
     std::string hardware;
     util::get_property("ro.hardware", &hardware, "");
 
-    snprintf(fstab_src, sizeof(fstab_src),
-             "/fstab.%s", hardware.c_str());
+    if (access(CRYPTO_FSTAB_PATH, R_OK) == 0) {
+        LOGD("Using crypto fstab file");
+        strcpy(fstab_src, CRYPTO_FSTAB_PATH);
+    } else {
+        LOGD("Using main fstab file");
+        snprintf(fstab_src, sizeof(fstab_src),
+                 "/fstab.%s", hardware.c_str());
+    }
     snprintf(fstab_dst, sizeof(fstab_dst),
              CHROOT_PATH "/fstab.%s", hardware.c_str());
 
@@ -264,7 +271,8 @@ static int wait_for_pid(const char *name, pid_t pid)
 
 static bool start_setup_script()
 {
-    if (access(SETUP_SCRIPT_PATH, X_OK) < 0) {
+    struct stat sb;
+    if (stat(CRYPTO_SETUP_PATH, &sb) < 0) {
         LOGI("Setup script is missing. Assuming it's not necessary");
         return true;
     }
@@ -273,8 +281,7 @@ static bool start_setup_script()
         return true;
     }
 
-    if (!util::copy_file(SETUP_SCRIPT_PATH, CHROOT_PATH SETUP_SCRIPT_PATH,
-                         util::COPY_ATTRIBUTES)) {
+    if (!util::copy_file(CRYPTO_SETUP_PATH, CHROOT_PATH "/setup", 0)) {
         LOGE("Failed to copy setup script to chroot: %s", strerror(errno));
         return false;
     }
@@ -303,7 +310,8 @@ static bool start_setup_script()
         close(setup_pipe[0]);
         close(setup_pipe[1]);
 
-        execl(SETUP_SCRIPT_PATH, SETUP_SCRIPT_PATH, nullptr);
+        chmod("/setup", 0700);
+        execl("/setup", "/setup", nullptr);
         LOGE("Failed to exec setup script: %s", strerror(errno));
         _exit(127);
     } else if (pid > 0) {
