@@ -64,6 +64,8 @@ public final class BootUIActionTask extends BaseServiceTask {
     private static final String PROP_VERSION = "bootui.version";
     private static final String PROP_GIT_VERSION = "bootui.git-version";
 
+    private static final String ENABLE_CRYPTO = false;
+
     private final BootUIAction mAction;
 
     private final Object mStateLock = new Object();
@@ -269,7 +271,8 @@ public final class BootUIActionTask extends BaseServiceTask {
         String sourceSetupSigPath = null;
 
         String path;
-        if (device.isCryptoSupported() && (path = device.getCryptoSetupPath()) != null) {
+        if (ENABLE_CRYPTO && device.isCryptoSupported() &&
+                (path = device.getCryptoSetupPath()) != null) {
             sourceSetupPath = PatcherUtils.getTargetDirectory(getContext())
                     + File.separator + path.replace('/', File.separatorChar);
             sourceSetupSigPath = sourceSetupPath + ".sig";
@@ -294,7 +297,7 @@ public final class BootUIActionTask extends BaseServiceTask {
             iface.pathChmod(targetZipPath, 0644);
             iface.pathChmod(targetZipSigPath, 0644);
 
-            if (device.isCryptoSupported()) {
+            if (ENABLE_CRYPTO && device.isCryptoSupported()) {
                 iface.pathMkdir(cryptoParent.getAbsolutePath(), 0755, true);
                 iface.pathCopy(sourceSetupPath, targetSetupPath);
                 iface.pathCopy(sourceSetupSigPath, targetSetupSigPath);
@@ -306,7 +309,7 @@ public final class BootUIActionTask extends BaseServiceTask {
             return false;
         }
 
-        if (device.isCryptoSupported()) {
+        if (ENABLE_CRYPTO && device.isCryptoSupported()) {
             // Get fstab from primary ROM's boot image
             String bootImage = RomUtils.getBootImagePath("primary");
             byte[] fstab = getFstabFromBootImage(bootImage);
