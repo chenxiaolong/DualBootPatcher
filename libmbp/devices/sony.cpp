@@ -84,6 +84,27 @@ void addSonyDevices(std::vector<Device *> *devices)
         "/dev/block/mmcblk0p16" });
     device->setExtraBlockDevs({ QCOM_ABOOT, QCOM_RPM, QCOM_SBL1, QCOM_TZ });
     devices->push_back(device);
+
+    // Sony Xperia T2 Ultra
+    device = new Device();
+    device->setId("tianchi");
+    device->setCodenames({ "tianchi", "D5303", "D5306", "D5316", "D5322",
+        "XM50h", "XM50H", "XM50t", "XM50T" });
+    device->setName("Sony Xperia T2 Ultra");
+    device->setFlags(Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY);
+    device->setRamdiskPatcher(XperiaDefaultRP::Id);
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
+        "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
+        "/dev/block/mmcblk0p24" });
+    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
+        "/dev/block/mmcblk0p25" });
+    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
+        "/dev/block/mmcblk0p14" });
+    device->setRecoveryBlockDevs({ QCOM_FOTA_RECOVERY, BOOTDEVICE_FOTA_RECOVERY,
+        "/dev/block/mmcblk0p16" });
+    devices->push_back(device);
 }
 
 }
