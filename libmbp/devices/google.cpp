@@ -47,11 +47,11 @@ void addGoogleDevices(std::vector<Device *> *devices)
         device->setCodenames({ "d5110_infinix_sprout", "d5110_infinix", "Infinix_X510_sprout", "Infinix_X510", "x510"});
         device->setName("Infinix Hot 2/Android One");
         device->setBlockDevBaseDirs({ MTK_BASE_DIR });
-        device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p24" });
-        device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p25" });
-        device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p26" });
-        device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p8" });
-        device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p9" });
+        device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p23" });
+        device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p24" });
+        device->setDataBlockDevs({ MTK_USERDATA, "/dev/block/mmcblk0p25" });
+        device->setBootBlockDevs({ MTK_BOOT, "/dev/block/mmcblk0p7" });
+        device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
         devices->push_back(device);
         
     // Infinix X510 (Infinix ROM partition scheme)
