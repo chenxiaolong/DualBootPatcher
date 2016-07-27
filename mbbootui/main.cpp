@@ -559,11 +559,11 @@ int main(int argc, char *argv[])
     gui_loadResources();
 
     LOGV("Checking for encryption...");
-    std::string crypto_state;
-    mb::util::get_property(PROP_CRYPTO_STATE, &crypto_state,
+    char crypto_state[PROP_VALUE_MAX];
+    mb::util::property_get(PROP_CRYPTO_STATE, crypto_state,
                            CRYPTO_STATE_DECRYPTED);
 
-    if (crypto_state == CRYPTO_STATE_ENCRYPTED) {
+    if (strcmp(crypto_state, CRYPTO_STATE_ENCRYPTED) == 0) {
         LOGV("Data appears to be encrypted");
 
         int is_encrypted = 1;
@@ -611,11 +611,11 @@ int main(int argc, char *argv[])
 
         if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
             LOGE("Decrypt page exited, but device is still encrypted");
-            mb::util::set_property(PROP_CRYPTO_STATE, CRYPTO_STATE_ERROR);
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_ERROR);
             return EXIT_FAILURE;
         } else {
             LOGV("Decrypt page exited and device was successfully decrypted");
-            mb::util::set_property(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
         }
     }
 

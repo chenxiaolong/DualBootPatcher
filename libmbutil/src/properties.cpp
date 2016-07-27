@@ -226,32 +226,81 @@ int libc_system_property_foreach(
     return __system_property_foreach(propfn, cookie);
 }
 
-void get_property(const std::string &name,
-                  std::string *value_out,
-                  const std::string &default_value)
+// BEGIN: Code partially based on libcutils properties.c
+
+int property_get(const char *key, char *value_out, const char *default_value)
 {
-    std::vector<char> value(MB_PROP_VALUE_MAX);
-    int len = libc_system_property_get(name.c_str(), value.data());
-    if (len == 0) {
-        *value_out = default_value;
+    int n = libc_system_property_get(key, value_out);
+
+    if (n > 0) {
+        return n;
     } else {
-        *value_out = value.data();
+        n = strlen(default_value);
+        if (n >= PROP_VALUE_MAX) {
+            n = PROP_VALUE_MAX - 1;
+        }
+        memcpy(value_out, default_value, n);
+        value_out[n] = '\0';
     }
+
+    return n;
 }
 
-bool set_property(const std::string &name,
-                  const std::string &value)
+int property_set(const char *key, const char *value)
 {
-    if (name.size() >= MB_PROP_NAME_MAX - 1) {
-        return false;
-    }
-    if (value.size() >= MB_PROP_VALUE_MAX - 1) {
-        return false;
+    return libc_system_property_set(key, value);
+}
+
+bool property_get_bool(const char *key, bool default_value)
+{
+    char buf[PROP_VALUE_MAX];
+    bool result = default_value;
+
+    int n = property_get(key, buf, "");
+    if (n == 1) {
+        if (buf[0] == '0' || buf[0] == 'n') {
+            result = false;
+        } else if (buf[0] == '1' || buf[0] == 'y') {
+            result = true;
+        }
+    } else if (n > 1) {
+         if (strcmp(buf, "no") == 0
+                || strcmp(buf, "false") == 0
+                || strcmp(buf, "off") == 0) {
+            result = false;
+        } else if (strcmp(buf, "yes") == 0
+                || strcmp(buf, "true") == 0
+                || strcmp(buf, "on") == 0) {
+            result = true;
+        }
     }
 
-    int ret = libc_system_property_set(name.c_str(), value.c_str());
-    return ret == 0;
+    return result;
 }
+
+struct property_list_cb_data
+{
+    property_list_cb propfn;
+    void *cookie;
+};
+
+static void property_list_callback(const prop_info *pi, void *cookie)
+{
+    char name[PROP_NAME_MAX];
+    char value[PROP_VALUE_MAX];
+    property_list_cb_data *data = static_cast<property_list_cb_data *>(cookie);
+
+    libc_system_property_read(pi, name, value);
+    data->propfn(name, value, data->cookie);
+}
+
+int property_list(property_list_cb propfn, void *cookie)
+{
+    property_list_cb_data data = { propfn, cookie };
+    return libc_system_property_foreach(property_list_callback, &data);
+}
+
+// END: Code partially based on libcutils properties.c
 
 static void _add_property(const prop_info *pi, void *cookie)
 {

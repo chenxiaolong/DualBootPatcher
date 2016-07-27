@@ -207,19 +207,17 @@ static bool create_chroot()
     char fstab_src[128];
     char fstab_dst[128];
 
-    std::string hardware;
-    util::get_property("ro.hardware", &hardware, "");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
 
     if (access(CRYPTO_FSTAB_PATH, R_OK) == 0) {
         LOGD("Using crypto fstab file");
         strcpy(fstab_src, CRYPTO_FSTAB_PATH);
     } else {
         LOGD("Using main fstab file");
-        snprintf(fstab_src, sizeof(fstab_src),
-                 "/fstab.%s", hardware.c_str());
+        snprintf(fstab_src, sizeof(fstab_src), "/fstab.%s", hardware);
     }
-    snprintf(fstab_dst, sizeof(fstab_dst),
-             CHROOT_PATH "/fstab.%s", hardware.c_str());
+    snprintf(fstab_dst, sizeof(fstab_dst), CHROOT_PATH "/fstab.%s", hardware);
 
     util::copy_file(fstab_src, fstab_dst, util::COPY_ATTRIBUTES);
 

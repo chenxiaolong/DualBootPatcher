@@ -62,8 +62,8 @@ bool reboot_via_framework(bool show_confirm_dialog)
 bool reboot_via_init(const char *reboot_arg)
 {
     // The length of the prefix + reboot_arg + NULL terminator cannot exceed
-    // MB_PROP_VALUE_MAX
-    char buf[MB_PROP_VALUE_MAX - 7 - 1];
+    // PROP_VALUE_MAX
+    char buf[PROP_VALUE_MAX - 7 - 1];
 
     if (!reboot_arg) {
         reboot_arg = "";
@@ -74,11 +74,11 @@ bool reboot_via_init(const char *reboot_arg)
         return false;
     } else if (ret >= (int) sizeof(buf)) {
         LOGE("Reboot argument %d bytes too long",
-             ret + 1 - MB_PROP_VALUE_MAX);
+             ret + 1 - PROP_VALUE_MAX);
         return false;
     }
 
-    if (!set_property(ANDROID_RB_PROPERTY, buf)) {
+    if (property_set(ANDROID_RB_PROPERTY, buf) < 0) {
         LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
         return false;
     }
@@ -101,7 +101,7 @@ bool reboot_via_syscall(const char *reboot_arg)
 
 bool shutdown_via_init()
 {
-    if (!set_property(ANDROID_RB_PROPERTY, "shutdown,")) {
+    if (property_set(ANDROID_RB_PROPERTY, "shutdown,") < 0) {
         LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
         return false;
     }

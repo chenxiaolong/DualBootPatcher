@@ -221,7 +221,7 @@ static bool set_kernel_properties()
 
     for (auto it = prop_map; it ->src_prop; ++it) {
         char value[PROP_VALUE_MAX];
-        int ret = property_get(it->src_prop, value);
+        int ret = ::property_get(it->src_prop, value);
         property_set(it->dst_prop, (ret > 0) ? value : it->default_value);
     }
 
@@ -700,14 +700,14 @@ bool mount_userdata()
     }
 
     std::string fstab("/fstab.");
-    std::string hardware;
-    util::get_property("ro.hardware", &hardware, "");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
     fstab += hardware;
 
     char value[PROP_VALUE_MAX];
 
     // Get block device property set by vold
-    if (property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
+    if (::property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
         // Assume first devmapper device on older versions of Android
         strcpy(value, "/dev/block/dm-0");
     }
@@ -1101,8 +1101,8 @@ int init_main(int argc, char *argv[])
     // mbtool no longer searches for the fstab file and just assumes that it is
     // /fstab.${ro.hardware} since this is what vold uses as well.
     std::string fstab("/fstab.");
-    std::string hardware;
-    util::get_property("ro.hardware", &hardware, "");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
     fstab += hardware;
 
     LOGV("fstab file: %s", fstab.c_str());
@@ -1182,7 +1182,7 @@ int init_main(int argc, char *argv[])
         }
 
         char value[PROP_VALUE_MAX];
-        if (property_get(PROP_CRYPTO_STATE, value) <= 0
+        if (::property_get(PROP_CRYPTO_STATE, value) <= 0
                 || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
             LOGE("Failed to decrypt device");
             emergency_reboot();
