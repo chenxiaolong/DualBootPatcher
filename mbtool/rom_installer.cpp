@@ -161,7 +161,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     autoclose::archive in(archive_read_new(), archive_read_free);
     autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
-    if (!in | !out) {
+    if (!in || !out) {
         LOGE("Out of memory");
         return ProceedState::Fail;
     }
