@@ -1162,12 +1162,6 @@ int init_main(int argc, char *argv[])
                  ? CRYPTO_STATE_ENCRYPTED
                  : CRYPTO_STATE_DECRYPTED);
 
-    if (has_encryption && !decrypt_init()) {
-        LOGE("Failed to initialize decryption operation");
-        emergency_reboot();
-        return EXIT_FAILURE;
-    }
-
     if (!launch_boot_menu(has_encryption)) {
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
@@ -1175,12 +1169,6 @@ int init_main(int argc, char *argv[])
 
     // Check if the data partition was successfully decrypted
     if (has_encryption) {
-        if (!decrypt_cleanup()) {
-            LOGE("Failed to clean up decryption operation");
-            emergency_reboot();
-            return EXIT_FAILURE;
-        }
-
         char value[PROP_VALUE_MAX];
         if (::property_get(PROP_CRYPTO_STATE, value) <= 0
                 || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {

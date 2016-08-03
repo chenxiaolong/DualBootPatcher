@@ -123,9 +123,9 @@ static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::CryptoDecryptResponse> response;
 
-    bool ret = decrypt_userdata(request->password()->c_str());
+    std::string block_dev = decrypt_userdata(request->password()->c_str());
 
-    response = v3::CreateCryptoDecryptResponse(builder, ret);
+    response = v3::CreateCryptoDecryptResponse(builder, !block_dev.empty());
 
     // Wrap response
     v3::ResponseBuilder rb(builder);
@@ -145,17 +145,15 @@ static bool v3_crypto_get_pw_type(int fd, const v3::Request *msg)
 
     v3::CryptoPwType v3_pw_type = v3::CryptoPwType_UNKNOWN;
 
-    const char *pw_type = decrypt_get_pw_type();
-    if (pw_type) {
-        if (strcmp(pw_type, CRYPTFS_PW_TYPE_DEFAULT) == 0) {
-            v3_pw_type = v3::CryptoPwType_DEFAULT;
-        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PASSWORD) == 0) {
-            v3_pw_type = v3::CryptoPwType_PASSWORD;
-        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PATTERN) == 0) {
-            v3_pw_type = v3::CryptoPwType_PATTERN;
-        } else if (strcmp(pw_type, CRYPTFS_PW_TYPE_PIN) == 0) {
-            v3_pw_type = v3::CryptoPwType_PIN;
-        }
+    std::string pw_type = decrypt_get_pw_type();
+    if (pw_type == CRYPTFS_PW_TYPE_DEFAULT) {
+        v3_pw_type = v3::CryptoPwType_DEFAULT;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PASSWORD) {
+        v3_pw_type = v3::CryptoPwType_PASSWORD;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PATTERN) {
+        v3_pw_type = v3::CryptoPwType_PATTERN;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PIN) {
+        v3_pw_type = v3::CryptoPwType_PIN;
     }
 
     response = v3::CreateCryptoGetPwTypeResponse(builder, v3_pw_type);

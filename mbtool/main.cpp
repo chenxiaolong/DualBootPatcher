@@ -40,8 +40,6 @@
 #include "sepolpatch.h"
 #include "signature.h"
 #include "uevent_dump.h"
-#include "voldclient.h"
-#include "voldwrapper.h"
 #endif
 
 #include "mbcommon/version.h"
@@ -83,8 +81,6 @@ struct tool tools[] = {
     { "sepolpatch", mb::sepolpatch_main },
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
-    { "voldclient", mb::voldclient_main },
-    { "voldwrapper", mb::voldwrapper_main },
 #endif
     { nullptr, nullptr }
 };

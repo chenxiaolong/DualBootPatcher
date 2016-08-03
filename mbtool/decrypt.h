@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <string>
+
 #define CRYPTFS_PW_TYPE_DEFAULT         "default"
 #define CRYPTFS_PW_TYPE_PASSWORD        "password"
 #define CRYPTFS_PW_TYPE_PATTERN         "pattern"
@@ -27,10 +29,8 @@
 namespace mb
 {
 
-bool decrypt_init();
-bool decrypt_cleanup();
-const char * decrypt_get_pw_type();
-bool decrypt_userdata(const char *password);
+std::string decrypt_get_pw_type();
+std::string decrypt_userdata(const char *password);
 
 int decrypt_main(int argc, char *argv[]);
 
