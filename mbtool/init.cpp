@@ -857,7 +857,9 @@ static bool launch_boot_menu(bool has_encryption)
 
     start_daemon();
 
-    int ret = util::run_command({ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH });
+    const char *argv[] = { BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH, nullptr };
+    int ret = util::run_command(argv[0], argv, nullptr, nullptr, nullptr,
+                                nullptr);
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {

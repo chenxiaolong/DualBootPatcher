@@ -811,9 +811,11 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-static void signed_exec_output_cb(const std::string &line, void *data)
+static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 {
-    int *fd_ptr = (int *) data;
+    (void) error;
+
+    int *fd_ptr = (int *) userdata;
     // TODO: Send line
 
     fb::FlatBufferBuilder builder;
@@ -845,8 +847,9 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
+    size_t nargs;
+    const char **argv;
     int status;
-    std::vector<std::string> argv;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
     // Variables that are part of the response
@@ -943,23 +946,43 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     }
 
     // Build arguments
-    if (request->arg0()) {
-        argv.push_back(request->arg0()->str());
-    } else {
-        argv.push_back(target_binary);
-    }
+    nargs = 2; // argv[0] + NULL-terminator
     if (request->args()) {
-        for (auto const &arg : *request->args()) {
-            argv.push_back(arg->str());
+        nargs += request->args()->size();
+    }
+
+    argv = (const char **) malloc(nargs * sizeof(const char *));
+    if (!argv) {
+        result = v3::SignedExecResult_OTHER_ERROR;
+        error_msg = util::format("%s", strerror(errno));
+        LOGE("%s", error_msg.c_str());
+        goto done;
+    }
+
+    {
+        size_t i = 0;
+        if (request->arg0()) {
+            argv[i++] = request->arg0()->c_str();
+        } else {
+            argv[i++] = target_binary.c_str();
         }
+        if (request->args()) {
+            for (auto const &arg : *request->args()) {
+                argv[i++] = arg->c_str();
+            }
+        }
+        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command2(target_binary, argv, std::string(),
-                                &signed_exec_output_cb, &fd);
+    status = util::run_command(argv[0], argv, nullptr, nullptr,
+                               &signed_exec_output_cb, &fd);
+
+    free(argv);
+
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);

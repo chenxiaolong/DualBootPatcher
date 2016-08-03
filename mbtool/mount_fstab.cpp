@@ -261,13 +261,20 @@ static bool path_matches(const char *path, const char *pattern)
     }
 }
 
-static void dump(const std::string &line, void *data)
+static void dump(const char *line, bool error, void *userdata)
 {
-    (void) data;
+    (void) error;
+    (void) userdata;
+
+    size_t size = strlen(line);
+
     std::string copy;
-    if (!line.empty() && line.back() == '\n') {
-        copy.assign(line.begin(), line.end() - 1);
+    if (size > 0 && line[size - 1] == '\n') {
+        copy.assign(line, line + size - 1);
+    } else {
+        copy.assign(line, line + size);
     }
+
     LOGD("Command output: %s", copy.c_str());
 }
 
@@ -298,23 +305,31 @@ static bool mount_exfat_fuse(const char *source, const char *target)
         return false;
     }
 
-    // Run filesystem checks
-    util::run_command_cb({
+    char mount_args[100];
+
+    snprintf(mount_args, sizeof(mount_args),
+             "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
+             uid, uid, 0007, 0007, "noexec", "rw");
+
+    const char *fsck_argv[] = {
         "/sbin/fsck.exfat",
-        source
-    }, &dump, nullptr);
+        source,
+        nullptr
+    };
+    const char *mount_argv[] = {
+        "/sbin/mount.exfat",
+        "-o", mount_args,
+        source, target,
+        nullptr
+    };
+
+    // Run filesystem checks
+    util::run_command(fsck_argv[0], fsck_argv, nullptr, nullptr, &dump,
+                      nullptr);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command_cb({
-        "/sbin/mount.exfat",
-        "-o",
-        util::format(
-            "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
-            uid, uid, 0007, 0007, "noexec", "rw"
-        ),
-        source,
-        target
-    }, &dump, nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, nullptr, nullptr,
+                                &dump, nullptr);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));
@@ -580,12 +595,15 @@ static bool create_ext4_temp_fs(const char *mount_point)
     struct stat sb;
     if (stat(EXT4_TEMP_IMAGE, &sb) < 0) {
         if (errno == ENOENT) {
-            int ret = util::run_command_cb({
+            const char *argv[] = {
                 "/system/bin/make_ext4fs",
-                "-l",
-                "20M",
-                EXT4_TEMP_IMAGE
-            }, &dump, nullptr);
+                "-l", "20M",
+                EXT4_TEMP_IMAGE,
+                nullptr
+            };
+
+            int ret = util::run_command(argv[0], argv, nullptr, nullptr, &dump,
+                                        nullptr);
             if (ret < 0) {
                 LOGE("Failed to run make_ext4fs");
                 return false;
