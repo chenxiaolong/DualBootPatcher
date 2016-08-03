@@ -6,7 +6,6 @@ if(MBP_TOP_LEVEL_BUILD)
 
     set(scripts
         scripts/bb-wrapper.sh
-        scripts/jflte/crypto-setup.sh
     )
 
 
