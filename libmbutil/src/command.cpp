@@ -33,6 +33,8 @@
 #include "mblog/logging.h"
 #include "mbutil/string.h"
 
+#define LOG_COMMANDS 0
+
 namespace mb
 {
 namespace util
@@ -408,8 +410,13 @@ int run_command(const char *path,
     ctx.envp = envp;
     ctx.chroot_dir = chroot_dir;
     ctx.redirect_stdio = !!cb;
+#if LOG_COMMANDS
+    ctx.log_argv = true;
+    ctx.log_envp = true;
+#else
     ctx.log_argv = false;
     ctx.log_envp = false;
+#endif
 
     if (!command_start(&ctx)) {
         return -1;
