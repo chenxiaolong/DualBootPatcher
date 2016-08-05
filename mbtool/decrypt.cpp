@@ -38,7 +38,7 @@
 #define CRYPTFSTOOL_PATH        "/raw/cache/multiboot/crypto/cryptfstool"
 #define CRYPTFSTOOL_REC_PATH    "/raw/cache/multiboot/crypto/cryptfstool_rec"
 
-static bool verbose = false;
+static bool verbose = true;
 
 namespace mb
 {
@@ -254,7 +254,7 @@ static void decrypt_usage(FILE *stream)
     fprintf(stream,
             "Usage: decrypt [OPTION]... <password>\n\n"
             "Options:\n"
-            "  -v, --verbose    Show cryptfstool output\n"
+            "  -q, --quiet      Hide cryptfstool output\n"
             "  -h, --help       Display this help message\n");
 }
 
@@ -262,10 +262,10 @@ int decrypt_main(int argc, char *argv[])
 {
     int opt;
 
-    static const char short_options[] = "vh";
+    static const char short_options[] = "qh";
 
     static struct option long_options[] = {
-        {"verbose", no_argument, 0, 'v'},
+        {"quiet", no_argument, 0, 'q'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}
     };
@@ -275,8 +275,8 @@ int decrypt_main(int argc, char *argv[])
     while ((opt = getopt_long(argc, argv, short_options,
                               long_options, &long_index)) != -1) {
         switch (opt) {
-        case 'v':
-            verbose = true;
+        case 'q':
+            verbose = false;
             break;
 
         case 'h':
