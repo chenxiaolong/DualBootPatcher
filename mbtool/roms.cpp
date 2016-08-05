@@ -331,7 +331,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
         strlcpy(prop_id, temp.c_str(), sizeof(prop_id));
     }
 
-    if (!prop_id[0]) {
+    if (prop_id[0]) {
         auto rom = roms.find_by_id(prop_id);
         if (rom) {
             return rom;
