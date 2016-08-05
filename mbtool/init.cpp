@@ -1083,6 +1083,8 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
+    add_props_to_default_prop();
+
     // initialize properties
     properties_setup();
 
@@ -1123,10 +1125,6 @@ int init_main(int argc, char *argv[])
     }
 
     LOGV("ROM ID is: %s", rom_id.c_str());
-
-    // This needs to be done before the boot menu runs so that the daemon can
-    // get the ROM ID;
-    add_props_to_default_prop();
 
     // Mount system, cache, and external SD from fstab file
     int flags = MOUNT_FLAG_REWRITE_FSTAB
