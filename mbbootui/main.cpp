@@ -544,11 +544,6 @@ int main(int argc, char *argv[])
     mbtool_interface->version(&mbtool_version);
     DataManager::SetValue(TW_MBTOOL_VERSION, mbtool_version);
 
-    // Set ROM ID
-    std::string rom_id;
-    mbtool_interface->get_booted_rom_id(&rom_id);
-    DataManager::SetValue(TW_ROM_ID, rom_id);
-
     LOGV("Loading graphics system...");
     if (gui_init() < 0) {
         LOGE("Failed to load graphics system");
@@ -618,6 +613,17 @@ int main(int argc, char *argv[])
             mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
         }
     }
+
+    // Set ROM ID. This must happen after decryption or else the current ROM
+    // will not be detected if it is a data-slot. mbtool's ROM detection code
+    // doesn't fully trust the "ro.multiboot.romid" property and will do some
+    // additional checks to ensure that the value is correct.
+    std::string rom_id;
+    mbtool_interface->get_booted_rom_id(&rom_id);
+    if (rom_id.empty()) {
+        LOGW("Could not determine ROM ID");
+    }
+    DataManager::SetValue(TW_ROM_ID, rom_id);
 
     LOGV("Loading user settings...");
     DataManager::ReadSettingsFile();
