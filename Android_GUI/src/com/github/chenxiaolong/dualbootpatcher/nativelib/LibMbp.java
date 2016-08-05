@@ -175,7 +175,7 @@ public class LibMbp {
         static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
         static native boolean mbp_device_boot_ui_supported(CDevice device);
         static native boolean mbp_device_crypto_supported(CDevice device);
-        static native Pointer mbp_device_crypto_setup_path(CDevice device);
+        static native Pointer mbp_device_crypto_header_path(CDevice device);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -1269,10 +1269,10 @@ public class LibMbp {
             return CWrapper.mbp_device_crypto_supported(mCDevice);
         }
 
-        public String getCryptoSetupPath() {
-            validate(mCDevice, Device.class, "getCryptoSetupPath");
+        public String getCryptoHeaderPath() {
+            validate(mCDevice, Device.class, "getCryptoHeaderPath");
 
-            String path = getStringAndFree(CWrapper.mbp_device_crypto_setup_path(mCDevice));
+            String path = getStringAndFree(CWrapper.mbp_device_crypto_header_path(mCDevice));
             if (path == null || path.isEmpty()) {
                 return null;
             } else {

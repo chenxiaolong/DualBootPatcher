@@ -111,7 +111,7 @@ public:
     {
         bool supported = false;
 
-        std::string setupPath;
+        std::string headerPath;
     };
 
     Device();

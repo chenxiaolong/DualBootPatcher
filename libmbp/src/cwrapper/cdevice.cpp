@@ -273,10 +273,10 @@ bool mbp_device_crypto_supported(const CDevice *device)
     return d->cryptoOptions()->supported;
 }
 
-char * mbp_device_crypto_setup_path(const CDevice *device)
+char * mbp_device_crypto_header_path(const CDevice *device)
 {
     CCAST(device);
-    return string_to_cstring(d->cryptoOptions()->setupPath);
+    return string_to_cstring(d->cryptoOptions()->headerPath);
 }
 
 }
