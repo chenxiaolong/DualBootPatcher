@@ -99,6 +99,7 @@ static bool find_paths(struct paths *paths)
     for (auto &path : recovery_list) {
         if (access(path.c_str(), R_OK) == 0) {
             recovery = std::move(path);
+            break;
         }
     }
 
@@ -224,7 +225,7 @@ std::string decrypt_userdata(const char *password)
         CRYPTFSTOOL_PATH,
         "decrypt", password,
         "--path", paths.userdata.c_str(),
-        "--header", paths.recovery.c_str(),
+        "--header", paths.header.c_str(),
         nullptr
     };
 
