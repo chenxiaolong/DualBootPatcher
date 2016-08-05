@@ -254,6 +254,7 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
         | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
     device->twOptions()->graphicsBackends = { "fbdev" };
     device->cryptoOptions()->supported = true;
+    device->cryptoOptions()->headerPath = "footer";
     devices->push_back(device);
 
     // Samsung Galaxy S 4 (Exynos)
