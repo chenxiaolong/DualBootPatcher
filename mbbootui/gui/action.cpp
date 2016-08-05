@@ -43,8 +43,6 @@
 #include "gui/gui.h"
 #include "gui/hardwarekeyboard.hpp"
 
-void curtainClose();
-
 GUIAction::mapFunc GUIAction::mf;
 std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 
@@ -239,7 +237,7 @@ GUIAction::GUIAction(xml_node<>* node)
     }
 }
 
-int GUIAction::NotifyTouch(TOUCH_STATE state __unused, int x __unused, int y __unused)
+int GUIAction::NotifyTouch(TOUCH_STATE state, int x __unused, int y __unused)
 {
     if (state == TOUCH_RELEASE) {
         doActions();
@@ -405,8 +403,6 @@ void GUIAction::operation_end(const int operation_status)
 
 int GUIAction::reboot(const std::string& arg)
 {
-    //curtainClose(); this sometimes causes a crash
-
     sync();
     DataManager::SetValue(TW_GUI_DONE, 1);
     DataManager::SetValue(TW_EXIT_ACTION, arg);
