@@ -691,7 +691,7 @@ static bool fstab_replace_block_dev(const char *path, const char *mount_point,
     return replace_file(path, new_path.c_str());
 }
 
-bool mount_userdata()
+bool mount_userdata(const char *block_dev)
 {
     std::string rom_id = get_rom_id();
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
@@ -704,16 +704,8 @@ bool mount_userdata()
     util::property_get("ro.hardware", hardware, "");
     fstab += hardware;
 
-    char value[PROP_VALUE_MAX];
-
-    // Get block device property set by vold
-    if (::property_get("ro.crypto.fs_crypto_blkdev", value) <= 0) {
-        // Assume first devmapper device on older versions of Android
-        strcpy(value, "/dev/block/dm-0");
-    }
-
     // Rewrite fstab with the devmapper device for /data
-    fstab_replace_block_dev(fstab.c_str(), "/data", value);
+    fstab_replace_block_dev(fstab.c_str(), "/data", block_dev);
 
     // Try mounting data again
     int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;

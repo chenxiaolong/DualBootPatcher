@@ -42,6 +42,7 @@
 #include "mbutil/string.h"
 
 #include "decrypt.h"
+#include "init.h"
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
@@ -124,8 +125,9 @@ static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
     fb::Offset<v3::CryptoDecryptResponse> response;
 
     std::string block_dev = decrypt_userdata(request->password()->c_str());
+    bool ret = !block_dev.empty() && mount_userdata(block_dev.c_str());
 
-    response = v3::CreateCryptoDecryptResponse(builder, !block_dev.empty());
+    response = v3::CreateCryptoDecryptResponse(builder, ret);
 
     // Wrap response
     v3::ResponseBuilder rb(builder);
