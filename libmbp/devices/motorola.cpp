@@ -169,6 +169,19 @@ void addMotorolaDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, F9824900_RECOVERY,
         F9824900_SOC0_RECOVERY, "/dev/block/mmcblk0p37" });
     devices->push_back(device);
+
+    // Motorola Droid Turbo 1st
+    device = new Device();
+    device->setId("quark");
+    device->setCodenames({ "quark", "quark_lra", "quark_umts", "quark_verizon", "xt1225", "xt1250", "xt1254" });
+    device->setName("Motorola Droid Turbo");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p40" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p39" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p41" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p36" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p37" });
+    devices->push_back(device);
 }
 
 }
