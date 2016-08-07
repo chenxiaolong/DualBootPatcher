@@ -54,8 +54,7 @@ void addLenovoDevices(std::vector<Device *> *devices)
         MTK_UBOOT, MTK_11230000_UBOOT });
     device->twOptions()->supported = true;
     device->twOptions()->graphicsBackends = { "fbdev" };
-    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
-                               | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
     device->twOptions()->maxBrightness = 255;
     device->twOptions()->defaultBrightness = 162;
