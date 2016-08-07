@@ -980,7 +980,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command(argv[0], argv, nullptr, nullptr,
+    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
                                &signed_exec_output_cb, &fd);
 
     free(argv);
