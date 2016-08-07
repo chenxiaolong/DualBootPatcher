@@ -228,12 +228,7 @@ std::string StringUtils::toHex(const unsigned char *data, std::size_t size)
 
 std::string StringUtils::toMaxString(const char *str, std::size_t maxSize)
 {
-    const char *location;
-    if ((location = static_cast<const char *>(std::memchr(str, 0, maxSize)))) {
-        return std::string(str, location);
-    } else {
-        return std::string(str, maxSize);
-    }
+    return std::string(str, strnlen(str, maxSize));
 }
 
 std::string StringUtils::toPrintable(const unsigned char *data, std::size_t size)
