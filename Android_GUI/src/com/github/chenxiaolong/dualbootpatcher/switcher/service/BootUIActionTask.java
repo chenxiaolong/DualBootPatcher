@@ -23,7 +23,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
-import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
@@ -54,17 +53,25 @@ public final class BootUIActionTask extends BaseServiceTask {
     private static final String CACHE_MOUNT_POINT = "/cache";
     private static final String RAW_CACHE_MOUNT_POINT = "/raw/cache";
 
+    private static final FileMapping[] MAPPINGS = new FileMapping[] {
+            new FileMapping("/bootui/%s/bootui.zip", "/multiboot/bootui.zip", 0644),
+            new FileMapping("/bootui/%s/bootui.zip.sig", "/multiboot/bootui.zip.sig", 0644),
+            new FileMapping("/binaries/android/%s/cryptfstool", "/multiboot/crypto/cryptfstool", 0755),
+            new FileMapping("/binaries/android/%s/cryptfstool.sig", "/multiboot/crypto/cryptfstool.sig", 0644),
+            new FileMapping("/binaries/android/%s/cryptfstool_rec", "/multiboot/crypto/cryptfstool_rec", 0755),
+            new FileMapping("/binaries/android/%s/cryptfstool_rec.sig", "/multiboot/crypto/cryptfstool_rec.sig", 0644)
+    };
+
     private static final String BOOTUI_ZIP_PATH = "/multiboot/bootui.zip";
-    private static final String BOOTUI_ZIP_SIG_PATH = "/multiboot/bootui.zip.sig";
-    private static final String CRYPTO_SETUP_PATH = "/multiboot/crypto/setup";
-    private static final String CRYPTO_SETUP_SIG_PATH = "/multiboot/crypto/setup.sig";
-    private static final String CRYPTO_FSTAB_PATH = "/multiboot/crypto/fstab";
+    private static final String BOOTUI_ZIP_SIG_PATH = BOOTUI_ZIP_PATH + ".sig";
+    private static final String CRYPTFSTOOL_PATH = "/multiboot/crypto/cryptfstool";
+    private static final String CRYPTFSTOOL_SIG_PATH = CRYPTFSTOOL_PATH + ".sig";
+    private static final String CRYPTFSTOOL_REC_PATH = "/multiboot/crypto/cryptfstool_rec";
+    private static final String CRYPTFSTOOL_REC_SIG_PATH = CRYPTFSTOOL_REC_PATH + ".sig";
 
     private static final String PROPERTIES_FILE = "info.prop";
     private static final String PROP_VERSION = "bootui.version";
     private static final String PROP_GIT_VERSION = "bootui.git-version";
-
-    private static final String ENABLE_CRYPTO = false;
 
     private final BootUIAction mAction;
 
@@ -73,6 +80,18 @@ public final class BootUIActionTask extends BaseServiceTask {
 
     private Version mVersion;
     private boolean mSuccess;
+
+    private static class FileMapping {
+        String source;
+        String target;
+        int mode;
+
+        FileMapping(String source, String target, int mode) {
+            this.source = source;
+            this.target = target;
+            this.mode = mode;
+        }
+    }
 
     public enum BootUIAction {
         GET_VERSION,
@@ -263,68 +282,20 @@ public final class BootUIActionTask extends BaseServiceTask {
             abi = Build.CPU_ABI;
         }
 
-        // Source paths
-        String sourceZipPath = PatcherUtils.getTargetDirectory(getContext())
-                + File.separator + "bootui"  + File.separator + abi + File.separator + "bootui.zip";
-        String sourceZipSigPath = sourceZipPath + ".sig";
-        String sourceSetupPath = null;
-        String sourceSetupSigPath = null;
-
-        String path;
-        if (ENABLE_CRYPTO && device.isCryptoSupported() &&
-                (path = device.getCryptoSetupPath()) != null) {
-            sourceSetupPath = PatcherUtils.getTargetDirectory(getContext())
-                    + File.separator + path.replace('/', File.separatorChar);
-            sourceSetupSigPath = sourceSetupPath + ".sig";
-        }
-
-        // Target paths
+        File sourceDir = PatcherUtils.getTargetDirectory(getContext());
         String mountPoint = getCacheMountPoint(iface);
-        String targetZipPath = mountPoint + BOOTUI_ZIP_PATH;
-        String targetZipSigPath = mountPoint + BOOTUI_ZIP_SIG_PATH;
-        String targetSetupPath = mountPoint + CRYPTO_SETUP_PATH;
-        String targetSetupSigPath = mountPoint + CRYPTO_SETUP_SIG_PATH;
-        String targetFstabPath = mountPoint + CRYPTO_FSTAB_PATH;
-        File bootUiParent = new File(targetZipPath).getParentFile();
-        File cryptoParent = new File(targetSetupPath).getParentFile();
 
-
-        try {
-            // Boot UI
-            iface.pathMkdir(bootUiParent.getAbsolutePath(), 0755, true);
-            iface.pathCopy(sourceZipPath, targetZipPath);
-            iface.pathCopy(sourceZipSigPath, targetZipSigPath);
-            iface.pathChmod(targetZipPath, 0644);
-            iface.pathChmod(targetZipSigPath, 0644);
-
-            if (ENABLE_CRYPTO && device.isCryptoSupported()) {
-                iface.pathMkdir(cryptoParent.getAbsolutePath(), 0755, true);
-                iface.pathCopy(sourceSetupPath, targetSetupPath);
-                iface.pathCopy(sourceSetupSigPath, targetSetupSigPath);
-                iface.pathChmod(targetSetupPath, 0644);
-                iface.pathChmod(targetSetupSigPath, 0644);
-            }
-        } catch (MbtoolCommandException e) {
-            Log.e(TAG, "Failed to install/update boot UI or crypto scripts", e);
-            return false;
-        }
-
-        if (ENABLE_CRYPTO && device.isCryptoSupported()) {
-            // Get fstab from primary ROM's boot image
-            String bootImage = RomUtils.getBootImagePath("primary");
-            byte[] fstab = getFstabFromBootImage(bootImage);
-            if (fstab == null) {
-                Log.e(TAG, "Failed to get fstab file from the primary ROM's boot image");
-                return false;
-            }
+        for (FileMapping mapping : MAPPINGS) {
+            String source = String.format(sourceDir + mapping.source, abi);
+            String target = mountPoint + mapping.target;
+            File parent = new File(target).getParentFile();
 
             try {
-                int id = iface.fileOpen(targetFstabPath, new short[] {
-                        FileOpenFlag.CREAT, FileOpenFlag.WRONLY, FileOpenFlag.EXCL }, 0644);
-                iface.fileWrite(id, fstab);
-                iface.fileClose(id);
+                iface.pathMkdir(parent.getAbsolutePath(), 0755, true);
+                iface.pathCopy(source, target);
+                iface.pathChmod(target, mapping.mode);
             } catch (MbtoolCommandException e) {
-                Log.e(TAG, "Failed to install/update crypto fstab file", e);
+                Log.e(TAG, "Failed to install " + source + " -> " + target, e);
                 return false;
             }
         }
@@ -343,15 +314,9 @@ public final class BootUIActionTask extends BaseServiceTask {
     private boolean uninstall(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
 
-        String[] toDelete = new String[] {
-                mountPoint + BOOTUI_ZIP_PATH,
-                mountPoint + BOOTUI_ZIP_SIG_PATH,
-                mountPoint + CRYPTO_SETUP_PATH,
-                mountPoint + CRYPTO_SETUP_SIG_PATH,
-                mountPoint + CRYPTO_FSTAB_PATH
-        };
+        for (FileMapping mapping : MAPPINGS) {
+            String path = mountPoint + mapping.target;
 
-        for (String path : toDelete) {
             // Ignore errors for now since mbtool doesn't expose the errno value for us to check for
             // ENOENT
             try {
