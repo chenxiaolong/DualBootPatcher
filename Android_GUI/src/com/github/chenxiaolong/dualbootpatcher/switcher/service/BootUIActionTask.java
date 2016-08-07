@@ -19,10 +19,15 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
+import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.dualbootpatcher.Version;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -48,8 +53,21 @@ public final class BootUIActionTask extends BaseServiceTask {
     private static final String CACHE_MOUNT_POINT = "/cache";
     private static final String RAW_CACHE_MOUNT_POINT = "/raw/cache";
 
+    private static final FileMapping[] MAPPINGS = new FileMapping[] {
+            new FileMapping("/bootui/%s/bootui.zip", "/multiboot/bootui.zip", 0644),
+            new FileMapping("/bootui/%s/bootui.zip.sig", "/multiboot/bootui.zip.sig", 0644),
+            new FileMapping("/binaries/android/%s/cryptfstool", "/multiboot/crypto/cryptfstool", 0755),
+            new FileMapping("/binaries/android/%s/cryptfstool.sig", "/multiboot/crypto/cryptfstool.sig", 0644),
+            new FileMapping("/binaries/android/%s/cryptfstool_rec", "/multiboot/crypto/cryptfstool_rec", 0755),
+            new FileMapping("/binaries/android/%s/cryptfstool_rec.sig", "/multiboot/crypto/cryptfstool_rec.sig", 0644)
+    };
+
     private static final String BOOTUI_ZIP_PATH = "/multiboot/bootui.zip";
-    private static final String BOOTUI_SIG_PATH = "/multiboot/bootui.zip.sig";
+    private static final String BOOTUI_ZIP_SIG_PATH = BOOTUI_ZIP_PATH + ".sig";
+    private static final String CRYPTFSTOOL_PATH = "/multiboot/crypto/cryptfstool";
+    private static final String CRYPTFSTOOL_SIG_PATH = CRYPTFSTOOL_PATH + ".sig";
+    private static final String CRYPTFSTOOL_REC_PATH = "/multiboot/crypto/cryptfstool_rec";
+    private static final String CRYPTFSTOOL_REC_SIG_PATH = CRYPTFSTOOL_REC_PATH + ".sig";
 
     private static final String PROPERTIES_FILE = "info.prop";
     private static final String PROP_VERSION = "bootui.version";
@@ -62,6 +80,18 @@ public final class BootUIActionTask extends BaseServiceTask {
 
     private Version mVersion;
     private boolean mSuccess;
+
+    private static class FileMapping {
+        String source;
+        String target;
+        int mode;
+
+        FileMapping(String source, String target, int mode) {
+            this.source = source;
+            this.target = target;
+            this.mode = mode;
+        }
+    }
 
     public enum BootUIAction {
         GET_VERSION,
@@ -130,6 +160,7 @@ public final class BootUIActionTask extends BaseServiceTask {
      * @throws IOException
      * @throws MbtoolException
      */
+    @Nullable
     private Version getCurrentVersion(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
         String zipPath = mountPoint + BOOTUI_ZIP_PATH;
@@ -195,6 +226,31 @@ public final class BootUIActionTask extends BaseServiceTask {
         }
     }
 
+    @Nullable
+    private byte[] getFstabFromBootImage(String path) {
+        String hardware = SystemPropertiesProxy.get(getContext(), "ro.hardware", "");
+        String fstabPath = "fstab." + hardware;
+
+        BootImage bi = new BootImage();
+        CpioFile cf = new CpioFile();
+        try {
+            if (!bi.load(path)) {
+                return null;
+            }
+
+            if (!cf.load(bi.getRamdiskImage())) {
+                return null;
+            }
+
+            bi.destroy();
+
+            return cf.getContents(fstabPath);
+        } finally {
+            cf.destroy();
+            bi.destroy();
+        }
+    }
+
     /**
      * Install or update boot UI
      *
@@ -207,6 +263,18 @@ public final class BootUIActionTask extends BaseServiceTask {
         // Need to grab latest boot UI from the data archive
         PatcherUtils.initializePatcher(getContext());
 
+        Device device = PatcherUtils.getCurrentDevice(getContext(), PatcherUtils.sPC);
+        if (device == null) {
+            Log.e(TAG, "Failed to determine current device");
+            return false;
+        }
+
+        // Uninstall first, so we don't get any leftover files
+        Log.d(TAG, "Uninstalling before installing/updating");
+        if (!uninstall(iface)) {
+            return false;
+        }
+
         String abi;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             abi = Build.SUPPORTED_ABIS[0];
@@ -214,31 +282,25 @@ public final class BootUIActionTask extends BaseServiceTask {
             abi = Build.CPU_ABI;
         }
 
-        String zipPath = PatcherUtils.getTargetDirectory(getContext())
-                + File.separator + "bootui"
-                + File.separator + abi
-                + File.separator + "bootui.zip";
-        String sigPath = PatcherUtils.getTargetDirectory(getContext())
-                + File.separator + "bootui"
-                + File.separator + abi
-                + File.separator + "bootui.zip.sig";
-
+        File sourceDir = PatcherUtils.getTargetDirectory(getContext());
         String mountPoint = getCacheMountPoint(iface);
-        String targetZipPath = mountPoint + BOOTUI_ZIP_PATH;
-        String targetSigPath = mountPoint + BOOTUI_SIG_PATH;
-        File parent = new File(targetZipPath).getParentFile();
 
-        try {
-            iface.pathMkdir(parent.getAbsolutePath(), 0755, true);
-            iface.pathCopy(zipPath, targetZipPath);
-            iface.pathCopy(sigPath, targetSigPath);
-            iface.pathChmod(targetZipPath, 0644);
-            iface.pathChmod(targetSigPath, 0644);
-            return true;
-        } catch (MbtoolCommandException e) {
-            Log.e(TAG, "Failed to install/update boot UI", e);
-            return false;
+        for (FileMapping mapping : MAPPINGS) {
+            String source = String.format(sourceDir + mapping.source, abi);
+            String target = mountPoint + mapping.target;
+            File parent = new File(target).getParentFile();
+
+            try {
+                iface.pathMkdir(parent.getAbsolutePath(), 0755, true);
+                iface.pathCopy(source, target);
+                iface.pathChmod(target, mapping.mode);
+            } catch (MbtoolCommandException e) {
+                Log.e(TAG, "Failed to install " + source + " -> " + target, e);
+                return false;
+            }
         }
+
+        return true;
     }
 
     /**
@@ -251,20 +313,17 @@ public final class BootUIActionTask extends BaseServiceTask {
      */
     private boolean uninstall(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
-        String zipPath = mountPoint + BOOTUI_ZIP_PATH;
-        String sigPath = mountPoint + BOOTUI_SIG_PATH;
 
-        // Ignore errors for now since mbtool doesn't expose the errno value for us to check for
-        // ENOENT
-        try {
-            iface.pathDelete(zipPath, PathDeleteFlag.UNLINK);
-        } catch (MbtoolCommandException e) {
-            // Ignore
-        }
-        try {
-            iface.pathDelete(sigPath, PathDeleteFlag.UNLINK);
-        } catch (MbtoolCommandException e) {
-            // Ignore
+        for (FileMapping mapping : MAPPINGS) {
+            String path = mountPoint + mapping.target;
+
+            // Ignore errors for now since mbtool doesn't expose the errno value for us to check for
+            // ENOENT
+            try {
+                iface.pathDelete(path, PathDeleteFlag.UNLINK);
+            } catch (MbtoolCommandException e) {
+                // Ignore
+            }
         }
 
         return true;
@@ -287,7 +346,9 @@ public final class BootUIActionTask extends BaseServiceTask {
                     version = getCurrentVersion(iface);
                     break;
                 case INSTALL:
-                    success = install(iface);
+                    if (!(success = install(iface))) {
+                        uninstall(iface);
+                    }
                     break;
                 case UNINSTALL:
                     success = uninstall(iface);

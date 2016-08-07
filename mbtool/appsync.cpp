@@ -1153,7 +1153,10 @@ int appsync_main(int argc, char *argv[])
     create_layout_version();
 
     LOGI("Calling restorecon on /data/media/obb");
-    util::run_command({ "restorecon", "-R", "-F", "/data/media/obb" });
+    const char *restorecon[] =
+            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
+    util::run_command(restorecon[0], restorecon, nullptr, nullptr, nullptr,
+                      nullptr);
 
     bool can_appsync = false;
 

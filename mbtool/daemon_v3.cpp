@@ -41,6 +41,8 @@
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
+#include "decrypt.h"
+#include "init.h"
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
@@ -49,6 +51,8 @@
 #include "wipe.h"
 
 // flatbuffers
+#include "protocol/crypto_decrypt_generated.h"
+#include "protocol/crypto_get_pw_type_generated.h"
 #include "protocol/file_chmod_generated.h"
 #include "protocol/file_close_generated.h"
 #include "protocol/file_open_generated.h"
@@ -107,6 +111,61 @@ static bool v3_send_response_unsupported(int fd)
     auto response = v3::CreateResponse(builder, v3::ResponseType_Unsupported,
                                        v3::CreateUnsupported(builder).Union());
     builder.Finish(response);
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
+{
+    auto request = (v3::CryptoDecryptRequest *) msg->request();
+    if (!request->password()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoDecryptResponse> response;
+
+    std::string block_dev = decrypt_userdata(request->password()->c_str());
+    bool ret = !block_dev.empty() && mount_userdata(block_dev.c_str());
+
+    response = v3::CreateCryptoDecryptResponse(builder, ret);
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_CryptoDecryptResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_crypto_get_pw_type(int fd, const v3::Request *msg)
+{
+    (void) msg;
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoGetPwTypeResponse> response;
+
+    v3::CryptoPwType v3_pw_type = v3::CryptoPwType_UNKNOWN;
+
+    std::string pw_type = decrypt_get_pw_type();
+    if (pw_type == CRYPTFS_PW_TYPE_DEFAULT) {
+        v3_pw_type = v3::CryptoPwType_DEFAULT;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PASSWORD) {
+        v3_pw_type = v3::CryptoPwType_PASSWORD;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PATTERN) {
+        v3_pw_type = v3::CryptoPwType_PATTERN;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PIN) {
+        v3_pw_type = v3::CryptoPwType_PIN;
+    }
+
+    response = v3::CreateCryptoGetPwTypeResponse(builder, v3_pw_type);
+
+    // Wrap response
+    v3::ResponseBuilder rb(builder);
+    rb.add_response_type(v3::ResponseType_CryptoGetPwTypeResponse);
+    rb.add_response(response.Union());
+    builder.Finish(rb.Finish());
+
     return v3_send_response(fd, builder);
 }
 
@@ -754,9 +813,11 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-static void signed_exec_output_cb(const std::string &line, void *data)
+static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 {
-    int *fd_ptr = (int *) data;
+    (void) error;
+
+    int *fd_ptr = (int *) userdata;
     // TODO: Send line
 
     fb::FlatBufferBuilder builder;
@@ -788,8 +849,9 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
+    size_t nargs;
+    const char **argv;
     int status;
-    std::vector<std::string> argv;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
     // Variables that are part of the response
@@ -886,23 +948,43 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     }
 
     // Build arguments
-    if (request->arg0()) {
-        argv.push_back(request->arg0()->str());
-    } else {
-        argv.push_back(target_binary);
-    }
+    nargs = 2; // argv[0] + NULL-terminator
     if (request->args()) {
-        for (auto const &arg : *request->args()) {
-            argv.push_back(arg->str());
+        nargs += request->args()->size();
+    }
+
+    argv = (const char **) malloc(nargs * sizeof(const char *));
+    if (!argv) {
+        result = v3::SignedExecResult_OTHER_ERROR;
+        error_msg = util::format("%s", strerror(errno));
+        LOGE("%s", error_msg.c_str());
+        goto done;
+    }
+
+    {
+        size_t i = 0;
+        if (request->arg0()) {
+            argv[i++] = request->arg0()->c_str();
+        } else {
+            argv[i++] = target_binary.c_str();
         }
+        if (request->args()) {
+            for (auto const &arg : *request->args()) {
+                argv[i++] = arg->c_str();
+            }
+        }
+        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command2(target_binary, argv, std::string(),
-                                &signed_exec_output_cb, &fd);
+    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
+                               &signed_exec_output_cb, &fd);
+
+    free(argv);
+
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -1347,6 +1429,8 @@ struct RequestMap
 };
 
 static RequestMap request_map[] = {
+    { v3::RequestType_CryptoDecryptRequest, v3_crypto_decrypt },
+    { v3::RequestType_CryptoGetPwTypeRequest, v3_crypto_get_pw_type },
     { v3::RequestType_FileChmodRequest, v3_file_chmod },
     { v3::RequestType_FileCloseRequest, v3_file_close },
     { v3::RequestType_FileOpenRequest, v3_file_open },

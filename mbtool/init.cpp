@@ -35,10 +35,13 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "minizip/ioandroid.h"
+#include "minizip/ioapi_buf.h"
+#include "minizip/unzip.h"
+
 #include "mbcommon/version.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
@@ -48,6 +51,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
+#include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -55,18 +59,21 @@
 #include "mbutil/string.h"
 #include "mbutil/vibrate.h"
 
+#include "external/property_service.h"
+
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "daemon.h"
+#include "decrypt.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
 #include "sepolpatch.h"
 #include "signature.h"
 
-#define BOOT_ADB_INSTEAD_OF_INIT 0
+#define RUN_ADB_BEFORE_EXEC_OR_REBOOT 0
 
-#if BOOT_ADB_INSTEAD_OF_INIT
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
 #include "miniadbd.h"
 #include "miniadbd/adb_log.h"
 #endif
@@ -131,6 +138,8 @@ static bool start_daemon()
               "--allow-root-client",
               "--no-patch-sepolicy",
               "--sigstop-when-ready",
+              "--log-to-kmsg",
+              "--no-unshare",
               nullptr);
         LOGE("Failed to exec daemon: %s", strerror(errno));
         _exit(127);
@@ -175,6 +184,97 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
+static util::CmdlineIterAction set_kernel_properties_cb(const char *name,
+                                                        const char *value,
+                                                        void *userdata)
+{
+    (void) userdata;
+
+    if (util::starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
+        char buf[PROP_NAME_MAX];
+        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name + 12);
+        if (n >= 0 && n < (int) sizeof(buf)) {
+            property_set(buf, value);
+        }
+    }
+
+    return util::CmdlineIterAction::Continue;
+}
+
+static bool set_kernel_properties()
+{
+    util::kernel_cmdline_iter(&set_kernel_properties_cb, nullptr);
+
+    struct {
+        const char *src_prop;
+        const char *dst_prop;
+        const char *default_value;
+    } prop_map[] = {
+        { "ro.boot.serialno",   "ro.serialno",   ""        },
+        { "ro.boot.mode",       "ro.bootmode",   "unknown" },
+        { "ro.boot.baseband",   "ro.baseband",   "unknown" },
+        { "ro.boot.bootloader", "ro.bootloader", "unknown" },
+        { "ro.boot.hardware",   "ro.hardware",   "unknown" },
+        { "ro.boot.revision",   "ro.revision",   "0"       },
+        { nullptr,              nullptr,         nullptr   },
+    };
+
+    for (auto it = prop_map; it ->src_prop; ++it) {
+        char value[PROP_VALUE_MAX];
+        int ret = ::property_get(it->src_prop, value);
+        property_set(it->dst_prop, (ret > 0) ? value : it->default_value);
+    }
+
+    return true;
+}
+
+static bool properties_setup()
+{
+    char tmp[32];
+    int fd, sz;
+
+    if (!property_init()) {
+        LOGW("Failed to initialize properties area");
+    }
+
+    // Set ro.boot.* properties from the kernel command line
+    if (!set_kernel_properties()) {
+        LOGW("Failed to set kernel cmdline properties");
+    }
+
+    // Load /default.prop
+    property_load_boot_defaults();
+
+    // Start properties service (to allow other processes to set properties)
+    if (!start_property_service()) {
+        LOGW("Failed to start properties service");
+    }
+
+    get_property_workspace(&fd, &sz);
+    sprintf(tmp, "%d,%d", fd, sz);
+
+    // Clear FD_CLOEXEC since we want child processes to be able to set
+    // properties
+    fcntl(fd, F_SETFD, 0);
+
+    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+    return true;
+}
+
+static bool properties_cleanup()
+{
+    if (!stop_property_service()) {
+        LOGW("Failed to stop properties service");
+    }
+
+    if (!property_cleanup()) {
+        LOGW("Failed to clean up properties area");
+    }
+
+    return true;
+}
+
 static std::string get_rom_id()
 {
     std::string rom_id;
@@ -184,109 +284,6 @@ static std::string get_rom_id()
     }
 
     return rom_id;
-}
-
-static std::string find_fstab()
-{
-    autoclose::dir dir(autoclose::opendir("/"));
-    if (!dir) {
-        return std::string();
-    }
-
-    std::vector<std::string> fallback;
-
-    struct dirent *ent;
-    while ((ent = readdir(dir.get()))) {
-        // Look for *.rc files
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !util::ends_with(ent->d_name, ".rc")) {
-            continue;
-        }
-
-        std::string path("/");
-        path += ent->d_name;
-
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
-        if (!fp) {
-            continue;
-        }
-
-        char *line = nullptr;
-        size_t len = 0;
-        ssize_t read = 0;
-
-        auto free_line = util::finally([&]{
-            free(line);
-        });
-
-        while ((read = getline(&line, &len, fp.get())) >= 0) {
-            char *ptr = strstr(line, "mount_all");
-            if (!ptr) {
-                continue;
-            }
-            ptr += 9;
-
-            // Find the argument to mount_all
-            while (isspace(*ptr)) {
-                ++ptr;
-            }
-
-            // Strip everything after next whitespace
-            for (char *p = ptr; *p; ++p) {
-                if (isspace(*p)) {
-                    *p = '\0';
-                    break;
-                }
-            }
-
-            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
-                LOGV("Skipping goldfish fstab file: %s", ptr);
-                continue;
-            }
-
-            // Check if we need to strip "/." and ".gen" to remain compatible
-            // with boot images patched by an older version of libmbp
-            char *slash_ptr = strstr(ptr, "/.");
-            if (slash_ptr && util::ends_with(slash_ptr, ".gen")) {
-                ptr = slash_ptr + 2;
-                ptr[strlen(ptr) - 4] = '\0';
-            }
-
-            std::string fstab(ptr);
-
-            // Replace ${ro.hardware}
-            if (fstab.find("${ro.hardware}") != std::string::npos) {
-                std::string hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
-                util::replace_all(&fstab, "${ro.hardware}", hardware);
-            }
-
-            LOGD("Trying fstab: %s", fstab.c_str());
-
-            // Check if fstab exists
-            struct stat sb;
-            if (stat(fstab.c_str(), &sb) < 0) {
-                LOGE("Failed to stat fstab %s: %s",
-                     fstab.c_str(), strerror(errno));
-                continue;
-            }
-
-            // If the fstab file is for charger mode, add to fallback
-            if (fstab.find("charger") != std::string::npos) {
-                LOGE("Adding charger fstab to fallback fstabs: %s",
-                     fstab.c_str());
-                fallback.push_back(fstab);
-                continue;
-            }
-
-            return fstab;
-        }
-    }
-
-    if (!fallback.empty()) {
-        return fallback[0];
-    }
-    return std::string();
 }
 
 // Operating on paths instead of fd's should be safe enough since, at this
@@ -625,107 +622,185 @@ static bool symlink_base_dir()
     return false;
 }
 
-static bool extract_zip(const char *source, const char *target)
+static bool fstab_replace_forceencrypt(const char *path)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    if (!in) {
-        LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
-        return false;
-    }
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
-    if (!out) {
-        LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
-        return false;
-    }
+    std::string new_path(path);
+    new_path += ".new";
 
-    archive_read_support_format_zip(in.get());
-
-    // Set up disk writer parameters. We purposely don't extract any file
-    // metadata
-    int flags = ARCHIVE_EXTRACT_SECURE_SYMLINKS
-            | ARCHIVE_EXTRACT_SECURE_NODOTDOT;
-
-    archive_write_disk_set_standard_lookup(out.get());
-    archive_write_disk_set_options(out.get(), flags);
-
-    if (archive_read_open_filename(in.get(), source, 10240) != ARCHIVE_OK) {
-        LOGE("%s: Failed to open file: %s",
-             source, archive_error_string(in.get()));
+    std::vector<util::fstab_rec> recs = util::read_fstab(path);
+    if (recs.empty()) {
+        LOGE("%s: Failed to read fstab file", path);
         return false;
     }
 
-    archive_entry *entry;
-    int ret;
-    std::string target_path;
+    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             new_path.c_str(), strerror(errno));
+        return false;
+    }
 
-    while (true) {
-        ret = archive_read_next_header(in.get(), &entry);
-        if (ret == ARCHIVE_EOF) {
-            break;
-        } else if (ret == ARCHIVE_RETRY) {
-            LOGW("%s: Retrying header read", source);
-            continue;
-        } else if (ret != ARCHIVE_OK) {
-            LOGE("%s: Failed to read header: %s",
-                 source, archive_error_string(in.get()));
-            return false;
-        }
+    for (auto &rec : recs) {
+        if (rec.vold_args.find("forceencrypt") != std::string::npos) {
+            util::replace_all(&rec.vold_args, "forceencrypt", "encryptable");
 
-        const char *path = archive_entry_pathname(entry);
-        if (!path || !*path) {
-            LOGE("%s: Header has null or empty filename", source);
-            return false;
-        }
-
-        if (strcmp(path, "exec") != 0) {
-            LOGV("Skipping: %s", path);
-            continue;
-        }
-
-        LOGV("Extracting: %s", path);
-
-        // Build path
-        target_path = target;
-        if (target_path.back() != '/' && *path != '/') {
-            target_path += '/';
-        }
-        target_path += path;
-
-        archive_entry_set_pathname(entry, target_path.c_str());
-
-        // Extract file
-        ret = archive_read_extract2(in.get(), entry, out.get());
-        if (ret != ARCHIVE_OK) {
-            LOGE("%s: %s", archive_entry_pathname(entry),
-                 archive_error_string(in.get()));
-            return false;
+            fprintf(fp.get(), "%s %s %s %s %s\n", rec.blk_device.c_str(),
+                    rec.mount_point.c_str(), rec.fs_type.c_str(),
+                    rec.mount_args.c_str(), rec.vold_args.c_str());
+        } else {
+            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
         }
     }
 
-    if (archive_read_close(in.get()) != ARCHIVE_OK) {
-        LOGE("%s: Failed to close file: %s",
-             source, archive_error_string(in.get()));
+    fp.reset();
+
+    return replace_file(path, new_path.c_str());
+}
+
+static bool fstab_replace_block_dev(const char *path, const char *mount_point,
+                                    const char *new_block_dev)
+{
+    std::string new_path(path);
+    new_path += ".new";
+
+    std::vector<util::fstab_rec> recs = util::read_fstab(path);
+    if (recs.empty()) {
+        LOGE("%s: Failed to read fstab file", path);
+        return false;
+    }
+
+    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             new_path.c_str(), strerror(errno));
+        return false;
+    }
+
+    for (auto const &rec : recs) {
+        if (mount_point == rec.mount_point) {
+            fprintf(fp.get(), "%s %s %s %s %s\n", new_block_dev,
+                    rec.mount_point.c_str(), rec.fs_type.c_str(),
+                    rec.mount_args.c_str(), rec.vold_args.c_str());
+        } else {
+            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
+        }
+    }
+
+    fp.reset();
+
+    return replace_file(path, new_path.c_str());
+}
+
+bool mount_userdata(const char *block_dev)
+{
+    std::string rom_id = get_rom_id();
+    std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
+    if (!rom) {
+        return false;
+    }
+
+    std::string fstab("/fstab.");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
+    fstab += hardware;
+
+    // Rewrite fstab with the devmapper device for /data
+    fstab_replace_block_dev(fstab.c_str(), "/data", block_dev);
+
+    // Try mounting data again
+    int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+        LOGE("Failed to mount data. Decryption probably failed");
         return false;
     }
 
     return true;
 }
 
-static bool launch_boot_menu()
+static bool extract_zip(const char *source, const char *target)
+{
+    unzFile uf;
+    zlib_filefunc64_def zFunc;
+    ourbuffer_t iobuf;
+
+    memset(&zFunc, 0, sizeof(zFunc));
+    memset(&iobuf, 0, sizeof(iobuf));
+
+    fill_android_filefunc64(&iobuf.filefunc64);
+    fill_buffer_filefunc64(&zFunc, &iobuf);
+
+    uf = unzOpen2_64(source, &zFunc);
+    if (!uf) {
+        LOGE("%s: Failed to open zip", source);
+        return false;
+    }
+
+    auto close_zip = util::finally([&]{
+        unzClose(uf);
+    });
+
+    if (unzLocateFile(uf, "exec", nullptr) != UNZ_OK) {
+        LOGE("%s: Failed to find 'exec' in zip", source);
+        return false;
+    }
+
+    if (unzOpenCurrentFile(uf) != UNZ_OK) {
+        LOGE("%s: Failed to open file in zip", source);
+        return false;
+    }
+
+    auto close_inner_file = util::finally([&]{
+        unzCloseCurrentFile(uf);
+    });
+
+    std::string target_file(target);
+    target_file += "/exec";
+
+    util::mkdir_recursive(target, 0755);
+
+    FILE *fp = fopen(target_file.c_str(), "wb");
+    if (!fp) {
+        LOGE("%s: Failed to open for writing: %s",
+             target_file.c_str(), strerror(errno));
+        return false;
+    }
+
+    char buf[8192];
+    int bytes_read;
+
+    while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
+        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+        if (bytes_written == 0) {
+            bool ret = !ferror(fp);
+            fclose(fp);
+            return ret;
+        }
+    }
+    if (bytes_read != 0) {
+        LOGE("%s: Failed before reaching inner file's EOF", source);
+        fclose(fp);
+        return false;
+    }
+
+    if (fclose(fp) < 0) {
+        LOGE("%s: Error when closing file: %s",
+             target_file.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+static bool launch_boot_menu(bool has_encryption)
 {
     struct stat sb;
 
-    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
+    // Boot UI must always run if the device is encrypted
+    if (!has_encryption && stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
         std::string skip_rom;
         util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
 
         std::string rom_id = get_rom_id();
-
-        if (remove(BOOT_UI_SKIP_PATH) < 0) {
-            LOGW("%s: Failed to remove: %s",
-                 BOOT_UI_SKIP_PATH, strerror(errno));
-            LOGW("Boot UI won't run again!");
-        }
 
         if (skip_rom == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
@@ -734,6 +809,12 @@ static bool launch_boot_menu()
             LOGW("Skip file is not for: %s", rom_id.c_str());
             LOGW("Not skipping boot UI");
         }
+    }
+
+    if (remove(BOOT_UI_SKIP_PATH) < 0 && errno != ENOENT) {
+        LOGW("%s: Failed to remove file: %s",
+             BOOT_UI_SKIP_PATH, strerror(errno));
+        LOGW("Boot UI won't run again!");
     }
 
     if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
@@ -768,7 +849,9 @@ static bool launch_boot_menu()
 
     start_daemon();
 
-    int ret = util::run_command({ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH });
+    const char *argv[] = { BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH, nullptr };
+    int ret = util::run_command(argv[0], argv, nullptr, nullptr, nullptr,
+                                nullptr);
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {
@@ -846,8 +929,36 @@ static bool dump_kernel_log(const char *file)
     return true;
 }
 
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+static void run_adb()
+{
+    // Mount /system if we can so we can use adb shell
+    if (!util::is_mounted("/system") && util::is_mounted("/raw/system")) {
+        mount("/raw/system", "/system", "", MS_BIND, "");
+    }
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Don't spam the kernel log
+        adb_log_mask = ADB_SERV;
+
+        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
+        _exit(miniadbd_main(1, adb_argv));
+    } else if (pid >= 0) {
+        LOGV("miniadbd is running as pid %d; kill it to continue", pid);
+        wait_for_pid("miniadbd", pid);
+    } else {
+        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
+    }
+}
+#endif
+
 static bool emergency_reboot()
 {
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+    run_adb();
+#endif
+
     util::vibrate(100, 150);
     util::vibrate(100, 150);
     util::vibrate(100, 150);
@@ -953,8 +1064,12 @@ int init_main(int argc, char *argv[])
     mount("proc", "/proc", "proc", 0, nullptr);
     mount("sysfs", "/sys", "sysfs", 0, nullptr);
 
-    // Mount selinuxfs
-    util::selinux_mount();
+    // Create mount points
+    mkdir("/system", 0755);
+    mkdir("/cache", 0770);
+    mkdir("/data", 0771);
+    util::chown("/cache", "system", "cache", 0);
+    util::chown("/data", "system", "system", 0);
 
     // Redirect std{in,out,err} to /dev/null
     open_devnull_stdio();
@@ -968,27 +1083,37 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
+    add_props_to_default_prop();
+
+    // initialize properties
+    properties_setup();
+
     // Start probing for devices
     device_init(false);
 
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir();
 
-    // Find fstab file. Continues anyway if fstab file can't be found since
-    // mount_fstab() will try some generic fstab entries, which might work.
-    std::string fstab = find_fstab();
-    if (fstab.empty()) {
-        LOGW("Failed to find a suitable fstab file. Continuing anyway...");
+    // mbtool no longer searches for the fstab file and just assumes that it is
+    // /fstab.${ro.hardware} since this is what vold uses as well.
+    std::string fstab("/fstab.");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
+    fstab += hardware;
+
+    LOGV("fstab file: %s", fstab.c_str());
+
+    if (access(fstab.c_str(), R_OK) < 0) {
+        LOGW("%s: Failed to access file: %s", fstab.c_str(), strerror(errno));
+        LOGW("Continuing anyway...");
         fstab = "/fstab.MBTOOL_DUMMY_DO_NOT_USE";
         util::create_empty_file(fstab);
     }
 
-    // Create mount points
-    mkdir("/system", 0755);
-    mkdir("/cache", 0770);
-    mkdir("/data", 0771);
-    util::chown("/cache", "system", "cache", 0);
-    util::chown("/data", "system", "system", 0);
+    // Replace forceencrypt in fstab file since vold will need to process it if
+    // /data is encrypted. mbtool's mount code doesn't care about the presence
+    // of this option.
+    fstab_replace_forceencrypt(fstab.c_str());
 
     // Get ROM ID from /romid
     std::string rom_id = get_rom_id();
@@ -1001,25 +1126,58 @@ int init_main(int argc, char *argv[])
 
     LOGV("ROM ID is: %s", rom_id.c_str());
 
-    // This needs to be done before the boot menu runs so that the daemon can
-    // get the ROM ID;
-    add_props_to_default_prop();
-
-    // Mount fstab file
-    // TODO: Skip /data until it is decrypted
-    int flags = MOUNT_FLAG_REWRITE_FSTAB /* | MOUNT_FLAG_SKIP_DATA */;
+    // Mount system, cache, and external SD from fstab file
+    int flags = MOUNT_FLAG_REWRITE_FSTAB
+            | MOUNT_FLAG_MOUNT_SYSTEM
+            | MOUNT_FLAG_MOUNT_CACHE
+            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
         return EXIT_FAILURE;
     }
 
-    LOGV("Successfully mounted fstab");
+    LOGV("Successfully mounted fstab (excluding /data)");
 
-    if (!launch_boot_menu()) {
+    bool has_encryption = false;
+
+    // Try mounting data
+    flags = MOUNT_FLAG_REWRITE_FSTAB
+            | MOUNT_FLAG_MOUNT_DATA;
+    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+        LOGW("Failed to mount data, it might be encrypted");
+        has_encryption = true;
+    }
+
+    property_set(PROP_CRYPTO_STATE,
+                 has_encryption
+                 ? CRYPTO_STATE_ENCRYPTED
+                 : CRYPTO_STATE_DECRYPTED);
+
+    if (!launch_boot_menu(has_encryption)) {
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
     }
+
+    // Check if the data partition was successfully decrypted
+    if (has_encryption) {
+        char value[PROP_VALUE_MAX];
+        if (::property_get(PROP_CRYPTO_STATE, value) <= 0
+                || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
+            LOGE("Failed to decrypt device");
+            emergency_reboot();
+            return EXIT_FAILURE;
+        }
+
+        if (!util::is_mounted("/raw/data")) {
+            LOGE("/raw/data did not get mounted");
+            emergency_reboot();
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Mount selinuxfs
+    util::selinux_mount();
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1046,24 +1204,15 @@ int init_main(int argc, char *argv[])
     // Kill uevent thread and close uevent socket
     device_close();
 
+    // Kill properties service and clean up
+    properties_cleanup();
+
     // Remove mbtool init symlink and restore original binary
     unlink("/init");
     rename("/init.orig", "/init");
 
-#if BOOT_ADB_INSTEAD_OF_INIT
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Don't spam the kernel log
-        adb_log_mask = ADB_SERV;
-
-        char *adb_argv[] = { const_cast<char *>("miniadbd"), nullptr };
-        _exit(miniadbd_main(1, adb_argv));
-    } else if (pid >= 0) {
-        LOGV("miniadbd is running as pid %d; kill it to continue boot", pid);
-        wait_for_pid("miniadbd", pid);
-    } else {
-        LOGW("Failed to fork to run miniadbd: %s", strerror(errno));
-    }
+#if RUN_ADB_BEFORE_EXEC_OR_REBOOT
+    run_adb();
 #endif
 
     // Unmount partitions

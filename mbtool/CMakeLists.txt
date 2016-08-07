@@ -60,6 +60,7 @@ set(MBTOOL_BASE_SOURCES
     appsyncmanager.cpp
     daemon.cpp
     daemon_v3.cpp
+    decrypt.cpp
     init.cpp
     main.cpp
     miniadbd.cpp
@@ -75,6 +76,7 @@ set(MBTOOL_BASE_SOURCES
     uevent_dump.cpp
     wipe.cpp
     external/legacy_property_service.cpp
+    external/property_service.cpp
     initwrapper/cutils/uevent.cpp
     initwrapper/devices.cpp
     initwrapper/util.cpp
@@ -171,9 +173,9 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbsign-static
         mblog-static
         mbcommon-static
+        minizip
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
-        ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
     )
     target_link_libraries(

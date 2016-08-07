@@ -46,6 +46,8 @@ class MbtoolInterface
 public:
     virtual ~MbtoolInterface() {}
 
+    virtual bool crypto_decrypt(const std::string &password, bool *result) = 0;
+    virtual bool crypto_get_pw_type(std::string *result) = 0;
     virtual bool get_installed_roms(std::vector<Rom> *result) = 0;
     virtual bool get_booted_rom_id(std::string *result) = 0;
     virtual bool switch_rom(const std::string &id,

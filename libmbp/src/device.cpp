@@ -44,6 +44,7 @@ public:
     std::vector<std::string> extraDevs;
 
     TwOptions twOptions;
+    CryptoOptions cryptoOptions;
 };
 /*! \endcond */
 
@@ -215,5 +216,16 @@ Device::TwOptions * Device::twOptions()
 {
     return &m_impl->twOptions;
 }
+
+const Device::CryptoOptions * Device::cryptoOptions() const
+{
+    return &m_impl->cryptoOptions;
+}
+
+Device::CryptoOptions * Device::cryptoOptions()
+{
+    return &m_impl->cryptoOptions;
+}
+
 
 }

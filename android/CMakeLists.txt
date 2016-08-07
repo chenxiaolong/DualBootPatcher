@@ -95,7 +95,9 @@ if(MBP_TOP_LEVEL_BUILD)
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/mbtool_recovery
             ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/odinupdater
-            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse)
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/fuse-sparse
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/cryptfstool
+            ${CMAKE_CURRENT_BINARY_DIR}/result/bin/${abi}/cryptfstool_rec)
         set(sig_files "")
         foreach(file ${result_files})
             list(APPEND sig_files "${file}.sig")

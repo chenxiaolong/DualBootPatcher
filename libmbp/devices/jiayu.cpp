@@ -46,7 +46,8 @@ void addJiayuDevices(std::vector<Device *> *devices)
         "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ MTK_RECOVERY, MTK_11230000_RECOVERY,
         "/dev/block/mmcblk0p8" });
-    device->setExtraBlockDevs({
+    device->setExtraBlockDevs({ MTK_METADATA, MTK_11230000_METADATA,
+        MTK_NVRAM, MTK_11230000_NVRAM,
         MTK_LK, MTK_11230000_LK,
         MTK_LOGO, MTK_11230000_LOGO,
         MTK_PARA, MTK_11230000_PARA,
@@ -55,8 +56,7 @@ void addJiayuDevices(std::vector<Device *> *devices)
         MTK_UBOOT, MTK_11230000_UBOOT });
     device->twOptions()->supported = true;
     device->twOptions()->graphicsBackends = { "fbdev" };
-    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
-                               | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
     device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
     device->twOptions()->maxBrightness = 255;
     device->twOptions()->defaultBrightness = 162;
