@@ -790,15 +790,15 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
 
-    // Samsung Galaxy Tab S2 8.0/9.7 (Wifi)
+    // Samsung Galaxy Tab S2 8.0/9.7 
     device = new Device();
-    device->setId("tab_s2_wifi");
+    device->setId("tab_s2");
     device->setCodenames({
         // 8.0" variant
-        "gts28wifi", "gts28wifixx",
+        "gts28wifi", "gts28wifixx", "gts28lte", "gts28ltexx",
         // 9.7" variant
-        "gts210wifi", "gts210wifixx" });
-    device->setName("Samsung Galaxy Tab S2 8.0/9.7 (Wifi)");
+        "gts210wifi", "gts210wifixx", "gts210lte", "gts210ltexx" });
+    device->setName("Samsung Galaxy Tab S2 8.0/9.7 ");
     device->setBlockDevBaseDirs({ DWMMC0_15540000_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_15540000_SYSTEM,
         "/dev/block/mmcblk0p19" });
