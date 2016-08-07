@@ -39,6 +39,13 @@ void addWileyfoxDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ BOOTDEVICE_USERDATA, "/dev/block/mmcblk0p31" });
     device->setBootBlockDevs({ BOOTDEVICE_BOOT, "/dev/block/mmcblk0p24" });
     device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, "/dev/block/mmcblk0p26" });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->brightnessPath = "/sys/class/leds/lcd-backlight/brightness";
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 
     // WileyFox Storm
