@@ -69,6 +69,7 @@ set(MBP_DEVICE_SOURCES
     devices/nexus.cpp
     devices/oneplus.cpp
     devices/samsung.cpp
+    devices/theo.cpp
     devices/sony.cpp
     devices/xiaomi.cpp
     devices/pantech.cpp

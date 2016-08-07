@@ -39,6 +39,7 @@
 #include "devices/nexus.h"
 #include "devices/oneplus.h"
 #include "devices/samsung.h"
+#include "devices/theo.h"
 #include "devices/sony.h"
 #include "devices/xiaomi.h"
 #include "devices/pantech.h"
@@ -203,6 +204,7 @@ std::vector<Device *> PatcherConfig::devices() const
 void PatcherConfig::Impl::loadDefaultDevices()
 {
     addSamsungDevices(&devices);
+    addTheoDevices(&devices);
     addAsusDevices(&devices);
     addGoogleDevices(&devices);
     addHuaweiDevices(&devices);
