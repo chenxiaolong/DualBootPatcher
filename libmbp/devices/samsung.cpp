@@ -62,6 +62,13 @@ static void addGalaxyNoteSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->brightnessPath = "/sys/devices/mdp.0/qcom,mdss_fb_primary.185/leds/lcd-backlight/brightness";
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 
     // Samsung Galaxy Note 3 (Exynos)
