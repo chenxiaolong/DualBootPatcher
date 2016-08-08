@@ -19,6 +19,7 @@
 
 #include "mbutil/string.h"
 
+#include <algorithm>
 #include <memory>
 
 #include <cstdarg>
@@ -196,6 +197,67 @@ std::vector<std::string> tokenize(const std::string &str,
 }
 
 /*!
+ * \brief Trim whitespace from the left (in place)
+ */
+void trim_left(std::string &s)
+{
+    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
+    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
+    s.erase(s.begin(), nonspace);
+}
+
+/*!
+ * \brief Trim whitespace from the right (in place)
+ */
+void trim_right(std::string &s)
+{
+    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
+    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
+    s.erase(nonspace.base(), s.end());
+}
+
+/*!
+ * \brief Trim whitespace from the left and the right (in place)
+ */
+void trim(std::string &s)
+{
+    trim_left(s);
+    trim_right(s);
+}
+
+/*!
+ * \brief Trim whitespace from the left (one copy)
+ */
+std::string trimmed_left(const std::string &s)
+{
+    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
+    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
+    return std::string(nonspace, s.end());
+}
+
+/*!
+ * \brief Trim whitespace from the right (one copy)
+ */
+std::string trimmed_right(const std::string &s)
+{
+    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
+    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
+    return std::string(s.begin(), nonspace.base());
+}
+
+/*!
+ * \brief Trim whitespace from the left and the right (one copy)
+ */
+std::string trimmed(const std::string &s)
+{
+    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
+    auto begin = std::find_if(s.begin(), s.end(), isspace_fn);
+    auto search_end = std::string::const_reverse_iterator(begin);
+    auto end = std::find_if(s.rbegin(), search_end, isspace_fn);
+    return std::string(begin, end.base());
+}
+
+/*!
  * \brief Convert binary data to its hex string representation
  *
  * The size of the output string should be at least `2 * size + 1` bytes.
@@ -205,7 +267,7 @@ std::vector<std::string> tokenize(const std::string &str,
  * \param data Binary data
  * \param size Size of binary data
  */
-std::string hex_string(unsigned char *data, size_t size)
+std::string hex_string(const unsigned char *data, size_t size)
 {
     static const char digits[] = "0123456789abcdef";
 

@@ -245,6 +245,12 @@ bool CoreRP::addBlockDevProps()
     encoded += encode_list(device->extraBlockDevs());
     lines.push_back(encoded);
 
+    if (device->cryptoOptions()->supported) {
+        encoded = "ro.patcher.cryptfs_header_path=";
+        encoded += device->cryptoOptions()->headerPath;
+        lines.push_back(encoded);
+    }
+
     contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents("default.prop", std::move(contents));
 

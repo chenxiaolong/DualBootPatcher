@@ -53,14 +53,14 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
 {
     mbp::PatcherConfig pc;
 
-    std::string prop_product_device;
-    std::string prop_build_product;
+    char prop_product_device[PROP_VALUE_MAX];
+    char prop_build_product[PROP_VALUE_MAX];
 
-    util::get_property("ro.product.device", &prop_product_device, "");
-    util::get_property("ro.build.product", &prop_build_product, "");
+    util::property_get("ro.product.device", prop_product_device, "");
+    util::property_get("ro.build.product", prop_build_product, "");
 
-    LOGD("ro.product.device = %s", prop_product_device.c_str());
-    LOGD("ro.build.product = %s", prop_build_product.c_str());
+    LOGD("ro.product.device = %s", prop_product_device);
+    LOGD("ro.build.product = %s", prop_build_product);
 
     const mbp::Device *device = nullptr;
 
@@ -68,8 +68,8 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
         auto codenames = d->codenames();
         auto it = std::find_if(codenames.begin(), codenames.end(),
                                [&](const std::string &codename) {
-            return prop_product_device == codename
-                    || prop_build_product == codename;
+            return codename == prop_product_device
+                    || codename == prop_build_product;
         });
         if (it != codenames.end()) {
             device = d;
@@ -78,7 +78,7 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
     }
 
     if (!device) {
-        LOGE("Unknown device: %s", prop_product_device.c_str());
+        LOGE("Unknown device: %s", prop_product_device);
         return false;
     }
 

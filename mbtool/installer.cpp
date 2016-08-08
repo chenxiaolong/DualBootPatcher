@@ -208,29 +208,37 @@ bool log_copy_dir(const std::string &source,
  * Helper functions
  */
 
-void Installer::output_cb(const std::string &msg, void *data)
+void Installer::output_cb(const char *line, bool error, void *userdata)
 {
-    Installer *installer = reinterpret_cast<Installer *>(data);
-    installer->command_output(msg);
+    (void) error;
+
+    Installer *installer = static_cast<Installer *>(userdata);
+    installer->command_output(line);
 }
 
-int Installer::run_command(const std::vector<std::string> &argv)
+int Installer::run_command(const char * const *argv)
 {
-    if (_passthrough) {
-        return util::run_command(argv);
-    } else {
-        return util::run_command_cb(argv, &output_cb, this);
-    }
+    return util::run_command(
+        argv[0],
+        argv,
+        nullptr,
+        nullptr,
+        _passthrough ? nullptr : &output_cb,
+        this
+    );
 }
 
-int Installer::run_command_chroot(const std::string &dir,
-                                  const std::vector<std::string> &argv)
+int Installer::run_command_chroot(const char *dir,
+                                  const char * const *argv)
 {
-    if (_passthrough) {
-        return util::run_command_chroot(dir, argv);
-    } else {
-        return util::run_command_chroot_cb(dir, argv, &output_cb, this);
-    }
+    return util::run_command(
+        argv[0],
+        argv,
+        nullptr,
+        dir,
+        _passthrough ? nullptr : &output_cb,
+        this
+    );
 }
 
 std::string Installer::in_chroot(const std::string &path) const
@@ -246,10 +254,14 @@ bool Installer::create_chroot()
 {
     // We'll just call the recovery's mount tools directly to avoid having to
     // parse TWRP and CWM's different fstab formats
-    run_command({ "mount", "/system" });
-    run_command({ "mount", "/cache" });
-    run_command({ "mount", "/data" });
-    run_command({ "mount", "-o", "ro", "/efs" });
+    const char *argv_mount_system[] = { "mount", "/system", nullptr };
+    const char *argv_mount_cache[] = { "mount", "/cache", nullptr };
+    const char *argv_mount_data[] = { "mount", "/data", nullptr };
+    const char *argv_mount_efs[] = { "mount", "-o", "ro", "/efs", nullptr };
+    run_command(argv_mount_system);
+    run_command(argv_mount_cache);
+    run_command(argv_mount_data);
+    run_command(argv_mount_efs);
 
     // Remount as writable (needed for in-app flashing)
     log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
@@ -429,13 +441,13 @@ bool Installer::destroy_chroot() const
 
 bool Installer::mount_efs() const
 {
-    std::string manufacturer;
-    std::string brand;
-    util::get_property("ro.product.manufacturer", &manufacturer, "");
-    util::get_property("ro.product.brand", &brand, "");
+    char manufacturer[PROP_VALUE_MAX];
+    char brand[PROP_VALUE_MAX];
+    util::property_get("ro.product.manufacturer", manufacturer, "");
+    util::property_get("ro.product.brand", brand, "");
 
-    if (strcasecmp(manufacturer.c_str(), "samsung") != 0
-            && strcasecmp(brand.c_str(), "samsung") != 0) {
+    if (strcasecmp(manufacturer, "samsung") != 0
+            && strcasecmp(brand, "samsung") != 0) {
         LOGD("Not mounting EFS partition because this is not a Samsung device");
         return true;
     }
@@ -1140,9 +1152,9 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     LOGD("libmbp version: %s", _pc.version().c_str());
 
-    std::string prop_product_device;
-    std::string prop_build_product;
-    std::string prop_patcher_device;
+    char prop_product_device[PROP_VALUE_MAX];
+    char prop_build_product[PROP_VALUE_MAX];
+    char prop_patcher_device[PROP_VALUE_MAX];
     std::string install_prop_device;
 
     // Verify device
@@ -1153,20 +1165,20 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     install_prop_device = _prop["mbtool.installer.device"];
 
-    util::get_property("ro.product.device", &prop_product_device, "");
-    util::get_property("ro.build.product", &prop_build_product, "");
-    util::get_property("ro.patcher.device", &prop_patcher_device, "");
+    util::property_get("ro.product.device", prop_product_device, "");
+    util::property_get("ro.build.product", prop_build_product, "");
+    util::property_get("ro.patcher.device", prop_patcher_device, "");
 
-    LOGD("ro.product.device = %s", prop_product_device.c_str());
-    LOGD("ro.build.product = %s", prop_build_product.c_str());
-    LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
+    LOGD("ro.product.device = %s", prop_product_device);
+    LOGD("ro.build.product = %s", prop_build_product);
+    LOGD("ro.patcher.device = %s", prop_patcher_device);
     LOGD("Target device = %s", install_prop_device.c_str());
 
-    if (!prop_patcher_device.empty()) {
+    if (prop_patcher_device[0]) {
         _detected_device = prop_patcher_device;
-    } else if (!prop_product_device.empty()) {
+    } else if (prop_product_device[0]) {
         _detected_device = prop_product_device;
-    } else if (!prop_build_product.empty()) {
+    } else if (prop_build_product[0]) {
         _detected_device = prop_build_product;
     } else {
         display_msg("Failed to determine device's codename");
@@ -1521,7 +1533,8 @@ Installer::ProceedState Installer::install_stage_installation()
     {
         LOGD("To skip installation, create a file named: /.skip-install");
         LOGD("Pre-installation shell");
-        run_command_chroot(_chroot, { "/sbin/sh", "-i" });
+        const char *argv[] = { "/sbin/sh", "-i", nullptr };
+        run_command_chroot(_chroot.c_str(), argv);
     }
 #endif
 
@@ -1541,7 +1554,8 @@ Installer::ProceedState Installer::install_stage_installation()
 #if DEBUG_POST_SHELL
     {
         LOGD("Post-installation shell");
-        run_command_chroot(_chroot, { "/sbin/sh", "-i" });
+        const char *argv[] = { "/sbin/sh", "-i", nullptr };
+        run_command_chroot(_chroot.c_str(), argv);
     }
 #endif
 
@@ -1553,7 +1567,9 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
+    const char *argv[] = { HELPER_TOOL, "mount", "/system", nullptr };
+    run_command_chroot(_chroot.c_str(), argv);
+
     std::string vold_path(in_chroot("/system/bin/vold"));
     _use_fuse_exfat = util::file_find_one_of(vold_path, {
         "/system/bin/mount.exfat"
@@ -1570,9 +1586,12 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     LOGD("[Installer] Filesystem unmounting stage");
 
     // Umount filesystems from inside the chroot
-    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
-    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
-    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
+    const char *argv_unmount_system[] = { HELPER_TOOL, "unmount", "/system", nullptr };
+    const char *argv_unmount_cache[] = { HELPER_TOOL, "unmount", "/cache", nullptr };
+    const char *argv_unmount_data[] = { HELPER_TOOL, "unmount", "/data", nullptr };
+    run_command_chroot(_chroot.c_str(), argv_unmount_system);
+    run_command_chroot(_chroot.c_str(), argv_unmount_cache);
+    run_command_chroot(_chroot.c_str(), argv_unmount_data);
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {

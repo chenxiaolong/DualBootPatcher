@@ -107,9 +107,16 @@ public:
         std::string theme = TW_THEME_PORTRAIT_HDPI;
     };
 
+    struct CryptoOptions
+    {
+        bool supported = false;
+
+        std::string headerPath;
+    };
+
     enum Flags
     {
-        FLAG_HAS_COMBINED_BOOT_AND_RECOVERY     = 0x1
+        FLAG_HAS_COMBINED_BOOT_AND_RECOVERY = 0x1
     };
 
     Device();
@@ -156,6 +163,9 @@ public:
 
     const TwOptions * twOptions() const;
     TwOptions * twOptions();
+
+    const CryptoOptions * cryptoOptions() const;
+    CryptoOptions * cryptoOptions();
 
 private:
     class Impl;

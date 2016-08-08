@@ -20,164 +20,411 @@
 #include "mbutil/command.h"
 
 #include <cerrno>
+#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 
+#include <fcntl.h>
+#include <poll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/string.h"
+
+#define LOG_COMMANDS 0
 
 namespace mb
 {
 namespace util
 {
 
-int run_command(const std::vector<std::string> &argv)
+static inline int safely_close(int *fd)
 {
-    if (argv.empty()) {
-        errno = EINVAL;
-        return -1;
+    int ret = 0;
+
+    if (fd && *fd >= 0) {
+        ret = close(*fd);
+        *fd = -1;
     }
 
-    return run_command2(argv[0], argv, std::string(), nullptr, nullptr);
+    return ret;
 }
 
-int run_command_cb(const std::vector<std::string> &argv,
-                   OutputCb cb, void *data)
+static inline void log_command(const char *path, const char * const *argv,
+                               const char * const *envp)
 {
-    if (argv.empty()) {
-        errno = EINVAL;
-        return -1;
+    LOGD("Running executable: %s", path);
+
+    if (argv) {
+        char buf[8192];
+
+        strlcpy(buf, "Arguments: [ ", sizeof(buf));
+        for (auto iter = argv; *iter; ++iter) {
+            if (iter != argv) {
+                strlcat(buf, ", ", sizeof(buf));
+            }
+            strlcat(buf, *iter, sizeof(buf));
+        }
+        strlcat(buf, " ]", sizeof(buf));
+
+        LOGD("%s", buf);
     }
 
-    return run_command2(argv[0], argv, std::string(), cb, data);
+    if (envp && envp[0]) {
+        LOGD("Environment:");
+
+        for (auto iter = envp; *iter; ++iter) {
+            LOGD("- %s", *iter);
+        }
+    }
 }
 
-int run_command_chroot(const std::string &dir,
-                       const std::vector<std::string> &argv)
+struct CommandCtxPriv
 {
-    if (argv.empty()) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    return run_command2(argv[0], argv, dir, nullptr, nullptr);
-}
-
-int run_command_chroot_cb(const std::string &dir,
-                          const std::vector<std::string> &argv,
-                          OutputCb cb, void *data)
-{
-    if (argv.empty()) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    return run_command2(argv[0], argv, dir, cb, data);
-}
-
-int run_command2(const std::string &path,
-                 const std::vector<std::string> &argv,
-                 const std::string &chroot_dir,
-                 OutputCb cb, void *data)
-{
-    if (argv.empty()) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    LOGD("Running command: [ %s ]", util::join(argv, ", ").c_str());
-
-    std::vector<const char *> argv_c;
-    for (const std::string &arg : argv) {
-        argv_c.push_back(arg.c_str());
-    }
-    argv_c.push_back(nullptr);
-
-    int status;
     pid_t pid;
-    int stdio_fds[2];
+    int stdout_pipe[2];
+    int stderr_pipe[2];
+};
 
-    if (cb) {
-        pipe(stdio_fds);
+static void initialize_priv(struct CommandCtxPriv *priv)
+{
+    priv->pid = -1;
+    priv->stdout_pipe[0] = -1;
+    priv->stdout_pipe[1] = -1;
+    priv->stderr_pipe[0] = -1;
+    priv->stderr_pipe[1] = -1;
+}
+
+bool command_start(struct CommandCtx *ctx)
+{
+    if (ctx->_priv                              // Process already started
+            || !ctx->path                       // Invalid path
+            || !ctx->argv || !ctx->argv[0]) {   // Invalid arguments
+        errno = EINVAL;
+        goto error;
     }
 
-    if ((pid = fork()) >= 0) {
-        if (pid == 0) {
-            if (cb) {
-                close(stdio_fds[0]);
-            }
+    ctx->_priv = static_cast<CommandCtxPriv *>(malloc(sizeof(CommandCtxPriv)));
+    if (!ctx->_priv) {
+        goto error;
+    }
+    initialize_priv(ctx->_priv);
 
-            if (!chroot_dir.empty()) {
-                if (chdir(chroot_dir.c_str()) < 0) {
-                    LOGE("%s: Failed to chdir: %s",
-                         chroot_dir.c_str(), strerror(errno));
-                    _exit(EXIT_FAILURE);
-                }
-                if (chroot(chroot_dir.c_str()) < 0) {
-                    LOGE("%s: Failed to chroot: %s",
-                         chroot_dir.c_str(), strerror(errno));
-                    _exit(EXIT_FAILURE);
-                }
-            }
+    log_command(ctx->path, ctx->log_argv ? ctx->argv : nullptr,
+                ctx->log_envp ? ctx->envp : nullptr);
 
-            if (cb) {
-                dup2(stdio_fds[1], STDOUT_FILENO);
-                dup2(stdio_fds[1], STDERR_FILENO);
-                close(stdio_fds[1]);
-            }
+    // Create stdout/stderr pipe if output callback is provided
+    if (ctx->redirect_stdio) {
+        if (pipe(ctx->_priv->stdout_pipe) < 0) {
+            ctx->_priv->stdout_pipe[0] = -1;
+            ctx->_priv->stdout_pipe[1] = -1;
+            goto error;
+        }
+        if (pipe(ctx->_priv->stderr_pipe) < 0) {
+            ctx->_priv->stderr_pipe[0] = -1;
+            ctx->_priv->stderr_pipe[1] = -1;
+            goto error;
+        }
 
-            if (execvp(path.c_str(),
-                       const_cast<char * const *>(argv_c.data())) < 0) {
-                LOGE("Failed to exec: %s", strerror(errno));
-            }
-            _exit(127);
-        } else {
-            if (cb) {
-                close(stdio_fds[1]);
-
-                int reader_status;
-                pid_t reader_pid = fork();
-
-                if (reader_pid < 0) {
-                    LOGE("Failed to fork reader process");
-                } else if (reader_pid == 0) {
-                    // Read program output in child process (stdout, stderr)
-                    char buf[1024];
-
-                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        cb(buf, data);
-                    }
-
-                    _exit(EXIT_SUCCESS);
-                } else {
-                    do {
-                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): %s", strerror(errno));
-                            break;
-                        }
-                    } while (!WIFEXITED(reader_status)
-                            && !WIFSIGNALED(reader_status));
-                }
-
-                close(stdio_fds[0]);
-            }
-
-            do {
-                if (waitpid(pid, &status, 0) < 0) {
-                    return -1;
-                }
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        // Make read ends non-blocking
+        if (fcntl(ctx->_priv->stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0
+                || fcntl(ctx->_priv->stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+            goto error;
         }
     }
 
-    return pid == -1 ? -1 : status;
+    ctx->_priv->pid = fork();
+    if (ctx->_priv->pid < 0) {
+        LOGE("Failed to fork: %s", strerror(errno));
+        goto error;
+    } else if (ctx->_priv->pid == 0) {
+        // Close read end of the pipes
+        if (ctx->redirect_stdio) {
+            safely_close(&ctx->_priv->stdout_pipe[0]);
+            safely_close(&ctx->_priv->stderr_pipe[0]);
+        }
+
+        // Chroot if needed
+        if (ctx->chroot_dir) {
+            if (chdir(ctx->chroot_dir) < 0) {
+                LOGE("%s: Failed to chdir: %s",
+                     ctx->chroot_dir, strerror(errno));
+                goto child_error;
+            }
+            if (chroot(ctx->chroot_dir) < 0) {
+                LOGE("%s: Failed to chroot: %s",
+                     ctx->chroot_dir, strerror(errno));
+                goto child_error;
+            }
+        }
+
+        // Reassign stdout/stderr fds
+        if (ctx->redirect_stdio) {
+            if (dup2(ctx->_priv->stdout_pipe[1], STDOUT_FILENO) < 0) {
+                LOGE("Failed to redirect stdout: %s", strerror(errno));
+                goto child_error;
+            }
+            if (dup2(ctx->_priv->stderr_pipe[1], STDERR_FILENO) < 0) {
+                LOGE("Failed to redirect stderr: %s", strerror(errno));
+                goto child_error;
+            }
+
+            safely_close(&ctx->_priv->stdout_pipe[1]);
+            safely_close(&ctx->_priv->stderr_pipe[1]);
+        }
+
+        if (ctx->envp) {
+            execvpe(ctx->path, const_cast<char * const *>(ctx->argv),
+                    const_cast<char * const *>(ctx->envp));
+        } else {
+            execvp(ctx->path, const_cast<char * const *>(ctx->argv));
+        }
+
+        LOGE("%s: Failed to exec: %s", ctx->path, strerror(errno));
+
+child_error:
+        if (ctx->redirect_stdio) {
+            safely_close(&ctx->_priv->stdout_pipe[0]);
+            safely_close(&ctx->_priv->stdout_pipe[1]);
+            safely_close(&ctx->_priv->stderr_pipe[0]);
+            safely_close(&ctx->_priv->stderr_pipe[1]);
+        }
+
+        _exit(127);
+    } else {
+        // Close write ends of the pipes
+        safely_close(&ctx->_priv->stdout_pipe[1]);
+        safely_close(&ctx->_priv->stderr_pipe[1]);
+    }
+
+    return true;
+
+error:
+    if (ctx->_priv && ctx->redirect_stdio) {
+        safely_close(&ctx->_priv->stdout_pipe[0]);
+        safely_close(&ctx->_priv->stdout_pipe[1]);
+        safely_close(&ctx->_priv->stderr_pipe[0]);
+        safely_close(&ctx->_priv->stderr_pipe[1]);
+    }
+    free(ctx->_priv);
+
+    return false;
+}
+
+int command_wait(struct CommandCtx *ctx)
+{
+    // Check if process was started
+    if (!ctx->_priv) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // Close read ends of the pipe
+    if (ctx->redirect_stdio) {
+        safely_close(&ctx->_priv->stdout_pipe[0]);
+        safely_close(&ctx->_priv->stderr_pipe[0]);
+    }
+
+    // Wait for child to finish
+    int status;
+    do {
+        if (waitpid(ctx->_priv->pid, &status, 0) < 0) {
+            LOGE("Failed to waitpid: %s", strerror(errno));
+            status = -1;
+            break;
+        }
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+    free(ctx->_priv);
+    ctx->_priv = nullptr;
+
+    return status;
+}
+
+bool command_raw_reader(struct CommandCtx *ctx, CmdRawCb cb, void *userdata)
+{
+    bool ret = true;
+    char buf[8192];
+
+    struct pollfd fds[2];
+    const int fds_size = sizeof(fds) / sizeof(fds[0]);
+
+    fds[0].fd = ctx->_priv->stdout_pipe[0];
+    fds[0].events = POLLIN;
+    fds[1].fd = ctx->_priv->stderr_pipe[0];
+    fds[1].events = POLLIN;
+
+    while (true) {
+        bool done = true;
+
+        for (int i = 0; i < fds_size; ++i) {
+            fds[i].revents = 0;
+            done = done && (fds[i].fd < 0);
+        }
+
+        if (done) {
+            break;
+        }
+
+        if (poll(fds, fds_size, -1) <= 0) {
+            continue;
+        }
+
+        for (int i = 0; i < fds_size; ++i) {
+            bool is_stderr = fds[i].fd == ctx->_priv->stderr_pipe[0];
+
+            if (fds[i].revents & POLLHUP) {
+                // EOF/pipe closed. The fd will be closed later
+                fds[i].fd = -1;
+                fds[i].events = 0;
+
+                // Final call for EOF
+                cb(buf, 0, is_stderr, userdata);
+            } else if (fds[i].revents & POLLIN) {
+                ssize_t n = read(fds[i].fd, buf, sizeof(buf) - 1);
+                if (n < 0) {
+                    if (errno != EAGAIN
+                            && errno != EWOULDBLOCK
+                            && errno != EINTR) {
+                        // Read failed; disable FD
+                        fds[i].fd = -1;
+                        fds[i].events = 0;
+                        ret = false;
+                    }
+                } else {
+                    // NULL-terminate
+                    buf[n] = '\0';
+
+                    // Potential EOF (n == 0) here on some non-Linux systems,
+                    // which is fine since it's not possible to reach both the
+                    // POLLHUP block and this block
+                    cb(buf, n, is_stderr, userdata);
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+struct CommandLineReaderCtx
+{
+    char stdout_buf[4096];
+    char stderr_buf[4096];
+    size_t stdout_used = 0;
+    size_t stderr_used = 0;
+
+    CmdLineCb cb;
+    void *userdata;
+};
+
+void command_line_reader_cb(const char *data, size_t size, bool error,
+                            void *userdata)
+{
+    CommandLineReaderCtx *ctx = static_cast<CommandLineReaderCtx *>(userdata);
+
+    size_t cap = (error ? sizeof(ctx->stderr_buf) : sizeof(ctx->stdout_buf)) - 1;
+    char *buf = error ? ctx->stderr_buf : ctx->stdout_buf;
+    size_t *used = error ? &ctx->stderr_used : &ctx->stdout_used;
+
+    // Reached EOF
+    if (size == 0 && *used > 0) {
+        // NULL-terminate the buffer
+        buf[*used] = '\0';
+        ctx->cb(buf, error, ctx->userdata);
+        *used = 0;
+    }
+
+    while (size > 0) {
+        // Find available space
+        size_t avail = cap - *used;
+
+        // Copy as much as we can into the buffer
+        size_t n = size > avail ? avail : size;
+        memcpy(buf + *used, data, n);
+
+        // Advance pointer
+        data += n;
+        size -= n;
+        *used += n;
+
+        // NULL-terminate the buffer
+        buf[*used] = '\0';
+
+        // Call cb for each contained line
+        char *ptr = buf;
+        char *newline;
+        while ((newline = strchr(ptr, '\n'))) {
+            // Temporarily NULL-terminate
+            char c = *(newline + 1);
+            *(newline + 1) = '\0';
+
+            // Yay
+            ctx->cb(ptr, error, ctx->userdata);
+
+            // Restore character
+            *(newline + 1) = c;
+
+            // Advance pointer for next search
+            ptr = newline + 1;
+        }
+
+        // ptr now points to the character after the last newline
+        size_t consumed = ptr - buf;
+        if (consumed == 0 && *used == cap) {
+            // If nothing was consumed and the buffer is full, then the line is
+            // too long.
+            ctx->cb(buf, error, ctx->userdata);
+            consumed = *used;
+        }
+
+        // Move unconsumed data to the beginning of the buffer
+        if (consumed > 0) {
+            *used -= consumed;
+            memmove(buf, ptr, *used);
+        }
+    }
+}
+
+bool command_line_reader(struct CommandCtx *ctx, CmdLineCb cb, void *userdata)
+{
+    CommandLineReaderCtx reader_ctx;
+    reader_ctx.cb = cb;
+    reader_ctx.userdata = userdata;
+
+    return command_raw_reader(ctx, &command_line_reader_cb, &reader_ctx);
+}
+
+int run_command(const char *path,
+                const char * const *argv,
+                const char * const *envp,
+                const char *chroot_dir,
+                CmdLineCb cb,
+                void *userdata)
+{
+    struct CommandCtx ctx;
+    ctx.path = path;
+    ctx.argv = argv;
+    ctx.envp = envp;
+    ctx.chroot_dir = chroot_dir;
+    ctx.redirect_stdio = !!cb;
+#if LOG_COMMANDS
+    ctx.log_argv = true;
+    ctx.log_envp = true;
+#else
+    ctx.log_argv = false;
+    ctx.log_envp = false;
+#endif
+
+    if (!command_start(&ctx)) {
+        return -1;
+    }
+
+    command_line_reader(&ctx, cb, userdata);
+
+    return command_wait(&ctx);
 }
 
 }

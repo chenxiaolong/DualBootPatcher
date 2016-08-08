@@ -126,15 +126,15 @@ std::unordered_map<std::string, std::string> RomInstaller::get_properties()
             continue;
         }
 
-        std::string value;
-        util::get_property(prop, &value, "");
-        if (!value.empty()) {
+        char value[PROP_VALUE_MAX];
+        int n = util::property_get(prop.c_str(), value, "");
+        if (n > 0) {
             props[prop] = value;
 
             LOGD("Property '%s' does not exist in recovery's default.prop",
                  prop.c_str());
             LOGD("- '%s'='%s' will be set in chroot environment",
-                 prop.c_str(), value.c_str());
+                 prop.c_str(), value);
         }
     }
 
@@ -192,7 +192,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     autoclose::archive in(archive_read_new(), archive_read_free);
     autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
-    if (!in | !out) {
+    if (!in || !out) {
         LOGE("Out of memory");
         return ProceedState::Fail;
     }

@@ -320,16 +320,18 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     roms.add_installed();
 
     // This is set if mbtool is handling the boot process
-    std::string prop_id;
-    util::get_property(PROP_MULTIBOOT_ROM_ID, &prop_id, std::string());
+    char prop_id[PROP_VALUE_MAX];
+    util::property_get(PROP_MULTIBOOT_ROM_ID, prop_id, "");
     // This is necessary for the daemon to get a correct result before Android
     // boots (eg. for the boot UI)
-    if (prop_id.empty()) {
+    if (!prop_id[0]) {
+        std::string temp;
         util::file_get_property(DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID,
-                                &prop_id, std::string());
+                                &temp, std::string());
+        strlcpy(prop_id, temp.c_str(), sizeof(prop_id));
     }
 
-    if (!prop_id.empty()) {
+    if (prop_id[0]) {
         auto rom = roms.find_by_id(prop_id);
         if (rom) {
             return rom;
@@ -343,7 +345,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     bool has_raw_system = stat("/raw-system", &sb) == 0;
     if (!has_raw && !has_raw_system) {
         // Cache the result
-        util::set_property(PROP_MULTIBOOT_ROM_ID, "primary");
+        util::property_set(PROP_MULTIBOOT_ROM_ID, "primary");
 
         return roms.find_by_id("primary");
     }
@@ -369,7 +371,7 @@ std::shared_ptr<Rom> Roms::get_current_rom()
                     && sb.st_dev == sb2.st_dev
                     && sb.st_ino == sb2.st_ino) {
                 // Cache the result
-                util::set_property("ro.multiboot.romid", rom->id);
+                util::property_set(PROP_MULTIBOOT_ROM_ID, rom->id.c_str());
 
                 return rom;
             }
@@ -517,17 +519,23 @@ std::string Roms::get_mountpoint(Rom::Source source)
 //       get_system_partition(), get_cache_partition(), and get_data_partition()
 std::string get_raw_path(const std::string &path)
 {
-    struct stat sb;
-    if (stat("/raw", &sb) == 0 && S_ISDIR(sb.st_mode)) {
-        std::string result("/raw");
-        if (!path.empty() && path[0] != '/') {
-            result += "/";
-        }
-        result += path;
-        return result;
+    std::string result;
+
+    // This is faster than doing util::path_split()...
+    if (path == "/system" || util::starts_with(path, "/system/")) {
+        result = Roms::get_system_partition();
+        result += path.substr(7);
+    } else if (path == "/cache" || util::starts_with(path, "/cache/")) {
+        result = Roms::get_cache_partition();
+        result += path.substr(6);
+    } else if (path == "/data" || util::starts_with(path, "/data/")) {
+        result = Roms::get_data_partition();
+        result += path.substr(5);
     } else {
-        return path;
+        result = path;
     }
+
+    return result;
 }
 
 }

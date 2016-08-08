@@ -62,6 +62,13 @@ static void addGalaxyNoteSeriesPhones(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p26" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    device->twOptions()->brightnessPath = "/sys/devices/mdp.0/qcom,mdss_fb_primary.185/leds/lcd-backlight/brightness";
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
     devices->push_back(device);
 
     // Samsung Galaxy Note 3 (Exynos)
@@ -253,6 +260,8 @@ static void addGalaxySSeriesPhones(std::vector<Device *> *devices)
     device->twOptions()->flags = Device::FLAG_TW_PREFER_LCD_BACKLIGHT
         | Device::FLAG_TW_HAS_DOWNLOAD_MODE;
     device->twOptions()->graphicsBackends = { "fbdev" };
+    device->cryptoOptions()->supported = true;
+    device->cryptoOptions()->headerPath = "footer";
     devices->push_back(device);
 
     // Samsung Galaxy S 4 (Exynos)
@@ -788,15 +797,15 @@ static void addGalaxyTabSeriesTablets(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC0_RADIO, DWMMC0_CDMA_RADIO });
     devices->push_back(device);
 
-    // Samsung Galaxy Tab S2 8.0/9.7 (Wifi)
+    // Samsung Galaxy Tab S2 8.0/9.7
     device = new Device();
-    device->setId("tab_s2_wifi");
+    device->setId("tab_s2");
     device->setCodenames({
         // 8.0" variant
-        "gts28wifi", "gts28wifixx",
+        "gts28wifi", "gts28wifixx", "gts28lte", "gts28ltexx",
         // 9.7" variant
-        "gts210wifi", "gts210wifixx" });
-    device->setName("Samsung Galaxy Tab S2 8.0/9.7 (Wifi)");
+        "gts210wifi", "gts210wifixx", "gts210lte", "gts210ltexx" });
+    device->setName("Samsung Galaxy Tab S2 8.0/9.7");
     device->setBlockDevBaseDirs({ DWMMC0_15540000_BASE_DIR });
     device->setSystemBlockDevs({ DWMMC0_15540000_SYSTEM,
         "/dev/block/mmcblk0p19" });

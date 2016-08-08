@@ -30,6 +30,7 @@
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
+#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -50,6 +51,8 @@
 
 #define APPEND_TO_LOG               1
 
+#define MAX_LOG_SIZE                (1024 * 1024) /* 1MiB */
+
 #define MBBOOTUI_BASE_PATH          "/raw/cache/multiboot/bootui"
 #define MBBOOTUI_LOG_PATH           MBBOOTUI_BASE_PATH "/exec.log"
 #define MBBOOTUI_SCREENSHOTS_PATH   MBBOOTUI_BASE_PATH "/screenshots";
@@ -61,6 +64,11 @@
 #define DEFAULT_PROP_PATH           "/default.prop"
 
 #define PROP_PATCHER_DEVICE         "ro.patcher.device"
+
+#define PROP_CRYPTO_STATE           "state.multiboot.crypto"
+#define CRYPTO_STATE_ENCRYPTED      "encrypted"
+#define CRYPTO_STATE_DECRYPTED      "decrypted"
+#define CRYPTO_STATE_ERROR          "error"
 
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
@@ -326,6 +334,15 @@ static void load_device_config()
     tw_graphics_backends_length = gfx_backends.size();
 }
 
+static void load_other_config()
+{
+    // Get Android version (needed for pattern input)
+    std::string value;
+    mb::util::file_get_property("/raw/system/build.prop",
+                                "ro.build.version.sdk", &value, "0");
+    mb::util::str_to_snum(value.c_str(), 10, &tw_android_sdk_version);
+}
+
 static void log_startup()
 {
     LOGV("----------------------------------------");
@@ -410,6 +427,8 @@ static void log_startup()
             LOGV("  - %s", tw_graphics_backends[i]);
         }
     }
+
+    LOGV("- tw_android_sdk_version:       %d", tw_android_sdk_version);
 }
 
 static void usage(FILE *stream)
@@ -468,6 +487,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Rotate log if it is too large
+    struct stat sb;
+    if (stat(MBBOOTUI_LOG_PATH, &sb) == 0 && sb.st_size > MAX_LOG_SIZE) {
+        rename(MBBOOTUI_LOG_PATH, MBBOOTUI_LOG_PATH ".prev");
+    }
+
     if (!no_log_file && !redirect_output_to_file(MBBOOTUI_LOG_PATH, 0600)) {
         return EXIT_FAILURE;
     }
@@ -494,6 +519,7 @@ int main(int argc, char *argv[])
 
     // Load device configuration options
     load_device_config();
+    load_other_config();
 
     log_startup();
 
@@ -518,11 +544,6 @@ int main(int argc, char *argv[])
     mbtool_interface->version(&mbtool_version);
     DataManager::SetValue(TW_MBTOOL_VERSION, mbtool_version);
 
-    // Set ROM ID
-    std::string rom_id;
-    mbtool_interface->get_booted_rom_id(&rom_id);
-    DataManager::SetValue(TW_ROM_ID, rom_id);
-
     LOGV("Loading graphics system...");
     if (gui_init() < 0) {
         LOGE("Failed to load graphics system");
@@ -531,6 +552,78 @@ int main(int argc, char *argv[])
 
     LOGV("Loading resources...");
     gui_loadResources();
+
+    LOGV("Checking for encryption...");
+    char crypto_state[PROP_VALUE_MAX];
+    mb::util::property_get(PROP_CRYPTO_STATE, crypto_state,
+                           CRYPTO_STATE_DECRYPTED);
+
+    if (strcmp(crypto_state, CRYPTO_STATE_ENCRYPTED) == 0) {
+        LOGV("Data appears to be encrypted");
+
+        int is_encrypted = 1;
+
+        // Ask mbtool for password type
+        std::string pw_type;
+        if (!mbtool_interface->crypto_get_pw_type(&pw_type)) {
+            LOGE("Failed to ask mbtool for the crypto password type");
+            return EXIT_FAILURE;
+        }
+
+        // If password type is unknown, assume "password"
+        if (pw_type.empty()) {
+            LOGW("Crypto password type is unknown. Assuming 'password'");
+            pw_type = "password";
+        }
+
+        // Try default password
+        if (pw_type == "default") {
+            bool ret;
+            if (!mbtool_interface->crypto_decrypt("default_password", &ret)) {
+                LOGE("Failed to ask mbtool to decrypt userdata");
+                return EXIT_FAILURE;
+            }
+
+            if (ret) {
+                LOGV("Successfully decrypted device with default password");
+                is_encrypted = 0;
+            } else {
+                LOGW("Failed to decrypt device with default password despite "
+                     "password type being 'default'");
+                pw_type = "password";
+            }
+        }
+
+        DataManager::SetValue(TW_IS_ENCRYPTED, is_encrypted);
+        DataManager::SetValue(TW_CRYPTO_PWTYPE, pw_type);
+        DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+        DataManager::SetValue("tw_crypto_display", "");
+
+        if (is_encrypted) {
+            LOGV("Showing decrypt page first due to encrypted device");
+            gui_startPage("decrypt", 1, 1);
+        }
+
+        if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
+            LOGE("Decrypt page exited, but device is still encrypted");
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_ERROR);
+            return EXIT_FAILURE;
+        } else {
+            LOGV("Decrypt page exited and device was successfully decrypted");
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
+        }
+    }
+
+    // Set ROM ID. This must happen after decryption or else the current ROM
+    // will not be detected if it is a data-slot. mbtool's ROM detection code
+    // doesn't fully trust the "ro.multiboot.romid" property and will do some
+    // additional checks to ensure that the value is correct.
+    std::string rom_id;
+    mbtool_interface->get_booted_rom_id(&rom_id);
+    if (rom_id.empty()) {
+        LOGW("Could not determine ROM ID");
+    }
+    DataManager::SetValue(TW_ROM_ID, rom_id);
 
     LOGV("Loading user settings...");
     DataManager::ReadSettingsFile();

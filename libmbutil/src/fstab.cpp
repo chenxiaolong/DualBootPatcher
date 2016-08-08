@@ -241,6 +241,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
             LOGE("No mount options found in entry: %s", line);
             return std::vector<fstab_rec>();
         }
+        rec.mount_args = temp;
         rec.flags = options_to_flags(mount_flags, temp, temp_mount_args, 1024);
 
         if (temp_mount_args[0]) {
