@@ -31,7 +31,7 @@ static void addLgGSeriesPhones(std::vector<Device *> *devices)
     // LG G2
     device = new Device();
     device->setId("lgg2");
-    device->setCodenames({ "g2", "d800", "d801", "ls980", "vs980" });
+    device->setCodenames({ "g2", "d800", "d801", "ls980", "vs980", "f320" });
     device->setName("LG G2");
     device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
     device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p34" });

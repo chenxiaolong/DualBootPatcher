@@ -116,23 +116,29 @@ bool file_first_line(const std::string &path,
 bool file_write_data(const std::string &path,
                      const char *data, size_t size)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
+    FILE *fp = fopen(path.c_str(), "wb");
     if (!fp) {
         return false;
     }
 
-    ssize_t nwritten;
+    size_t nwritten;
 
     do {
-        if ((nwritten = std::fwrite(data, 1, size, fp.get())) < 0) {
-            return false;
+        if ((nwritten = std::fwrite(data, 1, size, fp)) == 0) {
+            break;
         }
 
         size -= nwritten;
         data += nwritten;
     } while (size > 0);
 
-    return true;
+    bool ret = size == 0 || !ferror(fp);
+
+    if (fclose(fp) < 0) {
+        return false;
+    }
+
+    return ret;
 }
 
 bool file_find_one_of(const std::string &path, std::vector<std::string> items)

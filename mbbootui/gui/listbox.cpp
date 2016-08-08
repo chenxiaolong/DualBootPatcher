@@ -67,19 +67,6 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
                 }
                 mListItems.push_back(data);
             }
-        } else if (mVariable == TW_ROM_ID) {
-            std::vector<Rom> roms;
-            mbtool_interface->get_installed_roms(&roms);
-
-            for (Rom rom : roms) {
-                ListItem data;
-                // TODO: Read name from config file
-                data.displayName = rom.id;
-                data.variableValue = rom.id;
-                data.action = nullptr;
-                data.selected = (currentValue == rom.id);
-                mListItems.push_back(std::move(data));
-            }
         }
     } else {
         allowSelection = false; // allows using listbox as a read-only list or menu
@@ -121,7 +108,7 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
         LoadConditions(child, item.mConditions);
 
         mListItems.push_back(item);
-        mVisibleItems.push_back(mListItems.size()-1);
+        mVisibleItems.push_back(mListItems.size() - 1);
 
         child = child->next_sibling("listitem");
     }
@@ -183,7 +170,7 @@ int GUIListBox::NotifyVarChange(const std::string& varName,
         } else if (varName == mVariable) {
             if (item.variableValue == currentValue) {
                 item.selected = 1;
-                SetVisibleListLocation(mVisibleItems.empty() ? 0 : mVisibleItems.size()-1);
+                SetVisibleListLocation(mVisibleItems.empty() ? 0 : mVisibleItems.size() - 1);
             } else {
                 item.selected = 0;
             }
@@ -194,7 +181,7 @@ int GUIListBox::NotifyVarChange(const std::string& varName,
         mUpdate = 1; // some item's visibility has changed
         if (firstDisplayedItem >= (int) mVisibleItems.size()) {
             // all items in the view area were removed - make last item visible
-            SetVisibleListLocation(mVisibleItems.empty() ? 0 : mVisibleItems.size()-1);
+            SetVisibleListLocation(mVisibleItems.empty() ? 0 : mVisibleItems.size() - 1);
         }
     }
 
@@ -212,6 +199,24 @@ void GUIListBox::SetPageFocus(int inFocus)
                 item.displayName = gui_parse_text(item.displayName);
             }
         }
+
+        if (mVariable == TW_ROM_ID) {
+            mListItems.clear();
+
+            std::vector<Rom> roms;
+            mbtool_interface->get_installed_roms(&roms);
+
+            for (Rom rom : roms) {
+                ListItem data;
+                // TODO: Read name from config file
+                data.displayName = rom.id;
+                data.variableValue = rom.id;
+                data.action = nullptr;
+                data.selected = (currentValue == rom.id);
+                mListItems.push_back(std::move(data));
+            }
+        }
+
         DataManager::GetValue(mVariable, currentValue);
         NotifyVarChange(mVariable, currentValue);
     }

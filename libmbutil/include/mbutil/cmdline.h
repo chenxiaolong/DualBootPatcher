@@ -26,8 +26,18 @@ namespace mb
 namespace util
 {
 
-bool kernel_cmdline_get_option(const std::string &option,
-                               std::string *out);
+enum class CmdlineIterAction
+{
+    Continue,
+    Stop,
+    Error
+};
+
+typedef CmdlineIterAction (*CmdlineIterFn)(const char *, const char *, void *);
+
+bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata);
+
+bool kernel_cmdline_get_option(const char *option, std::string *out);
 
 }
 }

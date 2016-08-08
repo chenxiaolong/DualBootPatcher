@@ -84,6 +84,7 @@ protected:
     int setbrightness(const std::string& arg);
 
     // (originally) threaded actions
+    int decrypt(const std::string& arg);
     int autoboot(const std::string& arg);
     int autoboot_cancel(const std::string& arg);
 
