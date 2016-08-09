@@ -54,7 +54,7 @@ public:
 #define REPLACE_TO      "if [ -f /sbin/recovery ]; then\n" \
                         "    exec /init\n" \
                         "else\n" \
-                        "    exec /mbtool init\n" \
+                        "    exec /mbtool /init\n" \
                         "fi"
 
 XperiaBaseRP::XperiaBaseRP(const PatcherConfig * const pc,
