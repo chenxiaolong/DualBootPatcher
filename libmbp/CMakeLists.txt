@@ -14,7 +14,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-set(MBP_CORE_SOURCES
+set(MBP_SOURCES
     src/bootimage.cpp
     src/cpiofile.cpp
     src/device.cpp
@@ -57,30 +57,6 @@ set(MBP_CORE_SOURCES
     src/ramdiskpatchers/pepper.cpp
     # SHA1 library
     external/sha.cpp
-)
-
-set(MBP_DEVICE_SOURCES
-    devices/ark.cpp
-    devices/asus.cpp
-    devices/dexp.cpp
-    devices/google.cpp
-    devices/huawei.cpp
-    devices/jiayu.cpp
-    devices/lenovo.cpp
-    devices/lg.cpp
-    devices/motorola.cpp
-    devices/nexus.cpp
-    devices/oneplus.cpp
-    devices/pantech.cpp
-    devices/samsung.cpp
-    devices/sony.cpp
-    devices/wileyfox.cpp
-    devices/xiaomi.cpp
-)
-
-set(MBP_SOURCES
-    ${MBP_CORE_SOURCES}
-    ${MBP_DEVICE_SOURCES}
 )
 
 if(WIN32)

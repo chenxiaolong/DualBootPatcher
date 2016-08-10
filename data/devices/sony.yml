@@ -1,0 +1,17 @@
+---
+- name: Sony Xperia Sola
+  id: pepper
+  codenames:
+    - pepper
+    - MT27a
+    - MT27i
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p10
+    cache:
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/mmcblk0p11
+    boot:
+      - /dev/block/mmcblk0p9
