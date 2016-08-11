@@ -455,6 +455,13 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         return true;
     }
 
+//Ignore unsupported format when system doesn't locate on extSD
+    std::string rom_id;
+    util::file_first_line("/romid", &rom_id);
+    if (!use_fuse_exfat && !util::starts_with(rom_id, "extsd-slot")) {
+        return true;
+    }
+
     return false;
 }
 
