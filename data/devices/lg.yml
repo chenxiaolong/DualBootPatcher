@@ -126,6 +126,7 @@
     flags:
       - TW_QCOM_RTC_FIX
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG G4
@@ -201,6 +202,7 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG Optimus L7
@@ -243,6 +245,7 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG Optimus L1 II
@@ -288,6 +291,7 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG Optimus L3 II
@@ -333,6 +337,7 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG Optimus L7 II
@@ -382,3 +387,4 @@
     graphics_backends:
       - fbdev
     pixel_format: RGBX_8888
+    theme: portrait_hdpi

@@ -38,6 +38,7 @@
     pixel_format: RGBX_8888
     max_brightness: 255
     default_brightness: 175
+    theme: portrait_hdpi
 
 
 - name: Pantech Vega Iron
@@ -79,3 +80,4 @@
     pixel_format: RGBX_8888
     max_brightness: 255
     default_brightness: 175
+    theme: portrait_hdpi

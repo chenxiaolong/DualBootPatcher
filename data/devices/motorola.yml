@@ -34,6 +34,7 @@
     graphics_backends:
       - overlay_msm_old
       - fbdev
+    theme: portrait_hdpi
 
 
 - name: Motorola Moto G (2014)

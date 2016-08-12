@@ -73,6 +73,7 @@
     brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.185/leds/lcd-backlight/brightness
     max_brightness: 255
     default_brightness: 162
+    theme: portrait_hdpi
 
 
 - name: Samsung Galaxy Note 3 (Exynos)
