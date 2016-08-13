@@ -154,6 +154,7 @@ include(cmake/Dependencies.cmake)
 
 set(MBP_GLOBAL_INCLUDE_DIRS
     libmbcommon/include
+    libmbdevice/include
     libmblog/include
     libmbpio/include
     libmbp/include
@@ -166,6 +167,7 @@ include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
 
 # Main patcher
 add_subdirectory(libmbcommon)
+add_subdirectory(libmbdevice)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
