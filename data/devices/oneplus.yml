@@ -4,6 +4,7 @@
   codenames:
     - bacon
     - A0001
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -125,6 +126,7 @@
     - OnePlus
     - ONE
     - onyx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

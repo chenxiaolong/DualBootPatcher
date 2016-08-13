@@ -8,6 +8,7 @@
     # 3G variant
     - kona3g
     - kona3gxx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -37,6 +38,7 @@
   codenames:
     - p4noterf
     - p4noterfxx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -65,6 +67,7 @@
   codenames:
     - lt03wifi
     - lt03wifiue
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -94,6 +97,7 @@
   codenames:
     - lt033g
     - lt033gxx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -123,6 +127,7 @@
   codenames:
     - lt03lte
     - lt03ltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

@@ -5,6 +5,7 @@
     - pepper
     - MT27a
     - MT27i
+  architecture: armeabi-v7a
 
   block_devs:
     system:

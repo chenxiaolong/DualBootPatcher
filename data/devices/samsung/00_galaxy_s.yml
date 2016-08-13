@@ -6,6 +6,7 @@
     - s3ve3gds
     - s3ve3gdd
     - s3ve3jv
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -46,6 +47,7 @@
     - d2vmu
     - d2vzw
     - d2xar
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -75,6 +77,7 @@
     - m0
     - i9300
     - GT-I9300
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -103,6 +106,7 @@
   id: m3
   codenames:
     - m3
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -130,6 +134,7 @@
   id: golden
   codenames:
     - golden
+  architecture: armeabi-v7a
 
   block_devs:
     system:
@@ -169,6 +174,7 @@
     # GT-I9515
     - jfvelte
     - jfveltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -216,6 +222,7 @@
     - jalteskt
     # For OpenRecovery (TWRP)
     - i9500
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -246,6 +253,7 @@
     - ks01lte
     - ks01ltektt
     - ks01lteskt
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -271,6 +279,7 @@
   id: jactivelteskt
   codenames:
     - jactivelteskt
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -304,6 +313,7 @@
     # LTE variant
     - serranolte
     - serranoltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -336,6 +346,7 @@
     - kltevzw
     - kltexx
     - kltekdi
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -361,6 +372,7 @@
   id: kmini3g
   codenames:
     - kmini3g
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -387,6 +399,7 @@
   codenames:
     - k3g
     - k3gxx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -416,6 +429,7 @@
   codenames:
     - kminilte
     - kminiltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -447,6 +461,7 @@
     - lentislteskt
     - lentisltektt
     - lentisltelgt
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -472,6 +487,7 @@
   codenames:
     - kccat6
     - kccat6xx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

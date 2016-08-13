@@ -5,6 +5,7 @@
     - loganre
     - loganrelte
     - loganreltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -32,6 +33,7 @@
     - vivalto3g
     - vivalto3gvn
     - vivalto3gub
+  architecture: armeabi-v7a
 
   block_devs:
     system:

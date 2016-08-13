@@ -6,6 +6,7 @@
     - sprout_b
     - sprout4
     - sprout8
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

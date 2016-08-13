@@ -3,6 +3,7 @@
   id: cancro
   codenames:
     - cancro
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -46,6 +47,7 @@
   id: armani
   codenames:
     - armani
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -146,6 +148,7 @@
   id: gucci
   codenames:
     - gucci
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

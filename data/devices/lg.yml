@@ -8,6 +8,7 @@
     - ls980
     - vs980
     - f320
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -38,6 +39,7 @@
     - g2
     - d802
     - d802t
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -74,6 +76,7 @@
     - f400k
     - ls990
     - vs985
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -101,6 +104,7 @@
   id: lgg3s
   codenames:
     - jag3gds
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -174,6 +178,7 @@
     - E610
     - E612
     - E617
+  architecture: armeabi-v7a
 
   block_devs:
     system:
@@ -217,6 +222,7 @@
     - P700
     - P705
     - P708
+  architecture: armeabi-v7a
 
   block_devs:
     system:
@@ -263,6 +269,7 @@
     - E411
     - E415
     - E420
+  architecture: armeabi-v7a
 
   block_devs:
     system:
@@ -309,6 +316,7 @@
     - E430
     - E431
     - E435
+  architecture: armeabi-v7a
 
   block_devs:
     system:
@@ -359,6 +367,7 @@
     - P714
     - P715
     - P716
+  architecture: armeabi-v7a
 
   block_devs:
     system:

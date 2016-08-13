@@ -3,6 +3,7 @@
   id: hwp7
   codenames:
     - hwp7
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -35,6 +36,7 @@
     - MT2L03
     - mt2-l03
     - MT2-L03
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

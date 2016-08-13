@@ -15,6 +15,7 @@
     - espresso10rf
     - espresso10rfxx
     - espresso3g
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -41,6 +42,7 @@
   codenames:
     - lt01wifi
     - lt01wifixx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -103,6 +105,7 @@
   codenames:
     - matissewifi
     - SM-T530
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -130,6 +133,7 @@
     - mondrianwifi
     - mondrianwifiue
     - mondrianwifixx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -156,6 +160,7 @@
   codenames:
     - picassowifi
     - picassowifixx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -185,6 +190,7 @@
   codenames:
     - picassolte
     - picassoltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -221,6 +227,7 @@
     # 10.5" variant (LTE)
     - chagalllte
     - chagallltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -258,6 +265,7 @@
     - gts210wifixx
     - gts210lte
     - gts210ltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

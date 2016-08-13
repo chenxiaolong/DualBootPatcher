@@ -6,6 +6,7 @@
     - falcon_umts
     - falcon_umtsds
     - xt1032
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -48,6 +49,7 @@
     - xt1068
     - xt1064
     - xt1069
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -80,6 +82,7 @@
   codenames:
     - osprey
     - osprey_u2
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -110,6 +113,7 @@
     - xt1022
     - xt1021
     - xt1023
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -140,6 +144,7 @@
     - xt1505
     - xt1506
     - xt1511
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -178,6 +183,7 @@
     - xt1524
     - xt1526
     - xt1527
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -215,6 +221,7 @@
     - xt1056
     - xt1058
     - xt1060
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -239,6 +246,7 @@
   id: victara
   codenames:
     - victara
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -308,6 +316,7 @@
     - xt1225
     - xt1250
     - xt1254
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

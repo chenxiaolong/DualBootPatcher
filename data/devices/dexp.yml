@@ -3,6 +3,7 @@
   id: XLTE4
   codenames:
     - XLTE4
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -28,6 +29,7 @@
   id: mlte5
   codenames:
     - MLTE5
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

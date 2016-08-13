@@ -3,6 +3,7 @@
   id: crackling
   codenames:
     - crackling
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -40,6 +41,7 @@
   id: kipper
   codenames:
     - kipper
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

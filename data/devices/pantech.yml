@@ -5,6 +5,7 @@
     - ef63s
     - ef63l
     - ef63k
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -47,6 +48,7 @@
     - ef52s
     - ef52l
     - ef52k
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

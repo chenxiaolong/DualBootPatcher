@@ -10,6 +10,7 @@
     - t0ltetmo
     # - t0lteusc
     - t0ltevzw
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -43,6 +44,7 @@
     - hlteusc
     - hltevzw
     - hltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -80,6 +82,7 @@
   id: ha3g
   codenames:
     - ha3g
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -109,6 +112,7 @@
   codenames:
     - hllte
     - hlltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -144,6 +148,7 @@
     - trlteusc
     - trltevzw
     - trltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -179,6 +184,7 @@
     - tre3g
     # N910U
     - trhplte
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

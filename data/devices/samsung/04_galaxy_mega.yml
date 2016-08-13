@@ -5,6 +5,7 @@
     - melius
     - meliuslte
     - meliusltexx
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -32,6 +33,7 @@
     - melius
     - meliuslte
     - meliusltecan
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

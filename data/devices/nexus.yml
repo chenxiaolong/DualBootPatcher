@@ -3,6 +3,7 @@
   id: mako
   codenames:
     - mako
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -28,6 +29,7 @@
   id: hammerhead
   codenames:
     - hammerhead
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -94,6 +96,7 @@
   id: shamu
   codenames:
     - shamu
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -150,6 +153,7 @@
   id: grouper
   codenames:
     - grouper
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -175,6 +179,7 @@
   id: flo
   codenames:
     - flo
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:

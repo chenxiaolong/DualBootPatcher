@@ -66,6 +66,7 @@
   codenames:
     - kingdom_row
     - kingdomt
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
@@ -97,6 +98,7 @@
   id: Z1
   codenames:
     - Z1
+  architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
