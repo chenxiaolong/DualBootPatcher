@@ -39,7 +39,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     endif()
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop
-        OR ${MBP_BUILD_TARGET} STREQUAL signtool)
+        OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     # Build shared library
 
     add_library(mblog-shared SHARED ${MBLOG_SOURCES})

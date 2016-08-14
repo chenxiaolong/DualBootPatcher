@@ -21,15 +21,15 @@ set(MBP_SYSTEM_BUILD_TYPE "release"
 #                (not to be built manually)
 # - android-system: Build executables to be included in the distrbution
 #                   (not to be built manually)
-# - signtool: Builds only the code signing tool
-#             (not to be built manually)
+# - hosttools: Builds tools needed on the host when cross-compiling
+#              (not to be built manually)
 
 # Verify build target and type
 if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-app
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
 endif()
 if(NOT ${MBP_BUILD_TYPE} STREQUAL release
@@ -121,8 +121,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
-elseif(${MBP_BUILD_TARGET} STREQUAL signtool)
-    set(MBP_TARGET_CONFIG_FILE cmake/ConfigSignTool.cmake)
+elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigHostTools.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
 endif()
@@ -165,7 +165,7 @@ set(MBP_GLOBAL_INCLUDE_DIRS
 
 include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
 
-# Main patcher
+add_subdirectory(hosttools)
 add_subdirectory(libmbcommon)
 add_subdirectory(libmbdevice)
 add_subdirectory(libmblog)
@@ -186,7 +186,7 @@ add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(utilities)
 add_subdirectory(signtool)
-add_subdirectory(signtool/wrapped)
+add_subdirectory(yaml2json)
 add_subdirectory(android)
 
 # Must go after signtool since it references SIGNTOOL_COMMAND

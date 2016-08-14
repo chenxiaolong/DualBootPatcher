@@ -1,17 +1,18 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
-    include_directories(${MBP_OPENSSL_INCLUDES})
+    include_directories(${MBP_JSONCPP_INCLUDES})
+    include_directories(${MBP_YAML_CPP_INCLUDES})
 
-    add_executable(signtool signtool.cpp)
+    add_executable(yaml2json yaml2json.cpp)
 
     set_target_properties(
-        signtool
+        yaml2json
         PROPERTIES
         POSITION_INDEPENDENT_CODE 1
     )
 
     if(NOT MSVC)
         set_target_properties(
-            signtool
+            yaml2json
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
@@ -19,20 +20,20 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     endif()
 
     target_link_libraries(
-        signtool
-        mbsign-shared
-        ${MBP_OPENSSL_LIBCRYPTO_LIBRARY}
+        yaml2json
+        ${MBP_JSONCPP_LIBRARIES}
+        ${MBP_YAML_CPP_LIBRARIES}
     )
 
     set_target_properties(
-        signtool
+        yaml2json
         PROPERTIES
         BUILD_WITH_INSTALL_RPATH OFF
         INSTALL_RPATH "\$ORIGIN/../lib"
     )
 
     install(
-        TARGETS signtool
+        TARGETS yaml2json
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
         COMPONENT Applications
     )

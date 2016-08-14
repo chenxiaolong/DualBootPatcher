@@ -1,5 +1,5 @@
 if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     return()
 endif()
 
