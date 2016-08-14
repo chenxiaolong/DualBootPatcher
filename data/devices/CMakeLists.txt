@@ -28,36 +28,29 @@ set(files
     xiaomi.yml
 )
 
-set(targets)
+set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")
 
-foreach(file ${files})
-    set(source_file "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
-    set(target_file "${CMAKE_CURRENT_BINARY_DIR}/${file}")
-    string(REGEX REPLACE "\\.yml$" ".json" target_file "${target_file}")
-    get_filename_component(target_dir "${target_file}" DIRECTORY)
-    list(APPEND targets "${target_file}")
+add_custom_command(
+    OUTPUT "${target_file}"
+    COMMAND "${YAML2JSON_COMMAND}"
+        ${files}
+        -o "${target_file}"
+        #--styled
+        --flatten-root-array
+    DEPENDS hosttools ${files}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Generating device defition JSON file"
+    VERBATIM
+)
 
-    add_custom_command(
-        OUTPUT "${target_file}"
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "${target_dir}"
-        COMMAND "${YAML2JSON_COMMAND}" "${source_file}" -o "${target_file}"
-        MAIN_DEPENDENCY "${source_file}"
-        DEPENDS hosttools
-        COMMENT "Converting device definition yaml to json: ${file}"
-        VERBATIM
-    )
-
-    get_filename_component(parent "${file}" DIRECTORY)
-
-    install(
-        FILES "${target_file}"
-        DESTINATION "${DATA_INSTALL_DIR}/devices/${parent}/"
-        COMPONENT Libraries
-    )
-endforeach()
+install(
+    FILES "${target_file}"
+    DESTINATION "${DATA_INSTALL_DIR}/"
+    COMPONENT Libraries
+)
 
 add_custom_target(
     run_yaml2json
     ALL
-    DEPENDS ${targets}
+    DEPENDS ${target_file}
 )
