@@ -43,9 +43,9 @@ void addGoogleDevices(std::vector<Device *> *devices)
     
     // Infinix X510 (Android One)
         device = new Device();
-        device->setId("d5110_infinix");
+        device->setId("d5110");
         device->setCodenames({ "d5110_infinix_sprout", "d5110_infinix", "Infinix_X510_sprout", "Infinix_X510", "X510"});
-        device->setName("Infinix Hot 2/Android One");
+        device->setName("Hot 2/Android One");
         device->setBlockDevBaseDirs({ MTK_BASE_DIR });
         device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p23" });
         device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p24" });
@@ -58,7 +58,7 @@ void addGoogleDevices(std::vector<Device *> *devices)
         device = new Device();
         device->setId("d5110_infinix");
         device->setCodenames({ "d5110_infinix_sprout", "d5110_infinix", "Infinix_X510_sprout", "Infinix_X510", "X510"});
-        device->setName("Infinix Hot 2/Infinix ROM");
+        device->setName("Hot 2/Infinix ROM");
         device->setBlockDevBaseDirs({ MTK_BASE_DIR });
         device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p18" });
         device->setCacheBlockDevs({ MTK_CACHE, "/dev/block/mmcblk0p19" });
