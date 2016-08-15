@@ -41,9 +41,6 @@ void addGoogleDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ MTK_RECOVERY, "/dev/block/mmcblk0p8" });
     devices->push_back(device);
     
-    
-    Device *device
-    
     // LAVA Pixelv1 (second generation android one, mtk variant)
     device = new Device();
     device->setId("seedmtk");
