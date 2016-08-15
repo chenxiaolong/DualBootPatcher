@@ -134,6 +134,19 @@ void addNexusDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p14" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
     devices->push_back(device);
+
+    //I-Mobile IQ II /General Mobile GM4G (Google Android One Second Generation)
+    device = new Device();
+    device->setId("seed");
+    device->setCodenames({ "seed" });
+    device->setName("Google Android One Second Generation");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p25" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p29" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p31" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p24" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p26" });
+    devices->push_back(device);
 }
 
 }
