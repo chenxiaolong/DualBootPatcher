@@ -1,7 +1,7 @@
 ---
 - name: Samsung Galaxy Grand 2 (Qcom)
   id: ms013g
-  codename:
+  codenames:
     - ms013g
     - ms01lte
   architecture: armeabi-v7a
