@@ -28,6 +28,32 @@
       - /dev/block/mmcblk0p8
 
 
+- name: Android One 2nd Gen - IQ II, GM4G
+  id: seed
+  codenames:
+    - seed
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p29
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p31
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p26
+
+
 - name: Android One 2nd Gen - LAVA Pixelv1
   id: seedmtk
   codenames:
