@@ -21,21 +21,21 @@
 
 #include "mbdevice/device.h"
 
-#define MB_DEVICE_ERROR_JSON            (-10)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 enum MbDeviceJsonErrorType
 {
+    // Use |std_error| field
+    MB_DEVICE_JSON_STANDARD_ERROR,
     // Use |line| and |column| fields
     MB_DEVICE_JSON_PARSE_ERROR,
     // Use |context|, |expected_type|, and |actual_type| fields
     MB_DEVICE_JSON_MISMATCHED_TYPE,
-    // Use |context| fields
+    // Use |context| field
     MB_DEVICE_JSON_UNKNOWN_KEY,
-    // Use |context] fields
+    // Use |context] field
     MB_DEVICE_JSON_UNKNOWN_VALUE,
 };
 
@@ -43,6 +43,7 @@ struct MbDeviceJsonError
 {
     enum MbDeviceJsonErrorType type;
 
+    int std_error;
     int line;
     int column;
     char context[100];
@@ -50,8 +51,11 @@ struct MbDeviceJsonError
     char actual_type[20];
 };
 
-MB_EXPORT int mb_device_load_json(struct Device *device, const char *json,
-                                  struct MbDeviceJsonError *error);
+MB_EXPORT struct Device * mb_device_new_from_json(const char *json,
+                                                  struct MbDeviceJsonError *error);
+
+MB_EXPORT struct Device ** mb_device_new_list_from_json(const char *json,
+                                                        struct MbDeviceJsonError *error);
 
 #ifdef __cplusplus
 }

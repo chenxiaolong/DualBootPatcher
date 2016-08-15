@@ -51,6 +51,13 @@ static const char * json_type_to_string(json_type type)
     }
 }
 
+static void json_error_set_standard_error(struct MbDeviceJsonError *error,
+                                          int std_error)
+{
+    error->type = MB_DEVICE_JSON_STANDARD_ERROR;
+    error->std_error = std_error;
+}
+
 static void json_error_set_parse_error(struct MbDeviceJsonError *error,
                                        int line, int column)
 {
@@ -114,36 +121,63 @@ static inline int device_set_boolean(setter_boolean fn, struct Device *device,
                                      json_t *value, const char *context,
                                      struct MbDeviceJsonError *error)
 {
+    int ret;
+
     if (!json_is_boolean(value)) {
         json_error_set_mismatched_type(
-                    error, context, value->type, JSON_BOOLEAN);
-        return MB_DEVICE_ERROR_JSON;
+                error, context, value->type, JSON_BOOLEAN);
+        return -1;
     }
-    return fn(device, json_boolean_value(value));
+
+    ret = fn(device, json_boolean_value(value));
+    if (ret < 0) {
+        json_error_set_standard_error(error, ret);
+        return -1;
+    }
+
+    return 0;
 }
 
 static inline int device_set_int(setter_int fn, struct Device *device,
                                  json_t *value, const char *context,
                                  struct MbDeviceJsonError *error)
 {
+    int ret;
+
     if (!json_is_integer(value)) {
         json_error_set_mismatched_type(
                 error, context, value->type, JSON_INTEGER);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
-    return fn(device, json_integer_value(value));
+
+    ret = fn(device, json_integer_value(value));
+    if (ret < 0) {
+        json_error_set_standard_error(error, ret);
+        return -1;
+    }
+
+    return 0;
 }
 
 static inline int device_set_string(setter_string fn, struct Device *device,
                                     json_t *value, const char *context,
                                     struct MbDeviceJsonError *error)
 {
+    int ret;
+
     if (!json_is_string(value)) {
         json_error_set_mismatched_type(
                 error, context, value->type, JSON_STRING);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
-    return fn(device, json_string_value(value));
+
+    ret = fn(device, json_string_value(value));
+    if (ret < 0) {
+        json_error_set_standard_error(error, ret);
+        return -1;
+    }
+
+    return 0;
 }
 
 static inline int device_set_string_array(setter_string_array fn,
@@ -151,7 +185,8 @@ static inline int device_set_string_array(setter_string_array fn,
                                           json_t *node, const char *context,
                                           struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    int ret = 0;
+    int fn_ret;
     char subcontext[100];
     const char **array = NULL;
     size_t array_size;
@@ -161,14 +196,15 @@ static inline int device_set_string_array(setter_string_array fn,
     if (!json_is_array(node)) {
         json_error_set_mismatched_type(
                 error, context, node->type, JSON_ARRAY);
-        ret = MB_DEVICE_ERROR_JSON;
+        ret = -1;
         goto done;
     }
 
     array_size = (json_array_size(node) + 1) * sizeof(char *);
     array = (const char **) malloc(array_size);
     if (!array) {
-        ret = MB_DEVICE_ERROR_ERRNO;
+        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
+        ret = -1;
         goto done;
     }
     memset(array, 0, array_size);
@@ -179,14 +215,19 @@ static inline int device_set_string_array(setter_string_array fn,
         if (!json_is_string(value)) {
             json_error_set_mismatched_type(
                     error, subcontext, value->type, JSON_STRING);
-            ret = MB_DEVICE_ERROR_JSON;
+            ret = -1;
             goto done;
         }
 
         array[index] = json_string_value(value);
     }
 
-    ret = fn(device, array);
+    fn_ret = fn(device, array);
+    if (fn_ret < 0) {
+        json_error_set_standard_error(error, fn_ret);
+        ret = -1;
+        goto done;
+    }
 
 done:
     free(array);
@@ -232,7 +273,7 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
 
     if (!json_is_array(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_ARRAY);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     json_array_foreach(node, index, value) {
@@ -241,7 +282,7 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
         if (!json_is_string(value)) {
             json_error_set_mismatched_type(
                     error, subcontext, value->type, JSON_STRING);
-            return MB_DEVICE_ERROR_JSON;
+            return -1;
         }
 
         const char *str = json_string_value(value);
@@ -256,11 +297,17 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
 
         if (flags == old_flags) {
             json_error_set_unknown_value(error, subcontext);
-            return MB_DEVICE_ERROR_JSON;
+            return -1;
         }
     }
 
-    return mb_device_set_tw_flags(device, flags);
+    int fn_ret = mb_device_set_tw_flags(device, flags);
+    if (fn_ret < 0) {
+        json_error_set_standard_error(error, fn_ret);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int process_boot_ui_pixel_format(struct Device *device, json_t *node,
@@ -287,19 +334,24 @@ static int process_boot_ui_pixel_format(struct Device *device, json_t *node,
 
     if (!json_is_string(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     str = json_string_value(node);
 
     for (struct mapping *m = mappings; m->key; ++m) {
         if (strcmp(m->key, str) == 0) {
-            return mb_device_set_tw_pixel_format(device, m->value);
+            int fn_ret = mb_device_set_tw_pixel_format(device, m->value);
+            if (fn_ret < 0) {
+                json_error_set_standard_error(error, fn_ret);
+                return -1;
+            }
+            return 0;
         }
     }
 
     json_error_set_unknown_value(error, context);
-    return MB_DEVICE_ERROR_JSON;
+    return -1;
 }
 
 static int process_boot_ui_force_pixel_format(struct Device *device, json_t *node,
@@ -323,26 +375,31 @@ static int process_boot_ui_force_pixel_format(struct Device *device, json_t *nod
 
     if (!json_is_string(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     str = json_string_value(node);
 
     for (struct mapping *m = mappings; m->key; ++m) {
         if (strcmp(m->key, str) == 0) {
-            return mb_device_set_tw_force_pixel_format(device, m->value);
+            int fn_ret = mb_device_set_tw_force_pixel_format(device, m->value);
+            if (fn_ret < 0) {
+                json_error_set_standard_error(error, fn_ret);
+                return -1;
+            }
+            return 0;
         }
     }
 
     json_error_set_unknown_value(error, context);
-    return MB_DEVICE_ERROR_JSON;
+    return -1;
 }
 
 static int process_boot_ui(struct Device *device, json_t *node,
                            const char *context,
                            struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    int ret = 0;
     char subcontext[100];
     const char *key;
     json_t *value;
@@ -350,7 +407,7 @@ static int process_boot_ui(struct Device *device, json_t *node,
     if (!json_is_object(node)) {
         json_error_set_mismatched_type(
                 error, context, node->type, JSON_OBJECT);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     json_object_foreach(node, key, value) {
@@ -409,10 +466,10 @@ static int process_boot_ui(struct Device *device, json_t *node,
                                     device, value, subcontext, error);
         } else {
             json_error_set_unknown_key(error, subcontext);
-            ret = MB_DEVICE_ERROR_JSON;
+            ret = -1;
         }
 
-        if (ret != MB_DEVICE_OK) {
+        if (ret != 0) {
             break;
         }
     }
@@ -424,7 +481,7 @@ static int process_crypto(struct Device *device, json_t *node,
                           const char *context,
                           struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    int ret = 0;
     char subcontext[100];
     const char *key;
     json_t *value;
@@ -432,7 +489,7 @@ static int process_crypto(struct Device *device, json_t *node,
     if (!json_is_object(node)) {
         json_error_set_mismatched_type(
                 error, context, node->type, JSON_OBJECT);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     json_object_foreach(node, key, value) {
@@ -446,10 +503,10 @@ static int process_crypto(struct Device *device, json_t *node,
                                     device, value, subcontext, error);
         } else {
             json_error_set_unknown_key(error, subcontext);
-            ret = MB_DEVICE_ERROR_JSON;
+            ret = -1;
         }
 
-        if (ret != MB_DEVICE_OK) {
+        if (ret != 0) {
             break;
         }
     }
@@ -461,7 +518,7 @@ static int process_block_devs(struct Device *device, json_t *node,
                               const char *context,
                               struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    int ret = 0;
     char subcontext[100];
     const char *key;
     json_t *value;
@@ -469,7 +526,7 @@ static int process_block_devs(struct Device *device, json_t *node,
     if (!json_is_object(node)) {
         json_error_set_mismatched_type(
                 error, context, node->type, JSON_OBJECT);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     json_object_foreach(node, key, value) {
@@ -498,10 +555,10 @@ static int process_block_devs(struct Device *device, json_t *node,
                                           device, value, subcontext, error);
         } else {
             json_error_set_unknown_key(error, subcontext);
-            ret = MB_DEVICE_ERROR_JSON;
+            ret = -1;
         }
 
-        if (ret != MB_DEVICE_OK) {
+        if (ret != 0) {
             break;
         }
     }
@@ -513,7 +570,7 @@ static int process_device(struct Device *device, json_t *node,
                           const char *context,
                           struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    int ret = 0;
     char subcontext[100];
     const char *key;
     json_t *value;
@@ -521,7 +578,7 @@ static int process_device(struct Device *device, json_t *node,
     if (!json_is_object(node)) {
         json_error_set_mismatched_type(
                 error, context, node->type, JSON_OBJECT);
-        return MB_DEVICE_ERROR_JSON;
+        return -1;
     }
 
     json_object_foreach(node, key, value) {
@@ -547,10 +604,10 @@ static int process_device(struct Device *device, json_t *node,
             ret = process_crypto(device, value, subcontext, error);
         } else {
             json_error_set_unknown_key(error, subcontext);
-            ret = MB_DEVICE_ERROR_JSON;
+            ret = -1;
         }
 
-        if (ret != MB_DEVICE_OK) {
+        if (ret != 0) {
             break;
         }
     }
@@ -558,28 +615,102 @@ static int process_device(struct Device *device, json_t *node,
     return ret;
 }
 
-/*!
- * \brief Create new device definition object from its JSON representation
- */
-int mb_device_load_json(struct Device *device, const char *json,
-                        struct MbDeviceJsonError *error)
+struct Device * mb_device_new_from_json(const char *json,
+                                        struct MbDeviceJsonError *error)
 {
-    int ret = MB_DEVICE_OK;
+    struct Device *device = NULL;
     json_t *root = NULL;
     json_error_t json_error;
+    bool ok = true;
 
     root = json_loads(json, 0, &json_error);
     if (!root) {
-        json_error_set_parse_error(error, error->line, error->column);
-        ret = MB_DEVICE_ERROR_JSON;
+        json_error_set_parse_error(error, json_error.line, json_error.column);
+        ok = false;
         goto done;
     }
 
-    ret = process_device(device, root, "", error);
+    device = mb_device_new();
+    if (!device) {
+        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
+        ok = false;
+        goto done;
+    }
+
+    if (process_device(device, root, "", error) < 0) {
+        ok = false;
+        goto done;
+    }
 
 done:
     if (root) {
         json_decref(root);
     }
-    return ret;
+    if (!ok) {
+        mb_device_free(device);
+    }
+    return ok ? device : NULL;
+}
+
+struct Device ** mb_device_new_list_from_json(const char *json,
+                                              struct MbDeviceJsonError *error)
+{
+    struct Device **devices = NULL;
+    size_t devices_size;
+    json_t *root = NULL;
+    json_t *elem;
+    size_t index;
+    json_error_t json_error;
+    bool ok = true;
+    char context[100];
+
+    root = json_loads(json, 0, &json_error);
+    if (!root) {
+        json_error_set_parse_error(error, json_error.line, json_error.column);
+        ok = false;
+        goto done;
+    }
+
+    if (!json_is_array(root)) {
+        json_error_set_mismatched_type(error, "", root->type, JSON_ARRAY);
+        ok = false;
+        goto done;
+    }
+
+    devices_size = (json_array_size(root) + 1) * sizeof(struct Device *);
+    devices = (struct Device **) malloc(devices_size);
+    if (!devices) {
+        json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
+        ok = false;
+        goto done;
+    }
+    memset(devices, 0, devices_size);
+
+    json_array_foreach(root, index, elem) {
+        snprintf(context, sizeof(context), "[%zu]", index);
+
+        devices[index] = mb_device_new();
+        if (!devices[index]) {
+            json_error_set_standard_error(error, MB_DEVICE_ERROR_ERRNO);
+            ok = false;
+            goto done;
+        }
+
+        if (process_device(devices[index], elem, context, error) < 0) {
+            ok = false;
+            goto done;
+        }
+    }
+
+done:
+    if (root) {
+        json_decref(root);
+    }
+    if (!ok && devices) {
+        for (struct Device **iter = devices; *iter; ++iter) {
+            mb_device_free(*iter);
+        }
+        free(devices);
+    }
+    return ok ? devices : NULL;
 }
