@@ -5,6 +5,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 set(MBDEVICE_SOURCES
     src/device.c
     src/json.c
+    src/validate.c
     src/internal/array.c
     src/internal/structs.c
 )
