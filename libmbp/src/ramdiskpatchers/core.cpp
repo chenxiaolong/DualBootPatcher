@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include <cstring>
+
 #include "mbp/patcherconfig.h"
 #include "mbp/private/stringutils.h"
 
@@ -81,7 +83,7 @@ bool CoreRP::addMbtool()
     const std::string sig("mbtool.sig");
     std::string mbtoolPath(m_impl->pc->dataDirectory());
     mbtoolPath += "/binaries/android/";
-    mbtoolPath += m_impl->info->device()->architecture();
+    mbtoolPath += mb_device_architecture(m_impl->info->device());
     mbtoolPath += "/mbtool";
     std::string sigPath(mbtoolPath);
     sigPath += ".sig";
@@ -107,7 +109,7 @@ bool CoreRP::addExfat()
 
     std::string mountPath(m_impl->pc->dataDirectory());
     mountPath += "/binaries/android/";
-    mountPath += m_impl->info->device()->architecture();
+    mountPath += mb_device_architecture(m_impl->info->device());
     mountPath += "/mount.exfat";
     std::string sigPath(mountPath);
     sigPath += ".sig";
@@ -145,31 +147,38 @@ bool CoreRP::setUpInitWrapper()
     return true;
 }
 
-static std::string encode_list(const std::vector<std::string> &list)
+static std::string encode_list(const char * const *list)
 {
+    if (!list) {
+        return std::string();
+    }
+
     // We processing char-by-char, so avoid unnecessary reallocations
     std::size_t size = 0;
-    for (const std::string &item : list) {
-        size += item.size();
-        size += std::count(item.begin(), item.end(), ',');
+    std::size_t list_size = 0;
+    for (auto iter = list; *iter; ++iter) {
+        std::size_t item_length = strlen(*iter);
+        size += item_length;
+        size += std::count(*iter, *iter + item_length, ',');
+        ++list_size;
     }
     if (size == 0) {
         return std::string();
     }
-    size += list.size() - 1;
+    size += list_size - 1;
 
     std::string result;
     result.reserve(size);
 
     bool first = true;
-    for (const std::string &item : list) {
+    for (auto iter = list; *iter; ++iter) {
         if (!first) {
             result += ',';
         } else {
             first = false;
         }
-        for (char c : item) {
-            if (c == ',' || c == '\\') {
+        for (auto c = *iter; *c; ++c) {
+            if (*c == ',' || *c == '\\') {
                 result += '\\';
             }
             result += c;
@@ -201,36 +210,36 @@ bool CoreRP::addBlockDevProps()
     std::string encoded;
 
     encoded = "ro.patcher.blockdevs.base=";
-    encoded += encode_list(device->blockDevBaseDirs());
+    encoded += encode_list(mb_device_block_dev_base_dirs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.system=";
-    encoded += encode_list(device->systemBlockDevs());
+    encoded += encode_list(mb_device_system_block_devs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.cache=";
-    encoded += encode_list(device->cacheBlockDevs());
+    encoded += encode_list(mb_device_cache_block_devs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.data=";
-    encoded += encode_list(device->dataBlockDevs());
+    encoded += encode_list(mb_device_data_block_devs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.boot=";
-    encoded += encode_list(device->bootBlockDevs());
+    encoded += encode_list(mb_device_boot_block_devs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.recovery=";
-    encoded += encode_list(device->recoveryBlockDevs());
+    encoded += encode_list(mb_device_recovery_block_devs(device));
     lines.push_back(encoded);
 
     encoded = "ro.patcher.blockdevs.extra=";
-    encoded += encode_list(device->extraBlockDevs());
+    encoded += encode_list(mb_device_extra_block_devs(device));
     lines.push_back(encoded);
 
-    if (device->cryptoOptions()->supported) {
+    if (mb_device_crypto_supported(device)) {
         encoded = "ro.patcher.cryptfs_header_path=";
-        encoded += device->cryptoOptions()->headerPath;
+        encoded += mb_device_crypto_header_path(device);
         lines.push_back(encoded);
     }
 

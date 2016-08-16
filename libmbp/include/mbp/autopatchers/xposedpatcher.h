@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "mbp/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/patcherinterface.h"
 

@@ -25,7 +25,6 @@
 
 #include "mbcommon/version.h"
 
-#include "mbp/device.h"
 #include "mbp/patcherinterface.h"
 #include "mbp/private/fileutils.h"
 
@@ -51,7 +50,6 @@ public:
     std::string tempDir;
 
     std::string version;
-    std::vector<Device *> devices;
 
     // Errors
     ErrorCode error;
@@ -60,8 +58,6 @@ public:
     std::vector<Patcher *> allocPatchers;
     std::vector<AutoPatcher *> allocAutoPatchers;
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
-
-    void loadDefaultDevices();
 };
 /*! \endcond */
 
@@ -74,19 +70,11 @@ public:
 
 PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
-    m_impl->loadDefaultDevices();
-
     m_impl->version = mb::version();
 }
 
 PatcherConfig::~PatcherConfig()
 {
-    // Clean up devices
-    for (Device *device : m_impl->devices) {
-        delete device;
-    }
-    m_impl->devices.clear();
-
     for (Patcher *patcher : m_impl->allocPatchers) {
         destroyPatcher(patcher);
     }
@@ -173,21 +161,6 @@ void PatcherConfig::setTempDirectory(std::string path)
 std::string PatcherConfig::version() const
 {
     return m_impl->version;
-}
-
-/*!
- * \brief Get list of supported devices
- *
- * \return List of supported devices
- */
-std::vector<Device *> PatcherConfig::devices() const
-{
-    return m_impl->devices;
-}
-
-void PatcherConfig::Impl::loadDefaultDevices()
-{
-    // TODO
 }
 
 /*!

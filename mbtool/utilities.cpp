@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include <cstring>
+
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
@@ -29,6 +31,9 @@
 #include "minizip/ioandroid.h"
 
 #include "mbcommon/version.h"
+#include "mbdevice/device.h"
+#include "mbdevice/validate.h"
+#include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbp/patcherconfig.h"
@@ -49,10 +54,10 @@
 namespace mb
 {
 
-static bool utilities_switch_rom(const std::string &rom_id, bool force)
-{
-    mbp::PatcherConfig pc;
+const char *devices_file = nullptr;
 
+static Device * get_device(const char *path)
+{
     char prop_product_device[PROP_VALUE_MAX];
     char prop_build_product[PROP_VALUE_MAX];
 
@@ -62,43 +67,88 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
     LOGD("ro.product.device = %s", prop_product_device);
     LOGD("ro.build.product = %s", prop_build_product);
 
-    const mbp::Device *device = nullptr;
+    std::vector<unsigned char> contents;
+    if (!util::file_read_all(path, &contents)) {
+        LOGE("%s: Failed to read file: %s", path, strerror(errno));
+        return nullptr;
+    }
 
-    for (const mbp::Device *d : pc.devices()) {
-        auto codenames = d->codenames();
-        auto it = std::find_if(codenames.begin(), codenames.end(),
-                               [&](const std::string &codename) {
-            return codename == prop_product_device
-                    || codename == prop_build_product;
-        });
-        if (it != codenames.end()) {
-            device = d;
-            break;
+    MbDeviceJsonError error;
+    Device **devices = mb_device_new_list_from_json(
+            (const char *) contents.data(), &error);
+    if (!devices) {
+        LOGE("%s: Failed to load devices", path);
+        return nullptr;
+    }
+
+    Device *device = nullptr;
+
+    for (auto it = devices; *it; ++it) {
+        if (mb_device_validate(*it) != 0) {
+            LOGW("Skipping invalid device");
+            continue;
+        }
+
+        auto codenames = mb_device_codenames(*it);
+
+        for (auto it2 = codenames; *it2; ++it2) {
+            if (strcmp(*it2, prop_product_device) == 0
+                    || strcmp(*it2, prop_build_product) == 0) {
+                device = *it;
+                break;
+            }
+        }
+
+        // Free any devices we don't need
+        if (device != *it) {
+            mb_device_free(*it);
         }
     }
+
+    free(devices);
 
     if (!device) {
         LOGE("Unknown device: %s", prop_product_device);
+        return nullptr;
+    }
+
+    return device;
+}
+
+static bool utilities_switch_rom(const char *rom_id, bool force)
+{
+    const char *block_dev = nullptr;
+    struct stat sb;
+
+    if (!devices_file) {
+        LOGE("No device definitions file specified");
         return false;
     }
 
-    std::string block_dev;
-    struct stat sb;
+    Device *device = get_device(devices_file);
+    if (!device) {
+        LOGE("Failed to detect device");
+        return false;
+    }
 
-    for (auto const &path : device->bootBlockDevs()) {
-        if (stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode)) {
-            block_dev = path;
+    auto free_device = util::finally([&]{
+        mb_device_free(device);
+    });
+
+    for (auto it = mb_device_boot_block_devs(device); *it; ++it) {
+        if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
+            block_dev = *it;
             break;
         }
     }
 
-    if (block_dev.empty()) {
+    if (!block_dev) {
         LOGE("All specified boot partition paths could not be found");
         return false;
     }
 
     SwitchRomResult ret = switch_rom(
-            rom_id, block_dev, device->blockDevBaseDirs(), force);
+            rom_id, block_dev, mb_device_block_dev_base_dirs(device), force);
     switch (ret) {
     case SwitchRomResult::SUCCEEDED:
         LOGD("SUCCEEDED");
@@ -117,7 +167,7 @@ static bool utilities_switch_rom(const std::string &rom_id, bool force)
     return ret == SwitchRomResult::SUCCEEDED;
 }
 
-static bool utilities_wipe_system(const std::string &rom_id)
+static bool utilities_wipe_system(const char *rom_id)
 {
     auto rom = Roms::create_rom(rom_id);
     if (!rom) {
@@ -127,7 +177,7 @@ static bool utilities_wipe_system(const std::string &rom_id)
     return wipe_system(rom);
 }
 
-static bool utilities_wipe_cache(const std::string &rom_id)
+static bool utilities_wipe_cache(const char *rom_id)
 {
     auto rom = Roms::create_rom(rom_id);
     if (!rom) {
@@ -137,7 +187,7 @@ static bool utilities_wipe_cache(const std::string &rom_id)
     return wipe_cache(rom);
 }
 
-static bool utilities_wipe_data(const std::string &rom_id)
+static bool utilities_wipe_data(const char *rom_id)
 {
     auto rom = Roms::create_rom(rom_id);
     if (!rom) {
@@ -147,7 +197,7 @@ static bool utilities_wipe_data(const std::string &rom_id)
     return wipe_data(rom);
 }
 
-static bool utilities_wipe_dalvik_cache(const std::string &rom_id)
+static bool utilities_wipe_dalvik_cache(const char *rom_id)
 {
     auto rom = Roms::create_rom(rom_id);
     if (!rom) {
@@ -157,7 +207,7 @@ static bool utilities_wipe_dalvik_cache(const std::string &rom_id)
     return wipe_dalvik_cache(rom);
 }
 
-static bool utilities_wipe_multiboot(const std::string &rom_id)
+static bool utilities_wipe_multiboot(const char *rom_id)
 {
     auto rom = Roms::create_rom(rom_id);
     if (!rom) {
@@ -410,13 +460,17 @@ static void utilities_usage(bool error)
     FILE *stream = error ? stderr : stdout;
 
     fprintf(stream,
-            "Usage: utilities generate [template dir] [output file]\n"
-            "   OR: utilities switch [ROM ID] [--force]\n"
-            "   OR: utilities wipe-system [ROM ID]\n"
-            "   OR: utilities wipe-cache [ROM ID]\n"
-            "   OR: utilities wipe-data [ROM ID]\n"
-            "   OR: utilities wipe-dalvik-cache [ROM ID]\n"
-            "   OR: utilities wipe-multiboot [ROM ID]\n");
+            "Usage: utilities [opt...] generate [template dir] [output file]\n"
+            "   OR: utilities [opt...] switch [ROM ID] [--force]\n"
+            "   OR: utilities [opt...] wipe-system [ROM ID]\n"
+            "   OR: utilities [opt...] wipe-cache [ROM ID]\n"
+            "   OR: utilities [opt...] wipe-data [ROM ID]\n"
+            "   OR: utilities [opt...] wipe-dalvik-cache [ROM ID]\n"
+            "   OR: utilities [opt...] wipe-multiboot [ROM ID]\n"
+            "\n"
+            "Options:\n"
+            "  -f, --force      Force (only for 'switch' action)\n"
+            "  -d, --devices    Path to device defintions file\n");
 }
 
 int utilities_main(int argc, char *argv[])
@@ -433,15 +487,21 @@ int utilities_main(int argc, char *argv[])
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"force", no_argument, 0, 'f'},
+        {"devices", required_argument, 0, 'd'},
         {0, 0, 0, 0}
     };
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "hf", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hfd:",
+                              long_options, &long_index)) != -1) {
         switch (opt) {
         case 'f':
             force = true;
+            break;
+
+        case 'd':
+            devices_file = optarg;
             break;
 
         case 'h':

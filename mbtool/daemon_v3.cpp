@@ -1160,7 +1160,7 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    std::vector<std::string> block_dev_dirs;
+    std::vector<const char *> block_dev_dirs;
 
     if (request->blockdev_base_dirs()) {
         for (auto const &base_dir : *request->blockdev_base_dirs()) {
@@ -1174,7 +1174,7 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
 
     SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
                                      request->boot_blockdev()->c_str(),
-                                     block_dev_dirs,
+                                     block_dev_dirs.data(),
                                      force_update_checksums);
 
     bool success = ret == SwitchRomResult::SUCCEEDED;

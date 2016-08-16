@@ -223,11 +223,13 @@ bool MultiBootPatcher::Impl::patchZip()
     std::vector<CopySpec> toCopy{
         {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery.sig",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
             pc->dataDirectory() + "/scripts/bb-wrapper.sh",
@@ -283,8 +285,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateFiles(++files, maxFiles);
     updateDetails("multiboot/info.prop");
 
-    const std::string infoProp =
-            createInfoProp(pc, info->device(), info->romId());
+    const std::string infoProp = createInfoProp(pc, info->romId());
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -566,7 +567,8 @@ bool MultiBootPatcher::patchRamdisk(PatcherConfig * const pc,
         return false;
     }
 
-    std::string rpId = info->device()->id() + "/default";
+    std::string rpId(mb_device_id(info->device()));
+    rpId += "/default";
     auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
     if (!rp) {
         rpId = "default";
@@ -651,75 +653,7 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
     return max;
 }
 
-std::string MultiBootPatcher::createTable(const PatcherConfig * const pc)
-{
-    std::string out;
-
-    auto devices = pc->devices();
-    std::vector<std::string> ids;
-    std::vector<std::string> codenames;
-    std::vector<std::string> names;
-
-    std::size_t maxLenId = insertAndFindMax(devices, ids,
-            [](Device *d, std::vector<std::string> &list) {
-                list.push_back(d->id());
-                return d->id().size();
-            });
-    std::size_t maxLenCodenames = insertAndFindMax(devices, codenames,
-            [](Device *d, std::vector<std::string> &list) {
-                auto codenames = d->codenames();
-                std::string out = StringUtils::join(codenames, ", ");
-                std::size_t len = out.size();
-                list.push_back(std::move(out));
-                return len;
-            });
-    std::size_t maxLenName = insertAndFindMax(devices, names,
-            [](Device *d, std::vector<std::string> &list) {
-                list.push_back(d->name());
-                return d->name().size();
-            });
-
-    const std::string titleDevice = "Device";
-    const std::string titleCodenames = "Codenames";
-    const std::string titleName = "Name";
-
-    if (titleDevice.size() > maxLenId) {
-        maxLenId = titleDevice.size();
-    }
-    if (titleCodenames.size() > maxLenCodenames) {
-        maxLenCodenames = titleCodenames.size();
-    }
-    if (titleName.size() > maxLenName) {
-        maxLenName = titleName.size();
-    }
-
-    const std::string rowFmt =
-            StringUtils::format("# | %%-%" PRIzu "s | %%-%" PRIzu "s | %%-%" PRIzu "s |\n",
-                                maxLenId, maxLenCodenames, maxLenName);
-
-    // Titles
-    out += StringUtils::format(rowFmt.c_str(),
-                               titleDevice.c_str(), titleCodenames.c_str(),
-                               titleName.c_str());
-
-    // Separator
-    out += StringUtils::format("# |%s|%s|%s|\n",
-                               std::string(maxLenId + 2, '-').c_str(),
-                               std::string(maxLenCodenames + 2, '-').c_str(),
-                               std::string(maxLenName + 2, '-').c_str());
-
-    // Devices
-    for (std::size_t i = 0; i < devices.size(); ++i) {
-        out += StringUtils::format(rowFmt.c_str(),
-                                   ids[i].c_str(), codenames[i].c_str(),
-                                   names[i].c_str());
-    }
-
-    return out;
-}
-
 std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
-                                             const Device * const device,
                                              const std::string &romId)
 {
     std::string out;
@@ -740,29 +674,6 @@ std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
 
     out += "mbtool.installer.version=";
     out += pc->version();
-    out += "\n";
-
-    out +=
-"\n"
-"\n"
-"# mbtool.installer.device\n"
-"# -----------------------\n"
-"# This field specifies the target device for this zip file. Based on the value,\n"
-"# mbtool will determine the appropriate partitions to use as well as other\n"
-"# device-specific operations (eg. Loki for locked Galaxy S4 and LG G2\n"
-"# bootloaders). The devices supported by mbtool are specified below.\n"
-"#\n"
-"# WARNING: Except for debugging purposes, this value should NEVER be changed.\n"
-"# An incorrect value can hard-brick the device due to differences in the\n"
-"# partition table.\n"
-"#\n"
-"# Supported devices:\n"
-"#\n";
-
-    out += createTable(pc);
-    out += "#\n";
-    out += "mbtool.installer.device=";
-    out += device->id();
     out += "\n";
 
     out +=

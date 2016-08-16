@@ -186,6 +186,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbp-static
         mbpio-static
+        mbdevice-static
         mbcommon-static
         minizip
         ${MBP_JANSSON_LIBRARIES}

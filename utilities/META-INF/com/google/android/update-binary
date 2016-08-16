@@ -21,7 +21,8 @@ unzip "${zipfile}"
 
 ui_print "Generating AROMA config based on installed ROMS"
 chmod 755 /tmp/dbu/mbtool
-/tmp/dbu/mbtool utilities generate /tmp/dbu/template /tmp/dbu/aroma.zip
+/tmp/dbu/mbtool utilities generate /tmp/dbu/template /tmp/dbu/aroma.zip \
+    --device /tmp/dbu/devices.json
 
 ui_print "Starting AROMA"
 chmod 755 template/META-INF/com/google/android/update-binary

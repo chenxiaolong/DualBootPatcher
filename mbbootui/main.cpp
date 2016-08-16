@@ -24,12 +24,15 @@
 #include <unistd.h>
 
 #include "mbcommon/version.h"
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 #include "mblog/logging.h"
-#include "mbp/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
+#include "mbutil/file.h"
+#include "mbutil/finally.h"
 #include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -63,7 +66,7 @@
 
 #define DEFAULT_PROP_PATH           "/default.prop"
 
-#define PROP_PATCHER_DEVICE         "ro.patcher.device"
+#define DEVICE_JSON_PATH            "/device.json"
 
 #define PROP_CRYPTO_STATE           "state.multiboot.crypto"
 #define CRYPTO_STATE_ENCRYPTED      "encrypted"
@@ -73,8 +76,7 @@
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
 static mbp::PatcherConfig pc;
-static mbp::Device *device = nullptr;
-static std::vector<const char *> gfx_backends;
+static Device *device = nullptr;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
@@ -102,27 +104,26 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 
 static bool detect_device()
 {
-    std::string codename;
-    mb::util::file_get_property(DEFAULT_PROP_PATH, PROP_PATCHER_DEVICE,
-                                &codename, std::string());
-
-    if (codename.empty()) {
-        LOGE("%s: Missing '%s' property",
-             DEFAULT_PROP_PATH, PROP_PATCHER_DEVICE);
+    std::vector<unsigned char> contents;
+    if (!mb::util::file_read_all(DEVICE_JSON_PATH, &contents)) {
+        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
         return false;
     }
 
-    for (mbp::Device *d : pc.devices()) {
-        auto codenames = d->codenames();
-        auto it = std::find(codenames.begin(), codenames.end(), codename);
-        if (it != codenames.end()) {
-            device = d;
-            break;
-        }
+    MbDeviceJsonError error;
+    device = mb_device_new_from_json(
+            (const char *) contents.data(), &error);
+    if (!device) {
+        LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
+        return false;
     }
 
-    if (!device) {
-        LOGE("Unknown device: %s", codename.c_str());
+    auto free_device = mb::util::finally([&]{
+        mb_device_free(device);
+    });
+
+    if (mb_device_validate(device) != 0) {
+        LOGE("%s: Validation failed", DEVICE_JSON_PATH);
         return false;
     }
 
@@ -242,96 +243,84 @@ struct mapping
 
 static mapping flag_map[] =
 {
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_SWAP_XY,           TW_FLAG_TOUCHSCREEN_SWAP_XY           },
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_FLIP_X,            TW_FLAG_TOUCHSCREEN_FLIP_X            },
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_FLIP_Y,            TW_FLAG_TOUCHSCREEN_FLIP_Y            },
-    { mbp::Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH, TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH },
-    { mbp::Device::FLAG_TW_SCREEN_BLANK_ON_BOOT,          TW_FLAG_SCREEN_BLANK_ON_BOOT          },
-    { mbp::Device::FLAG_TW_BOARD_HAS_FLIPPED_SCREEN,      TW_FLAG_BOARD_HAS_FLIPPED_SCREEN      },
-    { mbp::Device::FLAG_TW_IGNORE_MAJOR_AXIS_0,           TW_FLAG_IGNORE_MAJOR_AXIS_0           },
-    { mbp::Device::FLAG_TW_IGNORE_MT_POSITION_0,          TW_FLAG_IGNORE_MT_POSITION_0          },
-    { mbp::Device::FLAG_TW_IGNORE_ABS_MT_TRACKING_ID,     TW_FLAG_IGNORE_ABS_MT_TRACKING_ID     },
-    { mbp::Device::FLAG_TW_NEW_ION_HEAP,                  TW_FLAG_NEW_ION_HEAP                  },
-    { mbp::Device::FLAG_TW_NO_SCREEN_BLANK,               TW_FLAG_NO_SCREEN_BLANK               },
-    { mbp::Device::FLAG_TW_NO_SCREEN_TIMEOUT,             TW_FLAG_NO_SCREEN_TIMEOUT             },
-    { mbp::Device::FLAG_TW_ROUND_SCREEN,                  TW_FLAG_ROUND_SCREEN                  },
-    { mbp::Device::FLAG_TW_NO_CPU_TEMP,                   TW_FLAG_NO_CPU_TEMP                   },
-    { mbp::Device::FLAG_TW_QCOM_RTC_FIX,                  TW_FLAG_QCOM_RTC_FIX                  },
-    { mbp::Device::FLAG_TW_HAS_DOWNLOAD_MODE,             TW_FLAG_HAS_DOWNLOAD_MODE             },
-    { mbp::Device::FLAG_TW_PREFER_LCD_BACKLIGHT,          TW_FLAG_PREFER_LCD_BACKLIGHT          },
+    { FLAG_TW_TOUCHSCREEN_SWAP_XY,           TW_FLAG_TOUCHSCREEN_SWAP_XY           },
+    { FLAG_TW_TOUCHSCREEN_FLIP_X,            TW_FLAG_TOUCHSCREEN_FLIP_X            },
+    { FLAG_TW_TOUCHSCREEN_FLIP_Y,            TW_FLAG_TOUCHSCREEN_FLIP_Y            },
+    { FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH, TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH },
+    { FLAG_TW_SCREEN_BLANK_ON_BOOT,          TW_FLAG_SCREEN_BLANK_ON_BOOT          },
+    { FLAG_TW_BOARD_HAS_FLIPPED_SCREEN,      TW_FLAG_BOARD_HAS_FLIPPED_SCREEN      },
+    { FLAG_TW_IGNORE_MAJOR_AXIS_0,           TW_FLAG_IGNORE_MAJOR_AXIS_0           },
+    { FLAG_TW_IGNORE_MT_POSITION_0,          TW_FLAG_IGNORE_MT_POSITION_0          },
+    { FLAG_TW_IGNORE_ABS_MT_TRACKING_ID,     TW_FLAG_IGNORE_ABS_MT_TRACKING_ID     },
+    { FLAG_TW_NEW_ION_HEAP,                  TW_FLAG_NEW_ION_HEAP                  },
+    { FLAG_TW_NO_SCREEN_BLANK,               TW_FLAG_NO_SCREEN_BLANK               },
+    { FLAG_TW_NO_SCREEN_TIMEOUT,             TW_FLAG_NO_SCREEN_TIMEOUT             },
+    { FLAG_TW_ROUND_SCREEN,                  TW_FLAG_ROUND_SCREEN                  },
+    { FLAG_TW_NO_CPU_TEMP,                   TW_FLAG_NO_CPU_TEMP                   },
+    { FLAG_TW_QCOM_RTC_FIX,                  TW_FLAG_QCOM_RTC_FIX                  },
+    { FLAG_TW_HAS_DOWNLOAD_MODE,             TW_FLAG_HAS_DOWNLOAD_MODE             },
+    { FLAG_TW_PREFER_LCD_BACKLIGHT,          TW_FLAG_PREFER_LCD_BACKLIGHT          },
     {0, 0}
 };
 
 static void load_device_config()
 {
-    const mbp::Device::TwOptions *opts = device->twOptions();
+    uint64_t flags = mb_device_tw_flags(device);
+    enum TwPixelFormat pixel_fomat =
+            mb_device_tw_pixel_format(device);
+    enum TwForcePixelFormat force_pixel_format =
+            mb_device_tw_force_pixel_format(device);
 
     for (auto iter = flag_map; iter->libmbp != 0; ++iter) {
-        if (opts->flags & iter->libmbp) {
+        if (flags & iter->libmbp) {
             tw_flags |= iter->bootui;
         }
     }
 
-    switch (opts->pixelFormat) {
-    case mbp::Device::TwPixelFormat::DEFAULT:
+    switch (pixel_fomat) {
+    case TW_PIXEL_FORMAT_DEFAULT:
         tw_pixel_format = TW_PXFMT_DEFAULT;
         break;
-    case mbp::Device::TwPixelFormat::ABGR_8888:
+    case TW_PIXEL_FORMAT_ABGR_8888:
         tw_pixel_format = TW_PXFMT_ABGR_8888;
         break;
-    case mbp::Device::TwPixelFormat::RGBX_8888:
+    case TW_PIXEL_FORMAT_RGBX_8888:
         tw_pixel_format = TW_PXFMT_RGBX_8888;
         break;
-    case mbp::Device::TwPixelFormat::BGRA_8888:
+    case TW_PIXEL_FORMAT_BGRA_8888:
         tw_pixel_format = TW_PXFMT_BGRA_8888;
         break;
-    case mbp::Device::TwPixelFormat::RGBA_8888:
+    case TW_PIXEL_FORMAT_RGBA_8888:
         tw_pixel_format = TW_PXFMT_RGBA_8888;
         break;
     }
 
-    switch (opts->forcePixelFormat) {
-    case mbp::Device::TwForcePixelFormat::NONE:
+    switch (force_pixel_format) {
+    case TW_FORCE_PIXEL_FORMAT_NONE:
         tw_force_pixel_format = TW_FORCE_PXFMT_NONE;
         break;
-    case mbp::Device::TwForcePixelFormat::RGB_565:
+    case TW_FORCE_PIXEL_FORMAT_RGB_565:
         tw_force_pixel_format = TW_FORCE_PXFMT_RGB_565;
         break;
     }
 
-    tw_overscan_percent = opts->overscanPercent;
-    tw_default_x_offset = opts->defaultXOffset;
-    tw_default_y_offset = opts->defaultYOffset;
+    tw_overscan_percent = mb_device_tw_overscan_percent(device);
+    tw_default_x_offset = mb_device_tw_default_x_offset(device);
+    tw_default_y_offset = mb_device_tw_default_y_offset(device);
+    tw_brightness_path = mb_device_tw_brightness_path(device);
+    tw_secondary_brightness_path = mb_device_tw_secondary_brightness_path(device);
+    tw_max_brightness = mb_device_tw_max_brightness(device);
+    tw_default_brightness = mb_device_tw_default_brightness(device);
+    tw_custom_battery_path = mb_device_tw_battery_path(device);
+    tw_custom_cpu_temp_path = mb_device_tw_cpu_temp_path(device);
+    tw_input_blacklist = mb_device_tw_input_blacklist(device);
+    tw_whitelist_input = mb_device_tw_input_whitelist(device);
 
-    if (!opts->brightnessPath.empty()) {
-        tw_brightness_path = opts->brightnessPath.c_str();
+    tw_graphics_backends = mb_device_tw_graphics_backends(device);
+    tw_graphics_backends_length = 0;
+    for (auto it = tw_graphics_backends; *it; ++it) {
+        tw_graphics_backends_length++;
     }
-    if (!opts->secondaryBrightnessPath.empty()) {
-        tw_secondary_brightness_path = opts->secondaryBrightnessPath.c_str();
-    }
-    tw_max_brightness = opts->maxBrightness;
-    tw_default_brightness = opts->defaultBrightness;
-
-    if (!opts->batteryPath.empty()) {
-        tw_custom_battery_path = opts->batteryPath.c_str();
-    }
-    if (!opts->cpuTempPath.empty()) {
-        tw_custom_cpu_temp_path = opts->cpuTempPath.c_str();
-    }
-
-    if (!opts->inputBlacklist.empty()) {
-        tw_input_blacklist = opts->inputBlacklist.c_str();
-    }
-    if (!opts->inputWhitelist.empty()) {
-        tw_whitelist_input = opts->inputWhitelist.c_str();
-    }
-
-    for (auto const &backend : opts->graphicsBackends) {
-        gfx_backends.push_back(backend.c_str());
-    }
-
-    tw_graphics_backends = gfx_backends.data();
-    tw_graphics_backends_length = gfx_backends.size();
 }
 
 static void load_other_config()
@@ -512,7 +501,7 @@ int main(int argc, char *argv[])
     }
 
     // Check if device supports the boot UI
-    if (!device->twOptions()->supported) {
+    if (!mb_device_tw_supported(device)) {
         LOGW("Boot UI is not supported for the device");
         return EXIT_FAILURE;
     }
@@ -524,7 +513,7 @@ int main(int argc, char *argv[])
     log_startup();
 
     if (!extract_theme(argv[optind], MBBOOTUI_THEME_PATH,
-                       device->twOptions()->theme)) {
+                       mb_device_tw_theme(device))) {
         LOGE("Failed to extract theme");
         return EXIT_FAILURE;
     }

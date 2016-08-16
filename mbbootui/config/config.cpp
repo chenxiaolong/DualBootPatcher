@@ -47,7 +47,7 @@ const char *tw_theme_zip_path = "/bootui/theme.zip";
 
 int tw_android_sdk_version = 0;
 
-const char **tw_graphics_backends = nullptr;
+const char * const *tw_graphics_backends = nullptr;
 size_t tw_graphics_backends_length = 0;
 
 }

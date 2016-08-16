@@ -17,7 +17,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 set(MBP_SOURCES
     src/bootimage.cpp
     src/cpiofile.cpp
-    src/device.cpp
     src/fileinfo.cpp
     src/patcherconfig.cpp
     # Boot image parsers
@@ -33,7 +32,6 @@ set(MBP_SOURCES
     src/cwrapper/cbootimage.cpp
     src/cwrapper/ccommon.cpp
     src/cwrapper/ccpiofile.cpp
-    src/cwrapper/cdevice.cpp
     src/cwrapper/cfileinfo.cpp
     src/cwrapper/cpatcherconfig.cpp
     src/cwrapper/cpatcherinterface.cpp
@@ -131,6 +129,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
     target_link_libraries(
         mbp-shared
         mbpio-static
+        mbdevice-shared
         mblog-shared
         mbcommon-shared
         minizip

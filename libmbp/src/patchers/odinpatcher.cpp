@@ -271,27 +271,33 @@ bool OdinPatcher::Impl::patchTar()
     std::vector<CopySpec> toCopy{
         {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater",
+                    + mb_device_architecture(info->device())
+                    + "/odinupdater",
             "META-INF/com/google/android/update-binary.orig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater.sig",
+                    + mb_device_architecture(info->device())
+                    + "/odinupdater.sig",
             "META-INF/com/google/android/update-binary.orig.sig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse",
+                    + mb_device_architecture(info->device())
+                    + "/fuse-sparse",
             "fuse-sparse"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse.sig",
+                    + mb_device_architecture(info->device())
+                    + "/fuse-sparse.sig",
             "fuse-sparse.sig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery.sig",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
             pc->dataDirectory() + "/scripts/bb-wrapper.sh",
@@ -323,7 +329,7 @@ bool OdinPatcher::Impl::patchTar()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->device(), info->romId());
+            MultiBootPatcher::createInfoProp(pc, info->romId());
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -338,10 +344,10 @@ bool OdinPatcher::Impl::patchTar()
 
     std::string blockDevsProp;
     blockDevsProp += "system=";
-    blockDevsProp += info->device()->systemBlockDevs()[0];
+    blockDevsProp += mb_device_system_block_devs(info->device())[0];
     blockDevsProp += "\n";
     blockDevsProp += "boot=";
-    blockDevsProp += info->device()->bootBlockDevs()[0];
+    blockDevsProp += mb_device_boot_block_devs(info->device())[0];
     blockDevsProp += "\n";
     result = MinizipUtils::addFile(
             zf, "block_devs.prop", std::vector<unsigned char>(

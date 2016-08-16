@@ -52,8 +52,10 @@ target_link_libraries(
     mbbootui-config
     mbutil-static
     mbp-static
+    mbdevice-static
     mblog-static
     mbcommon-static
+    ${MBP_JANSSON_LIBRARIES}
     ${MBP_LIBARCHIVE_LIBRARIES}
 )
 

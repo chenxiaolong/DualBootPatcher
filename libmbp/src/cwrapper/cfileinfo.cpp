@@ -122,10 +122,10 @@ void mbp_fileinfo_set_output_path(CFileInfo *info, const char *path)
  *
  * \sa FileInfo::device()
  */
-CDevice * mbp_fileinfo_device(const CFileInfo *info)
+struct Device * mbp_fileinfo_device(const CFileInfo *info)
 {
     CCAST(info);
-    return reinterpret_cast<CDevice *>(fi->device());
+    return fi->device();
 }
 
 /*!
@@ -136,10 +136,10 @@ CDevice * mbp_fileinfo_device(const CFileInfo *info)
  *
  * \sa FileInfo::setDevice()
  */
-void mbp_fileinfo_set_device(CFileInfo *info, CDevice *device)
+void mbp_fileinfo_set_device(CFileInfo *info, struct Device *device)
 {
     CAST(info);
-    fi->setDevice(reinterpret_cast<mbp::Device *>(device));
+    fi->setDevice(device);
 }
 
 char * mbp_fileinfo_rom_id(const CFileInfo *info)
