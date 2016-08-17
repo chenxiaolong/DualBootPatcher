@@ -57,6 +57,8 @@ MB_EXPORT struct Device * mb_device_new_from_json(const char *json,
 MB_EXPORT struct Device ** mb_device_new_list_from_json(const char *json,
                                                         struct MbDeviceJsonError *error);
 
+MB_EXPORT char * mb_device_to_json(struct Device *device);
+
 #ifdef __cplusplus
 }
 #endif

@@ -388,6 +388,19 @@ TEST(JsonTest, LoadMultiple)
     ASSERT_STREQ(sd2.error.expected_type, "array");
 }
 
+TEST(JsonTest, CreateJson)
+{
+    ScopedDevice sd1(sample_complete);
+    ASSERT_NE(sd1.device, nullptr);
+
+    std::unique_ptr<char, void (*)(void *)> json(
+            mb_device_to_json(sd1.device), free);
+    ASSERT_TRUE(json.operator bool());
+
+    ScopedDevice sd2(json.get());
+    ASSERT_TRUE(mb_device_equals(sd1.device, sd2.device));
+}
+
 int main(int argc, char *argv[])
 {
     testing::InitGoogleTest(&argc, argv);

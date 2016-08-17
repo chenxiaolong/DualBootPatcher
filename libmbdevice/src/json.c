@@ -24,9 +24,70 @@
 #include <jansson.h>
 
 #include "mbdevice/internal/array.h"
+#include "mbdevice/internal/structs.h"
 
 
 #define JSON_BOOLEAN JSON_TRUE
+
+struct tw_flag_mapping
+{
+    const char *key;
+    uint64_t flag;
+};
+
+struct tw_flag_mapping tw_flag_mappings[] = {
+#define FLAG(F) { #F, FLAG_ ## F }
+    FLAG(TW_TOUCHSCREEN_SWAP_XY),
+    FLAG(TW_TOUCHSCREEN_FLIP_X),
+    FLAG(TW_TOUCHSCREEN_FLIP_Y),
+    FLAG(TW_GRAPHICS_FORCE_USE_LINELENGTH),
+    FLAG(TW_SCREEN_BLANK_ON_BOOT),
+    FLAG(TW_BOARD_HAS_FLIPPED_SCREEN),
+    FLAG(TW_IGNORE_MAJOR_AXIS_0),
+    FLAG(TW_IGNORE_MT_POSITION_0),
+    FLAG(TW_IGNORE_ABS_MT_TRACKING_ID),
+    FLAG(TW_NEW_ION_HEAP),
+    FLAG(TW_NO_SCREEN_BLANK),
+    FLAG(TW_NO_SCREEN_TIMEOUT),
+    FLAG(TW_ROUND_SCREEN),
+    FLAG(TW_NO_CPU_TEMP),
+    FLAG(TW_QCOM_RTC_FIX),
+    FLAG(TW_HAS_DOWNLOAD_MODE),
+    FLAG(TW_PREFER_LCD_BACKLIGHT),
+#undef FLAG
+    { NULL, 0 }
+};
+
+struct tw_pxfmt_mapping
+{
+    const char *key;
+    enum TwPixelFormat value;
+};
+
+struct tw_pxfmt_mapping tw_pxfmt_mappings[] = {
+#define FLAG(F) { #F, TW_PIXEL_FORMAT_ ## F }
+    FLAG(DEFAULT),
+    FLAG(ABGR_8888),
+    FLAG(RGBX_8888),
+    FLAG(BGRA_8888),
+    FLAG(RGBA_8888),
+#undef FLAG
+    { NULL, TW_PIXEL_FORMAT_DEFAULT }
+};
+
+struct tw_force_pxfmt_mapping
+{
+    const char *key;
+    enum TwForcePixelFormat value;
+};
+
+struct tw_force_pxfmt_mapping tw_force_pxfmt_mappings[] = {
+#define FLAG(F) { #F, TW_FORCE_PIXEL_FORMAT_ ## F }
+    FLAG(NONE),
+    FLAG(RGB_565),
+#undef FLAG
+    { NULL, TW_FORCE_PIXEL_FORMAT_NONE }
+};
 
 static const char * json_type_to_string(json_type type)
 {
@@ -243,34 +304,6 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
     json_t *value;
     uint64_t flags = 0;
 
-    struct mapping {
-        const char *key;
-        uint64_t flag;
-    };
-
-    struct mapping mappings[] = {
-#define FLAG(F) { #F, FLAG_ ## F }
-        FLAG(TW_TOUCHSCREEN_SWAP_XY),
-        FLAG(TW_TOUCHSCREEN_FLIP_X),
-        FLAG(TW_TOUCHSCREEN_FLIP_Y),
-        FLAG(TW_GRAPHICS_FORCE_USE_LINELENGTH),
-        FLAG(TW_SCREEN_BLANK_ON_BOOT),
-        FLAG(TW_BOARD_HAS_FLIPPED_SCREEN),
-        FLAG(TW_IGNORE_MAJOR_AXIS_0),
-        FLAG(TW_IGNORE_MT_POSITION_0),
-        FLAG(TW_IGNORE_ABS_MT_TRACKING_ID),
-        FLAG(TW_NEW_ION_HEAP),
-        FLAG(TW_NO_SCREEN_BLANK),
-        FLAG(TW_NO_SCREEN_TIMEOUT),
-        FLAG(TW_ROUND_SCREEN),
-        FLAG(TW_NO_CPU_TEMP),
-        FLAG(TW_QCOM_RTC_FIX),
-        FLAG(TW_HAS_DOWNLOAD_MODE),
-        FLAG(TW_PREFER_LCD_BACKLIGHT),
-#undef FLAG
-        { NULL, 0 }
-    };
-
     if (!json_is_array(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_ARRAY);
         return -1;
@@ -288,7 +321,7 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
         const char *str = json_string_value(value);
         uint64_t old_flags = flags;
 
-        for (struct mapping *m = mappings; m->key; ++m) {
+        for (struct tw_flag_mapping *m = tw_flag_mappings; m->key; ++m) {
             if (strcmp(m->key, str) == 0) {
                 flags |= m->flag;
                 break;
@@ -316,22 +349,6 @@ static int process_boot_ui_pixel_format(struct Device *device, json_t *node,
 {
     const char *str;
 
-    struct mapping {
-        const char *key;
-        enum TwPixelFormat value;
-    };
-
-    struct mapping mappings[] = {
-#define FLAG(F) { #F, TW_PIXEL_FORMAT_ ## F }
-        FLAG(DEFAULT),
-        FLAG(ABGR_8888),
-        FLAG(RGBX_8888),
-        FLAG(BGRA_8888),
-        FLAG(RGBA_8888),
-#undef FLAG
-        { NULL, TW_PIXEL_FORMAT_DEFAULT }
-    };
-
     if (!json_is_string(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
         return -1;
@@ -339,7 +356,7 @@ static int process_boot_ui_pixel_format(struct Device *device, json_t *node,
 
     str = json_string_value(node);
 
-    for (struct mapping *m = mappings; m->key; ++m) {
+    for (struct tw_pxfmt_mapping *m = tw_pxfmt_mappings; m->key; ++m) {
         if (strcmp(m->key, str) == 0) {
             int fn_ret = mb_device_set_tw_pixel_format(device, m->value);
             if (fn_ret < 0) {
@@ -360,19 +377,6 @@ static int process_boot_ui_force_pixel_format(struct Device *device, json_t *nod
 {
     const char *str;
 
-    struct mapping {
-        const char *key;
-        enum TwForcePixelFormat value;
-    };
-
-    struct mapping mappings[] = {
-#define FLAG(F) { #F, TW_FORCE_PIXEL_FORMAT_ ## F }
-        FLAG(NONE),
-        FLAG(RGB_565),
-#undef FLAG
-        { NULL, TW_FORCE_PIXEL_FORMAT_NONE }
-    };
-
     if (!json_is_string(node)) {
         json_error_set_mismatched_type(error, context, node->type, JSON_STRING);
         return -1;
@@ -380,7 +384,8 @@ static int process_boot_ui_force_pixel_format(struct Device *device, json_t *nod
 
     str = json_string_value(node);
 
-    for (struct mapping *m = mappings; m->key; ++m) {
+    for (struct tw_force_pxfmt_mapping *m = tw_force_pxfmt_mappings;
+            m->key; ++m) {
         if (strcmp(m->key, str) == 0) {
             int fn_ret = mb_device_set_tw_force_pixel_format(device, m->value);
             if (fn_ret < 0) {
@@ -713,4 +718,276 @@ done:
         free(devices);
     }
     return ok ? devices : NULL;
+}
+
+static json_t * json_string_array(char * const *array)
+{
+    json_t *j_array = NULL;
+
+    j_array = json_array();
+    if (!j_array) {
+        goto error;
+    }
+
+    for (char * const *it = array; *it; ++it) {
+        if (json_array_append_new(j_array, json_string(*it)) < 0) {
+            goto error;
+        }
+    }
+
+    return j_array;
+
+error:
+    if (j_array) {
+        json_decref(j_array);
+    }
+    return NULL;
+}
+
+char * mb_device_to_json(struct Device *device)
+{
+    json_t *root = NULL;
+    json_t *block_devs = NULL;
+    json_t *boot_ui = NULL;
+    json_t *crypto = NULL;
+    char *result = NULL;
+
+    root = json_object();
+    if (!root) {
+        goto done;
+    }
+
+    if (device->id && json_object_set_new(
+            root, "id", json_string(device->id)) < 0) {
+        goto done;
+    }
+
+    if (device->codenames && json_object_set_new(
+            root, "codenames", json_string_array(device->codenames)) < 0) {
+        goto done;
+    }
+
+    if (device->name && json_object_set_new(
+            root, "name", json_string(device->name)) < 0) {
+        goto done;
+    }
+
+    if (device->architecture && json_object_set_new(
+            root, "architecture", json_string(device->architecture)) < 0) {
+        goto done;
+    }
+
+    /* Block devs */
+    block_devs = json_object();
+
+    if (json_object_set_new(root, "block_devs", block_devs) < 0) {
+        goto done;
+    }
+
+    if (device->base_dirs && json_object_set_new(
+            block_devs, "base_dirs",
+            json_string_array(device->base_dirs)) < 0) {
+        goto done;
+    }
+
+    if (device->system_devs && json_object_set_new(
+            block_devs, "system",
+            json_string_array(device->system_devs)) < 0) {
+        goto done;
+    }
+
+    if (device->cache_devs && json_object_set_new(
+            block_devs, "cache",
+            json_string_array(device->cache_devs)) < 0) {
+        goto done;
+    }
+
+    if (device->data_devs && json_object_set_new(
+            block_devs, "data",
+            json_string_array(device->data_devs)) < 0) {
+        goto done;
+    }
+
+    if (device->boot_devs && json_object_set_new(
+            block_devs, "boot",
+            json_string_array(device->boot_devs)) < 0) {
+        goto done;
+    }
+
+    if (device->recovery_devs && json_object_set_new(
+            block_devs, "recovery",
+            json_string_array(device->recovery_devs)) < 0) {
+        goto done;
+    }
+
+    if (device->extra_devs && json_object_set_new(
+            block_devs, "extra",
+            json_string_array(device->extra_devs)) < 0) {
+        goto done;
+    }
+
+    /* Boot UI */
+
+    boot_ui = json_object();
+
+    if (json_object_set_new(root, "boot_ui", boot_ui) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.supported && json_object_set_new(
+            boot_ui, "supported", json_true()) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.flags != 0) {
+        json_t *array = json_array();
+
+        if (json_object_set_new(boot_ui, "flags", array) < 0) {
+            goto done;
+        }
+
+        for (struct tw_flag_mapping *it = tw_flag_mappings; it->key; ++it) {
+            if ((device->tw_options.flags & it->flag)
+                    && json_array_append_new(array, json_string(it->key)) < 0) {
+                goto done;
+            }
+        }
+    }
+
+    if (device->tw_options.pixel_format != TW_PIXEL_FORMAT_DEFAULT) {
+        for (struct tw_pxfmt_mapping *it = tw_pxfmt_mappings; it->key; ++it) {
+            if (device->tw_options.pixel_format == it->value) {
+                if (json_object_set_new(boot_ui, "pixel_format",
+                                        json_string(it->key)) < 0) {
+                    goto done;
+                }
+                break;
+            }
+        }
+    }
+
+    if (device->tw_options.force_pixel_format != TW_FORCE_PIXEL_FORMAT_NONE) {
+        for (struct tw_force_pxfmt_mapping *it = tw_force_pxfmt_mappings;
+                it->key; ++it) {
+            if (device->tw_options.force_pixel_format == it->value) {
+                if (json_object_set_new(boot_ui, "force_pixel_format",
+                                        json_string(it->key)) < 0) {
+                    goto done;
+                }
+                break;
+            }
+        }
+    }
+
+    if (device->tw_options.overscan_percent != 0 && json_object_set_new(
+            boot_ui, "overscan_percent",
+            json_integer(device->tw_options.overscan_percent)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.default_x_offset != 0 && json_object_set_new(
+            boot_ui, "default_x_offset",
+            json_integer(device->tw_options.default_x_offset)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.default_y_offset != 0 && json_object_set_new(
+            boot_ui, "default_y_offset",
+            json_integer(device->tw_options.default_y_offset)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.brightness_path && json_object_set_new(
+            boot_ui, "brightness_path",
+            json_string(device->tw_options.brightness_path)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.secondary_brightness_path && json_object_set_new(
+            boot_ui, "secondary_brightness_path",
+            json_string(device->tw_options.secondary_brightness_path)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.max_brightness != -1 && json_object_set_new(
+            boot_ui, "max_brightness",
+            json_integer(device->tw_options.max_brightness)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.default_brightness != -1 && json_object_set_new(
+            boot_ui, "default_brightness",
+            json_integer(device->tw_options.default_brightness)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.battery_path && json_object_set_new(
+            boot_ui, "battery_path",
+            json_string(device->tw_options.battery_path)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.cpu_temp_path && json_object_set_new(
+            boot_ui, "cpu_temp_path",
+            json_string(device->tw_options.cpu_temp_path)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.input_blacklist && json_object_set_new(
+            boot_ui, "input_blacklist",
+            json_string(device->tw_options.input_blacklist)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.input_whitelist && json_object_set_new(
+            boot_ui, "input_whitelist",
+            json_string(device->tw_options.input_whitelist)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.graphics_backends && json_object_set_new(
+            boot_ui, "graphics_backends",
+            json_string_array(device->tw_options.graphics_backends)) < 0) {
+        goto done;
+    }
+
+    if (device->tw_options.theme && json_object_set_new(
+            boot_ui, "theme", json_string(device->tw_options.theme)) < 0) {
+        goto done;
+    }
+
+    if (json_object_size(boot_ui) == 0) {
+        json_object_del(root, "boot_ui");
+    }
+
+    /* Crypto */
+
+    crypto = json_object();
+
+    if (json_object_set_new(root, "crypto", crypto) < 0) {
+        goto done;
+    }
+
+    if (device->crypto_options.supported && json_object_set_new(
+            crypto, "supported", json_true()) < 0) {
+        goto done;
+    }
+
+    if (device->crypto_options.header_path && json_object_set_new(
+            crypto, "header_path",
+            json_string(device->crypto_options.header_path)) < 0) {
+        goto done;
+    }
+
+    if (json_object_size(crypto) == 0) {
+        json_object_del(root, "crypto");
+    }
+
+    result = json_dumps(root, 0);
+
+done:
+    if (root) {
+        json_decref(root);
+    }
+    return result;
 }
