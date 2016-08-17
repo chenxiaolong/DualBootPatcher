@@ -1203,40 +1203,29 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    // Check if we should skip the codename check
-    bool skip_codename_check = false;
-    if (_prop.find("mbtool.installer.ignore-codename") != _prop.end()
-            && _prop["mbtool.installer.ignore-codename"] == "true") {
-        skip_codename_check = true;
-    }
-
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
 
     // Verify codename
-    if (skip_codename_check) {
-        display_msg("Skipping device check as requested by info.prop");
-    } else {
-        auto codenames = mb_device_codenames(_device);
-        const char *codename = nullptr;
+    auto codenames = mb_device_codenames(_device);
+    const char *codename = nullptr;
 
+    for (auto iter = codenames; *iter; ++iter) {
+        if (_detected_device == *iter) {
+            codename = *iter;
+            break;
+        }
+    }
+
+    if (!codename) {
+        display_msg("Patched zip is for:");
         for (auto iter = codenames; *iter; ++iter) {
-            if (_detected_device == *iter) {
-                codename = *iter;
-                break;
-            }
+            display_msg("- %s", *iter);
         }
+        display_msg("This device is '%s'", _detected_device.c_str());
 
-        if (!codename) {
-            display_msg("Patched zip is for:");
-            for (auto iter = codenames; *iter; ++iter) {
-                display_msg("- %s", *iter);
-            }
-            display_msg("This device is '%s'", _detected_device.c_str());
-
-            return ProceedState::Fail;
-        }
+        return ProceedState::Fail;
     }
 
     auto find_existing_path = [](const std::string &path) {
