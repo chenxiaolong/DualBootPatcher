@@ -110,6 +110,19 @@ void addXiaomiDevices(std::vector<Device *> *devices)
     });
     devices->push_back(device);
 
+    // Xiaomi Redmi Note 3 (Snapdragon)
+    device = new Device();
+    device->setId("kenzo");
+    device->setCodenames({ "kenzo" });
+    device->setName("Xiaomi Redmi Note 3 (Snapdragon)");
+    device->setBlockDevBaseDirs({ BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ BOOTDEVICE_SYSTEM, "/dev/block/mmcblk0p24" });
+    device->setCacheBlockDevs({ BOOTDEVICE_CACHE, "/dev/block/mmcblk0p25" });
+    device->setDataBlockDevs({ BOOTDEVICE_USERDATA, "/dev/block/mmcblk0p46" });
+    device->setBootBlockDevs({ BOOTDEVICE_BOOT, "/dev/block/mmcblk0p21" });
+    device->setRecoveryBlockDevs({ BOOTDEVICE_RECOVERY, "/dev/block/mmcblk0p22" });
+    devices->push_back(device);
+
     // Xiaomi Redmi Note 4G DS
     device = new Device();
     device->setId("gucci");
