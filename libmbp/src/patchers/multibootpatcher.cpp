@@ -23,7 +23,9 @@
 #include <unordered_set>
 
 #include <cassert>
+#include <cstring>
 
+#include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbpio/delete.h"
 
@@ -241,7 +243,8 @@ bool MultiBootPatcher::Impl::patchZip()
     };
 
     // +1 for info.prop
-    maxFiles = stats.files + toCopy.size() + 1;
+    // +1 for device.json
+    maxFiles = stats.files + toCopy.size() + 2;
     updateFiles(files, maxFiles);
 
     if (!openInputArchive()) {
@@ -289,6 +292,27 @@ bool MultiBootPatcher::Impl::patchZip()
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
+    if (result != ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    if (cancelled) return false;
+
+    updateFiles(++files, maxFiles);
+    updateDetails("multiboot/device.json");
+
+    char *json = mb_device_to_json(info->device());
+    if (!json) {
+        error = ErrorCode::MemoryAllocationError;
+        return false;
+    }
+
+    result = MinizipUtils::addFile(
+            zf, "multiboot/device.json",
+            std::vector<unsigned char>(json, json + strlen(json)));
+    free(json);
+
     if (result != ErrorCode::NoError) {
         error = result;
         return false;

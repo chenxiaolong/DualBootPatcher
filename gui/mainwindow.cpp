@@ -629,6 +629,8 @@ static QString errorToString(const mbp::ErrorCode &error) {
     switch (error) {
     case mbp::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
+    case mbp::ErrorCode::MemoryAllocationError:
+        return QObject::tr("Failed to allocate memory");
     case mbp::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
     case mbp::ErrorCode::AutoPatcherCreateError:

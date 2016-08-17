@@ -35,6 +35,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mbdevice/json.h"
+
 #include "mblog/logging.h"
 
 #include "mbpio/file.h"
@@ -352,6 +354,26 @@ bool OdinPatcher::Impl::patchTar()
     result = MinizipUtils::addFile(
             zf, "block_devs.prop", std::vector<unsigned char>(
                     blockDevsProp.begin(), blockDevsProp.end()));
+    if (result != ErrorCode::NoError) {
+        error = result;
+        return false;
+    }
+
+    if (cancelled) return false;
+
+    updateDetails("multiboot/device.json");
+
+    char *json = mb_device_to_json(info->device());
+    if (!json) {
+        error = ErrorCode::MemoryAllocationError;
+        return false;
+    }
+
+    result = MinizipUtils::addFile(
+            zf, "multiboot/device.json",
+            std::vector<unsigned char>(json, json + strlen(json)));
+    free(json);
+
     if (result != ErrorCode::NoError) {
         error = result;
         return false;

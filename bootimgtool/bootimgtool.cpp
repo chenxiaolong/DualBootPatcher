@@ -211,6 +211,8 @@ static const char PackUsage[] =
 
 static std::string error_to_string(const mbp::ErrorCode &error) {
     switch (error) {
+    case mbp::ErrorCode::MemoryAllocationError:
+        return "Failed to allocate memory";
     case mbp::ErrorCode::FileOpenError:
         return "Failed to open file";
     case mbp::ErrorCode::FileReadError:
