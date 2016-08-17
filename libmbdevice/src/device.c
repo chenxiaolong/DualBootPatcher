@@ -594,3 +594,68 @@ SETTER(const char *, crypto_header_path)
 {
     STRING_SETTER(device->crypto_options.header_path, value)
 }
+
+static inline bool array_equals(char * const *a, char * const *b)
+{
+    for (; *a && *b; ++a, ++b) {
+        if (strcmp(*a, *b) != 0) {
+            return false;
+        }
+    }
+
+    return !*a && !*b;
+}
+
+#define BOTH_NULL_OR_NONNULL(A, B) \
+    (((A) && (B)) || (!(A) && !(B)))
+#define BOTH_NULL_OR_STRINGS_EQUAL(A, B) \
+    (((A) && (B) && strcmp(A, B) == 0) || (!(A) && !(B)))
+#define BOTH_NULL_OR_ARRAYS_EQUAL(A, B) \
+    (((A) && (B) && array_equals(A, B)) || (!(A) && !(B)))
+
+bool mb_device_equals(struct Device *a, struct Device *b)
+{
+    return BOTH_NULL_OR_NONNULL(a, b)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->id, b->id)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->codenames, b->codenames)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->name, b->name)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->architecture, b->architecture)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->base_dirs, b->base_dirs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->system_devs, b->system_devs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->cache_devs, b->cache_devs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->data_devs, b->data_devs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->boot_devs, b->boot_devs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->recovery_devs, b->recovery_devs)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->extra_devs, b->extra_devs)
+            /* Boot UI */
+            && a->tw_options.supported == b->tw_options.supported
+            && a->tw_options.flags == b->tw_options.flags
+            && a->tw_options.pixel_format == b->tw_options.pixel_format
+            && a->tw_options.force_pixel_format == b->tw_options.force_pixel_format
+            && a->tw_options.overscan_percent == b->tw_options.overscan_percent
+            && a->tw_options.default_x_offset == b->tw_options.default_x_offset
+            && a->tw_options.default_y_offset == b->tw_options.default_y_offset
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.brightness_path,
+                                          b->tw_options.brightness_path)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.secondary_brightness_path,
+                                          b->tw_options.secondary_brightness_path)
+            && a->tw_options.max_brightness == b->tw_options.max_brightness
+            && a->tw_options.default_brightness == b->tw_options.default_brightness
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.battery_path,
+                                          b->tw_options.battery_path)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.cpu_temp_path,
+                                          b->tw_options.cpu_temp_path)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.input_blacklist,
+                                          b->tw_options.input_blacklist)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.input_whitelist,
+                                          b->tw_options.input_whitelist)
+            && BOTH_NULL_OR_ARRAYS_EQUAL(a->tw_options.graphics_backends,
+                                         b->tw_options.graphics_backends)
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.theme,
+                                          b->tw_options.theme)
+            /* Crypto */
+            && a->crypto_options.supported == b->crypto_options.supported
+            && BOTH_NULL_OR_STRINGS_EQUAL(a->crypto_options.header_path,
+                                          b->crypto_options.header_path)
+            ;
+}

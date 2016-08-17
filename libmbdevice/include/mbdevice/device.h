@@ -140,6 +140,9 @@ SETTER(bool, crypto_supported);
 GETTER(const char *, crypto_header_path);
 SETTER(const char *, crypto_header_path);
 
+
+MB_EXPORT bool mb_device_equals(struct Device *a, struct Device *b);
+
 #undef GETTER
 #undef SETTER
 
