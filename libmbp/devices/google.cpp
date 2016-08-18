@@ -44,7 +44,7 @@ void addGoogleDevices(std::vector<Device *> *devices)
     // LAVA Pixelv1 (second generation android one, mtk variant)
     device = new Device();
     device->setId("seedmtk");
-    device->setCodenames({ "seedmtk", "Pixelv1", "Pixelv1_sprout"});
+    device->setCodenames({ "seedmtk", "Pixelv1", "PixelV1_sprout"});
     device->setName("LAVA Pixelv1");
     device->setBlockDevBaseDirs({ MTK_BASE_DIR });
     device->setSystemBlockDevs({ MTK_SYSTEM, "/dev/block/mmcblk0p14" });
