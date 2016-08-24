@@ -76,7 +76,6 @@
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
 static mbp::PatcherConfig pc;
-static Device *device = nullptr;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
@@ -111,19 +110,16 @@ static bool detect_device()
     }
 
     MbDeviceJsonError error;
-    device = mb_device_new_from_json(
+    tw_device = mb_device_new_from_json(
             (const char *) contents.data(), &error);
-    if (!device) {
+    if (!tw_device) {
         LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
     }
 
-    auto free_device = mb::util::finally([&]{
-        mb_device_free(device);
-    });
-
-    if (mb_device_validate(device) != 0) {
+    if (mb_device_validate(tw_device) != 0) {
         LOGE("%s: Validation failed", DEVICE_JSON_PATH);
+        mb_device_free(tw_device);
         return false;
     }
 
@@ -265,11 +261,11 @@ static mapping flag_map[] =
 
 static void load_device_config()
 {
-    uint64_t flags = mb_device_tw_flags(device);
+    uint64_t flags = mb_device_tw_flags(tw_device);
     enum TwPixelFormat pixel_fomat =
-            mb_device_tw_pixel_format(device);
+            mb_device_tw_pixel_format(tw_device);
     enum TwForcePixelFormat force_pixel_format =
-            mb_device_tw_force_pixel_format(device);
+            mb_device_tw_force_pixel_format(tw_device);
 
     for (auto iter = flag_map; iter->libmbp != 0; ++iter) {
         if (flags & iter->libmbp) {
@@ -304,19 +300,19 @@ static void load_device_config()
         break;
     }
 
-    tw_overscan_percent = mb_device_tw_overscan_percent(device);
-    tw_default_x_offset = mb_device_tw_default_x_offset(device);
-    tw_default_y_offset = mb_device_tw_default_y_offset(device);
-    tw_brightness_path = mb_device_tw_brightness_path(device);
-    tw_secondary_brightness_path = mb_device_tw_secondary_brightness_path(device);
-    tw_max_brightness = mb_device_tw_max_brightness(device);
-    tw_default_brightness = mb_device_tw_default_brightness(device);
-    tw_custom_battery_path = mb_device_tw_battery_path(device);
-    tw_custom_cpu_temp_path = mb_device_tw_cpu_temp_path(device);
-    tw_input_blacklist = mb_device_tw_input_blacklist(device);
-    tw_whitelist_input = mb_device_tw_input_whitelist(device);
+    tw_overscan_percent = mb_device_tw_overscan_percent(tw_device);
+    tw_default_x_offset = mb_device_tw_default_x_offset(tw_device);
+    tw_default_y_offset = mb_device_tw_default_y_offset(tw_device);
+    tw_brightness_path = mb_device_tw_brightness_path(tw_device);
+    tw_secondary_brightness_path = mb_device_tw_secondary_brightness_path(tw_device);
+    tw_max_brightness = mb_device_tw_max_brightness(tw_device);
+    tw_default_brightness = mb_device_tw_default_brightness(tw_device);
+    tw_custom_battery_path = mb_device_tw_battery_path(tw_device);
+    tw_custom_cpu_temp_path = mb_device_tw_cpu_temp_path(tw_device);
+    tw_input_blacklist = mb_device_tw_input_blacklist(tw_device);
+    tw_whitelist_input = mb_device_tw_input_whitelist(tw_device);
 
-    tw_graphics_backends = mb_device_tw_graphics_backends(device);
+    tw_graphics_backends = mb_device_tw_graphics_backends(tw_device);
     tw_graphics_backends_length = 0;
     for (auto it = tw_graphics_backends; *it; ++it) {
         tw_graphics_backends_length++;
@@ -501,7 +497,7 @@ int main(int argc, char *argv[])
     }
 
     // Check if device supports the boot UI
-    if (!mb_device_tw_supported(device)) {
+    if (!mb_device_tw_supported(tw_device)) {
         LOGW("Boot UI is not supported for the device");
         return EXIT_FAILURE;
     }
@@ -513,7 +509,7 @@ int main(int argc, char *argv[])
     log_startup();
 
     if (!extract_theme(argv[optind], MBBOOTUI_THEME_PATH,
-                       mb_device_tw_theme(device))) {
+                       mb_device_tw_theme(tw_device))) {
         LOGE("Failed to extract theme");
         return EXIT_FAILURE;
     }

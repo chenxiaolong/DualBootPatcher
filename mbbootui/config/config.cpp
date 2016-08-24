@@ -50,4 +50,6 @@ int tw_android_sdk_version = 0;
 const char * const *tw_graphics_backends = nullptr;
 size_t tw_graphics_backends_length = 0;
 
+struct Device *tw_device = nullptr;
+
 }

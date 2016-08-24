@@ -124,6 +124,10 @@ extern int tw_android_sdk_version;
 extern const char * const *tw_graphics_backends;
 extern size_t tw_graphics_backends_length;
 
+// Device
+struct Device;
+extern struct Device *tw_device;
+
 #ifdef __cplusplus
 }
 #endif
