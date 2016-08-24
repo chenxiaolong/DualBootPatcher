@@ -23,6 +23,7 @@
 
 #include <cstring>
 
+#include "mbdevice/json.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/private/stringutils.h"
 
@@ -74,7 +75,8 @@ bool CoreRP::patchRamdisk()
     return addMbtool()
             && addExfat()
             && setUpInitWrapper()
-            && addBlockDevProps();
+            && removeBlockDevProps()
+            && addDeviceJson();
 }
 
 bool CoreRP::addMbtool()
@@ -147,53 +149,8 @@ bool CoreRP::setUpInitWrapper()
     return true;
 }
 
-static std::string encode_list(const char * const *list)
+bool CoreRP::removeBlockDevProps()
 {
-    if (!list) {
-        return std::string();
-    }
-
-    // We processing char-by-char, so avoid unnecessary reallocations
-    std::size_t size = 0;
-    std::size_t list_size = 0;
-    for (auto iter = list; *iter; ++iter) {
-        std::size_t item_length = strlen(*iter);
-        size += item_length;
-        size += std::count(*iter, *iter + item_length, ',');
-        ++list_size;
-    }
-    if (size == 0) {
-        return std::string();
-    }
-    size += list_size - 1;
-
-    std::string result;
-    result.reserve(size);
-
-    bool first = true;
-    for (auto iter = list; *iter; ++iter) {
-        if (!first) {
-            result += ',';
-        } else {
-            first = false;
-        }
-        for (auto c = *iter; *c; ++c) {
-            if (*c == ',' || *c == '\\') {
-                result += '\\';
-            }
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-bool CoreRP::addBlockDevProps()
-{
-    if (!m_impl->info->device()) {
-        return true;
-    }
-
     std::vector<unsigned char> contents;
     m_impl->cpio->contents("default.prop", &contents);
 
@@ -206,45 +163,34 @@ bool CoreRP::addBlockDevProps()
         }
     }
 
-    Device *device = m_impl->info->device();
-    std::string encoded;
-
-    encoded = "ro.patcher.blockdevs.base=";
-    encoded += encode_list(mb_device_block_dev_base_dirs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.system=";
-    encoded += encode_list(mb_device_system_block_devs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.cache=";
-    encoded += encode_list(mb_device_cache_block_devs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.data=";
-    encoded += encode_list(mb_device_data_block_devs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.boot=";
-    encoded += encode_list(mb_device_boot_block_devs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.recovery=";
-    encoded += encode_list(mb_device_recovery_block_devs(device));
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.extra=";
-    encoded += encode_list(mb_device_extra_block_devs(device));
-    lines.push_back(encoded);
-
-    if (mb_device_crypto_supported(device)) {
-        encoded = "ro.patcher.cryptfs_header_path=";
-        encoded += mb_device_crypto_header_path(device);
-        lines.push_back(encoded);
-    }
-
     contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents("default.prop", std::move(contents));
+
+    return true;
+}
+
+bool CoreRP::addDeviceJson()
+{
+    Device *device = m_impl->info->device();
+    if (!device) {
+        return true;
+    }
+
+    char *json = mb_device_to_json(device);
+    if (!json) {
+        m_impl->error = ErrorCode::MemoryAllocationError;
+        return false;
+    }
+
+    std::vector<unsigned char> contents(json, json + strlen(json));
+    free(json);
+
+    m_impl->cpio->remove("device.json");
+
+    if (!m_impl->cpio->addFile(contents, "device.json", 0644)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
 
     return true;
 }
