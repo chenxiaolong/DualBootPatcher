@@ -98,7 +98,7 @@ static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
-        fprintf(stderr, "Usage: %s <patcher id> <device> <rom id> "
+        fprintf(stderr, "Usage: %s <patcher id> <device file> <rom id> "
                 "<input path> <output path>\n", argv[0]);
         return EXIT_FAILURE;
     }
