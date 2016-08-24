@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "mbdevice/device.h"
+
 #include "roms.h"
 
 namespace mb
@@ -46,7 +48,8 @@ enum MountFlags : unsigned int
     MOUNT_FLAG_MOUNT_EXTERNAL_SD        = 1u << 13,
 };
 
-bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags);
+bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                 Device *device, int flags);
 bool mount_rom(const std::shared_ptr<Rom> &rom);
 
 }

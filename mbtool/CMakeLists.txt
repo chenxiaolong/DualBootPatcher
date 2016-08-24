@@ -171,6 +171,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         miniadbd-static
         mbutil-static
         mbsign-static
+        mbdevice-static
         mblog-static
         mbcommon-static
         minizip
