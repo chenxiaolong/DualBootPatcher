@@ -23,11 +23,8 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
-import com.github.chenxiaolong.dualbootpatcher.SystemPropertiesProxy;
 import com.github.chenxiaolong.dualbootpatcher.Version;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -47,6 +44,7 @@ import java.util.zip.ZipFile;
 import mbtool.daemon.v3.FileOpenFlag;
 import mbtool.daemon.v3.PathDeleteFlag;
 
+@SuppressWarnings("OctalInteger")
 public final class BootUIActionTask extends BaseServiceTask {
     private static final String TAG = BootUIActionTask.class.getSimpleName();
 
@@ -62,13 +60,6 @@ public final class BootUIActionTask extends BaseServiceTask {
             new FileMapping("/binaries/android/%s/cryptfstool_rec.sig", "/multiboot/crypto/cryptfstool_rec.sig", 0644)
     };
 
-    private static final String BOOTUI_ZIP_PATH = "/multiboot/bootui.zip";
-    private static final String BOOTUI_ZIP_SIG_PATH = BOOTUI_ZIP_PATH + ".sig";
-    private static final String CRYPTFSTOOL_PATH = "/multiboot/crypto/cryptfstool";
-    private static final String CRYPTFSTOOL_SIG_PATH = CRYPTFSTOOL_PATH + ".sig";
-    private static final String CRYPTFSTOOL_REC_PATH = "/multiboot/crypto/cryptfstool_rec";
-    private static final String CRYPTFSTOOL_REC_SIG_PATH = CRYPTFSTOOL_REC_PATH + ".sig";
-
     private static final String PROPERTIES_FILE = "info.prop";
     private static final String PROP_VERSION = "bootui.version";
     private static final String PROP_GIT_VERSION = "bootui.git-version";
@@ -78,6 +69,7 @@ public final class BootUIActionTask extends BaseServiceTask {
     private final Object mStateLock = new Object();
     private boolean mFinished;
 
+    private boolean mSupported;
     private Version mVersion;
     private boolean mSuccess;
 
@@ -94,6 +86,7 @@ public final class BootUIActionTask extends BaseServiceTask {
     }
 
     public enum BootUIAction {
+        CHECK_SUPPORTED,
         GET_VERSION,
         INSTALL,
         UNINSTALL
@@ -101,6 +94,8 @@ public final class BootUIActionTask extends BaseServiceTask {
 
     public interface BootUIActionTaskListener extends BaseServiceTaskListener,
             MbtoolErrorListener {
+        void onBootUICheckedSupported(int taskId, boolean supported);
+
         void onBootUIHaveVersion(int taskId, Version version);
 
         void onBootUIInstalled(int taskId, boolean success);
@@ -126,7 +121,7 @@ public final class BootUIActionTask extends BaseServiceTask {
             if (id >= 0) {
                 try {
                     iface.fileClose(id);
-                } catch (MbtoolCommandException e) {
+                } catch (Exception e) {
                     // Ignore
                 }
             }
@@ -151,6 +146,11 @@ public final class BootUIActionTask extends BaseServiceTask {
         return mountPoint;
     }
 
+    private boolean checkSupported() {
+        Device device = PatcherUtils.getCurrentDevice(getContext());
+        return device != null && device.isTwSupported();
+    }
+
     /**
      * Get currently installed version of boot UI
      *
@@ -163,7 +163,7 @@ public final class BootUIActionTask extends BaseServiceTask {
     @Nullable
     private Version getCurrentVersion(MbtoolInterface iface) throws IOException, MbtoolException {
         String mountPoint = getCacheMountPoint(iface);
-        String zipPath = mountPoint + BOOTUI_ZIP_PATH;
+        String zipPath = mountPoint + MAPPINGS[0].target;
 
         File tempZip = new File(getContext().getCacheDir() + "/bootui.zip");
         tempZip.delete();
@@ -226,31 +226,6 @@ public final class BootUIActionTask extends BaseServiceTask {
         }
     }
 
-    @Nullable
-    private byte[] getFstabFromBootImage(String path) {
-        String hardware = SystemPropertiesProxy.get(getContext(), "ro.hardware", "");
-        String fstabPath = "fstab." + hardware;
-
-        BootImage bi = new BootImage();
-        CpioFile cf = new CpioFile();
-        try {
-            if (!bi.load(path)) {
-                return null;
-            }
-
-            if (!cf.load(bi.getRamdiskImage())) {
-                return null;
-            }
-
-            bi.destroy();
-
-            return cf.getContents(fstabPath);
-        } finally {
-            cf.destroy();
-            bi.destroy();
-        }
-    }
-
     /**
      * Install or update boot UI
      *
@@ -263,7 +238,7 @@ public final class BootUIActionTask extends BaseServiceTask {
         // Need to grab latest boot UI from the data archive
         PatcherUtils.initializePatcher(getContext());
 
-        Device device = PatcherUtils.getCurrentDevice(getContext(), PatcherUtils.sPC);
+        Device device = PatcherUtils.getCurrentDevice(getContext());
         if (device == null) {
             Log.e(TAG, "Failed to determine current device");
             return false;
@@ -279,6 +254,7 @@ public final class BootUIActionTask extends BaseServiceTask {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             abi = Build.SUPPORTED_ABIS[0];
         } else {
+            //noinspection deprecation
             abi = Build.CPU_ABI;
         }
 
@@ -332,6 +308,7 @@ public final class BootUIActionTask extends BaseServiceTask {
     @Override
     public void execute() {
         boolean success = false;
+        boolean supported = false;
         Version version = null;
 
         MbtoolConnection conn = null;
@@ -342,6 +319,9 @@ public final class BootUIActionTask extends BaseServiceTask {
 
             synchronized (BootUIAction.class) {
                 switch (mAction) {
+                case CHECK_SUPPORTED:
+                    supported = checkSupported();
+                    break;
                 case GET_VERSION:
                     version = getCurrentVersion(iface);
                     break;
@@ -371,6 +351,7 @@ public final class BootUIActionTask extends BaseServiceTask {
 
         synchronized (mStateLock) {
             mSuccess = success;
+            mSupported = supported;
             mVersion = version;
             sendResult();
             mFinished = true;
@@ -390,6 +371,9 @@ public final class BootUIActionTask extends BaseServiceTask {
 
     private void sendResult() {
         switch (mAction) {
+        case CHECK_SUPPORTED:
+            sendOnCheckedSupported();
+            break;
         case GET_VERSION:
             sendOnHaveVersion();
             break;
@@ -400,6 +384,16 @@ public final class BootUIActionTask extends BaseServiceTask {
             sendOnUninstalled();
             break;
         }
+    }
+
+    private void sendOnCheckedSupported() {
+        forEachListener(new CallbackRunnable() {
+            @Override
+            public void call(BaseServiceTaskListener listener) {
+                ((BootUIActionTaskListener) listener).onBootUICheckedSupported(
+                        getTaskId(), mSupported);
+            }
+        });
     }
 
     private void sendOnHaveVersion() {
