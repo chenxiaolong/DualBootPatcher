@@ -91,6 +91,8 @@ static bool find_paths(struct paths *paths)
 
     std::vector<unsigned char> contents;
     util::file_read_all(DEVICE_JSON_PATH, &contents);
+    contents.push_back('\0');
+
     MbDeviceJsonError error;
     Device *device = mb_device_new_from_json((char *) contents.data(), &error);
     if (!device) {

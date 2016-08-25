@@ -108,6 +108,7 @@ static bool detect_device()
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
         return false;
     }
+    contents.push_back('\0');
 
     MbDeviceJsonError error;
     tw_device = mb_device_new_from_json(

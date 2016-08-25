@@ -72,6 +72,7 @@ static Device * get_device(const char *path)
         fprintf(stderr, "%s: Failed to read file: %s\n", path, strerror(errno));
         return nullptr;
     }
+    contents.push_back('\0');
 
     MbDeviceJsonError error;
     Device *device = mb_device_new_from_json(

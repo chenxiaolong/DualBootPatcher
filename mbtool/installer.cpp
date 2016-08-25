@@ -1164,6 +1164,7 @@ Installer::ProceedState Installer::install_stage_check_device()
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
+    contents.push_back('\0');
 
     MbDeviceJsonError error;
     _device = mb_device_new_from_json((const char *) contents.data(), &error);
