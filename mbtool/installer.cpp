@@ -817,6 +817,8 @@ bool Installer::run_real_updater()
     // util::get_properties()
     std::unordered_map<std::string, std::string> props = get_properties();
 
+    bool updater_ret = true;
+
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (!_passthrough) {
@@ -948,10 +950,14 @@ bool Installer::run_real_updater()
             } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
             if (WIFEXITED(status)) {
-                LOGD("Child exited: %d", WEXITSTATUS(status));
+                LOGD("Updater exited with status: %d", WEXITSTATUS(status));
+                if (WEXITSTATUS(status) != 0) {
+                    updater_ret = false;
+                }
             }
             if (WIFSIGNALED(status)) {
-                LOGD("Child killed with signal: %d", WTERMSIG(status));
+                LOGD("Updater killed with signal: %d", WTERMSIG(status));
+                updater_ret = false;
             }
         }
     }
@@ -966,13 +972,7 @@ bool Installer::run_real_updater()
         return false;
     }
 
-    if (WEXITSTATUS(status) != 0) {
-        LOGE("%s returned non-zero exit status",
-             "/mb/updater");
-        return false;
-    }
-
-    return true;
+    return updater_ret;
 }
 
 bool Installer::is_aroma(const std::string &path)
@@ -1177,8 +1177,6 @@ Installer::ProceedState Installer::install_stage_check_device()
         display_msg("Validation of device.json failed");
         return ProceedState::Fail;
     }
-
-    // TODO: Validate device
 
     char prop_product_device[PROP_VALUE_MAX];
     char prop_build_product[PROP_VALUE_MAX];
