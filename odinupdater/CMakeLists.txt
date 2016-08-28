@@ -30,6 +30,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         fuse-sparse
         PROPERTIES
         LINK_FLAGS "-static"
+        LINK_SEARCH_START_STATIC ON
     )
 
     target_link_libraries(

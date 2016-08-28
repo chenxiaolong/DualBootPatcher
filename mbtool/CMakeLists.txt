@@ -163,6 +163,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             mbtool mbtool_recovery
             PROPERTIES
             LINK_FLAGS "-static"
+            LINK_SEARCH_START_STATIC ON
         )
     endif()
 
