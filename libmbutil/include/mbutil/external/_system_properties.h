@@ -29,10 +29,12 @@
 #ifndef _INCLUDE_SYS__SYSTEM_PROPERTIES_H
 #define _INCLUDE_SYS__SYSTEM_PROPERTIES_H
 
+#include <sys/cdefs.h>
+
 #ifndef _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-#error you should #include <sys/system_properties.h> instead
+#error you should #include <mbutil/external/system_properties.h> instead
 #else
-#include <sys/system_properties.h>
+#include "mbutil/external/system_properties.h"
 
 typedef struct prop_msg prop_msg;
 
@@ -41,6 +43,7 @@ typedef struct prop_msg prop_msg;
 #define PROP_AREA_VERSION_COMPAT 0x45434f76
 
 #define PROP_SERVICE_NAME "property_service"
+#define PROP_FILENAME_MAX 1024
 #define PROP_FILENAME "/dev/__properties__"
 
 #define PA_SIZE         (128 * 1024)
@@ -88,38 +91,38 @@ struct prop_msg
 ** Map the property area from the specified filename.  This
 ** method is for testing only.
 */
-int __system_property_set_filename(const char *filename);
+int mb__system_property_set_filename(const char *filename);
 
 /*
 ** Initialize the area to be used to store properties.  Can
 ** only be done by a single process that has write access to
 ** the property area.
 */
-int __system_property_area_init();
+int mb__system_property_area_init();
 
 /* Read the global serial number of the system properties
 **
-** Called to predict if a series of cached __system_property_find
-** objects will have seen __system_property_serial values change.
+** Called to predict if a series of cached mb__system_property_find
+** objects will have seen mb__system_property_serial values change.
 ** But also aids the converse, as changes in the global serial can
-** also be used to predict if a failed __system_property_find
+** also be used to predict if a failed mb__system_property_find
 ** could in-turn now find a new object; thus preventing the
-** cycles of effort to poll __system_property_find.
+** cycles of effort to poll mb__system_property_find.
 **
 ** Typically called at beginning of a cache cycle to signal if _any_ possible
 ** changes have occurred since last. If there is, one may check each individual
-** __system_property_serial to confirm dirty, or __system_property_find
-** to check if the property now exists. If a call to __system_property_add
-** or __system_property_update has completed between two calls to
-** __system_property_area_serial then the second call will return a larger
+** mb__system_property_serial to confirm dirty, or mb__system_property_find
+** to check if the property now exists. If a call to mb__system_property_add
+** or mb__system_property_update has completed between two calls to
+** mb__system_property_area_serial then the second call will return a larger
 ** value than the first call. Beware of race conditions as changes to the
 ** properties are not atomic, the main value of this call is to determine
-** whether the expensive __system_property_find is worth retrying to see if
+** whether the expensive mb__system_property_find is worth retrying to see if
 ** a property now exists.
 **
 ** Returns the serial number on success, -1 on error.
 */
-unsigned int __system_property_area_serial();
+unsigned int mb__system_property_area_serial();
 
 /* Add a new system property.  Can only be done by a single
 ** process that has write access to the property area, and
@@ -129,37 +132,37 @@ unsigned int __system_property_area_serial();
 **
 ** Returns 0 on success, -1 if the property area is full.
 */
-int __system_property_add(const char *name, unsigned int namelen,
-			const char *value, unsigned int valuelen);
+int mb__system_property_add(const char *name, unsigned int namelen,
+           const char *value, unsigned int valuelen);
 
 /* Update the value of a system property returned by
-** __system_property_find.  Can only be done by a single process
+** mb__system_property_find.  Can only be done by a single process
 ** that has write access to the property area, and that process
 ** must handle sequencing to ensure that only one property is
 ** updated at a time.
 **
 ** Returns 0 on success, -1 if the parameters are incorrect.
 */
-int __system_property_update(prop_info *pi, const char *value, unsigned int len);
+int mb__system_property_update(prop_info *pi, const char *value, unsigned int len);
 
 /* Read the serial number of a system property returned by
-** __system_property_find.
+** mb__system_property_find.
 **
 ** Returns the serial number on success, -1 on error.
 */
-unsigned int __system_property_serial(const prop_info *pi);
+unsigned int mb__system_property_serial(const prop_info *pi);
 
 /* Wait for any system property to be updated.  Caller must pass
 ** in 0 the first time, and the previous return value on each
 ** successive call. */
-unsigned int __system_property_wait_any(unsigned int serial);
+unsigned int mb__system_property_wait_any(unsigned int serial);
 
 /*  Compatibility functions to support using an old init with a new libc,
  ** mostly for the OTA updater binary.  These can be deleted once OTAs from
  ** a pre-K release no longer needed to be supported. */
-const prop_info *__system_property_find_compat(const char *name);
-int __system_property_read_compat(const prop_info *pi, char *name, char *value);
-int __system_property_foreach_compat(
+const prop_info *mb__system_property_find_compat(const char *name);
+int mb__system_property_read_compat(const prop_info *pi, char *name, char *value);
+int mb__system_property_foreach_compat(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie);
 
@@ -169,7 +172,7 @@ int __system_property_foreach_compat(
  *
  * Returns 0 on success, -1 otherwise.
  */
-int __system_properties_init();
+int mb__system_properties_init();
 
 __END_DECLS
 

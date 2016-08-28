@@ -22,9 +22,8 @@
 #include <string>
 #include <unordered_map>
 
-#include <sys/system_properties.h>
-
 #include "mbutil/integer.h"
+#include "mbutil/external/system_properties.h"
 
 namespace mb
 {
