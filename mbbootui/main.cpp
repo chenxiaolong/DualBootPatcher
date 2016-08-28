@@ -725,3 +725,5 @@ void __android_log_assert(const char *cond, const char *tag,
 }
 
 }
+
+#include "mbcommon/atexit_hack.c"

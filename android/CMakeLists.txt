@@ -1,7 +1,7 @@
 if(MBP_TOP_LEVEL_BUILD)
     include(ExternalProject)
 
-    set(ANDROID_TOOLCHAIN_VERSION clang3.6)
+    set(ANDROID_TOOLCHAIN_VERSION clang)
     set(ANDROID_ABIS armeabi-v7a arm64-v8a x86 x86_64)
 
     function(get_toolchain_name toolchain_var abi)
@@ -71,7 +71,7 @@ if(MBP_TOP_LEVEL_BUILD)
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_APP_PIE=OFF
-            -DANDROID_NATIVE_API_LEVEL=23
+            -DANDROID_NATIVE_API_LEVEL=24
             -DMBP_BUILD_TARGET=android-system
         )
 

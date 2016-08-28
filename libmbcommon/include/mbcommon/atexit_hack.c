@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,28 +17,20 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "mblog/base_logger.h"
-
-#include <cstdio>
-
-namespace mb
+// HACK: Remove when https://github.com/android-ndk/ndk/issues/132 is released
+#ifdef __ARM_ARCH_7A__
+int atexit(void (*function)(void))
 {
-namespace log
-{
-
-class MB_EXPORT StdioLogger : public BaseLogger
-{
-public:
-    StdioLogger(std::FILE *stream, bool show_timestamps);
-
-    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
-
-private:
-    std::FILE *_stream;
-    bool _show_timestamps;
-};
-
+    // We don't use atexit() anyway
+    (void) function;
+    return 0;
 }
+#endif
+
+#ifdef __cplusplus
 }
+#endif

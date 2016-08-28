@@ -371,3 +371,5 @@ int main(int argc, char *argv[])
 
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
+
+#include "mbcommon/atexit_hack.c"
