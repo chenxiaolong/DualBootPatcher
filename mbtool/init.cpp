@@ -461,10 +461,12 @@ static bool add_mbtool_services()
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
+            "    seclabel u:r:init:s0\n"
             "\n"
             "service appsync /mbtool appsync\n"
             "    class main\n"
-            "    socket installd stream 600 system system\n";
+            "    socket installd stream 600 system system\n"
+            "    seclabel u:r:init:s0\n";
 
     fputs(init_multiboot_rc, fp_multiboot.get());
 
