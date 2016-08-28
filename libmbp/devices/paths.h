@@ -30,13 +30,14 @@
 // Used by devices where the 'androidboot.bootdevice' kernel cmdline
 // parameter is specified either in the ramdisk or by the bootloader. It is
 // simply a symlink to the device's block device platform directory.
-#define BOOTDEVICE_BASE_DIR     "/dev/block/bootdevice/by-name"
-#define BOOTDEVICE_BOOT         BOOTDEVICE_BASE_DIR "/boot"
-#define BOOTDEVICE_CACHE        BOOTDEVICE_BASE_DIR "/cache"
-#define BOOTDEVICE_RECOVERY     BOOTDEVICE_BASE_DIR "/recovery"
-#define BOOTDEVICE_SYSTEM       BOOTDEVICE_BASE_DIR "/system"
-#define BOOTDEVICE_TZ           BOOTDEVICE_BASE_DIR "/tz"
-#define BOOTDEVICE_USERDATA     BOOTDEVICE_BASE_DIR "/userdata"
+#define BOOTDEVICE_BASE_DIR      "/dev/block/bootdevice/by-name"
+#define BOOTDEVICE_BOOT          BOOTDEVICE_BASE_DIR "/boot"
+#define BOOTDEVICE_CACHE         BOOTDEVICE_BASE_DIR "/cache"
+#define BOOTDEVICE_RECOVERY      BOOTDEVICE_BASE_DIR "/recovery"
+#define BOOTDEVICE_SYSTEM        BOOTDEVICE_BASE_DIR "/system"
+#define BOOTDEVICE_TZ            BOOTDEVICE_BASE_DIR "/tz"
+#define BOOTDEVICE_USERDATA      BOOTDEVICE_BASE_DIR "/userdata"
+#define BOOTDEVICE_FOTA_RECOVERY BOOTDEVICE_BASE_DIR "/FOTAKernel"
 
 // Block device paths used by Qualcomm SOCs (Snapdragon 805 and lower)
 #define QCOM_BASE_DIR           "/dev/block/platform/msm_sdcc.1/by-name"
@@ -50,6 +51,7 @@
 #define QCOM_MODEM              QCOM_BASE_DIR "/modem"
 #define QCOM_OPPOSTANVBK        QCOM_BASE_DIR "/oppostanvbk"
 #define QCOM_RECOVERY           QCOM_BASE_DIR "/recovery"
+#define QCOM_FOTA_RECOVERY      QCOM_BASE_DIR "/FOTAKernel"
 #define QCOM_RESERVE4           QCOM_BASE_DIR "/reserve4"
 #define QCOM_RPM                QCOM_BASE_DIR "/rpm"
 #define QCOM_SBL1               QCOM_BASE_DIR "/sbl1"

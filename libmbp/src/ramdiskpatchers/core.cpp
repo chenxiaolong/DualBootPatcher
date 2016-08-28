@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -69,10 +69,27 @@ std::string CoreRP::id() const
 
 bool CoreRP::patchRamdisk()
 {
-    return addMbtool()
-            && addExfat()
-            && setUpInitWrapper()
-            && addBlockDevProps();
+    // Add mbtool binary to /mbtool in the ramdisk
+    if (!addMbtool()) {
+        return false;
+    }
+    // Add fuse-exfat binaries to /sbin/
+    if (!addExfat()) {
+        return false;
+    }
+    // Move /init -> /init.orig and symlink /mbtool -> /init, but only if we
+    // don't have a combined boot and recovery image (like on Sony devices)
+    if (!(m_impl->info->device()->flags()
+            & Device::FLAG_HAS_COMBINED_BOOT_AND_RECOVERY)
+            && !setUpInitWrapper()) {
+        return false;
+    }
+    // Add list of block devices to /default.prop
+    if (!addBlockDevProps()) {
+        return false;
+    }
+
+    return true;
 }
 
 bool CoreRP::addMbtool()

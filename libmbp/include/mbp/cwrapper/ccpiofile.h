@@ -47,6 +47,12 @@ MB_EXPORT bool mbp_cpiofile_remove(CCpioFile *cpio,
 
 MB_EXPORT char ** mbp_cpiofile_filenames(const CCpioFile *cpio);
 
+MB_EXPORT bool mbp_cpiofile_is_symlink(const CCpioFile *cpio,
+                                       const char *filename);
+
+MB_EXPORT char * mbp_cpiofile_symlink_path(const CCpioFile *cpio,
+                                           const char *filename);
+
 MB_EXPORT bool mbp_cpiofile_contents(const CCpioFile *cpio,
                                      const char *filename,
                                      const unsigned char **data, size_t *size);

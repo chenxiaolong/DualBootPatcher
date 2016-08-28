@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -114,6 +114,11 @@ public:
         std::string headerPath;
     };
 
+    enum Flags
+    {
+        FLAG_HAS_COMBINED_BOOT_AND_RECOVERY = 0x1
+    };
+
     Device();
     ~Device();
 
@@ -128,6 +133,12 @@ public:
 
     std::string architecture() const;
     void setArchitecture(std::string arch);
+
+    uint64_t flags() const;
+    void setFlags(uint64_t flags);
+
+    std::string ramdiskPatcher() const;
+    void setRamdiskPatcher(std::string id);
 
     std::vector<std::string> blockDevBaseDirs() const;
     void setBlockDevBaseDirs(std::vector<std::string> dirs);
