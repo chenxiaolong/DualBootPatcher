@@ -360,3 +360,5 @@ int main(int argc, char *argv[])
 
     return fuse_ret;
 }
+
+#include "mbcommon/atexit_hack.c"
