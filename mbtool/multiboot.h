@@ -20,7 +20,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #define INTERNAL_STORAGE                "/data/media/0"
 #define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
@@ -37,6 +36,8 @@
 #define PACKAGES_XML                    "/data/system/packages.xml"
 
 #define DEFAULT_PROP_PATH               "/default.prop"
+
+#define DEVICE_JSON_PATH                "/device.json"
 
 #define PROP_BLOCK_DEV_BASE_DIRS        "ro.patcher.blockdevs.base"
 #define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
@@ -73,7 +74,5 @@ namespace mb
 bool copy_system(const std::string &source, const std::string &target);
 
 bool fix_multiboot_permissions(void);
-
-std::vector<std::string> decode_list(const std::string &encoded);
 
 }

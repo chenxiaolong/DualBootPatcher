@@ -42,6 +42,10 @@
 // libmblog
 #include "mblog/logging.h"
 
+// libmbdevice
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
+
 // libmbp
 #include "mbp/bootimage.h"
 #include "mbp/cpiofile.h"
@@ -97,6 +101,7 @@
 #define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
 #define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
 #define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
+#define MULTIBOOT_DEVICE_JSON   "multiboot/device.json"
 #define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
 
 namespace mb {
@@ -120,6 +125,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
 
 Installer::~Installer()
 {
+    mb_device_free(_device);
 }
 
 
@@ -521,6 +527,7 @@ bool Installer::extract_multiboot_files()
         { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
         { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
         { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
+        { MULTIBOOT_DEVICE_JSON,       _temp + "/device.json"       },
         { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
     };
 
@@ -1152,18 +1159,30 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     LOGD("libmbp version: %s", _pc.version().c_str());
 
-    char prop_product_device[PROP_VALUE_MAX];
-    char prop_build_product[PROP_VALUE_MAX];
-    char prop_patcher_device[PROP_VALUE_MAX];
-    std::string install_prop_device;
+    std::vector<unsigned char> contents;
+    if (!util::file_read_all(_temp + "/device.json", &contents)) {
+        display_msg("Failed to read device.json");
+        return ProceedState::Fail;
+    }
+    contents.push_back('\0');
 
-    // Verify device
-    if (_prop.find("mbtool.installer.device") == _prop.end()) {
-        display_msg("info.prop missing mbtool.installer.device");
+    MbDeviceJsonError error;
+    _device = mb_device_new_from_json((const char *) contents.data(), &error);
+    if (!_device) {
+        display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }
 
-    install_prop_device = _prop["mbtool.installer.device"];
+    if (mb_device_validate(_device) != 0) {
+        display_msg("Validation of device.json failed");
+        return ProceedState::Fail;
+    }
+
+    // TODO: Validate device
+
+    char prop_product_device[PROP_VALUE_MAX];
+    char prop_build_product[PROP_VALUE_MAX];
+    char prop_patcher_device[PROP_VALUE_MAX];
 
     util::property_get("ro.product.device", prop_product_device, "");
     util::property_get("ro.build.product", prop_build_product, "");
@@ -1172,7 +1191,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device);
     LOGD("ro.build.product = %s", prop_build_product);
     LOGD("ro.patcher.device = %s", prop_patcher_device);
-    LOGD("Target device = %s", install_prop_device.c_str());
+    LOGD("Target device = %s", mb_device_id(_device));
 
     if (prop_patcher_device[0]) {
         _detected_device = prop_patcher_device;
@@ -1185,57 +1204,66 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    // Check if we should skip the codename check
-    bool skip_codename_check = false;
-    if (_prop.find("mbtool.installer.ignore-codename") != _prop.end()
-            && _prop["mbtool.installer.ignore-codename"] == "true") {
-        skip_codename_check = true;
-    }
-
-
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
 
-    for (const mbp::Device *d : _pc.devices()) {
-        if (d->id() == install_prop_device) {
-            _device = d;
+    // Verify codename
+    auto codenames = mb_device_codenames(_device);
+    const char *codename = nullptr;
+
+    for (auto iter = codenames; *iter; ++iter) {
+        if (_detected_device == *iter) {
+            codename = *iter;
             break;
         }
     }
 
-    if (!_device) {
-        display_msg("Invalid device ID: " + install_prop_device);
-        return ProceedState::Fail;
-    }
-
-    // Verify codename
-    if (skip_codename_check) {
-        display_msg("Skipping device check as requested by info.prop");
-    } else {
-        auto codenames = _device->codenames();
-        auto it = std::find_if(codenames.begin(), codenames.end(),
-                               [&](const std::string &codename) {
-            return _detected_device == codename;
-        });
-
-        if (it == codenames.end()) {
-            display_msg("Patched zip is for:");
-            for (const std::string &codename : _device->codenames()) {
-                display_msg("- %s", codename.c_str());
-            }
-            display_msg("This device is '%s'", _detected_device.c_str());
-
-            return ProceedState::Fail;
+    if (!codename) {
+        display_msg("Patched zip is for:");
+        for (auto iter = codenames; *iter; ++iter) {
+            display_msg("- %s", *iter);
         }
+        display_msg("This device is '%s'", _detected_device.c_str());
+
+        return ProceedState::Fail;
     }
 
     auto find_existing_path = [](const std::string &path) {
         return access(path.c_str(), R_OK) == 0;
     };
 
+    auto c_boot_devs = mb_device_boot_block_devs(_device);
+    auto c_recovery_devs = mb_device_recovery_block_devs(_device);
+    auto c_system_devs = mb_device_system_block_devs(_device);
+    auto c_extra_devs = mb_device_extra_block_devs(_device);
+    std::vector<std::string> boot_devs;
+    std::vector<std::string> recovery_devs;
+    std::vector<std::string> system_devs;
+    std::vector<std::string> extra_devs;
+
+    if (c_boot_devs) {
+        for (auto it = c_boot_devs; *it; ++it) {
+            boot_devs.push_back(*it);
+        }
+    }
+    if (c_recovery_devs) {
+        for (auto it = c_recovery_devs; *it; ++it) {
+            recovery_devs.push_back(*it);
+        }
+    }
+    if (c_system_devs) {
+        for (auto it = c_system_devs; *it; ++it) {
+            system_devs.push_back(*it);
+        }
+    }
+    if (c_extra_devs) {
+        for (auto it = c_extra_devs; *it; ++it) {
+            extra_devs.push_back(*it);
+        }
+    }
+
     // Find boot blockdev path
-    auto boot_devs = _device->bootBlockDevs();
     auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
                            find_existing_path);
     if (it == boot_devs.end()) {
@@ -1247,7 +1275,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Find recovery blockdev path
-    auto recovery_devs = _device->recoveryBlockDevs();
     it = std::find_if(recovery_devs.begin(), recovery_devs.end(),
                       find_existing_path);
     if (it == recovery_devs.end()) {
@@ -1259,7 +1286,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Find system blockdev path
-    auto system_devs = _device->systemBlockDevs();
     it = std::find_if(system_devs.begin(), system_devs.end(),
                       find_existing_path);
     if (it == system_devs.end()) {
@@ -1271,8 +1297,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Other block devices to copy
-    auto extra_devs = _device->extraBlockDevs();
-
     std::vector<std::string> devs;
     devs.insert(devs.end(), boot_devs.begin(), boot_devs.end());
     devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());

@@ -8,7 +8,6 @@ if(MBP_TOP_LEVEL_BUILD)
         scripts/bb-wrapper.sh
     )
 
-
     set(source_files
         ${CMAKE_CURRENT_BINARY_DIR}/
         ${CMAKE_CURRENT_BINARY_DIR}/
@@ -37,4 +36,6 @@ if(MBP_TOP_LEVEL_BUILD)
         sign_scripts
         ${source_files}
     )
+
+    add_subdirectory(devices)
 endif()

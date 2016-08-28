@@ -25,27 +25,8 @@
 
 #include "mbcommon/version.h"
 
-#include "mbp/device.h"
 #include "mbp/patcherinterface.h"
 #include "mbp/private/fileutils.h"
-
-// Devices
-#include "devices/ark.h"
-#include "devices/asus.h"
-#include "devices/dexp.h"
-#include "devices/google.h"
-#include "devices/huawei.h"
-#include "devices/jiayu.h"
-#include "devices/lenovo.h"
-#include "devices/lg.h"
-#include "devices/motorola.h"
-#include "devices/nexus.h"
-#include "devices/oneplus.h"
-#include "devices/pantech.h"
-#include "devices/samsung.h"
-#include "devices/sony.h"
-#include "devices/wileyfox.h"
-#include "devices/xiaomi.h"
 
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
@@ -69,7 +50,6 @@ public:
     std::string tempDir;
 
     std::string version;
-    std::vector<Device *> devices;
 
     // Errors
     ErrorCode error;
@@ -78,8 +58,6 @@ public:
     std::vector<Patcher *> allocPatchers;
     std::vector<AutoPatcher *> allocAutoPatchers;
     std::vector<RamdiskPatcher *> allocRamdiskPatchers;
-
-    void loadDefaultDevices();
 };
 /*! \endcond */
 
@@ -92,19 +70,11 @@ public:
 
 PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
-    m_impl->loadDefaultDevices();
-
     m_impl->version = mb::version();
 }
 
 PatcherConfig::~PatcherConfig()
 {
-    // Clean up devices
-    for (Device *device : m_impl->devices) {
-        delete device;
-    }
-    m_impl->devices.clear();
-
     for (Patcher *patcher : m_impl->allocPatchers) {
         destroyPatcher(patcher);
     }
@@ -191,36 +161,6 @@ void PatcherConfig::setTempDirectory(std::string path)
 std::string PatcherConfig::version() const
 {
     return m_impl->version;
-}
-
-/*!
- * \brief Get list of supported devices
- *
- * \return List of supported devices
- */
-std::vector<Device *> PatcherConfig::devices() const
-{
-    return m_impl->devices;
-}
-
-void PatcherConfig::Impl::loadDefaultDevices()
-{
-    addSamsungDevices(&devices);
-    addArkDevices(&devices);
-    addAsusDevices(&devices);
-    addDexpDevices(&devices);
-    addGoogleDevices(&devices);
-    addHuaweiDevices(&devices);
-    addJiayuDevices(&devices);
-    addLenovoDevices(&devices);
-    addLgDevices(&devices);
-    addMotorolaDevices(&devices);
-    addNexusDevices(&devices);
-    addPantechDevices(&devices);
-    addOnePlusDevices(&devices);
-    addSonyDevices(&devices);
-    addWileyfoxDevices(&devices);
-    addXiaomiDevices(&devices);
 }
 
 /*!

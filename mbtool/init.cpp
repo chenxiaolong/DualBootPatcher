@@ -19,6 +19,7 @@
 
 #include "init.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_set>
 
@@ -40,6 +41,8 @@
 #include "minizip/unzip.h"
 
 #include "mbcommon/version.h"
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/dir.h"
@@ -558,7 +561,48 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static bool add_props_to_default_prop()
+static std::string encode_list(const char * const *list)
+{
+    if (!list) {
+        return std::string();
+    }
+
+    // We processing char-by-char, so avoid unnecessary reallocations
+    std::size_t size = 0;
+    std::size_t list_size = 0;
+    for (auto iter = list; *iter; ++iter) {
+        std::size_t item_length = strlen(*iter);
+        size += item_length;
+        size += std::count(*iter, *iter + item_length, ',');
+        ++list_size;
+    }
+    if (size == 0) {
+        return std::string();
+    }
+    size += list_size - 1;
+
+    std::string result;
+    result.reserve(size);
+
+    bool first = true;
+    for (auto iter = list; *iter; ++iter) {
+        if (!first) {
+            result += ',';
+        } else {
+            first = false;
+        }
+        for (auto c = *iter; *c; ++c) {
+            if (*c == ',' || *c == '\\') {
+                result += '\\';
+            }
+            result += *c;
+        }
+    }
+
+    return result;
+}
+
+static bool add_props_to_default_prop(struct Device *device)
 {
     autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
     if (!fp) {
@@ -588,33 +632,51 @@ static bool add_props_to_default_prop()
     // Write ROM ID property
     fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
+    // Block device paths (deprecated)
+    fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
+            encode_list(mb_device_block_dev_base_dirs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
+            encode_list(mb_device_system_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
+            encode_list(mb_device_cache_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
+            encode_list(mb_device_data_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
+            encode_list(mb_device_boot_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
+            encode_list(mb_device_recovery_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
+            encode_list(mb_device_extra_block_devs(device)).c_str());
+
+    if (mb_device_crypto_supported(device)) {
+        fprintf(fp.get(), "ro.patcher.cryptfs_header_path=%s\n",
+                mb_device_crypto_header_path(device));
+    }
+
     return true;
 }
 
-static bool symlink_base_dir()
+static bool symlink_base_dir(Device *device)
 {
-    std::string encoded;
-    if (!util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
-                                 &encoded, "")) {
-        return false;
-    }
-
     struct stat sb;
     if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
         return true;
     }
 
-    std::vector<std::string> base_dirs = decode_list(encoded);
-    for (const std::string &base_dir : base_dirs) {
-        if (util::path_compare(base_dir, UNIVERSAL_BY_NAME_DIR) != 0
-                && stat(base_dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-            if (symlink(base_dir.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
-                LOGW("Failed to symlink %s to %s",
-                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
-            } else {
-                LOGE("Symlinked %s to %s",
-                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
-                return true;
+    std::vector<std::string> base_dirs;
+    auto devs = mb_device_block_dev_base_dirs(device);
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            if (util::path_compare(*it, UNIVERSAL_BY_NAME_DIR) != 0
+                    && stat(*it, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+                if (symlink(*it, UNIVERSAL_BY_NAME_DIR) < 0) {
+                    LOGW("Failed to symlink %s to %s",
+                         *it, UNIVERSAL_BY_NAME_DIR);
+                } else {
+                    LOGE("Symlinked %s to %s",
+                         *it, UNIVERSAL_BY_NAME_DIR);
+                    return true;
+                }
             }
         }
     }
@@ -709,7 +771,8 @@ bool mount_userdata(const char *block_dev)
 
     // Try mounting data again
     int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    // nullptr for the device because we do not need the generic fstab entries
+    if (!mount_fstab(fstab.c_str(), rom, nullptr, flags)) {
         LOGE("Failed to mount data. Decryption probably failed");
         return false;
     }
@@ -976,10 +1039,25 @@ static bool emergency_reboot()
 
         // Try mounting /data in case we couldn't get through the fstab mounting
         // steps. (This is an ugly brute force method...)
-        std::string encoded;
-        util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
-                                &encoded, "");
-        std::vector<std::string> data_block_devs = decode_list(encoded);
+        std::vector<std::string> data_block_devs;
+
+        std::vector<unsigned char> contents;
+        util::file_read_all(DEVICE_JSON_PATH, &contents);
+        contents.push_back('\0');
+
+        MbDeviceJsonError error;
+        Device *device = mb_device_new_from_json(
+                (char *) contents.data(), &error);
+        if (device) {
+            auto devs = mb_device_data_block_devs(device);
+            if (devs) {
+                for (auto it = devs; *it; ++it) {
+                    data_block_devs.push_back(*it);
+                }
+            }
+            mb_device_free(device);
+        }
+
         // Some catch-all paths to increase our chances of getting a usable log
         data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/data");
         data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/DATA");
@@ -1083,7 +1161,23 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    add_props_to_default_prop();
+    std::vector<unsigned char> contents;
+    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    contents.push_back('\0');
+
+    MbDeviceJsonError error;
+    Device *device = mb_device_new_from_json((char *) contents.data(), &error);
+    if (!device) {
+        LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
+        emergency_reboot();
+        return EXIT_FAILURE;
+    } else if (mb_device_validate(device) != 0) {
+        LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
+
+    add_props_to_default_prop(device);
 
     // initialize properties
     properties_setup();
@@ -1092,7 +1186,7 @@ int init_main(int argc, char *argv[])
     device_init(false);
 
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
-    symlink_base_dir();
+    symlink_base_dir(device);
 
     // mbtool no longer searches for the fstab file and just assumes that it is
     // /fstab.${ro.hardware} since this is what vold uses as well.
@@ -1131,7 +1225,7 @@ int init_main(int argc, char *argv[])
             | MOUNT_FLAG_MOUNT_SYSTEM
             | MOUNT_FLAG_MOUNT_CACHE
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
         return EXIT_FAILURE;
@@ -1144,7 +1238,7 @@ int init_main(int argc, char *argv[])
     // Try mounting data
     flags = MOUNT_FLAG_REWRITE_FSTAB
             | MOUNT_FLAG_MOUNT_DATA;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGW("Failed to mount data, it might be encrypted");
         has_encryption = true;
     }

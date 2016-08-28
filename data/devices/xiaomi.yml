@@ -1,0 +1,170 @@
+---
+- name: Xiaomi Mi3W
+  id: cancro
+  codenames:
+    - cancro
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p19
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p20
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
+
+
+- name: Xiaomi HM 1S
+  id: armani
+  codenames:
+    - armani
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p25
+
+
+- name: Xiaomi Redmi Note 2
+  id: hermes
+  codenames:
+    - hermes
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p15
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p16
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p17
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      # Directly written by updater-script
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/mmcblk0p11
+      # From reverse engineering the update-binary, it appears that
+      # /dev/block/mmcblk0boot0 is the "preloader" partition
+      - /dev/block/mmcblk0boot0
+
+
+- name: Xiaomi Redmi Note 3 (MTK)
+  id: hennessy
+  codenames:
+    - hennessy
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p15
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p16
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p17
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      # write_raw_image() callback in update-binary checks if the para
+      # partition exists
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/mmcblk0p10
+      # From reverse engineering the update-binary, it appears that
+      # /dev/block/mmcblk0boot0 is the "preloader" partition
+      - /dev/block/mmcblk0boot0
+
+
+- name: Xiaomi Redmi Note 4G DS
+  id: gucci
+  codenames:
+    - gucci
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p26
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p30
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p25
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p29

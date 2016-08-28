@@ -52,9 +52,9 @@ enum class SwitchRomResult
     CHECKSUM_INVALID
 };
 
-SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockdev,
-                           const std::vector<std::string> &blockdev_base_dirs,
+SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
+                           const char * const *blockdev_base_dirs,
                            bool force_update_checksums);
-bool set_kernel(const std::string &id, const std::string &boot_blockdev);
+bool set_kernel(const char *id, const char *boot_blockdev);
 
 }

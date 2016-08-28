@@ -23,7 +23,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "mbp/device.h"
+#include "mbdevice/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
 
@@ -76,7 +76,7 @@ protected:
     bool _passthrough;
 
     mbp::PatcherConfig _pc;
-    const mbp::Device *_device = nullptr;
+    Device *_device = nullptr;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;

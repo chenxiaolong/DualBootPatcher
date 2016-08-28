@@ -21,7 +21,7 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 
 public class PatchFileItem implements Parcelable {
     int taskId;

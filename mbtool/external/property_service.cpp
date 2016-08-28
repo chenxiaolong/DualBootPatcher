@@ -413,6 +413,7 @@ static void load_properties_from_file(const char *filename, const char *filter)
     std::vector<unsigned char> data;
     if (mb::util::file_read_all(filename, &data)) {
         data.push_back('\n');
+        data.push_back('\0');
         load_properties((char *) data.data(), filter);
     }
 

@@ -121,8 +121,12 @@ extern const char *tw_theme_zip_path;
 extern int tw_android_sdk_version;
 
 // Backends
-extern const char **tw_graphics_backends;
+extern const char * const *tw_graphics_backends;
 extern size_t tw_graphics_backends_length;
+
+// Device
+struct Device;
+extern struct Device *tw_device;
 
 #ifdef __cplusplus
 }

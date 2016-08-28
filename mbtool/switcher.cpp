@@ -191,7 +191,7 @@ struct Flashable
  *
  * \return Block device path if found. Otherwise, an empty string.
  */
-static std::string find_block_dev(const std::vector<std::string> &search_dirs,
+static std::string find_block_dev(const char * const *search_dirs,
                                   const std::string &partition)
 {
     struct stat sb;
@@ -205,8 +205,8 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
         }
     }
 
-    for (const std::string &base_dir : search_dirs) {
-        std::string block_dev(base_dir);
+    for (auto it = search_dirs; *it; ++it) {
+        std::string block_dev(*it);
         block_dev += "/";
         block_dev += partition;
 
@@ -218,14 +218,14 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
     return std::string();
 }
 
-static bool add_extra_images(const std::string &multiboot_dir,
-                             const std::vector<std::string> &block_dev_dirs,
+static bool add_extra_images(const char *multiboot_dir,
+                             const char * const *block_dev_dirs,
                              std::vector<Flashable> *flashables)
 {
     DIR *dir;
     dirent *ent;
 
-    dir = opendir(multiboot_dir.c_str());
+    dir = opendir(multiboot_dir);
     if (!dir) {
         return false;
     }
@@ -297,11 +297,11 @@ static bool add_extra_images(const std::string &multiboot_dir,
  *         SwitchRomResult::CHECKSUM_INVALID if the checksum for some image is invalid
  *
  */
-SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockdev,
-                           const std::vector<std::string> &blockdev_base_dirs,
+SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
+                           const char * const *blockdev_base_dirs,
                            bool force_update_checksums)
 {
-    LOGD("Attempting to switch to %s", id.c_str());
+    LOGD("Attempting to switch to %s", id);
     LOGD("Force update checksums: %d", force_update_checksums);
 
     // Path for all of the images
@@ -318,7 +318,7 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
 
     auto r = roms.find_by_id(id);
     if (!r) {
-        LOGE("Invalid ROM ID: %s", id.c_str());
+        LOGE("Invalid ROM ID: %s", id);
         return SwitchRomResult::FAILED;
     }
 
@@ -343,7 +343,7 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
     flashables.back().image = bootimg_path;
     flashables.back().block_dev = boot_blockdev;
 
-    if (!add_extra_images(multiboot_path, blockdev_base_dirs, &flashables)) {
+    if (!add_extra_images(multiboot_path.c_str(), blockdev_base_dirs, &flashables)) {
         LOGW("Failed to find extra images");
     }
 
@@ -428,9 +428,9 @@ SwitchRomResult switch_rom(const std::string &id, const std::string &boot_blockd
  *
  * \return True if the kernel was successfully set. Otherwise, false.
  */
-bool set_kernel(const std::string &id, const std::string &boot_blockdev)
+bool set_kernel(const char *id, const char *boot_blockdev)
 {
-    LOGD("Attempting to set the kernel for %s", id.c_str());
+    LOGD("Attempting to set the kernel for %s", id);
 
     // Path for all of the images
     std::string multiboot_path(get_raw_path(MULTIBOOT_DIR));
@@ -446,7 +446,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     auto r = roms.find_by_id(id);
     if (!r) {
-        LOGE("Invalid ROM ID: %s", id.c_str());
+        LOGE("Invalid ROM ID: %s", id);
         return false;
     }
 
@@ -461,7 +461,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     if (!util::file_read_all(boot_blockdev, &data, &size)) {
         LOGE("%s: Failed to read block device: %s",
-             boot_blockdev.c_str(), strerror(errno));
+             boot_blockdev, strerror(errno));
         return false;
     }
 
