@@ -732,6 +732,21 @@ bool Installer::mount_dir_or_image(const std::string &source,
     return true;
 }
 
+bool Installer::change_root(const std::string &path)
+{
+    if (chdir(path.c_str()) < 0) {
+        LOGE("%s: Failed to chdir: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    if (chroot(path.c_str()) < 0) {
+        LOGE("%s: Failed to chroot: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 bool Installer::set_up_legacy_properties()
 {
     // We don't need to worry about /dev/__properties__ since that's not present
@@ -913,14 +928,7 @@ bool Installer::run_real_updater()
                 close(stdio_fds[0]);
             }
 
-            if (chdir(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chdir: %s",
-                     _chroot.c_str(), strerror(errno));
-                _exit(EXIT_FAILURE);
-            }
-            if (chroot(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chroot: %s",
-                     _chroot.c_str(), strerror(errno));
+            if (!change_root(_chroot)) {
                 _exit(EXIT_FAILURE);
             }
 
