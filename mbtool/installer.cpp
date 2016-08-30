@@ -1001,6 +1001,44 @@ bool Installer::run_real_updater()
     return updater_ret;
 }
 
+bool Installer::run_debug_shell()
+{
+#if !DEBUG_PRE_SHELL && !DEBUG_POST_SHELL
+    return true;
+#else
+    int status;
+    pid_t pid;
+
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            if (!change_root(_chroot)) {
+                _exit(EXIT_FAILURE);
+            }
+
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
+            }
+
+            const char *argv[] = { "/sbin/sh", "-i", nullptr };
+            execvpe(argv[0], const_cast<char * const *>(argv), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
+            _exit(127);
+        } else {
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    LOGE("Failed to waitpid(): %s", strerror(errno));
+                    return false;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+            return true;
+        }
+    }
+
+    return false;
+#endif
+}
+
 bool Installer::is_aroma(const std::string &path)
 {
     return util::file_find_one_of(path, {
@@ -1581,12 +1619,9 @@ Installer::ProceedState Installer::install_stage_installation()
     display_msg("Here we go!");
 
 #if DEBUG_PRE_SHELL
-    {
-        LOGD("To skip installation, create a file named: /.skip-install");
-        LOGD("Pre-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("To skip installation, create a file named: /.skip-install");
+    LOGD("Pre-installation shell");
+    run_debug_shell();
 #endif
 
     bool updater_ret = true;
@@ -1603,11 +1638,8 @@ Installer::ProceedState Installer::install_stage_installation()
     }
 
 #if DEBUG_POST_SHELL
-    {
-        LOGD("Post-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("Post-installation shell");
+    run_debug_shell();
 #endif
 
     // Determine if fuse-exfat should be used. We can't detect this at boot time
