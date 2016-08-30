@@ -291,9 +291,14 @@ bool Installer::create_chroot()
         return false;
     }
 
-    // Set up directories
-    if (log_mkdir(_chroot.c_str(), 0755) < 0
-            || log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
+    // Create chroot and mount tmpfs there
+    if (log_mkdir(_chroot.c_str(), 0700) < 0
+            || log_mount("tmpfs", _chroot.c_str(), "tmpfs", 0, "") < 0) {
+        return false;
+    }
+
+    // Create remaining directories
+    if (log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/dev").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/etc").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/proc").c_str(), 0755) < 0
@@ -370,7 +375,6 @@ bool Installer::create_chroot()
     }
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
-#if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
                       util::COPY_ATTRIBUTES
                     | util::COPY_XATTRS
@@ -383,15 +387,8 @@ bool Installer::create_chroot()
                     | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
-#else
-    if (log_mkdir(in_chroot("/dev/input"), 0755) < 0
-            || log_mkdir(in_chroot("/dev/graphics"), 0755) < 0
-            || log_mount("/dev/input", in_chroot("/dev/input"), "", MS_BIND, "") < 0
-            || log_mount("/dev/graphics", in_chroot("/dev/graphics"), "", MS_BIND, "") < 0) {
-        return false;
-    }
-#endif
 
+    // Mount EFS partition so patched Odin images can properly set up multi-CSC
     if (!mount_efs()) {
         return false;
     }
@@ -405,12 +402,14 @@ bool Installer::destroy_chroot() const
 {
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
-    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    std::string dev_block_path(in_chroot("/dev/block"));
+    autoclose::dir dp = autoclose::opendir(dev_block_path.c_str());
     if (dp) {
         std::string path;
         struct dirent *ent;
         while ((ent = readdir(dp.get()))) {
-            path = in_chroot("/dev/block/");
+            path = dev_block_path;
+            path += '/';
             path += ent->d_name;
             util::loopdev_remove_device(path.c_str());
         }
@@ -429,6 +428,8 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/sys").c_str());
     log_umount(in_chroot("/tmp").c_str());
     log_umount(in_chroot("/sbin").c_str());
+
+    log_umount(_chroot.c_str());
 
     // Unmount everything previously mounted in the chroot
     if (!util::unmount_all(_chroot)) {
