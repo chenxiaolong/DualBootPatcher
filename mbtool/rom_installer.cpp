@@ -46,6 +46,9 @@
 #include "multiboot.h"
 
 
+#define DEBUG_LEAVE_STDIN_OPEN 0
+#define DEBUG_ENABLE_PASSTHROUGH 0
+
 static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
 
 namespace mb
@@ -79,7 +82,13 @@ private:
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
                            std::FILE *log_fp) :
-    Installer(zip_file, "/chroot", "/multiboot", 3, -1),
+    Installer(zip_file, "/chroot", "/multiboot", 3,
+#if DEBUG_ENABLE_PASSTHROUGH
+              STDOUT_FILENO
+#else
+              -1
+#endif
+             ),
     _rom_id(std::move(rom_id)),
     _log_fp(log_fp)
 {
@@ -533,11 +542,13 @@ int rom_installer_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // Close stdin
+#if !DEBUG_LEAVE_STDIN_OPEN
     int fd = open("/dev/null", O_RDONLY);
     if (fd >= 0) {
         dup2(fd, STDIN_FILENO);
         close(fd);
     }
+#endif
 
     // mbtool logging
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
