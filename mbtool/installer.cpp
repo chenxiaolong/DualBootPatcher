@@ -732,6 +732,71 @@ bool Installer::mount_dir_or_image(const std::string &source,
     return true;
 }
 
+bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
+{
+    int status;
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        LOGE("Failed to fork updater fd reader process");
+    } else if (pid == 0) {
+        // Don't need command_fd in the child process
+        close(command_fd);
+
+        // Read program output in child process (stdout, stderr)
+        char buf[1024];
+
+        autoclose::file fp(fdopen(stdio_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            command_output(buf);
+        }
+
+        _exit(EXIT_SUCCESS);
+    } else {
+        // Read special command fd in parent process
+
+        char buf[1024];
+        char *save_ptr;
+
+        // Similar parsing to AOSP recovery
+        autoclose::file fp(fdopen(command_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            char *cmd = strtok_r(buf, " \n", &save_ptr);
+            if (!cmd) {
+                continue;
+            } else if (strcmp(cmd, "progress") == 0
+                    || strcmp(cmd, "set_progress") == 0
+                    || strcmp(cmd, "wipe_cache") == 0
+                    || strcmp(cmd, "clear_display") == 0
+                    || strcmp(cmd, "enable_reboot") == 0) {
+                // Ignore
+            } else if (strcmp(cmd, "ui_print") == 0) {
+                char *str = strtok_r(nullptr, "\n", &save_ptr);
+                if (str) {
+                    updater_print(str);
+                } else {
+                    updater_print("\n");
+                }
+            } else {
+                LOGE("Unknown updater command: %s", cmd);
+            }
+        }
+
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                LOGE("Failed to waitpid(): %s", strerror(errno));
+                return false;
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+        return true;
+    }
+
+    return false;
+}
+
 /*!
  * \brief Run real update-binary in the chroot
  */
@@ -880,63 +945,12 @@ bool Installer::run_real_updater()
             _exit(127);
         } else {
             if (!_passthrough) {
+                // Close write ends of the pipes
                 close(pipe_fds[1]);
                 close(stdio_fds[1]);
 
-                int reader_status;
-                pid_t reader_pid = fork();
-
-                if (reader_pid < 0) {
-                    LOGE("Failed to fork reader process");
-                } else if (reader_pid == 0) {
-                    // Read program output in child process (stdout, stderr)
-                    char buf[1024];
-
-                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        command_output(buf);
-                    }
-
-                    _exit(EXIT_SUCCESS);
-                } else {
-                    // Read special command fd in parent process
-
-                    char buf[1024];
-                    char *save_ptr;
-
-                    // Similar parsing to AOSP recovery
-                    autoclose::file fp(fdopen(pipe_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        char *cmd = strtok_r(buf, " \n", &save_ptr);
-                        if (!cmd) {
-                            continue;
-                        } else if (strcmp(cmd, "progress") == 0
-                                || strcmp(cmd, "set_progress") == 0
-                                || strcmp(cmd, "wipe_cache") == 0
-                                || strcmp(cmd, "clear_display") == 0
-                                || strcmp(cmd, "enable_reboot") == 0) {
-                            // Ignore
-                        } else if (strcmp(cmd, "ui_print") == 0) {
-                            char *str = strtok_r(nullptr, "\n", &save_ptr);
-                            if (str) {
-                                updater_print(str);
-                            } else {
-                                updater_print("\n");
-                            }
-                        } else {
-                            LOGE("Unknown updater command: %s", cmd);
-                        }
-                    }
-
-                    do {
-                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): %s", strerror(errno));
-                            break;
-                        }
-                    } while (!WIFEXITED(reader_status)
-                            && !WIFSIGNALED(reader_status));
+                if (!updater_fd_reader(stdio_fds[0], pipe_fds[0])) {
+                    LOGW("Updater fd reader process failed");
                 }
 
                 close(pipe_fds[0]);
@@ -955,8 +969,7 @@ bool Installer::run_real_updater()
                 if (WEXITSTATUS(status) != 0) {
                     updater_ret = false;
                 }
-            }
-            if (WIFSIGNALED(status)) {
+            } else if (WIFSIGNALED(status)) {
                 LOGD("Updater killed with signal: %d", WTERMSIG(status));
                 updater_ret = false;
             }

@@ -124,6 +124,7 @@ private:
                             const std::string &loop_target,
                             bool is_image,
                             uint64_t image_size);
+    bool updater_fd_reader(int stdio_fd, int command_fd);
     bool run_real_updater();
 
     ProceedState install_stage_initialize();
