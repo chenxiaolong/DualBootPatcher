@@ -129,6 +129,7 @@ private:
     bool set_up_legacy_properties();
     bool updater_fd_reader(int stdio_fd, int command_fd);
     bool run_real_updater();
+    bool run_debug_shell();
 
     ProceedState install_stage_initialize();
     ProceedState install_stage_create_chroot();

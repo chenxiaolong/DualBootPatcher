@@ -27,6 +27,7 @@
 
 // Linux/posix
 #include <fcntl.h>
+#include <mntent.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -734,6 +735,40 @@ bool Installer::mount_dir_or_image(const std::string &source,
 
 bool Installer::change_root(const std::string &path)
 {
+    if (unshare(CLONE_NEWNS) < 0) {
+        LOGE("Failed to unshare mount namespace: %s", strerror(errno));
+        return false;
+    }
+
+    // Unmount everything besides our chroot dir
+    {
+        std::vector<std::string> to_unmount;
+        struct mntent ent;
+        char buf[1024];
+
+        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        if (!fp) {
+            LOGE("%s: Failed to read file: %s",
+                 "/proc/mounts", strerror(errno));
+            return false;
+        }
+
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            if (strcmp(ent.mnt_dir, "/") != 0
+                    && !util::starts_with(ent.mnt_dir, path.c_str())) {
+                to_unmount.push_back(ent.mnt_dir);
+            }
+        }
+
+        // Close procfs fd
+        fp.reset();
+
+        // Unmount in reverse order
+        for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
+            log_umount(it->c_str());
+        }
+    }
+
     if (chdir(path.c_str()) < 0) {
         LOGE("%s: Failed to chdir: %s", path.c_str(), strerror(errno));
         return false;
