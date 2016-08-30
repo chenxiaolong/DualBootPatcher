@@ -732,6 +732,31 @@ bool Installer::mount_dir_or_image(const std::string &source,
     return true;
 }
 
+bool Installer::set_up_legacy_properties()
+{
+    // We don't need to worry about /dev/__properties__ since that's not present
+    // in the chroot. Bionic will automatically fall back to getting the fd from
+    // the ANDROID_PROPERTY_WORKSPACE environment variable.
+    char tmp[32];
+    int propfd, propsz;
+    legacy_properties_init();
+    for (auto const &pair : _chroot_prop) {
+        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    }
+    legacy_get_property_workspace(&propfd, &propsz);
+    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
+
+    char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+    LOGD("Original properties environment: %s",
+         orig_prop_env ? orig_prop_env : "null");
+
+    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+    LOGD("Switched to legacy properties environment: %s", tmp);
+
+    return true;
+}
+
 bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
 {
     int status;
@@ -879,10 +904,6 @@ bool Installer::run_real_updater()
     }
     argv_c.push_back(nullptr);
 
-    // Keep get_properties() out of the fork since it might need to call
-    // util::get_properties()
-    std::unordered_map<std::string, std::string> props = get_properties();
-
     bool updater_ret = true;
 
     if ((pid = fork()) >= 0) {
@@ -909,26 +930,9 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            // We don't need to worry about /dev/__properties__
-            // since that's not present in the chroot. Bionic will
-            // automatically fall back to getting the fd from the
-            // ANDROID_PROPERTY_WORKSPACE environment variable.
-            char tmp[32];
-            int propfd, propsz;
-            legacy_properties_init();
-            for (auto const &pair : props) {
-                legacy_property_set(pair.first.c_str(), pair.second.c_str());
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
             }
-            legacy_get_property_workspace(&propfd, &propsz);
-            sprintf(tmp, "%d,%d", dup(propfd), propsz);
-
-            char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-            LOGD("Original properties environment: %s",
-                 orig_prop_env ? orig_prop_env : "null");
-
-            setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
-            LOGD("Switched to legacy properties environment: %s", tmp);
 
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
@@ -1163,6 +1167,9 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
+
+    // Get chroot props
+    _chroot_prop = get_properties();
 
     return ProceedState::Continue;
 }
