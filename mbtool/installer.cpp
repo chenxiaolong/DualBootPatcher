@@ -740,6 +740,10 @@ bool Installer::change_root(const std::string &path)
         return false;
     }
 
+    if (log_mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        return false;
+    }
+
     // Unmount everything besides our chroot dir
     {
         std::vector<std::string> to_unmount;
