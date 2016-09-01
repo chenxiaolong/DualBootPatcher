@@ -27,6 +27,7 @@
 
 // Linux/posix
 #include <fcntl.h>
+#include <mntent.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -70,6 +71,7 @@
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
+#include "mbutil/time.h"
 
 // Local
 #include "image.h"
@@ -291,9 +293,14 @@ bool Installer::create_chroot()
         return false;
     }
 
-    // Set up directories
-    if (log_mkdir(_chroot.c_str(), 0755) < 0
-            || log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
+    // Create chroot and mount tmpfs there
+    if (log_mkdir(_chroot.c_str(), 0700) < 0
+            || log_mount("tmpfs", _chroot.c_str(), "tmpfs", 0, "") < 0) {
+        return false;
+    }
+
+    // Create remaining directories
+    if (log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/dev").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/etc").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/proc").c_str(), 0755) < 0
@@ -370,7 +377,6 @@ bool Installer::create_chroot()
     }
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
-#if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
                       util::COPY_ATTRIBUTES
                     | util::COPY_XATTRS
@@ -383,15 +389,8 @@ bool Installer::create_chroot()
                     | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
-#else
-    if (log_mkdir(in_chroot("/dev/input"), 0755) < 0
-            || log_mkdir(in_chroot("/dev/graphics"), 0755) < 0
-            || log_mount("/dev/input", in_chroot("/dev/input"), "", MS_BIND, "") < 0
-            || log_mount("/dev/graphics", in_chroot("/dev/graphics"), "", MS_BIND, "") < 0) {
-        return false;
-    }
-#endif
 
+    // Mount EFS partition so patched Odin images can properly set up multi-CSC
     if (!mount_efs()) {
         return false;
     }
@@ -405,12 +404,14 @@ bool Installer::destroy_chroot() const
 {
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
-    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    std::string dev_block_path(in_chroot("/dev/block"));
+    autoclose::dir dp = autoclose::opendir(dev_block_path.c_str());
     if (dp) {
         std::string path;
         struct dirent *ent;
         while ((ent = readdir(dp.get()))) {
-            path = in_chroot("/dev/block/");
+            path = dev_block_path;
+            path += '/';
             path += ent->d_name;
             util::loopdev_remove_device(path.c_str());
         }
@@ -429,6 +430,8 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/sys").c_str());
     log_umount(in_chroot("/tmp").c_str());
     log_umount(in_chroot("/sbin").c_str());
+
+    log_umount(_chroot.c_str());
 
     // Unmount everything previously mounted in the chroot
     if (!util::unmount_all(_chroot)) {
@@ -731,6 +734,149 @@ bool Installer::mount_dir_or_image(const std::string &source,
     return true;
 }
 
+bool Installer::change_root(const std::string &path)
+{
+    if (unshare(CLONE_NEWNS) < 0) {
+        LOGE("Failed to unshare mount namespace: %s", strerror(errno));
+        return false;
+    }
+
+    if (log_mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        return false;
+    }
+
+    // Unmount everything besides our chroot dir
+    {
+        std::vector<std::string> to_unmount;
+        struct mntent ent;
+        char buf[1024];
+
+        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        if (!fp) {
+            LOGE("%s: Failed to read file: %s",
+                 "/proc/mounts", strerror(errno));
+            return false;
+        }
+
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            if (strcmp(ent.mnt_dir, "/") != 0
+                    && !util::starts_with(ent.mnt_dir, path.c_str())) {
+                to_unmount.push_back(ent.mnt_dir);
+            }
+        }
+
+        // Close procfs fd
+        fp.reset();
+
+        // Unmount in reverse order
+        for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
+            log_umount(it->c_str());
+        }
+    }
+
+    if (chdir(path.c_str()) < 0) {
+        LOGE("%s: Failed to chdir: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    if (chroot(path.c_str()) < 0) {
+        LOGE("%s: Failed to chroot: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+bool Installer::set_up_legacy_properties()
+{
+    // We don't need to worry about /dev/__properties__ since that's not present
+    // in the chroot. Bionic will automatically fall back to getting the fd from
+    // the ANDROID_PROPERTY_WORKSPACE environment variable.
+    char tmp[32];
+    int propfd, propsz;
+    legacy_properties_init();
+    for (auto const &pair : _chroot_prop) {
+        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    }
+    legacy_get_property_workspace(&propfd, &propsz);
+    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
+
+    char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+    LOGD("Original properties environment: %s",
+         orig_prop_env ? orig_prop_env : "null");
+
+    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+    LOGD("Switched to legacy properties environment: %s", tmp);
+
+    return true;
+}
+
+bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
+{
+    int status;
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        LOGE("Failed to fork updater fd reader process");
+    } else if (pid == 0) {
+        // Don't need command_fd in the child process
+        close(command_fd);
+
+        // Read program output in child process (stdout, stderr)
+        char buf[1024];
+
+        autoclose::file fp(fdopen(stdio_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            command_output(buf);
+        }
+
+        _exit(EXIT_SUCCESS);
+    } else {
+        // Read special command fd in parent process
+
+        char buf[1024];
+        char *save_ptr;
+
+        // Similar parsing to AOSP recovery
+        autoclose::file fp(fdopen(command_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            char *cmd = strtok_r(buf, " \n", &save_ptr);
+            if (!cmd) {
+                continue;
+            } else if (strcmp(cmd, "progress") == 0
+                    || strcmp(cmd, "set_progress") == 0
+                    || strcmp(cmd, "wipe_cache") == 0
+                    || strcmp(cmd, "clear_display") == 0
+                    || strcmp(cmd, "enable_reboot") == 0) {
+                // Ignore
+            } else if (strcmp(cmd, "ui_print") == 0) {
+                char *str = strtok_r(nullptr, "\n", &save_ptr);
+                if (str) {
+                    updater_print(str);
+                } else {
+                    updater_print("\n");
+                }
+            } else {
+                LOGE("Unknown updater command: %s", cmd);
+            }
+        }
+
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                LOGE("Failed to waitpid(): %s", strerror(errno));
+                return false;
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+        return true;
+    }
+
+    return false;
+}
+
 /*!
  * \brief Run real update-binary in the chroot
  */
@@ -813,10 +959,6 @@ bool Installer::run_real_updater()
     }
     argv_c.push_back(nullptr);
 
-    // Keep get_properties() out of the fork since it might need to call
-    // util::get_properties()
-    std::unordered_map<std::string, std::string> props = get_properties();
-
     bool updater_ret = true;
 
     if ((pid = fork()) >= 0) {
@@ -826,14 +968,7 @@ bool Installer::run_real_updater()
                 close(stdio_fds[0]);
             }
 
-            if (chdir(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chdir: %s",
-                     _chroot.c_str(), strerror(errno));
-                _exit(EXIT_FAILURE);
-            }
-            if (chroot(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chroot: %s",
-                     _chroot.c_str(), strerror(errno));
+            if (!change_root(_chroot)) {
                 _exit(EXIT_FAILURE);
             }
 
@@ -843,26 +978,9 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            // We don't need to worry about /dev/__properties__
-            // since that's not present in the chroot. Bionic will
-            // automatically fall back to getting the fd from the
-            // ANDROID_PROPERTY_WORKSPACE environment variable.
-            char tmp[32];
-            int propfd, propsz;
-            legacy_properties_init();
-            for (auto const &pair : props) {
-                legacy_property_set(pair.first.c_str(), pair.second.c_str());
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
             }
-            legacy_get_property_workspace(&propfd, &propsz);
-            sprintf(tmp, "%d,%d", dup(propfd), propsz);
-
-            char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-            LOGD("Original properties environment: %s",
-                 orig_prop_env ? orig_prop_env : "null");
-
-            setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
-            LOGD("Switched to legacy properties environment: %s", tmp);
 
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
@@ -879,63 +997,12 @@ bool Installer::run_real_updater()
             _exit(127);
         } else {
             if (!_passthrough) {
+                // Close write ends of the pipes
                 close(pipe_fds[1]);
                 close(stdio_fds[1]);
 
-                int reader_status;
-                pid_t reader_pid = fork();
-
-                if (reader_pid < 0) {
-                    LOGE("Failed to fork reader process");
-                } else if (reader_pid == 0) {
-                    // Read program output in child process (stdout, stderr)
-                    char buf[1024];
-
-                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        command_output(buf);
-                    }
-
-                    _exit(EXIT_SUCCESS);
-                } else {
-                    // Read special command fd in parent process
-
-                    char buf[1024];
-                    char *save_ptr;
-
-                    // Similar parsing to AOSP recovery
-                    autoclose::file fp(fdopen(pipe_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        char *cmd = strtok_r(buf, " \n", &save_ptr);
-                        if (!cmd) {
-                            continue;
-                        } else if (strcmp(cmd, "progress") == 0
-                                || strcmp(cmd, "set_progress") == 0
-                                || strcmp(cmd, "wipe_cache") == 0
-                                || strcmp(cmd, "clear_display") == 0
-                                || strcmp(cmd, "enable_reboot") == 0) {
-                            // Ignore
-                        } else if (strcmp(cmd, "ui_print") == 0) {
-                            char *str = strtok_r(nullptr, "\n", &save_ptr);
-                            if (str) {
-                                updater_print(str);
-                            } else {
-                                updater_print("\n");
-                            }
-                        } else {
-                            LOGE("Unknown updater command: %s", cmd);
-                        }
-                    }
-
-                    do {
-                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): %s", strerror(errno));
-                            break;
-                        }
-                    } while (!WIFEXITED(reader_status)
-                            && !WIFSIGNALED(reader_status));
+                if (!updater_fd_reader(stdio_fds[0], pipe_fds[0])) {
+                    LOGW("Updater fd reader process failed");
                 }
 
                 close(pipe_fds[0]);
@@ -954,8 +1021,7 @@ bool Installer::run_real_updater()
                 if (WEXITSTATUS(status) != 0) {
                     updater_ret = false;
                 }
-            }
-            if (WIFSIGNALED(status)) {
+            } else if (WIFSIGNALED(status)) {
                 LOGD("Updater killed with signal: %d", WTERMSIG(status));
                 updater_ret = false;
             }
@@ -973,6 +1039,44 @@ bool Installer::run_real_updater()
     }
 
     return updater_ret;
+}
+
+bool Installer::run_debug_shell()
+{
+#if !DEBUG_PRE_SHELL && !DEBUG_POST_SHELL
+    return true;
+#else
+    int status;
+    pid_t pid;
+
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            if (!change_root(_chroot)) {
+                _exit(EXIT_FAILURE);
+            }
+
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
+            }
+
+            const char *argv[] = { "/sbin/sh", "-i", nullptr };
+            execvpe(argv[0], const_cast<char * const *>(argv), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
+            _exit(127);
+        } else {
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    LOGE("Failed to waitpid(): %s", strerror(errno));
+                    return false;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+            return true;
+        }
+    }
+
+    return false;
+#endif
 }
 
 bool Installer::is_aroma(const std::string &path)
@@ -1149,6 +1253,9 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
+
+    // Get chroot props
+    _chroot_prop = get_properties();
 
     return ProceedState::Continue;
 }
@@ -1332,7 +1439,7 @@ Installer::ProceedState Installer::install_stage_check_device()
             LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
         } else {
-            LOGD("Symlinked %s to %s in the chroot",
+            LOGD("Symlinked %s to %s",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
         }
     }
@@ -1552,12 +1659,9 @@ Installer::ProceedState Installer::install_stage_installation()
     display_msg("Here we go!");
 
 #if DEBUG_PRE_SHELL
-    {
-        LOGD("To skip installation, create a file named: /.skip-install");
-        LOGD("Pre-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("To skip installation, create a file named: /.skip-install");
+    LOGD("Pre-installation shell");
+    run_debug_shell();
 #endif
 
     bool updater_ret = true;
@@ -1565,7 +1669,14 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
+        auto start = util::current_time_ms();
         updater_ret = run_real_updater();
+        auto stop = util::current_time_ms();
+        auto diff = (stop - start) / 1000;
+
+        display_msg("Elapsed time: %" PRIu64 ":%" PRIu64 "min",
+                    diff / 60, diff % 60);
+
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
         }
@@ -1574,11 +1685,8 @@ Installer::ProceedState Installer::install_stage_installation()
     }
 
 #if DEBUG_POST_SHELL
-    {
-        LOGD("Post-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("Post-installation shell");
+    run_debug_shell();
 #endif
 
     // Determine if fuse-exfat should be used. We can't detect this at boot time
