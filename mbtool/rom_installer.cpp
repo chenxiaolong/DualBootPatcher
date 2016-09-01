@@ -408,6 +408,12 @@ int rom_installer_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
+    }
+
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
