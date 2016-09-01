@@ -71,6 +71,7 @@
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
+#include "mbutil/time.h"
 
 // Local
 #include "image.h"
@@ -1438,7 +1439,7 @@ Installer::ProceedState Installer::install_stage_check_device()
             LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
         } else {
-            LOGD("Symlinked %s to %s in the chroot",
+            LOGD("Symlinked %s to %s",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
         }
     }
@@ -1668,7 +1669,14 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
+        auto start = util::current_time_ms();
         updater_ret = run_real_updater();
+        auto stop = util::current_time_ms();
+        auto diff = (stop - start) / 1000;
+
+        display_msg("Elapsed time: %" PRIu64 ":%" PRIu64 "min",
+                    diff / 60, diff % 60);
+
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
         }
