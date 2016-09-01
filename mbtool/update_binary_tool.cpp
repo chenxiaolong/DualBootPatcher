@@ -103,7 +103,7 @@ static bool do_mount(const char *mountpoint)
     }
 
     // NOTE: We don't need the loop mount logic in util::mount()
-    if (mount(image_loop_dev, mountpoint, "ext4", 0, "async,noatime") < 0) {
+    if (mount(image_loop_dev, mountpoint, "ext4", MS_NOATIME, "") < 0) {
         LOGE(TAG "Failed to mount %s: %s", image_loop_dev, strerror(errno));
         return false;
     }
