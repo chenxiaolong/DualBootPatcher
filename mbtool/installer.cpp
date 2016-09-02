@@ -670,15 +670,14 @@ bool Installer::system_image_copy(const std::string &source,
  * \brief Bind mount directory or create and mount image
  *
  * \param source Source path (directory or image file)
- * \param mount_point Target mount point
- * \param loop_target If nonempty, copy loop device to this path (only used
- *                    when \a is_image is true)
+ * \param bind_target Mount point for bind mount (if \a is_image is false)
+ * \param loop_target Path to create loop device (if \a is_image is true)
  * \param is_image Whether \a source is an image file
  * \param image_size Desired image size (only used if \a is_image is true and
  *                   \a source doesn't exist)
  */
 bool Installer::mount_dir_or_image(const std::string &source,
-                                   const std::string &mount_point,
+                                   const std::string &bind_target,
                                    const std::string &loop_target,
                                    bool is_image,
                                    uint64_t image_size)
@@ -698,14 +697,6 @@ bool Installer::mount_dir_or_image(const std::string &source,
             }
         }
 
-        //if (!util::mount(source.c_str(), mount_point.c_str(), "ext4", 0, "")) {
-        //    display_msg("Failed to mount %s to %s",
-        //                source.c_str(), mount_point.c_str());
-        //    LOGE("Failed to mount %s to %s: %s",
-        //         source.c_str(), mount_point.c_str(), strerror(errno));
-        //    return false;
-        //}
-
         std::string loopdev = util::loopdev_find_unused();
         if (loopdev.empty()) {
             LOGE("Failed to find unused loop device: %s", strerror(errno));
@@ -716,7 +707,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
                  loopdev.c_str(), source.c_str(), strerror(errno));
             return false;
         }
-        if (!loop_target.empty() && !util::copy_file(loopdev, loop_target, 0)) {
+        if (!util::copy_file(loopdev, loop_target, 0)) {
             LOGE("Failed to copy %s to %s: %s",
                  loopdev.c_str(), loop_target.c_str(), strerror(errno));
             return false;
@@ -724,9 +715,9 @@ bool Installer::mount_dir_or_image(const std::string &source,
 
         _associated_loop_devs.push_back(loopdev);
     } else {
-        if (!util::bind_mount(source, 0771, mount_point, 0771)) {
+        if (!util::bind_mount(source, 0771, bind_target, 0771)) {
             display_msg("Failed to bind mount %s to %s",
-                        source.c_str(), mount_point.c_str());
+                        source.c_str(), bind_target.c_str());
             return false;
         }
     }
@@ -1537,14 +1528,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
-    // Copy /etc/fstab
-    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
-
-    // Copy /etc/recovery.fstab
-    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
-
     return on_set_up_chroot();
 }
 
@@ -1552,7 +1535,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (!mount_dir_or_image(_cache_path, in_chroot("/cache"),
+    if (!mount_dir_or_image(_cache_path,
+                            in_chroot(CHROOT_CACHE_BIND_MOUNT),
                             in_chroot(CHROOT_CACHE_LOOP_DEV),
                             _rom->cache_is_image, DEFAULT_IMAGE_SIZE)) {
         return ProceedState::Fail;
@@ -1567,7 +1551,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         return ProceedState::Fail;
     }
 
-    if (!mount_dir_or_image(_data_path, in_chroot("/data"),
+    if (!mount_dir_or_image(_data_path,
+                            in_chroot(CHROOT_DATA_BIND_MOUNT),
                             in_chroot(CHROOT_DATA_LOOP_DEV),
                             _rom->data_is_image, DEFAULT_IMAGE_SIZE)) {
         return ProceedState::Fail;
@@ -1630,7 +1615,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         system_path = _temp_image_path;
     }
 
-    if (!mount_dir_or_image(system_path, in_chroot("/system"),
+    if (!mount_dir_or_image(system_path,
+                            in_chroot(CHROOT_SYSTEM_BIND_MOUNT),
                             in_chroot(CHROOT_SYSTEM_LOOP_DEV),
                             system_is_image, system_size)) {
         return ProceedState::Fail;

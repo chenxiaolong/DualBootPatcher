@@ -64,6 +64,9 @@
 #define BOOT_UI_EXEC_PATH               BOOT_UI_PATH "/exec"
 
 // Installer
+#define CHROOT_SYSTEM_BIND_MOUNT        "/mb/bind.system"
+#define CHROOT_CACHE_BIND_MOUNT         "/mb/bind.cache"
+#define CHROOT_DATA_BIND_MOUNT          "/mb/bind.data"
 #define CHROOT_SYSTEM_LOOP_DEV          "/mb/loop.system"
 #define CHROOT_CACHE_LOOP_DEV           "/mb/loop.cache"
 #define CHROOT_DATA_LOOP_DEV            "/mb/loop.data"

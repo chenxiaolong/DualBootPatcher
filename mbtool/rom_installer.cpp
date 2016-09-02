@@ -231,6 +231,32 @@ Installer::ProceedState RomInstaller::on_checked_device()
         return ProceedState::Fail;
     }
 
+    // Create fake /etc/fstab file to please installers that read the file
+    std::string etc_fstab(in_chroot("/etc/fstab"));
+    if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
+        autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
+        if (fp) {
+            auto system_devs = mb_device_system_block_devs(_device);
+            auto cache_devs = mb_device_cache_block_devs(_device);
+            auto data_devs = mb_device_data_block_devs(_device);
+
+            // Set block device if it's provided and non-empty
+            const char *system_dev =
+                    system_devs && system_devs[0] && system_devs[0][0]
+                    ? system_devs[0] : "dummy";
+            const char *cache_dev =
+                    cache_devs && cache_devs[0] && cache_devs[0][0]
+                    ? cache_devs[0] : "dummy";
+            const char *data_dev =
+                    data_devs && data_devs[0] && data_devs[0][0]
+                    ? data_devs[0] : "dummy";
+
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+        }
+    }
+
     // Load recovery properties
     util::file_get_all_properties(
             in_chroot("/default.recovery.prop"), &_recovery_props);
