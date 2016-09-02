@@ -44,7 +44,7 @@ set(MBP_SOURCES
     src/private/stringutils.cpp
     # Autopatchers
     src/autopatchers/standardpatcher.cpp
-    src/autopatchers/xposedpatcher.cpp
+    src/autopatchers/mountcmdpatcher.cpp
     # Patchers
     src/patchers/mbtoolupdater.cpp
     src/patchers/multibootpatcher.cpp
