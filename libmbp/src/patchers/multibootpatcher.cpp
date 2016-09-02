@@ -185,14 +185,14 @@ bool MultiBootPatcher::Impl::patchZip()
         return false;
     }
 
-    auto *xposedAp = pc->createAutoPatcher("XposedPatcher", info);
-    if (!xposedAp) {
+    auto *mountCmdAp = pc->createAutoPatcher("MountCmdPatcher", info);
+    if (!mountCmdAp) {
         error = ErrorCode::AutoPatcherCreateError;
         return false;
     }
 
     autoPatchers.push_back(standardAp);
-    autoPatchers.push_back(xposedAp);
+    autoPatchers.push_back(mountCmdAp);
 
     for (auto *ap : autoPatchers) {
         // AutoPatcher files should be excluded from the first pass

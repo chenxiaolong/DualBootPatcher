@@ -28,12 +28,12 @@
 namespace mbp
 {
 
-class XposedPatcher : public AutoPatcher
+class MountCmdPatcher : public AutoPatcher
 {
 public:
-    explicit XposedPatcher(const PatcherConfig * const pc,
-                           const FileInfo * const info);
-    ~XposedPatcher();
+    explicit MountCmdPatcher(const PatcherConfig * const pc,
+                             const FileInfo * const info);
+    ~MountCmdPatcher();
 
     static const std::string Id;
 

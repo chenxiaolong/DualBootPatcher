@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,7 +17,7 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbp/autopatchers/xposedpatcher.h"
+#include "mbp/autopatchers/mountcmdpatcher.h"
 
 #include <cstring>
 
@@ -29,7 +29,7 @@ namespace mbp
 {
 
 /*! \cond INTERNAL */
-class XposedPatcher::Impl
+class MountCmdPatcher::Impl
 {
 public:
     const PatcherConfig *pc;
@@ -38,53 +38,60 @@ public:
 /*! \endcond */
 
 
-const std::string XposedPatcher::Id = "XposedPatcher";
+const std::string MountCmdPatcher::Id = "MountCmdPatcher";
 
+// Xposed
 static const std::string FlashScript =
         "META-INF/com/google/android/flash-script.sh";
+// OpenGapps
+static const std::string InstallerScript =
+        "installer.sh";
 
 
-XposedPatcher::XposedPatcher(const PatcherConfig * const pc,
-                             const FileInfo * const info) :
+MountCmdPatcher::MountCmdPatcher(const PatcherConfig * const pc,
+                                 const FileInfo * const info) :
     m_impl(new Impl())
 {
     m_impl->pc = pc;
     m_impl->info = info;
 }
 
-XposedPatcher::~XposedPatcher()
+MountCmdPatcher::~MountCmdPatcher()
 {
 }
 
-ErrorCode XposedPatcher::error() const
+ErrorCode MountCmdPatcher::error() const
 {
     return ErrorCode();
 }
 
-std::string XposedPatcher::id() const
+std::string MountCmdPatcher::id() const
 {
     return Id;
 }
 
-std::vector<std::string> XposedPatcher::newFiles() const
+std::vector<std::string> MountCmdPatcher::newFiles() const
 {
     return std::vector<std::string>();
 }
 
-std::vector<std::string> XposedPatcher::existingFiles() const
+std::vector<std::string> MountCmdPatcher::existingFiles() const
 {
-    return { FlashScript };
+    return { FlashScript, InstallerScript };
 }
 
-bool XposedPatcher::patchFiles(const std::string &directory)
+static bool spaceOrEnd(const char *ptr)
+{
+    return !*ptr || isspace(*ptr);
+}
+
+static bool patchFile(const std::string &path)
 {
     std::string contents;
 
-    ErrorCode ret = FileUtils::readToString(
-            directory + "/" + FlashScript, &contents);
+    ErrorCode ret = FileUtils::readToString(path, &contents);
     if (ret != ErrorCode::NoError) {
-        // Don't fail if it doesn't exist
-        return true;
+        return false;
     }
 
     std::vector<std::string> lines = StringUtils::split(contents, '\n');
@@ -95,14 +102,24 @@ bool XposedPatcher::patchFiles(const std::string &directory)
         // Skip whitespace
         for (; *ptr && isspace(*ptr); ++ptr);
 
-        if (strncmp(ptr, "mount", 5) == 0 || strncmp(ptr, "umount", 6) == 0) {
+        if ((strncmp(ptr, "mount", 5) == 0 && spaceOrEnd(ptr + 5))
+                || (strncmp(ptr, "umount", 6) == 0 && spaceOrEnd(ptr + 6))) {
             line.insert(ptr - line.data(), "/sbin/");
         }
     }
 
     contents = StringUtils::join(lines, "\n");
-    FileUtils::writeFromString(directory + "/" + FlashScript, contents);
+    FileUtils::writeFromString(path, contents);
 
+    return true;
+}
+
+bool MountCmdPatcher::patchFiles(const std::string &directory)
+{
+    patchFile(directory + "/" + FlashScript);
+    patchFile(directory + "/" + InstallerScript);
+
+    // Don't fail if an error occurs
     return true;
 }
 

@@ -30,7 +30,7 @@
 
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
-#include "mbp/autopatchers/xposedpatcher.h"
+#include "mbp/autopatchers/mountcmdpatcher.h"
 #include "mbp/patchers/mbtoolupdater.h"
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/patchers/odinpatcher.h"
@@ -186,7 +186,7 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
 {
     return {
         StandardPatcher::Id,
-        XposedPatcher::Id
+        MountCmdPatcher::Id
     };
 }
 
@@ -244,8 +244,8 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
 
     if (id == StandardPatcher::Id) {
         ap = new StandardPatcher(this, info);
-    } else if (id == XposedPatcher::Id) {
-        ap = new XposedPatcher(this, info);
+    } else if (id == MountCmdPatcher::Id) {
+        ap = new MountCmdPatcher(this, info);
     }
 
     if (ap != nullptr) {
