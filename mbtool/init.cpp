@@ -594,6 +594,49 @@ static bool strip_manual_mounts()
     return true;
 }
 
+static unsigned long get_api_version()
+{
+    std::string api_str;
+    util::file_get_property("/system/build.prop",
+                            "ro.build.version.sdk",
+                            &api_str, "");
+
+    char *temp;
+    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
+    if (*temp == '\0') {
+        return api;
+    } else {
+        return 0;
+    }
+}
+
+static void create_layout_version()
+{
+    // Prevent installd from dying because it can't unmount /data/media for
+    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
+    // we'll bypass this.
+    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
+    if (fp) {
+        const char *layout_version;
+        if (get_api_version() >= 21) {
+            layout_version = "3";
+        } else {
+            layout_version = "2";
+        }
+
+        fwrite(layout_version, 1, strlen(layout_version), fp.get());
+        fp.reset();
+    } else {
+        LOGE("Failed to open /data/.layout_version to disable migration");
+    }
+
+    if (!util::selinux_set_context(
+            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
+        LOGE("%s: Failed to set SELinux context: %s",
+             "/data/.layout_version", strerror(errno));
+    }
+}
+
 static std::string encode_list(const char * const *list)
 {
     if (!list) {
@@ -1318,6 +1361,7 @@ int init_main(int argc, char *argv[])
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();
+    create_layout_version();
 
     // Patch SELinux policy
     struct stat sb;
