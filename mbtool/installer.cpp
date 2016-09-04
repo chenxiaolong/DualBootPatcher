@@ -1245,9 +1245,6 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
         return ProceedState::Fail;
     }
 
-    // Get chroot props
-    _chroot_prop = get_properties();
-
     return ProceedState::Continue;
 }
 
@@ -1639,6 +1636,8 @@ Installer::ProceedState Installer::install_stage_installation()
     ProceedState hook_ret = on_pre_install();
     if (hook_ret != ProceedState::Continue) return hook_ret;
 
+    // Get chroot props
+    _chroot_prop = get_properties();
 
     // Run real update-binary
     display_msg("Running real update-binary");
