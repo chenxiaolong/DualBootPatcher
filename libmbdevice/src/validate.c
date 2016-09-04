@@ -60,9 +60,9 @@ uint64_t mb_device_validate(const struct Device *device)
         flags |= MB_DEVICE_MISSING_BOOT_BLOCK_DEVS;
     }
 
-    if (NULL_OR_EMPTY(device->recovery_devs)) {
-        flags |= MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS;
-    }
+    //if (NULL_OR_EMPTY(device->recovery_devs)) {
+    //    flags |= MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS;
+    //}
 
     if (device->tw_options.supported) {
         if (NULL_OR_EMPTY(device->tw_options.theme)) {
