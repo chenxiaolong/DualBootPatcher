@@ -331,21 +331,33 @@ static bool convert_binary_file_contexts()
 
 static bool fix_file_contexts()
 {
-    autoclose::file fp_old(autoclose::fopen(FILE_CONTEXTS, "rb"));
+    char path[256];
+    char path_new[256];
+
+    if (access(FILE_CONTEXTS_BIN, R_OK) == 0) {
+        strlcpy(path, FILE_CONTEXTS_BIN, sizeof(path));
+        strlcpy(path_new, FILE_CONTEXTS_BIN, sizeof(path_new));
+    } else {
+        strlcpy(path, FILE_CONTEXTS, sizeof(path));
+        strlcpy(path_new, FILE_CONTEXTS, sizeof(path_new));
+    }
+    strlcat(path_new, ".new", sizeof(path_new));
+
+    autoclose::file fp_old(autoclose::fopen(path, "rb"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
         } else {
             LOGE("%s: Failed to open for reading: %s",
-                 FILE_CONTEXTS, strerror(errno));
+                 path, strerror(errno));
             return false;
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen(FILE_CONTEXTS ".new", "wb"));
+    autoclose::file fp_new(autoclose::fopen(path_new, "wb"));
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
-             FILE_CONTEXTS ".new", strerror(errno));
+             path_new, strerror(errno));
         return false;
     }
 
@@ -365,7 +377,7 @@ static bool fix_file_contexts()
 
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
             LOGE("%s: Failed to write file: %s",
-                 FILE_CONTEXTS ".new", strerror(errno));
+                 path_new, strerror(errno));
             return false;
         }
     }
@@ -380,7 +392,7 @@ static bool fix_file_contexts()
             "/system/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    return replace_file(FILE_CONTEXTS, FILE_CONTEXTS ".new");
+    return replace_file(path, path_new);
 }
 
 static bool is_completely_whitespace(const char *str)
