@@ -33,6 +33,9 @@ static const char sample_complete[] =
             "\"test4\""
         "],"
         "\"architecture\": \"arm64-v8a\","
+        "\"flags\": ["
+            "\"HAS_COMBINED_BOOT_AND_RECOVERY\""
+        "],"
         "\"block_devs\": {"
             "\"base_dirs\": ["
                 "\"/dev/block/bootdevice/by-name\""
@@ -117,6 +120,13 @@ static const char sample_invalid_root[] =
 static const char sample_invalid_key[] =
     "{"
         "\"foo\": \"bar\""
+    "}";
+
+static const char sample_invalid_device_flags[] =
+    "{"
+        "\"flags\": ["
+            "\"FOO_BAR\""
+        "]"
     "}";
 
 static const char sample_invalid_tw_flags[] =
@@ -223,6 +233,9 @@ TEST(JsonTest, LoadCompleteDefinition)
 
     ASSERT_STREQ(mb_device_name(sd.device), "Test Device");
     ASSERT_STREQ(mb_device_architecture(sd.device), "arm64-v8a");
+
+    uint64_t device_flags = FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    ASSERT_EQ(mb_device_flags(sd.device), device_flags);
 
     const char *base_dirs[] = { "/dev/block/bootdevice/by-name", nullptr };
     ASSERT_TRUE(string_array_eq(mb_device_block_dev_base_dirs(sd.device), base_dirs));
@@ -333,20 +346,25 @@ TEST(JsonTest, LoadInvalidKey)
 
 TEST(JsonTest, LoadInvalidValue)
 {
-    ScopedDevice sd1(sample_invalid_tw_flags);
+    ScopedDevice sd1(sample_invalid_device_flags);
     ASSERT_EQ(sd1.device, nullptr);
     ASSERT_EQ(sd1.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd1.error.context, ".boot_ui.flags[0]");
+    ASSERT_STREQ(sd1.error.context, ".flags[0]");
 
-    ScopedDevice sd2(sample_invalid_tw_pixel_format);
+    ScopedDevice sd2(sample_invalid_tw_flags);
     ASSERT_EQ(sd2.device, nullptr);
     ASSERT_EQ(sd2.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd2.error.context, ".boot_ui.pixel_format");
+    ASSERT_STREQ(sd2.error.context, ".boot_ui.flags[0]");
 
-    ScopedDevice sd3(sample_invalid_tw_force_pixel_format);
+    ScopedDevice sd3(sample_invalid_tw_pixel_format);
     ASSERT_EQ(sd3.device, nullptr);
     ASSERT_EQ(sd3.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd3.error.context, ".boot_ui.force_pixel_format");
+    ASSERT_STREQ(sd3.error.context, ".boot_ui.pixel_format");
+
+    ScopedDevice sd4(sample_invalid_tw_force_pixel_format);
+    ASSERT_EQ(sd4.device, nullptr);
+    ASSERT_EQ(sd4.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
+    ASSERT_STREQ(sd4.error.context, ".boot_ui.force_pixel_format");
 }
 
 TEST(JsonTest, LoadInvalidType)

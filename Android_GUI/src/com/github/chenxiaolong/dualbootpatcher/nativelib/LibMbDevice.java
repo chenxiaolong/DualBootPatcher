@@ -67,6 +67,9 @@ public class LibMbDevice {
         static native String mb_device_architecture(CDevice device);
         static native int mb_device_set_architecture(CDevice device, String architecture);
 
+        static native long mb_device_flags(CDevice device);
+        static native int mb_device_set_flags(CDevice device, long flags);
+
         static native Pointer mb_device_block_dev_base_dirs(CDevice device);
         static native int mb_device_set_block_dev_base_dirs(CDevice device, StringArray baseDirs);
 
@@ -360,6 +363,14 @@ public class LibMbDevice {
 
         public void setArchitecture(String arch) {
             handleReturn(CWrapper.mb_device_set_architecture(mCDevice, arch));
+        }
+
+        public long getFlags() {
+            return CWrapper.mb_device_flags(mCDevice);
+        }
+
+        public void setFlags(long flags) {
+            handleReturn(CWrapper.mb_device_set_flags(mCDevice, flags));
         }
 
         public String[] getBlockDevBaseDirs() {

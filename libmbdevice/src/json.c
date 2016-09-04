@@ -29,13 +29,20 @@
 
 #define JSON_BOOLEAN JSON_TRUE
 
-struct tw_flag_mapping
+struct flag_mapping
 {
     const char *key;
     uint64_t flag;
 };
 
-struct tw_flag_mapping tw_flag_mappings[] = {
+struct flag_mapping device_flag_mappings[] = {
+#define FLAG(F) { #F, FLAG_ ## F }
+    FLAG(HAS_COMBINED_BOOT_AND_RECOVERY),
+#undef FLAG
+    { NULL, 0 }
+};
+
+struct flag_mapping tw_flag_mappings[] = {
 #define FLAG(F) { #F, FLAG_ ## F }
     FLAG(TW_TOUCHSCREEN_SWAP_XY),
     FLAG(TW_TOUCHSCREEN_FLIP_X),
@@ -295,6 +302,54 @@ done:
     return ret;
 }
 
+static int process_device_flags(struct Device *device, json_t *node,
+                                const char *context,
+                                struct MbDeviceJsonError *error)
+{
+    char subcontext[100];
+    size_t index;
+    json_t *value;
+    uint64_t flags = 0;
+
+    if (!json_is_array(node)) {
+        json_error_set_mismatched_type(error, context, node->type, JSON_ARRAY);
+        return -1;
+    }
+
+    json_array_foreach(node, index, value) {
+        snprintf(subcontext, sizeof(subcontext), "%s[%zu]", context, index);
+
+        if (!json_is_string(value)) {
+            json_error_set_mismatched_type(
+                    error, subcontext, value->type, JSON_STRING);
+            return -1;
+        }
+
+        const char *str = json_string_value(value);
+        uint64_t old_flags = flags;
+
+        for (struct flag_mapping *m = device_flag_mappings; m->key; ++m) {
+            if (strcmp(m->key, str) == 0) {
+                flags |= m->flag;
+                break;
+            }
+        }
+
+        if (flags == old_flags) {
+            json_error_set_unknown_value(error, subcontext);
+            return -1;
+        }
+    }
+
+    int fn_ret = mb_device_set_flags(device, flags);
+    if (fn_ret < 0) {
+        json_error_set_standard_error(error, fn_ret);
+        return -1;
+    }
+
+    return 0;
+}
+
 static int process_boot_ui_flags(struct Device *device, json_t *node,
                                  const char *context,
                                  struct MbDeviceJsonError *error)
@@ -321,7 +376,7 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
         const char *str = json_string_value(value);
         uint64_t old_flags = flags;
 
-        for (struct tw_flag_mapping *m = tw_flag_mappings; m->key; ++m) {
+        for (struct flag_mapping *m = tw_flag_mappings; m->key; ++m) {
             if (strcmp(m->key, str) == 0) {
                 flags |= m->flag;
                 break;
@@ -601,6 +656,8 @@ static int process_device(struct Device *device, json_t *node,
         } else if (strcmp(key, "architecture") == 0) {
             ret = device_set_string(&mb_device_set_architecture,
                                     device, value, subcontext, error);
+        } else if (strcmp(key, "flags") == 0) {
+            ret = process_device_flags(device, value, subcontext, error);
         } else if (strcmp(key, "block_devs") == 0) {
             ret = process_block_devs(device, value, subcontext, error);
         } else if (strcmp(key, "boot_ui") == 0) {
@@ -777,6 +834,21 @@ char * mb_device_to_json(struct Device *device)
         goto done;
     }
 
+    if (device->flags != 0) {
+        json_t *array = json_array();
+
+        if (json_object_set_new(root, "flags", array) < 0) {
+            goto done;
+        }
+
+        for (struct flag_mapping *it = device_flag_mappings; it->key; ++it) {
+            if ((device->flags & it->flag)
+                    && json_array_append_new(array, json_string(it->key)) < 0) {
+                goto done;
+            }
+        }
+    }
+
     /* Block devs */
     block_devs = json_object();
 
@@ -846,7 +918,7 @@ char * mb_device_to_json(struct Device *device)
             goto done;
         }
 
-        for (struct tw_flag_mapping *it = tw_flag_mappings; it->key; ++it) {
+        for (struct flag_mapping *it = tw_flag_mappings; it->key; ++it) {
             if ((device->tw_options.flags & it->flag)
                     && json_array_append_new(array, json_string(it->key)) < 0) {
                 goto done;

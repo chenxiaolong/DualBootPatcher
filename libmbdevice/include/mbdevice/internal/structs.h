@@ -66,6 +66,7 @@ struct Device
     char **codenames;
     char *name;
     char *architecture;
+    uint64_t flags;
 
     char **base_dirs;
     char **system_devs;

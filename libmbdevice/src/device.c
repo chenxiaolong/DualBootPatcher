@@ -206,6 +206,18 @@ SETTER(const char *, architecture)
     STRING_SETTER(device->architecture, value)
 }
 
+GETTER(uint64_t, flags)
+{
+    return device->flags;
+}
+
+SETTER(uint64_t, flags)
+{
+    // TODO: Check flags
+    device->flags = value;
+    return MB_DEVICE_OK;
+}
+
 /*!
  * \brief Get the block device base directories
  *
@@ -620,6 +632,7 @@ bool mb_device_equals(struct Device *a, struct Device *b)
             && BOTH_NULL_OR_ARRAYS_EQUAL(a->codenames, b->codenames)
             && BOTH_NULL_OR_STRINGS_EQUAL(a->name, b->name)
             && BOTH_NULL_OR_STRINGS_EQUAL(a->architecture, b->architecture)
+            && a->flags == b->flags
             && BOTH_NULL_OR_ARRAYS_EQUAL(a->base_dirs, b->base_dirs)
             && BOTH_NULL_OR_ARRAYS_EQUAL(a->system_devs, b->system_devs)
             && BOTH_NULL_OR_ARRAYS_EQUAL(a->cache_devs, b->cache_devs)

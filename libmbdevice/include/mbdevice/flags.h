@@ -28,6 +28,11 @@
 #define ARCH_X86                "x86"
 #define ARCH_X86_64             "x86_64"
 
+enum DeviceFlags
+{
+    FLAG_HAS_COMBINED_BOOT_AND_RECOVERY     = 1 << 0,
+};
+
 enum TwFlags
 {
     FLAG_TW_TOUCHSCREEN_SWAP_XY             = 1 << 0,
