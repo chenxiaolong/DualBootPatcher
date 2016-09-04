@@ -19,8 +19,8 @@ static Json::Value yaml_node_to_json_node(const YAML::Node &yaml_node)
         return Json::Value();
 
     case YAML::NodeType::Scalar:
-        TRY_RETURN(yaml_node, Json::UInt64);
-        TRY_RETURN(yaml_node, Json::Int64);
+        TRY_RETURN(yaml_node, Json::Value::UInt64);
+        TRY_RETURN(yaml_node, Json::Value::Int64);
         TRY_RETURN(yaml_node, double);
         TRY_RETURN(yaml_node, bool);
         TRY_RETURN(yaml_node, std::string);
