@@ -25,18 +25,10 @@
 namespace mb
 {
 
-struct SharedPackage
-{
-    std::string pkg_id;
-    bool share_data;
-};
-
 struct RomConfig
 {
     std::string id;
     std::string name;
-    bool indiv_app_sharing;
-    std::vector<SharedPackage> shared_pkgs;
 
     bool load_file(const std::string &path);
 };
