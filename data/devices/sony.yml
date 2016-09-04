@@ -6,6 +6,8 @@
     - MT27a
     - MT27i
   architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
 
   block_devs:
     system:
