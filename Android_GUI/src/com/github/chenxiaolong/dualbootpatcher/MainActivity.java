@@ -45,7 +45,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsActivity;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.freespace.FreeSpaceFragment;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileFragment;
@@ -347,12 +346,6 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         case R.id.nav_rom_settings: {
             Intent intent = new Intent(this, RomSettingsActivity.class);
             startActivityForResult(intent, REQUEST_SETTINGS_ACTIVITY);
-            break;
-        }
-
-        case R.id.nav_app_sharing: {
-            Intent intent = new Intent(this, AppSharingSettingsActivity.class);
-            startActivity(intent);
             break;
         }
 

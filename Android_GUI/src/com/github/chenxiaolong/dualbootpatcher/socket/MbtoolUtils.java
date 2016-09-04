@@ -32,12 +32,10 @@ public class MbtoolUtils {
         if (BuildConfig.BUILD_TYPE.equals("ci")) {
             // Snapshot builds
             sMinVersionMap.put(Feature.DAEMON, Version.from("8.0.0.r2605"));
-            sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.0.0.r2155"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r2447"));
         } else {
             // Debug/release builds
             sMinVersionMap.put(Feature.DAEMON, Version.from("8.99.17"));
-            sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.99.13"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.99.15"));
         }
     }
@@ -57,7 +55,6 @@ public class MbtoolUtils {
 
     public enum Feature {
         DAEMON,
-        APP_SHARING,
         IN_APP_INSTALLATION
     }
 }

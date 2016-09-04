@@ -43,10 +43,6 @@
             android:icon="@drawable/settings"
             android:title="@string/title_rom_settings" />
         <item
-            android:id="@+id/nav_app_sharing"
-            android:icon="@drawable/dashboard"
-            android:title="@string/title_app_sharing" />
-        <item
             android:id="@+id/nav_reboot"
             android:icon="@drawable/refresh"
             android:title="@string/title_reboot" />

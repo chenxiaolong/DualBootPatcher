@@ -35,8 +35,6 @@ Aperte para tentar novamente.</string>
   <string name="title_free_space">Espaço Livre</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Configurações</string>
-  <!--Navigation drawer item for changing the app sharing settings-->
-  <string name="title_app_sharing">Compartilhador de Apps</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Reiniciar</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -288,21 +286,6 @@ Por favor instale um gerenciador de arquivos para poder selecionar um arquivo pa
   <!--Format string for mebibytes-->
   <!--Format string for kibibytes-->
   <!--Format string for bytes-->
-  <!--Title for the individual application sharing section of the ROM settings-->
-  <string name="a_s_settings_indiv_app_sharing_section_title">Compartilhamento individual de aplicativos</string>
-  <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Compartilhar aplicativos individuais</string>
-  <!--Description for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_desc">Compartilhar aplicativos individuais entre ROMs (requer reinicialização).</string>
-  <!--Title for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_title">Gerenciar aplicativos compartilhados</string>
-  <!--Description for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_desc">Escolha quais aplicativos vão ser compartilhados para o Compartilhamento individual de aplicativos.</string>
-  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
-  <string name="a_s_settings_storage_permission_required">As configurações de compartilhamento de app não foram salvas por causa que as permissões de armazenamento foram negadas. Por favor garantas as permissões de armazenamento para mudar as configurações de compartilhamento de aplicativos.</string>
-  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
-  <string name="a_s_settings_version_too_old">O mbtool precisa estar atualizado para ter a vantagem do compartilhamento de aplicativos.
-Por favor atualize a ramdisk.</string>
   <!--Title for preference category for boot options-->
   <string name="rom_settings_booting_title">Opções de boot</string>
   <!--Preference for updating the ramdisk-->
@@ -321,7 +304,7 @@ Por favor atualize a ramdisk.</string>
   <string name="update_ramdisk_no_reboot_desc">A ramdisk foi atualizada com sucesso.</string>
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Falha ao atualizar a ramdisk</string>
-  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <!--Message telling the user that the ramdisk updating failed-->
   <string name="update_ramdisk_failure_desc">Ocorreu um erro ao atualizar a ramdisk. O log foi salvo em MultiBoot/ramdisk-update.log no armazenamento interno.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
@@ -344,27 +327,6 @@ Por favor atualize a ramdisk.</string>
   <string name="rom_settings_allow_intents_title">Permitir receber ações de terceiros</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Permitir aplicação de terceiros de enviar ações para este aplicativo para fazer ações, como trocar de ROMs e patchear arquivos.</string>
-  <!--Title for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_title">Compartilhamento individual de aplicativos</string>
-  <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_desc">Compartilhamento individual de aplicativos permite que os dados dos aplicativos possam ser armazenados num local acessível para compartilhar com todas as ROMs. A utilização dos dados compartilhados faz a sincronização dos dados do aplicativo entre as ROMs (por exemplo, as guias do Chrome).
-NOTA: Uma reinicialização é necessária para que as alterações tenham efeito.
-Para usar o compartilhamento de aplicativo individual, o compartilhamento de dados tem que ser ativado em cada ROM. Por exemplo: a partir da ROM primária, ativa o compartilhamento de dados para o Chrome. O Chrome vai começar a utilizar o diretório de dados compartilhado. Em seguida, vai iniciar na outra ROM e também ativa o compartilhamento de dados para o Chrome. Ele irá agora usar o mesmo diretório compartilhado.</string>
-  <!--App label in the individual app sharing screen shown if the app uses shared data-->
-  <string name="indiv_app_sharing_shared_data">Dados compartilhados</string>
-  <!--App label in the individual app sharing screen shown if the app is not shared-->
-  <string name="indiv_app_sharing_not_shared">Data não compartilhada</string>
-  <!--App sharing dialog checkbox text for using shared app data-->
-  <string name="indiv_app_sharing_dialog_share_data">Usando dados compartilhadod</string>
-  <!--App sharing dialog message shown by default-->
-  <string name="indiv_app_sharing_dialog_default_message">Escolha se o aplicativo deve usar um diretório de dados compartilhado.</string>
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
-  <string name="indiv_app_sharing_other_roms_using_shared_data">Outras ROMs estão usando os dados compartilhados:
-%s</string>
-  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
-  <string name="indiv_app_sharing_reboot_needed_message">As mudanças somente terá efeito após a próxima reinicialização.</string>
-  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
-  <string name="indiv_app_sharing_app_no_longer_shared">O aplicativo \'%s\' não está mais compartilhado.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">A ação de aplicativos de terceiros foram negadas. Para permitir que outros aplicativos mandem ações, ative a opção nas configurações do DualBootPatcher.</string>
   <!--Word/phrase for Search (used in action bars)-->

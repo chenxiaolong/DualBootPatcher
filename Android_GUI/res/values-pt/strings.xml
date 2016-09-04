@@ -29,7 +29,6 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Espaço livre</string>
   <!--Navigation drawer item for changing the ROM settings-->
-  <!--Navigation drawer item for changing the app sharing settings-->
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Reiniciar</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -178,12 +177,6 @@ arquivos a serem adaptados.</string>
   <!--Format string for mebibytes-->
   <!--Format string for kibibytes-->
   <!--Format string for bytes-->
-  <!--Title for the individual application sharing section of the ROM settings-->
-  <!--Title for the preference to share individual applications-->
-  <!--Description for the preference to share individual applications-->
-  <!--Title for the preference to manage shared apps for individual app sharing-->
-  <!--Description for the preference to manage shared apps for individual app sharing-->
-  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
@@ -199,7 +192,7 @@ Deseja reiniciar agora?</string>
   <!--Message telling user that the ramdisk updating succeeded-->
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Falha ao atualizar o Ramdisk</string>
-  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <!--Message telling the user that the ramdisk updating failed-->
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
@@ -212,15 +205,6 @@ Deseja reiniciar agora?</string>
   <!--Description for the initial screen preference-->
   <!--Title for the preference to enable receiving intents from third party applications-->
   <!--Description for the preference to enable receiving intents from third party applications-->
-  <!--Title for the dialog box explaining individual application sharing-->
-  <!--Description for the dialog box explaining individual application sharing-->
-  <!--App label in the individual app sharing screen shown if the app uses shared data-->
-  <!--App label in the individual app sharing screen shown if the app is not shared-->
-  <!--App sharing dialog checkbox text for using shared app data-->
-  <!--App sharing dialog message shown by default-->
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
-  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
-  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <!--Word/phrase for Search (used in action bars)-->
   <!--Word/phrase for None (used in eg. a list)-->

@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -34,9 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class RomConfig {
     private static final String TAG = RomConfig.class.getSimpleName();
@@ -47,20 +44,6 @@ public class RomConfig {
 
     private String mId;
     private String mName;
-    private boolean mIndivAppSharing;
-    private HashMap<String, SharedItems> mSharedPkgs = new HashMap<>();
-
-    public static class SharedItems {
-        public boolean sharedData;
-
-        public SharedItems(boolean sharedData) {
-            this.sharedData = sharedData;
-        }
-
-        public SharedItems(SharedItems si) {
-            this.sharedData = si.sharedData;
-        }
-    }
 
     private RomConfig(String filename) {
         mFilename = filename;
@@ -119,51 +102,11 @@ public class RomConfig {
         mName = name;
     }
 
-    public boolean isIndivAppSharingEnabled() {
-        return mIndivAppSharing;
-    }
-
-    public void setIndivAppSharingEnabled(boolean enabled) {
-        mIndivAppSharing = enabled;
-    }
-
-    @NonNull
-    public HashMap<String, SharedItems> getIndivAppSharingPackages() {
-        HashMap<String, SharedItems> result = new HashMap<>();
-        for (Map.Entry<String, SharedItems> item : mSharedPkgs.entrySet()) {
-            result.put(item.getKey(), new SharedItems(item.getValue()));
-        }
-        return result;
-    }
-
-    public void setIndivAppSharingPackages(HashMap<String, SharedItems> pkgs) {
-        mSharedPkgs = new HashMap<>();
-        for (Map.Entry<String, SharedItems> item : pkgs.entrySet()) {
-            mSharedPkgs.put(item.getKey(), new SharedItems(item.getValue()));
-        }
-    }
-
     private RawRoot serialize() {
         RawRoot root = new RawRoot();
 
         root.id = mId;
         root.name = mName;
-
-        root.appSharing = new RawAppSharing();
-        root.appSharing.individual = mIndivAppSharing;
-
-        if (!mSharedPkgs.isEmpty()) {
-            ArrayList<RawPackage> packages = new ArrayList<>();
-
-            for (Map.Entry<String, SharedItems> item : mSharedPkgs.entrySet()) {
-                RawPackage rp = new RawPackage();
-                rp.pkgId = item.getKey();
-                rp.shareData = item.getValue().sharedData;
-                packages.add(rp);
-            }
-
-            root.appSharing.packages = packages.toArray(new RawPackage[mSharedPkgs.size()]);
-        }
 
         return root;
     }
@@ -175,20 +118,6 @@ public class RomConfig {
 
         mId = root.id;
         mName = root.name;
-
-        if (root.appSharing != null) {
-            mIndivAppSharing = root.appSharing.individual;
-
-            if (root.appSharing.packages != null) {
-                for (RawPackage rp : root.appSharing.packages) {
-                    if (rp.pkgId == null) {
-                        continue;
-                    }
-
-                    mSharedPkgs.put(rp.pkgId, new SharedItems(rp.shareData));
-                }
-            }
-        }
     }
 
     private static class RawRoot {
@@ -196,22 +125,6 @@ public class RomConfig {
         String id;
         @SerializedName("name")
         String name;
-        @SerializedName("app_sharing")
-        RawAppSharing appSharing;
-    }
-
-    private static class RawAppSharing {
-        @SerializedName("individual")
-        boolean individual;
-        @SerializedName("packages")
-        RawPackage[] packages;
-    }
-
-    private static class RawPackage {
-        @SerializedName("pkg_id")
-        String pkgId;
-        @SerializedName("share_data")
-        boolean shareData;
     }
 
     private void loadFile() throws FileNotFoundException {

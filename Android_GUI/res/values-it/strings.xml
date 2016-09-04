@@ -33,8 +33,6 @@
   <string name="title_free_space">Spazio Disponibile</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Impostazioni</string>
-  <!--Navigation drawer item for changing the app sharing settings-->
-  <string name="title_app_sharing">Condivisione delle App</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Riavvia</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -273,20 +271,6 @@ Continuare</string>
   <!--Format string for mebibytes-->
   <!--Format string for kibibytes-->
   <!--Format string for bytes-->
-  <!--Title for the individual application sharing section of the ROM settings-->
-  <string name="a_s_settings_indiv_app_sharing_section_title">Condivisione individuale delle applicazioni</string>
-  <!--Title for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_title">Condividi singole applicazioni</string>
-  <!--Description for the preference to share individual applications-->
-  <string name="a_s_settings_indiv_app_sharing_desc">Condivisione di singole applicazioni tra le ROM (richiede riavvio).</string>
-  <!--Title for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_title">Gestisci applicazioni condivise</string>
-  <!--Description for the preference to manage shared apps for individual app sharing-->
-  <string name="a_s_settings_manage_shared_apps_desc">Scegli quali applicazioni condividere.</string>
-  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
-  <string name="a_s_settings_storage_permission_required">La configurazione della condivisione delle app non può essere salvata perchè l\'accesso alla memoria interna è stato negato. Per favore, garantisci l\'accesso per salvare la configurazione.</string>
-  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
-  <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
   <!--Title for preference category for boot options-->
   <string name="rom_settings_booting_title">Opzioni del kernel</string>
   <!--Preference for updating the ramdisk-->
@@ -305,7 +289,7 @@ Continuare</string>
   <string name="update_ramdisk_no_reboot_desc">Il ramdisk è stato aggiornato con successo.</string>
   <!--Title when ramdisk failed to update-->
   <string name="update_ramdisk_failure_title">Aggiornamento ramdisk fallito</string>
-  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <!--Message telling the user that the ramdisk updating failed-->
   <string name="update_ramdisk_failure_desc">Impossibile aggiornare il ramdisk. Il log è stato salvato nella directory MultiBoot/ramdisk-update.log nella memoria interna.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
@@ -328,25 +312,6 @@ Continuare</string>
   <string name="rom_settings_allow_intents_title">Permetti intent in entrata</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Permetti ad App di terzi di inviare intent per eseguire azioni, come ad esempio effettuare lo switch delle ROM o patchare file.</string>
-  <!--Title for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
-  <!--Description for the dialog box explaining individual application sharing-->
-  <string name="indiv_app_sharing_intro_dialog_desc">La condivisione individuale delle app permette ai dati di essere salvati in una directory condivisa ed accessibile da ogni ROM. I dati di un\'app vengono condivisi con tutte le ROM (Es. i tab di Chrome).\n\nNOTA: Un riavvio è richiesto per applicare i cambiamenti.\n\nAffinchè la condivisione individuale funzioni, essa deve essere attivata in ogni ROM.</string>
-  <!--App label in the individual app sharing screen shown if the app uses shared data-->
-  <string name="indiv_app_sharing_shared_data">Dati condivisi</string>
-  <!--App label in the individual app sharing screen shown if the app is not shared-->
-  <string name="indiv_app_sharing_not_shared">Non condiviso</string>
-  <!--App sharing dialog checkbox text for using shared app data-->
-  <string name="indiv_app_sharing_dialog_share_data">Condividi dati</string>
-  <!--App sharing dialog message shown by default-->
-  <string name="indiv_app_sharing_dialog_default_message">Scegli se l\'App deve utilizzare una cartella per la condivisione dei dati.</string>
-  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
-  <string name="indiv_app_sharing_other_roms_using_shared_data">Altre ROM che utilizzano i dati condivisi:
-%s</string>
-  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
-  <string name="indiv_app_sharing_reboot_needed_message">Riavvia per applicare i cambiamenti.</string>
-  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
-  <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">Negato intent da app di terze parti. Per ricevere intent dalle altre app, attiva l\'opzione nelle impostazioni del Patcher.</string>
   <!--Word/phrase for Search (used in action bars)-->

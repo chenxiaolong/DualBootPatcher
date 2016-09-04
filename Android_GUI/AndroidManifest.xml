@@ -54,14 +54,6 @@
             android:label="@string/title_rom_settings"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".appsharing.AppSharingSettingsActivity"
-            android:label="@string/title_app_sharing"
-            android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".appsharing.AppListActivity"
-            android:label="@string/a_s_settings_indiv_app_sharing_title"
-            android:parentActivityName=".appsharing.AppSharingSettingsActivity" />
-        <activity
             android:name=".switcher.ZipFlashingActivity"
             android:label="@string/zip_flashing_title"
             android:parentActivityName=".MainActivity" />
@@ -96,22 +88,11 @@
             android:theme="@style/TransparentActivityTheme">
         </activity>
 
-        <receiver android:name=".appsharing.AppSharingEventReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
-
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
-
         <service
             android:name=".patcher.PatcherService"
             android:exported="false" />
         <service
             android:name=".switcher.SwitcherService"
-            android:exported="false" />
-        <service
-            android:name=".appsharing.AppSharingService"
             android:exported="false" />
     </application>
 

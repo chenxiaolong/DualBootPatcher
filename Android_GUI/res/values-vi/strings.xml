@@ -49,7 +49,7 @@
     <string name="mbtool_connect_fail_title">Không thể kết nối tới mbtool</string>
     <!-- Message for the card shown in the switcher when the connection to mbtool failed -->
     <string name="mbtool_connect_fail_message">Ứng dụng không thể kết nối đến
-        mbtool. Điều này có thể xảy ra nếu quyền root đã bị từ chối hoặc ramdisk chưa được cập 
+        mbtool. Điều này có thể xảy ra nếu quyền root đã bị từ chối hoặc ramdisk chưa được cập
         nhật.\n\nBấm để thử lại.</string>
 
     <!-- Navigation drawer item for selecting the ROM -->
@@ -60,8 +60,6 @@
     <string name="title_free_space">Bộ nhớ trống</string>
     <!-- Navigation drawer item for changing the ROM settings -->
     <string name="title_rom_settings">Cài đặt</string>
-    <!-- Navigation drawer item for changing the app sharing settings -->
-    <string name="title_app_sharing">Chia sẻ ứng dụng</string>
     <!-- Nagivation drawer item for rebooting the device -->
     <string name="title_reboot">Khởi động lại</string>
     <!-- Navigation drawer item for showing the about screen -->
@@ -114,8 +112,8 @@
         thiết bị\'s tên mã \'%s\' không được hổ trợ.</string>
 
     <!-- Dialog message shown if the images' checksums don't match with switching ROMs -->
-    <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này\'s boot.img hoặc *.img 
-        tập tin trong /sdcard/MultiBoot/%s/ không chính xác. Ứng dụng bên thứ ba đã thay 
+    <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này\'s boot.img hoặc *.img
+        tập tin trong /sdcard/MultiBoot/%s/ không chính xác. Ứng dụng bên thứ ba đã thay
         những images n. Bạn có chắc muốn chuyển đổi rom?</string>
     <!-- Dialog message shown if the images' checksums don't exist when switching ROMs -->
     <string name="checksums_missing">Kiểm tra SHA512 checksums cho bản rom này\'s boot.img hoặc *.img
@@ -202,7 +200,7 @@
     <string name="kernel_not_set_desc">Kernel vẫn chưa được thiết lập cho ROM hiện tại.
         Bạn có muốn thiết lại kernel ngay không?</string>
     <!-- Dialog message shown when the saved kernel is different from the currently running kernel -->
-    <string name="kernel_different_from_saved_desc">Kernel được lưu trữ khác với 
+    <string name="kernel_different_from_saved_desc">Kernel được lưu trữ khác với
         Kernel đang chạy. Bạn có muốn thiết lại kernel ngay không?</string>
     <!-- Positive dialog button shown for the above two messages -->
     <string name="set_kernel_now">Thiết lập ngay</string>
@@ -317,7 +315,7 @@
     <string name="update_ramdisk_no_reboot_desc">Ramdisk được cập nhật thành công.</string>
     <!-- Title when ramdisk failed to update -->
     <string name="update_ramdisk_failure_title">Ramdisk được cập nhật thất bại</string>
-    <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
+    <!-- Message telling the user that the ramdisk updating failed -->
     <string name="update_ramdisk_failure_desc">Cập nhật ramdisk lỗi. Tập tin log được lưu vào
         MultiBoot/ramdisk-update.log của bộ nhớ trong.</string>
 
@@ -349,7 +347,7 @@
     <string name="rom_settings_boot_ui_uninstall_failure">Lỗi khi gỡ bỏ Boot UI</string>
     <!-- Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated -->
     <string name="rom_settings_boot_ui_update_ramdisk_msg">Boot UI đã được cài đặt thành công
-        .\n\n Hãy chắc chắn rằng ramdisk đã được cập nhật trong mỗi rom. Nếu không, Boot UI 
+        .\n\n Hãy chắc chắn rằng ramdisk đã được cập nhật trong mỗi rom. Nếu không, Boot UI
         sẽ không chạy trong quá trình khởi động.</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
@@ -369,9 +367,9 @@
     <!-- Title for the preference to enable confirmation dialog before rebooting -->
     <string name="rom_settings_show_reboot_confirm_title">Hiển thị tuỳ chọn khởi động lại</string>
     <!-- Description for the preference to enable confirmation dialog before rebooting -->
-    <string name="rom_settings_show_reboot_confirm_desc">Hiển thị tuỳ chọn khởi động thay vì 
+    <string name="rom_settings_show_reboot_confirm_desc">Hiển thị tuỳ chọn khởi động thay vì
         khởi động lại trực tiếp. Điều này cho phép khởi động vào recovery có trong tuỳ chọn khởi động lại</string>
-  
+
     <!-- Progress dialog message shown when starting mbtool (with root) -->
     <string name="mbtool_dialog_starting_mbtool">Khởi động mbtool…\n(This will require root)</string>
     <!-- Progress dialog message shown when updating mbtool (with root) -->

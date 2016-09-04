@@ -54,8 +54,6 @@
     <string name="title_free_space">Свободное место</string>
     <!-- Navigation drawer item for changing the ROM settings -->
     <string name="title_rom_settings">Настройки</string>
-    <!-- Navigation drawer item for changing the app sharing settings -->
-    <string name="title_app_sharing">Общие приложения</string>
     <!-- Nagivation drawer item for rebooting the device -->
     <string name="title_reboot">Перезагрузить</string>
     <!-- Navigation drawer item for showing the about screen -->
@@ -233,7 +231,7 @@
     <string name="zip_flashing_error_no_overwrite_rom">Во избежание сбоев или перезагрузок
         установка zip файлов невозможна на запущенной системе.</string>
     <!-- Dialog message asking if the user wants to change the installation location of the zip -->
-    <string name="zip_flashing_change_install_location_desc">Zip файл был пропатчен для 
+    <string name="zip_flashing_change_install_location_desc">Zip файл был пропатчен для
         установки в %s. Желаете изменить место установки?</string>
     <!-- Dialog button for keeping the current installation location -->
     <string name="zip_flashing_keep_current_location">Оставить место</string>
@@ -359,29 +357,6 @@
     <!-- Format string for bytes -->
     <string name="format_bytes" translatable="false">%s B</string>
 
-    <!-- Title for the individual application sharing section of the ROM settings -->
-    <string name="a_s_settings_indiv_app_sharing_section_title">Общие приложения</string>
-
-    <!-- Title for the preference to share individual applications -->
-    <string name="a_s_settings_indiv_app_sharing_title">Включить общие приложения</string>
-    <!-- Description for the preference to share individual applications -->
-    <string name="a_s_settings_indiv_app_sharing_desc">Общие приложения для разных прошивок
-        (требуется перезагрузка).</string>
-    <!-- Title for the preference to manage shared apps for individual app sharing -->
-    <string name="a_s_settings_manage_shared_apps_title">Управление общими приложениями</string>
-    <!-- Description for the preference to manage shared apps for individual app sharing -->
-    <string name="a_s_settings_manage_shared_apps_desc">Выберите приложения, которые должны
-        иметь общие данные.</string>
-
-    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage. -->
-    <string name="a_s_settings_storage_permission_required">Настройки общих приложений не могут быть
-        сохранены, потому что у приложения нет доступа к памяти устройства. Предоставьте доступ к памяти
-        для изменения настроек общих приложений.</string>
-
-    <!-- Dialog message shown the the mbtool version is too old and needs to be updated -->
-    <string name="a_s_settings_version_too_old">mbtool нужно обновить для использования функции общих
-        приложений. Обновите ramdisk!</string>
-
     <!-- Title for preference category for boot options -->
     <string name="rom_settings_booting_title">Параметры загрузки</string>
 
@@ -405,7 +380,7 @@
     <string name="update_ramdisk_no_reboot_desc">Ramdisk успешно обновлен.</string>
     <!-- Title when ramdisk failed to update -->
     <string name="update_ramdisk_failure_title">Обновление ramdisk не удалось</string>
-    <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
+    <!-- Message telling the user that the ramdisk updating failed -->
     <string name="update_ramdisk_failure_desc">Не удалось обновить ramdisk. Журнал сохранен в
         MultiBoot/ramdisk-update.log во внутренней памяти.</string>
 
@@ -468,44 +443,13 @@
     <!-- Title for the preference to enable confirmation dialog before rebooting -->
     <string name="rom_settings_show_reboot_confirm_title">Показывать окно перезагрузки</string>
     <!-- Description for the preference to enable confirmation dialog before rebooting -->
-    <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки. 
+    <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки.
         Это позволяет перезагрузиться в рекавери на прошивках, которые имеют расширенное меню перезагрузки.</string>
     <!-- Title for the preference to set the number of parallel patching operations -->
     <string name="rom_settings_parallel_patching_title">Параллельная модификация файлов</string>
     <!-- Description for the preference to set the number of parallel patching operations -->
     <string name="rom_settings_parallel_patching_desc">Позволить модифицировать %s файл(ов) одновременно, когда в очереди
         на модификацию несколько файлов.</string>
-
-    <!-- Title for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_intro_dialog_title">Общие приложения</string>
-    <!-- Description for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_intro_dialog_desc">Функция Общие приложения позволяет хранить
-        настройки приложений в общей папке доступной для каждой прошивки. Использование общих
-        приложений позволяет синхронизировать данные приложения между прошивками (прим. вкладки в Chrome).
-        \n\nNOTE: Необходима перезагрузка, чтобы изменения вступили в силу.\n\nДля использования Общих приложений
-        функция должна быть включена в каждой прошивке. Пример: В основной прошивке включена синхронизация данных
-        для приложения Chrome. Chrome начинает использовать общую папку данных. Тогда при загрузке в другую прошивку
-        и включении функции общих приложений для Chrome он начнет использовать общую папку данных.</string>
-
-    <!-- App label in the individual app sharing screen shown if the app uses shared data -->
-    <string name="indiv_app_sharing_shared_data">Общие данные</string>
-    <!-- App label in the individual app sharing screen shown if the app is not shared -->
-    <string name="indiv_app_sharing_not_shared">Выключено</string>
-
-    <!-- App sharing dialog checkbox text for using shared app data -->
-    <string name="indiv_app_sharing_dialog_share_data">Включить общие данные</string>
-    <!-- App sharing dialog message shown by default -->
-    <string name="indiv_app_sharing_dialog_default_message">Выбор приложения, которое должно использовать
-        общую папку данных.</string>
-    <!-- Message in the app sharing dialog showing the list of ROMs using the shared data -->
-    <string name="indiv_app_sharing_other_roms_using_shared_data">Другие прошивки использующие общие данные:
-        %s</string>
-
-    <!-- Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect -->
-    <string name="indiv_app_sharing_reboot_needed_message">Изменения вступят в силу после перезагрузки.</string>
-
-    <!-- Toast popup message shown when a shared app is uninstalled (and thus becomes unshared) -->
-    <string name="indiv_app_sharing_app_no_longer_shared">Приложение \'%s\' больше не имеет общих данных.</string>
 
     <!-- Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled -->
     <string name="third_party_intents_not_allowed">Принятие запросов от сторонних приложений выключено. Включить
@@ -517,7 +461,7 @@
     <string name="mbtool_dialog_updating_mbtool">Обновление mbtool…\n(Это требует root доступа)</string>
     <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
     <string name="mbtool_dialog_signature_check_fail">mbtool отклонил соединение с приложением.
-        Это могло произойти из-за использования неофициальной сборки данного приложения или его модификации. 
+        Это могло произойти из-за использования неофициальной сборки данного приложения или его модификации.
         Если вы все еще хотите продолжить, то mbtool будет закрыт и будет использоваться драгая версия mbtool запущенная
         с правами root.</string>
     <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->

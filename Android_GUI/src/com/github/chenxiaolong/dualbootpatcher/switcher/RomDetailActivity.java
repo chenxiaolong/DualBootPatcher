@@ -416,11 +416,10 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void updateMbtoolStatus() {
         // There is currently no way to determine the mbtool version of other ROMs
         if (mBootedRomInfo != null && mBootedRomInfo.getId().equals(mRomInfo.getId())) {
-            Version minAppSharing = MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING);
             Version minDaemon = MbtoolUtils.getMinimumRequiredVersion(Feature.DAEMON);
             Version version = MbtoolUtils.getSystemMbtoolVersion(this);
 
-            if (version.compareTo(minAppSharing) >= 0 && version.compareTo(minDaemon) >= 0) {
+            if (version.compareTo(minDaemon) >= 0) {
                 mUpdateRamdiskCountdown = FORCE_RAMDISK_UPDATE_TAPS;
                 mUpdateRamdiskResId = R.string.update_ramdisk_up_to_date_desc;
             } else {
