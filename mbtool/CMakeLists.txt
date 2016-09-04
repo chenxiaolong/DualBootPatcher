@@ -56,8 +56,6 @@ set(MINIADBD_SOURCES
 )
 
 set(MBTOOL_BASE_SOURCES
-    appsync.cpp
-    appsyncmanager.cpp
     daemon.cpp
     daemon_v3.cpp
     decrypt.cpp

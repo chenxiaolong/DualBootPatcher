@@ -32,7 +32,6 @@
 #include "update_binary_tool.h"
 #include "utilities.h"
 #else
-#include "appsync.h"
 #include "daemon.h"
 #include "decrypt.h"
 #include "file_contexts.h"
@@ -75,7 +74,6 @@ struct tool tools[] = {
     { "utilities", mb::utilities_main },
 #else
     { "adbd", mb::miniadbd_main },
-    { "appsync", mb::appsync_main },
     { "daemon", mb::daemon_main },
     { "decrypt", mb::decrypt_main },
     { "file_contexts", mb::file_contexts_main },

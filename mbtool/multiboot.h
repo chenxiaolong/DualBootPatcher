@@ -25,7 +25,6 @@
 #define MULTIBOOT_DIR                   INTERNAL_STORAGE "/MultiBoot"
 #define MULTIBOOT_BACKUP_DIR            MULTIBOOT_DIR "/backups"
 #define MULTIBOOT_LOG_INSTALLER         INTERNAL_STORAGE "/MultiBoot.log"
-#define MULTIBOOT_LOG_APPSYNC           MULTIBOOT_DIR "/appsync.log"
 #define MULTIBOOT_LOG_DAEMON            MULTIBOOT_DIR "/daemon.log"
 #define MULTIBOOT_LOG_KERNEL            MULTIBOOT_DIR "/kernel.log"
 
