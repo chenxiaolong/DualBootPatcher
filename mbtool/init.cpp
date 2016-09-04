@@ -637,6 +637,22 @@ static void create_layout_version()
     }
 }
 
+static bool fix_obb_contexts()
+{
+    if (!util::mkdir_recursive("/data/media/obb", 0755)) {
+        LOGE("%s: Failed to create directory: %s",
+             "/data/media/obb", strerror(errno));
+        return false;
+    }
+
+    const char *restorecon[] =
+            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
+    int status = util::run_command(restorecon[0], restorecon, nullptr, nullptr,
+                                   nullptr, nullptr);
+
+    return status != -1 && WIFEXITED(status) && WEXITSTATUS(status);
+}
+
 static std::string encode_list(const char * const *list)
 {
     if (!list) {
@@ -1362,6 +1378,7 @@ int init_main(int argc, char *argv[])
     add_mbtool_services();
     strip_manual_mounts();
     create_layout_version();
+    fix_obb_contexts();
 
     // Patch SELinux policy
     struct stat sb;

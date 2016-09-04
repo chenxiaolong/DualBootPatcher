@@ -1101,17 +1101,6 @@ int appsync_main(int argc, char *argv[])
 
     fix_multiboot_permissions();
 
-    // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
-
-    LOGI("=== APPSYNC VERSION %s ===", version());
-
-    LOGI("Calling restorecon on /data/media/obb");
-    const char *restorecon[] =
-            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
-    util::run_command(restorecon[0], restorecon, nullptr, nullptr, nullptr,
-                      nullptr);
-
     bool can_appsync = false;
 
     // Try to load config file
