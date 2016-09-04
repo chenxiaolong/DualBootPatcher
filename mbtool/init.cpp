@@ -68,6 +68,7 @@
 #include "initwrapper/util.h"
 #include "daemon.h"
 #include "decrypt.h"
+#include "file_contexts.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
@@ -312,22 +313,39 @@ static bool replace_file(const char *replace, const char *with)
     return true;
 }
 
+static bool convert_binary_file_contexts()
+{
+    auto ret = patch_file_contexts(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
+    if (ret == FileContextsResult::ERRNO && errno == ENOENT) {
+        LOGV("%s doesn't exist; Skipping file conversion", FILE_CONTEXTS_BIN);
+        return true;
+    } else if (ret != FileContextsResult::OK) {
+        LOGE("%s: Binary file_contexts conversion failed", FILE_CONTEXTS_BIN);
+        return false;
+    }
+
+    return replace_file(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
+
+    return true;
+}
+
 static bool fix_file_contexts()
 {
-    autoclose::file fp_old(autoclose::fopen("/file_contexts", "rb"));
+    autoclose::file fp_old(autoclose::fopen(FILE_CONTEXTS, "rb"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
         } else {
-            LOGE("Failed to open /file_contexts: %s", strerror(errno));
+            LOGE("%s: Failed to open for reading: %s",
+                 FILE_CONTEXTS, strerror(errno));
             return false;
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen("/file_contexts.new", "wb"));
+    autoclose::file fp_new(autoclose::fopen(FILE_CONTEXTS ".new", "wb"));
     if (!fp_new) {
-        LOGE("Failed to open /file_contexts.new for writing: %s",
-             strerror(errno));
+        LOGE("%s: Failed to open for writing: %s",
+             FILE_CONTEXTS ".new", strerror(errno));
         return false;
     }
 
@@ -346,7 +364,8 @@ static bool fix_file_contexts()
         }
 
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
-            LOGE("Failed to write to /file_contexts.new: %s", strerror(errno));
+            LOGE("%s: Failed to write file: %s",
+                 FILE_CONTEXTS ".new", strerror(errno));
             return false;
         }
     }
@@ -361,7 +380,7 @@ static bool fix_file_contexts()
             "/system/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    return replace_file("/file_contexts", "/file_contexts.new");
+    return replace_file(FILE_CONTEXTS, FILE_CONTEXTS ".new");
 }
 
 static bool is_completely_whitespace(const char *str)
@@ -1283,6 +1302,7 @@ int init_main(int argc, char *argv[])
     }
 
     // Make runtime ramdisk modifications
+    convert_binary_file_contexts();
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();

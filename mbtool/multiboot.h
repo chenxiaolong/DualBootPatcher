@@ -39,6 +39,9 @@
 
 #define DEVICE_JSON_PATH                "/device.json"
 
+#define FILE_CONTEXTS_BIN               "/file_contexts.bin"
+#define FILE_CONTEXTS                   "/file_contexts"
+
 #define PROP_BLOCK_DEV_BASE_DIRS        "ro.patcher.blockdevs.base"
 #define PROP_BLOCK_DEV_SYSTEM_PATHS     "ro.patcher.blockdevs.system"
 #define PROP_BLOCK_DEV_CACHE_PATHS      "ro.patcher.blockdevs.cache"
