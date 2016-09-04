@@ -395,17 +395,6 @@ static bool fix_file_contexts()
     return replace_file(path, path_new);
 }
 
-static bool is_completely_whitespace(const char *str)
-{
-    while (*str) {
-        if (!isspace(*str)) {
-            return false;
-        }
-        ++str;
-    }
-    return true;
-}
-
 static bool add_mbtool_services()
 {
     autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
@@ -434,22 +423,11 @@ static bool add_mbtool_services()
     });
 
     bool has_init_multiboot_rc = false;
-    bool has_disabled_installd = false;
-    bool inside_service = false;
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
         if (strstr(line, "import /init.multiboot.rc")) {
             has_init_multiboot_rc = true;
-        }
-
-        if (util::starts_with(line, "service")) {
-            inside_service = strstr(line, "installd") != nullptr;
-        } else if (inside_service && is_completely_whitespace(line)) {
-            inside_service = false;
-        }
-
-        if (inside_service && strstr(line, "disabled")) {
-            has_disabled_installd = true;
+            break;
         }
     }
 
@@ -465,13 +443,6 @@ static bool add_mbtool_services()
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
-        }
-
-        // Disable installd. mbtool's appsync will spawn it on demand
-        if (!has_disabled_installd
-                && util::starts_with(line, "service")
-                && strstr(line, "installd")) {
-            fputs("    disabled\n", fp_new.get());
         }
     }
 
@@ -492,11 +463,6 @@ static bool add_mbtool_services()
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
-            "    seclabel u:r:init:s0\n"
-            "\n"
-            "service appsync /mbtool appsync\n"
-            "    class main\n"
-            "    socket installd stream 600 system system\n"
             "    seclabel u:r:init:s0\n";
 
     fputs(init_multiboot_rc, fp_multiboot.get());
