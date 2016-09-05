@@ -126,7 +126,6 @@ bool MbtoolUpdater::Impl::patchImage()
         target = &mainCpio;
     }
 
-    // Make sure init.rc has the mbtooldaemon service
     CoreRP crp(pc, info, target);
     if (!crp.patchRamdisk()) {
         error = crp.error();

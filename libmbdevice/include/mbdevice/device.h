@@ -58,6 +58,9 @@ SETTER(const char *, name);
 GETTER(const char *, architecture);
 SETTER(const char *, architecture);
 
+GETTER(uint64_t, flags);
+SETTER(uint64_t, flags);
+
 GETTER(char const * const *, block_dev_base_dirs);
 SETTER(char const * const *, block_dev_base_dirs);
 

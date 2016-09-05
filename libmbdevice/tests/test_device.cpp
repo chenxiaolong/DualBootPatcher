@@ -54,6 +54,7 @@ TEST_F(DeviceTest, CheckDefaultValues)
     ASSERT_EQ(mb_device_codenames(_device), nullptr);
     ASSERT_EQ(mb_device_name(_device), nullptr);
     ASSERT_EQ(mb_device_architecture(_device), nullptr);
+    ASSERT_EQ(mb_device_flags(_device), 0);
     ASSERT_EQ(mb_device_block_dev_base_dirs(_device), nullptr);
     ASSERT_EQ(mb_device_system_block_devs(_device), nullptr);
     ASSERT_EQ(mb_device_cache_block_devs(_device), nullptr);
@@ -110,6 +111,10 @@ TEST_F(DeviceTest, CheckGettersSetters)
     ASSERT_STREQ(mb_device_architecture(_device), "arm64-v8a");
     ASSERT_EQ(mb_device_set_architecture(_device, nullptr), MB_DEVICE_OK);
     ASSERT_EQ(mb_device_architecture(_device), nullptr);
+
+    uint64_t device_flags = FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    ASSERT_EQ(mb_device_set_flags(_device, device_flags), MB_DEVICE_OK);
+    ASSERT_EQ(mb_device_flags(_device), device_flags);
 
     const char *base_dirs[] = { "/dev/block/bootdevice/by-name", nullptr };
     ASSERT_EQ(mb_device_set_block_dev_base_dirs(_device, base_dirs), MB_DEVICE_OK);

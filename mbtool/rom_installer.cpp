@@ -157,15 +157,48 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // installed though, so we'll open the recovery partition with libmbp and
     // extract its /sbin with libarchive into the chroot's /sbin.
 
+    std::string block_dev(_recovery_block_dev);
     mbp::BootImage bi;
-    if (!bi.loadFile(_recovery_block_dev)) {
+    mbp::CpioFile innerCpio;
+    const unsigned char *ramdisk_data;
+    std::size_t ramdisk_size;
+    bool using_boot = false;
+
+    // Check if the device has a combined boot/recovery partition. If the
+    // FOTAKernel partition is listed, it will be used instead of the combined
+    // ramdisk from the boot image
+    bool combined = mb_device_flags(_device)
+            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    if (combined && block_dev.empty()) {
+        block_dev = _boot_block_dev;
+        using_boot = true;
+    }
+
+    if (block_dev.empty()) {
+        display_msg("Could not determine the recovery block device");
+        return ProceedState::Fail;
+    }
+
+    if (!bi.loadFile(block_dev)) {
         display_msg("Failed to load recovery partition image");
         return ProceedState::Fail;
     }
 
-    const unsigned char *ramdisk_data;
-    std::size_t ramdisk_size;
+    // Load ramdisk
     bi.ramdiskImageC(&ramdisk_data, &ramdisk_size);
+
+    if (using_boot) {
+        if (!innerCpio.load(ramdisk_data, ramdisk_size)) {
+            display_msg("Failed to load ramdisk from combined boot image");
+            return ProceedState::Fail;
+        }
+
+        if (!innerCpio.contentsC("sbin/ramdisk-recovery.cpio",
+                                 &ramdisk_data, &ramdisk_size)) {
+            display_msg("Could not find recovery ramdisk in combined boot image");
+            return ProceedState::Fail;
+        }
+    }
 
     autoclose::archive in(archive_read_new(), archive_read_free);
     autoclose::archive out(archive_write_disk_new(), archive_write_free);

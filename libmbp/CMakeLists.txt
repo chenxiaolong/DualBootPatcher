@@ -52,7 +52,6 @@ set(MBP_SOURCES
     # Ramdisk patchers
     src/ramdiskpatchers/core.cpp
     src/ramdiskpatchers/default.cpp
-    src/ramdiskpatchers/pepper.cpp
     # SHA1 library
     external/sha.cpp
 )

@@ -305,6 +305,11 @@ static bool replace_file(const char *replace, const char *with)
         return false;
     }
 
+    if (chown(replace, sb.st_uid, sb.st_gid) < 0) {
+        LOGE("Failed to chown %s: %s", replace, strerror(errno));
+        return false;
+    }
+
     if (chmod(replace, sb.st_mode & 0777) < 0) {
         LOGE("Failed to chmod %s: %s", replace, strerror(errno));
         return false;
