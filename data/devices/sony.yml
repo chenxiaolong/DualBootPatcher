@@ -58,6 +58,15 @@
       - /dev/block/bootdevice/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 
 - name: Sony Xperia Z1
   id: honami
@@ -101,6 +110,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/sbl1
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 
 - name: Sony Xperia T2 Ultra
   id: tianchi
@@ -142,3 +160,12 @@
       - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
       - /dev/block/bootdevice/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
