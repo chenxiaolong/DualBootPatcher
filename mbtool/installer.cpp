@@ -1506,6 +1506,26 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         return ProceedState::Fail;
     }
 
+    // Switch to target ROM if possible
+    std::string boot_image_path(_rom->boot_image_path());
+    if (access(boot_image_path.c_str(), R_OK) == 0) {
+        // Use an empty base dirs list since we don't want to flash any non-boot
+        // partitions
+        const char * const *base_dirs = { nullptr };
+
+        auto result = switch_rom(_rom->id.c_str(), _boot_block_dev.c_str(),
+                                 base_dirs, true);
+        if (result != SwitchRomResult::SUCCEEDED) {
+            display_msg("Failed to switch to target ROM. Continuing anyway...");
+            LOGW("Failed to switch to target ROM: %d",
+                 static_cast<int>(result));
+        } else {
+            LOGV("Successfully switched to target ROM");
+        }
+    } else {
+        LOGV("Won't switch to non-existent target ROM");
+    }
+
     // Wrap busybox to disable some applets
     if (!set_up_busybox_wrapper()) {
         display_msg("Failed to extract busybox wrapper");
