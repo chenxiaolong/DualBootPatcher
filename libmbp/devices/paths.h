@@ -190,6 +190,20 @@
 #define MTK_11230000_UBOOT               MTK_11230000_BASE_DIR "/uboot"
 #define MTK_11230000_USERDATA            MTK_11230000_BASE_DIR "/userdata"
 
+// Block device paths used by Infinix X510 in Android 6.0
+#define MTK_11120000_BASE_DIR   "/dev/block/platform/mtk-msdc.0/11120000.MSDC0/by-name"
+#define MTK_11120000_BOOT       MTK_11120000_BASE_DIR "/boot"
+#define MTK_11120000_CACHE      MTK_11120000_BASE_DIR "/cache"
+#define MTK_11120000_LK         MTK_11120000_BASE_DIR "/lk"
+#define MTK_11120000_LOGO       MTK_11120000_BASE_DIR "/logo"
+#define MTK_11120000_PARA       MTK_11120000_BASE_DIR "/para"
+#define MTK_11120000_RECOVERY   MTK_11120000_BASE_DIR "/recovery"
+#define MTK_11120000_SYSTEM     MTK_11120000_BASE_DIR "/system"
+#define MTK_11120000_TEE1       MTK_11120000_BASE_DIR "/tee1"
+#define MTK_11120000_TEE2       MTK_11120000_BASE_DIR "/tee2"
+#define MTK_11120000_UBOOT      MTK_11120000_BASE_DIR "/uboot"
+#define MTK_11120000_USERDATA   MTK_11120000_BASE_DIR "/userdata"
+
 // Block device paths used by devices with Tegra 3 SOCs
 #define TEGRA3_BASE_DIR         "/dev/block/platform/sdhci-tegra.3/by-name"
 #define TEGRA3_BOOT             TEGRA3_BASE_DIR "/LNX"
