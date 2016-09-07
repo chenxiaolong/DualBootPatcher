@@ -1,0 +1,9 @@
+namespace mbtool.daemon.v3;
+
+table CryptoDecryptRequest {
+    password : string;
+}
+
+table CryptoDecryptResponse {
+    success : bool;
+}

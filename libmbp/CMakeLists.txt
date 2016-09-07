@@ -60,19 +60,22 @@ set(MBP_CORE_SOURCES
 )
 
 set(MBP_DEVICE_SOURCES
+    devices/ark.cpp
     devices/asus.cpp
+    devices/dexp.cpp
     devices/google.cpp
     devices/huawei.cpp
+    devices/jiayu.cpp
     devices/lenovo.cpp
     devices/lg.cpp
     devices/motorola.cpp
     devices/nexus.cpp
     devices/oneplus.cpp
+    devices/pantech.cpp
     devices/samsung.cpp
     devices/sony.cpp
+    devices/wileyfox.cpp
     devices/xiaomi.cpp
-    devices/pantech.cpp
-    devices/jiayu.cpp
 )
 
 set(MBP_SOURCES

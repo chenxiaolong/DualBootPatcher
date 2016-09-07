@@ -30,19 +30,22 @@
 #include "mbp/private/fileutils.h"
 
 // Devices
+#include "devices/ark.h"
 #include "devices/asus.h"
+#include "devices/dexp.h"
 #include "devices/google.h"
 #include "devices/huawei.h"
+#include "devices/jiayu.h"
 #include "devices/lenovo.h"
 #include "devices/lg.h"
 #include "devices/motorola.h"
 #include "devices/nexus.h"
 #include "devices/oneplus.h"
+#include "devices/pantech.h"
 #include "devices/samsung.h"
 #include "devices/sony.h"
+#include "devices/wileyfox.h"
 #include "devices/xiaomi.h"
-#include "devices/pantech.h"
-#include "devices/jiayu.h"
 
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
@@ -203,18 +206,21 @@ std::vector<Device *> PatcherConfig::devices() const
 void PatcherConfig::Impl::loadDefaultDevices()
 {
     addSamsungDevices(&devices);
+    addArkDevices(&devices);
     addAsusDevices(&devices);
+    addDexpDevices(&devices);
     addGoogleDevices(&devices);
     addHuaweiDevices(&devices);
+    addJiayuDevices(&devices);
     addLenovoDevices(&devices);
     addLgDevices(&devices);
     addMotorolaDevices(&devices);
     addNexusDevices(&devices);
+    addPantechDevices(&devices);
     addOnePlusDevices(&devices);
     addSonyDevices(&devices);
+    addWileyfoxDevices(&devices);
     addXiaomiDevices(&devices);
-    addPantechDevices(&devices);
-    addJiayuDevices(&devices);
 }
 
 /*!

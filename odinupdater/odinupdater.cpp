@@ -121,7 +121,9 @@ void info(const char *fmt, ...)
 static bool mount_system()
 {
     // mbtool will redirect the call
-    int status = mb::util::run_command({ "mount", "/system" });
+    const char *argv[] = { "mount", "/system", nullptr };
+    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -136,7 +138,9 @@ static bool mount_system()
 static bool umount_system()
 {
     // mbtool will redirect the call
-    int status = mb::util::run_command({ "umount", "/system" });
+    const char *argv[] = { "umount", "/system", nullptr };
+    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -738,11 +742,16 @@ static bool flash_csc()
     close(open(TEMP_CACHE_MOUNT_FILE, O_CREAT | O_WRONLY | O_CLOEXEC, 0600));
 
     // Mount sparse file with fuse-sparse
-    status = mb::util::run_command({
-        TEMP_FUSE_SPARSE_FILE,
-        TEMP_CACHE_SPARSE_FILE,
-        TEMP_CACHE_MOUNT_FILE
-    });
+    {
+        const char *argv[] = {
+            TEMP_FUSE_SPARSE_FILE,
+            TEMP_CACHE_SPARSE_FILE,
+            TEMP_CACHE_MOUNT_FILE,
+            nullptr
+        };
+        status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
+    }
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         goto error;

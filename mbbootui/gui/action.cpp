@@ -43,8 +43,6 @@
 #include "gui/gui.h"
 #include "gui/hardwarekeyboard.hpp"
 
-void curtainClose();
-
 GUIAction::mapFunc GUIAction::mf;
 std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 
@@ -172,6 +170,7 @@ GUIAction::GUIAction(xml_node<>* node)
         }
 
         // These actions will run in a separate thread
+        ADD_ACTION(decrypt);
         ADD_ACTION(autoboot);
         ADD_ACTION(switch_rom);
     }
@@ -238,7 +237,7 @@ GUIAction::GUIAction(xml_node<>* node)
     }
 }
 
-int GUIAction::NotifyTouch(TOUCH_STATE state __unused, int x __unused, int y __unused)
+int GUIAction::NotifyTouch(TOUCH_STATE state, int x __unused, int y __unused)
 {
     if (state == TOUCH_RELEASE) {
         doActions();
@@ -404,8 +403,6 @@ void GUIAction::operation_end(const int operation_status)
 
 int GUIAction::reboot(const std::string& arg)
 {
-    //curtainClose(); this sometimes causes a crash
-
     sync();
     DataManager::SetValue(TW_GUI_DONE, 1);
     DataManager::SetValue(TW_EXIT_ACTION, arg);
@@ -609,6 +606,34 @@ int GUIAction::screenshot(const std::string& arg __unused)
 int GUIAction::setbrightness(const std::string& arg)
 {
     return TWFunc::Set_Brightness(arg);
+}
+
+int GUIAction::decrypt(const std::string& arg __unused)
+{
+    int status = 0;
+
+    operation_start("Decrypt");
+
+    LOGV("Attempting to decrypt device");
+
+    std::string password;
+    DataManager::GetValue(TW_CRYPTO_PASSWORD, password);
+
+    // Try decrypting
+    bool decrypted;
+    if (!mbtool_interface->crypto_decrypt(password, &decrypted)) {
+        LOGW("Failed to ask mbtool to decrypt the device");
+        status = 1;
+    } else if (!decrypted) {
+        LOGW("Failed to decrypt device (incorrect password?)");
+        status = 1;
+    } else {
+        LOGV("Successfully decrypted device");
+        DataManager::SetValue(TW_IS_ENCRYPTED, 0);
+    }
+
+    operation_end(status);
+    return 0;
 }
 
 int GUIAction::autoboot(const std::string& arg __unused)

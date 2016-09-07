@@ -36,25 +36,36 @@ namespace mb
 namespace util
 {
 
-static void log_output(const std::string &line, void *data)
+static void log_output(const char *line, bool error, void *userdata)
 {
-    (void) data;
+    (void) error;
+    (void) userdata;
+
+    size_t size = strlen(line);
+
     std::string copy;
-    if (!line.empty() && line.back() == '\n') {
-        copy.assign(line.begin(), line.end() - 1);
+    if (size > 0 && line[size - 1] == '\n') {
+        copy.assign(line, line + size - 1);
+    } else {
+        copy.assign(line, line + size);
     }
+
     LOGD("Reboot command output: %s", copy.c_str());
 }
 
 bool reboot_via_framework(bool show_confirm_dialog)
 {
-    int status = run_command_cb({
+    const char *argv[] = {
         "am", "start",
         //"-W",
         "--ez", "android.intent.extra.KEY_CONFIRM",
             show_confirm_dialog ? "true" : "false",
-        "-a", "android.intent.action.REBOOT"
-    }, &log_output, nullptr);
+        "-a", "android.intent.action.REBOOT",
+        nullptr
+    };
+
+    int status = run_command(argv[0], argv, nullptr, nullptr, &log_output,
+                             nullptr);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
@@ -62,8 +73,8 @@ bool reboot_via_framework(bool show_confirm_dialog)
 bool reboot_via_init(const char *reboot_arg)
 {
     // The length of the prefix + reboot_arg + NULL terminator cannot exceed
-    // MB_PROP_VALUE_MAX
-    char buf[MB_PROP_VALUE_MAX - 7 - 1];
+    // PROP_VALUE_MAX
+    char buf[PROP_VALUE_MAX - 7 - 1];
 
     if (!reboot_arg) {
         reboot_arg = "";
@@ -74,11 +85,11 @@ bool reboot_via_init(const char *reboot_arg)
         return false;
     } else if (ret >= (int) sizeof(buf)) {
         LOGE("Reboot argument %d bytes too long",
-             ret + 1 - MB_PROP_VALUE_MAX);
+             ret + 1 - PROP_VALUE_MAX);
         return false;
     }
 
-    if (!set_property(ANDROID_RB_PROPERTY, buf)) {
+    if (property_set(ANDROID_RB_PROPERTY, buf) < 0) {
         LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
         return false;
     }
@@ -101,7 +112,7 @@ bool reboot_via_syscall(const char *reboot_arg)
 
 bool shutdown_via_init()
 {
-    if (!set_property(ANDROID_RB_PROPERTY, "shutdown,")) {
+    if (property_set(ANDROID_RB_PROPERTY, "shutdown,") < 0) {
         LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
         return false;
     }

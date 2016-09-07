@@ -925,9 +925,9 @@
         <page name="decrypt">
             <template name="page" />
 
-            <!-- Redirect to decryption page if needed -->
+            <!-- Redirect to pattern decryption page if needed -->
             <action>
-                <condition var1="tw_crypto_pwtype" var2="2" />
+                <condition var1="tw_crypto_pwtype" var2="pattern" />
                 <action function="page">decrypt_pattern</action>
             </action>
 

@@ -174,6 +174,8 @@ public class LibMbp {
         static native Pointer mbp_device_extra_block_devs(CDevice device);
         static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
         static native boolean mbp_device_boot_ui_supported(CDevice device);
+        static native boolean mbp_device_crypto_supported(CDevice device);
+        static native Pointer mbp_device_crypto_header_path(CDevice device);
         // END: cdevice.h
 
         // BEGIN: cfileinfo.h
@@ -1259,6 +1261,23 @@ public class LibMbp {
             validate(mCDevice, Device.class, "isBootUISupported");
 
             return CWrapper.mbp_device_boot_ui_supported(mCDevice);
+        }
+
+        public boolean isCryptoSupported() {
+            validate(mCDevice, Device.class, "isCryptoSupported");
+
+            return CWrapper.mbp_device_crypto_supported(mCDevice);
+        }
+
+        public String getCryptoHeaderPath() {
+            validate(mCDevice, Device.class, "getCryptoHeaderPath");
+
+            String path = getStringAndFree(CWrapper.mbp_device_crypto_header_path(mCDevice));
+            if (path == null || path.isEmpty()) {
+                return null;
+            } else {
+                return path;
+            }
         }
     }
 

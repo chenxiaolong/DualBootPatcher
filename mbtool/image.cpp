@@ -33,10 +33,12 @@
 namespace mb
 {
 
-static void output_cb(const std::string &msg, void *data)
+static void output_cb(const char *line, bool error, void *userdata)
 {
-    std::vector<std::string> *args = (std::vector<std::string> *) data;
-    LOGV("%s: %s", (*args)[0].c_str(), msg.c_str());
+    (void) error;
+
+    const char **args = static_cast<const char **>(userdata);
+    LOGV("%s: %s", args[0], line);
 }
 
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
@@ -62,8 +64,10 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str.c_str());
 
             // Create new image
-            std::vector<std::string> args{ "make_ext4fs", "-l", size_str, path };
-            int ret = util::run_command_cb(args, output_cb, nullptr);
+            const char *argv[] =
+                    { "make_ext4fs", "-l", size_str.c_str(), path.c_str(), nullptr };
+            int ret = util::run_command(argv[0], argv, nullptr, nullptr,
+                                        &output_cb, argv);
             if (ret < 0 || WEXITSTATUS(ret) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::FAILED;
@@ -78,8 +82,9 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 
 bool fsck_ext4_image(const std::string &image)
 {
-    std::vector<std::string> args{ "e2fsck", "-f", "-y", image };
-    int ret = util::run_command_cb(args, output_cb, &args);
+    const char *argv[] = { "e2fsck", "-f", "-y", image.c_str(), nullptr };
+    int ret = util::run_command(argv[0], argv, nullptr, nullptr,
+                                &output_cb, argv);
     if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
         LOGE("%s: Failed to e2fsck", image.c_str());
         return false;

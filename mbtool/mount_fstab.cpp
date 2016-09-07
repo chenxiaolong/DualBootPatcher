@@ -261,13 +261,20 @@ static bool path_matches(const char *path, const char *pattern)
     }
 }
 
-static void dump(const std::string &line, void *data)
+static void dump(const char *line, bool error, void *userdata)
 {
-    (void) data;
+    (void) error;
+    (void) userdata;
+
+    size_t size = strlen(line);
+
     std::string copy;
-    if (!line.empty() && line.back() == '\n') {
-        copy.assign(line.begin(), line.end() - 1);
+    if (size > 0 && line[size - 1] == '\n') {
+        copy.assign(line, line + size - 1);
+    } else {
+        copy.assign(line, line + size);
     }
+
     LOGD("Command output: %s", copy.c_str());
 }
 
@@ -298,23 +305,31 @@ static bool mount_exfat_fuse(const char *source, const char *target)
         return false;
     }
 
-    // Run filesystem checks
-    util::run_command_cb({
+    char mount_args[100];
+
+    snprintf(mount_args, sizeof(mount_args),
+             "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
+             uid, uid, 0007, 0007, "noexec", "rw");
+
+    const char *fsck_argv[] = {
         "/sbin/fsck.exfat",
-        source
-    }, &dump, nullptr);
+        source,
+        nullptr
+    };
+    const char *mount_argv[] = {
+        "/sbin/mount.exfat",
+        "-o", mount_args,
+        source, target,
+        nullptr
+    };
+
+    // Run filesystem checks
+    util::run_command(fsck_argv[0], fsck_argv, nullptr, nullptr, &dump,
+                      nullptr);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command_cb({
-        "/sbin/mount.exfat",
-        "-o",
-        util::format(
-            "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
-            uid, uid, 0007, 0007, "noexec", "rw"
-        ),
-        source,
-        target
-    }, &dump, nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, nullptr, nullptr,
+                                &dump, nullptr);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));
@@ -580,12 +595,15 @@ static bool create_ext4_temp_fs(const char *mount_point)
     struct stat sb;
     if (stat(EXT4_TEMP_IMAGE, &sb) < 0) {
         if (errno == ENOENT) {
-            int ret = util::run_command_cb({
+            const char *argv[] = {
                 "/system/bin/make_ext4fs",
-                "-l",
-                "20M",
-                EXT4_TEMP_IMAGE
-            }, &dump, nullptr);
+                "-l", "20M",
+                EXT4_TEMP_IMAGE,
+                nullptr
+            };
+
+            int ret = util::run_command(argv[0], argv, nullptr, nullptr, &dump,
+                                        nullptr);
             if (ret < 0) {
                 LOGE("Failed to run make_ext4fs");
                 return false;
@@ -789,25 +807,26 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
         LOGD("fstab: %s", it->orig_line.c_str());
 
         if (util::path_compare(it->mount_point, "/system") == 0
-                && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+                && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGD("-> /system entry");
             recs->system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
-                && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+                && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGD("-> /cache entry");
             recs->cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
-                && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+                && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGD("-> /data entry");
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
-        } else if ((it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
+        } else if ((it->vold_args.find("voldmanaged=sdcard0") != std::string::npos
+                || it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
-                && !(flags & MOUNT_FLAG_SKIP_EXTERNAL_SD)) {
+                && (flags & MOUNT_FLAG_MOUNT_EXTERNAL_SD)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
             recs->extsd.push_back(*it);
@@ -825,21 +844,21 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
     if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
-        if (recs->system.empty() && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+        if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGW("No /system fstab entries found. Adding generic entries");
             auto entries = generic_fstab_system_entries();
             for (util::fstab_rec &rec : entries) {
                 recs->system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+        if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
             auto entries = generic_fstab_cache_entries();
             for (util::fstab_rec &rec : entries) {
                 recs->cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+        if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGW("No /data fstab entries found. Adding generic entries");
             auto entries = generic_fstab_data_entries();
             for (util::fstab_rec &rec : entries) {
@@ -890,7 +909,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
     }
 
     // Partitions are mounted in /raw
-    if (mkdir("/raw", 0755) < 0) {
+    if (mkdir("/raw", 0755) < 0 && errno != EEXIST) {
         LOGE("Failed to create /raw: %s", strerror(errno));
         return false;
     }
@@ -949,7 +968,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
     }
 
     // Rewrite fstab file
-    if (flags & MOUNT_FLAG_REWRITE_FSTAB) {
+    if (ret && (flags & MOUNT_FLAG_REWRITE_FSTAB)) {
         int fd = open(path, O_RDWR | O_TRUNC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
