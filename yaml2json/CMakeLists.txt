@@ -1,5 +1,5 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
-    include_directories(${MBP_JSONCPP_INCLUDES})
+    include_directories(${MBP_JANSSON_INCLUDES})
     include_directories(${MBP_YAML_CPP_INCLUDES})
 
     add_executable(yaml2json yaml2json.cpp)
@@ -21,7 +21,7 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
 
     target_link_libraries(
         yaml2json
-        ${MBP_JSONCPP_LIBRARIES}
+        ${MBP_JANSSON_LIBRARIES}
         ${MBP_YAML_CPP_LIBRARIES}
     )
 
