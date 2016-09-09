@@ -1,10 +1,33 @@
+/*
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ *
+ * This file is part of MultiBootPatcher
+ *
+ * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MultiBootPatcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <cerrno>
+#include <cinttypes>
 #include <cstring>
 
 #include <getopt.h>
 
 #include <jansson.h>
 #include <yaml-cpp/yaml.h>
+
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 
 
 static void * xmalloc(size_t size)
@@ -62,6 +85,121 @@ static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
     default:
         throw std::runtime_error("Unknown YAML node type");
     }
+}
+
+static void print_json_error(const char *path, MbDeviceJsonError *error)
+{
+    fprintf(stderr, "%s: Error: ", path);
+
+    switch (error->type) {
+    case MB_DEVICE_JSON_STANDARD_ERROR:
+        fprintf(stderr, "Internal error\n");
+        break;
+    case MB_DEVICE_JSON_PARSE_ERROR:
+        fprintf(stderr, "Failed to parse generated JSON\n");
+        break;
+    case MB_DEVICE_JSON_MISMATCHED_TYPE:
+        fprintf(stderr, "Expected %s, but found %s at %s\n",
+                error->expected_type, error->actual_type, error->context);
+        break;
+    case MB_DEVICE_JSON_UNKNOWN_KEY:
+        fprintf(stderr, "Unknown key at %s\n", error->context);
+        break;
+    case MB_DEVICE_JSON_UNKNOWN_VALUE:
+        fprintf(stderr, "Unknown value at %s\n", error->context);
+        break;
+    default:
+        fprintf(stderr, "Unknown error\n");
+        break;
+    }
+}
+
+static void print_validation_error(const char *path, const char *id,
+                                   uint64_t flags)
+{
+    fprintf(stderr, "%s: [%s] Error during validation (0x%" PRIx64 "):\n",
+            path, id ? id : "unknown", flags);
+
+    struct mapping {
+        uint64_t flag;
+        const char *msg;
+    } mappings[] = {
+        { MB_DEVICE_MISSING_ID,                        "Missing device ID" },
+        { MB_DEVICE_MISSING_CODENAMES,                 "Missing device codenames" },
+        { MB_DEVICE_MISSING_NAME,                      "Missing device name" },
+        { MB_DEVICE_MISSING_ARCHITECTURE,              "Missing device architecture" },
+        { MB_DEVICE_MISSING_SYSTEM_BLOCK_DEVS,         "Missing system block device paths" },
+        { MB_DEVICE_MISSING_CACHE_BLOCK_DEVS,          "Missing cache block device paths" },
+        { MB_DEVICE_MISSING_DATA_BLOCK_DEVS,           "Missing data block device paths" },
+        { MB_DEVICE_MISSING_BOOT_BLOCK_DEVS,           "Missing boot block device paths" },
+        { MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS,       "Missing recovery block device paths" },
+        { MB_DEVICE_MISSING_BOOT_UI_THEME,             "Missing Boot UI theme" },
+        { MB_DEVICE_MISSING_BOOT_UI_GRAPHICS_BACKENDS, "Missing Boot UI graphics backends" },
+        { MB_DEVICE_MISSING_CRYPTO_HEADER_PATH,        "Missing crypto header path" },
+        { 0, nullptr }
+    };
+
+    for (auto it = mappings; it->flag; ++it) {
+        if (flags & it->flag) {
+            fprintf(stderr, "- %s\n", it->msg);
+            flags &= ~it->flag;
+        }
+    }
+
+    if (flags) {
+        fprintf(stderr, "- Unknown remaining flags (0x%" PRIx64 ")", flags);
+    }
+}
+
+static bool validate(const char *path, const char *json, bool is_array)
+{
+    MbDeviceJsonError error;
+
+    if (is_array) {
+        Device **devices = mb_device_new_list_from_json(json, &error);
+        if (!devices) {
+            print_json_error(path, &error);
+            return false;
+        }
+
+        bool failed = false;
+
+        for (Device **iter = devices; *iter; ++iter) {
+            uint64_t flags = mb_device_validate(*iter);
+            if (flags) {
+                print_validation_error(path, mb_device_id(*iter), flags);
+                failed = true;
+            }
+            mb_device_free(*iter);
+        }
+        free(devices);
+
+        if (failed) {
+            return false;
+        }
+    } else {
+        Device *device = mb_device_new_from_json(json, &error);
+        if (!device) {
+            print_json_error(path, &error);
+            return false;
+        }
+
+        bool failed = false;
+        uint64_t flags = mb_device_validate(device);
+
+        if (flags) {
+            print_validation_error(path, mb_device_id(device), flags);
+            failed = true;
+        }
+
+        mb_device_free(device);
+
+        if (failed) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static void usage(FILE *stream)
@@ -136,6 +274,13 @@ int main(int argc, char *argv[])
         try {
             YAML::Node root = YAML::LoadFile(argv[i]);
             json_t *node = yaml_node_to_json_node(root);
+
+            char *output = json_dumps(node, JSON_COMPACT);
+            bool valid = validate(argv[i], output, json_is_array(node));
+            free(output);
+            if (!valid) {
+                return EXIT_FAILURE;
+            }
 
             if (flatten_root_array && json_is_array(node)) {
                 size_t index;

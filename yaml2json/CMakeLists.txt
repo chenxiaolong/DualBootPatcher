@@ -21,6 +21,7 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
 
     target_link_libraries(
         yaml2json
+        mbdevice-shared
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_YAML_CPP_LIBRARIES}
     )
