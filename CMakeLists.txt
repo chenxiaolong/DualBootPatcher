@@ -183,7 +183,7 @@ add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(utilities)
 add_subdirectory(signtool)
-add_subdirectory(yaml2json)
+add_subdirectory(devicesgen)
 add_subdirectory(android)
 
 # Must go after signtool since it references SIGNTOOL_COMMAND

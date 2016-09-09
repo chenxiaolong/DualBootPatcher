@@ -205,7 +205,7 @@ static bool validate(const char *path, const char *json, bool is_array)
 static void usage(FILE *stream)
 {
     fprintf(stream,
-            "Usage: yaml2json [OPTION]...\n"
+            "Usage: devicesgen [OPTION]...\n"
             "\n"
             "Options:\n"
             "  -o, --output <file>\n"
