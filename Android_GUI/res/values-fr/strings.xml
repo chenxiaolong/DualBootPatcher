@@ -261,8 +261,6 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">mbtool doit être mis à jour pour profiter des fonctionnalités de partage de l\'application. S\'il vous plaît mettre à jour le disque virtuel.</string>
-  <!--Title for preference category for boot options-->
-  <string name="rom_settings_booting_title">Options de démarrage</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Mettre à jour le disque virtuel</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -288,6 +286,19 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Oblige la MAJ du disque virtuel</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <!--Title for the preference to install the Boot UI-->
+  <!--Title for the preference to update the Boot UI-->
+  <!--Title for the preference to uninstall the Boot UI-->
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -298,10 +309,15 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <string name="rom_settings_initial_screen_title">Ecran initial</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Premier écran à montrer lors de l\'ouverture de l\'application.</string>
+  <!--Title for the preference to use the dark theme-->
   <!--Title for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_title">Autoriser intentions de réception </string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Autoriser les applications tierces à envoyer des intentions à cette application pour effectuer des actions, comme la commutation de Rom et  de fichiers patchés.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <!--Description for the preference to set the number of parallel patching operations-->
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Partage d\'application individuelle</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -320,6 +336,11 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <string name="indiv_app_sharing_app_no_longer_shared">L\'appli \'%s\' n\'est plus partagée.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">Refusé l\'intention depuis une application tierce. Pour permettre à d\'autres applications d\'envoyer des intentions, activez l\'option dans les paramètres DualBootPatcher.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <!--Confirm dialog message shown when updating mbtool failed-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Chercher</string>
   <!--Word/phrase for None (used in eg. a list)-->
