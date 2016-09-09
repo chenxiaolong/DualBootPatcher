@@ -31,5 +31,5 @@ if(MBP_TOP_LEVEL_BUILD)
     )
 
     set(SIGNTOOL_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/signtool" PARENT_SCOPE)
-    set(YAML2JSON_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/yaml2json" PARENT_SCOPE)
+    set(DEVICESGEN_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/result/bin/devicesgen" PARENT_SCOPE)
 endif()

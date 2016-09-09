@@ -32,11 +32,10 @@ set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")
 
 add_custom_command(
     OUTPUT "${target_file}"
-    COMMAND "${YAML2JSON_COMMAND}"
+    COMMAND "${DEVICESGEN_COMMAND}"
         ${files}
         -o "${target_file}"
         #--styled
-        --flatten-root-array
     DEPENDS hosttools ${files}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Generating device defition JSON file"
@@ -50,7 +49,7 @@ install(
 )
 
 add_custom_target(
-    run_yaml2json
+    run_devicesgen
     ALL
     DEPENDS ${target_file}
 )
