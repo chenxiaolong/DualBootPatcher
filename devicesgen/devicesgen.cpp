@@ -211,8 +211,6 @@ static void usage(FILE *stream)
             "  -o, --output <file>\n"
             "                   Output file (outputs to stdout if omitted)\n"
             "  -h, --help       Display this help message\n"
-            "  --flatten-root-array\n"
-            "                   Flatten if root is array\n"
             "  --styled         Output in human-readable format\n");
 }
 
@@ -221,14 +219,12 @@ int main(int argc, char *argv[])
     int opt;
 
     enum Options {
-        OPT_FLATTEN_ROOT_ARRAY = 1000,
-        OPT_STYLED             = 1001,
+        OPT_STYLED             = 1000,
     };
 
     static const char short_options[] = "o:h";
 
     static struct option long_options[] = {
-        {"flatten-root-array", no_argument, 0, OPT_FLATTEN_ROOT_ARRAY},
         {"styled", no_argument, 0, OPT_STYLED},
         {"output", required_argument, 0, 'o'},
         {"help", no_argument, 0, 'h'},
@@ -238,16 +234,11 @@ int main(int argc, char *argv[])
     int long_index = 0;
 
     const char *output_file = nullptr;
-    bool flatten_root_array = false;
     bool styled = false;
 
     while ((opt = getopt_long(argc, argv, short_options,
                               long_options, &long_index)) != -1) {
         switch (opt) {
-        case OPT_FLATTEN_ROOT_ARRAY:
-            flatten_root_array = true;
-            break;
-
         case OPT_STYLED:
             styled = true;
             break;
@@ -282,7 +273,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            if (flatten_root_array && json_is_array(node)) {
+            if (json_is_array(node)) {
                 size_t index;
                 json_t *elem;
 

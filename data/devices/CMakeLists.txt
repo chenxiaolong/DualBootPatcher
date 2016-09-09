@@ -36,7 +36,6 @@ add_custom_command(
         ${files}
         -o "${target_file}"
         #--styled
-        --flatten-root-array
     DEPENDS hosttools ${files}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Generating device defition JSON file"
