@@ -37,6 +37,45 @@
       - fbdev
     theme: portrait_hdpi
 
+- name: Motorola Moto G 4G (2013)
+  id: peregrine
+  codenames:
+    - peregrine
+    - peregrine_umts
+    - peregrine_cdma
+    - xt1039
+    - xt1040
+    - xt1045
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p34
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p33
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p36
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p31
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p32
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_IGNORE_MAJOR_AXIS_0
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - overlay_msm_old
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Motorola Moto G (2014)
   id: titan
