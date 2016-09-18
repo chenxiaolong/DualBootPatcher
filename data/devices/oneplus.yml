@@ -43,6 +43,14 @@
       - /dev/block/platform/msm_sdcc.1/by-name/tz
       - /dev/block/mmcblk0p8
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 
 - name: OnePlus 2
   id: OnePlus2
