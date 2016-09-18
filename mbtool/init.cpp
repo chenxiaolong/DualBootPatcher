@@ -895,6 +895,7 @@ static bool extract_zip(const char *source, const char *target)
 static bool launch_boot_menu(bool has_encryption)
 {
     struct stat sb;
+    bool skip = false;
 
     // Boot UI must always run if the device is encrypted
     if (!has_encryption && stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
@@ -905,7 +906,7 @@ static bool launch_boot_menu(bool has_encryption)
 
         if (skip_rom == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
-            return true;
+            skip = true;
         } else {
             LOGW("Skip file is not for: %s", rom_id.c_str());
             LOGW("Not skipping boot UI");
@@ -916,6 +917,10 @@ static bool launch_boot_menu(bool has_encryption)
         LOGW("%s: Failed to remove file: %s",
              BOOT_UI_SKIP_PATH, strerror(errno));
         LOGW("Boot UI won't run again!");
+    }
+
+    if (skip) {
+        return true;
     }
 
     if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
