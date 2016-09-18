@@ -39,6 +39,13 @@ void addOnePlusDevices(std::vector<Device *> *devices)
     device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p28" });
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p7" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY });
+    device->twOptions()->supported = true;
+    device->twOptions()->graphicsBackends = { "fbdev" };
+    device->twOptions()->flags = Device::FLAG_TW_QCOM_RTC_FIX;
+    device->twOptions()->pixelFormat = Device::TwPixelFormat::RGB_565;
+    device->twOptions()->brightnessPath = "/sys/class/leds/lcd-backlight/brightness";
+    device->twOptions()->maxBrightness = 255;
+    device->twOptions()->defaultBrightness = 162;
     device->setExtraBlockDevs({ QCOM_ABOOT, "/dev/block/mmcblk0p5",
         QCOM_DBI, "/dev/block/mmcblk0p3",
         QCOM_LOGO, "/dev/block/mmcblk0p22",
