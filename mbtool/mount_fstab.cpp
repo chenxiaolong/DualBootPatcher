@@ -963,7 +963,14 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
             }
         } else {
             LOGE("Failed to mount external SD");
-            ret = false;
+            if (rom->system_source == Rom::Source::EXTERNAL_SD
+                    || rom->cache_source == Rom::Source::EXTERNAL_SD
+                    || rom->data_source == Rom::Source::EXTERNAL_SD) {
+                LOGE("Failing as ROM ID requires external SD");
+                ret = false;
+            } else {
+                LOGE("Ignoring as ROM ID does not require external SD");
+            }
         }
     }
 
