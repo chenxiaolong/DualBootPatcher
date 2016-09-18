@@ -27,6 +27,14 @@
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
 
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    theme: portrait_hdpi
+
 
 - name: Android One 2nd Gen - LAVA Pixelv1
   id: seedmtk
