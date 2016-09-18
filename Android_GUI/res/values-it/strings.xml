@@ -287,8 +287,6 @@ Continuare</string>
   <string name="a_s_settings_storage_permission_required">La configurazione della condivisione delle app non può essere salvata perchè l\'accesso alla memoria interna è stato negato. Per favore, garantisci l\'accesso per salvare la configurazione.</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
-  <!--Title for preference category for boot options-->
-  <string name="rom_settings_booting_title">Opzioni del kernel</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Aggiorna ramdisk</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -314,6 +312,19 @@ Continuare</string>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Aggiornamento ramdisk</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <!--Title for the preference to install the Boot UI-->
+  <!--Title for the preference to update the Boot UI-->
+  <!--Title for the preference to uninstall the Boot UI-->
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -324,10 +335,15 @@ Continuare</string>
   <string name="rom_settings_initial_screen_title">Schermata iniziale</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Schermata da visualizzare all\'avvio dell\'app.</string>
+  <!--Title for the preference to use the dark theme-->
   <!--Title for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_title">Permetti intent in entrata</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Permetti ad App di terzi di inviare intent per eseguire azioni, come ad esempio effettuare lo switch delle ROM o patchare file.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <!--Description for the preference to set the number of parallel patching operations-->
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -349,6 +365,11 @@ Continuare</string>
   <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">Negato intent da app di terze parti. Per ricevere intent dalle altre app, attiva l\'opzione nelle impostazioni del Patcher.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <!--Confirm dialog message shown when updating mbtool failed-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Cerca</string>
   <!--Word/phrase for None (used in eg. a list)-->

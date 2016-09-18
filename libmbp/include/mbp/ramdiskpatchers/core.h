@@ -46,7 +46,8 @@ public:
     bool addMbtool();
     bool addExfat();
     bool setUpInitWrapper();
-    bool addBlockDevProps();
+    bool removeBlockDevProps();
+    bool addDeviceJson();
 
 private:
     class Impl;

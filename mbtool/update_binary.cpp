@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -53,6 +54,7 @@ public:
     virtual std::string get_install_type() override;
     virtual std::unordered_map<std::string, std::string> get_properties() override;
     virtual ProceedState on_initialize() override;
+    virtual ProceedState on_set_up_chroot() override;
     virtual void on_cleanup(ProceedState ret) override;
 
 private:
@@ -194,6 +196,19 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
     return ProceedState::Continue;
 }
 
+RecoveryInstaller::ProceedState RecoveryInstaller::on_set_up_chroot()
+{
+    // Copy /etc/fstab
+    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+
+    // Copy /etc/recovery.fstab
+    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
+                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+
+    return ProceedState::Continue;
+}
+
 void RecoveryInstaller::on_cleanup(Installer::ProceedState ret)
 {
     (void) ret;
@@ -226,6 +241,12 @@ int update_binary_main(int argc, char *argv[])
     if (unshare(CLONE_NEWNS) < 0) {
         fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
         return EXIT_FAILURE;
+    }
+
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
     }
 
     // Make stdout unbuffered

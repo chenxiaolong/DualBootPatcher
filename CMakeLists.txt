@@ -21,15 +21,15 @@ set(MBP_SYSTEM_BUILD_TYPE "release"
 #                (not to be built manually)
 # - android-system: Build executables to be included in the distrbution
 #                   (not to be built manually)
-# - signtool: Builds only the code signing tool
-#             (not to be built manually)
+# - hosttools: Builds tools needed on the host when cross-compiling
+#              (not to be built manually)
 
 # Verify build target and type
 if(NOT ${MBP_BUILD_TARGET} STREQUAL desktop
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-app
         AND NOT ${MBP_BUILD_TARGET} STREQUAL android-system
-        AND NOT ${MBP_BUILD_TARGET} STREQUAL signtool)
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     message(FATAL_ERROR "Invalid build target: ${MBP_BUILD_TARGET}")
 endif()
 if(NOT ${MBP_BUILD_TYPE} STREQUAL release
@@ -45,11 +45,8 @@ endif()
 # Require at least Android NDK r11
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
-    if(ANDROID_NDK_RELEASE_NUM LESS 11000)
-        message(FATAL_ERROR "Only android-ndk r11 or newer is supported")
-    elseif(ANDROID_NDK_RELEASE_NUM GREATER 12000 OR
-           ANDROID_NDK_RELEASE_NUM EQUAL 12000)
-        message(FATAL_ERROR "android-ndk r12 is broken for compiling static executables")
+    if(ANDROID_NDK_RELEASE_NUM LESS 12000)
+        message(FATAL_ERROR "Only android-ndk r12 or newer is supported")
     endif()
 endif()
 
@@ -121,8 +118,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
-elseif(${MBP_BUILD_TARGET} STREQUAL signtool)
-    set(MBP_TARGET_CONFIG_FILE cmake/ConfigSignTool.cmake)
+elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
+    set(MBP_TARGET_CONFIG_FILE cmake/ConfigHostTools.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
 endif()
@@ -154,6 +151,7 @@ include(cmake/Dependencies.cmake)
 
 set(MBP_GLOBAL_INCLUDE_DIRS
     libmbcommon/include
+    libmbdevice/include
     libmblog/include
     libmbpio/include
     libmbp/include
@@ -164,8 +162,9 @@ set(MBP_GLOBAL_INCLUDE_DIRS
 
 include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
 
-# Main patcher
+add_subdirectory(hosttools)
 add_subdirectory(libmbcommon)
+add_subdirectory(libmbdevice)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
 add_subdirectory(libmbp)
@@ -184,7 +183,7 @@ add_subdirectory(bootimgtool)
 add_subdirectory(examples)
 add_subdirectory(utilities)
 add_subdirectory(signtool)
-add_subdirectory(signtool/wrapped)
+add_subdirectory(devicesgen)
 add_subdirectory(android)
 
 # Must go after signtool since it references SIGNTOOL_COMMAND

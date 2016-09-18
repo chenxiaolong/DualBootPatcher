@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
@@ -728,34 +729,31 @@ int GUIAction::switch_rom(const std::string& arg)
         // Call mbtool to switch ROMs
         gui_msg(Msg("switch_rom_switching_to")(arg));
 
-        std::unordered_map<std::string, std::string> props;
-        mb::util::file_get_all_properties("/default.prop", &props);
+        const char * const *boot_devs = mb_device_boot_block_devs(tw_device);
+        const char *block_dev = nullptr;
 
-        std::vector<std::string> boot_devs;
-        std::vector<std::string> base_dirs;
-
-        auto it = props.find("ro.patcher.blockdevs.boot");
-        if (it != props.end()) {
-            boot_devs = TWFunc::decode_list(it->second);
-        }
-
-        it = props.find("ro.patcher.blockdevs.base");
-        if (it != props.end()) {
-            base_dirs = TWFunc::decode_list(it->second);
-        }
-
-        std::string block_dev;
-
-        for (const std::string &path : boot_devs) {
-            if (mb::util::path_exists(path.c_str(), true)) {
-                block_dev = path;
-                break;
+        if (boot_devs) {
+            for (auto it = boot_devs; *it; ++it) {
+                if (mb::util::path_exists(*it, true)) {
+                    block_dev = *it;
+                    break;
+                }
             }
         }
 
-        if (block_dev.empty()) {
+        if (!block_dev) {
             gui_msg(Msg(msg::kError, "switch_rom_unknown_boot_partition"));
             ret = 1;
+        }
+
+        std::vector<std::string> base_dirs;
+        const char * const *c_base_dirs =
+                mb_device_block_dev_base_dirs(tw_device);
+
+        if (c_base_dirs) {
+            for (auto it = c_base_dirs; *it; ++it) {
+                base_dirs.push_back(*it);
+            }
         }
 
         SwitchRomResult result;

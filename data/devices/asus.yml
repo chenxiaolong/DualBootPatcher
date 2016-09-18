@@ -1,0 +1,32 @@
+---
+- name: ASUS ZenFone 2
+  id: Z00A
+  codenames:
+    - Z00A
+    - Z008
+  architecture: x86
+
+  block_devs:
+    base_dirs:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name'
+      - /dev/block/by-name
+    system:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/system'
+      - /dev/block/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/cache'
+      - /dev/block/by-name/cache
+      - /dev/block/mmcblk0p15
+    data:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/data'
+      - /dev/block/by-name/data
+      - /dev/block/mmcblk0p19
+    boot:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/boot'
+      - /dev/block/by-name/boot
+      - /dev/block/mmcblk0p1
+    recovery:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/recovery'
+      - /dev/block/by-name/recovery
+      - /dev/block/mmcblk0p2

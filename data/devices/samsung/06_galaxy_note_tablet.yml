@@ -1,0 +1,149 @@
+---
+- name: Samsung Galaxy Note 8.0 (Wifi/3G)
+  id: kona
+  codenames:
+    # Wifi variant
+    - konawifi
+    - konawifixx
+    # 3G variant
+    - kona3g
+    - kona3gxx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p9
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p8
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p12
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p6
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+      - /dev/block/mmcblk0p7
+
+
+- name: Samsung Galaxy Note 10.1
+  id: p4noterf
+  codenames:
+    - p4noterf
+    - p4noterfxx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p9
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p8
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p12
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p6
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+
+
+- name: Samsung Galaxy Note 10.1 Wifi (2014 Edition)
+  id: lt03wifi
+  codenames:
+    - lt03wifi
+    - lt03wifiue
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy Note 10.1 3G (2014 Edition)
+  id: lt033g
+  codenames:
+    - lt033g
+    - lt033gxx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy Note 10.1 LTE (2014 Edition)
+  id: lt03lte
+  codenames:
+    - lt03lte
+    - lt03ltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15

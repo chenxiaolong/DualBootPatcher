@@ -61,6 +61,7 @@ set(MBTOOL_BASE_SOURCES
     daemon.cpp
     daemon_v3.cpp
     decrypt.cpp
+    file_contexts.cpp
     init.cpp
     main.cpp
     miniadbd.cpp
@@ -163,6 +164,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             mbtool mbtool_recovery
             PROPERTIES
             LINK_FLAGS "-static"
+            LINK_SEARCH_START_STATIC ON
         )
     endif()
 
@@ -171,6 +173,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         miniadbd-static
         mbutil-static
         mbsign-static
+        mbdevice-static
         mblog-static
         mbcommon-static
         minizip
@@ -186,6 +189,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbp-static
         mbpio-static
+        mbdevice-static
         mbcommon-static
         minizip
         ${MBP_JANSSON_LIBRARIES}

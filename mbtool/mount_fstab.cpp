@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/command.h"
@@ -143,34 +144,36 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
  * \brief Get list of generic /system fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_system_entries()
+static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_SYSTEM_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/system";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_RDONLY;
-        result.back().fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/system";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_RDONLY;
-        result.back().fs_options = "background_gc=off,nodiscard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_system_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            // ext4 entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/system";
+            result.back().fs_type = "ext4";
+            result.back().flags = MS_RDONLY;
+            result.back().fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+            // f2fs entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/system";
+            result.back().fs_type = "f2fs";
+            result.back().flags = MS_RDONLY;
+            result.back().fs_options = "background_gc=off,nodiscard";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -180,34 +183,36 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
  * \brief Get list of generic /cache fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_cache_entries()
+static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_CACHE_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/cache";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/cache";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "background_gc=on,discard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_cache_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            // ext4 entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/cache";
+            result.back().fs_type = "ext4";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+            // f2fs entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/cache";
+            result.back().fs_type = "f2fs";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "background_gc=on,discard";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -217,34 +222,36 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
  * \brief Get list of generic /data fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_data_entries()
+static std::vector<util::fstab_rec> generic_fstab_data_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_DATA_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/data";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/data";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "background_gc=on,discard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_data_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            // ext4 entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/data";
+            result.back().fs_type = "ext4";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+            // f2fs entry
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/data";
+            result.back().fs_type = "f2fs";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "background_gc=on,discard";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -785,8 +792,8 @@ struct FstabRecs
     std::vector<util::fstab_rec> extsd;
 };
 
-bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
-                   FstabRecs *recs)
+bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                   Device *device, int flags, FstabRecs *recs)
 {
     std::vector<util::fstab_rec> fstab;
 
@@ -846,21 +853,21 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
     if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
         if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGW("No /system fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_system_entries();
+            auto entries = generic_fstab_system_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->system.push_back(std::move(rec));
             }
         }
         if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_cache_entries();
+            auto entries = generic_fstab_cache_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->cache.push_back(std::move(rec));
             }
         }
         if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGW("No /data fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_data_entries();
+            auto entries = generic_fstab_data_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->data.push_back(std::move(rec));
             }
@@ -899,12 +906,13 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
  *
  * \return Whether all of the
  */
-bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
+bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                 Device *device, int flags)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
 
-    if (!process_fstab(path, rom, flags, &recs)) {
+    if (!process_fstab(path, rom, device, flags, &recs)) {
         return false;
     }
 
@@ -955,7 +963,14 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
             }
         } else {
             LOGE("Failed to mount external SD");
-            ret = false;
+            if (rom->system_source == Rom::Source::EXTERNAL_SD
+                    || rom->cache_source == Rom::Source::EXTERNAL_SD
+                    || rom->data_source == Rom::Source::EXTERNAL_SD) {
+                LOGE("Failing as ROM ID requires external SD");
+                ret = false;
+            } else {
+                LOGE("Ignoring as ROM ID does not require external SD");
+            }
         }
     }
 

@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -244,9 +245,17 @@ static bool run_daemon()
         if (child_pid < 0) {
             LOGE("Failed to fork: %s", strerror(errno));
         } else if (child_pid == 0) {
-            if (!no_unshare && unshare(CLONE_NEWNS) < 0) {
-                LOGE("unshare() failed: %s", strerror(errno));
-                _exit(127);
+            if (!no_unshare) {
+                if (unshare(CLONE_NEWNS) < 0) {
+                    LOGE("unshare() failed: %s", strerror(errno));
+                    _exit(127);
+                }
+
+                if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+                    LOGE("Failed to set private mount propagation: %s",
+                         strerror(errno));
+                    _exit(127);
+                }
             }
 
             // Change the process name so --replace doesn't kill existing

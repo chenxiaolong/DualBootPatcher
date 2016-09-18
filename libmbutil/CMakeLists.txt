@@ -38,6 +38,8 @@ set(MBUTIL_SOURCES
     src/string.cpp
     src/time.cpp
     src/vibrate.cpp
+    src/external/system_properties.cpp
+    src/external/system_properties_compat.c
     external/android_reboot.c
     external/mntent.c
 )

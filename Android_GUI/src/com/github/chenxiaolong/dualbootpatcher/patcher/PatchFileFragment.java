@@ -65,7 +65,7 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
         .PatchFileItemClickListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
@@ -78,6 +78,7 @@ import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1081,21 +1082,28 @@ public class PatchFileFragment extends Fragment implements
                 metadata.uri = params[i];
                 metadata.mimeType = mCR.getType(metadata.uri);
 
-                Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
-                try {
-                    if (cursor != null && cursor.moveToFirst()) {
-                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if ("content".equals(metadata.uri.getScheme())) {
+                    Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
+                    try {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
 
-                        metadata.displayName = cursor.getString(nameIndex);
-                        if (cursor.isNull(sizeIndex)) {
-                            metadata.size = -1;
-                        } else {
-                            metadata.size = cursor.getLong(sizeIndex);
+                            metadata.displayName = cursor.getString(nameIndex);
+                            if (cursor.isNull(sizeIndex)) {
+                                metadata.size = -1;
+                            } else {
+                                metadata.size = cursor.getLong(sizeIndex);
+                            }
                         }
+                    } finally {
+                        IOUtils.closeQuietly(cursor);
                     }
-                } finally {
-                    IOUtils.closeQuietly(cursor);
+                } else if ("file".equals(metadata.uri.getScheme())) {
+                    metadata.displayName = metadata.uri.getLastPathSegment();
+                    metadata.size = new File(metadata.uri.getPath()).length();
+                } else {
+                    throw new IllegalStateException("Cannot handle URI: " + metadata.uri);
                 }
             }
 

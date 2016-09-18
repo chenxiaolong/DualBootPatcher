@@ -39,10 +39,7 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServi
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherService;
@@ -58,6 +55,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     private static final String PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog";
     private static final String CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog";
 
+    private static final String EXTRA_TASK_ID_CHECK_SUPPORTED = "task_id_check_supported";
     private static final String EXTRA_TASK_ID_GET_VERSION = "task_id_get_version";
     private static final String EXTRA_TASK_ID_INSTALL = "task_id_install";
     private static final String EXTRA_TASK_ID_UNINSTALL = "task_id_uninstall";
@@ -72,6 +70,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     private Preference mParallelPatchingPref;
     private Preference mUseDarkThemePref;
 
+    private int mTaskIdCheckSupported = -1;
     private int mTaskIdGetVersion = -1;
     private int mTaskIdInstall = -1;
     private int mTaskIdUninstall = -1;
@@ -117,6 +116,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         mUseDarkThemePref.setOnPreferenceChangeListener(this);
 
         if (savedInstanceState != null) {
+            mTaskIdCheckSupported = savedInstanceState.getInt(EXTRA_TASK_ID_CHECK_SUPPORTED);
             mTaskIdGetVersion = savedInstanceState.getInt(EXTRA_TASK_ID_GET_VERSION);
             mTaskIdInstall = savedInstanceState.getInt(EXTRA_TASK_ID_INSTALL);
             mTaskIdUninstall = savedInstanceState.getInt(EXTRA_TASK_ID_UNINSTALL);
@@ -126,6 +126,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_TASK_ID_CHECK_SUPPORTED, mTaskIdCheckSupported);
         outState.putInt(EXTRA_TASK_ID_GET_VERSION, mTaskIdGetVersion);
         outState.putInt(EXTRA_TASK_ID_INSTALL, mTaskIdInstall);
         outState.putInt(EXTRA_TASK_ID_UNINSTALL, mTaskIdUninstall);
@@ -146,6 +147,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         super.onStop();
 
         if (getActivity().isFinishing()) {
+            if (mTaskIdCheckSupported >= 0) {
+                removeCachedTaskId(mTaskIdCheckSupported);
+                mTaskIdCheckSupported = -1;
+            }
             if (mTaskIdGetVersion >= 0) {
                 removeCachedTaskId(mTaskIdGetVersion);
                 mTaskIdGetVersion = -1;
@@ -154,6 +159,9 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
+            if (mTaskIdCheckSupported >= 0) {
+                mService.removeCallback(mTaskIdCheckSupported, mCallback);
+            }
             if (mTaskIdGetVersion >= 0) {
                 mService.removeCallback(mTaskIdGetVersion, mCallback);
             }
@@ -180,9 +188,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         }
         mTaskIdsToRemove.clear();
 
-        if (mTaskIdGetVersion < 0) {
-            getVersionIfSupported();
+        if (mTaskIdCheckSupported < 0) {
+            checkSupported();
         } else {
+            mService.addCallback(mTaskIdCheckSupported, mCallback);
+        }
+
+        if (mTaskIdGetVersion >= 0) {
             mService.addCallback(mTaskIdGetVersion, mCallback);
         }
 
@@ -208,15 +220,15 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         }
     }
 
-    private void getVersionIfSupported() {
-        boolean supported = false;
+    private void checkSupported() {
+        mTaskIdCheckSupported = mService.bootUIAction(BootUIAction.CHECK_SUPPORTED);
+        mService.addCallback(mTaskIdCheckSupported, mCallback);
+        mService.enqueueTaskId(mTaskIdCheckSupported);
+    }
 
-        PatcherConfig pc = new PatcherConfig();
-        Device device = PatcherUtils.getCurrentDevice(getActivity(), pc);
-        if (device != null && device.isBootUISupported()) {
-            supported = true;
-        }
-        pc.destroy();
+    private void onCheckedSupported(boolean supported) {
+        removeCachedTaskId(mTaskIdCheckSupported);
+        mTaskIdCheckSupported = -1;
 
         if (supported) {
             if (mTaskIdGetVersion < 0) {
@@ -288,7 +300,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             d.dismiss();
         }
 
-        getVersionIfSupported();
+        checkSupported();
 
         Toast.makeText(getActivity(),
                 success ? R.string.rom_settings_boot_ui_install_success :
@@ -312,7 +324,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             d.dismiss();
         }
 
-        getVersionIfSupported();
+        checkSupported();
 
         Toast.makeText(getActivity(),
                 success ? R.string.rom_settings_boot_ui_uninstall_success :
@@ -375,6 +387,18 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     }
 
     private class ServiceEventCallback implements BootUIActionTaskListener {
+        @Override
+        public void onBootUICheckedSupported(int taskId, final boolean supported) {
+            if (taskId == mTaskIdCheckSupported) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onCheckedSupported(supported);
+                    }
+                });
+            }
+        }
+
         @Override
         public void onBootUIHaveVersion(int taskId, final Version version) {
             if (taskId == mTaskIdGetVersion) {

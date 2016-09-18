@@ -1,0 +1,81 @@
+---
+- name: Samsung Galaxy Grand 2 (Qcom)
+  id: ms013g
+  codenames:
+    - ms013g
+    - ms01lte
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p22
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p23
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy Star
+  id: mint
+  codenames:
+    - mint
+    - mint2g
+  architecture: armeabi-v7a
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/mmcblk0p6
+
+
+- name: Samsung Galaxy Alpha (Exynos)
+  id: slte
+  codenames:
+    # G850F
+    - slte
+    - sltexx
+    # G850S/K/L
+    - slteskt
+    - sltektt
+    - sltelgu
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/15540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/15540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/15540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
+      - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO

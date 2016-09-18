@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -387,6 +387,38 @@ std::vector<std::string> CpioFile::filenames() const
     }
 
     return list;
+}
+
+bool CpioFile::isSymlink(const std::string &name) const
+{
+    for (auto const &p : m_impl->files) {
+        if (name == archive_entry_pathname(p.first)) {
+            return archive_entry_filetype(p.first) == AE_IFLNK;
+        }
+    }
+
+    m_impl->error = ErrorCode::CpioFileNotExistError;
+    return false;
+}
+
+bool CpioFile::symlinkPath(const std::string &name, std::string *out) const
+{
+    for (auto const &p : m_impl->files) {
+        if (name == archive_entry_pathname(p.first)) {
+            if (archive_entry_filetype(p.first) == AE_IFLNK) {
+                const char *path = archive_entry_symlink(p.first);
+                if (path) {
+                    *out = path;
+                    return true;
+                }
+            }
+            m_impl->error = ErrorCode::ArchiveReadHeaderError;
+            return false;
+        }
+    }
+
+    m_impl->error = ErrorCode::CpioFileNotExistError;
+    return false;
 }
 
 /*!
