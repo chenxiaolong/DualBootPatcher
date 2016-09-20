@@ -835,7 +835,7 @@ static bool flash_zip()
     }
 
     // Unmount system
-    if (!umount_system()) {
+    if (mb::util::is_mounted("/system") && !umount_system()) {
         ui_print("Failed to unmount /system");
         return false;
     }
