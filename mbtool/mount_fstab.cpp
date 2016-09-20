@@ -828,7 +828,8 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
             LOGD("-> /data entry");
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
-        } else if ((it->vold_args.find("voldmanaged=sdcard0") != std::string::npos
+        } else if (it->vold_args.find("emmc@intsd") == std::string::npos
+                && (it->vold_args.find("voldmanaged=sdcard0") != std::string::npos
                 || it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
