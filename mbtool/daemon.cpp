@@ -64,6 +64,7 @@ static bool send_ok_to_pipe = false;
 static bool sigstop_when_ready = false;
 static bool allow_root_client = false;
 static bool log_to_kmsg = false;
+static bool log_to_stdio = false;
 static bool no_unshare = false;
 
 static autoclose::file log_fp(nullptr, std::fclose);
@@ -332,12 +333,14 @@ static bool daemon_init()
 
     umask(0);
 
-    if (!redirect_stdio_to_dev_null()) {
+    if (!log_to_stdio && !redirect_stdio_to_dev_null()) {
         return false;
     }
 
     // Set up logging
-    if (log_to_kmsg) {
+    if (log_to_stdio) {
+        // Default; do nothing
+    } else if (log_to_kmsg) {
         log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
         if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
@@ -488,6 +491,7 @@ static void daemon_usage(bool error)
             "                   Send SIGSTOP to daemon process when it has been\n"
             "                   fully initialized\n"
             "  --log-to-kmsg    Send log output to kernel log instead of file\n"
+            "  --log-to-stdio   Send log output to stdout/stderr\n"
             "  --no-unshare     Don't unshare mount namespace\n");
 }
 
@@ -503,7 +507,8 @@ int daemon_main(int argc, char *argv[])
         OPT_NO_PATCH_SEPOLICY = 1001,
         OPT_SIGSTOP_WHEN_READY = 1002,
         OPT_LOG_TO_KMSG = 1003,
-        OPT_NO_UNSHARE = 1004,
+        OPT_LOG_TO_STDIO = 1004,
+        OPT_NO_UNSHARE = 1005,
     };
 
     static struct option long_options[] = {
@@ -514,6 +519,7 @@ int daemon_main(int argc, char *argv[])
         {"no-patch-sepolicy",  no_argument, 0, OPT_NO_PATCH_SEPOLICY},
         {"sigstop-when-ready", no_argument, 0, OPT_SIGSTOP_WHEN_READY},
         {"log-to-kmsg",        no_argument, 0, OPT_LOG_TO_KMSG},
+        {"log-to-stdio",       no_argument, 0, OPT_LOG_TO_STDIO},
         {"no-unshare",         no_argument, 0, OPT_NO_UNSHARE},
         {0, 0, 0, 0}
     };
@@ -548,6 +554,10 @@ int daemon_main(int argc, char *argv[])
 
         case OPT_LOG_TO_KMSG:
             log_to_kmsg = true;
+            break;
+
+        case OPT_LOG_TO_STDIO:
+            log_to_stdio = true;
             break;
 
         case OPT_NO_UNSHARE:
