@@ -96,6 +96,33 @@ void addLenovoDevices(std::vector<Device *> *devices)
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
         "/dev/block/mmcblk0p10" });
     devices->push_back(device);
+
+
+   // Lenovo Vibe P1 and P1 Turbo
+   device = new Device();
+    device->setId("P1");
+    device->setCodenames({ "P1a42", "passion_row", "P1a41" });
+    device->setName("Lenovo Vibe P1 / P1 Turbo");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR, BOOTDEVICE_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, BOOTDEVICE_SYSTEM,
+        "/dev/block/mmcblk0p22" });
+    device->setCacheBlockDevs({ QCOM_CACHE, BOOTDEVICE_CACHE,
+        "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, BOOTDEVICE_USERDATA,
+        "/dev/block/mmcblk0p23" });
+    device->setBootBlockDevs({ QCOM_BOOT, BOOTDEVICE_BOOT,
+        "/dev/block/mmcblk0p9" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, BOOTDEVICE_RECOVERY,
+        "/dev/block/mmcblk0p10" });
+    //device->twOptions()->supported = true;
+    //device->twOptions()->graphicsBackends = { "fbdev" };
+    //device->twOptions()->flags = Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH;
+    //device->twOptions()->pixelFormat = Device::TwPixelFormat::RGBX_8888;
+    //device->twOptions()->maxBrightness = 255;
+    //device->twOptions()->defaultBrightness = 162;
+    //device->twOptions()->cpuTempPath = "/sys/class/thermal/thermal_zone1/temp";
+    devices->push_back(device);
+
 }
 
 }
