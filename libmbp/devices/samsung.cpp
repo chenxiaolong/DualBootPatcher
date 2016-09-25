@@ -850,7 +850,19 @@ static void addOtherGalaxySeries(std::vector<Device *> *devices)
     device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
     device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
     devices->push_back(device);
-
+    
+    //Samsung Galaxy Star Plus|Pro
+    device = new Device();
+    device->setId("logan2g");
+    device->setCodenames({ "logan2g", "logan2gxx"});
+    device->setName("Samsung Galaxy Star Plus|Pro");
+    device->setSystemBlockDevs({ "/dev/block/mmcblk0p9" });
+    device->setCacheBlockDevs({ "/dev/block/mmcblk0p8" });
+    device->setDataBlockDevs({ "/dev/block/mmcblk0p12" });
+    device->setBootBlockDevs({ "/dev/block/mmcblk0p5" });
+    device->setRecoveryBlockDevs({ "/dev/block/mmcblk0p6" });
+    devices->push_back(device);
+    
     // Samsung Galaxy Alpha (Exynos)
     device = new Device();
     device->setId("slte");
