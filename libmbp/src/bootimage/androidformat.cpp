@@ -27,6 +27,8 @@
 #include "mbp/private/stringutils.h"
 #include "external/sha.h"
 
+#define SAMSUNG_SEANDROID_MAGIC         "SEANDROIDENFORCE"
+
 namespace mbp
 {
 
@@ -270,6 +272,9 @@ bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
         paddingSize = skipPadding(mI10e->dtImage.size(), hdr.page_size);
         data.insert(data.end(), paddingSize, 0);
     }
+
+    data.insert(data.end(), SAMSUNG_SEANDROID_MAGIC,
+                SAMSUNG_SEANDROID_MAGIC + strlen(SAMSUNG_SEANDROID_MAGIC));
 
     dataOut->swap(data);
     return true;
