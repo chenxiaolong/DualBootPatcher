@@ -874,6 +874,21 @@ static void addOtherGalaxySeries(std::vector<Device *> *devices)
     device->setExtraBlockDevs({ DWMMC0_15540000_RADIO,
         DWMMC0_15540000_CDMA_RADIO });
     devices->push_back(device);
+    
+    
+    //Samsung Galaxy Core 2
+    device = new Device();
+    device->setId("kanas");
+    device->setCodenames({ "kanas3gnfcxx, kanas3gnfc" });
+    device->setName("Samsung Galaxy Core 2");
+    device->setBlockDevBaseDirs({ DWMMC_BASE_DIR });
+    device->setSystemBlockDevs({ DWMMC_SYSTEM, "/dev/block/mmcblk0p20" });
+    device->setCacheBlockDevs({ DWMMC_CACHE, "/dev/block/mmcblk0p19" });
+    device->setDataBlockDevs({ DWMMC_USERDATA, "/dev/block/mmcblk0p22" });
+    device->setBootBlockDevs({ DWMMC_BOOT, "/dev/block/platform/sprd-sdhci.3/by-name/KERNEL" });
+    device->setRecoveryBlockDevs({ DWMMC_RECOVERY, "/dev/block/platform/sprd-sdhci.3/by-name/RECOVERY" });
+    device->setExtraBlockDevs({ DWMMC_RADIO });
+    devices->push_back(device);
 }
 
 void addSamsungDevices(std::vector<Device *> *devices)
