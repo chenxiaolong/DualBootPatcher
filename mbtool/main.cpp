@@ -33,6 +33,7 @@
 #include "utilities.h"
 #else
 #include "appsync.h"
+#include "auditd.h"
 #include "daemon.h"
 #include "decrypt.h"
 #include "file_contexts.h"
@@ -76,6 +77,7 @@ struct tool tools[] = {
 #else
     { "adbd", mb::miniadbd_main },
     { "appsync", mb::appsync_main },
+    { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
     { "decrypt", mb::decrypt_main },
     { "file_contexts", mb::file_contexts_main },
