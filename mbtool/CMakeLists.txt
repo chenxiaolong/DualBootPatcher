@@ -58,6 +58,7 @@ set(MINIADBD_SOURCES
 set(MBTOOL_BASE_SOURCES
     appsync.cpp
     appsyncmanager.cpp
+    auditd.cpp
     daemon.cpp
     daemon_v3.cpp
     decrypt.cpp
@@ -77,6 +78,7 @@ set(MBTOOL_BASE_SOURCES
     uevent_dump.cpp
     wipe.cpp
     external/legacy_property_service.cpp
+    external/audit/libaudit.cpp
     external/property_service.cpp
     initwrapper/cutils/uevent.cpp
     initwrapper/devices.cpp
@@ -93,6 +95,15 @@ set(MBTOOL_RECOVERY_SOURCES
     update_binary.cpp
     update_binary_tool.cpp
     utilities.cpp
+)
+
+set_source_files_properties(
+    miniadbd.cpp
+    external/audit/libaudit.h
+    external/audit/libaudit.cpp
+    external/property_service.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-gnu-statement-expression -Wno-zero-length-array"
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -136,6 +147,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         miniadbd-static
         PRIVATE
         -Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter
+        -Wno-gnu-statement-expression
     )
 
     set_target_properties(
