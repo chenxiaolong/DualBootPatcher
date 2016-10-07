@@ -17,7 +17,7 @@ set(files
     pantech.yml
     samsung/00_galaxy_s.yml
     samsung/01_galaxy_note.yml
-    samsung/02_galaxy_j.yml
+    samsung/02_galaxy_a_j.yml
     samsung/03_galaxy_ace.yml
     samsung/04_galaxy_mega.yml
     samsung/05_galaxy_tab_tablet.yml
