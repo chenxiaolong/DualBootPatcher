@@ -7,6 +7,7 @@ set(files
     asus.yml
     dexp.yml
     google.yml
+    homtom.yml
     huawei.yml
     jiayu.yml
     lenovo.yml
