@@ -55,6 +55,33 @@ void addHuaweiDevices(std::vector<Device *> *devices)
     device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
     device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
     devices->push_back(device);
+    
+    // Huawei Y635 LTE
+    device = new Device();
+    device->setId("hwY635");
+    device->setCodenames({ "hwY635", "Y635-L01", "Y635-L02", "Y635-L03", "Y635-L11",
+        "Y635-L21", "hwy635" });
+    device->setName("Huawei Y635 LTE");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
+    devices->push_back(device);
+    
+    // Huawei Y550
+    device = new Device();
+    device->setId("Y550");
+    device->setCodenames({ "y550", "Y550", "Y550-L01", "Y550-L02", "Y550-L03" });
+    device->setName("Huawei Y550");
+    device->setBlockDevBaseDirs({ QCOM_BASE_DIR });
+    device->setSystemBlockDevs({ QCOM_SYSTEM, "/dev/block/mmcblk0p23" });
+    device->setCacheBlockDevs({ QCOM_CACHE, "/dev/block/mmcblk0p21" });
+    device->setDataBlockDevs({ QCOM_USERDATA, "/dev/block/mmcblk0p24" });
+    device->setBootBlockDevs({ QCOM_BOOT, "/dev/block/mmcblk0p18" });
+    device->setRecoveryBlockDevs({ QCOM_RECOVERY, "/dev/block/mmcblk0p19" });
+    devices->push_back(device);
 }
 
 }
