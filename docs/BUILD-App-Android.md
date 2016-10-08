@@ -43,7 +43,7 @@ In case you have not cloned this repository using the ```git clone --recursive``
 
    ```sh
    mkdir build && cd build
-   cmake .. \
+   cmake <DualBootPatcher path> \
        -DMBP_BUILD_TARGET=android \
        -DMBP_BUILD_TYPE=release \
        -DMBP_SIGN_CONFIG_PATH=<signing config path>
@@ -56,7 +56,7 @@ In case you have not cloned this repository using the ```git clone --recursive``
 
    ```sh
    mkdir build && cd build
-   cmake .. \
+   cmake <DualBootPatcher path> \
        -DMBP_BUILD_TARGET=android \
        -DMBP_BUILD_TYPE=debug
    make
