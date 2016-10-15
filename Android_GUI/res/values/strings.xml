@@ -279,6 +279,11 @@
     <!-- ROM details item value shown when calculating the directory or image sizes -->
     <string name="rom_details_info_calculating">Calculating…</string>
 
+    <!-- Backup ROM activity title -->
+    <string name="br_backup_title">Backup ROM</string>
+    <!-- Restore ROM activity title -->
+    <string name="br_restore_title">Restore ROM</string>
+
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">The patcher cannot patch files without read
         and write access to the internal storage. Please grant storage permissions to be able to

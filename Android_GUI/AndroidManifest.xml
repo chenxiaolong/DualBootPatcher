@@ -70,6 +70,9 @@
             android:label="@string/zip_flashing_title"
             android:parentActivityName=".switcher.ZipFlashingActivity" />
         <activity
+            android:name=".switcher.BackupRestoreOutputActivity"
+            android:parentActivityName=".switcher.RomDetailActivity" />
+        <activity
             android:name=".patcher.AutomatedPatcherActivity"
             android:excludeFromRecents="true"
             android:label="@string/title_patch_zip">
