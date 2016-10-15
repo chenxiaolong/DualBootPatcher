@@ -284,6 +284,30 @@
     <!-- Restore ROM activity title -->
     <string name="br_restore_title">Restore ROM</string>
 
+    <!-- Backup targets dialog description -->
+    <string name="br_backup_targets_dialog_desc">Select targets that should be backed up.</string>
+    <!-- Restore targets dialog description -->
+    <string name="br_restore_targets_dialog_desc">Select targets that should be restored.</string>
+
+    <!-- Backup/restore target for ROM's /system files -->
+    <string name="br_target_system">System</string>
+    <!-- Backup/restore target for ROM's /cache files -->
+    <string name="br_target_cache">Cache</string>
+    <!-- Backup/restore target for ROM's /data files -->
+    <string name="br_target_data">Data</string>
+    <!-- Backup/restore target for ROM's boot image -->
+    <string name="br_target_boot">Boot image</string>
+    <!-- Backup/restore target for ROM's multiboot configuration files -->
+    <string name="br_target_config">MultiBoot configs</string>
+    <!-- Toast message shown if no backup/restore targets are selected -->
+    <string name="br_no_target_selected">No backup/restore targets selected.</string>
+
+    <!-- Backup name input dialog description -->
+    <string name="br_name_dialog_desc">Enter a name for the backup. It cannot contain the forward
+        slash (\"/\") or be \".\" or \"..\".</string>
+    <!-- Backup name input field hint for backup name dialog -->
+    <string name="br_name_dialog_hint">Enter backup name…</string>
+
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">The patcher cannot patch files without read
         and write access to the internal storage. Please grant storage permissions to be able to
