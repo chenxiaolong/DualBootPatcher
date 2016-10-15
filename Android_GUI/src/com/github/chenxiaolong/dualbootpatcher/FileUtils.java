@@ -73,7 +73,12 @@ public class FileUtils {
             // As of AOSP 4.4.2 in ExternalStorageProvider.java
             final String ROOT_ID_PRIMARY_EMULATED = "primary";
 
-            String[] split = DocumentsContract.getDocumentId(uri).split(":");
+            String[] split;
+            if (isUriForDocumentTree(uri)) {
+                split = DocumentsContract.getTreeDocumentId(uri).split(":");
+            } else {
+                split = DocumentsContract.getDocumentId(uri).split(":");
+            }
 
             String volId;
             for (Object vol : vols) {
