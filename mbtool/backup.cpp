@@ -824,10 +824,10 @@ static bool ensure_partitions_mounted(void)
 static bool is_valid_backup_name(const std::string &name)
 {
     // No empty strings, hidden paths, '..', or directory separators
-    return !name.empty()
-            && name[0] != '.'
-            && name.find("..") == std::string::npos
-            && name.find('/') == std::string::npos;
+    return !name.empty()                            // Must be non-empty
+            && name.find('/') == std::string::npos  // and contain no slashes
+            && name != "."                          // and not current directory
+            && name != "..";                        // and not parent directory
 }
 
 static void backup_usage(FILE *stream)
