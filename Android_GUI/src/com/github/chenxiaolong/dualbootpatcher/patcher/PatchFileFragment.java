@@ -694,7 +694,7 @@ public class PatchFileFragment extends Fragment implements
      * @see {@link #onSelectedInputUri(Uri)}
      */
     private void selectInputUri() {
-        Intent intent = FileUtils.getFileOpenIntent(getActivity());
+        Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
         startActivityForResult(intent, ACTIVITY_REQUEST_INPUT_FILE);
     }
 
@@ -732,7 +732,7 @@ public class PatchFileFragment extends Fragment implements
             sb.append(extension);
         }
         String desiredName = sb.toString();
-        Intent intent = FileUtils.getFileSaveIntent(getActivity(), desiredName);
+        Intent intent = FileUtils.getFileSaveIntent(getActivity(), "*/*", desiredName);
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
     }
 

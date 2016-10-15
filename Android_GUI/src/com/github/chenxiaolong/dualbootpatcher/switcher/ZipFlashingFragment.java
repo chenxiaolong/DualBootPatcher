@@ -186,7 +186,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             @Override
             public void onClick(View view) {
                 // Show file chooser
-                Intent intent = FileUtils.getFileOpenIntent(getActivity());
+                Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
                 startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
             }
         });
