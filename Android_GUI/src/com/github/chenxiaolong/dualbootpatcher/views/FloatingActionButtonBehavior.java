@@ -17,13 +17,13 @@
 
 package com.github.chenxiaolong.dualbootpatcher.views;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
-
 import android.content.Context;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar.SnackbarLayout;
 import android.util.AttributeSet;
 import android.view.View;
+
+import com.github.clans.fab.FloatingActionButton;
 
 // Based on https://github.com/ggajews/coordinatorlayoutwithfabdemo
 public class FloatingActionButtonBehavior extends CoordinatorLayout.Behavior<FloatingActionButton> {

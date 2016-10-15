@@ -46,7 +46,6 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.getbase.floatingactionbutton.AddFloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -74,6 +73,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.Ve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+import com.github.clans.fab.FloatingActionButton;
 
 import org.apache.commons.io.IOUtils;
 
@@ -180,8 +180,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         cardListView.setLayoutManager(llm);
 
-        AddFloatingActionButton fabFlashZip = (AddFloatingActionButton) getActivity()
-                .findViewById(R.id.fab_add_zip);
+        FloatingActionButton fabFlashZip =
+                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_item);
         fabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -36,15 +36,15 @@
         android:layout_centerInParent="true"
         android:indeterminate="true" />
 
-    <com.getbase.floatingactionbutton.AddFloatingActionButton
-        android:id="@+id/fab_add_zip"
+    <com.github.clans.fab.FloatingActionButton
+        android:id="@+id/fab_add_item"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_marginBottom="@dimen/fab_margin_bottom"
         android:layout_marginEnd="@dimen/fab_margin_end"
+        android:src="@drawable/ic_plus_white_24dp"
         fab:fab_colorNormal="@color/fab_pink"
-        fab:fab_colorPressed="@color/fab_pink_pressed"
-        fab:fab_plusIconColor="@color/fab_pink_plus" />
+        fab:fab_colorPressed="@color/fab_pink_pressed" />
 </RelativeLayout>
