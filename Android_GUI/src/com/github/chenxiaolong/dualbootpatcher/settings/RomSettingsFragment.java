@@ -17,11 +17,13 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -33,6 +35,8 @@ import android.preference.PreferenceFragment;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
+import com.github.chenxiaolong.dualbootpatcher.Constants;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainApplication;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
@@ -60,11 +64,15 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     private static final String EXTRA_TASK_ID_INSTALL = "task_id_install";
     private static final String EXTRA_TASK_ID_UNINSTALL = "task_id_uninstall";
 
+    private static final String KEY_BACKUP_DIRECTORY = "backup_directory";
     private static final String KEY_BOOT_UI_INSTALL = "boot_ui_install";
     private static final String KEY_BOOT_UI_UNINSTALL = "boot_ui_uninstall";
     private static final String KEY_PARALLEL_PATCHING = "parallel_patching_threads";
     private static final String KEY_USE_DARK_THEME = "use_dark_theme";
 
+    private static final int REQUEST_BACKUP_DIRECTORY = 1000;
+
+    private Preference mBackupDirectoryPref;
     private Preference mBootUIInstallPref;
     private Preference mBootUIUninstallPref;
     private Preference mParallelPatchingPref;
@@ -96,6 +104,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         int threads = getPreferenceManager().getSharedPreferences().getInt(
                 KEY_PARALLEL_PATCHING, PatcherService.DEFAULT_PATCHING_THREADS);
+
+        mBackupDirectoryPref = findPreference(KEY_BACKUP_DIRECTORY);
+        mBackupDirectoryPref.setOnPreferenceClickListener(this);
+        updateBackupDirectorySummary();
 
         mBootUIInstallPref = findPreference(KEY_BOOT_UI_INSTALL);
         mBootUIInstallPref.setEnabled(false);
@@ -333,7 +345,11 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
     @Override
     public boolean onPreferenceClick(Preference preference) {
-        if (preference == mBootUIInstallPref) {
+        if (preference == mBackupDirectoryPref) {
+            Intent intent = FileUtils.getFileTreeOpenIntent(getActivity());
+            startActivityForResult(intent, REQUEST_BACKUP_DIRECTORY);
+            return true;
+        } else if (preference == mBootUIInstallPref) {
             mTaskIdInstall = mService.bootUIAction(BootUIAction.INSTALL);
             mService.addCallback(mTaskIdInstall, mCallback);
             mService.enqueueTaskId(mTaskIdInstall);
@@ -379,6 +395,32 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void onActivityResult(int request, int result, Intent data) {
+        switch (request) {
+        case REQUEST_BACKUP_DIRECTORY:
+            if (data != null && result == Activity.RESULT_OK) {
+                String directory = FileUtils.getPathFromUri(getActivity(), data.getData());
+
+                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+                Editor editor = prefs.edit();
+                editor.putString(Constants.Preferences.BACKUP_DIRECTORY, directory);
+                editor.apply();
+
+                updateBackupDirectorySummary();
+            }
+            break;
+        default:
+            super.onActivityResult(request, result, data);
+            break;
+        }
+    }
+
+    private void updateBackupDirectorySummary() {
+        mBackupDirectoryPref.setSummary(getPreferenceManager().getSharedPreferences().getString(
+                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY));
     }
 
     private void updateParallelPatchingSummary(int threads) {

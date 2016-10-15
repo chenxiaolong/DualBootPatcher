@@ -457,6 +457,11 @@
         installed.\n\nPlease ensure that the ramdisk has been updated in every ROM. Otherwise, the
         Boot UI will not run during boot.</string>
 
+    <!-- Title for the section in ROM Settings to change backup/restore settings -->
+    <string name="rom_settings_backup_title">Backup/Restore (EXPERIMENTAL)</string>
+    <!-- Title for the preference to change the backup directory -->
+    <string name="rom_settings_backup_change_directory">Change backup directory</string>
+
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>
     <!-- Title for the preference to show the exit button in the navigation drawer -->
