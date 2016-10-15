@@ -22,6 +22,7 @@ import android.util.Log;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask
         .BaseServiceTaskListener;
@@ -242,6 +243,17 @@ public class SwitcherService extends ThreadPoolService {
     public int bootUIAction(BootUIAction action) {
         int taskId = sNewTaskId.getAndIncrement();
         BootUIActionTask task = new BootUIActionTask(taskId, this, action);
+        addTask(taskId, task);
+        return taskId;
+    }
+
+    // Backup or restore ROM
+
+    public int backupRestoreAction(String action, String romId, String[] targets, String name,
+                                   String backupDir, boolean force) {
+        int taskId = sNewTaskId.getAndIncrement();
+        BackupRestoreRomTask task = new BackupRestoreRomTask(
+                taskId, this, action, romId, targets, name, backupDir, force);
         addTask(taskId, task);
         return taskId;
     }
