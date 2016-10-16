@@ -86,6 +86,20 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         iface.pathDelete(path, PathDeleteFlag.REMOVE);
     }
 
+    private String translateEmulatedPath(String path) {
+        String emuSourcePath = System.getenv("EMULATED_STORAGE_SOURCE");
+        String emuTargetPath = System.getenv("EMULATED_STORAGE_TARGET");
+
+        if (emuSourcePath != null && emuTargetPath != null) {
+            if (path.startsWith(emuTargetPath)) {
+                printBoldText(Color.YELLOW, "Path uses EMULATED_STORAGE_TARGET\n");
+                return emuSourcePath + path.substring(emuTargetPath.length());
+            }
+        }
+
+        return path;
+    }
+
     private boolean performRomInstallation(RomInstallerParams params, MbtoolInterface iface)
             throws IOException, MbtoolCommandException, MbtoolException {
         printSeparator();
@@ -145,7 +159,8 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 }
             }
 
-            String[] args = new String[]{"--romid", params.getRomId(), params.getPath()};
+            String[] args = new String[]{"--romid", params.getRomId(),
+                    translateEmulatedPath(params.getPath())};
 
             printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
                     + TextUtils.join(", ", args) + "]\n");
@@ -251,7 +266,7 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         }
         if (params.getBackupDir() != null) {
             args.add("-d");
-            args.add(params.getBackupDir());
+            args.add(translateEmulatedPath(params.getBackupDir()));
         }
         if (params.getForce()) {
             args.add("-f");
