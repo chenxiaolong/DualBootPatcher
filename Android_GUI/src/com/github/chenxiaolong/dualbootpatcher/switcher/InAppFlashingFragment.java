@@ -44,6 +44,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.Constants;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
@@ -55,23 +56,24 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericSingleChoiceDialog;
+import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericSingleChoiceDialog
+        .GenericSingleChoiceDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog
         .BackupRestoreTargetsSelectionDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.BackupSelectionDialog
-        .BackupSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
         .NamedSlotIdInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
-import com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
@@ -94,7 +96,7 @@ import java.util.List;
 
 public class InAppFlashingFragment extends Fragment implements FirstUseDialogListener,
         RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
-        ChangeInstallLocationDialogListener, BackupSelectionDialogListener,
+        ChangeInstallLocationDialogListener, GenericSingleChoiceDialogListener,
         BackupRestoreTargetsSelectionDialogListener, LoaderCallbacks<LoaderResult>,
         ServiceConnection, OnItemMovedOrDismissedListener {
     private static final int PERFORM_ACTIONS = 1234;
@@ -365,6 +367,23 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     public void onLoaderReset(Loader<LoaderResult> loader) {
     }
 
+    private static String[] getDirectories(String path) {
+        final ArrayList<String> filenames = new ArrayList<>();
+        File[] files = new File(path).listFiles();
+
+        if (files == null) {
+            return null;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                filenames.add(file.getName());
+            }
+        }
+
+        return filenames.toArray(new String[filenames.size()]);
+    }
+
     private void addPatchedFile() {
         mAddType = Type.ROM_INSTALLER;
 
@@ -374,13 +393,21 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     private void addBackup() {
-        String backupDir = mPrefs.getString(
+        mSelectedBackupDir = mPrefs.getString(
                 Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+        String[] backupNames = getDirectories(mSelectedBackupDir);
 
-        mAddType = Type.BACKUP_RESTORE;
+        if (backupNames == null || backupNames.length == 0) {
+            Toast.makeText(getActivity(), R.string.in_app_flashing_no_backups_available,
+                    Toast.LENGTH_LONG).show();
+        } else {
+            mAddType = Type.BACKUP_RESTORE;
 
-        BackupSelectionDialog d = BackupSelectionDialog.newInstanceFromFragment(this, backupDir);
-        d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
+            GenericSingleChoiceDialog d = GenericSingleChoiceDialog.newInstanceFromFragment(
+                    this, 0, null, getString(R.string.in_app_flashing_select_backup_dialog_desc),
+                    getString(R.string.ok), getString(R.string.cancel), backupNames);
+            d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
+        }
     }
 
     private void onVerifiedZip(String romId, VerificationResult result) {
@@ -475,9 +502,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     @Override
-    public void onSelectedBackup(String backupDir, String backupName) {
-        mSelectedBackupDir = backupDir;
-        mSelectedBackupName = backupName;
+    public void onConfirmSingleChoice(int id, int index, String text) {
+        mSelectedBackupName = text;
 
         // Adk for restore targets
         BackupRestoreTargetsSelectionDialog d =

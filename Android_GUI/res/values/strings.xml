@@ -271,6 +271,9 @@
     <!-- Dialog description when choosing a backup to restore -->
     <string name="in_app_flashing_select_backup_dialog_desc">Choose a backup from the list to
         restore.</string>
+    <!-- Toast message shown if there are no backups available -->
+    <string name="in_app_flashing_no_backups_available">There are no backups available to
+        restore.</string>
 
     <!-- ROM details item showing which slot the ROM is installed to -->
     <string name="rom_details_info_slot">Slot</string>
