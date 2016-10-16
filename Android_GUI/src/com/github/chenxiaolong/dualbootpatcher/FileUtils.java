@@ -45,6 +45,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
+import io.noobdev.neuteredsaf.DocumentsApplication;
+import io.noobdev.neuteredsaf.compat.DocumentsContractCompat;
+import io.noobdev.neuteredsaf.providers.ExternalStorageProvider;
 import io.noobdev.neuteredsaf.providers.ProviderConstants;
 
 public class FileUtils {
@@ -59,7 +62,7 @@ public class FileUtils {
     }
 
     @SuppressLint("NewApi")
-    private static String getPathFromDocumentsUri(Context context, Uri uri) {
+    private static String getPathFromDocumentsUri(Context context, Uri uri, boolean isNeuteredSaf) {
         // Based on
         // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
         StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
@@ -80,9 +83,17 @@ public class FileUtils {
 
             String[] split;
             if (isUriForDocumentTree(uri)) {
-                split = DocumentsContract.getTreeDocumentId(uri).split(":");
+                if (isNeuteredSaf) {
+                    split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
+                } else {
+                    split = DocumentsContract.getTreeDocumentId(uri).split(":");
+                }
             } else {
-                split = DocumentsContract.getDocumentId(uri).split(":");
+                if (isNeuteredSaf) {
+                    split = DocumentsContractCompat.getDocumentId(uri).split("\0");
+                } else {
+                    split = DocumentsContract.getDocumentId(uri).split(":");
+                }
             }
 
             String volId;
@@ -134,12 +145,17 @@ public class FileUtils {
     }
 
     public static String getPathFromUri(Context context, Uri uri) {
+        String neuteredSafAuthority =
+                DocumentsApplication.getApplicationId() + ExternalStorageProvider.AUTHORITY_SUFFIX;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
                 ("com.android.externalstorage.documents").equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri);
+            return getPathFromDocumentsUri(context, uri, false);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
                 && ("com.android.providers.downloads.documents").equals(uri.getAuthority())) {
             return getPathFromDownloadsUri(context, uri);
+        } else if (neuteredSafAuthority.equals(uri.getAuthority())) {
+            return getPathFromDocumentsUri(context, uri, true);
         } else {
             return uri.getPath();
         }
