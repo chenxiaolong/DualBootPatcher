@@ -52,17 +52,16 @@
         android:layout_height="match_parent">
 
         <!-- FAB to add more files to patch -->
-        <com.getbase.floatingactionbutton.FloatingActionButton
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end|bottom"
             android:layout_marginBottom="@dimen/fab_margin_bottom"
             android:layout_marginEnd="@dimen/fab_margin_end"
+            android:src="@drawable/ic_plus_white_24dp"
             app:layout_behavior="com.github.chenxiaolong.dualbootpatcher.views.FloatingActionButtonBehavior"
             fab:fab_colorNormal="@color/fab_pink"
-            fab:fab_colorPressed="@color/fab_pink_pressed"
-            fab:fab_icon="@drawable/ic_content_add_white_48dp"
-            fab:fab_plusIconColor="@color/fab_pink_plus" />
+            fab:fab_colorPressed="@color/fab_pink_pressed" />
     </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

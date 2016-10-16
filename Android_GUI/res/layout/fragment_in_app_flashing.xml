@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -36,15 +36,35 @@
         android:layout_centerInParent="true"
         android:indeterminate="true" />
 
-    <com.getbase.floatingactionbutton.AddFloatingActionButton
-        android:id="@+id/fab_add_zip"
+    <com.github.clans.fab.FloatingActionMenu
+        android:id="@+id/fab_add_item_menu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_marginBottom="@dimen/fab_margin_bottom"
         android:layout_marginEnd="@dimen/fab_margin_end"
-        fab:fab_colorNormal="@color/fab_pink"
-        fab:fab_colorPressed="@color/fab_pink_pressed"
-        fab:fab_plusIconColor="@color/fab_pink_plus" />
+        fab:menu_colorNormal="@color/fab_pink"
+        fab:menu_colorPressed="@color/fab_pink_pressed">
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_add_patched_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_plus_white_24dp"
+            fab:fab_colorNormal="@color/fab_pink"
+            fab:fab_colorPressed="@color/fab_pink_pressed"
+            fab:fab_size="mini"
+            fab:fab_label="@string/in_app_flashing_fab_add_patched_file" />
+
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/fab_add_backup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_plus_white_24dp"
+            fab:fab_colorNormal="@color/fab_pink"
+            fab:fab_colorPressed="@color/fab_pink_pressed"
+            fab:fab_size="mini"
+            fab:fab_label="@string/in_app_flashing_fab_add_backup" />
+    </com.github.clans.fab.FloatingActionMenu>
 </RelativeLayout>

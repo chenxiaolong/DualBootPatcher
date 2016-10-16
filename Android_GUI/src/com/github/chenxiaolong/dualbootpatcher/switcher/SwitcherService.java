@@ -21,7 +21,7 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask
         .BaseServiceTaskListener;
@@ -29,9 +29,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask.BootUIAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWithRootTask;
@@ -192,15 +192,6 @@ public class SwitcherService extends ThreadPoolService {
         return taskId;
     }
 
-    // In-app flashing
-
-    public int flashZips(PendingAction[] actions) {
-        int taskId = sNewTaskId.getAndIncrement();
-        FlashZipsTask task = new FlashZipsTask(taskId, this, actions);
-        addTask(taskId, task);
-        return taskId;
-    }
-
     // Wipe ROM
 
     public int wipeRom(String romId, short[] targets) {
@@ -242,6 +233,15 @@ public class SwitcherService extends ThreadPoolService {
     public int bootUIAction(BootUIAction action) {
         int taskId = sNewTaskId.getAndIncrement();
         BootUIActionTask task = new BootUIActionTask(taskId, this, action);
+        addTask(taskId, task);
+        return taskId;
+    }
+
+    // Perform mbtool command operations
+
+    public int mbtoolActions(MbtoolAction[] actions) {
+        int taskId = sNewTaskId.getAndIncrement();
+        MbtoolTask task = new MbtoolTask(taskId, this, actions);
         addTask(taskId, task);
         return taskId;
     }

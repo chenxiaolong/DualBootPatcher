@@ -208,39 +208,39 @@
         установить ядро для %2$s. Вы хотите это сделать?.</string>
 
     <!-- ZIP flash activity title -->
-    <string name="zip_flashing_title">Прошить ZIP файл</string>
+    <string name="in_app_flashing_title">Прошить ZIP файл</string>
     <!-- Title of pending action card for installing a zip file -->
-    <string name="zip_flashing_install_zip">Установить zip файл</string>
+    <string name="in_app_flashing_action_flash_file">Установить zip файл</string>
     <!-- Subtitle text in pending action card showing the selected filename -->
-    <string name="zip_flashing_zip_file">Файл: %s</string>
+    <string name="in_app_flashing_filename">Файл: %s</string>
     <!-- Subtitle text in pending action card showing the installation location -->
-    <string name="zip_flashing_location">Место: %s</string>
+    <string name="in_app_flashing_location">Место: %s</string>
     <!-- Title shown in dialog asking for the installation location of a zip file -->
-    <string name="zip_flashing_dialog_installation_location">Место установки:</string>
+    <string name="in_app_flashing_dialog_installation_location">Место установки:</string>
     <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
-    <string name="zip_flashing_dialog_verifying_zip">Проверка zip файло</string>
+    <string name="in_app_flashing_dialog_verifying_zip">Проверка zip файло</string>
     <!-- Error message shown when the selected zip file is not found -->
-    <string name="zip_flashing_error_zip_not_found">Выбранный zip файл не найден.</string>
+    <string name="in_app_flashing_error_zip_not_found">Выбранный zip файл не найден.</string>
     <!-- Error message shown when the selected zip file could not be read -->
-    <string name="zip_flashing_error_zip_read_fail">Невозможно прочитать zip файл.</string>
+    <string name="in_app_flashing_error_zip_read_fail">Невозможно прочитать zip файл.</string>
     <!-- Error message shown when the selected zip file isn't patched -->
-    <string name="zip_flashing_error_not_multiboot">Этот zip файл не был пропатчен для
+    <string name="in_app_flashing_error_not_multiboot">Этот zip файл не был пропатчен для
         multiboot. Пожалуйста, пропатчите файл перед установкой.</string>
     <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
-    <string name="zip_flashing_error_version_too_old">Zip файл должен быть пропатчен %s или
+    <string name="in_app_flashing_error_version_too_old">Zip файл должен быть пропатчен %s или
         более новой версией для установки через приложение.</string>
     <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
-    <string name="zip_flashing_error_no_overwrite_rom">Во избежание сбоев или перезагрузок
+    <string name="in_app_flashing_error_no_overwrite_rom">Во избежание сбоев или перезагрузок
         установка zip файлов невозможна на запущенной системе.</string>
     <!-- Dialog message asking if the user wants to change the installation location of the zip -->
-    <string name="zip_flashing_change_install_location_desc">Zip файл был пропатчен для 
+    <string name="in_app_flashing_change_install_location_desc">Zip файл был пропатчен для
         установки в %s. Желаете изменить место установки?</string>
     <!-- Dialog button for keeping the current installation location -->
-    <string name="zip_flashing_keep_current_location">Оставить место</string>
+    <string name="in_app_flashing_keep_current_location">Оставить место</string>
     <!-- Dialog button for changing the installation location -->
-    <string name="zip_flashing_change_install_location">Изменить место</string>
+    <string name="in_app_flashing_change_install_location">Изменить место</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
-    <string name="zip_flashing_dialog_first_use">Для установки файла через приложение, добавьте
+    <string name="in_app_flashing_dialog_first_use">Для установки файла через приложение, добавьте
         пропатченный zip файл нажав на иконку плюс.\n\nОчередь файлов может быть изменена
         нажатием на файл и перемещением, а для удаления сдвиньте его в сторону.\n\nПримечание:
         Это экспериментальная функция! Делайте резервные копии заранее!</string>
@@ -468,7 +468,7 @@
     <!-- Title for the preference to enable confirmation dialog before rebooting -->
     <string name="rom_settings_show_reboot_confirm_title">Показывать окно перезагрузки</string>
     <!-- Description for the preference to enable confirmation dialog before rebooting -->
-    <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки. 
+    <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки.
         Это позволяет перезагрузиться в рекавери на прошивках, которые имеют расширенное меню перезагрузки.</string>
     <!-- Title for the preference to set the number of parallel patching operations -->
     <string name="rom_settings_parallel_patching_title">Параллельная модификация файлов</string>
@@ -517,7 +517,7 @@
     <string name="mbtool_dialog_updating_mbtool">Обновление mbtool…\n(Это требует root доступа)</string>
     <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
     <string name="mbtool_dialog_signature_check_fail">mbtool отклонил соединение с приложением.
-        Это могло произойти из-за использования неофициальной сборки данного приложения или его модификации. 
+        Это могло произойти из-за использования неофициальной сборки данного приложения или его модификации.
         Если вы все еще хотите продолжить, то mbtool будет закрыт и будет использоваться драгая версия mbtool запущенная
         с правами root.</string>
     <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->

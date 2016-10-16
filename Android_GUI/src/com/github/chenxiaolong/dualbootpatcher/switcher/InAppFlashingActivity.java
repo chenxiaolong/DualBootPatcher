@@ -27,16 +27,16 @@ import android.view.MenuItem;
 
 import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment
+import com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment
         .OnReadyStateChangedListener;
 
-public class ZipFlashingActivity extends AppCompatActivity implements OnReadyStateChangedListener {
+public class InAppFlashingActivity extends AppCompatActivity implements OnReadyStateChangedListener {
     boolean mShowCheckIcon;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zip_flashing);
+        setContentView(R.layout.activity_in_app_flashing);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -66,7 +66,7 @@ public class ZipFlashingActivity extends AppCompatActivity implements OnReadySta
             finish();
             return true;
         case R.id.check_item:
-            ZipFlashingFragment frag = (ZipFlashingFragment)
+            InAppFlashingFragment frag = (InAppFlashingFragment)
                     getFragmentManager().findFragmentById(R.id.zip_flashing_fragment);
             frag.onActionBarCheckItemClicked();
             return true;

@@ -523,18 +523,6 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    // Translate paths
-    char *emu_source_path = getenv("EMULATED_STORAGE_SOURCE");
-    char *emu_target_path = getenv("EMULATED_STORAGE_TARGET");
-    if (emu_source_path && emu_target_path) {
-        if (util::starts_with(zip_file, emu_target_path)) {
-            printf("Zip path uses EMULATED_STORAGE_TARGET\n");
-            zip_file.erase(0, strlen(emu_target_path));
-            zip_file.insert(0, emu_source_path);
-        }
-    }
-
-
     // Make sure install type is valid
     if (!Roms::is_valid(rom_id)) {
         fprintf(stderr, "Invalid ROM ID: %s\n", rom_id.c_str());

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask.FlashZipsTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask.MbtoolTaskListener;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -52,13 +52,15 @@ import java.util.Arrays;
 import jackpal.androidterm.emulatorview.EmulatorView;
 import jackpal.androidterm.emulatorview.TermSession;
 
-public class ZipFlashingOutputFragment extends Fragment implements ServiceConnection {
-    public static final String TAG = ZipFlashingOutputFragment.class.getSimpleName();
+public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnection {
+    public static final String TAG = MbtoolTaskOutputFragment.class.getSimpleName();
 
-    private static final String EXTRA_IS_RUNNING = "is_running";
-    private static final String EXTRA_TASK_ID_FLASH_ZIPS = "task_id_flash_zips";
+    private static final String EXTRA_IS_RUNNING = TAG + ".is_running";
+    private static final String EXTRA_TASK_ID = TAG + ".task_id";
 
-    public static final String PARAM_PENDING_ACTIONS = "pending_actions";
+    public static final String PARAM_ACTIONS = "actions";
+
+    private MbtoolAction[] mActions;
 
     private EmulatorView mEmulatorView;
     private TermSession mSession;
@@ -66,7 +68,7 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
 
     public boolean mIsRunning = true;
 
-    private int mTaskIdFlashZips = -1;
+    private int mTaskId = -1;
 
     /** Task IDs to remove */
     private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
@@ -84,14 +86,14 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         super.onCreate(savedInstanceState);
 
         if (savedInstanceState != null) {
-            mTaskIdFlashZips = savedInstanceState.getInt(EXTRA_TASK_ID_FLASH_ZIPS);
+            mTaskId = savedInstanceState.getInt(EXTRA_TASK_ID);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_zip_flashing_output, container, false);
+        return inflater.inflate(R.layout.fragment_mbtool_tasks_output, container, false);
     }
 
     @Override
@@ -106,13 +108,54 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         if (savedInstanceState != null) {
             mIsRunning = savedInstanceState.getBoolean(EXTRA_IS_RUNNING);
         }
+
+        Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_ACTIONS);
+        mActions = Arrays.copyOf(parcelables, parcelables.length, MbtoolAction[].class);
+
+        int titleResId = -1;
+
+        int countBackup = 0;
+        int countRestore = 0;
+        int countFlash = 0;
+
+        for (MbtoolAction a : mActions) {
+            switch (a.getType()) {
+            case ROM_INSTALLER:
+                countFlash++;
+                break;
+            case BACKUP_RESTORE:
+                switch (a.getBackupRestoreParams().getAction()) {
+                case BACKUP:
+                    countBackup++;
+                    break;
+                case RESTORE:
+                    countRestore++;
+                    break;
+                }
+                break;
+            }
+        }
+
+        if (countBackup + countRestore + countFlash > 1) {
+            titleResId = R.string.in_app_flashing_title_flash_files;
+        } else if (countBackup > 0) {
+            titleResId = R.string.in_app_flashing_title_backup_rom;
+        } else if (countRestore > 0) {
+            titleResId = R.string.in_app_flashing_title_restore_rom;
+        } else if (countFlash > 0) {
+            titleResId = R.string.in_app_flashing_title_flash_file;
+        }
+
+        if (titleResId >= 0) {
+            getActivity().setTitle(titleResId);
+        }
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(EXTRA_IS_RUNNING, mIsRunning);
-        outState.putInt(EXTRA_TASK_ID_FLASH_ZIPS, mTaskIdFlashZips);
+        outState.putInt(EXTRA_TASK_ID, mTaskId);
     }
 
     @Override
@@ -151,16 +194,16 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         mSession = null;
 
         if (getActivity().isFinishing()) {
-            if (mTaskIdFlashZips >= 0) {
-                removeCachedTaskId(mTaskIdFlashZips);
-                mTaskIdFlashZips = -1;
+            if (mTaskId >= 0) {
+                removeCachedTaskId(mTaskId);
+                mTaskId = -1;
             }
         }
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            if (mTaskIdFlashZips >= 0) {
-                mService.removeCallback(mTaskIdFlashZips, mCallback);
+            if (mTaskId >= 0) {
+                mService.removeCallback(mTaskId, mCallback);
             }
         }
 
@@ -185,15 +228,12 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         }
         mTaskIdsToRemove.clear();
 
-        if (mTaskIdFlashZips < 0) {
-            Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_PENDING_ACTIONS);
-            PendingAction[] actions =
-                    Arrays.copyOf(parcelables, parcelables.length, PendingAction[].class);
-            mTaskIdFlashZips = mService.flashZips(actions);
-            mService.addCallback(mTaskIdFlashZips, mCallback);
-            mService.enqueueTaskId(mTaskIdFlashZips);
+        if (mTaskId < 0) {
+            mTaskId = mService.mbtoolActions(mActions);
+            mService.addCallback(mTaskId, mCallback);
+            mService.enqueueTaskId(mTaskId);
         } else {
-            mService.addCallback(mTaskIdFlashZips, mCallback);
+            mService.addCallback(mTaskId, mCallback);
         }
     }
 
@@ -219,7 +259,7 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         }
     }
 
-    private void onFinishedFlashing() {
+    private void onFinishedTasks() {
         mIsRunning = false;
     }
 
@@ -227,14 +267,15 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
         return mIsRunning;
     }
 
-    private class SwitcherEventCallback implements FlashZipsTaskListener {
+    private class SwitcherEventCallback implements MbtoolTaskListener {
         @Override
-        public void onFlashedZips(int taskId, int totalActions, int failedActions) {
-            if (taskId == mTaskIdFlashZips) {
+        public void onMbtoolTasksCompleted(int taskId, MbtoolAction[] actions, int attempted,
+                                           int succeeded) {
+            if (taskId == mTaskId) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        onFinishedFlashing();
+                        onFinishedTasks();
                     }
                 });
             }
@@ -242,7 +283,7 @@ public class ZipFlashingOutputFragment extends Fragment implements ServiceConnec
 
         @Override
         public void onCommandOutput(int taskId, final String line) {
-            if (taskId == mTaskIdFlashZips) {
+            if (taskId == mTaskId) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {

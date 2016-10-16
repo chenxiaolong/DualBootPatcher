@@ -53,7 +53,6 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
@@ -74,6 +73,7 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService.PatcherEve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+import com.github.clans.fab.FloatingActionButton;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -252,6 +252,9 @@ public class PatchFileFragment extends Fragment implements
         LinearLayoutManager llm = new LinearLayoutManager(getActivity());
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mRecycler.setLayoutManager(llm);
+
+        // Hide FAB initially
+        mFAB.hide(false);
 
         // Show loading progress bar
         updateLoadingStatus();
@@ -525,12 +528,12 @@ public class PatchFileFragment extends Fragment implements
     private void updateLoadingStatus() {
         if (mShowingProgress) {
             mRecycler.setVisibility(View.GONE);
-            mFAB.setVisibility(View.GONE);
+            mFAB.hide(true);
             mAddZipMessage.setVisibility(View.GONE);
             mProgressBar.setVisibility(View.VISIBLE);
         } else {
             mRecycler.setVisibility(View.VISIBLE);
-            mFAB.setVisibility(View.VISIBLE);
+            mFAB.show(true);
             mAddZipMessage.setVisibility(View.VISIBLE);
             mProgressBar.setVisibility(View.GONE);
         }
@@ -694,7 +697,7 @@ public class PatchFileFragment extends Fragment implements
      * @see {@link #onSelectedInputUri(Uri)}
      */
     private void selectInputUri() {
-        Intent intent = FileUtils.getFileOpenIntent(getActivity());
+        Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
         startActivityForResult(intent, ACTIVITY_REQUEST_INPUT_FILE);
     }
 
@@ -732,7 +735,7 @@ public class PatchFileFragment extends Fragment implements
             sb.append(extension);
         }
         String desiredName = sb.toString();
-        Intent intent = FileUtils.getFileSaveIntent(getActivity(), desiredName);
+        Intent intent = FileUtils.getFileSaveIntent(getActivity(), "*/*", desiredName);
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
     }
 

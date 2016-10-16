@@ -45,6 +45,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
+import io.noobdev.neuteredsaf.DocumentsApplication;
+import io.noobdev.neuteredsaf.compat.DocumentsContractCompat;
+import io.noobdev.neuteredsaf.providers.ExternalStorageProvider;
 import io.noobdev.neuteredsaf.providers.ProviderConstants;
 
 public class FileUtils {
@@ -53,8 +56,13 @@ public class FileUtils {
     private static final boolean FORCE_NEUTERED_SAF = false;
     private static final boolean FORCE_GET_CONTENT = false;
 
+    private static boolean isUriForDocumentTree(Uri uri) {
+        List<String> segments = uri.getPathSegments();
+        return segments.size() > 0 && segments.get(0).equals("tree");
+    }
+
     @SuppressLint("NewApi")
-    private static String getPathFromDocumentsUri(Context context, Uri uri) {
+    private static String getPathFromDocumentsUri(Context context, Uri uri, boolean isNeuteredSaf) {
         // Based on
         // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
         StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
@@ -73,7 +81,20 @@ public class FileUtils {
             // As of AOSP 4.4.2 in ExternalStorageProvider.java
             final String ROOT_ID_PRIMARY_EMULATED = "primary";
 
-            String[] split = DocumentsContract.getDocumentId(uri).split(":");
+            String[] split;
+            if (isUriForDocumentTree(uri)) {
+                if (isNeuteredSaf) {
+                    split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
+                } else {
+                    split = DocumentsContract.getTreeDocumentId(uri).split(":");
+                }
+            } else {
+                if (isNeuteredSaf) {
+                    split = DocumentsContractCompat.getDocumentId(uri).split("\0");
+                } else {
+                    split = DocumentsContract.getDocumentId(uri).split(":");
+                }
+            }
 
             String volId;
             for (Object vol : vols) {
@@ -124,12 +145,17 @@ public class FileUtils {
     }
 
     public static String getPathFromUri(Context context, Uri uri) {
+        String neuteredSafAuthority =
+                DocumentsApplication.getApplicationId() + ExternalStorageProvider.AUTHORITY_SUFFIX;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
                 ("com.android.externalstorage.documents").equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri);
+            return getPathFromDocumentsUri(context, uri, false);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
                 && ("com.android.providers.downloads.documents").equals(uri.getAuthority())) {
             return getPathFromDownloadsUri(context, uri);
+        } else if (neuteredSafAuthority.equals(uri.getAuthority())) {
+            return getPathFromDocumentsUri(context, uri, true);
         } else {
             return uri.getPath();
         }
@@ -163,57 +189,68 @@ public class FileUtils {
         intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
     }
 
-    private static void setCommonOpenOptions(Intent intent) {
+    private static void setCommonOpenOptions(Intent intent, String mimeType) {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
+        intent.setType(mimeType);
     }
 
-    private static void setCommonSaveOptions(Intent intent, String defaultName) {
+    private static void setCommonSaveOptions(Intent intent, String mimeType, String defaultName) {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
+        intent.setType(mimeType);
         intent.putExtra(Intent.EXTRA_TITLE, defaultName);
     }
 
-    private static Intent buildNativeSafOpenDocumentIntent() {
+    private static Intent buildNativeSafOpenDocumentIntent(String mimeType) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         setCommonNativeSafOptions(intent);
-        setCommonOpenOptions(intent);
+        setCommonOpenOptions(intent, mimeType);
         return intent;
     }
 
-    private static Intent buildNativeSafGetContentIntent() {
+    private static Intent buildNativeSafOpenDocumentTreeIntent() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        setCommonNativeSafOptions(intent);
+        return intent;
+    }
+
+    private static Intent buildNativeSafGetContentIntent(String mimeType) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         setCommonNativeSafOptions(intent);
-        setCommonOpenOptions(intent);
+        setCommonOpenOptions(intent, mimeType);
         return intent;
     }
 
-    private static Intent buildNeuteredSafOpenDocumentIntent(Context context) {
+    private static Intent buildNeuteredSafOpenDocumentIntent(Context context, String mimeType) {
         Intent intent = new Intent(context, DocumentsActivity.class);
         intent.setAction(ProviderConstants.ACTION_OPEN_DOCUMENT);
-        setCommonOpenOptions(intent);
+        setCommonOpenOptions(intent, mimeType);
         return intent;
     }
 
-    private static Intent buildNativeSafCreateDocumentIntent(String defaultName) {
+    private static Intent buildNeuteredSafOpenDocumentTreeIntent(Context context) {
+        Intent intent = new Intent(context, DocumentsActivity.class);
+        intent.setAction(ProviderConstants.ACTION_OPEN_DOCUMENT_TREE);
+        return intent;
+    }
+
+    private static Intent buildNativeSafCreateDocumentIntent(String mimeType, String defaultName) {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-        intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
         setCommonNativeSafOptions(intent);
-        setCommonSaveOptions(intent, defaultName);
+        setCommonSaveOptions(intent, mimeType, defaultName);
         return intent;
     }
 
-    private static Intent buildNeuteredSafCreateDocumentIntent(Context context, String defaultName) {
+    private static Intent buildNeuteredSafCreateDocumentIntent(Context context, String mimeType,
+                                                               String defaultName) {
         Intent intent = new Intent(context, DocumentsActivity.class);
         intent.setAction(ProviderConstants.ACTION_CREATE_DOCUMENT);
         setCommonNativeSafOptions(intent);
-        setCommonSaveOptions(intent, defaultName);
+        setCommonSaveOptions(intent, mimeType, defaultName);
         return intent;
     }
 
     @NonNull
-    public static Intent getFileOpenIntent(Context context) {
+    public static Intent getFileOpenIntent(Context context, String mimeType) {
         PackageManager pm = context.getPackageManager();
         Intent intent = null;
 
@@ -223,14 +260,14 @@ public class FileUtils {
             if (isOpenDocumentBroken(context)) {
                 Log.d(TAG, "Can't use ACTION_OPEN_DOCUMENT due to OxygenOS bug");
             } else {
-                intent = buildNativeSafOpenDocumentIntent();
+                intent = buildNativeSafOpenDocumentIntent(mimeType);
             }
 
             // Use ACTION_GET_CONTENT if this is 4.4+, but DocumentsUI is missing (wtf) or
             // ACTION_OPEN_DOCUMENT won't work for some reason
             if (intent == null || !canHandleIntent(pm, intent)) {
                 Log.w(TAG, "ACTION_OPEN_DOCUMENT cannot be handled on 4.4+ device");
-                intent = buildNativeSafGetContentIntent();
+                intent = buildNativeSafGetContentIntent(mimeType);
             }
 
             // If neither ACTION_OPEN_DOCUMENT nor ACTION_GET_CONTENT can be handled, fall back to
@@ -243,19 +280,41 @@ public class FileUtils {
 
         // Fall back to NeuteredSaf for all other scenarios
         if (intent == null) {
-            intent = buildNeuteredSafOpenDocumentIntent(context);
+            intent = buildNeuteredSafOpenDocumentIntent(context, mimeType);
         }
 
         return intent;
     }
 
     @NonNull
-    public static Intent getFileSaveIntent(Context context, String defaultName) {
+    public static Intent getFileTreeOpenIntent(Context context) {
+        PackageManager pm = context.getPackageManager();
+        Intent intent = null;
+
+        if (shouldHaveNativeSaf()) {
+            intent = buildNativeSafOpenDocumentTreeIntent();
+
+            if (!canHandleIntent(pm, intent)) {
+                Log.w(TAG, "ACTION_OPEN_DOCUMENT_TREE cannot be handled");
+                intent = null;
+            }
+        }
+
+        // Fall back to NeuteredSaf
+        if (intent == null) {
+            intent = buildNeuteredSafOpenDocumentTreeIntent(context);
+        }
+
+        return intent;
+    }
+
+    @NonNull
+    public static Intent getFileSaveIntent(Context context, String mimeType, String defaultName) {
         Intent intent = null;
 
         if (shouldHaveNativeSaf()) {
             // Try ACTION_CREATE_DOCUMENT
-            intent = buildNativeSafCreateDocumentIntent(defaultName);
+            intent = buildNativeSafCreateDocumentIntent(mimeType, defaultName);
 
             // If DocumentsUI is missing, fall back to NeuteredSaf
             if (!canHandleIntent(context.getPackageManager(), intent)) {
@@ -266,7 +325,7 @@ public class FileUtils {
 
         // Fall back to NeuteredSaf for all other scenarios
         if (intent == null) {
-            intent = buildNeuteredSafCreateDocumentIntent(context, defaultName);
+            intent = buildNeuteredSafCreateDocumentIntent(context, mimeType, defaultName);
         }
 
         return intent;

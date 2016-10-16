@@ -26,22 +26,22 @@ import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class ZipFlashingOutputActivity extends AppCompatActivity {
-    ZipFlashingOutputFragment mFragment;
+public class MbtoolTaskOutputActivity extends AppCompatActivity {
+    MbtoolTaskOutputFragment mFragment;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zip_flashing_output);
+        setContentView(R.layout.activity_mbtool_task_output);
 
         if (savedInstanceState == null) {
-            mFragment = new ZipFlashingOutputFragment();
+            mFragment = new MbtoolTaskOutputFragment();
             mFragment.setArguments(getIntent().getExtras());
             getFragmentManager().beginTransaction().add(
-                    R.id.content_frame, mFragment, ZipFlashingOutputFragment.TAG).commit();
+                    R.id.content_frame, mFragment, MbtoolTaskOutputFragment.TAG).commit();
         } else {
-            mFragment = (ZipFlashingOutputFragment)
-                    getFragmentManager().findFragmentByTag(ZipFlashingOutputFragment.TAG);
+            mFragment = (MbtoolTaskOutputFragment)
+                    getFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.TAG);
         }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
