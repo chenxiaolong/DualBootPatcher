@@ -28,7 +28,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
     endif()
 
     add_custom_target(
-        apk ${GRADLEW_CMD} ${GRADLEW_ARG}
+        apk ${GRADLEW_CMD} -Pandroid.builder.sdkDownload=false ${GRADLEW_ARG}
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/build.gradle
                 #${CMAKE_BINARY_DIR}/assets/data-${MBP_VERSION}.tar.xz
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
