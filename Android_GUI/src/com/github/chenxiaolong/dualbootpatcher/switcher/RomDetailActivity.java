@@ -90,7 +90,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.UpdateRamdiskResultDialo
         .UpdateRamdiskResultDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
         .CacheWallpaperTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
@@ -676,8 +678,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     public void onSelectedBackupRom() {
         BackupRestoreTargetsSelectionDialog d =
-                BackupRestoreTargetsSelectionDialog.newInstanceFromActivity(
-                        BackupRestoreRomTask.ACTION_BACKUP_ROM);
+                BackupRestoreTargetsSelectionDialog.newInstanceFromActivity(Action.BACKUP);
         d.show(getFragmentManager(), CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS);
     }
 
@@ -760,16 +761,16 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onSelectedBackupName(String name) {
         SharedPreferences prefs = getSharedPreferences("settings", 0);
 
+        String backupDir = prefs.getString(
+                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+
+        BackupRestoreParams params = new BackupRestoreParams(
+                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDir, false);
+        MbtoolAction action = new MbtoolAction(params);
+
         // Start backup
-        Intent intent = new Intent(this, BackupRestoreOutputActivity.class);
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_ACTION,
-                BackupRestoreRomTask.ACTION_BACKUP_ROM);
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_ROM_ID, mRomInfo.getId());
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_TARGETS, mBackupTargets);
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_NAME, name);
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_BACKUP_DIR, prefs.getString(
-                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY));
-        intent.putExtra(BackupRestoreOutputFragment.PARAM_FORCE, false);
+        Intent intent = new Intent(this, MbtoolTaskOutputActivity.class);
+        intent.putExtra(MbtoolTaskOutputFragment.PARAM_ACTIONS, new MbtoolAction[] { action });
         startActivity(intent);
     }
 

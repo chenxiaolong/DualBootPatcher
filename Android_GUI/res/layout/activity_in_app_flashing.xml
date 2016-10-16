@@ -19,10 +19,14 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <jackpal.androidterm.emulatorview.EmulatorView
-        android:id="@+id/terminal"
+    <include layout="@layout/toolbar" />
+
+    <fragment
+        android:id="@+id/zip_flashing_fragment"
+        android:name="com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 </LinearLayout>

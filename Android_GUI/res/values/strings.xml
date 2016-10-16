@@ -213,43 +213,64 @@
     <string name="set_kernel_mismatched_rom">The currently selected ROM is %1$s, but you are trying
         to set the kernel for %2$s. Please confirm that this is what you want.</string>
 
-    <!-- ZIP flash activity title -->
-    <string name="zip_flashing_title">Flash ZIP files</string>
-    <!-- Title of pending action card for installing a zip file -->
-    <string name="zip_flashing_install_zip">Install zip file</string>
-    <!-- Subtitle text in pending action card showing the selected filename -->
-    <string name="zip_flashing_zip_file">Zip file: %s</string>
+    <!-- In-app flashing output activity title - shown when backing up a single ROM -->
+    <string name="in_app_flashing_title_backup_rom">Backup ROM</string>
+    <!-- In-app flashing output activity title - shown when restoring a single ROM -->
+    <string name="in_app_flashing_title_restore_rom">Restore ROM</string>
+    <!-- In-app flashing output activity title - shown when flashing a single file -->
+    <string name="in_app_flashing_title_flash_file">Flash file</string>
+    <!-- In-app flashing output activity title - shown when flashing multiple files/backups -->
+    <string name="in_app_flashing_title_flash_files">Flash files</string>
+    <!-- In-app flashing activity title -->
+    <string name="in_app_flashing_title">In-app flashing</string>
+    <!-- FAB button text for adding a patched file to flash -->
+    <string name="in_app_flashing_fab_add_patched_file">Add patched file</string>
+    <!-- FAB button text for adding a backup to flash -->
+    <string name="in_app_flashing_fab_add_backup">Add backup</string>
+    <!-- Title of pending action card for flashing a file -->
+    <string name="in_app_flashing_action_flash_file">Flash file</string>
+    <!-- Title of pending action card for restoring a backup -->
+    <string name="in_app_flashing_action_restore_backup">Restore backup</string>
+    <!-- [Flash file] Subtitle text in pending action card showing the selected filename -->
+    <string name="in_app_flashing_filename">Filename: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the selected backup name -->
+    <string name="in_app_flashing_backup_name">Backup name: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the restore targets -->
+    <string name="in_app_flashing_restore_targets">Targets: %s</string>
     <!-- Subtitle text in pending action card showing the installation location -->
-    <string name="zip_flashing_location">Location: %s</string>
+    <string name="in_app_flashing_location">ROM ID: %s</string>
     <!-- Title shown in dialog asking for the installation location of a zip file -->
-    <string name="zip_flashing_dialog_installation_location">Installation location:</string>
+    <string name="in_app_flashing_dialog_installation_location">Installation location:</string>
     <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
-    <string name="zip_flashing_dialog_verifying_zip">Verifying zip</string>
+    <string name="in_app_flashing_dialog_verifying_zip">Verifying zip</string>
     <!-- Error message shown when the selected zip file is not found -->
-    <string name="zip_flashing_error_zip_not_found">The selected zip file was not found.</string>
+    <string name="in_app_flashing_error_zip_not_found">The selected zip file was not found.</string>
     <!-- Error message shown when the selected zip file could not be read -->
-    <string name="zip_flashing_error_zip_read_fail">Could not read the selected zip file.</string>
+    <string name="in_app_flashing_error_zip_read_fail">Could not read the selected zip file.</string>
     <!-- Error message shown when the selected zip file isn't patched -->
-    <string name="zip_flashing_error_not_multiboot">The zip file doesn\'t appear to be patched for
-        multiboot. Please patch the file before flashing it.</string>
+    <string name="in_app_flashing_error_not_multiboot">The zip file doesn\'t appear to be patched
+        for multiboot. Please patch the file before flashing it.</string>
     <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
-    <string name="zip_flashing_error_version_too_old">The zip file needs to be patched with %s or
+    <string name="in_app_flashing_error_version_too_old">The zip file needs to be patched with %s or
         newer in order to use in-app flashing.</string>
     <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
-    <string name="zip_flashing_error_no_overwrite_rom">To prevent the current system from crashing
-        or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
+    <string name="in_app_flashing_error_no_overwrite_rom">To prevent the current system from
+        crashing or rebooting, flashing on top of the current ROM is not allowed.</string>
     <!-- Dialog message asking if the user wants to change the installation location of the zip -->
-    <string name="zip_flashing_change_install_location_desc">The zip was originally patched for
+    <string name="in_app_flashing_change_install_location_desc">The zip was originally patched for
         installation to %s. Would you like to change the installation location?</string>
     <!-- Dialog button for keeping the current installation location -->
-    <string name="zip_flashing_keep_current_location">Keep location</string>
+    <string name="in_app_flashing_keep_current_location">Keep location</string>
     <!-- Dialog button for changing the installation location -->
-    <string name="zip_flashing_change_install_location">Change location</string>
+    <string name="in_app_flashing_change_install_location">Change location</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
-    <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
-        add the patched zip file by tapping big plus icon.\n\nThe flashing order can be changed by
-        tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
-        This feature is still experimental. Please backup before continuing!</string>
+    <string name="in_app_flashing_dialog_first_use">The in-app flasher can flash both patched files
+        and DualBootPatcher backups. Just tap the plus button to start flashing.\n\nThe pending
+        actions can be dragged or swiped away to change the flash order or remove them from the
+        queue.\n\nNOTE: This feature is still experimental. Please backup before continuing!</string>
+    <!-- Dialog description when choosing a backup to restore -->
+    <string name="in_app_flashing_select_backup_dialog_desc">Choose a backup from the list to
+        restore.</string>
 
     <!-- ROM details item showing which slot the ROM is installed to -->
     <string name="rom_details_info_slot">Slot</string>

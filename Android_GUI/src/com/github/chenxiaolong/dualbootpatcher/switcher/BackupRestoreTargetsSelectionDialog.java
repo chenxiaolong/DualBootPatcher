@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMultiChoice;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
 
 import java.util.ArrayList;
 
@@ -39,7 +39,7 @@ public class BackupRestoreTargetsSelectionDialog extends DialogFragment {
         void onSelectedBackupRestoreTargets(String[] targets);
     }
 
-    public static BackupRestoreTargetsSelectionDialog newInstanceFromFragment(Fragment parent, String action) {
+    public static BackupRestoreTargetsSelectionDialog newInstanceFromFragment(Fragment parent, Action action) {
         if (parent != null) {
             if (!(parent instanceof BackupRestoreTargetsSelectionDialogListener)) {
                 throw new IllegalStateException(
@@ -48,7 +48,7 @@ public class BackupRestoreTargetsSelectionDialog extends DialogFragment {
         }
 
         Bundle args = new Bundle();
-        args.putString(ARG_ACTION, action);
+        args.putSerializable(ARG_ACTION, action);
 
         BackupRestoreTargetsSelectionDialog frag = new BackupRestoreTargetsSelectionDialog();
         frag.setTargetFragment(parent, 0);
@@ -56,9 +56,9 @@ public class BackupRestoreTargetsSelectionDialog extends DialogFragment {
         return frag;
     }
 
-    public static BackupRestoreTargetsSelectionDialog newInstanceFromActivity(String action) {
+    public static BackupRestoreTargetsSelectionDialog newInstanceFromActivity(Action action) {
         Bundle args = new Bundle();
-        args.putString(ARG_ACTION, action);
+        args.putSerializable(ARG_ACTION, action);
 
         BackupRestoreTargetsSelectionDialog frag = new BackupRestoreTargetsSelectionDialog();
         frag.setArguments(args);
@@ -88,12 +88,12 @@ public class BackupRestoreTargetsSelectionDialog extends DialogFragment {
                 getString(R.string.br_target_config)
         };
 
-        String action = getArguments().getString(ARG_ACTION);
+        Action action = (Action) getArguments().getSerializable(ARG_ACTION);
         int descResid = 0;
 
-        if (BackupRestoreRomTask.ACTION_BACKUP_ROM.equals(action)) {
+        if (action == Action.BACKUP) {
             descResid = R.string.br_backup_targets_dialog_desc;
-        } else if (BackupRestoreRomTask.ACTION_RESTORE_ROM.equals(action)) {
+        } else if (action == Action.RESTORE) {
             descResid = R.string.br_restore_targets_dialog_desc;
         }
 
@@ -108,33 +108,6 @@ public class BackupRestoreTargetsSelectionDialog extends DialogFragment {
                     @Override
                     public boolean onSelection(MaterialDialog dialog, Integer[] which,
                                                CharSequence[] text) {
-                        /*
-                        String[] targets = new String[which.length];
-
-                        for (int i = 0; i < which.length; i++) {
-                            int arrIndex = which[i];
-
-                            if (arrIndex == 0) {
-                                targets[i] = "system";
-                            } else if (arrIndex == 1) {
-                                targets[i] = "cache";
-                            } else if (arrIndex == 2) {
-                                targets[i] = "data";
-                            } else if (arrIndex == 3) {
-                                targets[i] = "boot";
-                            } else if (arrIndex == 4) {
-                                targets[i] = "config";
-                            }
-                        }
-
-                        BackupRestoreTargetsSelectionDialogListener owner = getOwner();
-                        if (owner != null) {
-                            owner.onSelectedBackupRestoreTargets(targets);
-                        }
-
-                        return true;
-                        */
-
                         dialog.getActionButton(DialogAction.POSITIVE).setEnabled(which.length > 0);
 
                         selected.clear();

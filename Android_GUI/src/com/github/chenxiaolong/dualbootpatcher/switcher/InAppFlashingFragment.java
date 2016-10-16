@@ -32,8 +32,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -46,6 +45,7 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.github.chenxiaolong.dualbootpatcher.Constants;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -59,6 +59,10 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog
+        .BackupRestoreTargetsSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupSelectionDialog
+        .BackupSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog
         .ChangeInstallLocationDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog
@@ -67,31 +71,42 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog
         .RomIdSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.LoaderResult;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction.Type;
+import com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment.LoaderResult;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction.Type;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.RomInstallerParams;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask.VerifyZipTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
 import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class ZipFlashingFragment extends Fragment implements FirstUseDialogListener,
+public class InAppFlashingFragment extends Fragment implements FirstUseDialogListener,
         RomIdSelectionDialogListener, NamedSlotIdInputDialogListener,
-        ChangeInstallLocationDialogListener, LoaderCallbacks<LoaderResult>,
+        ChangeInstallLocationDialogListener, BackupSelectionDialogListener,
+        BackupRestoreTargetsSelectionDialogListener, LoaderCallbacks<LoaderResult>,
         ServiceConnection, OnItemMovedOrDismissedListener {
     private static final int PERFORM_ACTIONS = 1234;
 
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
     private static final String EXTRA_SELECTED_FILE = "selected_file";
+    private static final String EXTRA_SELECTED_BACKUP_DIR = "selected_backup_dir";
+    private static final String EXTRA_SELECTED_BACKUP_NAME = "selected_backup_name";
+    private static final String EXTRA_SELECTED_BACKUP_TARGETS = "selected_backup_targets";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
     private static final String EXTRA_ZIP_ROM_ID = "zip_rom_id";
+    private static final String EXTRA_ADD_TYPE = "add_type";
     private static final String EXTRA_TASK_ID_VERIFY_ZIP = "task_id_verify_zip";
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
@@ -100,30 +115,38 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     private static final int ACTIVITY_REQUEST_FILE = 1000;
 
     private static final String PROGRESS_DIALOG_VERIFY_ZIP =
-            ZipFlashingFragment.class.getCanonicalName() + ".progress.verify_zip";
+            InAppFlashingFragment.class.getCanonicalName() + ".progress.verify_zip";
     private static final String CONFIRM_DIALOG_FIRST_USE =
-            ZipFlashingFragment.class.getCanonicalName() + ".confirm.first_use";
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.first_use";
     private static final String CONFIRM_DIALOG_INSTALL_LOCATION =
-            ZipFlashingFragment.class.getCanonicalName() + ".confirm.install_location";
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.install_location";
     private static final String CONFIRM_DIALOG_NAMED_SLOT_ID =
-            ZipFlashingFragment.class.getCanonicalName() + ".confirm.named_slot_id";
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.named_slot_id";
     private static final String CONFIRM_DIALOG_ROM_ID =
-            ZipFlashingFragment.class.getCanonicalName() + ".confirm.rom_id";
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.rom_id";
     private static final String CONFIRM_DIALOG_ERROR =
-            ZipFlashingFragment.class.getCanonicalName() + ".confirm.error";
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.error";
+    private static final String CONFIRM_DIALOG_SELECT_BACKUP =
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.select_backup";
+    private static final String CONFIRM_DIALOG_SELECT_TARGETS =
+            InAppFlashingFragment.class.getCanonicalName() + ".confirm.select_targets";
 
     private OnReadyStateChangedListener mActivityCallback;
 
     private SharedPreferences mPrefs;
 
     private String mSelectedFile;
+    private String mSelectedBackupDir;
+    private String mSelectedBackupName;
+    private String[] mSelectedBackupTargets;
     private String mSelectedRomId;
     private String mCurrentRomId;
     private String mZipRomId;
+    private Type mAddType;
 
     private ProgressBar mProgressBar;
 
-    private ArrayList<PendingAction> mPendingActions = new ArrayList<>();
+    private ArrayList<MbtoolAction> mPendingActions = new ArrayList<>();
     private PendingActionCardAdapter mAdapter;
 
     private ArrayList<RomInformation> mBuiltinRoms = new ArrayList<>();
@@ -152,7 +175,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_zip_flashing, container, false);
+        return inflater.inflate(R.layout.fragment_in_app_flashing, container, false);
     }
 
     @Override
@@ -160,7 +183,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         super.onActivityCreated(savedInstanceState);
 
         if (savedInstanceState != null) {
-            ArrayList<PendingAction> savedActions =
+            ArrayList<MbtoolAction> savedActions =
                     savedInstanceState.getParcelableArrayList(EXTRA_PENDING_ACTIONS);
             mPendingActions.addAll(savedActions);
         }
@@ -180,21 +203,36 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         cardListView.setLayoutManager(llm);
 
-        FloatingActionButton fabFlashZip =
-                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_item);
-        fabFlashZip.setOnClickListener(new OnClickListener() {
+        final FloatingActionMenu fabMenu =
+                (FloatingActionMenu) getActivity().findViewById(R.id.fab_add_item_menu);
+        FloatingActionButton fabAddPatchedFile =
+                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_patched_file);
+        FloatingActionButton fabAddBackup =
+                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_backup);
+
+        fabAddPatchedFile.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Show file chooser
-                Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
-                startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+                addPatchedFile();
+                fabMenu.close(true);
+            }
+        });
+        fabAddBackup.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                addBackup();
+                fabMenu.close(true);
             }
         });
 
         if (savedInstanceState != null) {
             mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
+            mSelectedBackupDir = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_DIR);
+            mSelectedBackupName = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_NAME);
+            mSelectedBackupTargets = savedInstanceState.getStringArray(EXTRA_SELECTED_BACKUP_TARGETS);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
             mZipRomId = savedInstanceState.getString(EXTRA_ZIP_ROM_ID);
+            mAddType = (Type) savedInstanceState.getSerializable(EXTRA_ADD_TYPE);
             mTaskIdVerifyZip = savedInstanceState.getInt(EXTRA_TASK_ID_VERIFY_ZIP);
         }
 
@@ -213,7 +251,8 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             boolean shouldShow = mPrefs.getBoolean(PREF_SHOW_FIRST_USE_DIALOG, true);
             if (shouldShow) {
                 FirstUseDialog d = FirstUseDialog.newInstance(
-                        this, R.string.zip_flashing_title, R.string.zip_flashing_dialog_first_use);
+                        this, R.string.in_app_flashing_title,
+                        R.string.in_app_flashing_dialog_first_use);
                 d.show(getFragmentManager(), CONFIRM_DIALOG_FIRST_USE);
             }
         }
@@ -228,8 +267,12 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         outState.putParcelableArrayList(EXTRA_PENDING_ACTIONS, mPendingActions);
 
         outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
+        outState.putString(EXTRA_SELECTED_BACKUP_DIR, mSelectedBackupDir);
+        outState.putString(EXTRA_SELECTED_BACKUP_NAME, mSelectedBackupName);
+        outState.putStringArray(EXTRA_SELECTED_BACKUP_TARGETS, mSelectedBackupTargets);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
         outState.putString(EXTRA_ZIP_ROM_ID, mZipRomId);
+        outState.putSerializable(EXTRA_ADD_TYPE, mAddType);
         outState.putInt(EXTRA_TASK_ID_VERIFY_ZIP, mTaskIdVerifyZip);
     }
 
@@ -322,6 +365,24 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     public void onLoaderReset(Loader<LoaderResult> loader) {
     }
 
+    private void addPatchedFile() {
+        mAddType = Type.ROM_INSTALLER;
+
+        // Show file chooser
+        Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
+        startActivityForResult(intent, ACTIVITY_REQUEST_FILE);
+    }
+
+    private void addBackup() {
+        String backupDir = mPrefs.getString(
+                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+
+        mAddType = Type.BACKUP_RESTORE;
+
+        BackupSelectionDialog d = BackupSelectionDialog.newInstanceFromFragment(this, backupDir);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
+    }
+
     private void onVerifiedZip(String romId, VerificationResult result) {
         removeCachedTaskId(mTaskIdVerifyZip);
         mTaskIdVerifyZip = -1;
@@ -347,20 +408,20 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
             switch (result) {
             case ERROR_ZIP_NOT_FOUND:
-                error = getString(R.string.zip_flashing_error_zip_not_found);
+                error = getString(R.string.in_app_flashing_error_zip_not_found);
                 break;
 
             case ERROR_ZIP_READ_FAIL:
-                error = getString(R.string.zip_flashing_error_zip_read_fail);
+                error = getString(R.string.in_app_flashing_error_zip_read_fail);
                 break;
 
             case ERROR_NOT_MULTIBOOT:
-                error = getString(R.string.zip_flashing_error_not_multiboot);
+                error = getString(R.string.in_app_flashing_error_not_multiboot);
                 break;
 
             case ERROR_VERSION_TOO_OLD:
                 error = String.format(
-                        getString(R.string.zip_flashing_error_version_too_old),
+                        getString(R.string.in_app_flashing_error_version_too_old),
                         MbtoolUtils.getMinimumRequiredVersion(Feature.IN_APP_INSTALLATION));
                 break;
 
@@ -385,7 +446,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
                 mSelectedFile = FileUtils.getPathFromUri(getActivity(), data.getData());
 
                 GenericProgressDialog d = GenericProgressDialog.newInstance(
-                        R.string.zip_flashing_dialog_verifying_zip, R.string.please_wait);
+                        R.string.in_app_flashing_dialog_verifying_zip, R.string.please_wait);
                 d.show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
 
                 if (mService != null) {
@@ -411,6 +472,25 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         Editor e = mPrefs.edit();
         e.putBoolean(PREF_SHOW_FIRST_USE_DIALOG, !dontShowAgain);
         e.apply();
+    }
+
+    @Override
+    public void onSelectedBackup(String backupDir, String backupName) {
+        mSelectedBackupDir = backupDir;
+        mSelectedBackupName = backupName;
+
+        // Adk for restore targets
+        BackupRestoreTargetsSelectionDialog d =
+                BackupRestoreTargetsSelectionDialog.newInstanceFromFragment(this, Action.RESTORE);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_TARGETS);
+    }
+
+    @Override
+    public void onSelectedBackupRestoreTargets(String[] targets) {
+        mSelectedBackupTargets = targets;
+
+        // Ask for ROM ID
+        showRomIdSelectionDialog();
     }
 
     @Override
@@ -470,17 +550,26 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
             GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
-                    null, -1, null, getString(R.string.zip_flashing_error_no_overwrite_rom), null);
+                    null, -1, null, getString(R.string.in_app_flashing_error_no_overwrite_rom), null);
             d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         } else {
             mActivityCallback.onReady(true);
 
-            PendingAction pa = new PendingAction();
-            pa.type = Type.INSTALL_ZIP;
-            pa.zipFile = mSelectedFile;
-            pa.romId = mSelectedRomId;
-            mPendingActions.add(pa);
-            mAdapter.notifyItemInserted(mPendingActions.size() - 1);
+            MbtoolAction action = null;
+
+            if (mAddType == Type.ROM_INSTALLER) {
+                RomInstallerParams params = new RomInstallerParams(mSelectedFile, mSelectedRomId);
+                action = new MbtoolAction(params);
+            } else if (mAddType == Type.BACKUP_RESTORE) {
+                BackupRestoreParams params = new BackupRestoreParams(Action.RESTORE, mSelectedRomId,
+                        mSelectedBackupTargets, mSelectedBackupName, mSelectedBackupDir, false);
+                action = new MbtoolAction(params);
+            }
+
+            if (action != null) {
+                mPendingActions.add(action);
+                mAdapter.notifyItemInserted(mPendingActions.size() - 1);
+            }
         }
     }
 
@@ -490,13 +579,14 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
     }
 
     public void onActionBarCheckItemClicked() {
-        Intent intent = new Intent(getActivity(), ZipFlashingOutputActivity.class);
-        intent.putExtra(ZipFlashingOutputFragment.PARAM_PENDING_ACTIONS, getPendingActions());
+        Intent intent = new Intent(getActivity(), MbtoolTaskOutputActivity.class);
+        intent.putExtra(MbtoolTaskOutputFragment.PARAM_ACTIONS, getPendingActions());
         startActivityForResult(intent, PERFORM_ACTIONS);
     }
 
-    private PendingAction[] getPendingActions() {
-        return mPendingActions.toArray(new PendingAction[mPendingActions.size()]);
+    @NonNull
+    private MbtoolAction[] getPendingActions() {
+        return mPendingActions.toArray(new MbtoolAction[mPendingActions.size()]);
     }
 
     private static class BuiltinRomsLoader extends AsyncTaskLoader<LoaderResult> {
@@ -545,67 +635,12 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
         RomInformation currentRom;
     }
 
-    public static class PendingAction implements Parcelable {
-        public enum Type {
-            INSTALL_ZIP
-        }
-
-        public Type type;
-        public String zipFile;
-        public String romId;
-
-        public PendingAction() {
-        }
-
-        protected PendingAction(Parcel in) {
-            type = (Type) in.readSerializable();
-            zipFile = in.readString();
-            romId = in.readString();
-        }
-
-        @Override
-        public String toString() {
-            switch (type) {
-            case INSTALL_ZIP:
-                return "Install " + zipFile + " to " + romId;
-            default:
-                // Not reached
-                throw new IllegalStateException("Invalid pending action type");
-            }
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeSerializable(type);
-            dest.writeString(zipFile);
-            dest.writeString(romId);
-        }
-
-        @SuppressWarnings("unused")
-        public static final Parcelable.Creator<PendingAction> CREATOR =
-                new Parcelable.Creator<PendingAction>() {
-            @Override
-            public PendingAction createFromParcel(Parcel in) {
-                return new PendingAction(in);
-            }
-
-            @Override
-            public PendingAction[] newArray(int size) {
-                return new PendingAction[size];
-            }
-        };
-    }
-
     private static class PendingActionViewHolder extends ViewHolder {
         CardView vCard;
         TextView vTitle;
         TextView vSubtitle1;
         TextView vSubtitle2;
+        TextView vSubtitle3;
 
         public PendingActionViewHolder(View itemView) {
             super(itemView);
@@ -613,15 +648,16 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
             vTitle = (TextView) itemView.findViewById(R.id.action_title);
             vSubtitle1 = (TextView) itemView.findViewById(R.id.action_subtitle1);
             vSubtitle2 = (TextView) itemView.findViewById(R.id.action_subtitle2);
+            vSubtitle3 = (TextView) itemView.findViewById(R.id.action_subtitle3);
         }
     }
 
     private static class PendingActionCardAdapter extends
             RecyclerView.Adapter<PendingActionViewHolder> {
         private Context mContext;
-        private List<PendingAction> mItems;
+        private List<MbtoolAction> mItems;
 
-        public PendingActionCardAdapter(Context context, List<PendingAction> items) {
+        public PendingActionCardAdapter(Context context, List<MbtoolAction> items) {
             mContext = context;
             mItems = items;
         }
@@ -636,18 +672,36 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
 
         @Override
         public void onBindViewHolder(PendingActionViewHolder holder, int position) {
-            PendingAction pa = mItems.get(position);
+            MbtoolAction pa = mItems.get(position);
 
-            String zipFile = mContext.getString(R.string.zip_flashing_zip_file);
-            String location = mContext.getString(R.string.zip_flashing_location);
+            switch (pa.getType()) {
+            case ROM_INSTALLER: {
+                RomInstallerParams params = pa.getRomInstallerParams();
+                String filename = new File(params.getPath()).getName();
 
-            switch (pa.type) {
-            case INSTALL_ZIP:
-                holder.vTitle.setText(R.string.zip_flashing_install_zip);
+                holder.vTitle.setText(R.string.in_app_flashing_action_flash_file);
+                holder.vSubtitle1.setText(mContext.getString(
+                        R.string.in_app_flashing_filename, filename));
+                holder.vSubtitle2.setText(mContext.getString(
+                        R.string.in_app_flashing_location, params.getRomId()));
+                holder.vSubtitle3.setVisibility(View.GONE);
+                break;
             }
+            case BACKUP_RESTORE: {
+                BackupRestoreParams params = pa.getBackupRestoreParams();
 
-            holder.vSubtitle1.setText(String.format(zipFile, new File(pa.zipFile).getName()));
-            holder.vSubtitle2.setText(String.format(location, pa.romId));
+                holder.vTitle.setText(R.string.in_app_flashing_action_restore_backup);
+                holder.vSubtitle1.setText(mContext.getString(
+                        R.string.in_app_flashing_backup_name, params.getBackupName()));
+                holder.vSubtitle2.setText(mContext.getString(
+                        R.string.in_app_flashing_restore_targets,
+                        Arrays.toString(params.getTargets())));
+                holder.vSubtitle3.setText(mContext.getString(
+                        R.string.in_app_flashing_location, params.getRomId()));
+                holder.vSubtitle3.setVisibility(View.VISIBLE);
+                break;
+            }
+            }
         }
 
         @Override
@@ -664,7 +718,7 @@ public class ZipFlashingFragment extends Fragment implements FirstUseDialogListe
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        ZipFlashingFragment.this.onVerifiedZip(romId, result);
+                        InAppFlashingFragment.this.onVerifiedZip(romId, result);
                     }
                 });
             }

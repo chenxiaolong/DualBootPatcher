@@ -18,70 +18,64 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
+import android.widget.Toast;
 
-import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment
-        .OnReadyStateChangedListener;
 
-public class ZipFlashingActivity extends AppCompatActivity implements OnReadyStateChangedListener {
-    boolean mShowCheckIcon;
+public class MbtoolTaskOutputActivity extends AppCompatActivity {
+    MbtoolTaskOutputFragment mFragment;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zip_flashing);
+        setContentView(R.layout.activity_mbtool_task_output);
+
+        if (savedInstanceState == null) {
+            mFragment = new MbtoolTaskOutputFragment();
+            mFragment.setArguments(getIntent().getExtras());
+            getFragmentManager().beginTransaction().add(
+                    R.id.content_frame, mFragment, MbtoolTaskOutputFragment.TAG).commit();
+        } else {
+            mFragment = (MbtoolTaskOutputFragment)
+                    getFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.TAG);
+        }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.actionbar_check, menu);
-
-        int primary = ContextCompat.getColor(this, R.color.text_color_primary);
-        MenuUtils.tintAllMenuIcons(menu, primary);
-
-        MenuItem checkItem = menu.findItem(R.id.check_item);
-        if (!mShowCheckIcon) {
-            checkItem.setVisible(false);
-        }
-
-        return super.onCreateOptionsMenu(menu);
+        // Keep screen on
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            finish();
-            return true;
-        case R.id.check_item:
-            ZipFlashingFragment frag = (ZipFlashingFragment)
-                    getFragmentManager().findFragmentById(R.id.zip_flashing_fragment);
-            frag.onActionBarCheckItemClicked();
+            if (mFragment.isRunning()) {
+                showWaitUntilFinished();
+            } else {
+                finish();
+            }
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
-    public void onReady(boolean ready) {
-        mShowCheckIcon = ready;
-        invalidateOptionsMenu();
+    public void onBackPressed() {
+        if (mFragment.isRunning()) {
+            showWaitUntilFinished();
+        } else {
+            super.onBackPressed();
+        }
     }
 
-    @Override
-    public void onFinished() {
-        finish();
+    private void showWaitUntilFinished() {
+        Toast.makeText(this, R.string.wait_until_finished, Toast.LENGTH_SHORT).show();
     }
 }

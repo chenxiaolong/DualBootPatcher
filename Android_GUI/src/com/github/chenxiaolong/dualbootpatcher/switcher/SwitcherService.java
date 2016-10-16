@@ -21,8 +21,7 @@ import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
-import com.github.chenxiaolong.dualbootpatcher.switcher.ZipFlashingFragment.PendingAction;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask
         .BaseServiceTaskListener;
@@ -30,9 +29,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask.BootUIAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.FlashZipsTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWithRootTask;
@@ -193,15 +192,6 @@ public class SwitcherService extends ThreadPoolService {
         return taskId;
     }
 
-    // In-app flashing
-
-    public int flashZips(PendingAction[] actions) {
-        int taskId = sNewTaskId.getAndIncrement();
-        FlashZipsTask task = new FlashZipsTask(taskId, this, actions);
-        addTask(taskId, task);
-        return taskId;
-    }
-
     // Wipe ROM
 
     public int wipeRom(String romId, short[] targets) {
@@ -247,13 +237,11 @@ public class SwitcherService extends ThreadPoolService {
         return taskId;
     }
 
-    // Backup or restore ROM
+    // Perform mbtool command operations
 
-    public int backupRestoreAction(String action, String romId, String[] targets, String name,
-                                   String backupDir, boolean force) {
+    public int mbtoolActions(MbtoolAction[] actions) {
         int taskId = sNewTaskId.getAndIncrement();
-        BackupRestoreRomTask task = new BackupRestoreRomTask(
-                taskId, this, action, romId, targets, name, backupDir, force);
+        MbtoolTask task = new MbtoolTask(taskId, this, actions);
         addTask(taskId, task);
         return taskId;
     }

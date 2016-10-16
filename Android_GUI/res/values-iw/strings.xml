@@ -155,35 +155,35 @@
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <string name="set_kernel_mismatched_rom">מערכת ההפעלה הנוכחית היא %1$s, אבל אתה מנסה להגדיר את הקרנל עבור %2$s. בבקשה אשר את הפעולה.</string>
   <!--ZIP flash activity title-->
-  <string name="zip_flashing_title">עשה פלאש לקבצי הזיפ</string>
+  <string name="in_app_flashing_title">עשה פלאש לקבצי הזיפ</string>
   <!--Title of pending action card for installing a zip file-->
-  <string name="zip_flashing_install_zip">התקן את קבצי הזיפ</string>
+  <string name="in_app_flashing_action_flash_file">התקן את קבצי הזיפ</string>
   <!--Subtitle text in pending action card showing the selected filename-->
-  <string name="zip_flashing_zip_file">קובץ הזיפ: %s</string>
+  <string name="in_app_flashing_filename">קובץ הזיפ: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
-  <string name="zip_flashing_location">מיקום: %s</string>
+  <string name="in_app_flashing_location">מיקום: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
-  <string name="zip_flashing_dialog_installation_location">מיקום ההתקנה:</string>
+  <string name="in_app_flashing_dialog_installation_location">מיקום ההתקנה:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
-  <string name="zip_flashing_dialog_verifying_zip">מאמת קובץ זיפ</string>
+  <string name="in_app_flashing_dialog_verifying_zip">מאמת קובץ זיפ</string>
   <!--Error message shown when the selected zip file is not found-->
-  <string name="zip_flashing_error_zip_not_found">הקובץ הנבחר לא נמצא.</string>
+  <string name="in_app_flashing_error_zip_not_found">הקובץ הנבחר לא נמצא.</string>
   <!--Error message shown when the selected zip file could not be read-->
-  <string name="zip_flashing_error_zip_read_fail">אין אפשרות לקרוא את הקובץ הנבחר.</string>
+  <string name="in_app_flashing_error_zip_read_fail">אין אפשרות לקרוא את הקובץ הנבחר.</string>
   <!--Error message shown when the selected zip file isn't patched-->
-  <string name="zip_flashing_error_not_multiboot">נוכח כי הקובץ הנבחר אינו מוטלא עבור רב - הפעלה. נא הטלא אותו לפני ההפלאשה שלו.</string>
+  <string name="in_app_flashing_error_not_multiboot">נוכח כי הקובץ הנבחר אינו מוטלא עבור רב - הפעלה. נא הטלא אותו לפני ההפלאשה שלו.</string>
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
-  <string name="zip_flashing_error_version_too_old">קובץ הזיפ צריך להיות מוטלה עם %s או גרסא חדשה יותר כדי להשתמש בהפלאשת - תוך - אפליקציה.</string>
+  <string name="in_app_flashing_error_version_too_old">קובץ הזיפ צריך להיות מוטלה עם %s או גרסא חדשה יותר כדי להשתמש בהפלאשת - תוך - אפליקציה.</string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
-  <string name="zip_flashing_error_no_overwrite_rom">כדי למנוע את קריסת מערכת ההפעלה הנוכחית, הפלאשת קובץ זיפ עליה אינו מותר.</string>
+  <string name="in_app_flashing_error_no_overwrite_rom">כדי למנוע את קריסת מערכת ההפעלה הנוכחית, הפלאשת קובץ זיפ עליה אינו מותר.</string>
   <!--Dialog message asking if the user wants to change the installation location of the zip-->
-  <string name="zip_flashing_change_install_location_desc">הקובץ המקורי הוטלא עבור התקנה ל%s. התרצה להחליף את מקום ההתקנה?</string>
+  <string name="in_app_flashing_change_install_location_desc">הקובץ המקורי הוטלא עבור התקנה ל%s. התרצה להחליף את מקום ההתקנה?</string>
   <!--Dialog button for keeping the current installation location-->
-  <string name="zip_flashing_keep_current_location">שמור מיקום</string>
+  <string name="in_app_flashing_keep_current_location">שמור מיקום</string>
   <!--Dialog button for changing the installation location-->
-  <string name="zip_flashing_change_install_location">שנה מיקום</string>
+  <string name="in_app_flashing_change_install_location">שנה מיקום</string>
   <!--Message shown in the first-use dialog for zip flashing-->
-  <string name="zip_flashing_dialog_first_use">כדי לעשות פלאש לקובץ זיפ דרך הישום, רק הוסף את הזיפ המוטלא על ידי לחיצה על כפתור ההוספה הגדול. \n\nאת סדר ההפלאשה ניתן לשנות על ידי לחיצה ארוכה על הקובץ, ועל מנת למחוק קבצים ניתן להחליק אותם הצידה.\n\nנא לשים לב:
+  <string name="in_app_flashing_dialog_first_use">כדי לעשות פלאש לקובץ זיפ דרך הישום, רק הוסף את הזיפ המוטלא על ידי לחיצה על כפתור ההוספה הגדול. \n\nאת סדר ההפלאשה ניתן לשנות על ידי לחיצה ארוכה על הקובץ, ועל מנת למחוק קבצים ניתן להחליק אותם הצידה.\n\nנא לשים לב:
  תכונה זו עדיין נסיונית. אנא גבה את מכשירך לפני שתמשיך.</string>
   <!--ROM details item showing which slot the ROM is installed to-->
   <string name="rom_details_info_slot">חלקה</string>

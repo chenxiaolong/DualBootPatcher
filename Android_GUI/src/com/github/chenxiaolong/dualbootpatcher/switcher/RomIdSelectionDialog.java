@@ -77,7 +77,7 @@ public class RomIdSelectionDialog extends DialogFragment {
         names[infos.size() + 1] = getString(R.string.install_location_extsd_slot);
 
         Dialog dialog = new MaterialDialog.Builder(getActivity())
-                .title(R.string.zip_flashing_dialog_installation_location)
+                .title(R.string.in_app_flashing_dialog_installation_location)
                 .items(names)
                 .negativeText(R.string.cancel)
                 .itemsCallbackSingleChoice(-1, new ListCallbackSingleChoice() {

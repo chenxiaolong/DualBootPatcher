@@ -26,6 +26,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,9 +36,8 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.BackupRestoreRomTask
-        .BackupRestoreRomTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask.MbtoolTaskListener;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -47,22 +47,20 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jackpal.androidterm.emulatorview.EmulatorView;
 import jackpal.androidterm.emulatorview.TermSession;
 
-public class BackupRestoreOutputFragment extends Fragment implements ServiceConnection {
-    public static final String TAG = BackupRestoreOutputFragment.class.getSimpleName();
+public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnection {
+    public static final String TAG = MbtoolTaskOutputFragment.class.getSimpleName();
 
     private static final String EXTRA_IS_RUNNING = TAG + ".is_running";
-    private static final String EXTRA_TASK_ID_BACKUP_RESTORE = TAG + ".task_id_backup_restore";
+    private static final String EXTRA_TASK_ID = TAG + ".task_id";
 
-    public static final String PARAM_ACTION = "action";
-    public static final String PARAM_ROM_ID = "rom_id";
-    public static final String PARAM_TARGETS = "targets";
-    public static final String PARAM_NAME = "name";
-    public static final String PARAM_BACKUP_DIR = "backup_dir";
-    public static final String PARAM_FORCE = "force";
+    public static final String PARAM_ACTIONS = "actions";
+
+    private MbtoolAction[] mActions;
 
     private EmulatorView mEmulatorView;
     private TermSession mSession;
@@ -70,7 +68,7 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
 
     public boolean mIsRunning = true;
 
-    private int mTaskIdBackupRestore = -1;
+    private int mTaskId = -1;
 
     /** Task IDs to remove */
     private ArrayList<Integer> mTaskIdsToRemove = new ArrayList<>();
@@ -88,14 +86,14 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
         super.onCreate(savedInstanceState);
 
         if (savedInstanceState != null) {
-            mTaskIdBackupRestore = savedInstanceState.getInt(EXTRA_TASK_ID_BACKUP_RESTORE);
+            mTaskId = savedInstanceState.getInt(EXTRA_TASK_ID);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_backup_restore_output, container, false);
+        return inflater.inflate(R.layout.fragment_mbtool_tasks_output, container, false);
     }
 
     @Override
@@ -111,12 +109,45 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
             mIsRunning = savedInstanceState.getBoolean(EXTRA_IS_RUNNING);
         }
 
-        // Set activity title depending on the action
-        String action = getArguments().getString(PARAM_ACTION);
-        if (BackupRestoreRomTask.ACTION_BACKUP_ROM.equals(action)) {
-            getActivity().setTitle(R.string.br_backup_title);
-        } else if (BackupRestoreRomTask.ACTION_RESTORE_ROM.equals(action)) {
-            getActivity().setTitle(R.string.br_restore_title);
+        Parcelable[] parcelables = getArguments().getParcelableArray(PARAM_ACTIONS);
+        mActions = Arrays.copyOf(parcelables, parcelables.length, MbtoolAction[].class);
+
+        int titleResId = -1;
+
+        int countBackup = 0;
+        int countRestore = 0;
+        int countFlash = 0;
+
+        for (MbtoolAction a : mActions) {
+            switch (a.getType()) {
+            case ROM_INSTALLER:
+                countFlash++;
+                break;
+            case BACKUP_RESTORE:
+                switch (a.getBackupRestoreParams().getAction()) {
+                case BACKUP:
+                    countBackup++;
+                    break;
+                case RESTORE:
+                    countRestore++;
+                    break;
+                }
+                break;
+            }
+        }
+
+        if (countBackup + countRestore + countFlash > 1) {
+            titleResId = R.string.in_app_flashing_title_flash_files;
+        } else if (countBackup > 0) {
+            titleResId = R.string.in_app_flashing_title_backup_rom;
+        } else if (countRestore > 0) {
+            titleResId = R.string.in_app_flashing_title_restore_rom;
+        } else if (countFlash > 0) {
+            titleResId = R.string.in_app_flashing_title_flash_file;
+        }
+
+        if (titleResId >= 0) {
+            getActivity().setTitle(titleResId);
         }
     }
 
@@ -124,7 +155,7 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(EXTRA_IS_RUNNING, mIsRunning);
-        outState.putInt(EXTRA_TASK_ID_BACKUP_RESTORE, mTaskIdBackupRestore);
+        outState.putInt(EXTRA_TASK_ID, mTaskId);
     }
 
     @Override
@@ -163,16 +194,16 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
         mSession = null;
 
         if (getActivity().isFinishing()) {
-            if (mTaskIdBackupRestore >= 0) {
-                removeCachedTaskId(mTaskIdBackupRestore);
-                mTaskIdBackupRestore = -1;
+            if (mTaskId >= 0) {
+                removeCachedTaskId(mTaskId);
+                mTaskId = -1;
             }
         }
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
-            if (mTaskIdBackupRestore >= 0) {
-                mService.removeCallback(mTaskIdBackupRestore, mCallback);
+            if (mTaskId >= 0) {
+                mService.removeCallback(mTaskId, mCallback);
             }
         }
 
@@ -197,21 +228,12 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
         }
         mTaskIdsToRemove.clear();
 
-        if (mTaskIdBackupRestore < 0) {
-            Bundle args = getArguments();
-            String action = args.getString(PARAM_ACTION);
-            String romId = args.getString(PARAM_ROM_ID);
-            String[] targets = args.getStringArray(PARAM_TARGETS);
-            String backupName = args.getString(PARAM_NAME);
-            String backupDir = args.getString(PARAM_BACKUP_DIR);
-            boolean force = args.getBoolean(PARAM_FORCE);
-
-            mTaskIdBackupRestore = mService.backupRestoreAction(
-                    action, romId, targets, backupName, backupDir, force);
-            mService.addCallback(mTaskIdBackupRestore, mCallback);
-            mService.enqueueTaskId(mTaskIdBackupRestore);
+        if (mTaskId < 0) {
+            mTaskId = mService.mbtoolActions(mActions);
+            mService.addCallback(mTaskId, mCallback);
+            mService.enqueueTaskId(mTaskId);
         } else {
-            mService.addCallback(mTaskIdBackupRestore, mCallback);
+            mService.addCallback(mTaskId, mCallback);
         }
     }
 
@@ -237,7 +259,7 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
         }
     }
 
-    private void onFinishedTask() {
+    private void onFinishedTasks() {
         mIsRunning = false;
     }
 
@@ -245,14 +267,15 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
         return mIsRunning;
     }
 
-    private class SwitcherEventCallback implements BackupRestoreRomTaskListener {
+    private class SwitcherEventCallback implements MbtoolTaskListener {
         @Override
-        public void onBackupRestoreFinished(int taskId, String action, boolean success) {
-            if (taskId == mTaskIdBackupRestore) {
+        public void onMbtoolTasksCompleted(int taskId, MbtoolAction[] actions, int attempted,
+                                           int succeeded) {
+            if (taskId == mTaskId) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        onFinishedTask();
+                        onFinishedTasks();
                     }
                 });
             }
@@ -260,7 +283,7 @@ public class BackupRestoreOutputFragment extends Fragment implements ServiceConn
 
         @Override
         public void onCommandOutput(int taskId, final String line) {
-            if (taskId == mTaskIdBackupRestore) {
+            if (taskId == mTaskId) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {

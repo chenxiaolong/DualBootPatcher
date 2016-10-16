@@ -152,35 +152,35 @@ spécifiées.</string>
   <string name="set_kernel_mismatched_rom">La ROM actuellement sélectionné est %1$s, mais vous essayez
 de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</string>
   <!--ZIP flash activity title-->
-  <string name="zip_flashing_title">Flasher des fichiers ZIP</string>
+  <string name="in_app_flashing_title">Flasher des fichiers ZIP</string>
   <!--Title of pending action card for installing a zip file-->
-  <string name="zip_flashing_install_zip">Installer le fichier zip</string>
+  <string name="in_app_flashing_action_flash_file">Installer le fichier zip</string>
   <!--Subtitle text in pending action card showing the selected filename-->
-  <string name="zip_flashing_zip_file">Fichier Zip: %s</string>
+  <string name="in_app_flashing_filename">Fichier Zip: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
-  <string name="zip_flashing_location">Emplacement: %s</string>
+  <string name="in_app_flashing_location">Emplacement: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
-  <string name="zip_flashing_dialog_installation_location">Emplacement de l\'installation:</string>
+  <string name="in_app_flashing_dialog_installation_location">Emplacement de l\'installation:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
-  <string name="zip_flashing_dialog_verifying_zip">Vérification zip</string>
+  <string name="in_app_flashing_dialog_verifying_zip">Vérification zip</string>
   <!--Error message shown when the selected zip file is not found-->
-  <string name="zip_flashing_error_zip_not_found">Le fichier zip sélectionné n\'a pas été trouvé.</string>
+  <string name="in_app_flashing_error_zip_not_found">Le fichier zip sélectionné n\'a pas été trouvé.</string>
   <!--Error message shown when the selected zip file could not be read-->
-  <string name="zip_flashing_error_zip_read_fail">Impossible de lire le fichier zip sélectionné.</string>
+  <string name="in_app_flashing_error_zip_read_fail">Impossible de lire le fichier zip sélectionné.</string>
   <!--Error message shown when the selected zip file isn't patched-->
-  <string name="zip_flashing_error_not_multiboot">Le fichier zip ne semble pas être patché pour le multiboot. S\'il vous plaît patcher le fichier avant de le flasher.</string>
+  <string name="in_app_flashing_error_not_multiboot">Le fichier zip ne semble pas être patché pour le multiboot. S\'il vous plaît patcher le fichier avant de le flasher.</string>
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
-  <string name="zip_flashing_error_version_too_old">Le fichier zip doit être patché avec %s ou plus récent afin d\'utiliser le flashage in-app.</string>
+  <string name="in_app_flashing_error_version_too_old">Le fichier zip doit être patché avec %s ou plus récent afin d\'utiliser le flashage in-app.</string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
-  <string name="zip_flashing_error_no_overwrite_rom">Pour éviter le système actuel d\'un crash ou redémarrage, flasher un zip par dessus la ROM actuelle n\'est pas autorisé.</string>
+  <string name="in_app_flashing_error_no_overwrite_rom">Pour éviter le système actuel d\'un crash ou redémarrage, flasher un zip par dessus la ROM actuelle n\'est pas autorisé.</string>
   <!--Dialog message asking if the user wants to change the installation location of the zip-->
-  <string name="zip_flashing_change_install_location_desc">Le Zip a été patché pour l\'installation de %s. Souhaitez-vous modifier l\'emplacement d\'installation?</string>
+  <string name="in_app_flashing_change_install_location_desc">Le Zip a été patché pour l\'installation de %s. Souhaitez-vous modifier l\'emplacement d\'installation?</string>
   <!--Dialog button for keeping the current installation location-->
-  <string name="zip_flashing_keep_current_location">Garder l\'emplacement</string>
+  <string name="in_app_flashing_keep_current_location">Garder l\'emplacement</string>
   <!--Dialog button for changing the installation location-->
-  <string name="zip_flashing_change_install_location">Changer l\'emplacement</string>
+  <string name="in_app_flashing_change_install_location">Changer l\'emplacement</string>
   <!--Message shown in the first-use dialog for zip flashing-->
-  <string name="zip_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
+  <string name="in_app_flashing_dialog_first_use">Pour flasher un fichier zip en utilisant le flashage in-app, just ajouter le fichier zip patché en tapant le grand icône plus. \n\nL\'ordre de flashage peut être modifié en appuyant et maintenant le fichier et un fichier peut être éliminé en le glissant sur les côtés. \n\nNOTE: Cette fonction est encore expérimentale. Veuillez sauvegarder avant de continuer!</string>
   <!--ROM details item showing which slot the ROM is installed to-->
   <!--ROM details item showing the version of the ROM-->
   <!--ROM details item showing the build name of the ROM-->

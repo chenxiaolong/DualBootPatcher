@@ -196,7 +196,7 @@ public class SwitcherListFragment extends Fragment implements
         mFabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), ZipFlashingActivity.class);
+                Intent intent = new Intent(getActivity(), InAppFlashingActivity.class);
                 startActivityForResult(intent, REQUEST_FLASH_ZIP);
             }
         });
