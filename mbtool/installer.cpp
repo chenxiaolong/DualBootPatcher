@@ -509,11 +509,23 @@ bool Installer::mount_efs() const
             }
         }
 
-        if (!efs_dev.empty() && stat(efs_dev.c_str(), &sb) == 0
-                && log_mount(efs_dev.c_str(), in_chroot("/efs").c_str(),
-                             "ext4", MS_RDONLY, "") < 0) {
-            return false;
+        // FIXME: Temporary hack until the EFS partition path is specified in
+        // the device definition
+        std::vector<std::string> efs_devs{
+            efs_dev,
+            "/dev/block/bootdevice/by-name/efs",
+            "/dev/block/bootdevice/by-name/EFS",
+        };
+
+        for (auto const &dev : efs_devs) {
+            if (!dev.empty() && stat(dev.c_str(), &sb) == 0
+                    && log_mount(dev.c_str(), in_chroot("/efs").c_str(),
+                                 "ext4", MS_RDONLY, "") == 0) {
+                return true;
+            }
         }
+
+        return false;
     }
 
     return true;
