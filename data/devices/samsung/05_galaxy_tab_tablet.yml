@@ -212,6 +212,34 @@
       - /dev/block/mmcblk0p15
 
 
+- name: Samsung Galaxy Tab Pro 12.2 (Wifi)
+  id: v2wifi
+  codenames:
+    - v2wifi
+    - v2wifiue
+    - v2wifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+
+
 - name: Samsung Galaxy Tab S 8.4/10.5
   id: tab_s
   codenames:
