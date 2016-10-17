@@ -114,7 +114,7 @@
                 <div class="panel panel-success">
                     <!-- Version and timestamp of build -->
                     <div class="panel-heading">
-                        <h2 class="panel-title" style="font-size:20px;">{{ build.version }}<p class="visible-xs"></p> <small>{{ build.timestamp }}</small></h2>
+                        <h2 class="panel-title" style="font-size:20px;">{{ build.version | e }}<p class="visible-xs"></p> <small>{{ build.timestamp | e }}</small></h2>
                     </div>
                     <div class="panel-body">
                         <h4>Files:</h4>
@@ -124,31 +124,31 @@
                                 <li>
                                     <!-- For extra-small devices -->
                                     <div class="visible-xs">
-                                        <a href="{{ file_info.file }}">{{ file_info.target }}</a>
+                                        <a href="{{ file_info.file | e }}">{{ file_info.target | e }}</a>
                                         {% if 'md5' in file_info %}
-                                            | <a href="{{ file_info.md5 }}">MD5</a>
+                                            | <a href="{{ file_info.md5 | e }}">MD5</a>
                                         {% endif %}
                                         {% if 'sha1' in file_info %}
-                                            | <a href="{{ file_info.sha1 }}">SHA1</a>
+                                            | <a href="{{ file_info.sha1 | e }}">SHA1</a>
                                         {% endif %}
                                         {% if 'sha512' in file_info %}
-                                            | <a href="{{ file_info.sha512 }}">SHA512</a>
+                                            | <a href="{{ file_info.sha512 | e }}">SHA512</a>
                                         {% endif %}
-                                        ({{ file_info.size }})
+                                        ({{ file_info.size | e }})
                                     </div>
                                     <!-- For non-extra-small devices -->
                                     <div class="hidden-xs">
-                                        {{ file_info.target }}: <a href="{{ file_info.file }}">{{ file_info.name }}</a>
+                                        {{ file_info.target | e }}: <a href="{{ file_info.file | e }}">{{ file_info.name | e }}</a>
                                         {% if 'md5' in file_info %}
-                                            | <a href="{{ file_info.md5 }}">MD5</a>
+                                            | <a href="{{ file_info.md5 | e }}">MD5</a>
                                         {% endif %}
                                         {% if 'sha1' in file_info %}
-                                            | <a href="{{ file_info.sha1 }}">SHA1</a>
+                                            | <a href="{{ file_info.sha1 | e }}">SHA1</a>
                                         {% endif %}
                                         {% if 'sha512' in file_info %}
-                                            | <a href="{{ file_info.sha512 }}">SHA512</a>
+                                            | <a href="{{ file_info.sha512 | e }}">SHA512</a>
                                         {% endif %}
-                                        ({{ file_info.size }})
+                                        ({{ file_info.size | e }})
                                     </div>
                                 </li>
                             {% endfor %}
@@ -165,8 +165,8 @@
                                 <tbody>
                                     {% for commit in build.commits %}
                                         <tr>
-                                            <td><a href="https://github.com/chenxiaolong/DualBootPatcher/commit/{{ commit.id }}">{{ commit.short_id }}</a></td>
-                                            <td>{{ commit.message }}</td>
+                                            <td><a href="https://github.com/chenxiaolong/DualBootPatcher/commit/{{ commit.id | e }}">{{ commit.short_id | e }}</a></td>
+                                            <td>{{ commit.message | e }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
