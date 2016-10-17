@@ -909,5 +909,3 @@ int main(int argc, char *argv[])
 
     return flash_zip() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-#include "mbcommon/atexit_hack.c"

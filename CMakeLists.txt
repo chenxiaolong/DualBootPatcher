@@ -45,8 +45,27 @@ endif()
 # Require at least Android NDK r11
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
-    if(ANDROID_NDK_RELEASE_NUM LESS 12000)
-        message(FATAL_ERROR "Only android-ndk r12 or newer is supported")
+    # r13 bug: ANDROID_NDK_RELEASE has newline at the end
+    string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
+    set(ndk_min_version 130.0)
+    set(ndk_max_version 131.0)
+
+    # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
+    # custom toolchain file. Since we can't guarantee that the custom toolchain
+    # file will work with newer versions of the NDK, we'll depend on an exact
+    # version.
+    set(ndk_exact_version 130.3315539)
+
+    if(DEFINED ndk_exact_version
+            AND NOT ndk_release VERSION_EQUAL ndk_exact_version)
+        message(FATAL_ERROR
+                "Requires NDK version ${ndk_exact_version}"
+                " (detected: ${ndk_release})")
+    elseif(ndk_release VERSION_LESS ndk_min_version
+            OR NOT ndk_release VERSION_LESS ndk_max_version)
+        message(FATAL_ERROR
+                "Requires ${ndk_min_version} <= NDK version < ${ndk_max_version}"
+                " (detected: ${ndk_release})")
     endif()
 endif()
 
