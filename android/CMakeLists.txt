@@ -1,30 +1,19 @@
 if(MBP_TOP_LEVEL_BUILD)
     include(ExternalProject)
 
-    set(ANDROID_TOOLCHAIN_VERSION clang3.6)
-    set(ANDROID_ABIS armeabi-v7a arm64-v8a x86 x86_64)
+    if(DEFINED ANDROID_NDK_HOME AND EXISTS "${ANDROID_NDK_HOME}")
+        set(ndk_path "${ANDROID_NDK_HOME}")
+    elseif(DEFINED ANDROID_NDK AND EXISTS "${ANDROID_NDK}")
+        set(ndk_path "${ANDROID_NDK}")
+    elseif(DEFINED ENV{ANDROID_NDK_HOME} AND EXISTS "$ENV{ANDROID_NDK_HOME}")
+        set(ndk_path "$ENV{ANDROID_NDK_HOME}")
+    elseif(DEFINED ENV{ANDROID_NDK} AND EXISTS "$ENV{ANDROID_NDK}")
+        set(ndk_path "$ENV{ANDROID_NDK}")
+    else()
+        message(FATAL_ERROR "Could not find Android NDK")
+    endif()
 
-    function(get_toolchain_name toolchain_var abi)
-        if(${abi} STREQUAL armeabi-v7a)
-            set(${toolchain_var}
-                arm-linux-androideabi-${ANDROID_TOOLCHAIN_VERSION}
-                PARENT_SCOPE)
-        elseif(${abi} STREQUAL arm64-v8a)
-            set(${toolchain_var}
-                aarch64-linux-android-${ANDROID_TOOLCHAIN_VERSION}
-                PARENT_SCOPE)
-        elseif(${abi} STREQUAL x86)
-            set(${toolchain_var}
-                x86-${ANDROID_TOOLCHAIN_VERSION}
-                PARENT_SCOPE)
-        elseif(${abi} STREQUAL x86_64)
-            set(${toolchain_var}
-                x86_64-${ANDROID_TOOLCHAIN_VERSION}
-                PARENT_SCOPE)
-        else()
-            message(FATAL_ERROR "Invalid ABI: ${abi}")
-        endif()
-    endfunction()
+    set(ANDROID_ABIS armeabi-v7a arm64-v8a x86 x86_64)
 
     # Always make release builds for the system components unless explicitly
     # told not to since a debug build of mbtool is too large to fit in some
@@ -38,14 +27,15 @@ if(MBP_TOP_LEVEL_BUILD)
     # List of ExternalProject directories to run "make clean" in
     set(RECURSIVE_CLEAN_DIRS)
 
-    foreach(abi ${ANDROID_ABIS})
-        get_toolchain_name(toolchain_name ${abi})
+    # FIXME: Required until https://github.com/android-ndk/ndk/issues/222 is fixed
+    set(ENV{ANDROID_NDK} "${ndk_path}")
 
+    foreach(abi ${ANDROID_ABIS})
         set(INTERNAL_COMMON_OPTIONS
-            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/external/android-cmake/android.toolchain.cmake
+            -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/cmake/android.toolchain.cmake
+            #-DCMAKE_TOOLCHAIN_FILE=${ndk_path}/build/cmake/android.toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
-            -DANDROID_TOOLCHAIN_NAME=${toolchain_name}
             -DANDROID_STL=gnustl_static
             #-DANDROID_STL=c++_static
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
@@ -56,22 +46,23 @@ if(MBP_TOP_LEVEL_BUILD)
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
-            list(APPEND INTERNAL_COMMON_OPTIONS "-DNDK_CCACHE=${MBP_CCACHE_PATH}")
+            list(APPEND INTERNAL_COMMON_OPTIONS
+                 "-DANDROID_CCACHE=${MBP_CCACHE_PATH}")
         endif()
 
         set(INTERNAL_ANDROID_APP_OPTIONS
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-            -DANDROID_APP_PIE=ON
-            -DANDROID_NATIVE_API_LEVEL=17
+            -DANDROID_PIE=ON
+            -DANDROID_PLATFORM=android-17
             -DMBP_BUILD_TARGET=android-app
         )
 
         set(INTERNAL_ANDROID_SYSTEM_OPTIONS
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
-            -DANDROID_APP_PIE=OFF
-            -DANDROID_NATIVE_API_LEVEL=23
+            -DANDROID_PIE=OFF
+            -DANDROID_PLATFORM=android-24
             -DMBP_BUILD_TARGET=android-system
         )
 

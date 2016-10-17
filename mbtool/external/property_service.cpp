@@ -35,7 +35,7 @@
 #include "mbutil/file.h"
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-#include "external/_system_properties.h"
+#include "mbutil/external/_system_properties.h"
 
 #define PERSISTENT_PROPERTY_DIR  "/data/property"
 #define FSTAB_PREFIX "/fstab."
@@ -62,7 +62,7 @@ bool property_init()
         return false;
     }
 
-    if (__system_property_area_init()) {
+    if (mb__system_property_area_init()) {
         return false;
     }
 
@@ -95,7 +95,7 @@ bool property_cleanup()
 
 int __property_get(const char *name, char *value)
 {
-    return __system_property_get(name, value);
+    return mb__system_property_get(name, value);
 }
 
 bool property_get_bool(const char *key, bool default_value)
@@ -190,7 +190,7 @@ static int property_set_impl(const char *name, const char *value)
         return -1;
     }
 
-    prop_info *pi = (prop_info *) __system_property_find(name);
+    prop_info *pi = (prop_info *) mb__system_property_find(name);
 
     if (pi != 0) {
         /* ro.* properties may NEVER be modified once set */
@@ -198,9 +198,9 @@ static int property_set_impl(const char *name, const char *value)
             return -1;
         }
 
-        __system_property_update(pi, value, valuelen);
+        mb__system_property_update(pi, value, valuelen);
     } else {
-        int rc = __system_property_add(name, namelen, value, valuelen);
+        int rc = mb__system_property_add(name, namelen, value, valuelen);
         if (rc < 0) {
             return rc;
         }
@@ -413,6 +413,7 @@ static void load_properties_from_file(const char *filename, const char *filter)
     std::vector<unsigned char> data;
     if (mb::util::file_read_all(filename, &data)) {
         data.push_back('\n');
+        data.push_back('\0');
         load_properties((char *) data.data(), filter);
     }
 

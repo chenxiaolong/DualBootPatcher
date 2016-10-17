@@ -17,6 +17,3 @@
 [submodule "external/neuteredsaf"]
 	path = external/neuteredsaf
 	url = https://github.com/chenxiaolong/neuteredsaf.git
-[submodule "external/android-cmake"]
-	path = external/android-cmake
-	url = https://github.com/chenxiaolong/android-cmake.git

@@ -29,9 +29,6 @@ typedef struct CBootImage CBootImage;
 struct CCpioFile;
 typedef struct CCpioFile CCpioFile;
 
-struct CDevice;
-typedef struct CDevice CDevice;
-
 struct CFileInfo;
 typedef struct CFileInfo CFileInfo;
 

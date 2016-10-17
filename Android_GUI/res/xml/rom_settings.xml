@@ -28,6 +28,12 @@
             android:title="@string/rom_settings_boot_ui_uninstall_title" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/rom_settings_backup_title">
+        <Preference
+            android:key="backup_directory"
+            android:title="@string/rom_settings_backup_change_directory" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/rom_settings_patcher_title">
         <!-- com.afollestad.materialdialogs.prefs.MaterialListPreference -->
         <ListPreference

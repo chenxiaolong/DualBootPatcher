@@ -53,7 +53,6 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
@@ -65,7 +64,7 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
         .PatchFileItemClickListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
@@ -74,10 +73,12 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService.PatcherEve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+import com.github.clans.fab.FloatingActionButton;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -251,6 +252,9 @@ public class PatchFileFragment extends Fragment implements
         LinearLayoutManager llm = new LinearLayoutManager(getActivity());
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mRecycler.setLayoutManager(llm);
+
+        // Hide FAB initially
+        mFAB.hide(false);
 
         // Show loading progress bar
         updateLoadingStatus();
@@ -524,12 +528,12 @@ public class PatchFileFragment extends Fragment implements
     private void updateLoadingStatus() {
         if (mShowingProgress) {
             mRecycler.setVisibility(View.GONE);
-            mFAB.setVisibility(View.GONE);
+            mFAB.hide(true);
             mAddZipMessage.setVisibility(View.GONE);
             mProgressBar.setVisibility(View.VISIBLE);
         } else {
             mRecycler.setVisibility(View.VISIBLE);
-            mFAB.setVisibility(View.VISIBLE);
+            mFAB.show(true);
             mAddZipMessage.setVisibility(View.VISIBLE);
             mProgressBar.setVisibility(View.GONE);
         }
@@ -693,7 +697,7 @@ public class PatchFileFragment extends Fragment implements
      * @see {@link #onSelectedInputUri(Uri)}
      */
     private void selectInputUri() {
-        Intent intent = FileUtils.getFileOpenIntent(getActivity());
+        Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
         startActivityForResult(intent, ACTIVITY_REQUEST_INPUT_FILE);
     }
 
@@ -731,7 +735,7 @@ public class PatchFileFragment extends Fragment implements
             sb.append(extension);
         }
         String desiredName = sb.toString();
-        Intent intent = FileUtils.getFileSaveIntent(getActivity(), desiredName);
+        Intent intent = FileUtils.getFileSaveIntent(getActivity(), "*/*", desiredName);
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
     }
 
@@ -1081,21 +1085,28 @@ public class PatchFileFragment extends Fragment implements
                 metadata.uri = params[i];
                 metadata.mimeType = mCR.getType(metadata.uri);
 
-                Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
-                try {
-                    if (cursor != null && cursor.moveToFirst()) {
-                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if ("content".equals(metadata.uri.getScheme())) {
+                    Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
+                    try {
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
 
-                        metadata.displayName = cursor.getString(nameIndex);
-                        if (cursor.isNull(sizeIndex)) {
-                            metadata.size = -1;
-                        } else {
-                            metadata.size = cursor.getLong(sizeIndex);
+                            metadata.displayName = cursor.getString(nameIndex);
+                            if (cursor.isNull(sizeIndex)) {
+                                metadata.size = -1;
+                            } else {
+                                metadata.size = cursor.getLong(sizeIndex);
+                            }
                         }
+                    } finally {
+                        IOUtils.closeQuietly(cursor);
                     }
-                } finally {
-                    IOUtils.closeQuietly(cursor);
+                } else if ("file".equals(metadata.uri.getScheme())) {
+                    metadata.displayName = metadata.uri.getLastPathSegment();
+                    metadata.size = new File(metadata.uri.getPath()).length();
+                } else {
+                    throw new IllegalStateException("Cannot handle URI: " + metadata.uri);
                 }
             }
 

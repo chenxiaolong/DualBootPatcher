@@ -4,6 +4,8 @@ Building Patcher for Linux
 The following packages are needed for compiling:
 
 - cmake
+- jansson
+- yaml-cpp
 - qt5
 - libarchive (optional)
 - lz4 (optional)

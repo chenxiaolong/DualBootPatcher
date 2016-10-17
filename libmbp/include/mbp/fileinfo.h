@@ -22,8 +22,7 @@
 #include <memory>
 
 #include "mbcommon/common.h"
-
-#include "device.h"
+#include "mbdevice/device.h"
 
 
 namespace mbp

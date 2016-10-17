@@ -62,13 +62,12 @@
             android:label="@string/a_s_settings_indiv_app_sharing_title"
             android:parentActivityName=".appsharing.AppSharingSettingsActivity" />
         <activity
-            android:name=".switcher.ZipFlashingActivity"
-            android:label="@string/zip_flashing_title"
+            android:name=".switcher.InAppFlashingActivity"
+            android:label="@string/in_app_flashing_title"
             android:parentActivityName=".MainActivity" />
         <activity
-            android:name=".switcher.ZipFlashingOutputActivity"
-            android:label="@string/zip_flashing_title"
-            android:parentActivityName=".switcher.ZipFlashingActivity" />
+            android:name=".switcher.MbtoolTaskOutputActivity"
+            android:parentActivityName=".switcher.RomDetailActivity" />
         <activity
             android:name=".patcher.AutomatedPatcherActivity"
             android:excludeFromRecents="true"

@@ -59,12 +59,12 @@ public class ChangeInstallLocationDialog extends DialogFragment {
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         String zipRomId = getArguments().getString(ARG_ZIP_ROM_ID);
         String message = String.format(
-                getString(R.string.zip_flashing_change_install_location_desc), zipRomId);
+                getString(R.string.in_app_flashing_change_install_location_desc), zipRomId);
 
         Dialog dialog = new MaterialDialog.Builder(getActivity())
                 .content(message)
-                .positiveText(R.string.zip_flashing_change_install_location)
-                .negativeText(R.string.zip_flashing_keep_current_location)
+                .positiveText(R.string.in_app_flashing_change_install_location)
+                .negativeText(R.string.in_app_flashing_keep_current_location)
                 .onPositive(new SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog,

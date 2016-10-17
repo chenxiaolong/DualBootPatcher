@@ -48,17 +48,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.getbase.floatingactionbutton.FloatingActionButton
+        <com.github.clans.fab.FloatingActionButton
             android:id="@+id/fab_flash_zip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end|bottom"
             android:layout_marginBottom="@dimen/fab_margin_bottom"
             android:layout_marginEnd="@dimen/fab_margin_end"
+            android:src="@drawable/ic_system_update_white_24dp"
             app:layout_behavior="com.github.chenxiaolong.dualbootpatcher.views.FloatingActionButtonBehavior"
             fab:fab_colorNormal="@color/fab_pink"
-            fab:fab_colorPressed="@color/fab_pink_pressed"
-            fab:fab_icon="@drawable/ic_system_update_white_48dp"
-            fab:fab_plusIconColor="@color/fab_pink_plus" />
+            fab:fab_colorPressed="@color/fab_pink_pressed" />
     </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

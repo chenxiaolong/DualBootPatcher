@@ -27,10 +27,10 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
@@ -72,7 +72,7 @@ public class SwitcherUtils {
             if (id >= 0) {
                 try {
                     iface.fileClose(id);
-                } catch (MbtoolCommandException e) {
+                } catch (Exception e) {
                     // Ignore
                 }
             }
@@ -83,59 +83,25 @@ public class SwitcherUtils {
 
     public static String getBootPartition(Context context, MbtoolInterface iface)
             throws IOException, MbtoolException {
-        String realCodename = RomUtils.getDeviceCodename(context);
-        String bootBlockDev = null;
+        Device device = PatcherUtils.getCurrentDevice(context);
 
-        PatcherConfig pc = new PatcherConfig();
-        for (Device d : pc.getDevices()) {
-            boolean matches = false;
-
-            for (String codename : d.getCodenames()) {
-                if (realCodename.equals(codename)) {
-                    matches = true;
-                    break;
+        if (device != null) {
+            for (String blockDev : device.getBootBlockDevs()) {
+                if (pathExists(iface, blockDev)) {
+                    return blockDev;
                 }
-            }
-
-            if (matches) {
-                String[] bootBlockDevs = d.getBootBlockDevs();
-                for (String blockDev : bootBlockDevs) {
-                    if (pathExists(iface, blockDev)) {
-                        bootBlockDev = blockDev;
-                        break;
-                    }
-                }
-                if (bootBlockDev == null && bootBlockDevs.length > 0) {
-                    bootBlockDev = bootBlockDevs[0];
-                }
-                break;
             }
         }
-        pc.destroy();
 
-        return bootBlockDev;
+        return null;
     }
 
     public static String[] getBlockDevSearchDirs(Context context) {
-        String realCodename = RomUtils.getDeviceCodename(context);
-        PatcherConfig pc = new PatcherConfig();
-        for (Device d : pc.getDevices()) {
-            boolean matches = false;
+        Device device = PatcherUtils.getCurrentDevice(context);
 
-            for (String codename : d.getCodenames()) {
-                if (realCodename.equals(codename)) {
-                    matches = true;
-                    break;
-                }
-            }
-
-            if (matches) {
-                String[] dirs = d.getBlockDevBaseDirs();
-                pc.destroy();
-                return dirs;
-            }
+        if (device != null) {
+            return device.getBlockDevBaseDirs();
         }
-        pc.destroy();
 
         return null;
     }
@@ -386,6 +352,7 @@ public class SwitcherUtils {
         }
 
         try {
+            //noinspection OctalInteger
             iface.pathChmod(targetFile.getAbsolutePath(), 0644);
         } catch (MbtoolCommandException e) {
             Log.e(TAG, "Failed to chmod " + targetFile, e);

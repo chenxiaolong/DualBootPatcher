@@ -22,10 +22,12 @@
 
 #include "mainwindow.h"
 
+#include <mbdevice/device.h>
 #include <mbp/patcherconfig.h>
 #include <mbp/patcherinterface.h>
 
 #include <memory>
+#include <vector>
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -37,6 +39,8 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
+
+typedef std::unique_ptr<Device, void (*)(Device *)> ScopedDevice;
 
 class InstallLocation
 {
@@ -73,6 +77,7 @@ public:
     bool autoMode;
 
     mbp::PatcherConfig *pc = nullptr;
+    std::vector<ScopedDevice> devices;
 
     // Selected patcher
     mbp::Patcher *patcher = nullptr;
@@ -87,7 +92,7 @@ public:
     PatcherTask *task;
 
     // Selected device
-    mbp::Device *device = nullptr;
+    Device *device = nullptr;
 
     // List of installation locations
     QList<InstallLocation> instLocs;

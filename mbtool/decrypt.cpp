@@ -19,6 +19,8 @@
 
 #include "decrypt.h"
 
+#include <vector>
+
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -27,9 +29,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/command.h"
+#include "mbutil/file.h"
 #include "mbutil/properties.h"
 
 #include "multiboot.h"
@@ -84,24 +89,43 @@ static bool find_paths(struct paths *paths)
     std::string header;
     std::string recovery;
 
-    std::vector<std::string> userdata_list =
-            decode_list(props[PROP_BLOCK_DEV_DATA_PATHS]);
-    std::vector<std::string> recovery_list =
-            decode_list(props[PROP_BLOCK_DEV_RECOVERY_PATHS]);
+    std::vector<unsigned char> contents;
+    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    contents.push_back('\0');
 
-    for (auto &path : userdata_list) {
-        if (access(path.c_str(), R_OK) == 0) {
-            userdata = std::move(path);
-            break;
+    MbDeviceJsonError error;
+    Device *device = mb_device_new_from_json((char *) contents.data(), &error);
+    if (!device) {
+        LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
+        return false;
+    } else if (mb_device_validate(device) != 0) {
+        LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
+        mb_device_free(device);
+        return false;
+    }
+
+    auto userdata_list = mb_device_data_block_devs(device);
+    auto recovery_list = mb_device_recovery_block_devs(device);
+
+    if (userdata_list) {
+        for (auto it = userdata_list; *it; ++it) {
+            if (access(*it, R_OK) == 0) {
+                userdata = *it;
+                break;
+            }
         }
     }
 
-    for (auto &path : recovery_list) {
-        if (access(path.c_str(), R_OK) == 0) {
-            recovery = std::move(path);
-            break;
+    if (recovery_list) {
+        for (auto it = recovery_list; *it; ++it) {
+            if (access(*it, R_OK) == 0) {
+                recovery = *it;
+                break;
+            }
         }
     }
+
+    mb_device_free(device);
 
     header = props[PROP_CRYPTFS_HEADER_PATH];
 

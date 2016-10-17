@@ -1,0 +1,48 @@
+---
+- name: Samsung Galaxy Ace 3 LTE
+  id: loganre
+  codenames:
+    - loganre
+    - loganrelte
+    - loganreltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p13
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p14
+
+
+- name: Samsung Galaxy V (Ace 4 Lite)
+  id: vivalto3g
+  codenames:
+    - vivalto3g
+    - vivalto3gvn
+    - vivalto3gub
+  architecture: armeabi-v7a
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/mmcblk0p17
+    data:
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/mmcblk0p11
+    recovery:
+      - /dev/block/mmcblk0p12

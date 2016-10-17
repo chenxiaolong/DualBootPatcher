@@ -150,12 +150,24 @@ public:
         if (response->roms()) {
             for (auto const &mb_rom : *response->roms()) {
                 roms.emplace_back();
-                roms.back().id = mb_rom->id()->str();
-                roms.back().system_path = mb_rom->system_path()->str();
-                roms.back().cache_path = mb_rom->cache_path()->str();
-                roms.back().data_path = mb_rom->data_path()->str();
-                roms.back().version = mb_rom->version()->str();
-                roms.back().build = mb_rom->build()->str();
+                if (mb_rom->id()) {
+                    roms.back().id = mb_rom->id()->str();
+                }
+                if (mb_rom->system_path()) {
+                    roms.back().system_path = mb_rom->system_path()->str();
+                }
+                if (mb_rom->cache_path()) {
+                    roms.back().cache_path = mb_rom->cache_path()->str();
+                }
+                if (mb_rom->data_path()) {
+                    roms.back().data_path = mb_rom->data_path()->str();
+                }
+                if (mb_rom->version()) {
+                    roms.back().version = mb_rom->version()->str();
+                }
+                if (mb_rom->build()) {
+                    roms.back().build = mb_rom->build()->str();
+                }
             }
         }
 

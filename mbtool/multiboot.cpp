@@ -193,36 +193,4 @@ bool fix_multiboot_permissions(void)
     return true;
 }
 
-std::vector<std::string> decode_list(const std::string &encoded)
-{
-    std::vector<std::string> result;
-    std::string buf;
-
-    bool escaped = false;
-    for (char c : encoded) {
-        if (!escaped) {
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            } else if (c == ',') {
-                result.push_back(buf);
-                buf.clear();
-                continue;
-            }
-        }
-
-        buf += c;
-        escaped = false;
-    }
-
-    if (escaped) {
-        // Invalid string
-        return {};
-    }
-
-    result.push_back(buf);
-
-    return result;
-}
-
 }

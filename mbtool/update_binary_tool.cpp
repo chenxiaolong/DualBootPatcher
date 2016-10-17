@@ -45,128 +45,104 @@
 
 #define TAG "update-binary-tool: "
 
-#define SYSTEM_STAMP_FILE "/.system-mounted"
-#define CACHE_STAMP_FILE "/.cache-mounted"
-#define DATA_STAMP_FILE "/.data-mounted"
-
 
 namespace mb
 {
 
-static bool get_paths(const char *mountpoint, const char **out_image_loop_dev,
-                      const char **out_stamp_file)
+static bool get_paths(const char *mountpoint, const char **out_source_path,
+                      bool *out_is_image)
 {
-    const char *image_loop_dev;
-    const char *stamp_file;
+    const char *loop_path;
+    const char *bind_path;
+    bool is_image;
 
     if (strcmp(mountpoint, SYSTEM) == 0) {
-        image_loop_dev = CHROOT_SYSTEM_LOOP_DEV;
-        stamp_file = SYSTEM_STAMP_FILE;
+        loop_path = CHROOT_SYSTEM_LOOP_DEV;
+        bind_path = CHROOT_SYSTEM_BIND_MOUNT;
     } else if (strcmp(mountpoint, CACHE) == 0) {
-        image_loop_dev = CHROOT_CACHE_LOOP_DEV;
-        stamp_file = CACHE_STAMP_FILE;
+        loop_path = CHROOT_CACHE_LOOP_DEV;
+        bind_path = CHROOT_CACHE_BIND_MOUNT;
     } else if (strcmp(mountpoint, DATA) == 0) {
-        image_loop_dev = CHROOT_DATA_LOOP_DEV;
-        stamp_file = DATA_STAMP_FILE;
+        loop_path = CHROOT_DATA_LOOP_DEV;
+        bind_path = CHROOT_DATA_BIND_MOUNT;
     } else {
         return false;
     }
 
-    if (out_image_loop_dev) {
-        *out_image_loop_dev = image_loop_dev;
+    is_image = access(loop_path, R_OK) == 0;
+
+    if (out_source_path) {
+        *out_source_path = is_image ? loop_path : bind_path;
     }
-    if (out_stamp_file) {
-        *out_stamp_file = stamp_file;
+    if (out_is_image) {
+        *out_is_image = is_image;
     }
+
     return true;
 }
 
 static bool do_mount(const char *mountpoint)
 {
-    const char *image_loop_dev;
-    const char *stamp_file;
+    const char *source_path;
+    bool is_image;
 
-    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
-        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+    if (!get_paths(mountpoint, &source_path, &is_image)) {
+        LOGE(TAG "%s: Invalid mountpoint", mountpoint);
         return false;
     }
 
-    if (access(image_loop_dev, F_OK) < 0) {
-        // Assume we don't need the image if the wrapper didn't create it
-        LOGV(TAG "Ignoring mount command for %s", mountpoint);
-        return true;
-    }
+    const char *fstype;
+    unsigned long flags;
 
-    if (access(stamp_file, F_OK) == 0) {
-        LOGV(TAG "%s already mounted. Skipping", mountpoint);
-        return true;
+    if (is_image) {
+        fstype = "ext4";
+        flags = MS_NOATIME;
+    } else {
+        fstype = "";
+        flags = MS_BIND;
     }
 
     // NOTE: We don't need the loop mount logic in util::mount()
-    if (mount(image_loop_dev, mountpoint, "ext4", 0, "") < 0) {
-        LOGE(TAG "Failed to mount %s: %s", image_loop_dev, strerror(errno));
+    if (mount(source_path, mountpoint, fstype, flags, "") < 0) {
+        LOGE(TAG "%s: Failed to mount path: %s", source_path, strerror(errno));
         return false;
     }
 
-    util::file_write_data(stamp_file, "", 0);
-
-    LOGD(TAG "Mounted %s at %s", image_loop_dev, mountpoint);
+    LOGD(TAG "Successfully mounted %s at %s", source_path, mountpoint);
 
     return true;
 }
 
 static bool do_unmount(const char *mountpoint)
 {
-    const char *image_loop_dev;
-    const char *stamp_file;
-
-    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
-        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+    if (!get_paths(mountpoint, nullptr, nullptr)) {
+        LOGE(TAG "%s: Invalid mountpoint", mountpoint);
         return false;
-    }
-
-    if (access(image_loop_dev, F_OK) < 0) {
-        // Assume we don't need the image if the wrapper didn't create it
-        LOGV(TAG "Ignoring unmount command for %s", mountpoint);
-        return true;
-    }
-
-    if (access(stamp_file, F_OK) != 0) {
-        LOGV(TAG "%s not mounted. Skipping", mountpoint);
-        return true;
     }
 
     // NOTE: We don't want to use util::umount() because it will disassociate
     // the loop device
     if (umount(mountpoint) < 0) {
-        LOGE(TAG "Failed to unmount %s: %s", mountpoint, strerror(errno));
+        LOGE(TAG "%s: Failed to unmount: %s", mountpoint, strerror(errno));
         return false;
     }
 
-    remove(stamp_file);
-
-    LOGD(TAG "Unmounted %s", mountpoint);
+    LOGD(TAG "Successfully unmounted %s", mountpoint);
 
     return true;
 }
 
 static bool do_format(const char *mountpoint)
 {
-    const char *image_loop_dev;
-    const char *stamp_file;
-
-    if (!get_paths(mountpoint, &image_loop_dev, &stamp_file)) {
-        LOGE(TAG "Invalid mountpoint: %s", mountpoint);
+    if (!get_paths(mountpoint, nullptr, nullptr)) {
+        LOGE(TAG "%s: Invalid mountpoint", mountpoint);
         return false;
     }
 
-    // Need to mount the partition if we're using an image file and it
-    // hasn't been mounted
-    bool needs_mount = access(image_loop_dev, F_OK) == 0
-            && access(stamp_file, F_OK) != 0;
+    bool needs_mount = !util::is_mounted(mountpoint);
 
     if (needs_mount && !do_mount(mountpoint)) {
-        LOGE(TAG "Failed to mount %s", mountpoint);
+        LOGE(TAG "%s: Failed to mount path", mountpoint);
         return false;
     }
 
@@ -176,16 +152,16 @@ static bool do_format(const char *mountpoint)
     }
 
     if (!wipe_directory(mountpoint, exclusions)) {
-        LOGE(TAG "Failed to wipe %s", mountpoint);
+        LOGE(TAG "%s: Failed to wipe directory", mountpoint);
         return false;
     }
 
     if (needs_mount && !do_unmount(mountpoint)) {
-        LOGE(TAG "Failed to unmount %s", mountpoint);
+        LOGE(TAG "%s: Failed to unmount path", mountpoint);
         return false;
     }
 
-    LOGD(TAG "Formatted %s", mountpoint);
+    LOGD(TAG "Successfully formatted %s", mountpoint);
 
     return true;
 }
@@ -214,6 +190,8 @@ int update_binary_tool_main(int argc, char *argv[])
 {
     int opt;
 
+    static const char *short_options = "h";
+
     static struct option long_options[] = {
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}
@@ -221,7 +199,8 @@ int update_binary_tool_main(int argc, char *argv[])
 
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_options,
+                              long_options, &long_index)) != -1) {
         switch (opt) {
         case 'h':
             update_binary_tool_usage(stdout);

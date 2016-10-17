@@ -27,6 +27,7 @@
 
 // Linux/posix
 #include <fcntl.h>
+#include <mntent.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -41,6 +42,10 @@
 
 // libmblog
 #include "mblog/logging.h"
+
+// libmbdevice
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 
 // libmbp
 #include "mbp/bootimage.h"
@@ -66,6 +71,7 @@
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
+#include "mbutil/time.h"
 
 // Local
 #include "image.h"
@@ -97,6 +103,7 @@
 #define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
 #define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
 #define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
+#define MULTIBOOT_DEVICE_JSON   "multiboot/device.json"
 #define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
 
 namespace mb {
@@ -120,6 +127,7 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
 
 Installer::~Installer()
 {
+    mb_device_free(_device);
 }
 
 
@@ -285,9 +293,14 @@ bool Installer::create_chroot()
         return false;
     }
 
-    // Set up directories
-    if (log_mkdir(_chroot.c_str(), 0755) < 0
-            || log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
+    // Create chroot and mount tmpfs there
+    if (log_mkdir(_chroot.c_str(), 0700) < 0
+            || log_mount("tmpfs", _chroot.c_str(), "tmpfs", 0, "") < 0) {
+        return false;
+    }
+
+    // Create remaining directories
+    if (log_mkdir(in_chroot("/mb").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/dev").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/etc").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/proc").c_str(), 0755) < 0
@@ -364,7 +377,6 @@ bool Installer::create_chroot()
     }
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
-#if 1
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
                       util::COPY_ATTRIBUTES
                     | util::COPY_XATTRS
@@ -377,15 +389,8 @@ bool Installer::create_chroot()
                     | util::COPY_EXCLUDE_TOP_LEVEL)) {
         return false;
     }
-#else
-    if (log_mkdir(in_chroot("/dev/input"), 0755) < 0
-            || log_mkdir(in_chroot("/dev/graphics"), 0755) < 0
-            || log_mount("/dev/input", in_chroot("/dev/input"), "", MS_BIND, "") < 0
-            || log_mount("/dev/graphics", in_chroot("/dev/graphics"), "", MS_BIND, "") < 0) {
-        return false;
-    }
-#endif
 
+    // Mount EFS partition so patched Odin images can properly set up multi-CSC
     if (!mount_efs()) {
         return false;
     }
@@ -399,12 +404,14 @@ bool Installer::destroy_chroot() const
 {
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
-    autoclose::dir dp = autoclose::opendir(in_chroot("/dev/block").c_str());
+    std::string dev_block_path(in_chroot("/dev/block"));
+    autoclose::dir dp = autoclose::opendir(dev_block_path.c_str());
     if (dp) {
         std::string path;
         struct dirent *ent;
         while ((ent = readdir(dp.get()))) {
-            path = in_chroot("/dev/block/");
+            path = dev_block_path;
+            path += '/';
             path += ent->d_name;
             util::loopdev_remove_device(path.c_str());
         }
@@ -423,6 +430,8 @@ bool Installer::destroy_chroot() const
     log_umount(in_chroot("/sys").c_str());
     log_umount(in_chroot("/tmp").c_str());
     log_umount(in_chroot("/sbin").c_str());
+
+    log_umount(_chroot.c_str());
 
     // Unmount everything previously mounted in the chroot
     if (!util::unmount_all(_chroot)) {
@@ -521,6 +530,7 @@ bool Installer::extract_multiboot_files()
         { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
         { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
         { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
+        { MULTIBOOT_DEVICE_JSON,       _temp + "/device.json"       },
         { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
     };
 
@@ -660,15 +670,14 @@ bool Installer::system_image_copy(const std::string &source,
  * \brief Bind mount directory or create and mount image
  *
  * \param source Source path (directory or image file)
- * \param mount_point Target mount point
- * \param loop_target If nonempty, copy loop device to this path (only used
- *                    when \a is_image is true)
+ * \param bind_target Mount point for bind mount (if \a is_image is false)
+ * \param loop_target Path to create loop device (if \a is_image is true)
  * \param is_image Whether \a source is an image file
  * \param image_size Desired image size (only used if \a is_image is true and
  *                   \a source doesn't exist)
  */
 bool Installer::mount_dir_or_image(const std::string &source,
-                                   const std::string &mount_point,
+                                   const std::string &bind_target,
                                    const std::string &loop_target,
                                    bool is_image,
                                    uint64_t image_size)
@@ -688,14 +697,6 @@ bool Installer::mount_dir_or_image(const std::string &source,
             }
         }
 
-        //if (!util::mount(source.c_str(), mount_point.c_str(), "ext4", 0, "")) {
-        //    display_msg("Failed to mount %s to %s",
-        //                source.c_str(), mount_point.c_str());
-        //    LOGE("Failed to mount %s to %s: %s",
-        //         source.c_str(), mount_point.c_str(), strerror(errno));
-        //    return false;
-        //}
-
         std::string loopdev = util::loopdev_find_unused();
         if (loopdev.empty()) {
             LOGE("Failed to find unused loop device: %s", strerror(errno));
@@ -706,7 +707,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
                  loopdev.c_str(), source.c_str(), strerror(errno));
             return false;
         }
-        if (!loop_target.empty() && !util::copy_file(loopdev, loop_target, 0)) {
+        if (!util::copy_file(loopdev, loop_target, 0)) {
             LOGE("Failed to copy %s to %s: %s",
                  loopdev.c_str(), loop_target.c_str(), strerror(errno));
             return false;
@@ -714,14 +715,157 @@ bool Installer::mount_dir_or_image(const std::string &source,
 
         _associated_loop_devs.push_back(loopdev);
     } else {
-        if (!util::bind_mount(source, 0771, mount_point, 0771)) {
+        if (!util::bind_mount(source, 0771, bind_target, 0771)) {
             display_msg("Failed to bind mount %s to %s",
-                        source.c_str(), mount_point.c_str());
+                        source.c_str(), bind_target.c_str());
             return false;
         }
     }
 
     return true;
+}
+
+bool Installer::change_root(const std::string &path)
+{
+    if (unshare(CLONE_NEWNS) < 0) {
+        LOGE("Failed to unshare mount namespace: %s", strerror(errno));
+        return false;
+    }
+
+    if (log_mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        return false;
+    }
+
+    // Unmount everything besides our chroot dir
+    {
+        std::vector<std::string> to_unmount;
+        struct mntent ent;
+        char buf[1024];
+
+        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        if (!fp) {
+            LOGE("%s: Failed to read file: %s",
+                 "/proc/mounts", strerror(errno));
+            return false;
+        }
+
+        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+            if (strcmp(ent.mnt_dir, "/") != 0
+                    && !util::starts_with(ent.mnt_dir, path.c_str())) {
+                to_unmount.push_back(ent.mnt_dir);
+            }
+        }
+
+        // Close procfs fd
+        fp.reset();
+
+        // Unmount in reverse order
+        for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
+            log_umount(it->c_str());
+        }
+    }
+
+    if (chdir(path.c_str()) < 0) {
+        LOGE("%s: Failed to chdir: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    if (chroot(path.c_str()) < 0) {
+        LOGE("%s: Failed to chroot: %s", path.c_str(), strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+bool Installer::set_up_legacy_properties()
+{
+    // We don't need to worry about /dev/__properties__ since that's not present
+    // in the chroot. Bionic will automatically fall back to getting the fd from
+    // the ANDROID_PROPERTY_WORKSPACE environment variable.
+    char tmp[32];
+    int propfd, propsz;
+    legacy_properties_init();
+    for (auto const &pair : _chroot_prop) {
+        legacy_property_set(pair.first.c_str(), pair.second.c_str());
+    }
+    legacy_get_property_workspace(&propfd, &propsz);
+    snprintf(tmp, sizeof(tmp), "%d,%d", dup(propfd), propsz);
+
+    char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
+    LOGD("Original properties environment: %s",
+         orig_prop_env ? orig_prop_env : "null");
+
+    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
+
+    LOGD("Switched to legacy properties environment: %s", tmp);
+
+    return true;
+}
+
+bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
+{
+    int status;
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        LOGE("Failed to fork updater fd reader process");
+    } else if (pid == 0) {
+        // Don't need command_fd in the child process
+        close(command_fd);
+
+        // Read program output in child process (stdout, stderr)
+        char buf[1024];
+
+        autoclose::file fp(fdopen(stdio_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            command_output(buf);
+        }
+
+        _exit(EXIT_SUCCESS);
+    } else {
+        // Read special command fd in parent process
+
+        char buf[1024];
+        char *save_ptr;
+
+        // Similar parsing to AOSP recovery
+        autoclose::file fp(fdopen(command_fd, "rb"), fclose);
+
+        while (fgets(buf, sizeof(buf), fp.get())) {
+            char *cmd = strtok_r(buf, " \n", &save_ptr);
+            if (!cmd) {
+                continue;
+            } else if (strcmp(cmd, "progress") == 0
+                    || strcmp(cmd, "set_progress") == 0
+                    || strcmp(cmd, "wipe_cache") == 0
+                    || strcmp(cmd, "clear_display") == 0
+                    || strcmp(cmd, "enable_reboot") == 0) {
+                // Ignore
+            } else if (strcmp(cmd, "ui_print") == 0) {
+                char *str = strtok_r(nullptr, "\n", &save_ptr);
+                if (str) {
+                    updater_print(str);
+                } else {
+                    updater_print("\n");
+                }
+            } else {
+                LOGE("Unknown updater command: %s", cmd);
+            }
+        }
+
+        do {
+            if (waitpid(pid, &status, 0) < 0) {
+                LOGE("Failed to waitpid(): %s", strerror(errno));
+                return false;
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+        return true;
+    }
+
+    return false;
 }
 
 /*!
@@ -806,9 +950,7 @@ bool Installer::run_real_updater()
     }
     argv_c.push_back(nullptr);
 
-    // Keep get_properties() out of the fork since it might need to call
-    // util::get_properties()
-    std::unordered_map<std::string, std::string> props = get_properties();
+    bool updater_ret = true;
 
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
@@ -817,14 +959,7 @@ bool Installer::run_real_updater()
                 close(stdio_fds[0]);
             }
 
-            if (chdir(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chdir: %s",
-                     _chroot.c_str(), strerror(errno));
-                _exit(EXIT_FAILURE);
-            }
-            if (chroot(_chroot.c_str()) < 0) {
-                LOGE("%s: Failed to chroot: %s",
-                     _chroot.c_str(), strerror(errno));
+            if (!change_root(_chroot)) {
                 _exit(EXIT_FAILURE);
             }
 
@@ -834,26 +969,9 @@ bool Installer::run_real_updater()
                 close(stdio_fds[1]);
             }
 
-            // We don't need to worry about /dev/__properties__
-            // since that's not present in the chroot. Bionic will
-            // automatically fall back to getting the fd from the
-            // ANDROID_PROPERTY_WORKSPACE environment variable.
-            char tmp[32];
-            int propfd, propsz;
-            legacy_properties_init();
-            for (auto const &pair : props) {
-                legacy_property_set(pair.first.c_str(), pair.second.c_str());
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
             }
-            legacy_get_property_workspace(&propfd, &propsz);
-            sprintf(tmp, "%d,%d", dup(propfd), propsz);
-
-            char *orig_prop_env = getenv("ANDROID_PROPERTY_WORKSPACE");
-            LOGD("Original properties environment: %s",
-                 orig_prop_env ? orig_prop_env : "null");
-
-            setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
-            LOGD("Switched to legacy properties environment: %s", tmp);
 
             // Make sure the updater won't run interactively
             close(STDIN_FILENO);
@@ -870,63 +988,12 @@ bool Installer::run_real_updater()
             _exit(127);
         } else {
             if (!_passthrough) {
+                // Close write ends of the pipes
                 close(pipe_fds[1]);
                 close(stdio_fds[1]);
 
-                int reader_status;
-                pid_t reader_pid = fork();
-
-                if (reader_pid < 0) {
-                    LOGE("Failed to fork reader process");
-                } else if (reader_pid == 0) {
-                    // Read program output in child process (stdout, stderr)
-                    char buf[1024];
-
-                    autoclose::file fp(fdopen(stdio_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        command_output(buf);
-                    }
-
-                    _exit(EXIT_SUCCESS);
-                } else {
-                    // Read special command fd in parent process
-
-                    char buf[1024];
-                    char *save_ptr;
-
-                    // Similar parsing to AOSP recovery
-                    autoclose::file fp(fdopen(pipe_fds[0], "rb"), fclose);
-
-                    while (fgets(buf, sizeof(buf), fp.get())) {
-                        char *cmd = strtok_r(buf, " \n", &save_ptr);
-                        if (!cmd) {
-                            continue;
-                        } else if (strcmp(cmd, "progress") == 0
-                                || strcmp(cmd, "set_progress") == 0
-                                || strcmp(cmd, "wipe_cache") == 0
-                                || strcmp(cmd, "clear_display") == 0
-                                || strcmp(cmd, "enable_reboot") == 0) {
-                            // Ignore
-                        } else if (strcmp(cmd, "ui_print") == 0) {
-                            char *str = strtok_r(nullptr, "\n", &save_ptr);
-                            if (str) {
-                                updater_print(str);
-                            } else {
-                                updater_print("\n");
-                            }
-                        } else {
-                            LOGE("Unknown updater command: %s", cmd);
-                        }
-                    }
-
-                    do {
-                        if (waitpid(reader_pid, &reader_status, 0) < 0) {
-                            LOGE("Failed to waitpid(): %s", strerror(errno));
-                            break;
-                        }
-                    } while (!WIFEXITED(reader_status)
-                            && !WIFSIGNALED(reader_status));
+                if (!updater_fd_reader(stdio_fds[0], pipe_fds[0])) {
+                    LOGW("Updater fd reader process failed");
                 }
 
                 close(pipe_fds[0]);
@@ -941,10 +1008,13 @@ bool Installer::run_real_updater()
             } while (!WIFEXITED(status) && !WIFSIGNALED(status));
 
             if (WIFEXITED(status)) {
-                LOGD("Child exited: %d", WEXITSTATUS(status));
-            }
-            if (WIFSIGNALED(status)) {
-                LOGD("Child killed with signal: %d", WTERMSIG(status));
+                LOGD("Updater exited with status: %d", WEXITSTATUS(status));
+                if (WEXITSTATUS(status) != 0) {
+                    updater_ret = false;
+                }
+            } else if (WIFSIGNALED(status)) {
+                LOGD("Updater killed with signal: %d", WTERMSIG(status));
+                updater_ret = false;
             }
         }
     }
@@ -959,13 +1029,45 @@ bool Installer::run_real_updater()
         return false;
     }
 
-    if (WEXITSTATUS(status) != 0) {
-        LOGE("%s returned non-zero exit status",
-             "/mb/updater");
-        return false;
+    return updater_ret;
+}
+
+bool Installer::run_debug_shell()
+{
+#if !DEBUG_PRE_SHELL && !DEBUG_POST_SHELL
+    return true;
+#else
+    int status;
+    pid_t pid;
+
+    if ((pid = fork()) >= 0) {
+        if (pid == 0) {
+            if (!change_root(_chroot)) {
+                _exit(EXIT_FAILURE);
+            }
+
+            if (!set_up_legacy_properties()) {
+                _exit(EXIT_FAILURE);
+            }
+
+            const char *argv[] = { "/sbin/sh", "-i", nullptr };
+            execvpe(argv[0], const_cast<char * const *>(argv), environ);
+            LOGE("Failed to execute updater: %s", strerror(errno));
+            _exit(127);
+        } else {
+            do {
+                if (waitpid(pid, &status, 0) < 0) {
+                    LOGE("Failed to waitpid(): %s", strerror(errno));
+                    return false;
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+            return true;
+        }
     }
 
-    return true;
+    return false;
+#endif
 }
 
 bool Installer::is_aroma(const std::string &path)
@@ -1152,18 +1254,28 @@ Installer::ProceedState Installer::install_stage_check_device()
 
     LOGD("libmbp version: %s", _pc.version().c_str());
 
-    char prop_product_device[PROP_VALUE_MAX];
-    char prop_build_product[PROP_VALUE_MAX];
-    char prop_patcher_device[PROP_VALUE_MAX];
-    std::string install_prop_device;
+    std::vector<unsigned char> contents;
+    if (!util::file_read_all(_temp + "/device.json", &contents)) {
+        display_msg("Failed to read device.json");
+        return ProceedState::Fail;
+    }
+    contents.push_back('\0');
 
-    // Verify device
-    if (_prop.find("mbtool.installer.device") == _prop.end()) {
-        display_msg("info.prop missing mbtool.installer.device");
+    MbDeviceJsonError error;
+    _device = mb_device_new_from_json((const char *) contents.data(), &error);
+    if (!_device) {
+        display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }
 
-    install_prop_device = _prop["mbtool.installer.device"];
+    if (mb_device_validate(_device) != 0) {
+        display_msg("Validation of device.json failed");
+        return ProceedState::Fail;
+    }
+
+    char prop_product_device[PROP_VALUE_MAX];
+    char prop_build_product[PROP_VALUE_MAX];
+    char prop_patcher_device[PROP_VALUE_MAX];
 
     util::property_get("ro.product.device", prop_product_device, "");
     util::property_get("ro.build.product", prop_build_product, "");
@@ -1172,7 +1284,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device);
     LOGD("ro.build.product = %s", prop_build_product);
     LOGD("ro.patcher.device = %s", prop_patcher_device);
-    LOGD("Target device = %s", install_prop_device.c_str());
+    LOGD("Target device = %s", mb_device_id(_device));
 
     if (prop_patcher_device[0]) {
         _detected_device = prop_patcher_device;
@@ -1185,57 +1297,66 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    // Check if we should skip the codename check
-    bool skip_codename_check = false;
-    if (_prop.find("mbtool.installer.ignore-codename") != _prop.end()
-            && _prop["mbtool.installer.ignore-codename"] == "true") {
-        skip_codename_check = true;
-    }
-
-
     // Due to optimizations in libc, strlen() may trigger valgrind errors like
     //     Address 0x4c0bf04 is 4 bytes inside a block of size 6 alloc'd
     // It's an annoyance, but not a big deal
 
-    for (const mbp::Device *d : _pc.devices()) {
-        if (d->id() == install_prop_device) {
-            _device = d;
+    // Verify codename
+    auto codenames = mb_device_codenames(_device);
+    const char *codename = nullptr;
+
+    for (auto iter = codenames; *iter; ++iter) {
+        if (_detected_device == *iter) {
+            codename = *iter;
             break;
         }
     }
 
-    if (!_device) {
-        display_msg("Invalid device ID: " + install_prop_device);
-        return ProceedState::Fail;
-    }
-
-    // Verify codename
-    if (skip_codename_check) {
-        display_msg("Skipping device check as requested by info.prop");
-    } else {
-        auto codenames = _device->codenames();
-        auto it = std::find_if(codenames.begin(), codenames.end(),
-                               [&](const std::string &codename) {
-            return _detected_device == codename;
-        });
-
-        if (it == codenames.end()) {
-            display_msg("Patched zip is for:");
-            for (const std::string &codename : _device->codenames()) {
-                display_msg("- %s", codename.c_str());
-            }
-            display_msg("This device is '%s'", _detected_device.c_str());
-
-            return ProceedState::Fail;
+    if (!codename) {
+        display_msg("Patched zip is for:");
+        for (auto iter = codenames; *iter; ++iter) {
+            display_msg("- %s", *iter);
         }
+        display_msg("This device is '%s'", _detected_device.c_str());
+
+        return ProceedState::Fail;
     }
 
     auto find_existing_path = [](const std::string &path) {
         return access(path.c_str(), R_OK) == 0;
     };
 
+    auto c_boot_devs = mb_device_boot_block_devs(_device);
+    auto c_recovery_devs = mb_device_recovery_block_devs(_device);
+    auto c_system_devs = mb_device_system_block_devs(_device);
+    auto c_extra_devs = mb_device_extra_block_devs(_device);
+    std::vector<std::string> boot_devs;
+    std::vector<std::string> recovery_devs;
+    std::vector<std::string> system_devs;
+    std::vector<std::string> extra_devs;
+
+    if (c_boot_devs) {
+        for (auto it = c_boot_devs; *it; ++it) {
+            boot_devs.push_back(*it);
+        }
+    }
+    if (c_recovery_devs) {
+        for (auto it = c_recovery_devs; *it; ++it) {
+            recovery_devs.push_back(*it);
+        }
+    }
+    if (c_system_devs) {
+        for (auto it = c_system_devs; *it; ++it) {
+            system_devs.push_back(*it);
+        }
+    }
+    if (c_extra_devs) {
+        for (auto it = c_extra_devs; *it; ++it) {
+            extra_devs.push_back(*it);
+        }
+    }
+
     // Find boot blockdev path
-    auto boot_devs = _device->bootBlockDevs();
     auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
                            find_existing_path);
     if (it == boot_devs.end()) {
@@ -1247,7 +1368,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Find recovery blockdev path
-    auto recovery_devs = _device->recoveryBlockDevs();
     it = std::find_if(recovery_devs.begin(), recovery_devs.end(),
                       find_existing_path);
     if (it == recovery_devs.end()) {
@@ -1259,7 +1379,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Find system blockdev path
-    auto system_devs = _device->systemBlockDevs();
     it = std::find_if(system_devs.begin(), system_devs.end(),
                       find_existing_path);
     if (it == system_devs.end()) {
@@ -1271,8 +1390,6 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
 
     // Other block devices to copy
-    auto extra_devs = _device->extraBlockDevs();
-
     std::vector<std::string> devs;
     devs.insert(devs.end(), boot_devs.begin(), boot_devs.end());
     devs.insert(devs.end(), recovery_devs.begin(), recovery_devs.end());
@@ -1310,7 +1427,7 @@ Installer::ProceedState Installer::install_stage_check_device()
             LOGW("Failed to symlink %s to %s: %s. Continuing anyway",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str(), strerror(errno));
         } else {
-            LOGD("Symlinked %s to %s in the chroot",
+            LOGD("Symlinked %s to %s",
                  CHROOT_SYSTEM_LOOP_DEV, dev_path.c_str());
         }
     }
@@ -1389,6 +1506,26 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         return ProceedState::Fail;
     }
 
+    // Switch to target ROM if possible
+    std::string boot_image_path(_rom->boot_image_path());
+    if (access(boot_image_path.c_str(), R_OK) == 0) {
+        // Use an empty base dirs list since we don't want to flash any non-boot
+        // partitions
+        const char * const *base_dirs = { nullptr };
+
+        auto result = switch_rom(_rom->id.c_str(), _boot_block_dev.c_str(),
+                                 base_dirs, true);
+        if (result != SwitchRomResult::SUCCEEDED) {
+            display_msg("Failed to switch to target ROM. Continuing anyway...");
+            LOGW("Failed to switch to target ROM: %d",
+                 static_cast<int>(result));
+        } else {
+            LOGV("Successfully switched to target ROM");
+        }
+    } else {
+        LOGV("Won't switch to non-existent target ROM");
+    }
+
     // Wrap busybox to disable some applets
     if (!set_up_busybox_wrapper()) {
         display_msg("Failed to extract busybox wrapper");
@@ -1408,14 +1545,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
                     util::COPY_ATTRIBUTES | util::COPY_XATTRS);
 
-    // Copy /etc/fstab
-    util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
-
-    // Copy /etc/recovery.fstab
-    util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
-
     return on_set_up_chroot();
 }
 
@@ -1423,7 +1552,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (!mount_dir_or_image(_cache_path, in_chroot("/cache"),
+    if (!mount_dir_or_image(_cache_path,
+                            in_chroot(CHROOT_CACHE_BIND_MOUNT),
                             in_chroot(CHROOT_CACHE_LOOP_DEV),
                             _rom->cache_is_image, DEFAULT_IMAGE_SIZE)) {
         return ProceedState::Fail;
@@ -1438,7 +1568,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         return ProceedState::Fail;
     }
 
-    if (!mount_dir_or_image(_data_path, in_chroot("/data"),
+    if (!mount_dir_or_image(_data_path,
+                            in_chroot(CHROOT_DATA_BIND_MOUNT),
                             in_chroot(CHROOT_DATA_LOOP_DEV),
                             _rom->data_is_image, DEFAULT_IMAGE_SIZE)) {
         return ProceedState::Fail;
@@ -1501,7 +1632,8 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         system_path = _temp_image_path;
     }
 
-    if (!mount_dir_or_image(system_path, in_chroot("/system"),
+    if (!mount_dir_or_image(system_path,
+                            in_chroot(CHROOT_SYSTEM_BIND_MOUNT),
                             in_chroot(CHROOT_SYSTEM_LOOP_DEV),
                             system_is_image, system_size)) {
         return ProceedState::Fail;
@@ -1524,18 +1656,17 @@ Installer::ProceedState Installer::install_stage_installation()
     ProceedState hook_ret = on_pre_install();
     if (hook_ret != ProceedState::Continue) return hook_ret;
 
+    // Get chroot props
+    _chroot_prop = get_properties();
 
     // Run real update-binary
     display_msg("Running real update-binary");
     display_msg("Here we go!");
 
 #if DEBUG_PRE_SHELL
-    {
-        LOGD("To skip installation, create a file named: /.skip-install");
-        LOGD("Pre-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("To skip installation, create a file named: /.skip-install");
+    LOGD("Pre-installation shell");
+    run_debug_shell();
 #endif
 
     bool updater_ret = true;
@@ -1543,7 +1674,14 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
+        auto start = util::current_time_ms();
         updater_ret = run_real_updater();
+        auto stop = util::current_time_ms();
+        auto diff = (stop - start) / 1000;
+
+        display_msg("Elapsed time: %" PRIu64 ":%" PRIu64 "min",
+                    diff / 60, diff % 60);
+
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
         }
@@ -1552,11 +1690,8 @@ Installer::ProceedState Installer::install_stage_installation()
     }
 
 #if DEBUG_POST_SHELL
-    {
-        LOGD("Post-installation shell");
-        const char *argv[] = { "/sbin/sh", "-i", nullptr };
-        run_command_chroot(_chroot.c_str(), argv);
-    }
+    LOGD("Post-installation shell");
+    run_debug_shell();
 #endif
 
     // Determine if fuse-exfat should be used. We can't detect this at boot time

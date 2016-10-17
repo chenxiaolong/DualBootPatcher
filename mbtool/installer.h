@@ -23,7 +23,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "mbp/device.h"
+#include "mbdevice/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
 
@@ -76,7 +76,7 @@ protected:
     bool _passthrough;
 
     mbp::PatcherConfig _pc;
-    const mbp::Device *_device = nullptr;
+    Device *_device = nullptr;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
@@ -88,6 +88,7 @@ protected:
     std::string _data_path;
 
     std::unordered_map<std::string, std::string> _prop;
+    std::unordered_map<std::string, std::string> _chroot_prop;
 
     std::string _temp_image_path;
     bool _has_block_image;
@@ -124,7 +125,11 @@ private:
                             const std::string &loop_target,
                             bool is_image,
                             uint64_t image_size);
+    static bool change_root(const std::string &path);
+    bool set_up_legacy_properties();
+    bool updater_fd_reader(int stdio_fd, int command_fd);
     bool run_real_updater();
+    bool run_debug_shell();
 
     ProceedState install_stage_initialize();
     ProceedState install_stage_create_chroot();

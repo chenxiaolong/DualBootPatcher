@@ -22,6 +22,8 @@
 
 #include <cassert>
 
+#include <mbdevice/json.h>
+#include <mbdevice/validate.h>
 #include <mbp/errors.h>
 
 #include <QtCore/QStringBuilder>
@@ -69,9 +71,9 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
 
     QString lastDeviceId = d->settings.value(
             QStringLiteral("last_device"), QString()).toString();
-    std::vector<mbp::Device *> devices = d->pc->devices();
-    for (size_t i = 0; i < devices.size(); ++i) {
-        if (lastDeviceId.toStdString() == devices[i]->id()) {
+    for (size_t i = 0; i < d->devices.size(); ++i) {
+        if (strcmp(mb_device_id(d->devices[i].get()),
+                   lastDeviceId.toUtf8().data()) == 0) {
             d->deviceSel->setCurrentIndex(i);
             break;
         }
@@ -117,7 +119,9 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    d->device = d->pc->devices()[index];
+    if (index < d->devices.size()) {
+        d->device = d->devices[index].get();
+    }
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
@@ -154,9 +158,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     Q_D(MainWindow);
 
-    int deviceIndex = d->deviceSel->currentIndex();
-    d->settings.setValue(QStringLiteral("last_device"),
-                         QString::fromStdString(d->pc->devices()[deviceIndex]->id()));
+    if (!d->devices.empty()) {
+        int deviceIndex = d->deviceSel->currentIndex();
+        const char *id = mb_device_id(d->devices[deviceIndex].get());
+        d->settings.setValue(QStringLiteral("last_device"),
+                             QString::fromUtf8(id));
+    }
 
     QWidget::closeEvent(event);
 }
@@ -399,11 +406,39 @@ void MainWindow::populateDevices()
 {
     Q_D(MainWindow);
 
-    // Populate devices
-    for (mbp::Device *device : d->pc->devices()) {
-        d->deviceSel->addItem(QStringLiteral("%1 - %2")
-                .arg(QString::fromStdString(device->id()))
-                .arg(QString::fromStdString(device->name())));
+    // TODO: This shouldn't be done in the GUI thread
+    QString path(QString::fromStdString(d->pc->dataDirectory())
+            % QStringLiteral("/devices.json"));
+    QFile file(path);
+
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray contents = file.readAll();
+        file.close();
+
+        MbDeviceJsonError error;
+        Device **devices =
+                mb_device_new_list_from_json(contents.data(), &error);
+
+        if (devices) {
+            for (Device **iter = devices; *iter; ++iter) {
+                if (mb_device_validate(*iter) == 0) {
+                    d->deviceSel->addItem(QStringLiteral("%1 - %2")
+                            .arg(QString::fromUtf8(mb_device_id(*iter)))
+                            .arg(QString::fromUtf8(mb_device_name(*iter))));
+                    d->devices.emplace_back(*iter, mb_device_free);
+                } else {
+                    // Clean up unusable devices
+                    mb_device_free(*iter);
+                }
+            }
+            // No need for array anymore
+            free(devices);
+        } else {
+            qWarning("Failed to load devices");
+        }
+    } else {
+        qWarning("%s: Failed to open file: %s",
+                 path.toUtf8().data(), file.errorString().toUtf8().data());
     }
 }
 
@@ -594,6 +629,8 @@ static QString errorToString(const mbp::ErrorCode &error) {
     switch (error) {
     case mbp::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
+    case mbp::ErrorCode::MemoryAllocationError:
+        return QObject::tr("Failed to allocate memory");
     case mbp::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
     case mbp::ErrorCode::AutoPatcherCreateError:

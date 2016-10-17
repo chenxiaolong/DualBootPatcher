@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include <sys/system_properties.h>
+#include "mbutil/external/system_properties.h"
 
 typedef struct prop_area prop_area;
 typedef struct prop_msg prop_msg;

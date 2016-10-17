@@ -41,7 +41,6 @@ public:
     ErrorCode error;
 
     bool patchImage();
-    void patchInitRc(CpioFile *cpio);
 };
 /*! \endcond */
 
@@ -127,8 +126,11 @@ bool MbtoolUpdater::Impl::patchImage()
         target = &mainCpio;
     }
 
-    // Make sure init.rc has the mbtooldaemon service
-    patchInitRc(target);
+    CoreRP crp(pc, info, target);
+    if (!crp.patchRamdisk()) {
+        error = crp.error();
+        return false;
+    }
 
     if (target == &cpioInCpio) {
         // Store new internal cpio archive
@@ -153,43 +155,6 @@ bool MbtoolUpdater::Impl::patchImage()
     }
 
     return true;
-}
-
-static bool allWhiteSpace(const char *str)
-{
-    for (; *str && isspace(*str); ++str);
-    return *str == '\0';
-}
-
-void MbtoolUpdater::Impl::patchInitRc(CpioFile *cpio)
-{
-    std::vector<unsigned char> contents;
-    cpio->contents("init.rc", &contents);
-
-    std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
-
-    bool insideService = false;
-
-    // Remove old mbtooldaemon service definition
-    for (auto it = lines.begin(); it != lines.end();) {
-        if (StringUtils::starts_with(*it, "service")) {
-            insideService = it->find("mbtooldaemon") != std::string::npos;
-        } else if (insideService && allWhiteSpace(it->c_str())) {
-            insideService = false;
-        }
-
-        if (insideService) {
-            it = lines.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    contents = StringUtils::joinData(lines, '\n');
-    cpio->setContents("init.rc", std::move(contents));
-
-    CoreRP crp(pc, info, cpio);
-    crp.patchRamdisk();
 }
 
 }
