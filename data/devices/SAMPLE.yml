@@ -14,7 +14,7 @@
   # practice to set this value similar to the device's codename if possible.
   id: jflte
 
-  # List of device codenames (required). The codename is the valud of
+  # List of device codenames (required). The codename is the value of
   # 'ro.product.device' or 'ro.build.product' in the /system/build.prop file.
   # WARNING: All of the devices listed MUST have the same partition table.
   #          Otherwise, there's a chance of hard-bricking the device.
