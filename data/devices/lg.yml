@@ -99,6 +99,13 @@
       - /dev/block/platform/msm_sdcc.1/by-name/aboot
       - /dev/block/platform/msm_sdcc.1/by-name/modem
 
+  boot_ui:
+    supported: true
+    pixel_format: RGBX_8888
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 
 - name: LG G3 S
   id: lgg3s
