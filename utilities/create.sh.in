@@ -19,7 +19,7 @@ unzip "${aroma}" META-INF/com/google/android/update-binary
 popd
 
 pushd "${temp_dir}"
-zip -r "${zip_file}" mbtool META-INF template
+zip -r "${zip_file}" mbtool META-INF template devices.json
 popd
 
 rm -rf "${temp_dir}"
