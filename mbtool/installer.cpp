@@ -1691,7 +1691,7 @@ Installer::ProceedState Installer::install_stage_installation()
         auto stop = util::current_time_ms();
         auto diff = (stop - start) / 1000;
 
-        display_msg("Elapsed time: %" PRIu64 ":%" PRIu64 "min",
+        display_msg("Elapsed time: %" PRIu64 ":%02" PRIu64 "min",
                     diff / 60, diff % 60);
 
         if (!updater_ret) {
