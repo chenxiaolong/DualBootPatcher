@@ -17,6 +17,7 @@ set(files
     oneplus.yml
     oukitel.yml
     pantech.yml
+    quantum.yml
     samsung/00_galaxy_s.yml
     samsung/01_galaxy_note.yml
     samsung/02_galaxy_a_j.yml
