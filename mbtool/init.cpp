@@ -72,6 +72,7 @@
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
+#include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
 
@@ -411,7 +412,7 @@ static bool is_completely_whitespace(const char *str)
     return true;
 }
 
-static bool add_mbtool_services()
+static bool add_mbtool_services(bool enable_appsync)
 {
     autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
     if (!fp_old) {
@@ -447,14 +448,16 @@ static bool add_mbtool_services()
             has_init_multiboot_rc = true;
         }
 
-        if (util::starts_with(line, "service")) {
-            inside_service = strstr(line, "installd") != nullptr;
-        } else if (inside_service && is_completely_whitespace(line)) {
-            inside_service = false;
-        }
+        if (enable_appsync) {
+            if (util::starts_with(line, "service")) {
+                inside_service = strstr(line, "installd") != nullptr;
+            } else if (inside_service && is_completely_whitespace(line)) {
+                inside_service = false;
+            }
 
-        if (inside_service && strstr(line, "disabled")) {
-            has_disabled_installd = true;
+            if (inside_service && strstr(line, "disabled")) {
+                has_disabled_installd = true;
+            }
         }
     }
 
@@ -473,7 +476,8 @@ static bool add_mbtool_services()
         }
 
         // Disable installd. mbtool's appsync will spawn it on demand
-        if (!has_disabled_installd
+        if (enable_appsync
+                && !has_disabled_installd
                 && util::starts_with(line, "service")
                 && strstr(line, "installd")) {
             fputs("    disabled\n", fp_new.get());
@@ -492,19 +496,24 @@ static bool add_mbtool_services()
         return false;
     }
 
-    static const char *init_multiboot_rc =
+    static const char *daemon_service =
             "service mbtooldaemon /mbtool daemon\n"
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
             "    seclabel u:r:init:s0\n"
-            "\n"
+            "\n";
+    static const char *appsync_service =
             "service appsync /mbtool appsync\n"
             "    class main\n"
             "    socket installd stream 600 system system\n"
-            "    seclabel u:r:init:s0\n";
+            "    seclabel u:r:init:s0\n"
+            "\n";
 
-    fputs(init_multiboot_rc, fp_multiboot.get());
+    fputs(daemon_service, fp_multiboot.get());
+    if (enable_appsync) {
+        fputs(appsync_service, fp_multiboot.get());
+    }
 
     fchmod(fileno(fp_multiboot.get()), 0750);
 
@@ -1323,10 +1332,17 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    std::string config_path(rom->config_path());
+    RomConfig config;
+    if (!config.load_file(config_path)) {
+        LOGW("%s: Failed to load config for ROM %s",
+             config_path.c_str(), rom->id.c_str());
+    }
+
     // Make runtime ramdisk modifications
     convert_binary_file_contexts();
     fix_file_contexts();
-    add_mbtool_services();
+    add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
 
     // Patch SELinux policy
