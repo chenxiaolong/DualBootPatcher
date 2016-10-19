@@ -215,6 +215,7 @@
 - name: Samsung Galaxy Tab Pro 12.2 (Wifi)
   id: v2wifi
   codenames:
+    - v2awifi
     - v2wifi
     - v2wifiue
     - v2wifixx
