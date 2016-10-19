@@ -791,6 +791,116 @@ static bool fstab_replace_block_dev(const char *path, const char *mount_point,
     return replace_file(path, new_path.c_str());
 }
 
+static std::string find_fstab()
+{
+    struct stat sb;
+
+    // Try using androidboot.hardware as the fstab suffix since most devices
+    // follow this scheme.
+    std::string fstab("/fstab.");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
+    fstab += hardware;
+
+    if (*hardware && stat(fstab.c_str(), &sb) == 0) {
+        return fstab;
+    }
+
+    // Otherwise, try to find it in the /init*.rc files
+    autoclose::dir dir(autoclose::opendir("/"));
+    if (!dir) {
+        return std::string();
+    }
+
+    std::vector<std::string> fallback;
+
+    struct dirent *ent;
+    while ((ent = readdir(dir.get()))) {
+        // Look for *.rc files
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
+                || !util::starts_with(ent->d_name, "init")
+                || !util::ends_with(ent->d_name, ".rc")) {
+            continue;
+        }
+
+        std::string path("/");
+        path += ent->d_name;
+
+        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        if (!fp) {
+            continue;
+        }
+
+        char *line = nullptr;
+        size_t len = 0;
+        ssize_t read = 0;
+
+        auto free_line = util::finally([&]{
+            free(line);
+        });
+
+        while ((read = getline(&line, &len, fp.get())) >= 0) {
+            char *ptr = strstr(line, "mount_all");
+            if (!ptr) {
+                continue;
+            }
+            ptr += 9;
+
+            // Find the argument to mount_all
+            while (isspace(*ptr)) {
+                ++ptr;
+            }
+
+            // Strip everything after next whitespace
+            for (char *p = ptr; *p; ++p) {
+                if (isspace(*p)) {
+                    *p = '\0';
+                    break;
+                }
+            }
+
+            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
+                LOGV("Skipping fstab file: %s", ptr);
+                continue;
+            }
+
+            fstab = ptr;
+
+            // Replace ${ro.hardware}
+            if (fstab.find("${ro.hardware}") != std::string::npos) {
+                std::string hardware;
+                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
+                util::replace_all(&fstab, "${ro.hardware}", hardware);
+            }
+
+            LOGD("Found fstab during search: %s", fstab.c_str());
+
+            // Check if fstab exists
+            struct stat sb;
+            if (stat(fstab.c_str(), &sb) < 0) {
+                LOGE("Failed to stat fstab %s: %s",
+                     fstab.c_str(), strerror(errno));
+                continue;
+            }
+
+            // If the fstab file is for charger mode, add to fallback
+            if (fstab.find("charger") != std::string::npos) {
+                LOGE("Adding charger fstab to fallback fstabs: %s",
+                     fstab.c_str());
+                fallback.push_back(fstab);
+                continue;
+            }
+
+            return fstab;
+        }
+    }
+
+    if (!fallback.empty()) {
+        return fallback[0];
+    }
+    return std::string();
+}
+
 bool mount_userdata(const char *block_dev)
 {
     std::string rom_id = get_rom_id();
@@ -799,10 +909,12 @@ bool mount_userdata(const char *block_dev)
         return false;
     }
 
-    std::string fstab("/fstab.");
-    char hardware[PROP_VALUE_MAX];
-    util::property_get("ro.hardware", hardware, "");
-    fstab += hardware;
+    std::string fstab(find_fstab());
+
+    if (fstab.empty()) {
+        LOGE("Failed to find fstab");
+        return false;
+    }
 
     // Rewrite fstab with the devmapper device for /data
     fstab_replace_block_dev(fstab.c_str(), "/data", block_dev);
@@ -1231,12 +1343,7 @@ int init_main(int argc, char *argv[])
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
     symlink_base_dir(device);
 
-    // mbtool no longer searches for the fstab file and just assumes that it is
-    // /fstab.${ro.hardware} since this is what vold uses as well.
-    std::string fstab("/fstab.");
-    char hardware[PROP_VALUE_MAX];
-    util::property_get("ro.hardware", hardware, "");
-    fstab += hardware;
+    std::string fstab(find_fstab());
 
     LOGV("fstab file: %s", fstab.c_str());
 
