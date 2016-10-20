@@ -6,6 +6,7 @@ set(files
     ark.yml
     asus.yml
     dexp.yml
+    elephone.yml
     google.yml
     huawei.yml
     jiayu.yml
