@@ -56,5 +56,14 @@
             android:layout_below="@id/action_subtitle1"
             android:ellipsize="end"
             android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/action_subtitle3"
+            style="@style/card_v7_secondary_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/action_subtitle2"
+            android:ellipsize="end"
+            android:singleLine="true" />
     </RelativeLayout>
 </android.support.v7.widget.CardView>

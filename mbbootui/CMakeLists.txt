@@ -44,6 +44,7 @@ set_target_properties(
     CXX_STANDARD_REQUIRED 1
     POSITION_INDEPENDENT_CODE 1
     LINK_FLAGS "-static"
+    LINK_SEARCH_START_STATIC ON
 )
 
 target_link_libraries(
@@ -52,8 +53,10 @@ target_link_libraries(
     mbbootui-config
     mbutil-static
     mbp-static
+    mbdevice-static
     mblog-static
     mbcommon-static
+    ${MBP_JANSSON_LIBRARIES}
     ${MBP_LIBARCHIVE_LIBRARIES}
 )
 

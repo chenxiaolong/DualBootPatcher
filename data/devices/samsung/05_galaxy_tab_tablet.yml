@@ -1,0 +1,319 @@
+---
+- name: Samsung Galaxy Tab 2 7.0/10.1 (Wifi/3G)
+  id: espresso10
+  codenames:
+    # 7.0" Wifi variant
+    - espressowifi
+    - espressowifixx
+    # 7.0" 3G variant
+    - espressorf
+    - espressorfxx
+    # 10.1" Wifi variant
+    - espresso10wifi
+    - espresso10wifixx
+    # 10.1" 3G variant
+    - espresso10rf
+    - espresso10rfxx
+    - espresso3g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name
+    system:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name/FACTORYFS
+      - /dev/block/mmcblk0p9
+    cache:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name/CACHE
+      - /dev/block/mmcblk0p7
+    data:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name/DATAFS
+      - /dev/block/mmcblk0p10
+    boot:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name/KERNEL
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/platform/omap/omap_hsmmc.1/by-name/RECOVERY
+      - /dev/block/mmcblk0p6
+
+
+- name: Samsung Galaxy Tab 3 8.0 (Wifi)
+  id: lt01wifi
+  codenames:
+    - lt01wifi
+    - lt01wifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+
+
+- name: Samsung Galaxy Tab 3 10.1
+  id: santos
+  codenames:
+    # 3G variant
+    - santos103g
+    - santos103gxx
+    # LTE variant
+    - santos10lte
+    - santos10ltexx
+    # Wifi variant
+    - santos10wifi
+    - santos10wifixx
+  architecture: x86
+
+  block_devs:
+    base_dirs:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name'
+    system:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/SYSTEM'
+      - /dev/block/mmcblk0p8
+    cache:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/CACHE'
+      - /dev/block/mmcblk0p6
+    data:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/USERDATA'
+      - /dev/block/mmcblk0p9
+    boot:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/BOOT'
+      - /dev/block/mmcblk0p10
+    recovery:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/RECOVERY'
+      - /dev/block/mmcblk0p11
+    extra:
+      - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/RADIO'
+
+
+- name: Samsung Galaxy Tab 4 10.1 (Wifi)
+  id: matissewifi
+  codenames:
+    - matissewifi
+    - SM-T530
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy Tab Pro 8.4 (Wifi)
+  id: mondrianwifi
+  codenames:
+    - mondrianwifi
+    - mondrianwifiue
+    - mondrianwifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy Tab Pro 10.1 (Wifi)
+  id: picassowifi
+  codenames:
+    - picassowifi
+    - picassowifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy Tab Pro 10.1 (LTE)
+  id: picassolte
+  codenames:
+    - picassolte
+    - picassoltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy Tab Pro 12.2 (Wifi)
+  id: v2wifi
+  codenames:
+    - v2awifi
+    - v2wifi
+    - v2wifiue
+    - v2wifixx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+
+
+- name: Samsung Galaxy Tab S 8.4/10.5
+  id: tab_s
+  codenames:
+    # 8.4" variant (wifi)
+    - klimtwifi
+    - klimtwifikx
+    # 8.4" variant (LTE)
+    - klimtlte
+    - klimtltexx
+    # 10.5" variant (wifi)
+    - chagallwifi
+    - chagallwifixx
+    # 10.5" variant (LTE)
+    - chagalllte
+    - chagallltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy Tab S2 8.0/9.7
+  id: tab_s2
+  codenames:
+    # 8.0" variant
+    - gts28wifi
+    - gts28wifixx
+    - gts28lte
+    - gts28ltexx
+    # 9.7" variant
+    - gts210wifi
+    - gts210wifixx
+    - gts210lte
+    - gts210ltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/15540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/15540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/15540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
+      - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO

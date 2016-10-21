@@ -172,32 +172,6 @@ char * mbp_config_version(const CPatcherConfig *pc)
 }
 
 /*!
- * \brief Get list of supported devices
- *
- * \note The returned array should be freed with `free()` when it
- *       is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return NULL-terminated array of supported devices
- *
- * \sa PatcherConfig::devices()
- */
-CDevice ** mbp_config_devices(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    auto const devices = config->devices();
-
-    CDevice **cDevices = (CDevice **) std::malloc(
-            sizeof(CDevice *) * (devices.size() + 1));
-    for (unsigned int i = 0; i < devices.size(); ++i) {
-        cDevices[i] = reinterpret_cast<CDevice *>(devices[i]);
-    }
-    cDevices[devices.size()] = nullptr;
-
-    return cDevices;
-}
-
-/*!
  * \brief Get list of Patcher IDs
  *
  * \note The returned array should be freed with `mbp_free_array()` when it

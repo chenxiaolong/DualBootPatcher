@@ -12,13 +12,14 @@ rm -f "${zip_file}"
 cp -vr '@CMAKE_CURRENT_SOURCE_DIR@/META-INF' "${temp_dir}"
 cp -vr '@CMAKE_CURRENT_SOURCE_DIR@/template' "${temp_dir}"
 cp -v '@CMAKE_BINARY_DIR@/android/result/bin/armeabi-v7a/mbtool_recovery' "${temp_dir}/mbtool"
+cp -v '@CMAKE_BINARY_DIR@/data/devices/devices.json' "${temp_dir}"
 
 pushd "${temp_dir}/template"
 unzip "${aroma}" META-INF/com/google/android/update-binary
 popd
 
 pushd "${temp_dir}"
-zip -r "${zip_file}" mbtool META-INF template
+zip -r "${zip_file}" mbtool META-INF template devices.json
 popd
 
 rm -rf "${temp_dir}"

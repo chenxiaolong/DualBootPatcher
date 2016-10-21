@@ -183,6 +183,23 @@ char ** mbp_cpiofile_filenames(const CCpioFile *cpio)
     return vector_to_cstring_array(cf->filenames());
 }
 
+bool mbp_cpiofile_is_symlink(const CCpioFile *cpio, const char *filename)
+{
+    CCAST(cpio);
+    return cf->isSymlink(filename);
+}
+
+char * mbp_cpiofile_symlink_path(const CCpioFile *cpio, const char *filename)
+{
+    CCAST(cpio);
+    std::string path;
+    if (cf->symlinkPath(filename, &path)) {
+        return string_to_cstring(path);
+    } else {
+        return nullptr;
+    }
+}
+
 /*!
  * \brief Get contents of a file in the archive
  *

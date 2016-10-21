@@ -20,8 +20,11 @@ package com.github.chenxiaolong.dualbootpatcher.patcher;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
+import android.app.LoaderManager.LoaderCallbacks;
+import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -43,19 +46,24 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog.LoaderResult;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
-public class PatcherOptionsDialog extends DialogFragment {
+public class PatcherOptionsDialog extends DialogFragment implements LoaderCallbacks<LoaderResult> {
     private static final String ARG_ID = "id";
     private static final String ARG_PRESELECTED_DEVICE_ID = "preselected_device_id";
     private static final String ARG_PRESELECTED_ROM_ID = "rom_id";
 
+    private boolean mIsInitial;
+
     private static Device sHero2qlteDevice;
+
+    private String mPreselectedDeviceId;
+    private String mPreselectedRomId;
 
     private MaterialDialog mDialog;
     private AppCompatSpinner mDeviceSpinner;
@@ -123,10 +131,20 @@ public class PatcherOptionsDialog extends DialogFragment {
     }
 
     @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        getActivity().getLoaderManager().initLoader(0, null, this);
+    }
+
+    @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        mIsInitial = savedInstanceState == null;
+
         final int id = getArguments().getInt(ARG_ID);
-        String preselectedDeviceId = getArguments().getString(ARG_PRESELECTED_DEVICE_ID);
-        String preselectedRomId = getArguments().getString(ARG_PRESELECTED_ROM_ID);
+
+        mPreselectedDeviceId = getArguments().getString(ARG_PRESELECTED_DEVICE_ID);
+        mPreselectedRomId = getArguments().getString(ARG_PRESELECTED_ROM_ID);
 
         mDialog = new MaterialDialog.Builder(getActivity())
                 .title(R.string.patcher_options_dialog_title)
@@ -165,35 +183,6 @@ public class PatcherOptionsDialog extends DialogFragment {
         initRomIds();
         // Initialize actions
         initActions();
-
-        // Load devices
-        refreshDevices();
-        // Load ROM IDs
-        refreshRomIds();
-
-        // Select our device on initial startup
-        if (savedInstanceState == null) {
-            if (preselectedDeviceId == null) {
-                Device device = PatcherUtils.getCurrentDevice(getActivity(), PatcherUtils.sPC);
-                if (device != null) {
-                    preselectedDeviceId = device.getId();
-                } else {
-                    Device rrd = getRickRollDevice();
-                    String codename = RomUtils.getDeviceCodename(getActivity());
-                    if (Arrays.asList(rrd.getCodenames()).contains(codename)) {
-                        preselectedDeviceId = rrd.getId();
-                    }
-                }
-            }
-            if (preselectedDeviceId != null) {
-                selectDeviceId(preselectedDeviceId);
-            }
-
-            // Select initial ROM ID
-            if (preselectedRomId != null) {
-                selectRomId(preselectedRomId);
-            }
-        }
 
         setCancelable(false);
         mDialog.setCanceledOnTouchOutside(false);
@@ -302,28 +291,55 @@ public class PatcherOptionsDialog extends DialogFragment {
     /**
      * Refresh the list of supported devices from libmbp.
      */
-    public void refreshDevices() {
+    private void refreshDevices(Device[] devices, Device currentDevice) {
         mDevices.clear();
         mDevicesNames.clear();
-        for (Device device : PatcherUtils.sPC.getDevices()) {
-            mDevices.add(device);
-            mDevicesNames.add(String.format("%s - %s", device.getId(), device.getName()));
-            if (device.getId().equals("hero2lte") || device.getId().equals("herolte")) {
-                Device rrd = getRickRollDevice();
-                mDevices.add(rrd);
-                mDevicesNames.add(String.format("%s - %s", rrd.getId(), rrd.getName()));
+
+        if (devices != null) {
+            for (Device device : devices) {
+                mDevices.add(device);
+                mDevicesNames.add(String.format("%s - %s", device.getId(), device.getName()));
+
+                if (device.getId().equals("hero2lte") || device.getId().equals("herolte")) {
+                    Device rrd = getRickRollDevice();
+                    mDevices.add(rrd);
+                    mDevicesNames.add(String.format("%s - %s", rrd.getId(), rrd.getName()));
+                }
             }
         }
+
         mDeviceAdapter.notifyDataSetChanged();
+
+        if (mIsInitial) {
+            String deviceId = mPreselectedDeviceId;
+
+            if (deviceId == null) {
+                if (currentDevice != null) {
+                    deviceId = currentDevice.getId();
+                } else {
+                    Device rrd = getRickRollDevice();
+                    String codename = RomUtils.getDeviceCodename(getActivity());
+                    for (String c : rrd.getCodenames()) {
+                        if (c.equals(codename)) {
+                            deviceId = rrd.getId();
+                            break;
+                        }
+                    }
+                }
+            }
+            if (deviceId != null) {
+                selectDeviceId(deviceId);
+            }
+        }
     }
 
     /**
      * Refresh the list of available ROM IDs
      */
-    public void refreshRomIds() {
+    private void refreshRomIds(InstallLocation[] locations) {
         mInstallLocations.clear();
         Collections.addAll(mInstallLocations, PatcherUtils.getInstallLocations(getActivity()));
-        Collections.addAll(mInstallLocations, PatcherUtils.getNamedInstallLocations(getActivity()));
+        Collections.addAll(mInstallLocations, locations);
 
         mRomIds.clear();
         for (InstallLocation location : mInstallLocations) {
@@ -332,6 +348,11 @@ public class PatcherOptionsDialog extends DialogFragment {
         mRomIds.add(getString(R.string.install_location_data_slot));
         mRomIds.add(getString(R.string.install_location_extsd_slot));
         mRomIdAdapter.notifyDataSetChanged();
+
+        // Select initial ROM ID
+        if (mPreselectedRomId != null) {
+            selectRomId(mPreselectedRomId);
+        }
     }
 
     private void selectDeviceId(String deviceId) {
@@ -402,7 +423,8 @@ public class PatcherOptionsDialog extends DialogFragment {
             InstallLocation location = PatcherUtils.getDataSlotInstallLocation(getActivity(), text);
             mRomIdDesc.setText(location.description);
         } else if (mRomIdSpinner.getSelectedItemPosition() == mRomIds.size() - 1) {
-            InstallLocation location = PatcherUtils.getExtsdSlotInstallLocation(getActivity(), text);
+            InstallLocation location = PatcherUtils.getExtsdSlotInstallLocation(getActivity(),
+                    text);
             mRomIdDesc.setText(location.description);
         }
     }
@@ -421,5 +443,54 @@ public class PatcherOptionsDialog extends DialogFragment {
             }
         }
         return null;
+    }
+
+    @Override
+    public Loader<LoaderResult> onCreateLoader(int i, Bundle bundle) {
+        return new OptionsLoader(getActivity());
+    }
+
+    @Override
+    public void onLoadFinished(Loader<LoaderResult> loader, LoaderResult result) {
+        refreshDevices(result.devices, result.currentDevice);
+        refreshRomIds(result.namedLocations);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<LoaderResult> loader) {
+    }
+
+    protected static class LoaderResult {
+        Device currentDevice;
+        Device[] devices;
+        InstallLocation[] namedLocations;
+    }
+
+    private static class OptionsLoader extends AsyncTaskLoader<LoaderResult> {
+        private LoaderResult mResult;
+
+        public OptionsLoader(Context context) {
+            super(context);
+            onContentChanged();
+        }
+
+        @Override
+        protected void onStartLoading() {
+            if (mResult != null) {
+                deliverResult(mResult);
+            } else if (takeContentChanged()) {
+                forceLoad();
+            }
+        }
+
+        @Override
+        public LoaderResult loadInBackground() {
+            LoaderResult result = new LoaderResult();
+            result.currentDevice = PatcherUtils.getCurrentDevice(getContext());
+            result.devices = PatcherUtils.getDevices(getContext());
+            result.namedLocations = PatcherUtils.getNamedInstallLocations(getContext());
+            mResult = result;
+            return mResult;
+        }
     }
 }

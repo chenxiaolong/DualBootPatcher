@@ -19,6 +19,7 @@
 
 #include "init.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_set>
 
@@ -40,6 +41,8 @@
 #include "minizip/unzip.h"
 
 #include "mbcommon/version.h"
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/dir.h"
@@ -65,6 +68,7 @@
 #include "initwrapper/util.h"
 #include "daemon.h"
 #include "decrypt.h"
+#include "file_contexts.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
@@ -301,6 +305,11 @@ static bool replace_file(const char *replace, const char *with)
         return false;
     }
 
+    if (chown(replace, sb.st_uid, sb.st_gid) < 0) {
+        LOGE("Failed to chown %s: %s", replace, strerror(errno));
+        return false;
+    }
+
     if (chmod(replace, sb.st_mode & 0777) < 0) {
         LOGE("Failed to chmod %s: %s", replace, strerror(errno));
         return false;
@@ -309,22 +318,51 @@ static bool replace_file(const char *replace, const char *with)
     return true;
 }
 
+static bool convert_binary_file_contexts()
+{
+    auto ret = patch_file_contexts(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
+    if (ret == FileContextsResult::ERRNO && errno == ENOENT) {
+        LOGV("%s doesn't exist; Skipping file conversion", FILE_CONTEXTS_BIN);
+        return true;
+    } else if (ret != FileContextsResult::OK) {
+        LOGE("%s: Binary file_contexts conversion failed", FILE_CONTEXTS_BIN);
+        return false;
+    }
+
+    return replace_file(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
+
+    return true;
+}
+
 static bool fix_file_contexts()
 {
-    autoclose::file fp_old(autoclose::fopen("/file_contexts", "rb"));
+    char path[256];
+    char path_new[256];
+
+    if (access(FILE_CONTEXTS_BIN, R_OK) == 0) {
+        strlcpy(path, FILE_CONTEXTS_BIN, sizeof(path));
+        strlcpy(path_new, FILE_CONTEXTS_BIN, sizeof(path_new));
+    } else {
+        strlcpy(path, FILE_CONTEXTS, sizeof(path));
+        strlcpy(path_new, FILE_CONTEXTS, sizeof(path_new));
+    }
+    strlcat(path_new, ".new", sizeof(path_new));
+
+    autoclose::file fp_old(autoclose::fopen(path, "rb"));
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
         } else {
-            LOGE("Failed to open /file_contexts: %s", strerror(errno));
+            LOGE("%s: Failed to open for reading: %s",
+                 path, strerror(errno));
             return false;
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen("/file_contexts.new", "wb"));
+    autoclose::file fp_new(autoclose::fopen(path_new, "wb"));
     if (!fp_new) {
-        LOGE("Failed to open /file_contexts.new for writing: %s",
-             strerror(errno));
+        LOGE("%s: Failed to open for writing: %s",
+             path_new, strerror(errno));
         return false;
     }
 
@@ -343,7 +381,8 @@ static bool fix_file_contexts()
         }
 
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
-            LOGE("Failed to write to /file_contexts.new: %s", strerror(errno));
+            LOGE("%s: Failed to write file: %s",
+                 path_new, strerror(errno));
             return false;
         }
     }
@@ -358,7 +397,7 @@ static bool fix_file_contexts()
             "/system/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    return replace_file("/file_contexts", "/file_contexts.new");
+    return replace_file(path, path_new);
 }
 
 static bool is_completely_whitespace(const char *str)
@@ -458,10 +497,12 @@ static bool add_mbtool_services()
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
+            "    seclabel u:r:init:s0\n"
             "\n"
             "service appsync /mbtool appsync\n"
             "    class main\n"
-            "    socket installd stream 600 system system\n";
+            "    socket installd stream 600 system system\n"
+            "    seclabel u:r:init:s0\n";
 
     fputs(init_multiboot_rc, fp_multiboot.get());
 
@@ -558,7 +599,48 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static bool add_props_to_default_prop()
+static std::string encode_list(const char * const *list)
+{
+    if (!list) {
+        return std::string();
+    }
+
+    // We processing char-by-char, so avoid unnecessary reallocations
+    std::size_t size = 0;
+    std::size_t list_size = 0;
+    for (auto iter = list; *iter; ++iter) {
+        std::size_t item_length = strlen(*iter);
+        size += item_length;
+        size += std::count(*iter, *iter + item_length, ',');
+        ++list_size;
+    }
+    if (size == 0) {
+        return std::string();
+    }
+    size += list_size - 1;
+
+    std::string result;
+    result.reserve(size);
+
+    bool first = true;
+    for (auto iter = list; *iter; ++iter) {
+        if (!first) {
+            result += ',';
+        } else {
+            first = false;
+        }
+        for (auto c = *iter; *c; ++c) {
+            if (*c == ',' || *c == '\\') {
+                result += '\\';
+            }
+            result += *c;
+        }
+    }
+
+    return result;
+}
+
+static bool add_props_to_default_prop(struct Device *device)
 {
     autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
     if (!fp) {
@@ -588,33 +670,51 @@ static bool add_props_to_default_prop()
     // Write ROM ID property
     fprintf(fp.get(), PROP_MULTIBOOT_ROM_ID "=%s\n", get_rom_id().c_str());
 
+    // Block device paths (deprecated)
+    fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
+            encode_list(mb_device_block_dev_base_dirs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
+            encode_list(mb_device_system_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
+            encode_list(mb_device_cache_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
+            encode_list(mb_device_data_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
+            encode_list(mb_device_boot_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
+            encode_list(mb_device_recovery_block_devs(device)).c_str());
+    fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
+            encode_list(mb_device_extra_block_devs(device)).c_str());
+
+    if (mb_device_crypto_supported(device)) {
+        fprintf(fp.get(), "ro.patcher.cryptfs_header_path=%s\n",
+                mb_device_crypto_header_path(device));
+    }
+
     return true;
 }
 
-static bool symlink_base_dir()
+static bool symlink_base_dir(Device *device)
 {
-    std::string encoded;
-    if (!util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
-                                 &encoded, "")) {
-        return false;
-    }
-
     struct stat sb;
     if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
         return true;
     }
 
-    std::vector<std::string> base_dirs = decode_list(encoded);
-    for (const std::string &base_dir : base_dirs) {
-        if (util::path_compare(base_dir, UNIVERSAL_BY_NAME_DIR) != 0
-                && stat(base_dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
-            if (symlink(base_dir.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
-                LOGW("Failed to symlink %s to %s",
-                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
-            } else {
-                LOGE("Symlinked %s to %s",
-                     base_dir.c_str(), UNIVERSAL_BY_NAME_DIR);
-                return true;
+    std::vector<std::string> base_dirs;
+    auto devs = mb_device_block_dev_base_dirs(device);
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            if (util::path_compare(*it, UNIVERSAL_BY_NAME_DIR) != 0
+                    && stat(*it, &sb) == 0 && S_ISDIR(sb.st_mode)) {
+                if (symlink(*it, UNIVERSAL_BY_NAME_DIR) < 0) {
+                    LOGW("Failed to symlink %s to %s",
+                         *it, UNIVERSAL_BY_NAME_DIR);
+                } else {
+                    LOGE("Symlinked %s to %s",
+                         *it, UNIVERSAL_BY_NAME_DIR);
+                    return true;
+                }
             }
         }
     }
@@ -691,6 +791,116 @@ static bool fstab_replace_block_dev(const char *path, const char *mount_point,
     return replace_file(path, new_path.c_str());
 }
 
+static std::string find_fstab()
+{
+    struct stat sb;
+
+    // Try using androidboot.hardware as the fstab suffix since most devices
+    // follow this scheme.
+    std::string fstab("/fstab.");
+    char hardware[PROP_VALUE_MAX];
+    util::property_get("ro.hardware", hardware, "");
+    fstab += hardware;
+
+    if (*hardware && stat(fstab.c_str(), &sb) == 0) {
+        return fstab;
+    }
+
+    // Otherwise, try to find it in the /init*.rc files
+    autoclose::dir dir(autoclose::opendir("/"));
+    if (!dir) {
+        return std::string();
+    }
+
+    std::vector<std::string> fallback;
+
+    struct dirent *ent;
+    while ((ent = readdir(dir.get()))) {
+        // Look for *.rc files
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
+                || !util::starts_with(ent->d_name, "init")
+                || !util::ends_with(ent->d_name, ".rc")) {
+            continue;
+        }
+
+        std::string path("/");
+        path += ent->d_name;
+
+        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        if (!fp) {
+            continue;
+        }
+
+        char *line = nullptr;
+        size_t len = 0;
+        ssize_t read = 0;
+
+        auto free_line = util::finally([&]{
+            free(line);
+        });
+
+        while ((read = getline(&line, &len, fp.get())) >= 0) {
+            char *ptr = strstr(line, "mount_all");
+            if (!ptr) {
+                continue;
+            }
+            ptr += 9;
+
+            // Find the argument to mount_all
+            while (isspace(*ptr)) {
+                ++ptr;
+            }
+
+            // Strip everything after next whitespace
+            for (char *p = ptr; *p; ++p) {
+                if (isspace(*p)) {
+                    *p = '\0';
+                    break;
+                }
+            }
+
+            if (strstr(ptr, "goldfish") || strstr(ptr, "fota")) {
+                LOGV("Skipping fstab file: %s", ptr);
+                continue;
+            }
+
+            fstab = ptr;
+
+            // Replace ${ro.hardware}
+            if (fstab.find("${ro.hardware}") != std::string::npos) {
+                std::string hardware;
+                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
+                util::replace_all(&fstab, "${ro.hardware}", hardware);
+            }
+
+            LOGD("Found fstab during search: %s", fstab.c_str());
+
+            // Check if fstab exists
+            struct stat sb;
+            if (stat(fstab.c_str(), &sb) < 0) {
+                LOGE("Failed to stat fstab %s: %s",
+                     fstab.c_str(), strerror(errno));
+                continue;
+            }
+
+            // If the fstab file is for charger mode, add to fallback
+            if (fstab.find("charger") != std::string::npos) {
+                LOGE("Adding charger fstab to fallback fstabs: %s",
+                     fstab.c_str());
+                fallback.push_back(fstab);
+                continue;
+            }
+
+            return fstab;
+        }
+    }
+
+    if (!fallback.empty()) {
+        return fallback[0];
+    }
+    return std::string();
+}
+
 bool mount_userdata(const char *block_dev)
 {
     std::string rom_id = get_rom_id();
@@ -699,17 +909,20 @@ bool mount_userdata(const char *block_dev)
         return false;
     }
 
-    std::string fstab("/fstab.");
-    char hardware[PROP_VALUE_MAX];
-    util::property_get("ro.hardware", hardware, "");
-    fstab += hardware;
+    std::string fstab(find_fstab());
+
+    if (fstab.empty()) {
+        LOGE("Failed to find fstab");
+        return false;
+    }
 
     // Rewrite fstab with the devmapper device for /data
     fstab_replace_block_dev(fstab.c_str(), "/data", block_dev);
 
     // Try mounting data again
     int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    // nullptr for the device because we do not need the generic fstab entries
+    if (!mount_fstab(fstab.c_str(), rom, nullptr, flags)) {
         LOGE("Failed to mount data. Decryption probably failed");
         return false;
     }
@@ -794,6 +1007,7 @@ static bool extract_zip(const char *source, const char *target)
 static bool launch_boot_menu(bool has_encryption)
 {
     struct stat sb;
+    bool skip = false;
 
     // Boot UI must always run if the device is encrypted
     if (!has_encryption && stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
@@ -804,7 +1018,7 @@ static bool launch_boot_menu(bool has_encryption)
 
         if (skip_rom == rom_id) {
             LOGV("Performing one-time skipping of Boot UI");
-            return true;
+            skip = true;
         } else {
             LOGW("Skip file is not for: %s", rom_id.c_str());
             LOGW("Not skipping boot UI");
@@ -815,6 +1029,10 @@ static bool launch_boot_menu(bool has_encryption)
         LOGW("%s: Failed to remove file: %s",
              BOOT_UI_SKIP_PATH, strerror(errno));
         LOGW("Boot UI won't run again!");
+    }
+
+    if (skip) {
+        return true;
     }
 
     if (stat(BOOT_UI_ZIP_PATH, &sb) < 0) {
@@ -976,10 +1194,25 @@ static bool emergency_reboot()
 
         // Try mounting /data in case we couldn't get through the fstab mounting
         // steps. (This is an ugly brute force method...)
-        std::string encoded;
-        util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_BASE_DIRS,
-                                &encoded, "");
-        std::vector<std::string> data_block_devs = decode_list(encoded);
+        std::vector<std::string> data_block_devs;
+
+        std::vector<unsigned char> contents;
+        util::file_read_all(DEVICE_JSON_PATH, &contents);
+        contents.push_back('\0');
+
+        MbDeviceJsonError error;
+        Device *device = mb_device_new_from_json(
+                (char *) contents.data(), &error);
+        if (device) {
+            auto devs = mb_device_data_block_devs(device);
+            if (devs) {
+                for (auto it = devs; *it; ++it) {
+                    data_block_devs.push_back(*it);
+                }
+            }
+            mb_device_free(device);
+        }
+
         // Some catch-all paths to increase our chances of getting a usable log
         data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/data");
         data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/DATA");
@@ -1083,7 +1316,23 @@ int init_main(int argc, char *argv[])
     LOGV("Booting up with version %s (%s)",
          version(), git_version());
 
-    add_props_to_default_prop();
+    std::vector<unsigned char> contents;
+    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    contents.push_back('\0');
+
+    MbDeviceJsonError error;
+    Device *device = mb_device_new_from_json((char *) contents.data(), &error);
+    if (!device) {
+        LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
+        emergency_reboot();
+        return EXIT_FAILURE;
+    } else if (mb_device_validate(device) != 0) {
+        LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
+        emergency_reboot();
+        return EXIT_FAILURE;
+    }
+
+    add_props_to_default_prop(device);
 
     // initialize properties
     properties_setup();
@@ -1092,14 +1341,9 @@ int init_main(int argc, char *argv[])
     device_init(false);
 
     // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
-    symlink_base_dir();
+    symlink_base_dir(device);
 
-    // mbtool no longer searches for the fstab file and just assumes that it is
-    // /fstab.${ro.hardware} since this is what vold uses as well.
-    std::string fstab("/fstab.");
-    char hardware[PROP_VALUE_MAX];
-    util::property_get("ro.hardware", hardware, "");
-    fstab += hardware;
+    std::string fstab(find_fstab());
 
     LOGV("fstab file: %s", fstab.c_str());
 
@@ -1131,7 +1375,7 @@ int init_main(int argc, char *argv[])
             | MOUNT_FLAG_MOUNT_SYSTEM
             | MOUNT_FLAG_MOUNT_CACHE
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         emergency_reboot();
         return EXIT_FAILURE;
@@ -1144,7 +1388,7 @@ int init_main(int argc, char *argv[])
     // Try mounting data
     flags = MOUNT_FLAG_REWRITE_FSTAB
             | MOUNT_FLAG_MOUNT_DATA;
-    if (!mount_fstab(fstab.c_str(), rom, flags)) {
+    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGW("Failed to mount data, it might be encrypted");
         has_encryption = true;
     }
@@ -1187,6 +1431,7 @@ int init_main(int argc, char *argv[])
     }
 
     // Make runtime ramdisk modifications
+    convert_binary_file_contexts();
     fix_file_contexts();
     add_mbtool_services();
     strip_manual_mounts();

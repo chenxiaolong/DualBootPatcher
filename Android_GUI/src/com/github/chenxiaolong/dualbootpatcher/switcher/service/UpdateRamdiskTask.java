@@ -24,12 +24,13 @@ import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage.Type;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
@@ -92,20 +93,25 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
      * @return Whether the ramdisk was successfully updated
      */
     private boolean updateMbtool(File path) {
-        Patcher patcher = PatcherUtils.sPC.createPatcher(LIBMBP_MBTOOL_UPDATER);
-        if (patcher == null) {
-            Log.e(TAG, "Bundled libmbp does not support " + LIBMBP_MBTOOL_UPDATER);
-            return false;
-        }
+        PatcherConfig pc = null;
+        Patcher patcher = null;
+        FileInfo fi = null;
 
         File outPath = new File(path + ".new");
 
-        FileInfo fi = new FileInfo();
         try {
+            fi = new FileInfo();
+            pc = PatcherUtils.newPatcherConfig(getContext());
+            patcher = pc.createPatcher(LIBMBP_MBTOOL_UPDATER);
+            if (patcher == null) {
+                Log.e(TAG, "Bundled libmbp does not support " + LIBMBP_MBTOOL_UPDATER);
+                return false;
+            }
+
             fi.setInputPath(path.getAbsolutePath());
             fi.setOutputPath(outPath.getAbsolutePath());
 
-            Device device = PatcherUtils.getCurrentDevice(getContext(), PatcherUtils.sPC);
+            Device device = PatcherUtils.getCurrentDevice(getContext());
             String codename = RomUtils.getDeviceCodename(getContext());
             if (device == null) {
                 Log.e(TAG, "Current device " + codename + " does not appear to be supported");
@@ -129,8 +135,15 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
             Log.e(TAG, "Failed to update ramdisk", e);
             return false;
         } finally {
-            fi.destroy();
-            PatcherUtils.sPC.destroyPatcher(patcher);
+            if (patcher != null) {
+                pc.destroyPatcher(patcher);
+            }
+            if (pc != null) {
+                pc.destroy();
+            }
+            if (fi != null) {
+                fi.destroy();
+            }
             outPath.delete();
         }
     }

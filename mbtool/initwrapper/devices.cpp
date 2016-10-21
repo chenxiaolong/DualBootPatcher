@@ -26,13 +26,13 @@
 #include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
-#include <sys/system_properties.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/directory.h"
 #include "mbutil/string.h"
+#include "mbutil/external/system_properties.h"
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"

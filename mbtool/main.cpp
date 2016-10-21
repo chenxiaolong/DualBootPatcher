@@ -33,8 +33,10 @@
 #include "utilities.h"
 #else
 #include "appsync.h"
+#include "auditd.h"
 #include "daemon.h"
 #include "decrypt.h"
+#include "file_contexts.h"
 #include "init.h"
 #include "miniadbd.h"
 #include "sepolpatch.h"
@@ -62,6 +64,7 @@ struct tool {
 
 struct tool tools[] = {
     { "mbtool", mbtool_main },
+    { "mbtool_recovery", mbtool_main },
     // Tools
 #ifdef RECOVERY
     { "backup", mb::backup_main },
@@ -74,8 +77,10 @@ struct tool tools[] = {
 #else
     { "adbd", mb::miniadbd_main },
     { "appsync", mb::appsync_main },
+    { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
     { "decrypt", mb::decrypt_main },
+    { "file_contexts", mb::file_contexts_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
     { "sepolpatch", mb::sepolpatch_main },
@@ -103,7 +108,8 @@ static void mbtool_usage(int error)
             mb::version(),
             mb::git_version());
     for (int i = 0; tools[i].name; ++i) {
-        if (strcmp(tools[i].name, "mbtool") != 0) {
+        if (strcmp(tools[i].name, "mbtool") != 0
+                && strcmp(tools[i].name, "mbtool_recovery") != 0) {
             fprintf(stream, "  %s\n", tools[i].name);
         }
     }

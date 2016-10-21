@@ -60,9 +60,7 @@ public:
                                std::vector<unsigned char> *data,
                                ErrorCode *errorOut);
 
-    static std::string createTable(const PatcherConfig * const pc);
     static std::string createInfoProp(const PatcherConfig * const pc,
-                                      const Device * const device,
                                       const std::string &romId);
 
 private:

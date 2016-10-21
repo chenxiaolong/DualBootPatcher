@@ -17,7 +17,8 @@
 #pragma once
 
 #include <cstddef>
-#include <sys/system_properties.h>
+
+#include "mbutil/external/system_properties.h"
 
 bool property_init();
 bool property_cleanup();

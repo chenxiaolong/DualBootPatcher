@@ -1,4 +1,4 @@
-if(${MBP_BUILD_TARGET} STREQUAL signtool)
+if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     include_directories(${MBP_OPENSSL_INCLUDES})
 
     add_executable(signtool signtool.cpp)

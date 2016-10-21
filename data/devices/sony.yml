@@ -1,0 +1,205 @@
+---
+- name: Sony Xperia Sola
+  id: pepper
+  codenames:
+    - pepper
+    - MT27a
+    - MT27i
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p10
+    cache:
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/mmcblk0p11
+    boot:
+      - /dev/block/mmcblk0p9
+
+
+- name: Sony Xperia E1
+  id: falconss
+  codenames:
+    - falconss
+    - D2004
+    - D2005
+    - D2104
+    - D2105
+    - D2114
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p15
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+
+- name: Sony Xperia Z1
+  id: honami
+  codenames:
+    - honami
+    - C6903
+    - C6902
+    - C6906
+    - C6943
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      - /dev/block/platform/msm_sdcc.1/by-name/rpm
+      - /dev/block/platform/msm_sdcc.1/by-name/sbl1
+      - /dev/block/platform/msm_sdcc.1/by-name/tz
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+
+- name: Sony Xperia T2 Ultra
+  id: tianchi
+  codenames:
+    - tianchi
+    - D5303
+    - D5306
+    - D5316
+    - D5322
+    - XM50h
+    - XM50H
+    - XM50t
+    - XM50T
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/mmcblk0p16
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+
+- name: Sony Xperia SP
+  id: huashan
+  codenames:
+    - huashan
+    - C5303
+    - C5302
+    - C5306
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p14
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p15
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p2
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/mmcblk0p11
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/TA
+      - /dev/block/platform/msm_sdcc.1/by-name/TZ

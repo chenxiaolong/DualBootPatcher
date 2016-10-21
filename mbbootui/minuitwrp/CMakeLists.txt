@@ -63,6 +63,7 @@ if(ENABLE_OVERLAY_MSM_OLD_BACKEND)
 
     target_include_directories(
         minui-backend-overlay-msm-old
+        BEFORE
         PRIVATE
         include/msm_old
     )
@@ -109,6 +110,7 @@ if(ENABLE_DRM_BACKEND)
 
     target_include_directories(
         minui-backend-drm
+        BEFORE
         PRIVATE
         ${MBP_LIBDRM_INCLUDES}
         ${MBP_LIBDRM_INCLUDES}/drm

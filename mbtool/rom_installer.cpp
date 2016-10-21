@@ -46,6 +46,9 @@
 #include "multiboot.h"
 
 
+#define DEBUG_LEAVE_STDIN_OPEN 0
+#define DEBUG_ENABLE_PASSTHROUGH 0
+
 static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
 
 namespace mb
@@ -79,7 +82,13 @@ private:
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
                            std::FILE *log_fp) :
-    Installer(zip_file, "/chroot", "/multiboot", 3, -1),
+    Installer(zip_file, "/chroot", "/multiboot", 3,
+#if DEBUG_ENABLE_PASSTHROUGH
+              STDOUT_FILENO
+#else
+              -1
+#endif
+             ),
     _rom_id(std::move(rom_id)),
     _log_fp(log_fp)
 {
@@ -148,15 +157,48 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // installed though, so we'll open the recovery partition with libmbp and
     // extract its /sbin with libarchive into the chroot's /sbin.
 
+    std::string block_dev(_recovery_block_dev);
     mbp::BootImage bi;
-    if (!bi.loadFile(_recovery_block_dev)) {
+    mbp::CpioFile innerCpio;
+    const unsigned char *ramdisk_data;
+    std::size_t ramdisk_size;
+    bool using_boot = false;
+
+    // Check if the device has a combined boot/recovery partition. If the
+    // FOTAKernel partition is listed, it will be used instead of the combined
+    // ramdisk from the boot image
+    bool combined = mb_device_flags(_device)
+            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    if (combined && block_dev.empty()) {
+        block_dev = _boot_block_dev;
+        using_boot = true;
+    }
+
+    if (block_dev.empty()) {
+        display_msg("Could not determine the recovery block device");
+        return ProceedState::Fail;
+    }
+
+    if (!bi.loadFile(block_dev)) {
         display_msg("Failed to load recovery partition image");
         return ProceedState::Fail;
     }
 
-    const unsigned char *ramdisk_data;
-    std::size_t ramdisk_size;
+    // Load ramdisk
     bi.ramdiskImageC(&ramdisk_data, &ramdisk_size);
+
+    if (using_boot) {
+        if (!innerCpio.load(ramdisk_data, ramdisk_size)) {
+            display_msg("Failed to load ramdisk from combined boot image");
+            return ProceedState::Fail;
+        }
+
+        if (!innerCpio.contentsC("sbin/ramdisk-recovery.cpio",
+                                 &ramdisk_data, &ramdisk_size)) {
+            display_msg("Could not find recovery ramdisk in combined boot image");
+            return ProceedState::Fail;
+        }
+    }
 
     autoclose::archive in(archive_read_new(), archive_read_free);
     autoclose::archive out(archive_write_disk_new(), archive_write_free);
@@ -220,6 +262,32 @@ Installer::ProceedState RomInstaller::on_checked_device()
         LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return ProceedState::Fail;
+    }
+
+    // Create fake /etc/fstab file to please installers that read the file
+    std::string etc_fstab(in_chroot("/etc/fstab"));
+    if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
+        autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
+        if (fp) {
+            auto system_devs = mb_device_system_block_devs(_device);
+            auto cache_devs = mb_device_cache_block_devs(_device);
+            auto data_devs = mb_device_data_block_devs(_device);
+
+            // Set block device if it's provided and non-empty
+            const char *system_dev =
+                    system_devs && system_devs[0] && system_devs[0][0]
+                    ? system_devs[0] : "dummy";
+            const char *cache_dev =
+                    cache_devs && cache_devs[0] && cache_devs[0][0]
+                    ? cache_devs[0] : "dummy";
+            const char *data_dev =
+                    data_devs && data_devs[0] && data_devs[0][0]
+                    ? data_devs[0] : "dummy";
+
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+        }
     }
 
     // Load recovery properties
@@ -399,6 +467,12 @@ int rom_installer_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
+    }
+
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
@@ -446,18 +520,6 @@ int rom_installer_main(int argc, char *argv[])
     if (zip_file.empty()) {
         fprintf(stderr, "Invalid zip file path\n");
         return EXIT_FAILURE;
-    }
-
-
-    // Translate paths
-    char *emu_source_path = getenv("EMULATED_STORAGE_SOURCE");
-    char *emu_target_path = getenv("EMULATED_STORAGE_TARGET");
-    if (emu_source_path && emu_target_path) {
-        if (util::starts_with(zip_file, emu_target_path)) {
-            printf("Zip path uses EMULATED_STORAGE_TARGET\n");
-            zip_file.erase(0, strlen(emu_target_path));
-            zip_file.insert(0, emu_source_path);
-        }
     }
 
 
@@ -533,11 +595,13 @@ int rom_installer_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // Close stdin
+#if !DEBUG_LEAVE_STDIN_OPEN
     int fd = open("/dev/null", O_RDONLY);
     if (fd >= 0) {
         dup2(fd, STDIN_FILENO);
         close(fd);
     }
+#endif
 
     // mbtool logging
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
