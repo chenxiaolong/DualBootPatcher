@@ -10,6 +10,8 @@
     - K3 Note
     - aio_otfp
   architecture: arm64-v8a
+  flags:
+    - FSTAB_SKIP_SDCARD0
 
   block_devs:
     base_dirs:
