@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(DualBootPatcher CXX C)
+project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
 set(MBP_VERSION_MINOR 0)
 set(MBP_VERSION_PATCH 0)
