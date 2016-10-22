@@ -49,6 +49,9 @@ const std::string StandardPatcher::Id
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 
+const std::string StandardPatcher::SystemTransferList
+        = "system.transfer.list";
+
 #define MOUNT_FMT \
         "(run_program(\"/update-binary-tool\", \"mount\", \"%s\") == 0)"
 #define UNMOUNT_FMT \
@@ -86,7 +89,7 @@ std::vector<std::string> StandardPatcher::newFiles() const
 
 std::vector<std::string> StandardPatcher::existingFiles() const
 {
-    return { UpdaterScript };
+    return { UpdaterScript, SystemTransferList };
 }
 
 static bool findItemsInString(const char *haystack,
@@ -539,9 +542,27 @@ replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
 
 bool StandardPatcher::patchFiles(const std::string &directory)
 {
-    std::string contents;
+    if (!patchUpdater(directory)) {
+        return false;
+    }
 
-    FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
+    if (!patchTransferList(directory)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool StandardPatcher::patchUpdater(const std::string &directory)
+{
+    std::string contents;
+    std::string path;
+
+    path += directory;
+    path += "/";
+    path += UpdaterScript;
+
+    FileUtils::readToString(path, &contents);
 
     if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
         // Ignore any script with a shebang line
@@ -610,12 +631,42 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     EdifyTokenizer::dump(tokens);
 #endif
 
-    FileUtils::writeFromString(directory + "/" + UpdaterScript,
-                               EdifyTokenizer::untokenize(tokens));
+    FileUtils::writeFromString(path, EdifyTokenizer::untokenize(tokens));
 
     for (EdifyToken *t : tokens) {
         delete t;
     }
+
+    return true;
+}
+
+bool StandardPatcher::patchTransferList(const std::string &directory)
+{
+    std::string contents;
+    std::string path;
+    std::vector<std::string> lines;
+
+    path += directory;
+    path += "/";
+    path += SystemTransferList;
+
+    auto ret = FileUtils::readToString(path, &contents);
+    if (ret != ErrorCode::NoError) {
+        return ret == ErrorCode::FileOpenError;
+    }
+
+    lines = StringUtils::split(contents, '\n');
+
+    for (auto it = lines.begin(); it != lines.end();) {
+        if (StringUtils::starts_with(*it, "erase ")) {
+            it = lines.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    contents = StringUtils::join(lines, "\n");
+    FileUtils::writeFromString(path, contents);
 
     return true;
 }
