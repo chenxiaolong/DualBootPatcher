@@ -69,6 +69,9 @@
 
 #define WRAPPED_BINARIES_DIR        "/wrapped"
 
+#define FSCK_WRAPPER                "/sbin/fsck-wrapper"
+#define FSCK_WRAPPER_SIG            "/sbin/fsck-wrapper.sig"
+
 
 namespace mb
 {
@@ -646,56 +649,49 @@ static bool create_temporary_fs(const char *mount_point)
 
 static bool disable_fsck(const char *fsck_binary)
 {
+    SigVerifyResult result;
+    result = verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG);
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", FSCK_WRAPPER);
+        return false;
+    }
+
     struct stat sb;
     if (stat(fsck_binary, &sb) < 0) {
         LOGE("%s: Failed to stat: %s", fsck_binary, strerror(errno));
         return errno == ENOENT;
     }
 
-    std::string filename = util::base_name(fsck_binary);
-    std::string path(WRAPPED_BINARIES_DIR);
-    path += "/";
-    path += filename;
+    std::string target(WRAPPED_BINARIES_DIR);
+    target += "/";
+    target += util::base_name(fsck_binary);
 
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wbe"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), strerror(errno));
+    if (!util::copy_file(FSCK_WRAPPER, target, 0)) {
+        LOGE("Failed to copy %s to %s: %s",
+             FSCK_WRAPPER, target.c_str(), strerror(errno));
         return false;
     }
 
-    fprintf(
-        fp.get(),
-        "#!/system/bin/sh\n"
-        "echo %s was disabled by mbtool because performing an online fsck while the\n"
-        "echo partition is mounted is not possible. This is done to ensure that vold\n"
-        "echo does not fail the filesystem checks and make the external SD invisible to the OS.\n"
-        "echo If the filesystem checks must be completed, it will need to be done from a\n"
-        "echo computer or from recovery.\n"
-        "exit 0",
-        filename.c_str()
-    );
-
     // Copy permissions
-    fchown(fileno(fp.get()), sb.st_uid, sb.st_gid);
-    fchmod(fileno(fp.get()), sb.st_mode);
+    chown(target.c_str(), sb.st_uid, sb.st_gid);
+    chmod(target.c_str(), sb.st_mode);
 
     // Copy SELinux label
     std::string context;
     if (util::selinux_get_context(fsck_binary, &context)) {
         LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
-        if (!util::selinux_fset_context(fileno(fp.get()), context)) {
+        if (!util::selinux_set_context(target.c_str(), context)) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 path.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
              fsck_binary, strerror(errno));
     }
 
-    if (mount(path.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
+    if (mount(target.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
         LOGE("Failed to bind mount %s to %s: %s",
-             path.c_str(), fsck_binary, strerror(errno));
+             target.c_str(), fsck_binary, strerror(errno));
         return false;
     }
 
