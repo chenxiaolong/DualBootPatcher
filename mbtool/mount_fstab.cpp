@@ -810,6 +810,8 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         return false;
     }
 
+    bool include_sdcard0 = !(mb_device_flags(device) & FLAG_FSTAB_SKIP_SDCARD0);
+
     for (auto it = fstab.begin(); it != fstab.end();) {
         LOGD("fstab: %s", it->orig_line.c_str());
 
@@ -829,7 +831,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (it->vold_args.find("emmc@intsd") == std::string::npos
-                && (it->vold_args.find("voldmanaged=sdcard0") != std::string::npos
+                && ((include_sdcard0 && it->vold_args.find("voldmanaged=sdcard0") != std::string::npos)
                 || it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos

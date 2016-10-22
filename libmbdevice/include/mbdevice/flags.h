@@ -31,6 +31,7 @@
 enum DeviceFlags
 {
     FLAG_HAS_COMBINED_BOOT_AND_RECOVERY     = 1 << 0,
+    FLAG_FSTAB_SKIP_SDCARD0                 = 1 << 1,
 };
 
 enum TwFlags

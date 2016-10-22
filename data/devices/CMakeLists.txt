@@ -14,6 +14,7 @@ set(files
     motorola.yml
     nexus.yml
     oneplus.yml
+    oukitel.yml
     pantech.yml
     samsung/00_galaxy_s.yml
     samsung/01_galaxy_note.yml
