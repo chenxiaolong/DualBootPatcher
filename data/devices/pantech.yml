@@ -1,4 +1,43 @@
 ---
+- name: Pantech IM-100
+  id: ef71
+  codenames:
+    - ef71s
+    - ef71k
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/
+    system:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p57
+    boot:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p25
+    extra:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/tz
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 175
+    theme: portrait_hdpi
+
 - name: Pantech Vega Iron 2
   id: A910
   codenames:
