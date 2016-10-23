@@ -9,6 +9,7 @@
     - K50-T5
     - K3 Note
     - aio_otfp
+    - aio_otfp_m
   architecture: arm64-v8a
   flags:
     - FSTAB_SKIP_SDCARD0
