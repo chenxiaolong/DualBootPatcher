@@ -31,17 +31,15 @@ import com.afollestad.materialdialogs.MaterialDialog.InputCallback;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 import com.github.chenxiaolong.dualbootpatcher.R;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 public class BackupNameInputDialog extends DialogFragment {
+    private static final String ARG_SUGGESTED_NAME = "suggested_name";
+
     public interface BackupNameInputDialogListener {
         void onSelectedBackupName(String name);
     }
 
-    public static BackupNameInputDialog newInstanceFromFragment(Fragment parent) {
+    public static BackupNameInputDialog newInstanceFromFragment(Fragment parent,
+                                                                String suggestedName) {
         if (parent != null) {
             if (!(parent instanceof BackupNameInputDialogListener)) {
                 throw new IllegalStateException(
@@ -49,13 +47,22 @@ public class BackupNameInputDialog extends DialogFragment {
             }
         }
 
+        Bundle args = new Bundle();
+        args.putString(ARG_SUGGESTED_NAME, suggestedName);
+
         BackupNameInputDialog frag = new BackupNameInputDialog();
         frag.setTargetFragment(parent, 0);
+        frag.setArguments(args);
         return frag;
     }
 
-    public static BackupNameInputDialog newInstanceFromActivity() {
-        return new BackupNameInputDialog();
+    public static BackupNameInputDialog newInstanceFromActivity(String suggestedName) {
+        Bundle args = new Bundle();
+        args.putString(ARG_SUGGESTED_NAME, suggestedName);
+
+        BackupNameInputDialog frag = new BackupNameInputDialog();
+        frag.setArguments(args);
+        return frag;
     }
 
     BackupNameInputDialogListener getOwner() {
@@ -73,8 +80,7 @@ public class BackupNameInputDialog extends DialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        DateFormat df = new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss", Locale.US);
-        String defaultName = df.format(new Date());
+        String suggestedName = getArguments().getString(ARG_SUGGESTED_NAME);
 
         Dialog dialog = new MaterialDialog.Builder(getActivity())
                 .content(R.string.br_name_dialog_desc)
@@ -82,7 +88,7 @@ public class BackupNameInputDialog extends DialogFragment {
                 .positiveText(R.string.ok)
                 .inputType(InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE
                         | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-                .input(getString(R.string.br_name_dialog_hint), defaultName, false,
+                .input(getString(R.string.br_name_dialog_hint), suggestedName, false,
                         new InputCallback() {
                     @Override
                     public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
