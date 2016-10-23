@@ -470,6 +470,9 @@ void DataManager::SetDefaultValues()
 
     mPersist.SetValue(TW_LANGUAGE, "en");
 
+    // Set default autoboot timeout to 5 seconds
+    mPersist.SetValue(TW_AUTOBOOT_TIMEOUT, 5);
+
     pthread_mutex_unlock(&m_valuesLock);
 }
 

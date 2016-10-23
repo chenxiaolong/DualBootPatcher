@@ -533,6 +533,13 @@
                 </listitem>
             </listbox>
 
+            <!-- Autoboot timeout slider -->
+            <slidervalue>
+                <placement x="indent" y="%row7_y%" w="%content_width%" />
+                <text>{@settings_general_autoboot_timeout}</text>
+                <data variable="tw_autoboot_timeout" min="5" max="30" />
+            </slidervalue>
+
             <!-- Restore default settings button -->
             <button style="main_button_half_height">
                 <placement x="%center_x%" y="%row21a_y%" />
@@ -540,6 +547,7 @@
                 <actions>
                     <action function="set">tw_samsung_navbar=0</action>
                     <action function="set">tw_tab_icons=0</action>
+                    <action function="set">tw_autoboot_timeout=5</action>
                     <action function="restoredefaultsettings" />
                 </actions>
             </button>

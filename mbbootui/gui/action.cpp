@@ -655,7 +655,9 @@ int GUIAction::autoboot(const std::string& arg __unused)
 
     gui_msg(Msg("autoboot_autobooting_to")(DataManager::GetStrValue(TW_ROM_ID)));
 
-    for (int i = 5; i > 0; --i) {
+    int timeout = DataManager::GetIntValue(TW_AUTOBOOT_TIMEOUT);
+
+    for (int i = timeout; i > 0; --i) {
         gui_msg(Msg("autoboot_booting_in")(i));
 
         clock_gettime(CLOCK_MONOTONIC, &now);
