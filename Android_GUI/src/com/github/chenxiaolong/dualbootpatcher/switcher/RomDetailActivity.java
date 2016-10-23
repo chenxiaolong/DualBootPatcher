@@ -108,7 +108,11 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 import mbtool.daemon.v3.MbWipeTarget;
 
@@ -752,8 +756,11 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         mBackupTargets = targets;
 
+        DateFormat df = new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss", Locale.US);
+        String suggestedName = df.format(new Date()) + '_' + mRomInfo.getId();
+
         // Prompt for back up name
-        BackupNameInputDialog d = BackupNameInputDialog.newInstanceFromActivity();
+        BackupNameInputDialog d = BackupNameInputDialog.newInstanceFromActivity(suggestedName);
         d.show(getFragmentManager(), INPUT_DIALOG_BACKUP_NAME);
     }
 
