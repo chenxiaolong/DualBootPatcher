@@ -162,6 +162,7 @@
         <string name="autoboot_booting_in">Booting in {1} seconds...</string>
         <string name="autoboot_canceled">Canceled autoboot</string>
         <string name="autoboot_booting_now">Booting now...</string>
+        <string name="autoboot_skip_countdown">Skip countdown</string>
 
         <!--
             Generic strings
