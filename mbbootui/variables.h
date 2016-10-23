@@ -120,4 +120,7 @@
 // Selected ROM ID
 #define TW_ROM_ID                   "tw_rom_id"
 
+// Autoboot timeout
+#define TW_AUTOBOOT_TIMEOUT         "tw_autoboot_timeout"
+
 #endif  // _VARIABLES_HEADER_
