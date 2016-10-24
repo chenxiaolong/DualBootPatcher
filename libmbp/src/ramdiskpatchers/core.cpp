@@ -74,6 +74,7 @@ bool CoreRP::patchRamdisk()
 {
     return addMbtool()
             && addExfat()
+            && addFsckWrapper()
             && setUpInitWrapper()
             && removeBlockDevProps()
             && addDeviceJson();
@@ -125,6 +126,29 @@ bool CoreRP::addExfat()
             || !m_impl->cpio->addFile(sigPath, mountSig, 0640)
             || !m_impl->cpio->addSymlink("mount.exfat", fsck)
             || !m_impl->cpio->addSymlink("mount.exfat.sig", fsckSig)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::addFsckWrapper()
+{
+    const std::string wrapper("sbin/fsck-wrapper");
+    const std::string sig("sbin/fsck-wrapper.sig");
+    std::string wrapperPath(m_impl->pc->dataDirectory());
+    wrapperPath += "/binaries/android/";
+    wrapperPath += mb_device_architecture(m_impl->info->device());
+    wrapperPath += "/fsck-wrapper";
+    std::string sigPath(wrapperPath);
+    sigPath += ".sig";
+
+    m_impl->cpio->remove(wrapper);
+    m_impl->cpio->remove(sig);
+
+    if (!m_impl->cpio->addFile(wrapperPath, wrapper, 0750)
+            || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
