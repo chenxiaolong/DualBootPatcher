@@ -234,12 +234,17 @@ void Roms::add_data_roms()
 void Roms::add_extsd_roms()
 {
     std::string mount_point = get_extsd_partition();
-    if (mount_point.empty()) {
-        return;
-    }
+    std::string search_dir;
+    bool is_boot;
 
-    std::string search_dir(mount_point);
-    search_dir += "/multiboot";
+    if (mount_point.empty()) {
+        search_dir = get_raw_path(MULTIBOOT_DIR);
+        is_boot = true;
+    } else {
+        search_dir = mount_point;
+        search_dir += "/multiboot";
+        is_boot = false;
+    }
 
     DIR *dp = opendir(search_dir.c_str());
     if (!dp) {
@@ -264,7 +269,11 @@ void Roms::add_extsd_roms()
         std::string image(search_dir);
         image += "/";
         image += ent->d_name;
-        image += "/system.img";
+        if (is_boot) {
+            image += "/boot.img";
+        } else {
+            image += "/system.img";
+        }
 
         if (stat(image.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
             temp_roms.push_back(create_rom_extsd_slot(ent->d_name + 11));
@@ -285,9 +294,13 @@ void Roms::add_installed()
     struct stat sb;
 
     for (auto rom : all_roms.roms) {
+        std::string boot_path = get_raw_path(rom->boot_image_path());
         std::string system_path = rom->full_system_path();
 
-        if (rom->system_is_image) {
+        if (stat(boot_path.c_str(), &sb) == 0) {
+            // If boot image exists, assume that the ROM is installed
+            roms.push_back(rom);
+        } else if (rom->system_is_image) {
             // If /system is on an ext4 image, check if the image exists
             if (stat(system_path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode)) {
                 roms.push_back(rom);
