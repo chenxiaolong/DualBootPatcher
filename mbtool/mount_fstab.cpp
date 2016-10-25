@@ -749,7 +749,7 @@ static bool copy_mount_exfat()
     return true;
 }
 
-static bool wrap_binaries()
+static bool wrap_extsd_binaries()
 {
     if (mkdir(WRAPPED_BINARIES_DIR, 0755) < 0 && errno != EEXIST) {
         return false;
@@ -968,6 +968,10 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
             || rom->cache_source == Rom::Source::EXTERNAL_SD
             || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (!require_extsd) {
+        LOGV("Skipping extsd mount because ROM is not an extsd-slot");
+    }
+
     if (ret && !recs.extsd.empty() && require_extsd) {
         if (mount_extsd_fstab_entries(recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
             successful.push_back(EXTSD_MOUNT_POINT);
@@ -1051,7 +1055,15 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     }
 
     mount_all_system_images();
-    wrap_binaries();
+
+    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
+            || rom->cache_source == Rom::Source::EXTERNAL_SD
+            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (require_extsd) {
+        wrap_extsd_binaries();
+    } else {
+        LOGV("Skipping external SD binaries wrapping");
+    }
 
     return true;
 }
