@@ -26,9 +26,9 @@ struct BlockDevInfo
 {
     std::string path;           // Path to block device
     std::string partition_name; // Partition name (system, cache, data, etc.)
-    int partition_num;          // Partition number
-    int major;                  // Block device major number
-    int minor;                  // Block device minor number
+    int partition_num = -1;     // Partition number
+    int major = -1;             // Block device major number
+    int minor = -1;             // Block device minor number
 };
 
 void handle_device_fd();

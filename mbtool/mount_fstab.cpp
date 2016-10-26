@@ -538,9 +538,10 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
                 LOGD("Matching devices against pattern: %s", pattern.c_str());
 
                 for (auto const &pair : devices_map) {
-                    if (path_matches(pair.first.c_str(), pattern.c_str())) {
-                        const BlockDevInfo &info = pair.second;
+                    const BlockDevInfo &info = pair.second;
 
+                    if (path_matches(pair.first.c_str(), pattern.c_str())
+                            && info.partition_num >= 0) {
                         LOGV("Matched external SD block dev: "
                              "major=%d; minor=%d; name=%s; number=%d; path=%s",
                              info.major, info.minor, info.partition_name.c_str(),
