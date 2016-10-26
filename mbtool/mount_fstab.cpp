@@ -766,6 +766,9 @@ static bool wrap_extsd_binaries()
     if (!disable_fsck("/system/bin/fsck_msdos")) {
         ret = false;
     }
+    if (!disable_fsck("/system/bin/fsck_msdos_mtk")) {
+        ret = false;
+    }
     if (!disable_fsck("/system/bin/fsck.exfat")) {
         ret = false;
     }
