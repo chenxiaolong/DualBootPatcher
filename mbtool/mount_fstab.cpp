@@ -518,41 +518,50 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
         return false;
     }
 
-    // If an actual SD card was found and the mount operation failed, then set
-    // to false. This way, the function won't fail if no SD card is inserted.
-    bool failed = false;
+    // We can't wait for a block device path to appear since we don't know the
+    // block device path. Thus, we'll match the paths a number of times with a
+    // delay between each attempt.
+    static const int max_attempts = 10;
 
-    auto const *devices_map = get_devices_map();
+    for (int i = 0; i < max_attempts; ++i) {
+        LOGV("[Attempt %d/%d] Finding and mounting external SD",
+             i + 1, max_attempts);
 
-    for (const util::fstab_rec &rec : extsd_recs) {
-        std::vector<std::string> patterns =
-                split_patterns(rec.blk_device.c_str());
-        for (const std::string &pattern : patterns) {
-            bool matched = false;
+        auto devices_map = get_block_dev_mappings();
 
-            for (auto const &pair : *devices_map) {
-                if (path_matches(pair.first.c_str(), pattern.c_str())) {
-                    matched = true;
-                    const std::string &block_dev = pair.second;
+        for (const util::fstab_rec &rec : extsd_recs) {
+            std::vector<std::string> patterns =
+                    split_patterns(rec.blk_device.c_str());
 
-                    if (try_extsd_mount(block_dev.c_str(), mount_point)) {
-                        return true;
-                    } else {
-                        failed = true;
+            // Match sysfs path pattern
+            for (const std::string &pattern : patterns) {
+                LOGD("Matching devices against pattern: %s", pattern.c_str());
+
+                for (auto const &pair : devices_map) {
+                    if (path_matches(pair.first.c_str(), pattern.c_str())) {
+                        const BlockDevInfo &info = pair.second;
+
+                        LOGV("Matched external SD block dev: "
+                             "major=%d; minor=%d; name=%s; number=%d; path=%s",
+                             info.major, info.minor, info.partition_name.c_str(),
+                             info.partition_num, info.path.c_str());
+
+                        return try_extsd_mount(info.path.c_str(), mount_point);
                     }
-
-                    // Keep trying ...
                 }
             }
+        }
 
-            if (!matched) {
-                LOGE("Failed to find block device corresponding to %s",
-                     pattern.c_str());
-            }
+        if (i < max_attempts - 1) {
+            LOGW("No external SD patterns were matched; waiting 1 second");
+            sleep(1);
         }
     }
 
-    return !failed;
+    LOGE("No external SD patterns were matched after %d attempts",
+         max_attempts);
+
+    return false;
 }
 
 static bool mount_image(const char *image, const char *mount_point,
@@ -740,7 +749,7 @@ static bool copy_mount_exfat()
     return true;
 }
 
-static bool wrap_binaries()
+static bool wrap_extsd_binaries()
 {
     if (mkdir(WRAPPED_BINARIES_DIR, 0755) < 0 && errno != EEXIST) {
         return false;
@@ -953,23 +962,22 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         }
     }
 
-    // Mount external SD
-    if (ret && !recs.extsd.empty()) {
+    // Mount external SD only if ROM is installed on the external SD. This is
+    // necessary because mount_extsd_fstab_entries() blocks until an SD card is
+    // found or a timeout occurs.
+    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
+            || rom->cache_source == Rom::Source::EXTERNAL_SD
+            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (!require_extsd) {
+        LOGV("Skipping extsd mount because ROM is not an extsd-slot");
+    }
+
+    if (ret && !recs.extsd.empty() && require_extsd) {
         if (mount_extsd_fstab_entries(recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
-            // Only add to list if an SD card exists and is mounted
-            if (util::is_mounted(EXTSD_MOUNT_POINT)) {
-                successful.push_back(EXTSD_MOUNT_POINT);
-            }
+            successful.push_back(EXTSD_MOUNT_POINT);
         } else {
-            LOGE("Failed to mount external SD");
-            if (rom->system_source == Rom::Source::EXTERNAL_SD
-                    || rom->cache_source == Rom::Source::EXTERNAL_SD
-                    || rom->data_source == Rom::Source::EXTERNAL_SD) {
-                LOGE("Failing as ROM ID requires external SD");
-                ret = false;
-            } else {
-                LOGE("Ignoring as ROM ID does not require external SD");
-            }
+            LOGE("Failed to mount " EXTSD_MOUNT_POINT);
+            ret = false;
         }
     }
 
@@ -1047,7 +1055,15 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
     }
 
     mount_all_system_images();
-    wrap_binaries();
+
+    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
+            || rom->cache_source == Rom::Source::EXTERNAL_SD
+            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (require_extsd) {
+        wrap_extsd_binaries();
+    } else {
+        LOGV("Skipping external SD binaries wrapping");
+    }
 
     return true;
 }
