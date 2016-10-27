@@ -49,7 +49,8 @@ std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 
 MonotonicCond GUIAction::s_autoboot_cond;
 pthread_mutex_t GUIAction::s_autoboot_mutex = PTHREAD_MUTEX_INITIALIZER;
-volatile bool GUIAction::s_autoboot_canceled = false;
+volatile GUIAction::AutobootSignal GUIAction::s_autoboot_signal =
+    GUIAction::AutobootSignal::NONE;
 
 static void *ActionThread_work_wrapper(void *data);
 
@@ -164,6 +165,7 @@ GUIAction::GUIAction(xml_node<>* node)
         ADD_ACTION(setbrightness);
         ADD_ACTION(setlanguage);
         ADD_ACTION(autoboot_cancel);
+        ADD_ACTION(autoboot_skip);
 
         // remember actions that run in the caller thread
         for (auto it = mf.cbegin(); it != mf.cend(); ++it) {
@@ -641,10 +643,10 @@ int GUIAction::autoboot(const std::string& arg __unused)
 {
     struct timespec wait_end;
     struct timespec now;
-    bool canceled = false;
+    AutobootSignal signal = AutobootSignal::NONE;
 
     pthread_mutex_lock(&s_autoboot_mutex);
-    s_autoboot_canceled = false;
+    s_autoboot_signal = AutobootSignal::NONE;
     pthread_mutex_unlock(&s_autoboot_mutex);
 
     operation_start("autoboot");
@@ -655,7 +657,9 @@ int GUIAction::autoboot(const std::string& arg __unused)
 
     gui_msg(Msg("autoboot_autobooting_to")(DataManager::GetStrValue(TW_ROM_ID)));
 
-    for (int i = 5; i > 0; --i) {
+    int timeout = DataManager::GetIntValue(TW_AUTOBOOT_TIMEOUT);
+
+    for (int i = timeout; i > 0; --i) {
         gui_msg(Msg("autoboot_booting_in")(i));
 
         clock_gettime(CLOCK_MONOTONIC, &now);
@@ -670,17 +674,17 @@ int GUIAction::autoboot(const std::string& arg __unused)
         } else {
             ::sleep(1);
         }
-        if (s_autoboot_canceled) {
-            canceled = true;
+        if (s_autoboot_signal != AutobootSignal::NONE) {
+            signal = s_autoboot_signal;
         }
         pthread_mutex_unlock(&s_autoboot_mutex);
 
-        if (canceled) {
+        if (signal != AutobootSignal::NONE) {
             break;
         }
     }
 
-    if (canceled) {
+    if (signal == AutobootSignal::CANCEL) {
         gui_msg("autoboot_canceled");
 
         operation_end(0);
@@ -704,7 +708,19 @@ int GUIAction::autoboot_cancel(const std::string& arg __unused)
     if (cond) {
         pthread_cond_signal(s_autoboot_cond);
     }
-    s_autoboot_canceled = true;
+    s_autoboot_signal = AutobootSignal::CANCEL;
+    pthread_mutex_unlock(&s_autoboot_mutex);
+    return 0;
+}
+
+int GUIAction::autoboot_skip(const std::string& arg __unused)
+{
+    pthread_mutex_lock(&s_autoboot_mutex);
+    pthread_cond_t *cond = s_autoboot_cond;
+    if (cond) {
+        pthread_cond_signal(s_autoboot_cond);
+    }
+    s_autoboot_signal = AutobootSignal::SKIP;
     pthread_mutex_unlock(&s_autoboot_mutex);
     return 0;
 }

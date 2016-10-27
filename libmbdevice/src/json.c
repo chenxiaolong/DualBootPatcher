@@ -38,6 +38,7 @@ struct flag_mapping
 struct flag_mapping device_flag_mappings[] = {
 #define FLAG(F) { #F, FLAG_ ## F }
     FLAG(HAS_COMBINED_BOOT_AND_RECOVERY),
+    FLAG(FSTAB_SKIP_SDCARD0),
 #undef FLAG
     { NULL, 0 }
 };

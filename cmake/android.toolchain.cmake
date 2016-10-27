@@ -529,14 +529,20 @@ set(_CMAKE_TOOLCHAIN_PREFIX "${ANDROID_TOOLCHAIN_PREFIX}")
 # This is necessary in case the user sets/changes flags in subsequent
 # configures. If we included the Android flags in here, they would get
 # overwritten.
+set(CMAKE_ASM_FLAGS ""
+    CACHE STRING "Flags used by the compiler during all build types.")
 set(CMAKE_C_FLAGS ""
 	CACHE STRING "Flags used by the compiler during all build types.")
 set(CMAKE_CXX_FLAGS ""
 	CACHE STRING "Flags used by the compiler during all build types.")
+set(CMAKE_ASM_FLAGS_DEBUG ""
+	CACHE STRING "Flags used by the compiler during debug builds.")
 set(CMAKE_C_FLAGS_DEBUG ""
 	CACHE STRING "Flags used by the compiler during debug builds.")
 set(CMAKE_CXX_FLAGS_DEBUG ""
 	CACHE STRING "Flags used by the compiler during debug builds.")
+set(CMAKE_ASM_FLAGS_RELEASE ""
+	CACHE STRING "Flags used by the compiler during release builds.")
 set(CMAKE_C_FLAGS_RELEASE ""
 	CACHE STRING "Flags used by the compiler during release builds.")
 set(CMAKE_CXX_FLAGS_RELEASE ""
@@ -548,10 +554,13 @@ set(CMAKE_SHARED_LINKER_FLAGS ""
 set(CMAKE_EXE_LINKER_FLAGS ""
 	CACHE STRING "Flags used by the linker.")
 
+set(CMAKE_ASM_FLAGS           "${ANDROID_COMPILER_FLAGS} ${CMAKE_ASM_FLAGS}")
 set(CMAKE_C_FLAGS             "${ANDROID_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS           "${ANDROID_COMPILER_FLAGS} ${ANDROID_COMPILER_FLAGS_CXX} ${CMAKE_CXX_FLAGS}")
+set(CMAKE_ASM_FLAGS_DEBUG     "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_ASM_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_DEBUG       "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_DEBUG     "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_RELEASE     "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS "${ANDROID_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,19 +17,10 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+.text
+    .global _start
 
-#include <string>
-
-#include <openssl/sha.h>
-
-namespace mb
-{
-namespace util
-{
-
-bool sha512_hash(const std::string &path,
-                 unsigned char digest[SHA512_DIGEST_LENGTH]);
-
-}
-}
+_start:
+    mov     %r0,$0
+    mov     %r7,$1
+    swi     $0

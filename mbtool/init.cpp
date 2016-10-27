@@ -72,6 +72,7 @@
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
+#include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
 
@@ -411,7 +412,7 @@ static bool is_completely_whitespace(const char *str)
     return true;
 }
 
-static bool add_mbtool_services()
+static bool add_mbtool_services(bool enable_appsync)
 {
     autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
     if (!fp_old) {
@@ -447,14 +448,16 @@ static bool add_mbtool_services()
             has_init_multiboot_rc = true;
         }
 
-        if (util::starts_with(line, "service")) {
-            inside_service = strstr(line, "installd") != nullptr;
-        } else if (inside_service && is_completely_whitespace(line)) {
-            inside_service = false;
-        }
+        if (enable_appsync) {
+            if (util::starts_with(line, "service")) {
+                inside_service = strstr(line, "installd") != nullptr;
+            } else if (inside_service && is_completely_whitespace(line)) {
+                inside_service = false;
+            }
 
-        if (inside_service && strstr(line, "disabled")) {
-            has_disabled_installd = true;
+            if (inside_service && strstr(line, "disabled")) {
+                has_disabled_installd = true;
+            }
         }
     }
 
@@ -473,7 +476,8 @@ static bool add_mbtool_services()
         }
 
         // Disable installd. mbtool's appsync will spawn it on demand
-        if (!has_disabled_installd
+        if (enable_appsync
+                && !has_disabled_installd
                 && util::starts_with(line, "service")
                 && strstr(line, "installd")) {
             fputs("    disabled\n", fp_new.get());
@@ -492,19 +496,24 @@ static bool add_mbtool_services()
         return false;
     }
 
-    static const char *init_multiboot_rc =
+    static const char *daemon_service =
             "service mbtooldaemon /mbtool daemon\n"
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
             "    seclabel u:r:init:s0\n"
-            "\n"
+            "\n";
+    static const char *appsync_service =
             "service appsync /mbtool appsync\n"
             "    class main\n"
             "    socket installd stream 600 system system\n"
-            "    seclabel u:r:init:s0\n";
+            "    seclabel u:r:init:s0\n"
+            "\n";
 
-    fputs(init_multiboot_rc, fp_multiboot.get());
+    fputs(daemon_service, fp_multiboot.get());
+    if (enable_appsync) {
+        fputs(appsync_service, fp_multiboot.get());
+    }
 
     fchmod(fileno(fp_multiboot.get()), 0750);
 
@@ -899,6 +908,54 @@ static std::string find_fstab()
         return fallback[0];
     }
     return std::string();
+}
+
+static unsigned long get_api_version(void)
+{
+    std::string api_str;
+    util::file_get_property("/system/build.prop",
+                            "ro.build.version.sdk",
+                            &api_str, "");
+
+    char *temp;
+    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
+    if (*temp == '\0') {
+        return api;
+    } else {
+        return 0;
+    }
+}
+
+static bool create_layout_version()
+{
+    // Prevent installd from dying because it can't unmount /data/media for
+    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
+    // we'll bypass this.
+    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
+    if (fp) {
+        const char *layout_version;
+        if (get_api_version() >= 21) {
+            layout_version = "3";
+        } else {
+            layout_version = "2";
+        }
+
+        fwrite(layout_version, 1, strlen(layout_version), fp.get());
+        fp.reset();
+    } else {
+        LOGE("%s: Failed to open for writing: %s",
+             "/data/.layout_version", strerror(errno));
+        return false;
+    }
+
+    if (!util::selinux_set_context(
+            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
+        LOGE("%s: Failed to set SELinux context: %s",
+             "/data/.layout_version", strerror(errno));
+        return false;
+    }
+
+    return true;
 }
 
 bool mount_userdata(const char *block_dev)
@@ -1308,7 +1365,7 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
 
     // Log to kmsg
-    log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+    log::log_set_logger(std::make_shared<log::KmsgLogger>(true));
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }
@@ -1430,11 +1487,21 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    std::string config_path(rom->config_path());
+    RomConfig config;
+    if (!config.load_file(config_path)) {
+        LOGW("%s: Failed to load config for ROM %s",
+             config_path.c_str(), rom->id.c_str());
+    }
+
     // Make runtime ramdisk modifications
     convert_binary_file_contexts();
     fix_file_contexts();
-    add_mbtool_services();
+    add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
+
+    // Data modifications
+    create_layout_version();
 
     // Patch SELinux policy
     struct stat sb;

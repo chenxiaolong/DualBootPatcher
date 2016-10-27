@@ -81,7 +81,7 @@ protected:
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
     std::string _system_block_dev;
-    unsigned char _boot_hash[SHA_DIGEST_LENGTH];
+    unsigned char _boot_hash[SHA512_DIGEST_LENGTH];
     std::shared_ptr<Rom> _rom;
     std::string _system_path;
     std::string _cache_path;

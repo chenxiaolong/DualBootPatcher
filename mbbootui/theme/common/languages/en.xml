@@ -71,6 +71,7 @@
         <string name="settings_general_title">General</string>
         <string name="settings_general_use24clock">Use 24-hour clock</string>
         <string name="settings_general_rev_navbar">Reversed navbar layout</string>
+        <string name="settings_general_autoboot_timeout">Autoboot timeout in seconds:</string>
         <string name="settings_general_restore_defaults">Restore Defaults</string>
 
         <string name="settings_tz_title">Time Zone</string>
@@ -161,6 +162,7 @@
         <string name="autoboot_booting_in">Booting in {1} seconds...</string>
         <string name="autoboot_canceled">Canceled autoboot</string>
         <string name="autoboot_booting_now">Booting now...</string>
+        <string name="autoboot_skip_countdown">Skip countdown</string>
 
         <!--
             Generic strings

@@ -5,9 +5,14 @@
     - K50
     - K50a40
     - K50t5
+    - K50-t5
     - K50-T5
+    - K3 Note
     - aio_otfp
+    - aio_otfp_m
   architecture: arm64-v8a
+  flags:
+    - FSTAB_SKIP_SDCARD0
 
   block_devs:
     base_dirs:

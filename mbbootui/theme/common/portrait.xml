@@ -180,6 +180,20 @@
                 <action function="set">tw_has_action2=0</action>
                 <action function="set">tw_action2=</action>
                 <action function="set">tw_action2_param=</action>
+                <!-- Whether a custom action button should be shown on action_page -->
+                <action function="set">tw_has_custom_action=0</action>
+                <!-- Text to show on custom action button -->
+                <action function="set">tw_custom_action_text=</action>
+                <!-- Action to perform upon pressing the custom action button -->
+                <action function="set">tw_custom_action=</action>
+                <!-- Parameter to action function specified by %tw_custom_action% -->
+                <action function="set">tw_custom_action_param=</action>
+                <!-- Whether the custom action button was pressed -->
+                <action function="set">tw_custom_action_selected=0</action>
+                <!-- Whether to redirect to %tw_custom_action_page% if the custom action button is pressed -->
+                <action function="set">tw_has_custom_action_page=0</action>
+                <!-- Custom page in which to redirect if the custom action button is pressed -->
+                <action function="set">tw_custom_action_page=</action>
                 <!-- Whether a cancel button should be shown on action_page -->
                 <action function="set">tw_has_cancel=0</action>
                 <!-- Action to perform upon canceling an operation -->
@@ -222,6 +236,27 @@
 
             <!-- Progress bar -->
             <template name="progress_bar" />
+
+            <!-- Custom button -->
+            <button style="main_button_half_height">
+                <condition var1="tw_has_custom_action" var2="1" />
+                <placement x="%indent%" y="%row21a_y%" />
+                <text>%tw_custom_action_text%</text>
+                <actions>
+                    <action function="set">tw_custom_action_selected=1</action>
+                    <action function="%tw_custom_action%">%tw_custom_action_param%</action>
+                </actions>
+            </button>
+
+            <!-- Go to custom page if custom action button clicked -->
+            <action>
+                <condition var1="tw_operation_state" var2="1" />
+                <condition var1="tw_custom_action_selected" op="!=" var2="0" />
+                <condition var1="tw_has_custom_action_page" op="!=" var2="0" />
+                <actions>
+                    <action function="page">%tw_custom_action_page%</action>
+                </actions>
+            </action>
 
             <!-- Cancel button -->
             <button style="main_button_half_height">
@@ -356,6 +391,8 @@
         <!-- Autoboot countdown page -->
         <page name="autoboot">
             <action>
+                <!-- Allow skipping the autoboot countdown -->
+                <action function="set">tw_has_custom_action=1</action>
                 <!-- Allow canceling the autoboot countdown -->
                 <action function="set">tw_has_cancel=1</action>
                 <!-- Head back to the main page if canceled -->
@@ -363,6 +400,10 @@
                 <!-- Call autoboot function to countdown and reboot -->
                 <action function="set">tw_action=autoboot</action>
                 <action function="set">tw_action_param=</action>
+                <!-- Call autoboot_skip function to skip the countdown -->
+                <action function="set">tw_custom_action=autoboot_skip</action>
+                <action function="set">tw_custom_action_param=</action>
+                <action function="set">tw_custom_action_text={@autoboot_skip_countdown}</action>
                 <!-- Call autoboot_cancel function to stop the countdown -->
                 <action function="set">tw_cancel_action=autoboot_cancel</action>
                 <action function="set">tw_cancel_param=</action>
@@ -533,6 +574,13 @@
                 </listitem>
             </listbox>
 
+            <!-- Autoboot timeout slider -->
+            <slidervalue>
+                <placement x="indent" y="%row7_y%" w="%content_width%" />
+                <text>{@settings_general_autoboot_timeout}</text>
+                <data variable="tw_autoboot_timeout" min="5" max="30" />
+            </slidervalue>
+
             <!-- Restore default settings button -->
             <button style="main_button_half_height">
                 <placement x="%center_x%" y="%row21a_y%" />
@@ -540,6 +588,7 @@
                 <actions>
                     <action function="set">tw_samsung_navbar=0</action>
                     <action function="set">tw_tab_icons=0</action>
+                    <action function="set">tw_autoboot_timeout=5</action>
                     <action function="restoredefaultsettings" />
                 </actions>
             </button>
