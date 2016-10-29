@@ -520,6 +520,27 @@ static bool add_mbtool_services(bool enable_appsync)
     return true;
 }
 
+static bool write_fstab_hack(const char *fstab)
+{
+    autoclose::file fp_fstab(autoclose::fopen(fstab, "abe"));
+    if (!fp_fstab) {
+        LOGE("%s: Failed to open for writing: %s",
+             fstab, strerror(errno));
+        return false;
+    }
+
+    fputs(R"EOF(
+# The following is added to prevent vold in Android 7.0 from segfaulting due to
+# dereferencing a null pointer when checking if the /data fstab entry has the
+# "forcefdeorfbe" vold option. (See cryptfs_isConvertibleToFBE() in
+# system/vold/cryptfs.c.)
+
+/dev/null /data auto defaults voldmanaged=dummy:auto
+)EOF", fp_fstab.get());
+
+    return true;
+}
+
 static bool strip_manual_mounts()
 {
     autoclose::dir dir(autoclose::opendir("/"));
@@ -1497,6 +1518,7 @@ int init_main(int argc, char *argv[])
     // Make runtime ramdisk modifications
     convert_binary_file_contexts();
     fix_file_contexts();
+    write_fstab_hack(fstab.c_str());
     add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
 
