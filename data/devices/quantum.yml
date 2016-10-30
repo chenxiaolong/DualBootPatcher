@@ -4,6 +4,8 @@
   codenames:
     - Q2
   architecture: arm64-v8a
+  flags:
+    - FSTAB_SKIP_SDCARD0
   
   block_devs:
     base_dirs:
@@ -52,7 +54,9 @@
   codenames:
     - Q5
   architecture: arm64-v8a
-  
+  flags:
+    - FSTAB_SKIP_SDCARD0
+
   block_devs:
     base_dirs:
       - /dev/block/platform/mtk-msdc.0/by-name
