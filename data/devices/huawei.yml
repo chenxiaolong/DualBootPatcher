@@ -56,3 +56,35 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p19
+
+
+- name: Huawei Y635 LTE
+  id: hwY635
+  codenames:
+    - hwY635
+    - Y635-L01
+    - Y635-L02
+    - Y635-L03
+    - Y635-L11
+    - Y635-L21
+    - hwy635
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p18
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p19
