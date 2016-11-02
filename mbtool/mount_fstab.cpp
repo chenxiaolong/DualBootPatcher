@@ -838,6 +838,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         } else if (it->vold_args.find("emmc@intsd") == std::string::npos
                 && ((include_sdcard0 && it->vold_args.find("voldmanaged=sdcard0") != std::string::npos)
                 || it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
+                || it->vold_args.find("voldmanaged=sdcard") != std::string::npos
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
