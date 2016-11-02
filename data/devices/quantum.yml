@@ -31,22 +31,6 @@
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p8
-    extra:
-      - /dev/block/mmcblk0boot0
-      - /dev/block/platform/mtk-msdc.0/by-name/metadata
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/metadata
-      - /dev/block/platform/mtk-msdc.0/by-name/nvram
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/nvram
-      - /dev/block/platform/mtk-msdc.0/by-name/lk
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
-      - /dev/block/platform/mtk-msdc.0/by-name/logo
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
-      - /dev/block/platform/mtk-msdc.0/by-name/para
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
-      - /dev/block/platform/mtk-msdc.0/by-name/tee1
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
-      - /dev/block/platform/mtk-msdc.0/by-name/tee2
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
 
   boot_ui:
     supported: true
@@ -63,7 +47,6 @@
   crypto:
     supported: true
     header_path: /dev/block/mmcblk0p19
-
 
 
 - name: Quantum MUV PRO
@@ -98,22 +81,6 @@
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p8
-    extra:
-      - /dev/block/mmcblk0boot0
-      - /dev/block/platform/mtk-msdc.0/by-name/metadata
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/metadata
-      - /dev/block/platform/mtk-msdc.0/by-name/nvram
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/nvram
-      - /dev/block/platform/mtk-msdc.0/by-name/lk
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
-      - /dev/block/platform/mtk-msdc.0/by-name/logo
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
-      - /dev/block/platform/mtk-msdc.0/by-name/para
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
-      - /dev/block/platform/mtk-msdc.0/by-name/tee1
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
-      - /dev/block/platform/mtk-msdc.0/by-name/tee2
-      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
 
   boot_ui:
     supported: true
@@ -130,46 +97,3 @@
   crypto:
     supported: true
     header_path: /dev/block/mmcblk0p19
-
-
-- name: Quantum GO 3G
-  id: Q1
-  codenames:
-    - Q1
-  architecture: armeabi-v7a
-  flags:
-    - FSTAB_SKIP_SDCARD0
-
-  block_devs:
-    base_dirs:
-      - /
-      - /dev/
-      - /dev/block/
-    system:
-      - /emmc@android
-      - /dev/block/mmcblk0p6
-    cache:
-      - /emmc@cache
-      - /dev/block/mmcblk0p7
-    data:
-      - emmc@usrdata
-      - /dev/block/mmcblk0p8
-    boot:
-      - /dev/bootimg
-    recovery:
-      - /dev/recovery
-    extra:
-      - /dev/block/mmcblk0boot0
-      - /dev/block/mmcblk0p2
-      - /emmc@protect_f
-      - /dev/block/mmcblk0p3
-      - /emmc@protect_s
-      - /dev/nvram
-      - /dev/pro_info
-      - /dev/seccfg
-      - /dev/uboot
-      - /dev/block/mmcblk0p4
-      - /dev/sec_ro
-      - /dev/misc
-      - /dev/logo
-      - /dev/expdb
