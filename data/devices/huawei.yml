@@ -88,3 +88,6 @@
     recovery:
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p19
+    extra:
+      - /dev/block/bootdevice
+      - /dev/block/bootdevice/by-name/system
