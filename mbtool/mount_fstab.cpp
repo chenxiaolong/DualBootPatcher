@@ -1030,7 +1030,14 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
             return false;
         }
     }
-    if (rom->cache_is_image) {
+
+    struct stat sb;
+
+    // If /cache is a symlink (Nougat-style ROMs), then don't mount the cache
+    // directory since they use /data/cache.
+    if (lstat("/cache", &sb) == 0 && S_ISLNK(sb.st_mode)) {
+        LOGW("Not mounting /cache because it is a symlink!");
+    } else if (rom->cache_is_image) {
         if (!mount_image(target_cache.c_str(), "/cache", 0771)) {
             return false;
         }
@@ -1039,6 +1046,7 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
             return false;
         }
     }
+
     if (rom->data_is_image) {
         if (!mount_image(target_data.c_str(), "/data", 0771)) {
             return false;
