@@ -74,11 +74,16 @@
 #define CHROOT_CACHE_LOOP_DEV           "/mb/loop.cache"
 #define CHROOT_DATA_LOOP_DEV            "/mb/loop.data"
 
+// SELinux context for mbtool utils
+#define MB_EXEC_CONTEXT                 "u:r:mb_exec:s0"
+
 namespace mb
 {
 
 bool copy_system(const std::string &source, const std::string &target);
 
-bool fix_multiboot_permissions(void);
+bool fix_multiboot_permissions();
+
+bool switch_context(const std::string &context);
 
 }

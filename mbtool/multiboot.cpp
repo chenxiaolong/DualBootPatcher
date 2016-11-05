@@ -193,4 +193,33 @@ bool fix_multiboot_permissions(void)
     return true;
 }
 
+bool switch_context(const std::string &context)
+{
+    std::string current;
+
+    if (!util::selinux_get_process_attr(
+            0, util::SELinuxAttr::CURRENT, &current)) {
+        LOGE("Failed to get current process context: %s", strerror(errno));
+        // Don't fail if SELinux is not supported
+        return errno == ENOENT;
+    }
+
+    LOGI("Current process context: %s", current.c_str());
+
+    if (current == context) {
+        LOGV("Not switching process context");
+        return true;
+    }
+
+    LOGV("Setting process context: %s", context.c_str());
+
+    if (!util::selinux_set_process_attr(
+            0, util::SELinuxAttr::CURRENT, context)) {
+        LOGE("Failed to set current process context: %s", strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 }

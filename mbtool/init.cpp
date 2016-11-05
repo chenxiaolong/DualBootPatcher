@@ -501,13 +501,13 @@ static bool add_mbtool_services(bool enable_appsync)
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
-            "    seclabel u:r:init:s0\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
     static const char *appsync_service =
             "service appsync /mbtool appsync\n"
             "    class main\n"
             "    socket installd stream 600 system system\n"
-            "    seclabel u:r:init:s0\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
 
     fputs(daemon_service, fp_multiboot.get());
@@ -1495,7 +1495,10 @@ int init_main(int argc, char *argv[])
     }
 
     // Mount selinuxfs
-    util::selinux_mount();
+    selinux_mount();
+    // Load pre-boot policy
+    patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE, SELINUX_LOAD_FILE,
+                   SELinuxPatch::PRE_BOOT, nullptr);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1511,6 +1514,8 @@ int init_main(int argc, char *argv[])
              config_path.c_str(), rom->id.c_str());
     }
 
+    LOGD("Enable appsync: %d", config.indiv_app_sharing);
+
     // Make runtime ramdisk modifications
     convert_binary_file_contexts();
     fix_file_contexts();
@@ -1523,9 +1528,11 @@ int init_main(int argc, char *argv[])
 
     // Patch SELinux policy
     struct stat sb;
-    if (stat("/sepolicy", &sb) == 0) {
-        if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
-            LOGW("Failed to patch /sepolicy");
+    if (stat(SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
+        if (!patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE,
+                            SELINUX_DEFAULT_POLICY_FILE,
+                            SELinuxPatch::MAIN, nullptr)) {
+            LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
             emergency_reboot();
             return EXIT_FAILURE;
         }
@@ -1546,7 +1553,7 @@ int init_main(int argc, char *argv[])
 #endif
 
     // Unmount partitions
-    util::selinux_unmount();
+    selinux_unmount();
     umount("/dev/pts");
     umount("/dev");
     umount("/proc");

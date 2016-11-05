@@ -441,37 +441,6 @@ static void run_daemon_fork()
             ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
-static bool patch_sepolicy_daemon()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    LOGD("Policy version: %u", pdb.policyvers);
-
-    util::selinux_add_rule(&pdb, "untrusted_app", "init",
-                           "unix_stream_socket", "connectto");
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    policydb_destroy(&pdb);
-
-    return true;
-}
-
 static void daemon_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -582,11 +551,12 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (patch_sepolicy) {
-        // Patch SELinux policy to make init permissive
-        patch_loaded_sepolicy();
+        patch_loaded_sepolicy(SELinuxPatch::MAIN, nullptr);
+    }
 
-        // Allow untrusted_app to connect to our daemon
-        patch_sepolicy_daemon();
+    if (!switch_context(MB_EXEC_CONTEXT)) {
+        fprintf(stderr, "Failed to switch context; %s may not run properly",
+                argv[0]);
     }
 
     if (replace_flag) {

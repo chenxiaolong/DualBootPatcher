@@ -23,57 +23,13 @@
 
 #include "mblog/logging.h"
 #include "mbutil/reboot.h"
-#include "mbutil/selinux.h"
+
 
 namespace mb
 {
 
-static bool allow_reboot_via_framework()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    LOGD("Policy version: %u", pdb.policyvers);
-
-    // Allow zygote to write to our stdout pipe
-    util::selinux_add_rule(&pdb, "zygote", "init", "fifo_file", "write");
-
-    util::selinux_add_rule(&pdb, "zygote", "activity_service", "service_manager", "find");
-    util::selinux_add_rule(&pdb, "zygote", "init", "unix_stream_socket", "read");
-    util::selinux_add_rule(&pdb, "zygote", "init", "unix_stream_socket", "write");
-    util::selinux_add_rule(&pdb, "zygote", "servicemanager", "binder", "call");
-    util::selinux_add_rule(&pdb, "zygote", "system_server", "binder", "call");
-
-    util::selinux_add_rule(&pdb, "servicemanager", "zygote", "dir", "search");
-    util::selinux_add_rule(&pdb, "servicemanager", "zygote", "file", "open");
-    util::selinux_add_rule(&pdb, "servicemanager", "zygote", "file", "read");
-    util::selinux_add_rule(&pdb, "servicemanager", "zygote", "process", "getattr");
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    policydb_destroy(&pdb);
-
-    return true;
-}
-
 bool reboot_via_framework(bool confirm)
 {
-    allow_reboot_via_framework();
-
     return util::reboot_via_framework(confirm);
 }
 

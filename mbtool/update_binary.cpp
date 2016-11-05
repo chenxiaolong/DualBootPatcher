@@ -33,12 +33,14 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
+#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
 #include "installer.h"
 #include "multiboot.h"
+#include "sepolpatch.h"
 
 
 namespace mb
@@ -56,98 +58,12 @@ public:
     virtual ProceedState on_initialize() override;
     virtual ProceedState on_set_up_chroot() override;
     virtual void on_cleanup(ProceedState ret) override;
-
-private:
-    static bool patch_sepolicy();
 };
 
 
 RecoveryInstaller::RecoveryInstaller(std::string zip_file, int interface, int output_fd) :
     Installer(zip_file, "/chroot", "/multiboot", interface, output_fd)
 {
-}
-
-/*
- * To work around denials (on Samsung devices):
- * 1. Mount the system and data partitions
- *
- *      $ mount /system
- *      $ mount /data
- *
- * 2. Start the audit daemon
- *
- *      $ /system/bin/auditd
- *
- * 3. From another window, run mbtool's update-binary wrapper
- *
- *      $ /tmp/mbtool_recovery updater 3 1 /path/to/file_patched.zip
- *
- * 4. Pull /data/misc/audit/audit.log and run it through audit2allow
- *
- *      $ adb pull /data/misc/audit/audit.log
- *      $ grep denied audit.log | audit2allow
- *
- * 5. Allow the rule using util::selinux_add_rule()
- *
- *    Rules of the form:
- *      allow source target:class perm;
- *    Are allowed by calling:
- *      util::selinux_add_rule(&pdb, source, target, class, perm);
- *
- * --
- *
- * To view the allow rules for the currently loaded policy:
- *
- * 1. Pull the current policy file
- *
- *      $ adb pull /sys/fs/selinux/policy
- *
- * 2. View the rules (the -s, -t, -c, and -p parameters can be used to filter
- *    the rules by source, target, class, and permission, respectively)
- *
- *      $ sesearch -A policy
- */
-bool RecoveryInstaller::patch_sepolicy()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    LOGD("Policy version: %u", pdb.policyvers);
-
-    // Debugging rules (for CWM and Philz)
-    util::selinux_add_rule(&pdb, "adbd",  "block_device",    "blk_file",   "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "graphics_device", "chr_file",   "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "graphics_device", "dir",        "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "input_device",    "chr_file",   "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "input_device",    "dir",        "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "rootfs",          "dir",        "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "rootfs",          "file",       "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "rootfs",          "lnk_file",   "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "system_file",     "file",       "relabelto");
-    util::selinux_add_rule(&pdb, "adbd",  "tmpfs",           "file",       "relabelto");
-
-    util::selinux_add_rule(&pdb, "rootfs", "tmpfs",          "filesystem", "associate");
-    util::selinux_add_rule(&pdb, "tmpfs",  "rootfs",         "filesystem", "associate");
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    policydb_destroy(&pdb);
-
-    return true;
 }
 
 void RecoveryInstaller::display_msg(const std::string &msg)
@@ -180,7 +96,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 {
     struct stat sb;
     if (stat("/sys/fs/selinux", &sb) == 0) {
-        if (!patch_sepolicy()) {
+        if (!patch_loaded_sepolicy(SELinuxPatch::CWM_RECOVERY, nullptr)) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
             int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {

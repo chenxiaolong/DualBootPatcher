@@ -69,7 +69,6 @@
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
-#include "mbutil/selinux.h"
 #include "mbutil/string.h"
 #include "mbutil/time.h"
 

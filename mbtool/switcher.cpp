@@ -35,7 +35,6 @@
 #include "mbutil/finally.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
-#include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
 #include "multiboot.h"

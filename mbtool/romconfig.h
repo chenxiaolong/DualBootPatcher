@@ -35,7 +35,7 @@ struct RomConfig
 {
     std::string id;
     std::string name;
-    bool indiv_app_sharing;
+    bool indiv_app_sharing = false;
     std::vector<SharedPackage> shared_pkgs;
 
     bool load_file(const std::string &path);
