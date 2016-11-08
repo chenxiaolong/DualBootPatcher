@@ -639,10 +639,16 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to create ramdisk patcher");
     case mbp::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
+    case mbp::ErrorCode::FileCloseError:
+        return QObject::tr("Failed to close file");
     case mbp::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file");
     case mbp::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file");
+    case mbp::ErrorCode::FileSeekError:
+        return QObject::tr("Failed to seek file");
+    case mbp::ErrorCode::FileTellError:
+        return QObject::tr("Failed to get file position");
     case mbp::ErrorCode::BootImageParseError:
         return QObject::tr("Failed to parse boot image");
     case mbp::ErrorCode::BootImageApplyBumpError:
@@ -671,6 +677,8 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to free archive header memory");
     case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
+    case mbp::ErrorCode::BootImageTooLargeError:
+        return QObject::tr("Boot image is too large");
     default:
         assert(false);
     }
