@@ -637,12 +637,12 @@ static bool create_ext4_temp_fs(const char *mount_point)
         }
     }
 
-    return util::mount(EXT4_TEMP_IMAGE, mount_point, "ext4", MS_NOSUID, "");
+    return util::mount(EXT4_TEMP_IMAGE, mount_point, "ext4", 0, "");
 }
 
 static bool create_tmpfs_temp_fs(const char *mount_point)
 {
-    return util::mount("tmpfs", mount_point, "tmpfs", MS_NOSUID, "mode=0755");
+    return util::mount("tmpfs", mount_point, "tmpfs", 0, "mode=0755");
 }
 
 static bool create_temporary_fs(const char *mount_point)
