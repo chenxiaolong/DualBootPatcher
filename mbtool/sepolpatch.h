@@ -114,6 +114,7 @@ enum class SELinuxPatch
     PRE_BOOT,
     MAIN,
     CWM_RECOVERY,
+    STRIP_NO_AUDIT,
 };
 
 bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch);

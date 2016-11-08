@@ -1159,6 +1159,10 @@ bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch)
     case SELinuxPatch::CWM_RECOVERY:
         ret = apply_cwm_recovery_patches(pdb);
         break;
+    case SELinuxPatch::STRIP_NO_AUDIT:
+        selinux_strip_no_audit(pdb);
+        ret = true;
+        break;
     case SELinuxPatch::NONE:
         break;
     }
@@ -1258,10 +1262,11 @@ struct {
     const char *name;
     SELinuxPatch patch;
 } patches[] = {
-    { "pre_boot",     SELinuxPatch::PRE_BOOT },
-    { "main",         SELinuxPatch::MAIN },
-    { "cwm_recovery", SELinuxPatch::CWM_RECOVERY },
-    { nullptr,        SELinuxPatch::NONE },
+    { "pre_boot",       SELinuxPatch::PRE_BOOT },
+    { "main",           SELinuxPatch::MAIN },
+    { "cwm_recovery",   SELinuxPatch::CWM_RECOVERY },
+    { "strip_no_audit", SELinuxPatch::STRIP_NO_AUDIT },
+    { nullptr,          SELinuxPatch::NONE },
 };
 
 int sepolpatch_main(int argc, char *argv[])
