@@ -1498,7 +1498,7 @@ int init_main(int argc, char *argv[])
     selinux_mount();
     // Load pre-boot policy
     patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE, SELINUX_LOAD_FILE,
-                   SELinuxPatch::PRE_BOOT, nullptr);
+                   SELinuxPatch::PRE_BOOT);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1531,7 +1531,7 @@ int init_main(int argc, char *argv[])
     if (stat(SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
         if (!patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE,
                             SELINUX_DEFAULT_POLICY_FILE,
-                            SELinuxPatch::MAIN, nullptr)) {
+                            SELinuxPatch::MAIN)) {
             LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
             emergency_reboot();
             return EXIT_FAILURE;

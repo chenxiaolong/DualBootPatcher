@@ -121,10 +121,8 @@ bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch);
 
 bool patch_sepolicy(const std::string &source,
                     const std::string &target,
-                    SELinuxPatch patch,
-                    bool *patch_result);
-bool patch_loaded_sepolicy(SELinuxPatch patch,
-                           bool *patch_result);
+                    SELinuxPatch patch);
+bool patch_loaded_sepolicy(SELinuxPatch patch);
 
 int sepolpatch_main(int argc, char *argv[]);
 

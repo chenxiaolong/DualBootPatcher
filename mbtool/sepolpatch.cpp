@@ -418,10 +418,7 @@ bool selinux_make_permissive(policydb_t *pdb,
     SELinuxResult result = selinux_raw_set_permissive(pdb, type->s.value, true);
     switch (result) {
     case SELinuxResult::CHANGED:
-        LOGD("Type %s is now permissive", type_str);
-        return true;
     case SELinuxResult::UNCHANGED:
-        LOGV("Type %s is already permissive", type_str);
         return true;
     case SELinuxResult::ERROR:
         LOGE("Failed to set type %s to permissive", type_str);
@@ -469,21 +466,13 @@ bool selinux_set_allow_rule(policydb_t *pdb,
             pdb, source->s.value, target->s.value, clazz->s.value,
             perm->s.value, remove);
 
-    char buf[100];
-    snprintf(buf, sizeof(buf), "allow %s %s:%s %s;",
-             source_str, target_str, class_str, perm_str);
-
     switch (result) {
     case SELinuxResult::CHANGED:
-        LOGD("%s: %s",
-             remove ? "Removed rule": "Added rule", buf);
-        return true;
     case SELinuxResult::UNCHANGED:
-        LOGD("%s: %s",
-             remove ? "Rule does not exist" : "Rule already exists", buf);
         return true;
     case SELinuxResult::ERROR:
-        LOGE("Failed to add rule: %s", buf);
+        LOGE("Failed to add rule: allow %s %s:%s %s;",
+             source_str, target_str, class_str, perm_str);
     }
 
     return false;
@@ -546,19 +535,13 @@ bool selinux_set_type_trans(policydb_t *pdb,
             pdb, source->s.value, target->s.value, clazz->s.value,
             def->s.value);
 
-    char buf[100];
-    snprintf(buf, sizeof(buf), "type_transition %s %s:%s %s;",
-             source_str, target_str, class_str, default_str);
-
     switch (result) {
     case SELinuxResult::CHANGED:
-        LOGD("Added type transition: %s", buf);
-        return true;
     case SELinuxResult::UNCHANGED:
-        LOGD("Type transition already exists: %s", buf);
         return true;
     case SELinuxResult::ERROR:
-        LOGE("Failed to add type transition: %s", buf);
+        LOGE("Failed to add type transition: type_transition %s %s:%s %s;",
+             source_str, target_str, class_str, default_str);
     }
 
     return false;
@@ -799,9 +782,11 @@ void selinux_strip_no_audit(policydb_t *pdb)
 
 // Patching functions
 
-// Late failure
-#define lf(expr) \
-    ((expr) || (ret = false))
+// Fail fast
+#define ff(expr) \
+    do { \
+        if (!(expr)) return false; \
+    } while (0)
 
 static inline bool add_rules(policydb_t *pdb,
                              const char *source,
@@ -809,15 +794,13 @@ static inline bool add_rules(policydb_t *pdb,
                              const char *clazz,
                              const std::vector<std::string> &perms)
 {
-    bool ret = true;
-
     for (auto const &perm : perms) {
         if (!selinux_add_rule(pdb, source, target, clazz, perm.c_str())) {
-            ret = false;
+            return false;
         }
     }
 
-    return ret;
+    return true;
 }
 
 static inline bool remove_rules(policydb_t *pdb,
@@ -826,11 +809,9 @@ static inline bool remove_rules(policydb_t *pdb,
                                 const char *clazz,
                                 const std::vector<std::string> &perms)
 {
-    bool ret = true;
-
     for (auto const &perm : perms) {
         if (!selinux_remove_rule(pdb, source, target, clazz, perm.c_str())) {
-            ret = false;
+            return false;
         }
     }
 
@@ -839,15 +820,13 @@ static inline bool remove_rules(policydb_t *pdb,
 
 static bool apply_pre_boot_patches(policydb_t *pdb)
 {
-    bool ret = true;
-
     // We are going to allow everything. The stage 1 policy is not a security
     // concern because the real (secure) policy will be loaded by the real /init
     // binary. This temporary policy exists solely for stage 2 to prepare the
     // environment for the real /init.
 
     // For most ROMs, we can just make the kernel domain permissive
-    lf(selinux_make_permissive(pdb, "kernel"));
+    ff(selinux_make_permissive(pdb, "kernel"));
 
     // For TW 6.0 ROMs, the kernel #define's the permissive flag to be 0, so
     // per-type permissive flags are completely ignored. For these ROMs, we'll
@@ -868,12 +847,7 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
         auto ret = selinux_raw_grant_all_perms(pdb, kernel->s.value, type_val);
         switch (ret) {
         case SELinuxResult::CHANGED:
-            LOGD("Allowed all perms for: %s -> %s",
-                 "kernel", pdb->p_type_val_to_name[type_val - 1]);
-            break;
         case SELinuxResult::UNCHANGED:
-            LOGD("All perms already allowed for: %s -> %s",
-                 "kernel", pdb->p_type_val_to_name[type_val - 1]);
             break;
         case SELinuxResult::ERROR:
             LOGE("Failed to grant all perms for: %s -> %s",
@@ -883,9 +857,9 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
     }
 
     // Allow the real init to load the "secure" SELinux policy
-    lf(selinux_add_rule(pdb, "kernel", "kernel", "security", "load_policy"));
+    ff(selinux_add_rule(pdb, "kernel", "kernel", "security", "load_policy"));
 
-    return ret;
+    return true;
 }
 
 static bool disable_spota_access(policydb_t *pdb)
@@ -894,6 +868,11 @@ static bool disable_spota_access(policydb_t *pdb)
 
     // NOTE: This currently only removes rules that directly affect
     // security_spota_file and does not care about any of its type attributes.
+
+    if (!find_type(pdb, "security_spota_file")) {
+        // Not a Samsung device
+        return true;
+    }
 
     std::vector<std::string> source_types{
         "auditd",
@@ -917,16 +896,16 @@ static bool disable_spota_access(policydb_t *pdb)
         "zygote",
     };
 
-    bool ret = true;
-
     for (auto const &s : source_types) {
-        lf(remove_rules(pdb, s.c_str(), "security_spota_file", "dir",
-                        { "read", "write" }));
-        lf(remove_rules(pdb, s.c_str(), "security_spota_file", "file",
-                        { "read", "write", }));
+        if (find_type(pdb, s.c_str())) {
+            ff(remove_rules(pdb, s.c_str(), "security_spota_file", "dir",
+                            { "read", "write" }));
+            ff(remove_rules(pdb, s.c_str(), "security_spota_file", "file",
+                            { "read", "write", }));
+        }
     }
 
-    return ret;
+    return true;
 }
 
 static bool copy_avtab_rules(policydb_t *pdb,
@@ -938,9 +917,8 @@ static bool copy_avtab_rules(policydb_t *pdb,
     type_datum_t *source, *target;
 
     if (strcmp(source_type, target_type) == 0) {
-        LOGW("Types %s and %s are equal. Not copying rules",
-             source_type, target_type);
-        return true;
+        LOGE("Source and target types are the same: %s", source_type);
+        return false;
     }
 
     source = find_type(pdb, source_type);
@@ -1011,7 +989,8 @@ static bool fix_data_media_rules(policydb_t *pdb)
         path = "/data/media";
         if (!util::selinux_lget_context(path, &context)) {
             LOGE("%s: Failed to get context: %s", path, strerror(errno));
-            return false;
+            // Don't fail if /data/media does not exist
+            return errno == ENOENT;
         }
     }
 
@@ -1022,6 +1001,10 @@ static bool fix_data_media_rules(policydb_t *pdb)
     }
     std::string type = pieces[2];
 
+    if (type == expected_type) {
+        return true;
+    }
+
     LOGV("Copying %s rules to %s because of improper %s SELinux label",
          expected_type, type.c_str(), path);
     return copy_avtab_rules(pdb, expected_type, type.c_str());
@@ -1029,52 +1012,50 @@ static bool fix_data_media_rules(policydb_t *pdb)
 
 static bool create_mbtool_types(policydb_t *pdb)
 {
-    bool ret = true;
-
     // Used for running any mbtool commands
-    lf(selinux_create_type(pdb, "mb_exec") != SELinuxResult::ERROR);
-    lf(selinux_add_to_role(pdb, "r", "mb_exec"));
-    lf(selinux_set_attribute(pdb, "mb_exec", "domain"));
-    lf(selinux_set_attribute(pdb, "mb_exec", "mlstrustedobject"));
-    lf(selinux_set_attribute(pdb, "mb_exec", "mlstrustedsubject"));
+    ff(selinux_create_type(pdb, "mb_exec") != SELinuxResult::ERROR);
+    ff(selinux_add_to_role(pdb, "r", "mb_exec"));
+    ff(selinux_set_attribute(pdb, "mb_exec", "domain"));
+    ff(selinux_set_attribute(pdb, "mb_exec", "mlstrustedobject"));
+    ff(selinux_set_attribute(pdb, "mb_exec", "mlstrustedsubject"));
 
     // Allow setting the current process context from init to mb_exec
-    lf(add_rules(pdb, "init", "mb_exec", "process", {
+    ff(add_rules(pdb, "init", "mb_exec", "process", {
         "noatsecure", "rlimitinh", "setcurrent", "siginh", "transition",
         //"dyntransition",
     }));
 
     // Allow installd to connect to appsync's socket
-    lf(add_rules(pdb, "installd", "mb_exec", "unix_stream_socket", {
+    ff(add_rules(pdb, "installd", "mb_exec", "unix_stream_socket", {
         "accept", "listen", "read", "write",
     }));
-    lf(add_rules(pdb, "system_server", "mb_exec", "unix_stream_socket", {
+    ff(add_rules(pdb, "system_server", "mb_exec", "unix_stream_socket", {
         "connectto"
     }));
 
     // Allow apps to connect to the daemon
-    lf(add_rules(pdb, "untrusted_app", "mb_exec", "unix_stream_socket", {
+    ff(add_rules(pdb, "untrusted_app", "mb_exec", "unix_stream_socket", {
         "connectto"
     }));
 
     // Allow zygote to write to our stdout pipe when rebooting
-    lf(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
+    ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
 
     // Allow rebooting via the android.intent.action.REBOOT intent
-    lf(add_rules(pdb, "zygote", "activity_service", "service_manager", { "find" }));
-    lf(add_rules(pdb, "zygote", "init", "unix_stream_socket", { "read", "write" }));
-    lf(add_rules(pdb, "zygote", "servicemanager", "binder", { "call" }));
-    lf(add_rules(pdb, "zygote", "system_server", "binder", { "call" }));
-    lf(add_rules(pdb, "servicemanager", "mb_exec", "binder", { "transfer" }));
-    lf(add_rules(pdb, "servicemanager", "zygote", "dir", { "search" }));
-    lf(add_rules(pdb, "servicemanager", "zygote", "file", { "open" }));
-    lf(add_rules(pdb, "servicemanager", "zygote", "file", { "read" }));
-    lf(add_rules(pdb, "servicemanager", "zygote", "process", { "getattr" }));
+    ff(add_rules(pdb, "zygote", "activity_service", "service_manager", { "find" }));
+    ff(add_rules(pdb, "zygote", "init", "unix_stream_socket", { "read", "write" }));
+    ff(add_rules(pdb, "zygote", "servicemanager", "binder", { "call" }));
+    ff(add_rules(pdb, "zygote", "system_server", "binder", { "call" }));
+    ff(add_rules(pdb, "servicemanager", "mb_exec", "binder", { "transfer" }));
+    ff(add_rules(pdb, "servicemanager", "zygote", "dir", { "search" }));
+    ff(add_rules(pdb, "servicemanager", "zygote", "file", { "open" }));
+    ff(add_rules(pdb, "servicemanager", "zygote", "file", { "read" }));
+    ff(add_rules(pdb, "servicemanager", "zygote", "process", { "getattr" }));
 
     // For in-app flashing
-    lf(add_rules(pdb, "rootfs", "tmpfs", "filesystem", { "associate" }));
-    lf(add_rules(pdb, "tmpfs",  "rootfs", "filesystem", { "associate" }));
-    lf(add_rules(pdb, "kernel", "mb_exec", "fd", { "use" }));
+    ff(add_rules(pdb, "rootfs", "tmpfs", "filesystem", { "associate" }));
+    ff(add_rules(pdb, "tmpfs",  "rootfs", "filesystem", { "associate" }));
+    ff(add_rules(pdb, "kernel", "mb_exec", "fd", { "use" }));
 
     // Give mb_exec <insert diety here> permissions
     type_datum_t *mb_exec = find_type(pdb, "mb_exec");
@@ -1095,12 +1076,7 @@ static bool create_mbtool_types(policydb_t *pdb)
                 pdb, mb_exec->s.value, type_val);
         switch (ret2) {
         case SELinuxResult::CHANGED:
-            LOGD("Allowed all perms for: %s -> %s",
-                 "mb_exec", pdb->p_type_val_to_name[type_val - 1]);
-            break;
         case SELinuxResult::UNCHANGED:
-            LOGD("All perms already allowed for: %s -> %s",
-                 "mb_exec", pdb->p_type_val_to_name[type_val - 1]);
             break;
         case SELinuxResult::ERROR:
             LOGE("Failed to grant all perms for: %s -> %s",
@@ -1109,40 +1085,36 @@ static bool create_mbtool_types(policydb_t *pdb)
         }
     }
 
-    return ret;
+    return true;
 }
 
 static bool apply_main_patches(policydb_t *pdb)
 {
-    bool ret = true;
+    ff(disable_spota_access(pdb));
+    ff(fix_data_media_rules(pdb));
+    ff(create_mbtool_types(pdb));
 
-    lf(disable_spota_access(pdb));
-    lf(fix_data_media_rules(pdb));
-    lf(create_mbtool_types(pdb));
-
-    return ret;
+    return true;
 }
 
 static bool apply_cwm_recovery_patches(policydb_t *pdb)
 {
-    bool ret = true;
-
     // Debugging rules (for CWM and Philz)
-    lf(add_rules(pdb, "adbd",  "block_device",    "blk_file",   { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "graphics_device", "chr_file",   { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "graphics_device", "dir",        { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "input_device",    "chr_file",   { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "input_device",    "dir",        { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "rootfs",          "dir",        { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "rootfs",          "file",       { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "rootfs",          "lnk_file",   { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "system_file",     "file",       { "relabelto" }));
-    lf(add_rules(pdb, "adbd",  "tmpfs",           "file",       { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "block_device",    "blk_file",   { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "graphics_device", "chr_file",   { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "graphics_device", "dir",        { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "input_device",    "chr_file",   { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "input_device",    "dir",        { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "rootfs",          "dir",        { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "rootfs",          "file",       { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "rootfs",          "lnk_file",   { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "system_file",     "file",       { "relabelto" }));
+    ff(add_rules(pdb, "adbd",  "tmpfs",           "file",       { "relabelto" }));
 
-    lf(add_rules(pdb, "rootfs", "tmpfs",          "filesystem", { "associate" }));
-    lf(add_rules(pdb, "tmpfs",  "rootfs",         "filesystem", { "associate" }));
+    ff(add_rules(pdb, "rootfs", "tmpfs",          "filesystem", { "associate" }));
+    ff(add_rules(pdb, "tmpfs",  "rootfs",         "filesystem", { "associate" }));
 
-    return ret;
+    return true;
 }
 
 bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch)
@@ -1170,10 +1142,9 @@ bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch)
     return ret;
 }
 
-static bool patch_sepolicy_internal(const std::string &source,
-                                    const std::string &target,
-                                    SELinuxPatch patch,
-                                    bool *patch_result)
+bool patch_sepolicy(const std::string &source,
+                    const std::string &target,
+                    SELinuxPatch patch)
 {
     policydb_t pdb;
 
@@ -1193,9 +1164,9 @@ static bool patch_sepolicy_internal(const std::string &source,
 
     LOGD("Policy version: %u", pdb.policyvers);
 
-    bool ret = selinux_apply_patch(&pdb, patch);
-    if (patch_result) {
-        *patch_result = ret;
+    if (!selinux_apply_patch(&pdb, patch)) {
+        LOGE("%s: Failed to apply policy patch", source.c_str());
+        return false;
     }
 
     if (!util::selinux_write_policy(target, &pdb)) {
@@ -1206,16 +1177,7 @@ static bool patch_sepolicy_internal(const std::string &source,
     return true;
 }
 
-bool patch_sepolicy(const std::string &source,
-                    const std::string &target,
-                    SELinuxPatch patch,
-                    bool *patch_result)
-{
-    return patch_sepolicy_internal(source, target, patch, patch_result);
-}
-
-bool patch_loaded_sepolicy(SELinuxPatch patch,
-                           bool *patch_result)
+bool patch_loaded_sepolicy(SELinuxPatch patch)
 {
     autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rbe"));
     if (!fp) {
@@ -1231,8 +1193,7 @@ bool patch_loaded_sepolicy(SELinuxPatch patch,
         }
     }
 
-    return patch_sepolicy_internal(
-            SELINUX_POLICY_FILE, SELINUX_LOAD_FILE, patch, patch_result);
+    return patch_sepolicy(SELINUX_POLICY_FILE, SELINUX_LOAD_FILE, patch);
 }
 
 static void sepolpatch_usage(FILE *stream)
@@ -1373,8 +1334,7 @@ int sepolpatch_main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            bool patch_ret;
-            return (patch_loaded_sepolicy(patch_type, &patch_ret) && patch_ret)
+            return patch_loaded_sepolicy(patch_type)
                     ? EXIT_SUCCESS : EXIT_FAILURE;
         } else {
             if (!source_file) {
@@ -1384,9 +1344,7 @@ int sepolpatch_main(int argc, char *argv[])
                 target_file = SELINUX_LOAD_FILE;
             }
 
-            bool patch_ret;
-            return (patch_sepolicy(source_file, target_file, patch_type,
-                                   &patch_ret) & patch_ret)
+            return patch_sepolicy(source_file, target_file, patch_type)
                     ? EXIT_SUCCESS : EXIT_FAILURE;
         }
     }
