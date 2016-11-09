@@ -979,6 +979,28 @@ static bool create_layout_version()
     return true;
 }
 
+static bool disable_spota()
+{
+    static const char *spota_dir = "/data/security/spota";
+
+    std::unordered_map<std::string, std::string> props;
+    util::file_get_all_properties("/system/build.prop", &props);
+
+    if (strcasecmp(props["ro.product.manufacturer"].c_str(), "samsung") != 0
+            && strcasecmp(props["ro.product.brand"].c_str(), "samsung") != 0) {
+        // Not a Samsung device
+        LOGV("Not mounting empty tmpfs over: %s", spota_dir);
+        return true;
+    }
+
+    if (mkdir("/data/security/spota", 0) < 0 && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
+        return false;
+    }
+
+    return util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000");
+}
+
 bool mount_userdata(const char *block_dev)
 {
     std::string rom_id = get_rom_id();
@@ -1525,6 +1547,9 @@ int init_main(int argc, char *argv[])
 
     // Data modifications
     create_layout_version();
+
+    // Disable spota
+    disable_spota();
 
     // Patch SELinux policy
     struct stat sb;

@@ -862,52 +862,6 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
     return true;
 }
 
-static bool disable_spota_access(policydb_t *pdb)
-{
-    // sesearch -A -t security_spota_file -d sepolicy | sort
-
-    // NOTE: This currently only removes rules that directly affect
-    // security_spota_file and does not care about any of its type attributes.
-
-    if (!find_type(pdb, "security_spota_file")) {
-        // Not a Samsung device
-        return true;
-    }
-
-    std::vector<std::string> source_types{
-        "auditd",
-        "debuggerd",
-        "domain",
-        "init",
-        "installd",
-        "itsonbs",
-        "logd",
-        "mfescand",
-        "platformappdomain",
-        "policyloader_app",
-        "runas",
-        "sdcardd",
-        "servicemanager",
-        "sysaccess_platform_app",
-        "system_app",
-        "system_server",
-        "ueventd",
-        "vold",
-        "zygote",
-    };
-
-    for (auto const &s : source_types) {
-        if (find_type(pdb, s.c_str())) {
-            ff(remove_rules(pdb, s.c_str(), "security_spota_file", "dir",
-                            { "read", "write" }));
-            ff(remove_rules(pdb, s.c_str(), "security_spota_file", "file",
-                            { "read", "write", }));
-        }
-    }
-
-    return true;
-}
-
 static bool copy_avtab_rules(policydb_t *pdb,
                              const char *source_type,
                              const char *target_type)
@@ -1029,23 +983,35 @@ static bool create_mbtool_types(policydb_t *pdb)
     ff(add_rules(pdb, "installd", "mb_exec", "unix_stream_socket", {
         "accept", "listen", "read", "write",
     }));
-    ff(add_rules(pdb, "system_server", "mb_exec", "unix_stream_socket", {
-        "connectto"
-    }));
+    if (find_type(pdb, "system_server")) {
+        ff(add_rules(pdb, "system_server", "mb_exec", "unix_stream_socket", {
+            "connectto",
+        }));
+    } else {
+        ff(add_rules(pdb, "system", "mb_exec", "unix_stream_socket", {
+            "connectto",
+        }));
+    }
 
     // Allow apps to connect to the daemon
     ff(add_rules(pdb, "untrusted_app", "mb_exec", "unix_stream_socket", {
-        "connectto"
+        "connectto",
     }));
 
     // Allow zygote to write to our stdout pipe when rebooting
     ff(add_rules(pdb, "zygote", "init", "fifo_file", { "write" }));
 
     // Allow rebooting via the android.intent.action.REBOOT intent
-    ff(add_rules(pdb, "zygote", "activity_service", "service_manager", { "find" }));
+    if (find_type(pdb, "activity_service")) {
+        ff(add_rules(pdb, "zygote", "activity_service", "service_manager", { "find" }));
+    }
+    if (find_type(pdb, "system_server")) {
+        ff(add_rules(pdb, "zygote", "system_server", "binder", { "call" }));
+    }
+
     ff(add_rules(pdb, "zygote", "init", "unix_stream_socket", { "read", "write" }));
     ff(add_rules(pdb, "zygote", "servicemanager", "binder", { "call" }));
-    ff(add_rules(pdb, "zygote", "system_server", "binder", { "call" }));
+
     ff(add_rules(pdb, "servicemanager", "mb_exec", "binder", { "transfer" }));
     ff(add_rules(pdb, "servicemanager", "mb_exec", "dir", { "search" }));
     ff(add_rules(pdb, "servicemanager", "mb_exec", "file", { "open", "read" }));
@@ -1093,7 +1059,6 @@ static bool create_mbtool_types(policydb_t *pdb)
 
 static bool apply_main_patches(policydb_t *pdb)
 {
-    ff(disable_spota_access(pdb));
     ff(fix_data_media_rules(pdb));
     ff(create_mbtool_types(pdb));
 
