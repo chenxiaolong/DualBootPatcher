@@ -583,7 +583,7 @@ int daemon_main(int argc, char *argv[])
                             && strstr(info->cmdline[1], "daemon") // And it's a daemon process
                             && info->tid != curpid) {             // And we're not killing ourself
                         // Kill the daemon process
-                        LOGV("Killing PID %d\n", info->tid);
+                        LOGV("Killing PID %d", info->tid);
                         kill(info->tid, SIGTERM);
                     }
                 }
