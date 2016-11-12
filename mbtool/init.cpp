@@ -993,7 +993,7 @@ static bool disable_spota()
         return true;
     }
 
-    if (mkdir("/data/security/spota", 0) < 0 && errno != EEXIST) {
+    if (!util::mkdir_recursive("/data/security/spota", 0) && errno != EEXIST) {
         LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
         return false;
     }
