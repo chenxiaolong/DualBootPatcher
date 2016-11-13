@@ -651,7 +651,7 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image.c_str(), temp_mnt.c_str(), "ext4", 0, "")) {
+    if (!util::mount(image.c_str(), temp_mnt.c_str(), "auto", 0, "")) {
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }

@@ -1268,8 +1268,6 @@ static bool emergency_reboot()
     if (!util::is_mounted("/data")) {
         LOGW("/data is not mounted. Attempting to mount /data");
 
-        struct stat sb;
-
         // Try mounting /data in case we couldn't get through the fstab mounting
         // steps. (This is an ugly brute force method...)
         std::vector<std::string> data_block_devs;
@@ -1299,14 +1297,12 @@ static bool emergency_reboot()
         data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/UDA");
 
         for (const std::string &block_dev : data_block_devs) {
-            if (stat(block_dev.c_str(), &sb) < 0) {
-                continue;
-            }
-
-            if (mount(block_dev.c_str(), "/data", "ext4", 0, "") == 0
-                    || mount(block_dev.c_str(), "/data", "f2fs", 0, "") == 0) {
+            if (mount(block_dev.c_str(), "/data", "auto", 0, "") == 0) {
                 LOGW("Mounted %s at /data", block_dev.c_str());
                 break;
+            } else {
+                LOGW("Failed to mount %s at /data: %s",
+                     block_dev.c_str(), strerror(errno));
             }
         }
     }
