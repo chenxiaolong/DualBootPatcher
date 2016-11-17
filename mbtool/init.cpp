@@ -1628,7 +1628,8 @@ int init_main(int argc, char *argv[])
     // Unmount partitions
     selinux_unmount();
     umount("/dev/pts");
-    umount("/dev");
+    // Detach because we still hold a kmsg fd open
+    umount2("/dev", MNT_DETACH);
     umount("/proc");
     umount("/sys");
     // Do not remove these as Android 6.0 init's stage 1 no longer creates these
