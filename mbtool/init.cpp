@@ -1030,12 +1030,19 @@ static bool disable_spota()
         return true;
     }
 
-    if (!util::mkdir_recursive("/data/security/spota", 0) && errno != EEXIST) {
+    if (!util::mkdir_recursive(spota_dir, 0) && errno != EEXIST) {
         LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
         return false;
     }
 
-    return util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000");
+    if (!util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000")) {
+        LOGE("%s: Failed to mount tmpfs: %s", spota_dir, strerror(errno));
+        return false;
+    }
+
+    LOGV("%s: Mounted read-only tmpfs over spota directory", spota_dir);
+
+    return true;
 }
 
 bool mount_userdata(const char *block_dev)

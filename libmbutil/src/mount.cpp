@@ -208,21 +208,19 @@ bool mount(const char *source, const char *target, const char *fstype,
     bool need_loopdev = false;
     struct stat sb;
 
-    if (stat(source, &sb) < 0) {
-        return false;
-    }
-
     if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
-        if (S_ISREG(sb.st_mode)) {
-            need_loopdev = true;
-        }
-        if (fstype && strcmp(fstype, "auto") == 0
-                && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
-            if (!blkid_get_fs_type(source, &fstype) || !fstype) {
-                return false;
-            } else if (strcmp(fstype, "ext") == 0) {
-                // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
-                fstype = "ext4";
+        if (stat(source, &sb) >= 0) {
+            if (S_ISREG(sb.st_mode)) {
+                need_loopdev = true;
+            }
+            if (fstype && strcmp(fstype, "auto") == 0
+                    && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
+                if (!blkid_get_fs_type(source, &fstype) || !fstype) {
+                    return false;
+                } else if (strcmp(fstype, "ext") == 0) {
+                    // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
+                    fstype = "ext4";
+                }
             }
         }
     }
