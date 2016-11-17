@@ -1,0 +1,19 @@
+This is a modification of the Android fork of libselinux:
+
+    https://android.googlesource.com/platform/external/libselinux/
+
+based on commit: d4828b3ba449355aa2d1751026e5f1d1129cedcf
+
+--------------------------------------------------------------------------------
+
+DualBootPatcher's fork of Android's libselinux removes everything unrelated to
+the creation and parsing of the binary file_contexts format. Also, instead of
+directly linking against PCRE or PCRE2, the tool dynamically loads libpcre and
+checks if it is PCRE or PCRE2 at runtime. This allows the tool to work with
+whatever version of PCRE that comes preloaded on the firmware.
+
+--------------------------------------------------------------------------------
+
+All files inside this "file-contexts-tool" folder are under the same license
+as Android's fork of libselinux linked above. That is, these files are public
+domain software (see the LICENSE file for details).
