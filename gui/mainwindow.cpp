@@ -195,12 +195,21 @@ void MainWindow::onButtonClicked(QAbstractButton *button)
 {
     Q_D(MainWindow);
 
-    if (button == d->chooseFileBtn) {
-        chooseFile();
-    } else if (button == d->chooseAnotherFileBtn) {
-        chooseFile();
-    } else if (button == d->startPatchingBtn) {
+    if (button == d->startPatchingBtn) {
         startPatching();
+    }
+}
+
+void MainWindow::onChooseFileItemClicked(QAction *action)
+{
+    Q_D(MainWindow);
+
+    if (action == d->chooseFlashableZip) {
+        d->patcherId = QStringLiteral("MultiBootPatcher");
+        chooseFile(tr("Flashable zips (*.zip)"));
+    } else if (action == d->chooseOdinImage) {
+        d->patcherId = QStringLiteral("OdinPatcher");
+        chooseFile(tr("Odin images (*.zip *.tar.md5 *.tar.md5.gz *.tar.md5.xz)"));
     }
 }
 
@@ -313,8 +322,14 @@ void MainWindow::addWidgets()
     d->messageLbl->setWordWrap(true);
     d->messageLbl->setMaximumWidth(550);
 
+    d->chooseFileMenu = new QMenu(d->mainContainer);
+    d->chooseFlashableZip = d->chooseFileMenu->addAction(tr("Flashable zip"));
+    d->chooseOdinImage = d->chooseFileMenu->addAction(tr("Odin image"));
+
     d->chooseFileBtn = new QPushButton(tr("Choose file"), d->mainContainer);
+    d->chooseFileBtn->setMenu(d->chooseFileMenu);
     d->chooseAnotherFileBtn = new QPushButton(tr("Choose another file"), d->mainContainer);
+    d->chooseAnotherFileBtn->setMenu(d->chooseFileMenu);
     d->startPatchingBtn = new QPushButton(tr("Start patching"), d->mainContainer);
 
     d->buttons = new QDialogButtonBox(d->mainContainer);
@@ -400,6 +415,10 @@ void MainWindow::setWidgetActions()
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
+
+    // Choose file button menu
+    connect(d->chooseFileMenu, &QMenu::triggered,
+            this, &MainWindow::onChooseFileItemClicked);
 }
 
 void MainWindow::populateDevices()
@@ -480,13 +499,13 @@ void MainWindow::populateInstallationLocations()
     d->instLocSel->addItem(tr("Extsd-slot"));
 }
 
-void MainWindow::chooseFile()
+void MainWindow::chooseFile(const QString &patterns)
 {
     Q_D(MainWindow);
 
     QString fileName = QFileDialog::getOpenFileName(this, QString(),
             d->settings.value(QStringLiteral("last_dir")).toString(),
-            tr("Zip files and Odin tarballs (*.zip *.tar.md5 *.tar.md5.gz *.tar.md5.xz)"));
+            patterns);
     if (fileName.isNull()) {
         return;
     }
@@ -574,7 +593,6 @@ void MainWindow::startPatching()
     QFileInfo qFileInfo(d->fileName);
     QString suffix;
     QString outputName;
-    bool isOdin = false;
 
     for (const QString &suffix : suffixes) {
         if (d->fileName.endsWith(suffix)) {
@@ -584,7 +602,6 @@ void MainWindow::startPatching()
                     % QStringLiteral("_")
                     % romId
                     % QStringLiteral(".zip");
-            isOdin = suffix.contains(QStringLiteral(".tar.md5"));
             break;
         }
     }
@@ -606,11 +623,7 @@ void MainWindow::startPatching()
     fileInfo->setDevice(d->device);
     fileInfo->setRomId(romId.toUtf8().constData());
 
-    if (isOdin) {
-        d->patcher = d->pc->createPatcher("OdinPatcher");
-    } else {
-        d->patcher = d->pc->createPatcher("MultiBootPatcher");
-    }
+    d->patcher = d->pc->createPatcher(d->patcherId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }

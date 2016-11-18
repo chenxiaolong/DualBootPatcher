@@ -36,6 +36,7 @@
 #include <QtWidgets/QDialogButtonBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
@@ -73,6 +74,7 @@ public:
     State state = FirstRun;
 
     // Selected file
+    QString patcherId;
     QString fileName;
     bool autoMode;
 
@@ -115,6 +117,11 @@ public:
     // Progress
     QLabel *detailsLbl;
     QProgressBar *progressBar;
+
+    // Menus
+    QMenu *chooseFileMenu;
+    QAction *chooseFlashableZip;
+    QAction *chooseOdinImage;
 
     // Buttons
     QDialogButtonBox *buttons;
