@@ -1,4 +1,5 @@
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL android-system
+        OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(
         file-contexts-tool
         file-contexts-tool/callbacks.c
@@ -19,12 +20,21 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         C_STANDARD_REQUIRED 1
     )
 
+    if (${MBP_BUILD_TARGET} STREQUAL hosttools)
+        target_link_libraries(
+            file-contexts-tool
+            dl
+        )
+    endif()
+
     install(
         TARGETS file-contexts-tool
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
         COMPONENT Applications
     )
+endif()
 
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
     # We use assembly for fsck-wrapper because there's no reason that
     #
     #    int main(int argc, int argv) { return 0; }
