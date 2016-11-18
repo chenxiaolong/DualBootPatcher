@@ -148,4 +148,19 @@ public final class CommandUtils {
 
         return -1;
     }
+
+    public static int runRootCommand(String... args) {
+        StringBuilder command = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0) {
+                command.append(' ');
+            }
+            command.append(shellQuote(args[i]));
+        }
+        return runRootCommand(command.toString());
+    }
+
+    public static String shellQuote(String text) {
+        return "'" + text.replace("'", "'\"'\"'") + "'";
+    }
 }
