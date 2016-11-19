@@ -45,6 +45,7 @@
 #include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
+#include "mbutil/selinux.h"
 #include "mbutil/string.h"
 #include "mbutil/time.h"
 
@@ -830,6 +831,21 @@ static bool is_valid_backup_name(const std::string &name)
             && name != "..";                        // and not parent directory
 }
 
+static void warn_selinux_context()
+{
+    // We do not need to patch the SELinux policy or switch to mb_exec because
+    // the daemon will guarantee that we run in that context. We'll just warn if
+    // this happens to not be the case (eg. debugging via command line).
+
+    std::string context;
+    if (util::selinux_get_process_attr(
+            0, util::SELinuxAttr::CURRENT, &context)
+            && context != MB_EXEC_CONTEXT) {
+        fprintf(stderr, "WARNING: Not running under %s context\n",
+                MB_EXEC_CONTEXT);
+    }
+}
+
 static void backup_usage(FILE *stream)
 {
     fprintf(stream,
@@ -968,6 +984,8 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    warn_selinux_context();
+
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;
     }
@@ -1079,6 +1097,8 @@ int restore_main(int argc, char *argv[])
         fprintf(stderr, "Invalid backup name: %s\n", name.c_str());
         return EXIT_FAILURE;
     }
+
+    warn_selinux_context();
 
     if (!ensure_partitions_mounted()) {
         return EXIT_FAILURE;

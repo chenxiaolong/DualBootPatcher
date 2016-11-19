@@ -69,7 +69,6 @@
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
-#include "mbutil/selinux.h"
 #include "mbutil/string.h"
 #include "mbutil/time.h"
 
@@ -1802,7 +1801,7 @@ Installer::ProceedState Installer::install_stage_finish()
 
     // Set kernel if it was changed
     if (memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0) {
-        display_msg("Boot partition was modified. Setting kernel");
+        display_msg("A new boot image was installed");
 
         mbp::BootImage bi;
         if (!bi.loadFile(_boot_block_dev)) {
@@ -1869,6 +1868,40 @@ Installer::ProceedState Installer::install_stage_finish()
 
         std::vector<unsigned char> bootimg;
         bi.create(&bootimg);
+
+        {
+            // We'll use SuperSU's patch for negating the effects of
+            // CONFIG_RKP_NS_PROT=y in newer Samsung kernels. This kernel
+            // feature prevents exec()'ing anything as a privileged user unless
+            // the binary resides in rootfs or whichever filesystem was first
+            // mounted at /system.
+            //
+            // It is trivial to update mbtool to only use rootfs, but we need
+            // to override fsck tools by bind-mounting dummy binaries from an
+            // ext4 image when booting from an external SD. Unless we patch the
+            // SELinux policy to allow vold to execute u:r:rootfs:s0-labeled
+            // fsck binaries, this patch must remain.
+
+            const unsigned char source[] = {
+                0x49, 0x01, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
+                0x0F, 0x71, 0xE9, 0x00, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
+                0x3F, 0xA0, 0x0F, 0x71, 0x89, 0x00, 0x00, 0x54, 0x00, 0x18,
+                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x88, 0x01, 0x00, 0x54,
+            };
+            const unsigned char target[] = {
+                0xA1, 0x02, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
+                0x0F, 0x71, 0x40, 0x02, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
+                0x3F, 0xA0, 0x0F, 0x71, 0xE0, 0x01, 0x00, 0x54, 0x00, 0x18,
+                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
+            };
+
+            void *ptr = memmem(bootimg.data(), bootimg.size(),
+                               source, sizeof(source));
+            if (ptr) {
+                memcpy(ptr, target, sizeof(target));
+            }
+        }
+
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
 

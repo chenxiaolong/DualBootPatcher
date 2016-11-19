@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 
@@ -32,14 +33,8 @@
 #include "mblog/logging.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
-#include "mbutil/mount.h"
-
-#define SELINUX_MOUNT_POINT     "/sys/fs/selinux"
-#define SELINUX_FS_TYPE         "selinuxfs"
 
 #define SELINUX_XATTR           "security.selinux"
-
-#define DEFAULT_SEPOLICY_FILE   "/sepolicy"
 
 #define OPEN_ATTEMPTS           5
 
@@ -92,71 +87,6 @@ private:
         }
     }
 };
-
-bool selinux_mount()
-{
-    // Try /sys/fs/selinux
-    if (!util::mount(SELINUX_FS_TYPE, SELINUX_MOUNT_POINT,
-                     SELINUX_FS_TYPE, 0, nullptr)) {
-        LOGW("Failed to mount %s at %s: %s",
-             SELINUX_FS_TYPE, SELINUX_MOUNT_POINT, strerror(errno));
-        if (errno == ENODEV || errno == ENOENT) {
-            LOGI("Kernel does not support SELinux");
-        }
-        return false;
-    }
-
-    // Load default policy
-    struct stat sb;
-    if (stat(DEFAULT_SEPOLICY_FILE, &sb) == 0) {
-        policydb_t pdb;
-
-        if (policydb_init(&pdb) < 0) {
-            LOGE("Failed to initialize policydb");
-            return false;
-        }
-
-        if (!selinux_read_policy(DEFAULT_SEPOLICY_FILE, &pdb)) {
-            LOGE("Failed to read SELinux policy file: %s",
-                 DEFAULT_SEPOLICY_FILE);
-            policydb_destroy(&pdb);
-            return false;
-        }
-
-        // Make all types permissive. Otherwise, some more restrictive policies
-        // will prevent the real init from loading /sepolicy because init
-        // (stage 1) runs under the `u:r:kernel:s0` context.
-        util::selinux_make_all_permissive(&pdb);
-
-        if (!selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-            LOGE("Failed to write SELinux policy file: %s",
-                 SELINUX_LOAD_FILE);
-            policydb_destroy(&pdb);
-            return false;
-        }
-
-        policydb_destroy(&pdb);
-
-        return true;
-    }
-
-    return true;
-}
-
-bool selinux_unmount()
-{
-    if (!util::is_mounted(SELINUX_MOUNT_POINT)) {
-        LOGI("No SELinux filesystem to unmount");
-        return false;
-    }
-
-    if (!util::umount(SELINUX_MOUNT_POINT)) {
-        LOGE("Failed to unmount %s: %s", SELINUX_MOUNT_POINT, strerror(errno));
-        return false;
-    }
-
-    return true;
-}
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb)
 {
@@ -260,136 +190,6 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     if (write(fd, data, len) < 0) {
         LOGE("%s: Failed to write sepolicy: %s", path.c_str(), strerror(errno));
         return false;
-    }
-
-    return true;
-}
-
-void selinux_make_all_permissive(policydb_t *pdb)
-{
-    //char *name;
-
-    for (unsigned int i = 0; i < pdb->p_types.nprim - 1; i++) {
-        //name = pdb->p_type_val_to_name[i];
-        //if (ebitmap_get_bit(&pdb->permissive_map, i + 1)) {
-        //    LOGD("Type %s is already permissive", name);
-        //} else {
-            ebitmap_set_bit(&pdb->permissive_map, i + 1, 1);
-        //    LOGD("Made %s permissive", name);
-        //}
-    }
-}
-
-bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str)
-{
-    type_datum_t *type;
-
-    type = (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) type_str.c_str());
-    if (!type) {
-        LOGV("Type %s not found in policy", type_str.c_str());
-        return false;
-    }
-
-    if (ebitmap_get_bit(&pdb->permissive_map, type->s.value)) {
-        LOGV("Type %s is already permissive", type_str.c_str());
-        return true;
-    }
-
-    if (ebitmap_set_bit(&pdb->permissive_map, type->s.value, 1) < 0) {
-        LOGE("Failed to set bit for type %s in the permissive map",
-             type_str.c_str());
-        return false;
-    }
-
-    LOGD("Type %s is now permissive", type_str.c_str());
-
-    return true;
-}
-
-// Based on public domain code from sepolicy-inject:
-// https://bitbucket.org/joshua_brindle/sepolicy-inject/
-// See the following commit about the hashtab_key_t casts:
-// https://github.com/TresysTechnology/setools/commit/2994d1ca1da9e6f25f082c0dd1a49b5f958bd2ca
-bool selinux_add_rule(policydb_t *pdb,
-                      const std::string &source_str,
-                      const std::string &target_str,
-                      const std::string &class_str,
-                      const std::string &perm_str)
-{
-    type_datum_t *source, *target;
-    class_datum_t *clazz;
-    perm_datum_t *perm;
-    avtab_datum_t *av;
-    avtab_key_t key;
-
-    source = (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) source_str.c_str());
-    if (!source) {
-        LOGE("Source type %s does not exist", source_str.c_str());
-        return false;
-    }
-    target = (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) target_str.c_str());
-    if (!target) {
-        LOGE("Target type %s does not exist", target_str.c_str());
-        return false;
-    }
-    clazz = (class_datum_t *) hashtab_search(
-            pdb->p_classes.table, (hashtab_key_t) class_str.c_str());
-    if (!clazz) {
-        LOGE("Class %s does not exist", class_str.c_str());
-        return false;
-    }
-    perm = (perm_datum_t *) hashtab_search(
-            clazz->permissions.table, (hashtab_key_t) perm_str.c_str());
-    if (!perm) {
-        if (clazz->comdatum == nullptr) {
-            LOGE("Perm %s does not exist in class %s",
-                 perm_str.c_str(), class_str.c_str());
-            return false;
-        }
-        perm = (perm_datum_t *) hashtab_search(
-                clazz->comdatum->permissions.table,
-                (hashtab_key_t) perm_str.c_str());
-        if (!perm) {
-            LOGE("Perm %s does not exist in class %s",
-                 perm_str.c_str(), class_str.c_str());
-            return false;
-        }
-    }
-
-    // See if there is already a rule
-    key.source_type = source->s.value;
-    key.target_type = target->s.value;
-    key.target_class = clazz->s.value;
-    key.specified = AVTAB_ALLOWED;
-    av = avtab_search(&pdb->te_avtab, &key);
-
-    bool exists = false;
-
-    if (!av) {
-        avtab_datum_t av_new;
-        av_new.data = (1U << (perm->s.value - 1));
-        if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
-            LOGE("Failed to add rule to avtab");
-            return false;
-        }
-    } else {
-        if (av->data & (1U << (perm->s.value - 1))) {
-            exists = true;
-        }
-        av->data |= (1U << (perm->s.value - 1));
-    }
-
-    if (exists) {
-        LOGD("Rule already exists: \"allow %s %s:%s %s;\"",
-             source_str.c_str(), target_str.c_str(), class_str.c_str(),
-             perm_str.c_str());
-    } else {
-        LOGD("Added rule: \"allow %s %s:%s %s;\"",
-             source_str.c_str(), target_str.c_str(), class_str.c_str(),
-             perm_str.c_str());
     }
 
     return true;
@@ -535,6 +335,140 @@ bool selinux_set_enforcing(int value)
     }
 
     return true;
+}
+
+#ifndef __ANDROID__
+static pid_t gettid(void)
+{
+    return syscall(__NR_gettid);
+}
+#endif
+
+// Based on procattr.c from libselinux (public domain)
+static int open_attr(pid_t pid, SELinuxAttr attr, int flags)
+{
+    const char *attr_name;
+
+    switch (attr) {
+    case SELinuxAttr::CURRENT:
+        attr_name = "current";
+        break;
+    case SELinuxAttr::EXEC:
+        attr_name = "exec";
+        break;
+    case SELinuxAttr::FSCREATE:
+        attr_name = "fscreate";
+        break;
+    case SELinuxAttr::KEYCREATE:
+        attr_name = "keycreate";
+        break;
+    case SELinuxAttr::PREV:
+        attr_name = "prev";
+        break;
+    case SELinuxAttr::SOCKCREATE:
+        attr_name = "SOCKCREATE";
+        break;
+    default:
+        errno = EINVAL;
+        return false;
+    }
+
+    int fd;
+    int ret;
+    char *path;
+    pid_t tid;
+
+    if (pid > 0) {
+        ret = asprintf(&path, "/proc/%d/attr/%s", pid, attr_name);
+    } else if (pid == 0) {
+        ret = asprintf(&path, "/proc/thread-self/attr/%s", attr_name);
+        if (ret < 0) {
+            return -1;
+        }
+
+        fd = open(path, flags | O_CLOEXEC);
+        if (fd >= 0 || errno != ENOENT) {
+            goto out;
+        }
+
+        free(path);
+        tid = gettid();
+        ret = asprintf(&path, "/proc/self/task/%d/attr/%s", tid, attr_name);
+    } else {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (ret < 0) {
+        return -1;
+    }
+
+    fd = open(path, flags | O_CLOEXEC);
+
+out:
+    free(path);
+    return fd;
+}
+
+bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
+                              std::string *context_out)
+{
+    int fd = open_attr(pid, attr, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+
+    auto close_fd = util::finally([&]{
+        int saved_errno = errno;
+        close(fd);
+        errno = saved_errno;
+    });
+
+    std::vector<char> buf(sysconf(_SC_PAGE_SIZE));
+    ssize_t n;
+
+    do {
+        n = read(fd, buf.data(), buf.size() - 1);
+    } while (n < 0 && errno == EINTR);
+
+    if (n < 0) {
+        return false;
+    }
+
+    // buf is guaranteed to be NULL-terminated
+    *context_out = buf.data();
+    return true;
+}
+
+bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
+                              const std::string &context)
+{
+    int fd = open_attr(pid, attr, O_WRONLY | O_CLOEXEC);
+    if (fd < 0) {
+        return false;
+    }
+
+    auto close_fd = util::finally([&]{
+        int saved_errno = errno;
+        close(fd);
+        errno = saved_errno;
+    });
+
+    ssize_t n;
+    if (context.empty()) {
+        // Clear context in the attr file if context is empty
+        do {
+            n = write(fd, nullptr, 0);
+        } while (n < 0 && errno == EINTR);
+    } else {
+        // Otherwise, write the new context. The written string must be
+        // NULL-terminated
+        do {
+            n = write(fd, context.c_str(), context.size() + 1);
+        } while (n < 0 && errno == EINTR);
+    }
+
+    return n >= 0;
 }
 
 }
