@@ -18,6 +18,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
         LINK_FLAGS "-pie"
         C_STANDARD 11
         C_STANDARD_REQUIRED 1
+        POSITION_INDEPENDENT_CODE 1
     )
 
     if (${MBP_BUILD_TARGET} STREQUAL hosttools)
