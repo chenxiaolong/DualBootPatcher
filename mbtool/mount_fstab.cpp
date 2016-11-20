@@ -164,7 +164,7 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
             result.back().mount_point = "/system";
             result.back().fs_type = "auto";
             result.back().flags = MS_RDONLY;
-            result.back().fs_options = "defaults";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
@@ -193,7 +193,7 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
             result.back().mount_point = "/cache";
             result.back().fs_type = "auto";
             result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "defaults";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
@@ -222,7 +222,7 @@ static std::vector<util::fstab_rec> generic_fstab_data_entries(Device *device)
             result.back().mount_point = "/data";
             result.back().fs_type = "auto";
             result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "defaults";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
