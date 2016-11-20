@@ -62,7 +62,6 @@ set(MBTOOL_BASE_SOURCES
     daemon.cpp
     daemon_v3.cpp
     decrypt.cpp
-    file_contexts.cpp
     init.cpp
     main.cpp
     miniadbd.cpp

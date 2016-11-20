@@ -68,7 +68,6 @@
 #include "initwrapper/util.h"
 #include "daemon.h"
 #include "decrypt.h"
-#include "file_contexts.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
 #include "reboot.h"
