@@ -1699,13 +1699,20 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
-        auto start = util::current_time_ms();
+        uint64_t start = util::current_time_ms();
         updater_ret = run_real_updater();
-        auto stop = util::current_time_ms();
-        auto diff = (stop - start) / 1000;
+        uint64_t stop = util::current_time_ms();
+        uint64_t remainder = stop - start;
 
-        display_msg("Elapsed time: %" PRIu64 ":%02" PRIu64 "min",
-                    diff / 60, diff % 60);
+        uint64_t hours = remainder / (3600 * 1000);
+        remainder %= (3600 * 1000);
+        uint64_t minutes = remainder / (60 * 1000);
+        remainder %= (60 * 1000);
+        uint64_t seconds = remainder / 1000;
+        remainder %= 1000;
+
+        display_msg("Elapsed time: %02" PRIu64 ":%02" PRIu64 ":%02" PRIu64
+                    ".%03" PRIu64, hours, minutes, seconds, remainder);
 
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
