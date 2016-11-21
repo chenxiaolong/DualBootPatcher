@@ -937,8 +937,14 @@ bool Installer::run_real_updater()
     int pipe_fds[2];
     int stdio_fds[2];
     if (!_passthrough) {
-        pipe(pipe_fds);
-        pipe(stdio_fds);
+        if (pipe(pipe_fds) < 0) {
+            return false;
+        }
+        if (pipe(stdio_fds) < 0) {
+            close(pipe_fds[0]);
+            close(pipe_fds[1]);
+            return false;
+        }
     }
 
     // Run updater in the chroot
@@ -966,6 +972,7 @@ bool Installer::run_real_updater()
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (!_passthrough) {
+                // Close read ends of the pipes
                 close(pipe_fds[0]);
                 close(stdio_fds[0]);
             }
@@ -975,8 +982,10 @@ bool Installer::run_real_updater()
             }
 
             if (!_passthrough) {
-                dup2(stdio_fds[1], STDOUT_FILENO);
-                dup2(stdio_fds[1], STDERR_FILENO);
+                if (dup2(stdio_fds[1], STDOUT_FILENO) < 0
+                        || dup2(stdio_fds[1], STDERR_FILENO) < 0) {
+                    _exit(EXIT_FAILURE);
+                }
                 close(stdio_fds[1]);
             }
 
@@ -985,11 +994,16 @@ bool Installer::run_real_updater()
             }
 
             // Make sure the updater won't run interactively
-            close(STDIN_FILENO);
-            if (open("/dev/null", O_RDONLY) < 0) {
+            int fd_dev_null = open("/dev/null", O_RDONLY);
+            if (fd_dev_null < 0) {
+                LOGE("%s: Failed to open: %s", "/dev/null", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+            if (dup2(fd_dev_null, STDIN_FILENO) < 0) {
                 LOGE("Failed to reopen stdin: %s", strerror(errno));
                 _exit(EXIT_FAILURE);
             }
+            close(fd_dev_null);
 
             // HACK: SuperSU only accepts boot partition paths that are symlinks
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
