@@ -134,7 +134,7 @@ Installer::~Installer()
  * Wrappers around functions that log failures
  */
 
-int log_mkdir(const char *pathname, mode_t mode)
+static int log_mkdir(const char *pathname, mode_t mode)
 {
     int ret = mkdir(pathname, mode);
     if (ret < 0) {
@@ -143,8 +143,8 @@ int log_mkdir(const char *pathname, mode_t mode)
     return ret;
 }
 
-int log_mount(const char *source, const char *target, const char *fstype,
-              long unsigned int mountflags, const void *data)
+static int log_mount(const char *source, const char *target, const char *fstype,
+                     long unsigned int mountflags, const void *data)
 {
     int ret = mount(source, target, fstype, mountflags, data);
     if (ret < 0) {
@@ -154,7 +154,7 @@ int log_mount(const char *source, const char *target, const char *fstype,
     return ret;
 }
 
-int log_umount(const char *target)
+static int log_umount(const char *target)
 {
     int ret = umount(target);
     if (ret < 0) {
@@ -163,7 +163,7 @@ int log_umount(const char *target)
     return ret;
 }
 
-int log_mknod(const char *pathname, mode_t mode, dev_t dev)
+static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 {
     int ret = mknod(pathname, mode, dev);
     if (ret < 0) {
@@ -172,7 +172,7 @@ int log_mknod(const char *pathname, mode_t mode, dev_t dev)
     return ret;
 }
 
-bool log_is_mounted(const std::string &mountpoint)
+static bool log_is_mounted(const std::string &mountpoint)
 {
     bool ret = util::is_mounted(mountpoint);
     if (!ret) {
@@ -181,7 +181,7 @@ bool log_is_mounted(const std::string &mountpoint)
     return ret;
 }
 
-bool log_unmount_all(const std::string &dir)
+static bool log_unmount_all(const std::string &dir)
 {
     bool ret = util::unmount_all(dir);
     if (!ret) {
@@ -190,7 +190,7 @@ bool log_unmount_all(const std::string &dir)
     return ret;
 }
 
-bool log_delete_recursive(const std::string &path)
+static bool log_delete_recursive(const std::string &path)
 {
     bool ret = util::delete_recursive(path);
     if (!ret) {
@@ -199,8 +199,8 @@ bool log_delete_recursive(const std::string &path)
     return ret;
 }
 
-bool log_copy_dir(const std::string &source,
-                  const std::string &target, int flags)
+static bool log_copy_dir(const std::string &source,
+                         const std::string &target, int flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
