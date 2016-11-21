@@ -290,6 +290,8 @@ bool umount(const char *target)
 
     int ret = ::umount(target);
 
+    int saved_errno = errno;
+
     if (!source.empty()) {
         struct stat sb;
 
@@ -303,6 +305,8 @@ bool umount(const char *target)
             }
         }
     }
+
+    errno = saved_errno;
 
     return ret == 0;
 }
