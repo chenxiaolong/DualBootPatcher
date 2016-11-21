@@ -195,8 +195,10 @@ child_error:
         _exit(127);
     } else {
         // Close write ends of the pipes
-        safely_close(&ctx->_priv->stdout_pipe[1]);
-        safely_close(&ctx->_priv->stderr_pipe[1]);
+        if (ctx->redirect_stdio) {
+            safely_close(&ctx->_priv->stdout_pipe[1]);
+            safely_close(&ctx->_priv->stderr_pipe[1]);
+        }
     }
 
     return true;
