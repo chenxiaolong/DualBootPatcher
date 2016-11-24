@@ -324,6 +324,13 @@
         черту (\"/\"), быть \".\" или \"..\".</string>
     <!-- Backup name input field hint for backup name dialog -->
     <string name="br_name_dialog_hint">Введите имя резервной копии…</string>
+    <!-- Text shown on blank background when no files have been added for patching yet -->
+    <string name="patcher_background_message">Нажмите плюс для добавления файлов для установки.</string>
+
+    <!-- Label for FAB to add a flashable zip -->
+    <string name="patcher_add_flashable_zip">Добавить установочный zip</string>
+    <!-- Label for FAB to add an Odin image -->
+    <string name="patcher_add_odin_image">Добавить образ Odin</string>
 
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">Патчер не может модифицировать файлы
