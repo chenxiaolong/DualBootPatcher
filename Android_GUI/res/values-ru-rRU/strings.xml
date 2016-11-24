@@ -325,7 +325,7 @@
     <!-- Backup name input field hint for backup name dialog -->
     <string name="br_name_dialog_hint">Введите имя резервной копии…</string>
     <!-- Text shown on blank background when no files have been added for patching yet -->
-    <string name="patcher_background_message">Нажмите плюс для добавления файлов для установки.</string>
+    <string name="patcher_background_message">Нажмите плюс для добавления файлов для применения патча.</string>
 
     <!-- Label for FAB to add a flashable zip -->
     <string name="patcher_add_flashable_zip">Добавить установочный zip</string>
