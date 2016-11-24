@@ -206,13 +206,30 @@
     <!-- Dialog message shown when the user tries to set the kernel for the incorrect ROM -->
     <string name="set_kernel_mismatched_rom">Текущая прошивка это %1$s, но вы пытаетесь
         установить ядро для %2$s. Вы хотите это сделать?.</string>
-
-    <!-- ZIP flash activity title -->
+    <!-- In-app flashing output activity title - shown when backing up a single ROM -->
+    <string name="in_app_flashing_title_backup_rom">Создание резервной копии прошивки</string>
+    <!-- In-app flashing output activity title - shown when restoring a single ROM -->
+    <string name="in_app_flashing_title_restore_rom">Восстановление прошивки</string>
+    <!-- In-app flashing output activity title - shown when flashing a single file -->
+    <string name="in_app_flashing_title_flash_file">Установка файла</string>
+    <!-- In-app flashing output activity title - shown when flashing multiple files/backups -->
+    <string name="in_app_flashing_title_flash_files">Установка файлов</string>
+    <!-- In-app flashing activity title -->
     <string name="in_app_flashing_title">Прошить ZIP файл</string>
+    <!-- FAB button text for adding a patched file to flash -->
+    <string name="in_app_flashing_fab_add_patched_file">Добавить пропатченный файл</string>
+    <!-- FAB button text for adding a backup to flash -->
+    <string name="in_app_flashing_fab_add_backup">Добавить файл бэкапа</string>
     <!-- Title of pending action card for installing a zip file -->
     <string name="in_app_flashing_action_flash_file">Установить zip файл</string>
+    <!-- Title of pending action card for restoring a backup -->
+    <string name="in_app_flashing_action_restore_backup">Восстановить бэкап</string>
     <!-- Subtitle text in pending action card showing the selected filename -->
     <string name="in_app_flashing_filename">Файл: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the selected backup name -->
+    <string name="in_app_flashing_backup_name">Имя файла рез. копии: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the restore targets -->
+    <string name="in_app_flashing_restore_targets">Задания: %s</string>
     <!-- Subtitle text in pending action card showing the installation location -->
     <string name="in_app_flashing_location">Место: %s</string>
     <!-- Title shown in dialog asking for the installation location of a zip file -->
@@ -244,6 +261,12 @@
         пропатченный zip файл нажав на иконку плюс.\n\nОчередь файлов может быть изменена
         нажатием на файл и перемещением, а для удаления сдвиньте его в сторону.\n\nПримечание:
         Это экспериментальная функция! Делайте резервные копии заранее!</string>
+    <!-- Dialog description when choosing a backup to restore -->
+    <string name="in_app_flashing_select_backup_dialog_desc">Выберите резервную копию из списка
+        для восстановления.</string>
+    <!-- Toast message shown if there are no backups available -->
+    <string name="in_app_flashing_no_backups_available">Нет резервных копий, доступных
+        для восстановления.</string>
 
     <!-- ROM details item showing which slot the ROM is installed to -->
     <string name="rom_details_info_slot">Слот</string>
@@ -272,6 +295,35 @@
     <string name="rom_details_info_data_size">Размер данных</string>
     <!-- ROM details item value shown when calculating the directory or image sizes -->
     <string name="rom_details_info_calculating">Подсчет…</string>
+
+    <!-- Backup ROM activity title -->
+    <string name="br_backup_title">Бэкап прошивки</string>
+    <!-- Restore ROM activity title -->
+    <string name="br_restore_title">Восстановление прошивки</string>
+
+    <!-- Backup targets dialog description -->
+    <string name="br_backup_targets_dialog_desc">Выберите объекты, для которых будут созданы рез. копии.</string>
+    <!-- Restore targets dialog description -->
+    <string name="br_restore_targets_dialog_desc">Выберите объекты, которые должны быть восстановлены.</string>
+
+    <!-- Backup/restore target for ROM's /system files -->
+    <string name="br_target_system">System</string>
+    <!-- Backup/restore target for ROM's /cache files -->
+    <string name="br_target_cache">Cache</string>
+    <!-- Backup/restore target for ROM's /data files -->
+    <string name="br_target_data">Data</string>
+    <!-- Backup/restore target for ROM's boot image -->
+    <string name="br_target_boot">Boot image</string>
+    <!-- Backup/restore target for ROM's multiboot configuration files -->
+    <string name="br_target_config">Настройеи MultiBoot</string>
+    <!-- Toast message shown if no backup/restore targets are selected -->
+    <string name="br_no_target_selected">Не выбранны объекты для восстановления/бэкапа</string>
+
+    <!-- Backup name input dialog description -->
+    <string name="br_name_dialog_desc">Введите имя резервной копии. Оно не может содержать косую
+        черту (\"/\"), быть \".\" или \"..\".</string>
+    <!-- Backup name input field hint for backup name dialog -->
+    <string name="br_name_dialog_hint">Введите имя резервной копии…</string>
 
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">Патчер не может модифицировать файлы
@@ -447,6 +499,10 @@
     <string name="rom_settings_boot_ui_update_ramdisk_msg">Загрузочный интерфейс был успешно установлен.
         \n\nУбедитесь, что ramdisk был обновлен в каждой прошивке. Иначе, загрузочный интерфейс не будет
         работать во время загрузки.</string>
+    <!-- Title for the section in ROM Settings to change backup/restore settings -->
+    <string name="rom_settings_backup_title">Бэкап/Восстановление (ЭКСПЕРИМЕНТАЛЬНАЯ ФУНКЦИЯ)</string>
+    <!-- Title for the preference to change the backup directory -->
+    <string name="rom_settings_backup_change_directory">Изменить каталог резервного копирования</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Патчер</string>
