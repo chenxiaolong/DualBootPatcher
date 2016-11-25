@@ -134,7 +134,7 @@ Installer::~Installer()
  * Wrappers around functions that log failures
  */
 
-int log_mkdir(const char *pathname, mode_t mode)
+static int log_mkdir(const char *pathname, mode_t mode)
 {
     int ret = mkdir(pathname, mode);
     if (ret < 0) {
@@ -143,8 +143,8 @@ int log_mkdir(const char *pathname, mode_t mode)
     return ret;
 }
 
-int log_mount(const char *source, const char *target, const char *fstype,
-              long unsigned int mountflags, const void *data)
+static int log_mount(const char *source, const char *target, const char *fstype,
+                     long unsigned int mountflags, const void *data)
 {
     int ret = mount(source, target, fstype, mountflags, data);
     if (ret < 0) {
@@ -154,7 +154,7 @@ int log_mount(const char *source, const char *target, const char *fstype,
     return ret;
 }
 
-int log_umount(const char *target)
+static int log_umount(const char *target)
 {
     int ret = umount(target);
     if (ret < 0) {
@@ -163,7 +163,7 @@ int log_umount(const char *target)
     return ret;
 }
 
-int log_mknod(const char *pathname, mode_t mode, dev_t dev)
+static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 {
     int ret = mknod(pathname, mode, dev);
     if (ret < 0) {
@@ -172,7 +172,7 @@ int log_mknod(const char *pathname, mode_t mode, dev_t dev)
     return ret;
 }
 
-bool log_is_mounted(const std::string &mountpoint)
+static bool log_is_mounted(const std::string &mountpoint)
 {
     bool ret = util::is_mounted(mountpoint);
     if (!ret) {
@@ -181,7 +181,7 @@ bool log_is_mounted(const std::string &mountpoint)
     return ret;
 }
 
-bool log_unmount_all(const std::string &dir)
+static bool log_unmount_all(const std::string &dir)
 {
     bool ret = util::unmount_all(dir);
     if (!ret) {
@@ -190,7 +190,7 @@ bool log_unmount_all(const std::string &dir)
     return ret;
 }
 
-bool log_delete_recursive(const std::string &path)
+static bool log_delete_recursive(const std::string &path)
 {
     bool ret = util::delete_recursive(path);
     if (!ret) {
@@ -199,8 +199,8 @@ bool log_delete_recursive(const std::string &path)
     return ret;
 }
 
-bool log_copy_dir(const std::string &source,
-                  const std::string &target, int flags)
+static bool log_copy_dir(const std::string &source,
+                         const std::string &target, int flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -937,8 +937,14 @@ bool Installer::run_real_updater()
     int pipe_fds[2];
     int stdio_fds[2];
     if (!_passthrough) {
-        pipe(pipe_fds);
-        pipe(stdio_fds);
+        if (pipe(pipe_fds) < 0) {
+            return false;
+        }
+        if (pipe(stdio_fds) < 0) {
+            close(pipe_fds[0]);
+            close(pipe_fds[1]);
+            return false;
+        }
     }
 
     // Run updater in the chroot
@@ -966,6 +972,7 @@ bool Installer::run_real_updater()
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (!_passthrough) {
+                // Close read ends of the pipes
                 close(pipe_fds[0]);
                 close(stdio_fds[0]);
             }
@@ -975,8 +982,10 @@ bool Installer::run_real_updater()
             }
 
             if (!_passthrough) {
-                dup2(stdio_fds[1], STDOUT_FILENO);
-                dup2(stdio_fds[1], STDERR_FILENO);
+                if (dup2(stdio_fds[1], STDOUT_FILENO) < 0
+                        || dup2(stdio_fds[1], STDERR_FILENO) < 0) {
+                    _exit(EXIT_FAILURE);
+                }
                 close(stdio_fds[1]);
             }
 
@@ -985,11 +994,16 @@ bool Installer::run_real_updater()
             }
 
             // Make sure the updater won't run interactively
-            close(STDIN_FILENO);
-            if (open("/dev/null", O_RDONLY) < 0) {
+            int fd_dev_null = open("/dev/null", O_RDONLY);
+            if (fd_dev_null < 0) {
+                LOGE("%s: Failed to open: %s", "/dev/null", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+            if (dup2(fd_dev_null, STDIN_FILENO) < 0) {
                 LOGE("Failed to reopen stdin: %s", strerror(errno));
                 _exit(EXIT_FAILURE);
             }
+            close(fd_dev_null);
 
             // HACK: SuperSU only accepts boot partition paths that are symlinks
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
@@ -1685,13 +1699,20 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
-        auto start = util::current_time_ms();
+        uint64_t start = util::current_time_ms();
         updater_ret = run_real_updater();
-        auto stop = util::current_time_ms();
-        auto diff = (stop - start) / 1000;
+        uint64_t stop = util::current_time_ms();
+        uint64_t remainder = stop - start;
 
-        display_msg("Elapsed time: %" PRIu64 ":%02" PRIu64 "min",
-                    diff / 60, diff % 60);
+        uint64_t hours = remainder / (3600 * 1000);
+        remainder %= (3600 * 1000);
+        uint64_t minutes = remainder / (60 * 1000);
+        remainder %= (60 * 1000);
+        uint64_t seconds = remainder / 1000;
+        remainder %= 1000;
+
+        display_msg("Elapsed time: %02" PRIu64 ":%02" PRIu64 ":%02" PRIu64
+                    ".%03" PRIu64, hours, minutes, seconds, remainder);
 
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");

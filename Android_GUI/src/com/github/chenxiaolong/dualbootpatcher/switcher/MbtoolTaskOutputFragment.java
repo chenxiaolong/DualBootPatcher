@@ -34,6 +34,7 @@ import android.view.ViewGroup;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
+import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
@@ -172,7 +173,7 @@ public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnect
         try {
             mSession.setTermIn(new PipedInputStream(mOS));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Failed to set terminal input stream to pipe", e);
         }
 
         mEmulatorView.attachSession(mSession);
@@ -233,7 +234,14 @@ public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnect
             mService.addCallback(mTaskId, mCallback);
             mService.enqueueTaskId(mTaskId);
         } else {
-            mService.addCallback(mTaskId, mCallback);
+            // FIXME: Hack so mCallback.onCommandOutput() is not called on the main thread, which
+            //        would result in a deadlock
+            new Thread("Add service callback for " + this) {
+                @Override
+                public void run() {
+                    mService.addCallback(mTaskId, mCallback);
+                }
+            }.start();
         }
     }
 
@@ -247,15 +255,6 @@ public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnect
             mService.removeCachedTask(taskId);
         } else {
             mTaskIdsToRemove.add(taskId);
-        }
-    }
-
-    private void onNewOutputLine(String line) {
-        try {
-            String crlf  = line.replace("\n", "\r\n");
-            mOS.write(crlf.getBytes(Charset.forName("UTF-8")));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -283,13 +282,17 @@ public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnect
 
         @Override
         public void onCommandOutput(int taskId, final String line) {
+            // This must *NOT* be called on the main thread or else it'll result in a dead lock
+            ThreadUtils.enforceExecutionOnNonMainThread();
+
             if (taskId == mTaskId) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        onNewOutputLine(line);
-                    }
-                });
+                try {
+                    String crlf  = line.replace("\n", "\r\n");
+                    mOS.write(crlf.getBytes(Charset.forName("UTF-8")));
+                    mOS.flush();
+                } catch (IOException e) {
+                    // Ignore. This will happen if the pipe is closed (eg. on configuration change)
+                }
             }
         }
 

@@ -716,6 +716,8 @@ error:
 static bool flash_csc()
 {
     int status;
+    bool unmounted_dir = false;
+    bool unmounted_file = false;
 
     if (!extract_raw_file(CACHE_SPARSE_FILE, TEMP_CACHE_SPARSE_FILE)) {
         goto error;
@@ -786,8 +788,46 @@ static bool flash_csc()
     }
 
     umount_system();
-    mb::util::umount(TEMP_CACHE_MOUNT_DIR);
-    umount(TEMP_CACHE_MOUNT_FILE);
+
+    // Looping is necessary in Touchwiz, which sometimes fails to unmount the
+    // fuse mountpoint on the first try (kernel bug?)
+    static constexpr int max_attempts = 5;
+
+    for (int attempt = 1; attempt <= max_attempts; ++attempt) {
+        bool success = true;
+
+        info("[Attempt %d/%d] Unmounting %s",
+             attempt, max_attempts, TEMP_CACHE_MOUNT_DIR);
+        if (!unmounted_dir) {
+            unmounted_dir = mb::util::umount(TEMP_CACHE_MOUNT_DIR);
+            if (!unmounted_dir) {
+                error("WARNING: Failed to unmount %s: %s",
+                      TEMP_CACHE_MOUNT_DIR, strerror(errno));
+                success = false;
+            }
+        }
+
+        info("[Attempt %d/%d] Unmounting %s",
+             attempt, max_attempts, TEMP_CACHE_MOUNT_FILE);
+        if (!unmounted_file) {
+            unmounted_file = mb::util::umount(TEMP_CACHE_MOUNT_FILE);
+            if (!unmounted_file) {
+                error("WARNING: Failed to unmount %s: %s",
+                      TEMP_CACHE_MOUNT_FILE, strerror(errno));
+                success = false;
+            }
+        }
+
+        if (success) {
+            info("Successfully unmounted temporary cache image mountpoints");
+            break;
+        } else if (attempt != max_attempts) {
+            info("[Attempt %d/%d] Waiting 1 second before next attempt",
+                 attempt, max_attempts);
+            sleep(1);
+        }
+    }
+
     return true;
 
 error_system_mounted:
