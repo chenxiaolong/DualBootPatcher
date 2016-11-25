@@ -396,9 +396,9 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
 
     @Override
     protected void onListenerAdded(BaseServiceTaskListener listener) {
-        super.onListenerAdded(listener);
-
         synchronized (mStateLock) {
+            super.onListenerAdded(listener);
+
             for (String line : mLines) {
                 sendOnCommandOutput(line);
             }
