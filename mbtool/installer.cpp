@@ -309,6 +309,7 @@ bool Installer::create_chroot()
             || log_mkdir(in_chroot("/data").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/cache").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/system").c_str(), 0755) < 0
+            || log_mkdir(in_chroot("/firmware").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/efs").c_str(), 0755) < 0) {
         return false;
     }
