@@ -105,6 +105,9 @@
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p61
+    extra:
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
 
 
 - name: Xiaomi HM 1S
