@@ -179,7 +179,8 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                     return false;
                 }
 
-                String[] args = new String[]{"--romid", params.getRomId(), fdTarget};
+                String[] args = new String[]{"--romid", params.getRomId(),
+                        translateEmulatedPath(fdTarget)};
 
                 printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
                         + TextUtils.join(", ", args) + "]\n");
