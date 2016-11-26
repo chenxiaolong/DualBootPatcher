@@ -22,12 +22,15 @@ import android.app.Fragment;
 import android.app.LoaderManager.LoaderCallbacks;
 import android.content.AsyncTaskLoader;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -48,6 +51,7 @@ import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.Constants;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils.UriMetadata;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
@@ -102,7 +106,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     private static final int PERFORM_ACTIONS = 1234;
 
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
-    private static final String EXTRA_SELECTED_FILE = "selected_file";
+    private static final String EXTRA_SELECTED_URI = "selected_uri";
+    private static final String EXTRA_SELECTED_URI_FILE_NAME = "selected_uri_file_name";
     private static final String EXTRA_SELECTED_BACKUP_DIR = "selected_backup_dir";
     private static final String EXTRA_SELECTED_BACKUP_NAME = "selected_backup_name";
     private static final String EXTRA_SELECTED_BACKUP_TARGETS = "selected_backup_targets";
@@ -110,6 +115,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     private static final String EXTRA_ZIP_ROM_ID = "zip_rom_id";
     private static final String EXTRA_ADD_TYPE = "add_type";
     private static final String EXTRA_TASK_ID_VERIFY_ZIP = "task_id_verify_zip";
+    private static final String EXTRA_QUERYING_METADATA = "querying_metadata";
 
     private static final String PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog";
 
@@ -118,6 +124,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     private static final String PROGRESS_DIALOG_VERIFY_ZIP =
             InAppFlashingFragment.class.getCanonicalName() + ".progress.verify_zip";
+    private static final String PROGRESS_DIALOG_QUERYING_METADATA =
+            InAppFlashingFragment.class.getCanonicalName() + ".progress.querying_metadata";
     private static final String CONFIRM_DIALOG_FIRST_USE =
             InAppFlashingFragment.class.getCanonicalName() + ".confirm.first_use";
     private static final String CONFIRM_DIALOG_INSTALL_LOCATION =
@@ -137,7 +145,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     private SharedPreferences mPrefs;
 
-    private String mSelectedFile;
+    private Uri mSelectedUri;
+    private String mSelectedUriFileName;
     private String mSelectedBackupDir;
     private String mSelectedBackupName;
     private String[] mSelectedBackupTargets;
@@ -167,6 +176,11 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     /** Handler for processing events from the service on the UI thread */
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+
+    /** Whether we're querying the URI metadata */
+    private boolean mQueryingMetadata;
+    /** Task for querying the metadata of URIs */
+    private GetUriMetadataTask mQueryMetadataTask;
 
     public interface OnReadyStateChangedListener {
         void onReady(boolean ready);
@@ -228,7 +242,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         });
 
         if (savedInstanceState != null) {
-            mSelectedFile = savedInstanceState.getString(EXTRA_SELECTED_FILE);
+            mSelectedUri = savedInstanceState.getParcelable(EXTRA_SELECTED_URI);
+            mSelectedUriFileName = savedInstanceState.getString(EXTRA_SELECTED_URI_FILE_NAME);
             mSelectedBackupDir = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_DIR);
             mSelectedBackupName = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_NAME);
             mSelectedBackupTargets = savedInstanceState.getStringArray(EXTRA_SELECTED_BACKUP_TARGETS);
@@ -236,6 +251,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             mZipRomId = savedInstanceState.getString(EXTRA_ZIP_ROM_ID);
             mAddType = (Type) savedInstanceState.getSerializable(EXTRA_ADD_TYPE);
             mTaskIdVerifyZip = savedInstanceState.getInt(EXTRA_TASK_ID_VERIFY_ZIP);
+            mQueryingMetadata = savedInstanceState.getBoolean(EXTRA_QUERYING_METADATA);
         }
 
         try {
@@ -268,7 +284,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
         outState.putParcelableArrayList(EXTRA_PENDING_ACTIONS, mPendingActions);
 
-        outState.putString(EXTRA_SELECTED_FILE, mSelectedFile);
+        outState.putParcelable(EXTRA_SELECTED_URI, mSelectedUri);
+        outState.putString(EXTRA_SELECTED_URI_FILE_NAME, mSelectedUriFileName);
         outState.putString(EXTRA_SELECTED_BACKUP_DIR, mSelectedBackupDir);
         outState.putString(EXTRA_SELECTED_BACKUP_NAME, mSelectedBackupName);
         outState.putStringArray(EXTRA_SELECTED_BACKUP_TARGETS, mSelectedBackupTargets);
@@ -276,6 +293,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         outState.putString(EXTRA_ZIP_ROM_ID, mZipRomId);
         outState.putSerializable(EXTRA_ADD_TYPE, mAddType);
         outState.putInt(EXTRA_TASK_ID_VERIFY_ZIP, mTaskIdVerifyZip);
+        outState.putBoolean(EXTRA_QUERYING_METADATA, mQueryingMetadata);
     }
 
     @Override
@@ -291,6 +309,9 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     @Override
     public void onStop() {
         super.onStop();
+
+        // Cancel metadata query task
+        cancelQueryUriMetadata();
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
@@ -327,6 +348,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         if (mVerifyZipOnServiceConnected) {
             mVerifyZipOnServiceConnected = false;
             verifyZip();
+        }
+
+        if (mQueryingMetadata) {
+            queryUriMetadata();
         }
     }
 
@@ -423,13 +448,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         mZipRomId = romId;
 
         if (result == VerificationResult.NO_ERROR) {
-            if (romId != null) {
-                ChangeInstallLocationDialog cild =
-                        ChangeInstallLocationDialog.newInstance(this, romId);
-                cild.show(getFragmentManager(), CONFIRM_DIALOG_INSTALL_LOCATION);
-            } else {
-                showRomIdSelectionDialog();
-            }
+            queryUriMetadata();
         } else {
             String error;
 
@@ -462,6 +481,31 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         }
     }
 
+    /**
+     * Called after the input URI's metadata has been retrieved
+     *
+     * @param metadata URI metadata
+     *
+     * @see #queryUriMetadata()
+     */
+    private void onQueriedMetadata(@NonNull UriMetadata metadata) {
+        GenericProgressDialog dialog = (GenericProgressDialog)
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
+        if (dialog != null) {
+            dialog.dismiss();
+        }
+
+        mSelectedUriFileName = metadata.displayName;
+
+        if (mZipRomId != null) {
+            ChangeInstallLocationDialog cild =
+                    ChangeInstallLocationDialog.newInstance(this, mZipRomId);
+            cild.show(getFragmentManager(), CONFIRM_DIALOG_INSTALL_LOCATION);
+        } else {
+            showRomIdSelectionDialog();
+        }
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
@@ -470,7 +514,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             break;
         case ACTIVITY_REQUEST_FILE:
             if (data != null && resultCode == Activity.RESULT_OK) {
-                mSelectedFile = FileUtils.getPathFromUri(getActivity(), data.getData());
+                mSelectedUri = data.getData();
 
                 GenericProgressDialog d = GenericProgressDialog.newInstance(
                         R.string.in_app_flashing_dialog_verifying_zip, R.string.please_wait);
@@ -489,9 +533,49 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     private void verifyZip() {
-        mTaskIdVerifyZip = mService.verifyZip(mSelectedFile);
+        mTaskIdVerifyZip = mService.verifyZip(mSelectedUri);
         mService.addCallback(mTaskIdVerifyZip, mCallback);
         mService.enqueueTaskId(mTaskIdVerifyZip);
+    }
+
+    /**
+     * Query the metadata for the input file
+     *
+     * After the user selects an input file, this function is called to start the task of retrieving
+     * the file's name and size. Once the information has been retrieved,
+     * {@link #onQueriedMetadata(UriMetadata)} is called.
+     *
+     * @see #onQueriedMetadata(UriMetadata)
+     */
+    private void queryUriMetadata() {
+        if (mQueryMetadataTask != null) {
+            throw new IllegalStateException("Already querying metadata!");
+        }
+        mQueryMetadataTask = new GetUriMetadataTask();
+        mQueryMetadataTask.execute(mSelectedUri);
+
+        // Show progress dialog. Dialog may already exist if a configuration change occurred during
+        // the query (and thus, this function is called again in onReady()).
+        GenericProgressDialog dialog = (GenericProgressDialog)
+                getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
+        if (dialog == null) {
+            dialog = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            dialog.show(getFragmentManager(), PROGRESS_DIALOG_QUERYING_METADATA);
+        }
+    }
+
+    /**
+     * Cancel task for querying the input URI metadata
+     *
+     * This function is a no-op if there is no such task.
+     *
+     * @see #onStop()
+     */
+    private void cancelQueryUriMetadata() {
+        if (mQueryMetadataTask != null) {
+            mQueryMetadataTask.cancel(true);
+            mQueryMetadataTask = null;
+        }
     }
 
     @Override
@@ -584,7 +668,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             MbtoolAction action = null;
 
             if (mAddType == Type.ROM_INSTALLER) {
-                RomInstallerParams params = new RomInstallerParams(mSelectedFile, mSelectedRomId);
+                RomInstallerParams params = new RomInstallerParams(
+                        mSelectedUri, mSelectedUriFileName, mSelectedRomId);
                 action = new MbtoolAction(params);
             } else if (mAddType == Type.BACKUP_RESTORE) {
                 BackupRestoreParams params = new BackupRestoreParams(Action.RESTORE, mSelectedRomId,
@@ -703,11 +788,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             switch (pa.getType()) {
             case ROM_INSTALLER: {
                 RomInstallerParams params = pa.getRomInstallerParams();
-                String filename = new File(params.getPath()).getName();
 
                 holder.vTitle.setText(R.string.in_app_flashing_action_flash_file);
                 holder.vSubtitle1.setText(mContext.getString(
-                        R.string.in_app_flashing_filename, filename));
+                        R.string.in_app_flashing_filename, params.getDisplayName()));
                 holder.vSubtitle2.setText(mContext.getString(
                         R.string.in_app_flashing_location, params.getRomId()));
                 holder.vSubtitle3.setVisibility(View.GONE);
@@ -736,9 +820,37 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         }
     }
 
+    /**
+     * Task to query the display name, size, and MIME type of a list of openable URIs.
+     */
+    private class GetUriMetadataTask extends AsyncTask<Uri, Void, UriMetadata[]> {
+        private ContentResolver mCR;
+
+        @Override
+        protected void onPreExecute() {
+            mCR = getActivity().getContentResolver();
+            mQueryingMetadata = true;
+        }
+
+        @Override
+        protected UriMetadata[] doInBackground(Uri... params) {
+            return FileUtils.queryUriMetadata(mCR, params);
+        }
+
+        @Override
+        protected void onPostExecute(UriMetadata[] metadatas) {
+            mCR = null;
+
+            if (isAdded()) {
+                mQueryingMetadata = false;
+                onQueriedMetadata(metadatas[0]);
+            }
+        }
+    }
+
     private class SwitcherEventCallback implements VerifyZipTaskListener {
         @Override
-        public void onVerifiedZip(int taskId, String path, final VerificationResult result,
+        public void onVerifiedZip(int taskId, Uri uri, final VerificationResult result,
                                   final String romId) {
             if (taskId == mTaskIdVerifyZip) {
                 mHandler.post(new Runnable() {

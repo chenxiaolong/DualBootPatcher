@@ -17,23 +17,26 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher.actions;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 public class RomInstallerParams implements Parcelable {
-    private String mPath;
+    private Uri mUri;
+    private String mDisplayName;
     private String mRomId;
 
     public RomInstallerParams() {
     }
 
-    public RomInstallerParams(String path, String romId) {
-        mPath = path;
+    public RomInstallerParams(Uri uri, String displayName, String romId) {
+        mUri = uri;
+        mDisplayName = displayName;
         mRomId = romId;
     }
 
     protected RomInstallerParams(Parcel in) {
-        mPath = in.readString();
+        mUri = in.readParcelable(Uri.class.getClassLoader());
         mRomId = in.readString();
     }
 
@@ -44,7 +47,7 @@ public class RomInstallerParams implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(mPath);
+        dest.writeParcelable(mUri, 0);
         dest.writeString(mRomId);
     }
 
@@ -62,12 +65,20 @@ public class RomInstallerParams implements Parcelable {
                 }
             };
 
-    public String getPath() {
-        return mPath;
+    public Uri getUri() {
+        return mUri;
     }
 
-    public void setPath(String path) {
-        mPath = path;
+    public void setUri(Uri uri) {
+        mUri = uri;
+    }
+
+    public String getDisplayName() {
+        return mDisplayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        mDisplayName = displayName;
     }
 
     public String getRomId() {

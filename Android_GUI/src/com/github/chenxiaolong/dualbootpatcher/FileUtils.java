@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +31,7 @@ import android.os.Environment;
 import android.os.UserHandle;
 import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
+import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -42,10 +44,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
 import io.noobdev.neuteredsaf.DocumentsApplication;
@@ -678,27 +679,19 @@ public class FileUtils {
         }
     }
 
-    public static boolean zipExtractFile(String zipFile, String filename, String destFile) {
-        ZipFile zf = null;
+    public static boolean zipExtractFile(Context context, Uri uri, String filename,
+                                         String destFile) {
+        ZipInputStream zis = null;
         FileOutputStream fos = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().equals(filename)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(filename)) {
                     fos = new FileOutputStream(destFile);
-                    InputStream is = zf.getInputStream(ze);
-                    byte[] buffer = new byte[10240];
-
-                    int len;
-                    while ((len = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-
+                    IOUtils.copy(zis, fos);
                     return true;
                 }
             }
@@ -707,13 +700,7 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            //IOUtils.closeQuietly(zf);
-            try {
-                if (zf != null) {
-                    zf.close();
-                }
-            } catch (IOException e) {
-            }
+            IOUtils.closeQuietly(zis);
             IOUtils.closeQuietly(fos);
         }
 
@@ -757,5 +744,50 @@ public class FileUtils {
 
         String decimal = String.format("%." + precision + "f", (double) size / abbrev.factor);
         return context.getString(abbrev.stringResId, decimal);
+    }
+
+    public static class UriMetadata {
+        public Uri uri;
+        public String displayName;
+        public long size;
+        public String mimeType;
+    }
+
+    public static UriMetadata[] queryUriMetadata(ContentResolver cr, Uri... uris) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        UriMetadata[] metadatas = new UriMetadata[uris.length];
+        for (int i = 0; i < metadatas.length; i++) {
+            UriMetadata metadata = new UriMetadata();
+            metadatas[i] = metadata;
+            metadata.uri = uris[i];
+            metadata.mimeType = cr.getType(metadata.uri);
+
+            if ("content".equals(metadata.uri.getScheme())) {
+                Cursor cursor = cr.query(metadata.uri, null, null, null, null, null);
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+
+                        metadata.displayName = cursor.getString(nameIndex);
+                        if (cursor.isNull(sizeIndex)) {
+                            metadata.size = -1;
+                        } else {
+                            metadata.size = cursor.getLong(sizeIndex);
+                        }
+                    }
+                } finally {
+                    IOUtils.closeQuietly(cursor);
+                }
+            } else if ("file".equals(metadata.uri.getScheme())) {
+                metadata.displayName = metadata.uri.getLastPathSegment();
+                metadata.size = new File(metadata.uri.getPath()).length();
+            } else {
+                throw new IllegalArgumentException("Cannot handle URI: " + metadata.uri);
+            }
+        }
+
+        return metadatas;
     }
 }

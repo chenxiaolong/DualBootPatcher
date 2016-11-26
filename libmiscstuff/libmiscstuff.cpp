@@ -210,4 +210,44 @@ void mblog_set_logcat()
     mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
 }
 
+int get_pid()
+{
+    return getpid();
+}
+
+char * read_link(const char *path)
+{
+    size_t buf_size = 64;
+    char *buf;
+    ssize_t n;
+
+    buf = (char *) malloc(buf_size);
+    if (!buf) {
+        goto error;
+    }
+
+    for (;;) {
+        n = readlink(path, buf, buf_size);
+        if (n < 0) {
+            return nullptr;
+        } else if ((size_t) n == buf_size - 1) {
+            char *new_buf = (char *) realloc(buf, buf_size << 1);
+            if (!new_buf) {
+                goto error;
+            }
+            buf = new_buf;
+            buf_size <<= 1;
+        } else {
+            break;
+        }
+    }
+
+    buf[n] = '\0';
+    return buf;
+
+error:
+    free(buf);
+    return nullptr;
+}
+
 }

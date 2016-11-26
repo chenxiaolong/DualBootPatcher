@@ -24,14 +24,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
@@ -54,6 +52,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils.UriMetadata;
 import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -77,9 +76,7 @@ import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1069,13 +1066,6 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
-    private static class UriMetadata {
-        Uri uri;
-        String displayName;
-        long size;
-        String mimeType;
-    }
-
     /**
      * Task to query the display name, size, and MIME type of a list of openable URIs.
      */
@@ -1090,39 +1080,7 @@ public class PatchFileFragment extends Fragment implements
 
         @Override
         protected UriMetadata[] doInBackground(Uri... params) {
-            UriMetadata[] metadatas = new UriMetadata[params.length];
-            for (int i = 0; i < metadatas.length; i++) {
-                UriMetadata metadata = new UriMetadata();
-                metadatas[i] = metadata;
-                metadata.uri = params[i];
-                metadata.mimeType = mCR.getType(metadata.uri);
-
-                if ("content".equals(metadata.uri.getScheme())) {
-                    Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
-                    try {
-                        if (cursor != null && cursor.moveToFirst()) {
-                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                            int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
-
-                            metadata.displayName = cursor.getString(nameIndex);
-                            if (cursor.isNull(sizeIndex)) {
-                                metadata.size = -1;
-                            } else {
-                                metadata.size = cursor.getLong(sizeIndex);
-                            }
-                        }
-                    } finally {
-                        IOUtils.closeQuietly(cursor);
-                    }
-                } else if ("file".equals(metadata.uri.getScheme())) {
-                    metadata.displayName = metadata.uri.getLastPathSegment();
-                    metadata.size = new File(metadata.uri.getPath()).length();
-                } else {
-                    throw new IllegalStateException("Cannot handle URI: " + metadata.uri);
-                }
-            }
-
-            return metadatas;
+            return FileUtils.queryUriMetadata(mCR, params);
         }
 
         @Override
