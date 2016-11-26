@@ -18,6 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -26,8 +27,11 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.os.UserHandle;
 import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
+import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -38,11 +42,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
 import io.noobdev.neuteredsaf.DocumentsApplication;
@@ -56,6 +60,296 @@ public class FileUtils {
     private static final boolean FORCE_NEUTERED_SAF = false;
     private static final boolean FORCE_GET_CONTENT = false;
 
+    // Can't load this with reflection since ExternalStorageProvider is not part of the framework
+    private static final String ROOT_ID_PRIMARY_EMULATED = "primary";
+
+    private static class WrapperNotUsableException extends Exception {
+        WrapperNotUsableException(String msg) {
+            super(msg);
+        }
+
+        WrapperNotUsableException(Throwable th) {
+            super(th);
+        }
+
+        WrapperNotUsableException(String msg, Throwable th) {
+            super(msg, th);
+        }
+    }
+
+    private static class VolumeInfoWrapper {
+        private static Method sMethod_isMountedReadable;
+        private static Method sMethod_getFsUuid;
+        private static Method sMethod_getInternalPathForUser;
+        private static Method sMethod_getPathForUser;
+        private static Method sMethod_getPath;
+        private static Method sMethod_getType;
+
+        static Integer TYPE_PUBLIC;
+        static Integer TYPE_EMULATED;
+
+        private final Object mObject;
+
+        static {
+            try {
+                Class<?> clazz = Class.forName("android.os.storage.VolumeInfo");
+                sMethod_isMountedReadable = clazz.getDeclaredMethod("isMountedReadable");
+                sMethod_getFsUuid = clazz.getDeclaredMethod("getFsUuid");
+                sMethod_getInternalPathForUser =
+                        clazz.getDeclaredMethod("getInternalPathForUser", int.class);
+                sMethod_getPathForUser = clazz.getDeclaredMethod("getPathForUser", int.class);
+                sMethod_getPath = clazz.getDeclaredMethod("getPath");
+                sMethod_getType = clazz.getDeclaredMethod("getType");
+
+                Field f_TYPE_PUBLIC = clazz.getDeclaredField("TYPE_PUBLIC");
+                TYPE_PUBLIC = (Integer) f_TYPE_PUBLIC.get(null);
+                Field f_TYPE_EMULATED = clazz.getDeclaredField("TYPE_EMULATED");
+                TYPE_EMULATED = (Integer) f_TYPE_EMULATED.get(null);
+            } catch (ClassNotFoundException e) {
+                Log.i(TAG, "VolumeInfo class not found: " + e.getMessage());
+            } catch (NoSuchMethodException e) {
+                Log.e(TAG, "Missing method in VolumeInfo", e);
+            } catch (NoSuchFieldException e) {
+                Log.e(TAG, "Missing field in VolumeInfo", e);
+            } catch (IllegalAccessException e) {
+                Log.e(TAG, "IllegalAccessException", e);
+            }
+        }
+
+        VolumeInfoWrapper(Object object) {
+            mObject = object;
+        }
+
+        boolean isMountedReadable() throws WrapperNotUsableException {
+            try {
+                if (sMethod_isMountedReadable == null) {
+                    throw new WrapperNotUsableException("Missing VolumeInfo.isMountedReadable()");
+                }
+                return (Boolean) sMethod_isMountedReadable.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.isMountedReadable()", e);
+            }
+        }
+
+        String getFsUuid() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getFsUuid == null) {
+                    throw new WrapperNotUsableException("Missing VolumeInfo.getFsUuid()");
+                }
+                return (String) sMethod_getFsUuid.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.getFsUuid()", e);
+            }
+        }
+
+        File getInternalPathForUser(int userId) throws WrapperNotUsableException {
+            try {
+                if (sMethod_getInternalPathForUser == null) {
+                    throw new WrapperNotUsableException(
+                            "Missing VolumeInfo.getInternalPathForUser()");
+                }
+                return (File) sMethod_getInternalPathForUser.invoke(mObject, userId);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.getInternalPathForUser()", e);
+            }
+        }
+
+        File getPathForUser(int userId) throws WrapperNotUsableException {
+            try {
+                if (sMethod_getPathForUser == null) {
+                    throw new WrapperNotUsableException("Missing VolumeInfo.getPathForUser()");
+                }
+                return (File) sMethod_getPathForUser.invoke(mObject, userId);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.getPathForUser()", e);
+            }
+        }
+
+        File getPath() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getPath == null) {
+                    throw new WrapperNotUsableException("Missing VolumeInfo.getPath()");
+                }
+                return (File) sMethod_getPath.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.getPath()", e);
+            }
+        }
+
+        int getType() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getType == null) {
+                    throw new WrapperNotUsableException("Missing VolumeInfo.getType()");
+                }
+                return (Integer) sMethod_getType.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("VolumeInfo.getType()", e);
+            }
+        }
+    }
+
+    private static class StorageVolumeWrapper {
+        private static Method sMethod_isPrimary;
+        private static Method sMethod_isEmulated;
+        private static Method sMethod_getUuid;
+        private static Method sMethod_getPath;
+        private static Method sMethod_getState;
+
+        private final Object mObject;
+
+        static {
+            try {
+                Class<?> clazz = Class.forName("android.os.storage.StorageVolume");
+                sMethod_isPrimary = clazz.getDeclaredMethod("isPrimary");
+                sMethod_isEmulated = clazz.getDeclaredMethod("isEmulated");
+                sMethod_getUuid = clazz.getDeclaredMethod("getUuid");
+                sMethod_getPath = clazz.getDeclaredMethod("getPath");
+                sMethod_getState = clazz.getDeclaredMethod("getState");
+            } catch (ClassNotFoundException e) {
+                Log.i(TAG, "StorageVolume class not found: " + e.getMessage());
+            } catch (NoSuchMethodException e) {
+                Log.e(TAG, "Missing method in StorageVolume", e);
+            }
+        }
+
+        StorageVolumeWrapper(Object object) {
+            mObject = object;
+        }
+
+        boolean isPrimary() throws WrapperNotUsableException {
+            try {
+                if (sMethod_isPrimary == null) {
+                    throw new WrapperNotUsableException("Missing StorageVolume.isPrimary()");
+                }
+                return (Boolean) sMethod_isPrimary.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageVolume.isPrimary()", e);
+            }
+        }
+
+        boolean isEmulated() throws WrapperNotUsableException {
+            try {
+                if (sMethod_isEmulated == null) {
+                    throw new WrapperNotUsableException("Missing StorageVolume.isEmulated()");
+                }
+                return (Boolean) sMethod_isEmulated.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageVolume.isEmulated()", e);
+            }
+        }
+
+        String getUuid() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getUuid == null) {
+                    throw new WrapperNotUsableException("Missing StorageVolume.getUuid()");
+                }
+                return (String) sMethod_getUuid.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageVolume.getUuid()", e);
+            }
+        }
+
+        String getPath() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getPath == null) {
+                    throw new WrapperNotUsableException("Missing StorageVolume.getPath()");
+                }
+                return (String) sMethod_getPath.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageVolume.getPath()", e);
+            }
+        }
+
+        String getState() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getState == null) {
+                    throw new WrapperNotUsableException("Missing StorageVolume.getState()");
+                }
+                return (String) sMethod_getState.invoke(mObject);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageVolume.getState()", e);
+            }
+        }
+    }
+
+    private static class StorageManagerWrapper {
+        private static Method sMethod_getVolumes;
+        private static Method sMethod_getVolumeList;
+
+        private final StorageManager mSM;
+
+        static {
+            try {
+                sMethod_getVolumes = StorageManager.class.getDeclaredMethod("getVolumes");
+                sMethod_getVolumeList = StorageManager.class.getDeclaredMethod("getVolumeList");
+            } catch (NoSuchMethodException e) {
+                Log.e(TAG, "Missing method in StorageManager", e);
+            }
+        }
+
+        StorageManagerWrapper(StorageManager sm) {
+            mSM = sm;
+        }
+
+        VolumeInfoWrapper[] getVolumes() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getVolumes == null) {
+                    throw new WrapperNotUsableException("Missing StorageManager.getVolumes()");
+                }
+
+                List<?> volumes = (List<?>) sMethod_getVolumes.invoke(mSM);
+                VolumeInfoWrapper[] result = new VolumeInfoWrapper[volumes.size()];
+                for (int i = 0; i < volumes.size(); i++) {
+                    result[i] = new VolumeInfoWrapper(volumes.get(i));
+                }
+                return result;
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageManager.getVolumes()", e);
+            }
+        }
+
+        StorageVolumeWrapper[] getVolumeList() throws WrapperNotUsableException {
+            try {
+                if (sMethod_getVolumeList == null) {
+                    throw new WrapperNotUsableException("Missing StorageManager.getVolumeList()");
+                }
+
+                Object[] volumes = (Object[]) sMethod_getVolumeList.invoke(mSM);
+                StorageVolumeWrapper[] result = new StorageVolumeWrapper[volumes.length];
+                for (int i = 0; i < volumes.length; i++) {
+                    result[i] = new StorageVolumeWrapper(volumes[i]);
+                }
+                return result;
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("StorageManager.getVolumeList()", e);
+            }
+        }
+    }
+
+    private static class UserHandleWrapper {
+        private static Method sMethod_myUserId;
+
+        static {
+            try {
+                sMethod_myUserId = UserHandle.class.getDeclaredMethod("myUserId");
+            } catch (NoSuchMethodException e) {
+                Log.e(TAG, "Missing method in UserHandle", e);
+            }
+        }
+
+        static int myUserId() throws WrapperNotUsableException {
+            try {
+                if (sMethod_myUserId == null) {
+                    throw new WrapperNotUsableException("Missing UserHandle.myUserId()");
+                }
+
+                return (Integer) sMethod_myUserId.invoke(null);
+            } catch (Exception e) {
+                throw new WrapperNotUsableException("UserHandle.myUserId()", e);
+            }
+        }
+    }
+
     private static boolean isUriForDocumentTree(Uri uri) {
         List<String> segments = uri.getPathSegments();
         return segments.size() > 0 && segments.get(0).equals("tree");
@@ -63,60 +357,88 @@ public class FileUtils {
 
     @SuppressLint("NewApi")
     private static String getPathFromDocumentsUri(Context context, Uri uri, boolean isNeuteredSaf) {
-        // Based on
-        // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
         StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+        StorageManagerWrapper smw = new StorageManagerWrapper(sm);
 
-        try {
-            Class<? extends StorageManager> StorageManager = sm.getClass();
-            Method getVolumeList = StorageManager.getDeclaredMethod("getVolumeList");
-            Object[] vols = (Object[]) getVolumeList.invoke(sm);
-
-            Class<?> StorageVolume = Class.forName("android.os.storage.StorageVolume");
-            Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
-            Method isEmulated = StorageVolume.getDeclaredMethod("isEmulated");
-            Method getUuid = StorageVolume.getDeclaredMethod("getUuid");
-            Method getPath = StorageVolume.getDeclaredMethod("getPath");
-
-            // As of AOSP 4.4.2 in ExternalStorageProvider.java
-            final String ROOT_ID_PRIMARY_EMULATED = "primary";
-
-            String[] split;
-            if (isUriForDocumentTree(uri)) {
-                if (isNeuteredSaf) {
-                    split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
-                } else {
-                    split = DocumentsContract.getTreeDocumentId(uri).split(":");
-                }
+        String[] split;
+        if (isUriForDocumentTree(uri)) {
+            if (isNeuteredSaf) {
+                split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
             } else {
-                if (isNeuteredSaf) {
-                    split = DocumentsContractCompat.getDocumentId(uri).split("\0");
-                } else {
-                    split = DocumentsContract.getDocumentId(uri).split(":");
-                }
+                split = DocumentsContract.getTreeDocumentId(uri).split(":");
             }
+        } else {
+            if (isNeuteredSaf) {
+                split = DocumentsContractCompat.getDocumentId(uri).split("\0");
+            } else {
+                split = DocumentsContract.getDocumentId(uri).split(":");
+            }
+        }
 
-            String volId;
-            for (Object vol : vols) {
-                if ((Boolean) isPrimary.invoke(vol) && (Boolean) isEmulated.invoke(vol)) {
-                    volId = ROOT_ID_PRIMARY_EMULATED;
-                } else if (getUuid.invoke(vol) != null) {
-                    volId = (String) getUuid.invoke(vol);
-                } else {
-                    Log.e("DualBootPatcher", "Missing UUID for " + getPath.invoke(vol));
+        // Android >= 6.0
+        try {
+            VolumeInfoWrapper[] volumes = smw.getVolumes();
+            int userId = UserHandleWrapper.myUserId();
+
+            for (VolumeInfoWrapper volume : volumes) {
+                if (!volume.isMountedReadable()) {
                     continue;
                 }
 
-                if (volId.equals(split[0])) {
-                    return getPath.invoke(vol) + File.separator + split[1];
+                String id;
+
+                if (VolumeInfoWrapper.TYPE_EMULATED != null &&
+                        volume.getType() == VolumeInfoWrapper.TYPE_EMULATED) {
+                    id = ROOT_ID_PRIMARY_EMULATED;
+                } else if (VolumeInfoWrapper.TYPE_PUBLIC != null &&
+                        volume.getType() == VolumeInfoWrapper.TYPE_PUBLIC) {
+                    id = volume.getFsUuid();
+                } else {
+                    continue;
+                }
+
+                if (split[0].equals(id)) {
+                    return volume.getPathForUser(userId) + File.separator + split[1];
                 }
             }
 
+            Log.w(TAG, "Cannot find volume for: " + split[0]);
             return null;
-        } catch (Exception e) {
-            Log.e("DualBootPatcher", "Java reflection failure: " + e);
-            return null;
+        } catch (WrapperNotUsableException e) {
+            Log.w(TAG, "Failed to get volumes using StorageManager.getVolumes()", e);
         }
+
+        // Android < 6.0
+        try {
+            StorageVolumeWrapper[] volumes = smw.getVolumeList();
+            for (StorageVolumeWrapper volume : volumes) {
+                final boolean mounted = Environment.MEDIA_MOUNTED.equals(volume.getState())
+                        || Environment.MEDIA_MOUNTED_READ_ONLY.equals(volume.getState());
+                if (!mounted) {
+                    continue;
+                }
+
+                String id;
+
+                if (volume.isPrimary() && volume.isEmulated()) {
+                    id = ROOT_ID_PRIMARY_EMULATED;
+                } else if ((id = volume.getUuid()) == null) {
+                    continue;
+                }
+
+                if (split[0].equals(id)) {
+                    return volume.getPath() + File.separator + split[1];
+                }
+            }
+
+            Log.w(TAG, "Cannot find volume for: " + split[0]);
+            return null;
+        } catch (WrapperNotUsableException e) {
+            Log.w(TAG, "Failed to get volumes using StorageManager.getVolumeList()", e);
+        }
+
+        Log.w(TAG, "Both methods failed. Is this Android?");
+        return null;
     }
 
     @SuppressLint("NewApi")
@@ -357,27 +679,19 @@ public class FileUtils {
         }
     }
 
-    public static boolean zipExtractFile(String zipFile, String filename, String destFile) {
-        ZipFile zf = null;
+    public static boolean zipExtractFile(Context context, Uri uri, String filename,
+                                         String destFile) {
+        ZipInputStream zis = null;
         FileOutputStream fos = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().equals(filename)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(filename)) {
                     fos = new FileOutputStream(destFile);
-                    InputStream is = zf.getInputStream(ze);
-                    byte[] buffer = new byte[10240];
-
-                    int len;
-                    while ((len = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-
+                    IOUtils.copy(zis, fos);
                     return true;
                 }
             }
@@ -386,13 +700,7 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            //IOUtils.closeQuietly(zf);
-            try {
-                if (zf != null) {
-                    zf.close();
-                }
-            } catch (IOException e) {
-            }
+            IOUtils.closeQuietly(zis);
             IOUtils.closeQuietly(fos);
         }
 
@@ -436,5 +744,50 @@ public class FileUtils {
 
         String decimal = String.format("%." + precision + "f", (double) size / abbrev.factor);
         return context.getString(abbrev.stringResId, decimal);
+    }
+
+    public static class UriMetadata {
+        public Uri uri;
+        public String displayName;
+        public long size;
+        public String mimeType;
+    }
+
+    public static UriMetadata[] queryUriMetadata(ContentResolver cr, Uri... uris) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        UriMetadata[] metadatas = new UriMetadata[uris.length];
+        for (int i = 0; i < metadatas.length; i++) {
+            UriMetadata metadata = new UriMetadata();
+            metadatas[i] = metadata;
+            metadata.uri = uris[i];
+            metadata.mimeType = cr.getType(metadata.uri);
+
+            if ("content".equals(metadata.uri.getScheme())) {
+                Cursor cursor = cr.query(metadata.uri, null, null, null, null, null);
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+
+                        metadata.displayName = cursor.getString(nameIndex);
+                        if (cursor.isNull(sizeIndex)) {
+                            metadata.size = -1;
+                        } else {
+                            metadata.size = cursor.getLong(sizeIndex);
+                        }
+                    }
+                } finally {
+                    IOUtils.closeQuietly(cursor);
+                }
+            } else if ("file".equals(metadata.uri.getScheme())) {
+                metadata.displayName = metadata.uri.getLastPathSegment();
+                metadata.size = new File(metadata.uri.getPath()).length();
+            } else {
+                throw new IllegalArgumentException("Cannot handle URI: " + metadata.uri);
+            }
+        }
+
+        return metadatas;
     }
 }

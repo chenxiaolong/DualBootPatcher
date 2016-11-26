@@ -57,8 +57,23 @@ public class LibMiscStuff {
         boolean find_string_in_file(String path, String str, IntByReference result);
 
         void mblog_set_logcat();
+
+        int get_pid();
+
+        Pointer read_link(String path);
     }
 
     public static final CLibrary INSTANCE =
             (CLibrary) Native.loadLibrary("miscstuff", CLibrary.class);
+
+    public static String readLink(String path) {
+        Pointer p = INSTANCE.read_link(path);
+        if (p == null) {
+            return null;
+        }
+
+        String result = p.getString(0);
+        Native.free(Pointer.nativeValue(p));
+        return result;
+    }
 }

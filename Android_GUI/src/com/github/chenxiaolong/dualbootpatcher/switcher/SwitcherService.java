@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -217,9 +218,9 @@ public class SwitcherService extends ThreadPoolService {
 
     // Verify zip
 
-    public int verifyZip(String path) {
+    public int verifyZip(Uri uri) {
         int taskId = sNewTaskId.getAndIncrement();
-        VerifyZipTask task = new VerifyZipTask(taskId, this, path);
+        VerifyZipTask task = new VerifyZipTask(taskId, this, uri);
         addTask(taskId, task);
         return taskId;
     }

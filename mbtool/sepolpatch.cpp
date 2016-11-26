@@ -953,7 +953,7 @@ static bool fix_data_media_rules(policydb_t *pdb)
         LOGE("%s: Malformed context string: %s", path, context.c_str());
         return false;
     }
-    std::string type = pieces[2];
+    const std::string &type = pieces[2];
 
     if (type == expected_type) {
         return true;
@@ -961,7 +961,12 @@ static bool fix_data_media_rules(policydb_t *pdb)
 
     LOGV("Copying %s rules to %s because of improper %s SELinux label",
          expected_type, type.c_str(), path);
-    return copy_avtab_rules(pdb, expected_type, type.c_str());
+    ff(copy_avtab_rules(pdb, expected_type, type.c_str()));
+
+    // Required for MLS on Android 7.1
+    ff(selinux_set_attribute(pdb, type.c_str(), "mlstrustedobject"));
+
+    return true;
 }
 
 static bool create_mbtool_types(policydb_t *pdb)
