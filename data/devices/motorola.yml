@@ -377,3 +377,45 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p37
+
+- name: Motorola Moto G4 & G4 Plus Edition
+  id: athene
+  codenames:
+    - athene
+    - athene_f
+    - xt1621
+    - xt1622
+    - xt1625
+    - xt1626
+    - xt1640
+    - xt1641
+    - xt1642
+    - xt1643
+    - xt1644
+
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p47
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p46
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p48
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p29
