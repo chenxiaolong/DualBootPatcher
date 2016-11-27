@@ -230,7 +230,7 @@ char * read_link(const char *path)
         n = readlink(path, buf, buf_size);
         if (n < 0) {
             return nullptr;
-        } else if ((size_t) n == buf_size - 1) {
+        } else if ((size_t) n == buf_size) {
             char *new_buf = (char *) realloc(buf, buf_size << 1);
             if (!new_buf) {
                 goto error;
@@ -242,6 +242,8 @@ char * read_link(const char *path)
         }
     }
 
+    // n is always less then buf_size because the buffer size is doubled when
+    // n == buf_size
     buf[n] = '\0';
     return buf;
 
