@@ -50,6 +50,8 @@ import java.util.zip.ZipInputStream;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
 import io.noobdev.neuteredsaf.DocumentsApplication;
+import io.noobdev.neuteredsaf.VolumeUtils;
+import io.noobdev.neuteredsaf.VolumeUtils.Volume;
 import io.noobdev.neuteredsaf.compat.DocumentsContractCompat;
 import io.noobdev.neuteredsaf.providers.ExternalStorageProvider;
 import io.noobdev.neuteredsaf.providers.ProviderConstants;
@@ -356,23 +358,15 @@ public class FileUtils {
     }
 
     @SuppressLint("NewApi")
-    private static String getPathFromDocumentsUri(Context context, Uri uri, boolean isNeuteredSaf) {
+    private static String getPathFromDocumentsUri(Context context, Uri uri) {
         StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
         StorageManagerWrapper smw = new StorageManagerWrapper(sm);
 
         String[] split;
         if (isUriForDocumentTree(uri)) {
-            if (isNeuteredSaf) {
-                split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
-            } else {
-                split = DocumentsContract.getTreeDocumentId(uri).split(":");
-            }
+            split = DocumentsContract.getTreeDocumentId(uri).split(":");
         } else {
-            if (isNeuteredSaf) {
-                split = DocumentsContractCompat.getDocumentId(uri).split("\0");
-            } else {
-                split = DocumentsContract.getDocumentId(uri).split(":");
-            }
+            split = DocumentsContract.getDocumentId(uri).split(":");
         }
 
         // Android >= 6.0
@@ -466,18 +460,47 @@ public class FileUtils {
         return null;
     }
 
+    @SuppressLint("NewApi")
+    private static String getPathFromNeuteredSafUri(Context context, Uri uri) {
+        String[] split;
+        if (isUriForDocumentTree(uri)) {
+            split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
+        } else {
+            split = DocumentsContractCompat.getDocumentId(uri).split("\0");
+        }
+
+        Volume[] volumes = VolumeUtils.getVolumes();
+
+        for (Volume volume : volumes) {
+            String id;
+
+            if (volume.isPrimary) {
+                id = ROOT_ID_PRIMARY_EMULATED;
+            } else if ((id = volume.id) == null) {
+                continue;
+            }
+
+            if (split[0].equals(id)) {
+                return volume.mountPoint + File.separator + split[1];
+            }
+        }
+
+        Log.w(TAG, "Cannot find volume for: " + split[0]);
+        return null;
+    }
+
     public static String getPathFromUri(Context context, Uri uri) {
         String neuteredSafAuthority =
                 DocumentsApplication.getApplicationId() + ExternalStorageProvider.AUTHORITY_SUFFIX;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
                 ("com.android.externalstorage.documents").equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri, false);
+            return getPathFromDocumentsUri(context, uri);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
                 && ("com.android.providers.downloads.documents").equals(uri.getAuthority())) {
             return getPathFromDownloadsUri(context, uri);
         } else if (neuteredSafAuthority.equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri, true);
+            return getPathFromNeuteredSafUri(context, uri);
         } else {
             return uri.getPath();
         }
