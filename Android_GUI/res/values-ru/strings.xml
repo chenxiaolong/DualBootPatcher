@@ -472,6 +472,10 @@
     <plurals name="force_update_ramdisk_countdown">
         <item quantity="one">Вы в %1$d шаге от принудительного
             обновления ramdisk.</item>
+        <item quantity="few">(??) Вы в %1$d шагах от принудительного
+            обновления ramdisk.</item>
+        <item quantity="many">(??) Вы в %1$d шагах от принудительного
+            обновления ramdisk.</item>
         <item quantity="other">Вы в %1$d шагах от принудительного
             обновления ramdisk.</item>
     </plurals>

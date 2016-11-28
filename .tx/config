@@ -9,3 +9,4 @@ file_filter = Android_GUI/res/values-<lang>/strings.xml
 source_file = Android_GUI/res/values/strings.xml
 source_lang = en
 type = ANDROID
+minimum_perc = 60
