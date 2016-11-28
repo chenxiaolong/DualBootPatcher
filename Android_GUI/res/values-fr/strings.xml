@@ -129,6 +129,7 @@ Continuer?</string>
 spécifiées.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM en cours d\'exécution ne peut pas être effacée.</string>
+  <!--Switcher service notification title-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo de la rom</string>
@@ -217,6 +218,9 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <!--Toast message shown if no backup/restore targets are selected-->
   <!--Backup name input dialog description-->
   <!--Backup name input field hint for backup name dialog-->
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
   <!--Title of the device selection box in the patcher-->

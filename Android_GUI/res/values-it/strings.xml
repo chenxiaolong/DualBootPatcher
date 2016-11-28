@@ -132,6 +132,7 @@ Continuare</string>
   <string name="wipe_rom_none_selected">Nessun wipe è stato effettuato perchè nessuna opzione è stata selezionata.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM attualmente in uso non può essere eliminata.</string>
+  <!--Switcher service notification title-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">Il nome ed i thumbnail non possono essere caricati perchè è stato negato l\'accesso alla memoria interna.</string>
   <!--Accessibility text for the ROM logo images-->
@@ -234,6 +235,9 @@ Continuare</string>
   <!--Toast message shown if no backup/restore targets are selected-->
   <!--Backup name input dialog description-->
   <!--Backup name input field hint for backup name dialog-->
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">Il patcher non può patchare i file senza l\'accesso alla memoria interna. Per favore, garantisci l\'accesso per patchare i file.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->

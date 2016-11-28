@@ -137,6 +137,7 @@ Continuar com a troca de ROM?</string>
   <string name="wipe_rom_none_selected">Nenhuma limpeza foi feita por que os alvos não foram especificados.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">A ROM que esta rodando no momento não pode ser limpa.</string>
+  <!--Switcher service notification title-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">O nome e a miniatura da ROM não pôde ser carregado por que as permissões de armazenamento foram negadas.</string>
   <!--Accessibility text for the ROM logo images-->
@@ -267,6 +268,9 @@ Você gostaria de alterar o local de instalação?</string>
   <string name="br_name_dialog_desc">Entre um nome para o backup. Ele não pode conter barra (\"/\") ou ser \".\" ou \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
   <string name="br_name_dialog_hint">Entre com o nome do backup...</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">O adaptador não pode modificar os arquivos sem o acesso a leitura e escrita no armazenamento interno.
 Por favor garanta as permissões de armazenamento para poder adaptar os arquivos.</string>
