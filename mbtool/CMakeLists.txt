@@ -62,6 +62,7 @@ set(MBTOOL_BASE_SOURCES
     daemon.cpp
     daemon_v3.cpp
     decrypt.cpp
+    emergency.cpp
     init.cpp
     main.cpp
     miniadbd.cpp
