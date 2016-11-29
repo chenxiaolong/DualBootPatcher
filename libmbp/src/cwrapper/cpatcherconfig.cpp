@@ -155,23 +155,6 @@ void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path)
 }
 
 /*!
- * \brief Get version number of the patcher
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return Version number
- *
- * \sa PatcherConfig::version()
- */
-char * mbp_config_version(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return string_to_cstring(config->version());
-}
-
-/*!
  * \brief Get list of Patcher IDs
  *
  * \note The returned array should be freed with `mbp_free_array()` when it

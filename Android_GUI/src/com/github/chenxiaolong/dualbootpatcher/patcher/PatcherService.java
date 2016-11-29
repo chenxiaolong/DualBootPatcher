@@ -29,6 +29,7 @@ import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbcommon;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
@@ -595,7 +596,8 @@ public class PatcherService extends ThreadPoolService {
             String outputName = queryDisplayName(cr, mOutputUri);
 
             Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
-            Log.d(TAG, "libmbp version: " + mPC.getVersion());
+            Log.d(TAG, "libmbp version: " + LibMbcommon.getVersion() +
+                    " (" + LibMbcommon.getGitVersion() + ")");
             Log.d(TAG, "Patching file:");
             Log.d(TAG, "- Patcher ID:  " + mPatcherId);
             Log.d(TAG, "- Input URI:   " + mInputUri);

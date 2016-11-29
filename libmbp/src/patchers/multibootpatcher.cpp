@@ -25,6 +25,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "mbcommon/version.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbpio/delete.h"
@@ -697,7 +698,7 @@ std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
 "#\n";
 
     out += "mbtool.installer.version=";
-    out += pc->version();
+    out += mb::version();
     out += "\n";
 
     out +=
