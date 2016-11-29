@@ -21,6 +21,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 
@@ -50,6 +51,8 @@ public final class VerifyZipTask extends BaseServiceTask {
 
         VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(getContext(), mUri);
         String romId = SwitcherUtils.getTargetInstallLocation(getContext(), mUri);
+
+        LogUtils.dump("verify-zip.log");
 
         synchronized (mStateLock) {
             mResult = result;
