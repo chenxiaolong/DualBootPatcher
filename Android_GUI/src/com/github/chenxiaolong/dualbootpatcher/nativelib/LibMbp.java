@@ -169,7 +169,6 @@ public class LibMbp {
         static native Pointer mbp_config_temp_directory(CPatcherConfig pc);
         static native void mbp_config_set_data_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_temp_directory(CPatcherConfig pc, String path);
-        static native Pointer mbp_config_version(CPatcherConfig pc);
         static native Pointer mbp_config_patchers(CPatcherConfig pc);
         static native Pointer mbp_config_autopatchers(CPatcherConfig pc);
         static native Pointer mbp_config_ramdiskpatchers(CPatcherConfig pc);
@@ -1244,12 +1243,6 @@ public class LibMbp {
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_temp_directory(mCPatcherConfig, path);
-        }
-
-        public String getVersion() {
-            validate(mCPatcherConfig, PatcherConfig.class, "getVersion");
-            Pointer p = CWrapper.mbp_config_version(mCPatcherConfig);
-            return getStringAndFree(p);
         }
 
         public String[] getPatchers() {

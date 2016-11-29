@@ -40,6 +40,9 @@
 // Legacy properties
 #include "external/legacy_property_service.h"
 
+// libmbcommon
+#include "mbcommon/version.h"
+
 // libmblog
 #include "mblog/logging.h"
 
@@ -1203,6 +1206,8 @@ void Installer::on_cleanup(Installer::ProceedState ret)
 
 Installer::ProceedState Installer::install_stage_initialize()
 {
+    LOGD("Installer version: %s (%s)", mb::version(), mb::git_version());
+
     LOGD("[Installer] Initialization stage");
 
     std::vector<util::exists_info> info{
@@ -1277,8 +1282,6 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
 Installer::ProceedState Installer::install_stage_check_device()
 {
     LOGD("[Installer] Device verification stage");
-
-    LOGD("libmbp version: %s", _pc.version().c_str());
 
     std::vector<unsigned char> contents;
     if (!util::file_read_all(_temp + "/device.json", &contents)) {

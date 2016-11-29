@@ -21,6 +21,8 @@
 
 #include "mbcommon/common.h"
 
+#ifdef __cplusplus
+
 namespace mb
 {
 
@@ -28,3 +30,13 @@ MB_EXPORT const char * version();
 MB_EXPORT const char * git_version();
 
 }
+
+extern "C" {
+#endif
+
+MB_EXPORT const char * mb_version();
+MB_EXPORT const char * mb_git_version();
+
+#ifdef __cplusplus
+}
+#endif

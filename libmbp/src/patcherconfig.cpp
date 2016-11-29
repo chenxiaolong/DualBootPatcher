@@ -23,8 +23,6 @@
 
 #include <cassert>
 
-#include "mbcommon/version.h"
-
 #include "mbp/patcherinterface.h"
 #include "mbp/private/fileutils.h"
 
@@ -48,8 +46,6 @@ public:
     std::string dataDir;
     std::string tempDir;
 
-    std::string version;
-
     // Errors
     ErrorCode error;
 
@@ -69,7 +65,6 @@ public:
 
 PatcherConfig::PatcherConfig() : m_impl(new Impl())
 {
-    m_impl->version = mb::version();
 }
 
 PatcherConfig::~PatcherConfig()
@@ -150,16 +145,6 @@ void PatcherConfig::setDataDirectory(std::string path)
 void PatcherConfig::setTempDirectory(std::string path)
 {
     m_impl->tempDir = std::move(path);
-}
-
-/*!
- * \brief Get version number of the patcher
- *
- * \return Version number
- */
-std::string PatcherConfig::version() const
-{
-    return m_impl->version;
 }
 
 /*!
