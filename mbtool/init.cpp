@@ -60,7 +60,6 @@
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
-#include "mbutil/vibrate.h"
 
 #include "external/property_service.h"
 
@@ -68,9 +67,9 @@
 #include "initwrapper/util.h"
 #include "daemon.h"
 #include "decrypt.h"
+#include "emergency.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
-#include "reboot.h"
 #include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
@@ -1232,64 +1231,6 @@ static bool launch_boot_menu(bool has_encryption)
     return true;
 }
 
-#define KLOG_CLOSE         0
-#define KLOG_OPEN          1
-#define KLOG_READ          2
-#define KLOG_READ_ALL      3
-#define KLOG_READ_CLEAR    4
-#define KLOG_CLEAR         5
-#define KLOG_CONSOLE_OFF   6
-#define KLOG_CONSOLE_ON    7
-#define KLOG_CONSOLE_LEVEL 8
-#define KLOG_SIZE_UNREAD   9
-#define KLOG_SIZE_BUFFER   10
-
-static bool dump_kernel_log(const char *file)
-{
-    int len = klogctl(KLOG_SIZE_BUFFER, nullptr, 0);
-    if (len < 0) {
-        LOGE("Failed to get kernel log buffer size: %s", strerror(errno));
-        return false;
-    }
-
-    char *buf = (char *) malloc(len);
-    if (!buf) {
-        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
-        return false;
-    }
-
-    auto free_buf = util::finally([&]{
-        free(buf);
-    });
-
-    len = klogctl(KLOG_READ_ALL, buf, len);
-    if (len < 0) {
-        LOGE("Failed to read kernel log buffer: %s", strerror(errno));
-        return false;
-    }
-
-    autoclose::file fp(autoclose::fopen(file, "wb"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
-        return false;
-    }
-
-    if (len > 0) {
-        if (fwrite(buf, len, 1, fp.get()) != 1) {
-            LOGE("%s: Failed to write data: %s", file, strerror(errno));
-            return false;
-        }
-        if (buf[len - 1] != '\n') {
-            if (fputc('\n', fp.get()) == EOF) {
-                LOGE("%s: Failed to write data: %s", file, strerror(errno));
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 #if RUN_ADB_BEFORE_EXEC_OR_REBOOT
 static void run_adb()
 {
@@ -1314,83 +1255,13 @@ static void run_adb()
 }
 #endif
 
-static bool emergency_reboot()
+static bool critical_failure()
 {
 #if RUN_ADB_BEFORE_EXEC_OR_REBOOT
     run_adb();
 #endif
 
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-
-    LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
-
-    // Some devices don't have /proc/last_kmsg, so we'll attempt to save the
-    // kernel log to /data/media/0/MultiBoot/kernel.log
-    if (!util::is_mounted("/data")) {
-        LOGW("/data is not mounted. Attempting to mount /data");
-
-        // Try mounting /data in case we couldn't get through the fstab mounting
-        // steps. (This is an ugly brute force method...)
-        std::vector<std::string> data_block_devs;
-
-        std::vector<unsigned char> contents;
-        util::file_read_all(DEVICE_JSON_PATH, &contents);
-        contents.push_back('\0');
-
-        MbDeviceJsonError error;
-        Device *device = mb_device_new_from_json(
-                (char *) contents.data(), &error);
-        if (device) {
-            auto devs = mb_device_data_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    data_block_devs.push_back(*it);
-                }
-            }
-            mb_device_free(device);
-        }
-
-        // Some catch-all paths to increase our chances of getting a usable log
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/data");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/DATA");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/userdata");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/USERDATA");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/UDA");
-
-        for (const std::string &block_dev : data_block_devs) {
-            if (mount(block_dev.c_str(), "/data", "auto", 0, "") == 0) {
-                LOGW("Mounted %s at /data", block_dev.c_str());
-                break;
-            } else {
-                LOGW("Failed to mount %s at /data: %s",
-                     block_dev.c_str(), strerror(errno));
-            }
-        }
-    }
-
-    LOGW("Dumping kernel log to %s", MULTIBOOT_LOG_KERNEL);
-
-    // Remove old log
-    remove(MULTIBOOT_LOG_KERNEL);
-
-    // Write new log
-    util::mkdir_parent(MULTIBOOT_LOG_KERNEL, 0775);
-    dump_kernel_log(MULTIBOOT_LOG_KERNEL);
-
-    // Set file attributes on log file
-    fix_multiboot_permissions();
-
-    sync();
-    umount("/data");
-
-    // Does not return if successful
-    reboot_directly("recovery");
-
-    return false;
+    return emergency_reboot();
 }
 
 int init_main(int argc, char *argv[])
@@ -1459,28 +1330,29 @@ int init_main(int argc, char *argv[])
     util::file_read_all(DEVICE_JSON_PATH, &contents);
     contents.push_back('\0');
 
+    // Start probing for devices so we have somewhere to write logs for
+    // critical_failure()
+    device_init(false);
+
     MbDeviceJsonError error;
     Device *device = mb_device_new_from_json((char *) contents.data(), &error);
     if (!device) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     } else if (mb_device_validate(device) != 0) {
         LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
+
+    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
+    symlink_base_dir(device);
 
     add_props_to_default_prop(device);
 
     // initialize properties
     properties_setup();
-
-    // Start probing for devices
-    device_init(false);
-
-    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
-    symlink_base_dir(device);
 
     std::string fstab(find_fstab());
 
@@ -1503,7 +1375,7 @@ int init_main(int argc, char *argv[])
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
     if (!rom) {
         LOGE("Unknown ROM ID: %s", rom_id.c_str());
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1516,7 +1388,7 @@ int init_main(int argc, char *argv[])
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1548,13 +1420,13 @@ int init_main(int argc, char *argv[])
         if (::property_get(PROP_CRYPTO_STATE, value) <= 0
                 || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
             LOGE("Failed to decrypt device");
-            emergency_reboot();
+            critical_failure();
             return EXIT_FAILURE;
         }
 
         if (!util::is_mounted("/raw/data")) {
             LOGE("/raw/data did not get mounted");
-            emergency_reboot();
+            critical_failure();
             return EXIT_FAILURE;
         }
     }
@@ -1568,7 +1440,7 @@ int init_main(int argc, char *argv[])
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
         LOGE("Failed to mount ROM directories and images");
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1605,7 +1477,7 @@ int init_main(int argc, char *argv[])
                             SELINUX_DEFAULT_POLICY_FILE,
                             SELinuxPatch::MAIN)) {
             LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
-            emergency_reboot();
+            critical_failure();
             return EXIT_FAILURE;
         }
     }
@@ -1641,7 +1513,7 @@ int init_main(int argc, char *argv[])
     LOGD("Launching real init ...");
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
-    emergency_reboot();
+    critical_failure();
     return EXIT_FAILURE;
 }
 
