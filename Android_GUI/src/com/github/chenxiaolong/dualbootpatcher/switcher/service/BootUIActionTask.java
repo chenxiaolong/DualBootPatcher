@@ -345,7 +345,7 @@ public final class BootUIActionTask extends BaseServiceTask {
 
             // Save log
             if (mAction != BootUIAction.GET_VERSION) {
-                LogUtils.dump("boot-ui-install.log");
+                LogUtils.dump("boot-ui-action.log");
             }
         }
 
