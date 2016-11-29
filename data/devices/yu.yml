@@ -48,7 +48,8 @@
   id: jalebi
   codenames:
     - YUNIQUE
-      - jalebi
+    - jalebi
+    - YU4711
   architecture: armeabi-v7a
 
   block_devs:
