@@ -17,8 +17,16 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.MainActivity;
+import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
@@ -48,6 +56,8 @@ public class SwitcherService extends ThreadPoolService {
 
     private static final String THREAD_POOL_DEFAULT = "default";
     private static final int THREAD_POOL_DEFAULT_THREADS = 2;
+
+    private static final int NOTIFICATION_ID = 1;
 
     public boolean addCallback(int taskId, BaseServiceTaskListener callback) {
         BaseServiceTask task = getTask(taskId);
@@ -136,6 +146,29 @@ public class SwitcherService extends ThreadPoolService {
         super.onCreate();
 
         addThreadPool(THREAD_POOL_DEFAULT, THREAD_POOL_DEFAULT_THREADS);
+
+        setForegroundNotification();
+    }
+
+    private void setForegroundNotification() {
+        Intent startupIntent = new Intent(this, MainActivity.class);
+        startupIntent.setAction(Intent.ACTION_MAIN);
+        startupIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        PendingIntent startupPendingIntent = PendingIntent.getActivity(
+                this, 0,  startupIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentIntent(startupPendingIntent)
+                .setContentTitle(getString(R.string.switcher_service_background_service))
+                .setPriority(Notification.PRIORITY_MIN);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            builder.setCategory(Notification.CATEGORY_SERVICE);
+        }
+
+        startForeground(NOTIFICATION_ID, builder.build());
     }
 
     // Get ROMs state
@@ -185,9 +218,9 @@ public class SwitcherService extends ThreadPoolService {
 
     // Verify zip
 
-    public int verifyZip(String path) {
+    public int verifyZip(Uri uri) {
         int taskId = sNewTaskId.getAndIncrement();
-        VerifyZipTask task = new VerifyZipTask(taskId, this, path);
+        VerifyZipTask task = new VerifyZipTask(taskId, this, uri);
         addTask(taskId, task);
         return taskId;
     }

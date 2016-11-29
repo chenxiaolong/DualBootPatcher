@@ -144,63 +144,6 @@ static bool load_config_files()
     return true;
 }
 
-static bool patch_sepolicy()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    auto destroy_pdb = util::finally([&]{
-        policydb_destroy(&pdb);
-    });
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
-        return false;
-    }
-
-    LOGD("Policy version: %u", pdb.policyvers);
-
-    // Allow installd to connect to our socket
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "accept");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "listen");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "read");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "write");
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
-        return false;
-    }
-
-    return true;
-}
-
-static void patch_sepolicy_wrapper()
-{
-    struct stat sb;
-    if (stat("/sys/fs/selinux", &sb) < 0) {
-        LOGV("SELinux not supported. No need to modify policy");
-    } else {
-        LOGV("Patching SELinux policy to allow installd connection");
-        int attempt;
-        for (attempt = 0; attempt < 5; ++attempt) {
-            LOGV("Patching SELinux policy [Attempt %d/%d]", attempt + 1, 5);
-            if (!patch_sepolicy()) {
-                sleep(1);
-            } else {
-                break;
-            }
-        }
-
-        if (attempt == 5) {
-            LOGW("Failed to patch current SELinux policy");
-        }
-    }
-}
-
 static bool prepare_appsync()
 {
     // Detect directory locations
@@ -883,9 +826,6 @@ static bool hijack_socket(bool can_appsync)
 
     // Put the new fd in the environment
     put_socket_to_env(SOCKET_PATH, new_fd);
-
-    // Patch SELinux policy
-    patch_sepolicy_wrapper();
 
     LOGD("Launching installd");
     pid_t pid = spawn_installd();

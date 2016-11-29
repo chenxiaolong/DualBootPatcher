@@ -36,7 +36,6 @@
 #include "auditd.h"
 #include "daemon.h"
 #include "decrypt.h"
-#include "file_contexts.h"
 #include "init.h"
 #include "miniadbd.h"
 #include "sepolpatch.h"
@@ -80,7 +79,6 @@ struct tool tools[] = {
     { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
     { "decrypt", mb::decrypt_main },
-    { "file_contexts", mb::file_contexts_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
     { "sepolpatch", mb::sepolpatch_main },

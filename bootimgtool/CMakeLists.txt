@@ -1,19 +1,38 @@
-if(${MBP_BUILD_TARGET} STREQUAL desktop)
+if(${MBP_BUILD_TARGET} STREQUAL desktop
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     set(BOOTIMGTOOL_SOURCES
         bootimgtool.cpp
     )
 
-    add_definitions(
-        -DMB_DYNAMIC_LINK
-    )
-
     add_executable(bootimgtool ${BOOTIMGTOOL_SOURCES})
 
-    target_link_libraries(
-        bootimgtool
-        mbp-shared
-        mbpio-static
-    )
+    if (${MBP_BUILD_TARGET} STREQUAL desktop)
+        target_compile_definitions(
+            bootimgtool
+            PRIVATE
+            -DMB_DYNAMIC_LINK
+        )
+
+        target_link_libraries(
+            bootimgtool
+            mbp-shared
+            mbpio-static
+        )
+    else()
+        target_link_libraries(
+            bootimgtool
+            mbp-static
+            mbpio-static
+            mblog-static
+        )
+
+        set_target_properties(
+            bootimgtool
+            PROPERTIES
+            LINK_FLAGS "-static"
+            LINK_SEARCH_START_STATIC ON
+        )
+    endif()
 
     if(NOT MSVC)
         set_target_properties(

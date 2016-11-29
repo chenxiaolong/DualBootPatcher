@@ -40,6 +40,7 @@
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
+#include "mbutil/blkid.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
@@ -119,12 +120,12 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
         }
 
         // Try mounting
-        int ret = mount(rec.blk_device.c_str(),
-                        mount_point,
-                        rec.fs_type.c_str(),
-                        rec.flags,
-                        rec.fs_options.c_str());
-        if (ret < 0) {
+        bool ret = util::mount(rec.blk_device.c_str(),
+                               mount_point,
+                               rec.fs_type.c_str(),
+                               rec.flags,
+                               rec.fs_options.c_str());
+        if (!ret) {
             LOGE("Failed to mount %s (%s) at %s: %s",
                  rec.blk_device.c_str(), rec.fs_type.c_str(),
                  mount_point, strerror(errno));
@@ -158,22 +159,12 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
 
     if (devs) {
         for (auto it = devs; *it; ++it) {
-            // ext4 entry
             result.emplace_back();
             result.back().blk_device = *it;
             result.back().mount_point = "/system";
-            result.back().fs_type = "ext4";
+            result.back().fs_type = "auto";
             result.back().flags = MS_RDONLY;
-            result.back().fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-            // f2fs entry
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/system";
-            result.back().fs_type = "f2fs";
-            result.back().flags = MS_RDONLY;
-            result.back().fs_options = "background_gc=off,nodiscard";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
@@ -197,22 +188,12 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
 
     if (devs) {
         for (auto it = devs; *it; ++it) {
-            // ext4 entry
             result.emplace_back();
             result.back().blk_device = *it;
             result.back().mount_point = "/cache";
-            result.back().fs_type = "ext4";
+            result.back().fs_type = "auto";
             result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-            // f2fs entry
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/cache";
-            result.back().fs_type = "f2fs";
-            result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "background_gc=on,discard";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
@@ -236,22 +217,12 @@ static std::vector<util::fstab_rec> generic_fstab_data_entries(Device *device)
 
     if (devs) {
         for (auto it = devs; *it; ++it) {
-            // ext4 entry
             result.emplace_back();
             result.back().blk_device = *it;
             result.back().mount_point = "/data";
-            result.back().fs_type = "ext4";
+            result.back().fs_type = "auto";
             result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-            // f2fs entry
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/data";
-            result.back().fs_type = "f2fs";
-            result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "background_gc=on,discard";
+            result.back().fs_options = "";
             result.back().fs_mgr_flags = 0;
             result.back().vold_args = "check";
         }
@@ -450,19 +421,30 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
              DEFAULT_PROP_PATH, strerror(errno));
     }
 
-    LOGD("Using fuse-exfat: %d", use_fuse_exfat);
+    const char *fstype;
+    if (!util::blkid_get_fs_type(block_dev, &fstype)) {
+        LOGE("%s: Failed to detect filesystem type: %s",
+             block_dev, strerror(errno));
+    } else if (!fstype) {
+        LOGE("%s: Unknown filesystem", block_dev);
+    } else if (strcmp(fstype, "exfat") == 0) {
+        LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
-    if (use_fuse_exfat && mount_exfat_fuse(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_exfat_kernel(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_vfat(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_ext4(block_dev, mount_point)) {
-        return true;
+        auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
+        if (func(block_dev, mount_point)) {
+            return true;
+        }
+    } else if (strcmp(fstype, "vfat") == 0) {
+        if (mount_vfat(block_dev, mount_point)) {
+            return true;
+        }
+    } else if (strcmp(fstype, "ext") == 0) {
+        // Assume ext4
+        if (mount_ext4(block_dev, mount_point)) {
+            return true;
+        }
+    } else {
+        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype);
     }
 
     return false;
@@ -610,53 +592,6 @@ static bool mount_all_system_images()
     return !failed;
 }
 
-static bool create_ext4_temp_fs(const char *mount_point)
-{
-    struct stat sb;
-    if (stat(EXT4_TEMP_IMAGE, &sb) < 0) {
-        if (errno == ENOENT) {
-            const char *argv[] = {
-                "/system/bin/make_ext4fs",
-                "-l", "20M",
-                EXT4_TEMP_IMAGE,
-                nullptr
-            };
-
-            int ret = util::run_command(argv[0], argv, nullptr, nullptr, &dump,
-                                        nullptr);
-            if (ret < 0) {
-                LOGE("Failed to run make_ext4fs");
-                return false;
-            } else if (WEXITSTATUS(ret) != 0) {
-                LOGE("make_ext4fs returned non-zero exit status: %d",
-                     WEXITSTATUS(ret));
-                return false;
-            }
-        } else {
-            LOGE("%s: Failed to stat: %s", EXT4_TEMP_IMAGE, strerror(errno));
-        }
-    }
-
-    return util::mount(EXT4_TEMP_IMAGE, mount_point, "ext4", 0, "");
-}
-
-static bool create_tmpfs_temp_fs(const char *mount_point)
-{
-    return util::mount("tmpfs", mount_point, "tmpfs", 0, "mode=0755");
-}
-
-static bool create_temporary_fs(const char *mount_point)
-{
-    if (!create_ext4_temp_fs(mount_point)) {
-        LOGW("Failed to create ext4-backed temporary filesystem");
-        if (!create_tmpfs_temp_fs(mount_point)) {
-            LOGW("Failed to create tmpfs-backed temporary filesystem");
-            return false;
-        }
-    }
-    return true;
-}
-
 static bool disable_fsck(const char *fsck_binary)
 {
     SigVerifyResult result;
@@ -753,9 +688,6 @@ static bool copy_mount_exfat()
 static bool wrap_extsd_binaries()
 {
     if (mkdir(WRAPPED_BINARIES_DIR, 0755) < 0 && errno != EEXIST) {
-        return false;
-    }
-    if (!create_temporary_fs(WRAPPED_BINARIES_DIR)) {
         return false;
     }
 

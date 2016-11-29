@@ -84,6 +84,12 @@ public class MbtoolConnection implements Closeable {
      */
     private static final String HANDSHAKE_RESPONSE_UNSUPPORTED = "UNSUPPORTED";
 
+    // Paths
+
+    private static final String TMPFS_MOUNTPOINT = "/mnt/mb_tmp";
+    private static final String MBTOOL_TMPFS_PATH = TMPFS_MOUNTPOINT + "/mbtool";
+    private static final String MBTOOL_ROOTFS_PATH = "/mbtool";
+
     /** mbtool socket */
     private LocalSocket mSocket;
     /** Socket's input stream */
@@ -251,6 +257,47 @@ public class MbtoolConnection implements Closeable {
         }
     }
 
+    private static int runMbtoolDaemon(String path) {
+        return CommandUtils.runRootCommand(path, "daemon", "--replace", "--daemonize");
+    }
+
+    private static boolean launchMbtoolFromTmpfs(String path) {
+        // Mount tmpfs if it doesn't already exist
+        if (CommandUtils.runRootCommand("mountpoint", TMPFS_MOUNTPOINT) != 0
+                && CommandUtils.runRootCommand("mkdir", "-p", TMPFS_MOUNTPOINT) != 0
+                && CommandUtils.runRootCommand("mount", "-t", "tmpfs", "tmpfs", TMPFS_MOUNTPOINT) != 0) {
+            return false;
+        }
+
+        // Move away old binary if it exists
+        CommandUtils.runRootCommand("mv", MBTOOL_TMPFS_PATH, MBTOOL_TMPFS_PATH + ".bak");
+
+        // Copy new executable and execute it
+        return CommandUtils.runRootCommand("cp", path, MBTOOL_TMPFS_PATH) == 0
+                && CommandUtils.runRootCommand("chmod", "755", MBTOOL_TMPFS_PATH) == 0
+                && runMbtoolDaemon(MBTOOL_TMPFS_PATH) == 0;
+    }
+
+    private static boolean launchMbtoolFromRootfs(String path) {
+        // Make rootfs writable
+        if (CommandUtils.runRootCommand("mount", "-o", "remount,rw", "/") != 0) {
+            return false;
+        }
+
+        // Move away old binary if it exists
+        CommandUtils.runRootCommand("mv", MBTOOL_ROOTFS_PATH, MBTOOL_ROOTFS_PATH + ".bak");
+
+        // Copy new executable
+        boolean ret = CommandUtils.runRootCommand("cp", path, MBTOOL_ROOTFS_PATH) == 0
+                && CommandUtils.runRootCommand("chmod", "755", MBTOOL_ROOTFS_PATH) == 0;
+
+        // Try to make rootfs read-only
+        CommandUtils.runRootCommand("mount", "-o", "remount,ro", "/");
+
+        // Run daemon
+        return ret && runMbtoolDaemon(MBTOOL_ROOTFS_PATH) == 0;
+    }
+
     public static boolean replaceViaRoot(Context context) {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
@@ -259,14 +306,11 @@ public class MbtoolConnection implements Closeable {
 
         String mbtool = PatcherUtils.getTargetDirectory(context)
                 + "/binaries/android/" + abi + "/mbtool";
-        mbtool = mbtool.replace("'", "'\"'\"'");
 
-        return CommandUtils.runRootCommand("mount -o remount,rw /") == 0
-                && CommandUtils.runRootCommand("mv /mbtool /mbtool.bak || :") == 0
-                && CommandUtils.runRootCommand("cp '" + mbtool + "' /mbtool") == 0
-                && CommandUtils.runRootCommand("chmod 755 /mbtool") == 0
-                && CommandUtils.runRootCommand("mount -o remount,ro / || :") == 0
-                && CommandUtils.runRootCommand("/mbtool daemon --replace --daemonize") == 0;
+        // We can't run mbtool directly from /data because TouchWiz kernels severely restrict the
+        // exec*() family of syscalls for executables that reside in /data.
+
+        return launchMbtoolFromTmpfs(mbtool) || launchMbtoolFromRootfs(mbtool);
     }
 
     public static boolean replaceViaSignedExec(Context context) {

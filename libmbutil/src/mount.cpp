@@ -34,6 +34,7 @@
 
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
+#include "mbutil/blkid.h"
 #include "mbutil/directory.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
@@ -207,9 +208,21 @@ bool mount(const char *source, const char *target, const char *fstype,
     bool need_loopdev = false;
     struct stat sb;
 
-    if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))
-            && stat(source, &sb) == 0 && S_ISREG(sb.st_mode)) {
-        need_loopdev = true;
+    if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
+        if (stat(source, &sb) >= 0) {
+            if (S_ISREG(sb.st_mode)) {
+                need_loopdev = true;
+            }
+            if (fstype && strcmp(fstype, "auto") == 0
+                    && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
+                if (!blkid_get_fs_type(source, &fstype) || !fstype) {
+                    return false;
+                } else if (strcmp(fstype, "ext") == 0) {
+                    // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
+                    fstype = "ext4";
+                }
+            }
+        }
     }
 
     if (need_loopdev) {
@@ -277,6 +290,8 @@ bool umount(const char *target)
 
     int ret = ::umount(target);
 
+    int saved_errno = errno;
+
     if (!source.empty()) {
         struct stat sb;
 
@@ -290,6 +305,8 @@ bool umount(const char *target)
             }
         }
     }
+
+    errno = saved_errno;
 
     return ret == 0;
 }

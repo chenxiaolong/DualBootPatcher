@@ -69,7 +69,6 @@
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
-#include "mbutil/selinux.h"
 #include "mbutil/string.h"
 #include "mbutil/time.h"
 
@@ -135,7 +134,7 @@ Installer::~Installer()
  * Wrappers around functions that log failures
  */
 
-int log_mkdir(const char *pathname, mode_t mode)
+static int log_mkdir(const char *pathname, mode_t mode)
 {
     int ret = mkdir(pathname, mode);
     if (ret < 0) {
@@ -144,8 +143,8 @@ int log_mkdir(const char *pathname, mode_t mode)
     return ret;
 }
 
-int log_mount(const char *source, const char *target, const char *fstype,
-              long unsigned int mountflags, const void *data)
+static int log_mount(const char *source, const char *target, const char *fstype,
+                     long unsigned int mountflags, const void *data)
 {
     int ret = mount(source, target, fstype, mountflags, data);
     if (ret < 0) {
@@ -155,7 +154,7 @@ int log_mount(const char *source, const char *target, const char *fstype,
     return ret;
 }
 
-int log_umount(const char *target)
+static int log_umount(const char *target)
 {
     int ret = umount(target);
     if (ret < 0) {
@@ -164,7 +163,7 @@ int log_umount(const char *target)
     return ret;
 }
 
-int log_mknod(const char *pathname, mode_t mode, dev_t dev)
+static int log_mknod(const char *pathname, mode_t mode, dev_t dev)
 {
     int ret = mknod(pathname, mode, dev);
     if (ret < 0) {
@@ -173,7 +172,7 @@ int log_mknod(const char *pathname, mode_t mode, dev_t dev)
     return ret;
 }
 
-bool log_is_mounted(const std::string &mountpoint)
+static bool log_is_mounted(const std::string &mountpoint)
 {
     bool ret = util::is_mounted(mountpoint);
     if (!ret) {
@@ -182,7 +181,7 @@ bool log_is_mounted(const std::string &mountpoint)
     return ret;
 }
 
-bool log_unmount_all(const std::string &dir)
+static bool log_unmount_all(const std::string &dir)
 {
     bool ret = util::unmount_all(dir);
     if (!ret) {
@@ -191,7 +190,7 @@ bool log_unmount_all(const std::string &dir)
     return ret;
 }
 
-bool log_delete_recursive(const std::string &path)
+static bool log_delete_recursive(const std::string &path)
 {
     bool ret = util::delete_recursive(path);
     if (!ret) {
@@ -200,8 +199,8 @@ bool log_delete_recursive(const std::string &path)
     return ret;
 }
 
-bool log_copy_dir(const std::string &source,
-                  const std::string &target, int flags)
+static bool log_copy_dir(const std::string &source,
+                         const std::string &target, int flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -310,6 +309,7 @@ bool Installer::create_chroot()
             || log_mkdir(in_chroot("/data").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/cache").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/system").c_str(), 0755) < 0
+            || log_mkdir(in_chroot("/firmware").c_str(), 0755) < 0
             || log_mkdir(in_chroot("/efs").c_str(), 0755) < 0) {
         return false;
     }
@@ -651,7 +651,7 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image.c_str(), temp_mnt.c_str(), "ext4", 0, "")) {
+    if (!util::mount(image.c_str(), temp_mnt.c_str(), "auto", 0, "")) {
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
@@ -938,8 +938,14 @@ bool Installer::run_real_updater()
     int pipe_fds[2];
     int stdio_fds[2];
     if (!_passthrough) {
-        pipe(pipe_fds);
-        pipe(stdio_fds);
+        if (pipe(pipe_fds) < 0) {
+            return false;
+        }
+        if (pipe(stdio_fds) < 0) {
+            close(pipe_fds[0]);
+            close(pipe_fds[1]);
+            return false;
+        }
     }
 
     // Run updater in the chroot
@@ -967,6 +973,7 @@ bool Installer::run_real_updater()
     if ((pid = fork()) >= 0) {
         if (pid == 0) {
             if (!_passthrough) {
+                // Close read ends of the pipes
                 close(pipe_fds[0]);
                 close(stdio_fds[0]);
             }
@@ -976,8 +983,10 @@ bool Installer::run_real_updater()
             }
 
             if (!_passthrough) {
-                dup2(stdio_fds[1], STDOUT_FILENO);
-                dup2(stdio_fds[1], STDERR_FILENO);
+                if (dup2(stdio_fds[1], STDOUT_FILENO) < 0
+                        || dup2(stdio_fds[1], STDERR_FILENO) < 0) {
+                    _exit(EXIT_FAILURE);
+                }
                 close(stdio_fds[1]);
             }
 
@@ -986,11 +995,16 @@ bool Installer::run_real_updater()
             }
 
             // Make sure the updater won't run interactively
-            close(STDIN_FILENO);
-            if (open("/dev/null", O_RDONLY) < 0) {
+            int fd_dev_null = open("/dev/null", O_RDONLY);
+            if (fd_dev_null < 0) {
+                LOGE("%s: Failed to open: %s", "/dev/null", strerror(errno));
+                _exit(EXIT_FAILURE);
+            }
+            if (dup2(fd_dev_null, STDIN_FILENO) < 0) {
                 LOGE("Failed to reopen stdin: %s", strerror(errno));
                 _exit(EXIT_FAILURE);
             }
+            close(fd_dev_null);
 
             // HACK: SuperSU only accepts boot partition paths that are symlinks
             setenv("BOOTIMAGE", _boot_block_dev.c_str(), 1);
@@ -1686,13 +1700,20 @@ Installer::ProceedState Installer::install_stage_installation()
     struct stat sb;
     if (lstat(in_chroot("/.skip-install").c_str(), &sb) < 0
             && errno == ENOENT) {
-        auto start = util::current_time_ms();
+        uint64_t start = util::current_time_ms();
         updater_ret = run_real_updater();
-        auto stop = util::current_time_ms();
-        auto diff = (stop - start) / 1000;
+        uint64_t stop = util::current_time_ms();
+        uint64_t remainder = stop - start;
 
-        display_msg("Elapsed time: %" PRIu64 ":%02" PRIu64 "min",
-                    diff / 60, diff % 60);
+        uint64_t hours = remainder / (3600 * 1000);
+        remainder %= (3600 * 1000);
+        uint64_t minutes = remainder / (60 * 1000);
+        remainder %= (60 * 1000);
+        uint64_t seconds = remainder / 1000;
+        remainder %= 1000;
+
+        display_msg("Elapsed time: %02" PRIu64 ":%02" PRIu64 ":%02" PRIu64
+                    ".%03" PRIu64, hours, minutes, seconds, remainder);
 
         if (!updater_ret) {
             display_msg("Failed to run real update-binary");
@@ -1802,7 +1823,7 @@ Installer::ProceedState Installer::install_stage_finish()
 
     // Set kernel if it was changed
     if (memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0) {
-        display_msg("Boot partition was modified. Setting kernel");
+        display_msg("A new boot image was installed");
 
         mbp::BootImage bi;
         if (!bi.loadFile(_boot_block_dev)) {
@@ -1869,6 +1890,40 @@ Installer::ProceedState Installer::install_stage_finish()
 
         std::vector<unsigned char> bootimg;
         bi.create(&bootimg);
+
+        {
+            // We'll use SuperSU's patch for negating the effects of
+            // CONFIG_RKP_NS_PROT=y in newer Samsung kernels. This kernel
+            // feature prevents exec()'ing anything as a privileged user unless
+            // the binary resides in rootfs or whichever filesystem was first
+            // mounted at /system.
+            //
+            // It is trivial to update mbtool to only use rootfs, but we need
+            // to override fsck tools by bind-mounting dummy binaries from an
+            // ext4 image when booting from an external SD. Unless we patch the
+            // SELinux policy to allow vold to execute u:r:rootfs:s0-labeled
+            // fsck binaries, this patch must remain.
+
+            const unsigned char source[] = {
+                0x49, 0x01, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
+                0x0F, 0x71, 0xE9, 0x00, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
+                0x3F, 0xA0, 0x0F, 0x71, 0x89, 0x00, 0x00, 0x54, 0x00, 0x18,
+                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x88, 0x01, 0x00, 0x54,
+            };
+            const unsigned char target[] = {
+                0xA1, 0x02, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
+                0x0F, 0x71, 0x40, 0x02, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
+                0x3F, 0xA0, 0x0F, 0x71, 0xE0, 0x01, 0x00, 0x54, 0x00, 0x18,
+                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
+            };
+
+            void *ptr = memmem(bootimg.data(), bootimg.size(),
+                               source, sizeof(source));
+            if (ptr) {
+                memcpy(ptr, target, sizeof(target));
+            }
+        }
+
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
 

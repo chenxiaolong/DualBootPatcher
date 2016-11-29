@@ -19,19 +19,24 @@ package com.github.chenxiaolong.dualbootpatcher.settings;
 
 import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -43,6 +48,7 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServi
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
@@ -51,6 +57,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
         .BootUIActionTaskListener;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
@@ -402,14 +411,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         switch (request) {
         case REQUEST_BACKUP_DIRECTORY:
             if (data != null && result == Activity.RESULT_OK) {
-                String directory = FileUtils.getPathFromUri(getActivity(), data.getData());
-
-                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-                Editor editor = prefs.edit();
-                editor.putString(Constants.Preferences.BACKUP_DIRECTORY, directory);
-                editor.apply();
-
-                updateBackupDirectorySummary();
+                Uri treeDocumentUri = FileUtils.getDocumentUriFromTreeUri(data.getData());
+                if (treeDocumentUri != null) {
+                    new SetBackupPathTask().execute(treeDocumentUri);
+                }
             }
             break;
         default:
@@ -487,6 +492,52 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                     startActivity(intent);
                 }
             });
+        }
+    }
+
+    private class SetBackupPathTask extends AsyncTask<Uri, Void, String> {
+        private ContentResolver mCR;
+
+        @Override
+        protected void onPreExecute() {
+            mCR = getActivity().getContentResolver();
+        }
+
+        @Override
+        protected String doInBackground(Uri... params) {
+            // The input URI was already converted from a tree URI to a document URI. Linux lets us
+            // open directories with open() so we can simply read the symlink from /proc/self/fd/.
+
+            Uri uri = params[0];
+
+            ParcelFileDescriptor pfd = null;
+            try {
+                pfd = mCR.openFileDescriptor(uri, "r");
+                if (pfd != null) {
+                    return LibMiscStuff.readLink("/proc/self/fd/" + pfd.getFd());
+                }
+            } catch (FileNotFoundException e) {
+                Log.w(TAG, "URI not found: " + uri, e);
+                return null;
+            } finally {
+                IOUtils.closeQuietly(pfd);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String path) {
+            mCR = null;
+
+            if (isAdded()) {
+                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+                Editor editor = prefs.edit();
+                editor.putString(Constants.Preferences.BACKUP_DIRECTORY, path);
+                editor.apply();
+
+                updateBackupDirectorySummary();
+            }
         }
     }
 }

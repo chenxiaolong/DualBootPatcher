@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -26,6 +27,7 @@ import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -105,7 +107,8 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         printSeparator();
 
         printBoldText(Color.MAGENTA, "Processing action: Flash file\n");
-        printBoldText(Color.MAGENTA, "- File path: " + params.getPath() + "\n");
+        printBoldText(Color.MAGENTA, "- File URI: " + params.getUri() + "\n");
+        printBoldText(Color.MAGENTA, "- File name: " + params.getDisplayName() + "\n");
         printBoldText(Color.MAGENTA, "- Destination: " + params.getRomId() + "\n");
 
         // Extract mbtool from the zip file
@@ -146,28 +149,48 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
             } else {
                 printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
 
-                if (!FileUtils.zipExtractFile(params.getPath(), UPDATE_BINARY,
+                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY,
                         zipInstaller.getPath())) {
                     printBoldText(Color.RED, "Failed to extract update-binary\n");
                     return false;
                 }
                 printBoldText(Color.YELLOW, "Extracting mbtool signature from the zip file\n");
-                if (!FileUtils.zipExtractFile(params.getPath(), UPDATE_BINARY_SIG,
+                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY_SIG,
                         zipInstallerSig.getPath())) {
                     printBoldText(Color.RED, "Failed to extract update-binary.sig\n");
                     return false;
                 }
             }
 
-            String[] args = new String[]{"--romid", params.getRomId(),
-                    translateEmulatedPath(params.getPath())};
+            ParcelFileDescriptor pfd = null;
+            SignedExecCompletion completion;
+            try {
+                pfd = getContext().getContentResolver().openFileDescriptor(params.getUri(), "r");
+                if (pfd == null) {
+                    printBoldText(Color.RED, "Failed to open: " + params.getUri());
+                    return false;
+                }
 
-            printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
-                    + TextUtils.join(", ", args) + "]\n");
+                String fdSource = "/proc/self/fd/" + pfd.getFd();
+                String fdTarget = LibMiscStuff.readLink(fdSource);
 
-            SignedExecCompletion completion = iface.signedExec(
-                    zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
-                    "rom-installer", args, this);
+                if (fdTarget == null) {
+                    printBoldText(Color.RED, "Failed to resolve symlink: " + fdSource);
+                    return false;
+                }
+
+                String[] args = new String[]{"--romid", params.getRomId(),
+                        translateEmulatedPath(fdTarget)};
+
+                printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
+                        + TextUtils.join(", ", args) + "]\n");
+
+                completion = iface.signedExec(
+                        zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
+                        "rom-installer", args, this);
+            } finally {
+                IOUtils.closeQuietly(pfd);
+            }
 
             switch (completion.result) {
             case SignedExecResult.PROCESS_EXITED:
@@ -396,9 +419,9 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
 
     @Override
     protected void onListenerAdded(BaseServiceTaskListener listener) {
-        super.onListenerAdded(listener);
-
         synchronized (mStateLock) {
+            super.onListenerAdded(listener);
+
             for (String line : mLines) {
                 sendOnCommandOutput(line);
             }

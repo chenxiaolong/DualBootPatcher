@@ -60,7 +60,6 @@
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
-#include "mbutil/vibrate.h"
 
 #include "external/property_service.h"
 
@@ -68,10 +67,9 @@
 #include "initwrapper/util.h"
 #include "daemon.h"
 #include "decrypt.h"
-#include "file_contexts.h"
+#include "emergency.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
-#include "reboot.h"
 #include "romconfig.h"
 #include "sepolpatch.h"
 #include "signature.h"
@@ -81,6 +79,14 @@
 #if RUN_ADB_BEFORE_EXEC_OR_REBOOT
 #include "miniadbd.h"
 #include "miniadbd/adb_log.h"
+#endif
+
+#if defined(__i386__) || defined(__arm__)
+#define PCRE_PATH               "/system/lib/libpcre.so"
+#elif defined(__x86_64__) || defined(__aarch64__)
+#define PCRE_PATH               "/system/lib64/libpcre.so"
+#else
+#error Unknown PCRE path for architecture
 #endif
 
 namespace mb
@@ -296,58 +302,34 @@ static std::string get_rom_id()
 static bool replace_file(const char *replace, const char *with)
 {
     struct stat sb;
-    if (stat(replace, &sb) < 0) {
-        LOGE("Failed to stat %s: %s", replace, strerror(errno));
-        return false;
-    }
+    int sb_ret;
+
+    sb_ret = stat(replace, &sb);
 
     if (rename(with, replace) < 0) {
         LOGE("Failed to rename %s to %s: %s", with, replace, strerror(errno));
         return false;
     }
 
-    if (chown(replace, sb.st_uid, sb.st_gid) < 0) {
-        LOGE("Failed to chown %s: %s", replace, strerror(errno));
-        return false;
-    }
+    if (sb_ret == 0) {
+        if (chown(replace, sb.st_uid, sb.st_gid) < 0) {
+            LOGE("Failed to chown %s: %s", replace, strerror(errno));
+            return false;
+        }
 
-    if (chmod(replace, sb.st_mode & 0777) < 0) {
-        LOGE("Failed to chmod %s: %s", replace, strerror(errno));
-        return false;
+        if (chmod(replace, sb.st_mode & 0777) < 0) {
+            LOGE("Failed to chmod %s: %s", replace, strerror(errno));
+            return false;
+        }
     }
 
     return true;
 }
 
-static bool convert_binary_file_contexts()
+static bool fix_file_contexts(const char *path)
 {
-    auto ret = patch_file_contexts(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
-    if (ret == FileContextsResult::ERRNO && errno == ENOENT) {
-        LOGV("%s doesn't exist; Skipping file conversion", FILE_CONTEXTS_BIN);
-        return true;
-    } else if (ret != FileContextsResult::OK) {
-        LOGE("%s: Binary file_contexts conversion failed", FILE_CONTEXTS_BIN);
-        return false;
-    }
-
-    return replace_file(FILE_CONTEXTS_BIN, FILE_CONTEXTS_BIN ".new");
-
-    return true;
-}
-
-static bool fix_file_contexts()
-{
-    char path[256];
-    char path_new[256];
-
-    if (access(FILE_CONTEXTS_BIN, R_OK) == 0) {
-        strlcpy(path, FILE_CONTEXTS_BIN, sizeof(path));
-        strlcpy(path_new, FILE_CONTEXTS_BIN, sizeof(path_new));
-    } else {
-        strlcpy(path, FILE_CONTEXTS, sizeof(path));
-        strlcpy(path_new, FILE_CONTEXTS, sizeof(path_new));
-    }
-    strlcat(path_new, ".new", sizeof(path_new));
+    std::string new_path(path);
+    new_path += ".new";
 
     autoclose::file fp_old(autoclose::fopen(path, "rb"));
     if (!fp_old) {
@@ -360,10 +342,10 @@ static bool fix_file_contexts()
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen(path_new, "wb"));
+    autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "wb"));
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
-             path_new, strerror(errno));
+             new_path.c_str(), strerror(errno));
         return false;
     }
 
@@ -383,7 +365,7 @@ static bool fix_file_contexts()
 
         if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
             LOGE("%s: Failed to write file: %s",
-                 path_new, strerror(errno));
+                 new_path.c_str(), strerror(errno));
             return false;
         }
     }
@@ -398,7 +380,60 @@ static bool fix_file_contexts()
             "/system/multiboot(/.*)?  <<none>>\n";
     fputs(new_contexts, fp_new.get());
 
-    return replace_file(path, path_new);
+    return replace_file(path, new_path.c_str());
+}
+
+static bool fix_binary_file_contexts(const char *path)
+{
+    std::string new_path(path);
+    new_path += ".bin";
+    std::string tmp_path(path);
+    tmp_path += ".tmp";
+
+    // Check signature
+    SigVerifyResult result;
+    result = verify_signature("/sbin/file-contexts-tool",
+                              "/sbin/file-contexts-tool.sig");
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", "/sbin/file-contexts-tool");
+        return false;
+    }
+
+    const char *decompile_argv[] = {
+        "/sbin/file-contexts-tool",  "decompile", "-p", PCRE_PATH,
+        path, tmp_path.c_str(), nullptr
+    };
+    const char *compile_argv[] = {
+        "/sbin/file-contexts-tool", "compile", "-p", PCRE_PATH,
+        tmp_path.c_str(), new_path.c_str(), nullptr
+    };
+
+    // Decompile binary file_contexts to temporary file
+    int ret = util::run_command(decompile_argv[0], decompile_argv,
+                                nullptr, nullptr, nullptr, nullptr);
+    if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
+        LOGE("%s: Failed to decompile file_contexts", path);
+        return false;
+    }
+
+    // Patch temporary file
+    if (!fix_file_contexts(tmp_path.c_str())) {
+        unlink(tmp_path.c_str());
+        return false;
+    }
+
+    // Recompile binary file_contexts
+    ret = util::run_command(compile_argv[0], compile_argv,
+                            nullptr, nullptr, nullptr, nullptr);
+    if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
+        LOGE("%s: Failed to compile binary file_contexts", tmp_path.c_str());
+        unlink(tmp_path.c_str());
+        return false;
+    }
+
+    unlink(tmp_path.c_str());
+
+    return replace_file(path, new_path.c_str());
 }
 
 static bool is_completely_whitespace(const char *str)
@@ -501,13 +536,13 @@ static bool add_mbtool_services(bool enable_appsync)
             "    class main\n"
             "    user root\n"
             "    oneshot\n"
-            "    seclabel u:r:init:s0\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
     static const char *appsync_service =
             "service appsync /mbtool appsync\n"
             "    class main\n"
             "    socket installd stream 600 system system\n"
-            "    seclabel u:r:init:s0\n"
+            "    seclabel " MB_EXEC_CONTEXT "\n"
             "\n";
 
     fputs(daemon_service, fp_multiboot.get());
@@ -979,6 +1014,35 @@ static bool create_layout_version()
     return true;
 }
 
+static bool disable_spota()
+{
+    static const char *spota_dir = "/data/security/spota";
+
+    std::unordered_map<std::string, std::string> props;
+    util::file_get_all_properties("/system/build.prop", &props);
+
+    if (strcasecmp(props["ro.product.manufacturer"].c_str(), "samsung") != 0
+            && strcasecmp(props["ro.product.brand"].c_str(), "samsung") != 0) {
+        // Not a Samsung device
+        LOGV("Not mounting empty tmpfs over: %s", spota_dir);
+        return true;
+    }
+
+    if (!util::mkdir_recursive(spota_dir, 0) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", spota_dir, strerror(errno));
+        return false;
+    }
+
+    if (!util::mount("tmpfs", spota_dir, "tmpfs", MS_RDONLY, "mode=0000")) {
+        LOGE("%s: Failed to mount tmpfs: %s", spota_dir, strerror(errno));
+        return false;
+    }
+
+    LOGV("%s: Mounted read-only tmpfs over spota directory", spota_dir);
+
+    return true;
+}
+
 bool mount_userdata(const char *block_dev)
 {
     std::string rom_id = get_rom_id();
@@ -1167,64 +1231,6 @@ static bool launch_boot_menu(bool has_encryption)
     return true;
 }
 
-#define KLOG_CLOSE         0
-#define KLOG_OPEN          1
-#define KLOG_READ          2
-#define KLOG_READ_ALL      3
-#define KLOG_READ_CLEAR    4
-#define KLOG_CLEAR         5
-#define KLOG_CONSOLE_OFF   6
-#define KLOG_CONSOLE_ON    7
-#define KLOG_CONSOLE_LEVEL 8
-#define KLOG_SIZE_UNREAD   9
-#define KLOG_SIZE_BUFFER   10
-
-static bool dump_kernel_log(const char *file)
-{
-    int len = klogctl(KLOG_SIZE_BUFFER, nullptr, 0);
-    if (len < 0) {
-        LOGE("Failed to get kernel log buffer size: %s", strerror(errno));
-        return false;
-    }
-
-    char *buf = (char *) malloc(len);
-    if (!buf) {
-        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
-        return false;
-    }
-
-    auto free_buf = util::finally([&]{
-        free(buf);
-    });
-
-    len = klogctl(KLOG_READ_ALL, buf, len);
-    if (len < 0) {
-        LOGE("Failed to read kernel log buffer: %s", strerror(errno));
-        return false;
-    }
-
-    autoclose::file fp(autoclose::fopen(file, "wb"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
-        return false;
-    }
-
-    if (len > 0) {
-        if (fwrite(buf, len, 1, fp.get()) != 1) {
-            LOGE("%s: Failed to write data: %s", file, strerror(errno));
-            return false;
-        }
-        if (buf[len - 1] != '\n') {
-            if (fputc('\n', fp.get()) == EOF) {
-                LOGE("%s: Failed to write data: %s", file, strerror(errno));
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 #if RUN_ADB_BEFORE_EXEC_OR_REBOOT
 static void run_adb()
 {
@@ -1249,87 +1255,13 @@ static void run_adb()
 }
 #endif
 
-static bool emergency_reboot()
+static bool critical_failure()
 {
 #if RUN_ADB_BEFORE_EXEC_OR_REBOOT
     run_adb();
 #endif
 
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-    util::vibrate(100, 150);
-
-    LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
-
-    // Some devices don't have /proc/last_kmsg, so we'll attempt to save the
-    // kernel log to /data/media/0/MultiBoot/kernel.log
-    if (!util::is_mounted("/data")) {
-        LOGW("/data is not mounted. Attempting to mount /data");
-
-        struct stat sb;
-
-        // Try mounting /data in case we couldn't get through the fstab mounting
-        // steps. (This is an ugly brute force method...)
-        std::vector<std::string> data_block_devs;
-
-        std::vector<unsigned char> contents;
-        util::file_read_all(DEVICE_JSON_PATH, &contents);
-        contents.push_back('\0');
-
-        MbDeviceJsonError error;
-        Device *device = mb_device_new_from_json(
-                (char *) contents.data(), &error);
-        if (device) {
-            auto devs = mb_device_data_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    data_block_devs.push_back(*it);
-                }
-            }
-            mb_device_free(device);
-        }
-
-        // Some catch-all paths to increase our chances of getting a usable log
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/data");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/DATA");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/userdata");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/USERDATA");
-        data_block_devs.push_back(UNIVERSAL_BY_NAME_DIR "/UDA");
-
-        for (const std::string &block_dev : data_block_devs) {
-            if (stat(block_dev.c_str(), &sb) < 0) {
-                continue;
-            }
-
-            if (mount(block_dev.c_str(), "/data", "ext4", 0, "") == 0
-                    || mount(block_dev.c_str(), "/data", "f2fs", 0, "") == 0) {
-                LOGW("Mounted %s at /data", block_dev.c_str());
-                break;
-            }
-        }
-    }
-
-    LOGW("Dumping kernel log to %s", MULTIBOOT_LOG_KERNEL);
-
-    // Remove old log
-    remove(MULTIBOOT_LOG_KERNEL);
-
-    // Write new log
-    util::mkdir_parent(MULTIBOOT_LOG_KERNEL, 0775);
-    dump_kernel_log(MULTIBOOT_LOG_KERNEL);
-
-    // Set file attributes on log file
-    fix_multiboot_permissions();
-
-    sync();
-    umount("/data");
-
-    // Does not return if successful
-    reboot_directly("recovery");
-
-    return false;
+    return emergency_reboot();
 }
 
 int init_main(int argc, char *argv[])
@@ -1398,28 +1330,29 @@ int init_main(int argc, char *argv[])
     util::file_read_all(DEVICE_JSON_PATH, &contents);
     contents.push_back('\0');
 
+    // Start probing for devices so we have somewhere to write logs for
+    // critical_failure()
+    device_init(false);
+
     MbDeviceJsonError error;
     Device *device = mb_device_new_from_json((char *) contents.data(), &error);
     if (!device) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     } else if (mb_device_validate(device) != 0) {
         LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
+
+    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
+    symlink_base_dir(device);
 
     add_props_to_default_prop(device);
 
     // initialize properties
     properties_setup();
-
-    // Start probing for devices
-    device_init(false);
-
-    // Symlink by-name directory to /dev/block/by-name (ugh... ASUS)
-    symlink_base_dir(device);
 
     std::string fstab(find_fstab());
 
@@ -1442,7 +1375,7 @@ int init_main(int argc, char *argv[])
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
     if (!rom) {
         LOGE("Unknown ROM ID: %s", rom_id.c_str());
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1455,7 +1388,7 @@ int init_main(int argc, char *argv[])
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1487,24 +1420,27 @@ int init_main(int argc, char *argv[])
         if (::property_get(PROP_CRYPTO_STATE, value) <= 0
                 || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
             LOGE("Failed to decrypt device");
-            emergency_reboot();
+            critical_failure();
             return EXIT_FAILURE;
         }
 
         if (!util::is_mounted("/raw/data")) {
             LOGE("/raw/data did not get mounted");
-            emergency_reboot();
+            critical_failure();
             return EXIT_FAILURE;
         }
     }
 
     // Mount selinuxfs
-    util::selinux_mount();
+    selinux_mount();
+    // Load pre-boot policy
+    patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE, SELINUX_LOAD_FILE,
+                   SELinuxPatch::PRE_BOOT);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
         LOGE("Failed to mount ROM directories and images");
-        emergency_reboot();
+        critical_failure();
         return EXIT_FAILURE;
     }
 
@@ -1515,9 +1451,15 @@ int init_main(int argc, char *argv[])
              config_path.c_str(), rom->id.c_str());
     }
 
+    LOGD("Enable appsync: %d", config.indiv_app_sharing);
+
     // Make runtime ramdisk modifications
-    convert_binary_file_contexts();
-    fix_file_contexts();
+    if (access(FILE_CONTEXTS, R_OK) == 0) {
+        fix_file_contexts(FILE_CONTEXTS);
+    }
+    if (access(FILE_CONTEXTS_BIN, R_OK) == 0) {
+        fix_binary_file_contexts(FILE_CONTEXTS_BIN);
+    }
     write_fstab_hack(fstab.c_str());
     add_mbtool_services(config.indiv_app_sharing);
     strip_manual_mounts();
@@ -1525,12 +1467,17 @@ int init_main(int argc, char *argv[])
     // Data modifications
     create_layout_version();
 
+    // Disable spota
+    disable_spota();
+
     // Patch SELinux policy
     struct stat sb;
-    if (stat("/sepolicy", &sb) == 0) {
-        if (!patch_sepolicy("/sepolicy", "/sepolicy")) {
-            LOGW("Failed to patch /sepolicy");
-            emergency_reboot();
+    if (stat(SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
+        if (!patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE,
+                            SELINUX_DEFAULT_POLICY_FILE,
+                            SELinuxPatch::MAIN)) {
+            LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
+            critical_failure();
             return EXIT_FAILURE;
         }
     }
@@ -1550,9 +1497,10 @@ int init_main(int argc, char *argv[])
 #endif
 
     // Unmount partitions
-    util::selinux_unmount();
+    selinux_unmount();
     umount("/dev/pts");
-    umount("/dev");
+    // Detach because we still hold a kmsg fd open
+    umount2("/dev", MNT_DETACH);
     umount("/proc");
     umount("/sys");
     // Do not remove these as Android 6.0 init's stage 1 no longer creates these
@@ -1565,7 +1513,7 @@ int init_main(int argc, char *argv[])
     LOGD("Launching real init ...");
     execlp("/init", "/init", nullptr);
     LOGE("Failed to exec real init: %s", strerror(errno));
-    emergency_reboot();
+    critical_failure();
     return EXIT_FAILURE;
 }
 

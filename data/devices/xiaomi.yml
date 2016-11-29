@@ -42,6 +42,43 @@
     default_brightness: 162
     theme: portrait_hdpi
 
+- name: Xiaomi MI 4i
+  id: ferrari
+  codenames:
+    - ferrari
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p34
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p35
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p36
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p30
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p31
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: ABGR_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
 
 - name: Xiaomi MI 5
   id: gemini
@@ -75,6 +112,38 @@
       - /dev/block/sde37
 
 
+- name: Xiaomi MI MAX
+  id: hydrogen
+  codenames:
+    - hydrogen
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p64
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p62
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p65
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p60
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p61
+
+
 - name: Xiaomi HM 1S
   id: armani
   codenames:
@@ -99,6 +168,140 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p25
+
+
+- name: Xiaomi Redmi 2
+  id: wt88047
+  codenames:
+    - wt88047
+    - HM2014811
+    - HM2014817
+    - HM2014813
+    - wt86047
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p30
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p22
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p26
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p1
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+
+- name: Xiaomi Redmi 3
+  id: ido
+  codenames:
+    - ido
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p31
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p22
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p26
+    extra:
+      # cust
+      - /dev/block/platform/soc.0/7824900.sdhci/mmcblk0p30
+      - /dev/block/bootdevice/by-name/cust
+      - /dev/block/mmcblk0p30
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p1
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
 
 
 - name: Xiaomi Redmi Note 2
@@ -140,6 +343,18 @@
       # From reverse engineering the update-binary, it appears that
       # /dev/block/mmcblk0boot0 is the "preloader" partition
       - /dev/block/mmcblk0boot0
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 250
+    default_brightness: 157
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 
 - name: Xiaomi Redmi Note 3 (MTK)

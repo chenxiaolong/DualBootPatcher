@@ -132,6 +132,7 @@
   <string name="wipe_rom_none_selected">לא חלו מחיקות משום שלא הוגדרו מטרות</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">לא ניתן למחוק את מערכת ההפעלה הפועלת כעת</string>
+  <!--Switcher service notification title-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">טעינת התמונות הממוזערות והשמות של מערכות ההפעלה נכשלה משום שאין הרשאה לגשץ לקבצים</string>
   <!--Accessibility text for the ROM logo images-->
@@ -154,12 +155,21 @@
   <string name="set_kernel_later">הגדר מאוחר יותר</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <string name="set_kernel_mismatched_rom">מערכת ההפעלה הנוכחית היא %1$s, אבל אתה מנסה להגדיר את הקרנל עבור %2$s. בבקשה אשר את הפעולה.</string>
-  <!--ZIP flash activity title-->
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <!--In-app flashing activity title-->
   <string name="in_app_flashing_title">עשה פלאש לקבצי הזיפ</string>
-  <!--Title of pending action card for installing a zip file-->
+  <!--FAB button text for adding a patched file to flash-->
+  <!--FAB button text for adding a backup to flash-->
+  <!--Title of pending action card for flashing a file-->
   <string name="in_app_flashing_action_flash_file">התקן את קבצי הזיפ</string>
-  <!--Subtitle text in pending action card showing the selected filename-->
+  <!--Title of pending action card for restoring a backup-->
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
   <string name="in_app_flashing_filename">קובץ הזיפ: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
   <!--Subtitle text in pending action card showing the installation location-->
   <string name="in_app_flashing_location">מיקום: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
@@ -185,6 +195,8 @@
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="in_app_flashing_dialog_first_use">כדי לעשות פלאש לקובץ זיפ דרך הישום, רק הוסף את הזיפ המוטלא על ידי לחיצה על כפתור ההוספה הגדול. \n\nאת סדר ההפלאשה ניתן לשנות על ידי לחיצה ארוכה על הקובץ, ועל מנת למחוק קבצים ניתן להחליק אותם הצידה.\n\nנא לשים לב:
  תכונה זו עדיין נסיונית. אנא גבה את מכשירך לפני שתמשיך.</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <!--Toast message shown if there are no backups available-->
   <!--ROM details item showing which slot the ROM is installed to-->
   <string name="rom_details_info_slot">חלקה</string>
   <!--ROM details item showing the version of the ROM-->
@@ -211,6 +223,21 @@
   <string name="rom_details_info_data_size">גודל הדאטה</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
   <string name="rom_details_info_calculating">מחשב...</string>
+  <!--Backup ROM activity title-->
+  <!--Restore ROM activity title-->
+  <!--Backup targets dialog description-->
+  <!--Restore targets dialog description-->
+  <!--Backup/restore target for ROM's /system files-->
+  <!--Backup/restore target for ROM's /cache files-->
+  <!--Backup/restore target for ROM's /data files-->
+  <!--Backup/restore target for ROM's boot image-->
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <!--Backup name input dialog description-->
+  <!--Backup name input field hint for backup name dialog-->
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">המטלא (פאצ׳ר) אינו יכול לטלאות ללא אישורי כתיבה וקריאה לשטח האחסון. אנא אפשר גישה זו על מנת שתוכל לטלאות קבצים.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
@@ -325,6 +352,8 @@
   <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
   <!--Toast message to indicate that the Boot UI failed to uninstall-->
   <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <!--Title for the preference to change the backup directory-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">מטלא</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->

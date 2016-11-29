@@ -14,7 +14,7 @@
         <string name="app_name">DualBootPatcher</string>
 
         <!-- Button on main page for navigating to Switch ROM page -->
-        <string name="title_switch_rom">Выбрать прошивку</string>
+        <string name="title_switch_rom">Прошивки</string>
         <string name="title_decrypt_passwd_test">Тест пароля</string>
         <string name="title_decrypt_pattern_test">Тест графического ключа</string>
         <string name="title_settings">Настройки</string>
@@ -71,6 +71,7 @@
         <string name="settings_general_title">Основные</string>
         <string name="settings_general_use24clock">Использовать  24-часовой формат времени</string>
         <string name="settings_general_rev_navbar">Инвертировать порядок навигационных кнопок</string>
+        <string name="settings_general_autoboot_timeout">Тайм-аут автозагрузки в секундах:</string>
         <string name="settings_general_restore_defaults">Сброс настроек</string>
 
         <string name="settings_tz_title">Часовой пояс</string>
@@ -161,6 +162,7 @@
         <string name="autoboot_booting_in">Загрузка через {1} секунд...</string>
         <string name="autoboot_canceled">Автозагрузка отменена</string>
         <string name="autoboot_booting_now">Загрузка...</string>
+        <string name="autoboot_skip_countdown">Пропустить отсчет</string>
 
         <!--
             Generic strings

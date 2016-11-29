@@ -46,6 +46,7 @@ public:
     bool addMbtool();
     bool addExfat();
     bool addFsckWrapper();
+    bool addFileContextsTool();
     bool setUpInitWrapper();
     bool removeBlockDevProps();
     bool addDeviceJson();

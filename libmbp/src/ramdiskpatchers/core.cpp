@@ -75,6 +75,7 @@ bool CoreRP::patchRamdisk()
     return addMbtool()
             && addExfat()
             && addFsckWrapper()
+            && addFileContextsTool()
             && setUpInitWrapper()
             && removeBlockDevProps()
             && addDeviceJson();
@@ -148,6 +149,29 @@ bool CoreRP::addFsckWrapper()
     m_impl->cpio->remove(sig);
 
     if (!m_impl->cpio->addFile(wrapperPath, wrapper, 0750)
+            || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::addFileContextsTool()
+{
+    const std::string tool("sbin/file-contexts-tool");
+    const std::string sig("sbin/file-contexts-tool.sig");
+    std::string toolPath(m_impl->pc->dataDirectory());
+    toolPath += "/binaries/android/";
+    toolPath += mb_device_architecture(m_impl->info->device());
+    toolPath += "/file-contexts-tool";
+    std::string sigPath(toolPath);
+    sigPath += ".sig";
+
+    m_impl->cpio->remove(tool);
+    m_impl->cpio->remove(sig);
+
+    if (!m_impl->cpio->addFile(toolPath, tool, 0750)
             || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
         m_impl->error = m_impl->cpio->error();
         return false;

@@ -19,6 +19,7 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -44,10 +45,9 @@ import org.apache.commons.io.IOUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import mbtool.daemon.v3.FileOpenFlag;
 
@@ -106,28 +106,25 @@ public class SwitcherUtils {
         return null;
     }
 
-    public static VerificationResult verifyZipMbtoolVersion(String zipFile) {
+    public static VerificationResult verifyZipMbtoolVersion(Context context, Uri uri) {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
-        ZipFile zf = null;
+        ZipInputStream zis = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
 
             boolean isMultiboot = false;
-
             Properties prop = null;
+            ZipEntry entry;
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().startsWith(ZIP_MULTIBOOT_DIR)) {
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().startsWith(ZIP_MULTIBOOT_DIR)) {
                     isMultiboot = true;
                 }
-                if (ze.getName().equals(ZIP_INFO_PROP)) {
+                if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zf.getInputStream(ze));
+                    prop.load(zis);
                     break;
                 }
             }
@@ -158,32 +155,23 @@ public class SwitcherUtils {
             e.printStackTrace();
             return VerificationResult.ERROR_VERSION_TOO_OLD;
         } finally {
-            //IOUtils.closeQuietly(zf);
-            if (zf != null) {
-                try {
-                    zf.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-            }
+            IOUtils.closeQuietly(zis);
         }
     }
 
-    public static String getTargetInstallLocation(String zipFile) {
-        ZipFile zf = null;
+    public static String getTargetInstallLocation(Context context, Uri uri) {
+        ZipInputStream zis = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
 
             Properties prop = null;
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().equals(ZIP_INFO_PROP)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zf.getInputStream(ze));
+                    prop.load(zis);
                     break;
                 }
             }
@@ -200,14 +188,7 @@ public class SwitcherUtils {
             e.printStackTrace();
             return null;
         } finally {
-            //IOUtils.closeQuietly(zf);
-            if (zf != null) {
-                try {
-                    zf.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-            }
+            IOUtils.closeQuietly(zis);
         }
     }
 

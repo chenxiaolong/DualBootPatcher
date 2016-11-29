@@ -18,7 +18,7 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.annotation.SuppressLint;
-import android.content.ContentUris;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,8 +26,8 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
+import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -38,11 +38,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
 import io.noobdev.neuteredsaf.DocumentsApplication;
@@ -56,108 +54,20 @@ public class FileUtils {
     private static final boolean FORCE_NEUTERED_SAF = false;
     private static final boolean FORCE_GET_CONTENT = false;
 
-    private static boolean isUriForDocumentTree(Uri uri) {
-        List<String> segments = uri.getPathSegments();
-        return segments.size() > 0 && segments.get(0).equals("tree");
-    }
-
     @SuppressLint("NewApi")
-    private static String getPathFromDocumentsUri(Context context, Uri uri, boolean isNeuteredSaf) {
-        // Based on
-        // frameworks/base/packages/ExternalStorageProvider/src/com/android/externalstorage/ExternalStorageProvider.java
-        StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
-
-        try {
-            Class<? extends StorageManager> StorageManager = sm.getClass();
-            Method getVolumeList = StorageManager.getDeclaredMethod("getVolumeList");
-            Object[] vols = (Object[]) getVolumeList.invoke(sm);
-
-            Class<?> StorageVolume = Class.forName("android.os.storage.StorageVolume");
-            Method isPrimary = StorageVolume.getDeclaredMethod("isPrimary");
-            Method isEmulated = StorageVolume.getDeclaredMethod("isEmulated");
-            Method getUuid = StorageVolume.getDeclaredMethod("getUuid");
-            Method getPath = StorageVolume.getDeclaredMethod("getPath");
-
-            // As of AOSP 4.4.2 in ExternalStorageProvider.java
-            final String ROOT_ID_PRIMARY_EMULATED = "primary";
-
-            String[] split;
-            if (isUriForDocumentTree(uri)) {
-                if (isNeuteredSaf) {
-                    split = DocumentsContractCompat.getTreeDocumentId(uri).split("\0");
-                } else {
-                    split = DocumentsContract.getTreeDocumentId(uri).split(":");
-                }
-            } else {
-                if (isNeuteredSaf) {
-                    split = DocumentsContractCompat.getDocumentId(uri).split("\0");
-                } else {
-                    split = DocumentsContract.getDocumentId(uri).split(":");
-                }
-            }
-
-            String volId;
-            for (Object vol : vols) {
-                if ((Boolean) isPrimary.invoke(vol) && (Boolean) isEmulated.invoke(vol)) {
-                    volId = ROOT_ID_PRIMARY_EMULATED;
-                } else if (getUuid.invoke(vol) != null) {
-                    volId = (String) getUuid.invoke(vol);
-                } else {
-                    Log.e("DualBootPatcher", "Missing UUID for " + getPath.invoke(vol));
-                    continue;
-                }
-
-                if (volId.equals(split[0])) {
-                    return getPath.invoke(vol) + File.separator + split[1];
-                }
-            }
-
-            return null;
-        } catch (Exception e) {
-            Log.e("DualBootPatcher", "Java reflection failure: " + e);
-            return null;
-        }
-    }
-
-    @SuppressLint("NewApi")
-    private static String getPathFromDownloadsUri(Context context, Uri uri) {
-        // Based on
-        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
-        String id = DocumentsContract.getDocumentId(uri);
-        Uri contentUri = ContentUris.withAppendedId(Uri.parse
-                ("content://downloads/public_downloads"), Long.parseLong(id));
-
-        Cursor cursor = null;
-        String[] projection = {"_data"};
-
-        try {
-            cursor = context.getContentResolver().query(contentUri, projection, null, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                return cursor.getString(cursor.getColumnIndexOrThrow("_data"));
-            }
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-
-        return null;
-    }
-
-    public static String getPathFromUri(Context context, Uri uri) {
-        String neuteredSafAuthority =
-                DocumentsApplication.getApplicationId() + ExternalStorageProvider.AUTHORITY_SUFFIX;
+    public static Uri getDocumentUriFromTreeUri(Uri uri) {
+        String neuteredSafAuthority = DocumentsApplication.getApplicationId() +
+                ExternalStorageProvider.AUTHORITY_SUFFIX;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
                 ("com.android.externalstorage.documents").equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri, false);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
-                && ("com.android.providers.downloads.documents").equals(uri.getAuthority())) {
-            return getPathFromDownloadsUri(context, uri);
+            return DocumentsContract.buildDocumentUriUsingTree(
+                    uri, DocumentsContract.getTreeDocumentId(uri));
         } else if (neuteredSafAuthority.equals(uri.getAuthority())) {
-            return getPathFromDocumentsUri(context, uri, true);
+            return DocumentsContractCompat.buildDocumentUriUsingTree(
+                    uri, DocumentsContractCompat.getTreeDocumentId(uri));
         } else {
-            return uri.getPath();
+            return null;
         }
     }
 
@@ -357,27 +267,19 @@ public class FileUtils {
         }
     }
 
-    public static boolean zipExtractFile(String zipFile, String filename, String destFile) {
-        ZipFile zf = null;
+    public static boolean zipExtractFile(Context context, Uri uri, String filename,
+                                         String destFile) {
+        ZipInputStream zis = null;
         FileOutputStream fos = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().equals(filename)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName().equals(filename)) {
                     fos = new FileOutputStream(destFile);
-                    InputStream is = zf.getInputStream(ze);
-                    byte[] buffer = new byte[10240];
-
-                    int len;
-                    while ((len = is.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-
+                    IOUtils.copy(zis, fos);
                     return true;
                 }
             }
@@ -386,13 +288,7 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            //IOUtils.closeQuietly(zf);
-            try {
-                if (zf != null) {
-                    zf.close();
-                }
-            } catch (IOException e) {
-            }
+            IOUtils.closeQuietly(zis);
             IOUtils.closeQuietly(fos);
         }
 
@@ -436,5 +332,50 @@ public class FileUtils {
 
         String decimal = String.format("%." + precision + "f", (double) size / abbrev.factor);
         return context.getString(abbrev.stringResId, decimal);
+    }
+
+    public static class UriMetadata {
+        public Uri uri;
+        public String displayName;
+        public long size;
+        public String mimeType;
+    }
+
+    public static UriMetadata[] queryUriMetadata(ContentResolver cr, Uri... uris) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        UriMetadata[] metadatas = new UriMetadata[uris.length];
+        for (int i = 0; i < metadatas.length; i++) {
+            UriMetadata metadata = new UriMetadata();
+            metadatas[i] = metadata;
+            metadata.uri = uris[i];
+            metadata.mimeType = cr.getType(metadata.uri);
+
+            if ("content".equals(metadata.uri.getScheme())) {
+                Cursor cursor = cr.query(metadata.uri, null, null, null, null, null);
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+
+                        metadata.displayName = cursor.getString(nameIndex);
+                        if (cursor.isNull(sizeIndex)) {
+                            metadata.size = -1;
+                        } else {
+                            metadata.size = cursor.getLong(sizeIndex);
+                        }
+                    }
+                } finally {
+                    IOUtils.closeQuietly(cursor);
+                }
+            } else if ("file".equals(metadata.uri.getScheme())) {
+                metadata.displayName = metadata.uri.getLastPathSegment();
+                metadata.size = new File(metadata.uri.getPath()).length();
+            } else {
+                throw new IllegalArgumentException("Cannot handle URI: " + metadata.uri);
+            }
+        }
+
+        return metadatas;
     }
 }

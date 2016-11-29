@@ -177,6 +177,40 @@
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
 
+- name: Samsung Galaxy Note 4 Edge
+  id: tblte
+  codenames:
+    - tblte
+    - tbltecan
+    - tbltedt
+    - tbltespr
+    - tbltetmo
+    - tblteusc
+    - tbltevzw
+    - tbltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p25
+    # Shouldn't be an issue as long as ROMs don't touch the "hidden" partition
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+
+
 - name: Samsung Galaxy Note 4 (Snapdragon)
   id: trlte
   codenames:

@@ -27,7 +27,6 @@
 #define MULTIBOOT_LOG_INSTALLER         INTERNAL_STORAGE "/MultiBoot.log"
 #define MULTIBOOT_LOG_APPSYNC           MULTIBOOT_DIR "/appsync.log"
 #define MULTIBOOT_LOG_DAEMON            MULTIBOOT_DIR "/daemon.log"
-#define MULTIBOOT_LOG_KERNEL            MULTIBOOT_DIR "/kernel.log"
 
 #define ABOOT_PARTITION                 "/dev/block/platform/msm_sdcc.1/by-name/aboot"
 
@@ -74,11 +73,16 @@
 #define CHROOT_CACHE_LOOP_DEV           "/mb/loop.cache"
 #define CHROOT_DATA_LOOP_DEV            "/mb/loop.data"
 
+// SELinux context for mbtool utils
+#define MB_EXEC_CONTEXT                 "u:r:mb_exec:s0"
+
 namespace mb
 {
 
 bool copy_system(const std::string &source, const std::string &target);
 
-bool fix_multiboot_permissions(void);
+bool fix_multiboot_permissions();
+
+bool switch_context(const std::string &context);
 
 }
