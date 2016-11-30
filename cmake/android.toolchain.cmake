@@ -187,7 +187,12 @@ set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
 
 # Standard cross-compiling stuff.
 set(ANDROID TRUE)
-set(CMAKE_SYSTEM_NAME Android)
+if(CMAKE_VERSION VERSION_LESS 3.7)
+    set(CMAKE_SYSTEM_NAME Android)
+else()
+    # Avoid using CMake 3.7's built-in Android platform
+    set(CMAKE_SYSTEM_NAME AndroidCompat)
+endif()
 set(CMAKE_SYSTEM_VERSION ${ANDROID_PLATFORM_LEVEL})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.6)
+
+# Add custom module path for AndroidCompat platform on CMake 3.7
+if(NOT CMAKE_VERSION VERSION_LESS 3.7)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/cmake-3.7")
+endif()
 
 project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
@@ -48,18 +53,21 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
     set(ndk_min_version 130.0)
-    set(ndk_max_version 131.0)
+    set(ndk_max_version 132.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
-    set(ndk_exact_version 130.3315539)
+    set(ndk_version_whitelist
+        130.3315539
+        131.3345770
+    )
 
-    if(DEFINED ndk_exact_version
-            AND NOT ndk_release VERSION_EQUAL ndk_exact_version)
+    if(DEFINED ndk_version_whitelist
+            AND NOT ndk_release IN_LIST ndk_version_whitelist)
         message(FATAL_ERROR
-                "Requires NDK version ${ndk_exact_version}"
+                "Requires NDK version in list: ${ndk_version_whitelist}"
                 " (detected: ${ndk_release})")
     elseif(ndk_release VERSION_LESS ndk_min_version
             OR NOT ndk_release VERSION_LESS ndk_max_version)
