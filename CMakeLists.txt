@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.6)
 
 # Add custom module path for AndroidCompat platform on CMake 3.7
 if(NOT CMAKE_VERSION VERSION_LESS 3.7)
