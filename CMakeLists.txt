@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.3)
 
+# Add custom module path for AndroidCompat platform on CMake 3.7
+if(NOT CMAKE_VERSION VERSION_LESS 3.7)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/cmake-3.7")
+endif()
+
 project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
 set(MBP_VERSION_MINOR 1)
