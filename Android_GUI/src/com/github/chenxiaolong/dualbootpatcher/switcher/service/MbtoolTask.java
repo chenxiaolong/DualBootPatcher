@@ -172,10 +172,11 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 }
 
                 String fdSource = "/proc/self/fd/" + pfd.getFd();
-                String fdTarget = LibMiscStuff.readLink(fdSource);
-
-                if (fdTarget == null) {
-                    printBoldText(Color.RED, "Failed to resolve symlink: " + fdSource);
+                String fdTarget;
+                try {
+                    fdTarget = LibMiscStuff.readLink(fdSource);
+                } catch (IOException e) {
+                    printBoldText(Color.RED, "Failed to resolve symlink: " + fdSource + "\n");
                     return false;
                 }
 

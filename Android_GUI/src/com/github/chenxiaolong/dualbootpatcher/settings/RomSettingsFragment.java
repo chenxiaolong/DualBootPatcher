@@ -60,6 +60,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import org.apache.commons.io.IOUtils;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
@@ -518,6 +519,9 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                 }
             } catch (FileNotFoundException e) {
                 Log.w(TAG, "URI not found: " + uri, e);
+                return null;
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to read fd link for: " + uri, e);
                 return null;
             } finally {
                 IOUtils.closeQuietly(pfd);
