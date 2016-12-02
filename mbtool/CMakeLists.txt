@@ -188,7 +188,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbdevice-static
         mblog-static
         mbcommon-static
-        minizip
+        minizip-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_PROCPS_NG_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
@@ -203,7 +203,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbpio-static
         mbdevice-static
         mbcommon-static
-        minizip
+        minizip-static
         ${MBP_JANSSON_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
