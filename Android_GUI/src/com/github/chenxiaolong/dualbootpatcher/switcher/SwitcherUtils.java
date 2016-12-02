@@ -20,6 +20,8 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -31,6 +33,8 @@ import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipEntry;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
@@ -46,8 +50,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import mbtool.daemon.v3.FileOpenFlag;
 
@@ -106,25 +108,32 @@ public class SwitcherUtils {
         return null;
     }
 
-    public static VerificationResult verifyZipMbtoolVersion(Context context, Uri uri) {
+    public static VerificationResult verifyZipMbtoolVersion(@NonNull Context context,
+                                                            @NonNull Uri uri) {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
-        ZipInputStream zis = null;
+        ParcelFileDescriptor pfd = null;
+        MiniZipInputFile mzif = null;
 
         try {
-            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                return VerificationResult.ERROR_ZIP_READ_FAIL;
+            }
+
+            mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
 
             boolean isMultiboot = false;
             Properties prop = null;
-            ZipEntry entry;
 
-            while ((entry = zis.getNextEntry()) != null) {
+            MiniZipEntry entry;
+            while ((entry = mzif.nextEntry()) != null) {
                 if (entry.getName().startsWith(ZIP_MULTIBOOT_DIR)) {
                     isMultiboot = true;
                 }
                 if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zis);
+                    prop.load(mzif.getInputStream());
                     break;
                 }
             }
@@ -155,23 +164,32 @@ public class SwitcherUtils {
             e.printStackTrace();
             return VerificationResult.ERROR_VERSION_TOO_OLD;
         } finally {
-            IOUtils.closeQuietly(zis);
+            IOUtils.closeQuietly(mzif);
+            IOUtils.closeQuietly(pfd);
         }
     }
 
-    public static String getTargetInstallLocation(Context context, Uri uri) {
-        ZipInputStream zis = null;
+    public static String getTargetInstallLocation(@NonNull Context context, @NonNull Uri uri) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        ParcelFileDescriptor pfd = null;
+        MiniZipInputFile mzif = null;
 
         try {
-            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                return null;
+            }
+
+            mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
 
             Properties prop = null;
 
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
+            MiniZipEntry entry;
+            while ((entry = mzif.nextEntry()) != null) {
                 if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zis);
+                    prop.load(mzif.getInputStream());
                     break;
                 }
             }
@@ -188,7 +206,8 @@ public class SwitcherUtils {
             e.printStackTrace();
             return null;
         } finally {
-            IOUtils.closeQuietly(zis);
+            IOUtils.closeQuietly(mzif);
+            IOUtils.closeQuietly(pfd);
         }
     }
 

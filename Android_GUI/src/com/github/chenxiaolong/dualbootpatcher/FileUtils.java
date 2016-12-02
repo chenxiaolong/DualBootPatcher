@@ -26,10 +26,14 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.util.Log;
+
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipEntry;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile;
 
 import org.apache.commons.io.IOUtils;
 
@@ -39,8 +43,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import io.noobdev.neuteredsaf.DocumentsActivity;
 import io.noobdev.neuteredsaf.DocumentsApplication;
@@ -267,19 +269,25 @@ public class FileUtils {
         }
     }
 
-    public static boolean zipExtractFile(Context context, Uri uri, String filename,
-                                         String destFile) {
-        ZipInputStream zis = null;
+    public static boolean zipExtractFile(@NonNull Context context, @NonNull Uri uri,
+                                         @NonNull String filename, @NonNull String destFile) {
+        ParcelFileDescriptor pfd = null;
+        MiniZipInputFile mzif = null;
         FileOutputStream fos = null;
 
         try {
-            zis = new ZipInputStream(context.getContentResolver().openInputStream(uri));
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                return false;
+            }
 
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
+            mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
+
+            MiniZipEntry entry;
+            while ((entry = mzif.nextEntry()) != null) {
                 if (entry.getName().equals(filename)) {
                     fos = new FileOutputStream(destFile);
-                    IOUtils.copy(zis, fos);
+                    IOUtils.copy(mzif.getInputStream(), fos);
                     return true;
                 }
             }
@@ -288,8 +296,9 @@ public class FileUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            IOUtils.closeQuietly(zis);
+            IOUtils.closeQuietly(mzif);
             IOUtils.closeQuietly(fos);
+            IOUtils.closeQuietly(pfd);
         }
 
         return false;
