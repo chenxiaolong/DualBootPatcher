@@ -448,7 +448,13 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         mZipRomId = romId;
 
         if (result == VerificationResult.NO_ERROR) {
-            queryUriMetadata();
+            if (mZipRomId != null) {
+                ChangeInstallLocationDialog cild =
+                        ChangeInstallLocationDialog.newInstance(this, mZipRomId);
+                cild.show(getFragmentManager(), CONFIRM_DIALOG_INSTALL_LOCATION);
+            } else {
+                showRomIdSelectionDialog();
+            }
         } else {
             String error;
 
@@ -497,12 +503,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
         mSelectedUriFileName = metadata.displayName;
 
-        if (mZipRomId != null) {
-            ChangeInstallLocationDialog cild =
-                    ChangeInstallLocationDialog.newInstance(this, mZipRomId);
-            cild.show(getFragmentManager(), CONFIRM_DIALOG_INSTALL_LOCATION);
+        if (mService != null) {
+            verifyZip();
         } else {
-            showRomIdSelectionDialog();
+            mVerifyZipOnServiceConnected = true;
         }
     }
 
@@ -520,11 +524,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
                         R.string.in_app_flashing_dialog_verifying_zip, R.string.please_wait);
                 d.show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
 
-                if (mService != null) {
-                    verifyZip();
-                } else {
-                    mVerifyZipOnServiceConnected = true;
-                }
+                queryUriMetadata();
             }
             break;
         }

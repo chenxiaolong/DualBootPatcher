@@ -131,7 +131,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         mbdevice-shared
         mblog-shared
         mbcommon-shared
-        minizip
+        minizip-shared
         ${ADDITIONAL_LIBRARIES}
         ${LIBARCHIVE_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
