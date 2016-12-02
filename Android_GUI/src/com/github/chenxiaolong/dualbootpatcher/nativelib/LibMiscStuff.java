@@ -17,12 +17,14 @@
 
 package com.github.chenxiaolong.dualbootpatcher.nativelib;
 
+import com.sun.jna.LastErrorException;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,20 +62,24 @@ public class LibMiscStuff {
 
         int get_pid();
 
-        Pointer read_link(String path);
+        Pointer read_link(String path) throws LastErrorException;
     }
 
     public static final CLibrary INSTANCE =
             (CLibrary) Native.loadLibrary("miscstuff", CLibrary.class);
 
-    public static String readLink(String path) {
-        Pointer p = INSTANCE.read_link(path);
-        if (p == null) {
-            return null;
-        }
+    public static String readLink(String path) throws IOException {
+        try {
+            Pointer p = INSTANCE.read_link(path);
+            if (p == null) {
+                return null;
+            }
 
-        String result = p.getString(0);
-        Native.free(Pointer.nativeValue(p));
-        return result;
+            String result = p.getString(0);
+            Native.free(Pointer.nativeValue(p));
+            return result;
+        } catch (LastErrorException e) {
+            throw new IOException("Failed to read link: " + path, e);
+        }
     }
 }

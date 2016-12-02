@@ -229,7 +229,7 @@ char * read_link(const char *path)
     for (;;) {
         n = readlink(path, buf, buf_size);
         if (n < 0) {
-            return nullptr;
+            goto error;
         } else if ((size_t) n == buf_size) {
             char *new_buf = (char *) realloc(buf, buf_size << 1);
             if (!new_buf) {
