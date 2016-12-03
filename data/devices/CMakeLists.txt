@@ -10,6 +10,7 @@ set(files
     google.yml
     huawei.yml
     jiayu.yml
+    leeco.yml
     lenovo.yml
     lg.yml
     motorola.yml
