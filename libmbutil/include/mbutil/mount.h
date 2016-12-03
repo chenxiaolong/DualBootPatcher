@@ -28,8 +28,6 @@ namespace util
 
 bool is_mounted(const std::string &mountpoint);
 bool unmount_all(const std::string &dir);
-bool bind_mount(const std::string &source, mode_t source_perms,
-                const std::string &target, mode_t target_perms);
 bool mount(const char *source, const char *target, const char *fstype,
            unsigned long mount_flags, const void *data);
 bool umount(const char *target);

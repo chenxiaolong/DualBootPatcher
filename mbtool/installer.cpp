@@ -730,7 +730,9 @@ bool Installer::mount_dir_or_image(const std::string &source,
 
         _associated_loop_devs.push_back(loopdev);
     } else {
-        if (!util::bind_mount(source, 0771, bind_target, 0771)) {
+        if (!util::mkdir_recursive(source, 0771)
+                || !util::mkdir_recursive(bind_target, 0771)
+                || mount(source.c_str(), bind_target.c_str(), "", MS_BIND, "") < 0) {
             display_msg("Failed to bind mount %s to %s",
                         source.c_str(), bind_target.c_str());
             return false;
