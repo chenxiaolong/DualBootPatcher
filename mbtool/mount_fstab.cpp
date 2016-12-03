@@ -547,18 +547,29 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
     return false;
 }
 
-static bool mount_image(const char *image, const char *mount_point,
-                        mode_t perms)
+static bool mount_target(const char *source, const char *target, bool bind)
 {
-    if (!util::mkdir_recursive(mount_point, perms)) {
-        LOGE("%s: Failed to create directory: %s",
-             mount_point, strerror(errno));
+    struct stat sb;
+
+    if (lstat(target, &sb) == 0 && S_ISLNK(sb.st_mode)) {
+        unlink(target);
+    }
+
+    if (!util::mkdir_recursive(target, 0755) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", target, strerror(errno));
         return false;
     }
 
-    // Our image files are always ext4 images
-    if (!util::mount(image, mount_point, "ext4", 0, "")) {
-        LOGE("%s: Failed to mount image: %s", image, strerror(errno));
+    bool ret;
+
+    if (bind) {
+        ret = util::mount(source, target, "", MS_BIND, "");
+    } else {
+        ret = util::mount(source, target, "auto", 0, "");
+    }
+
+    if (!ret) {
+        LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
     }
 
@@ -582,7 +593,7 @@ static bool mount_all_system_images()
             mount_point += rom->id;
             std::string system_path(rom->full_system_path());
 
-            if (!mount_image(system_path.c_str(), mount_point.c_str(), 0771)) {
+            if (!mount_target(system_path.c_str(), mount_point.c_str(), false)) {
                 LOGW("Failed to mount image for %s", rom->id.c_str());
                 failed = true;
             }
@@ -832,9 +843,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         }
     }
 
-    // TODO: util::bind_mount() chmod's the source directory. Once that is
-    // removed, we can use read-only system partitions again
-    if (rom /* && rom->cache_source == Rom::Source::SYSTEM */) {
+    if (rom && rom->cache_source == Rom::Source::SYSTEM) {
         for (util::fstab_rec &rec : recs->system) {
             rec.flags &= ~MS_RDONLY;
         }
@@ -958,44 +967,23 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
         return false;
     }
 
-    if (rom->system_is_image) {
-        if (!mount_image(target_system.c_str(), "/system", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
-            return false;
-        }
+    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image)) {
+        return false;
     }
 
-    struct stat sb;
-
-    // If /cache is a symlink (Nougat-style ROMs), then don't mount the cache
-    // directory since they use /data/cache.
-    if (lstat("/cache", &sb) == 0 && S_ISLNK(sb.st_mode)) {
-        LOGW("Not mounting /cache because it is a symlink!");
-    } else if (rom->cache_is_image) {
-        if (!mount_image(target_cache.c_str(), "/cache", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
-            return false;
-        }
+    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image)) {
+        return false;
     }
 
-    if (rom->data_is_image) {
-        if (!mount_image(target_data.c_str(), "/data", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
-            return false;
-        }
+    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image)) {
+        return false;
     }
 
     // Bind mount internal SD directory
-    if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
+    util::mkdir_recursive("/raw/data/media", 0771);
+    util::mkdir_recursive("/data/media", 0771);
+
+    if (!util::mount("/raw/data/media", "/data/media", "", MS_BIND, "")) {
         return false;
     }
 

@@ -132,58 +132,6 @@ bool unmount_all(const std::string &dir)
 }
 
 /*!
- * \brief Bind mount a directory
- *
- * This function will create or chmod the source and target directories before
- * performing the bind mount. If the source or target directories don't exist,
- * they will be created (recursively) with the specified permissions. If the
- * directories already exist, they will be chmod'ed with the specified mode
- * (parent directories will not be touched).
- *
- * \param source Source path
- * \param source_perms Permissions for source path
- * \param target Target path
- * \param target_perms Permissions for target path
- *
- * \return True if bind mount is successful. False, otherwise.
- */
-bool bind_mount(const std::string &source, mode_t source_perms,
-                const std::string &target, mode_t target_perms)
-{
-    struct stat sb;
-
-    if (stat(source.c_str(), &sb) < 0
-            && !mkdir_recursive(source, source_perms)) {
-        LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (stat(target.c_str(), &sb) < 0
-            && !mkdir_recursive(target, target_perms)) {
-        LOGE("Failed to create %s: %s", target.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (chmod(source.c_str(), source_perms) < 0) {
-        LOGE("Failed to chmod %s: %s", source.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (chmod(target.c_str(), target_perms) < 0) {
-        LOGE("Failed to chmod %s: %s", target.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (::mount(source.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
-        LOGE("Failed to bind mount %s to %s: %s",
-             source.c_str(), target.c_str(), strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
-/*!
  * \brief Mount filesystem
  *
  * This function takes the same arguments as mount(2), but returns true on
