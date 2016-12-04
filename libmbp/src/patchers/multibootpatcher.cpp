@@ -375,7 +375,7 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
         bool isExtGz = StringUtils::ends_with(curFile, ".gz");
         // Boot images should never be over about 30 MiB. This check is here so
         // the patcher won't try to read a multi-gigabyte system image into RAM
-        bool isSizeOK = fi.uncompressed_size <= 30 * 1024 * 1024;
+        bool isSizeOK = fi.uncompressed_size <= 50 * 1024 * 1024;
 
         if ((isExtImg || isExtLok || isExtGz) && isSizeOK) {
             // Load the file into memory
