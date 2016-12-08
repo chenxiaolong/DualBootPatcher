@@ -1679,12 +1679,6 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
         return ProceedState::Fail;
     }
 
-    // Mount /cache and /data by default to match the recovery's behavior
-    const char *argv_mount_cache[] = { HELPER_TOOL, "mount", "/cache", nullptr };
-    const char *argv_mount_data[] = { HELPER_TOOL, "mount", "/data", nullptr };
-    run_command_chroot(_chroot.c_str(), argv_mount_cache);
-    run_command_chroot(_chroot.c_str(), argv_mount_data);
-
     return on_mounted_filesystems();
 }
 
