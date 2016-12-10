@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbGetPackagesCountRequest;
+
 struct MbGetPackagesCountResponse;
 
 struct MbGetPackagesCountRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -39,10 +39,15 @@ struct MbGetPackagesCountRequestBuilder {
 };
 
 inline flatbuffers::Offset<MbGetPackagesCountRequest> CreateMbGetPackagesCountRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> rom_id = 0) {
+    flatbuffers::Offset<flatbuffers::String> rom_id = 0) {
   MbGetPackagesCountRequestBuilder builder_(_fbb);
   builder_.add_rom_id(rom_id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbGetPackagesCountRequest> CreateMbGetPackagesCountRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *rom_id = nullptr) {
+  return CreateMbGetPackagesCountRequest(_fbb, rom_id ? _fbb.CreateString(rom_id) : 0);
 }
 
 struct MbGetPackagesCountResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -82,10 +87,10 @@ struct MbGetPackagesCountResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbGetPackagesCountResponse> CreateMbGetPackagesCountResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   uint32_t system_packages = 0,
-   uint32_t system_update_packages = 0,
-   uint32_t non_system_packages = 0) {
+    bool success = false,
+    uint32_t system_packages = 0,
+    uint32_t system_update_packages = 0,
+    uint32_t non_system_packages = 0) {
   MbGetPackagesCountResponseBuilder builder_(_fbb);
   builder_.add_non_system_packages(non_system_packages);
   builder_.add_system_update_packages(system_update_packages);

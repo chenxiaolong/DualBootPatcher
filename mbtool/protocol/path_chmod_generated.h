@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathChmodRequest;
+
 struct PathChmodResponse;
 
 struct PathChmodRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -43,12 +43,18 @@ struct PathChmodRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathChmodRequest> CreatePathChmodRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   uint32_t mode = 0) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    uint32_t mode = 0) {
   PathChmodRequestBuilder builder_(_fbb);
   builder_.add_mode(mode);
   builder_.add_path(path);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathChmodRequest> CreatePathChmodRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    uint32_t mode = 0) {
+  return CreatePathChmodRequest(_fbb, path ? _fbb.CreateString(path) : 0, mode);
 }
 
 struct PathChmodResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -81,12 +87,18 @@ struct PathChmodResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathChmodResponse> CreatePathChmodResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   PathChmodResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathChmodResponse> CreatePathChmodResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreatePathChmodResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

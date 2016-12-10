@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathDeleteRequest;
+
 struct PathDeleteResponse;
 
 enum PathDeleteFlag {
@@ -59,12 +59,18 @@ struct PathDeleteRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathDeleteRequest> CreatePathDeleteRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
   PathDeleteRequestBuilder builder_(_fbb);
   builder_.add_path(path);
   builder_.add_flag(flag);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathDeleteRequest> CreatePathDeleteRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
+  return CreatePathDeleteRequest(_fbb, path ? _fbb.CreateString(path) : 0, flag);
 }
 
 struct PathDeleteResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -97,12 +103,18 @@ struct PathDeleteResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathDeleteResponse> CreatePathDeleteResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   PathDeleteResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathDeleteResponse> CreatePathDeleteResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreatePathDeleteResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

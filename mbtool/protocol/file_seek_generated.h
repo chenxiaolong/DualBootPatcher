@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileSeekRequest;
+
 struct FileSeekResponse;
 
 enum FileSeekWhence {
@@ -61,9 +61,9 @@ struct FileSeekRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileSeekRequest> CreateFileSeekRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0,
-   int64_t offset = 0,
-   FileSeekWhence whence = FileSeekWhence_SEEK_SET) {
+    int32_t id = 0,
+    int64_t offset = 0,
+    FileSeekWhence whence = FileSeekWhence_SEEK_SET) {
   FileSeekRequestBuilder builder_(_fbb);
   builder_.add_offset(offset);
   builder_.add_id(id);
@@ -105,14 +105,21 @@ struct FileSeekResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileSeekResponse> CreateFileSeekResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   int64_t offset = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    int64_t offset = 0) {
   FileSeekResponseBuilder builder_(_fbb);
   builder_.add_offset(offset);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileSeekResponse> CreateFileSeekResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    int64_t offset = 0) {
+  return CreateFileSeekResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, offset);
 }
 
 }  // namespace v3

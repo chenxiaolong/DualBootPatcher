@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileCloseRequest;
+
 struct FileCloseResponse;
 
 struct FileCloseRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -38,7 +38,7 @@ struct FileCloseRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileCloseRequest> CreateFileCloseRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0) {
+    int32_t id = 0) {
   FileCloseRequestBuilder builder_(_fbb);
   builder_.add_id(id);
   return builder_.Finish();
@@ -74,12 +74,18 @@ struct FileCloseResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileCloseResponse> CreateFileCloseResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   FileCloseResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileCloseResponse> CreateFileCloseResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreateFileCloseResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

@@ -17,21 +17,42 @@
 
 package com.github.chenxiaolong.dualbootpatcher.socket.exceptions;
 
+import android.support.annotation.NonNull;
+
 /**
  * Exception thrown when an RPC call fails.
  *
  * If this exception is thrown, the mbtool connection can still be used.
  */
 public class MbtoolCommandException extends Exception {
+    private final int mErrno;
+
     public MbtoolCommandException(String detailMessage) {
         super(detailMessage);
+        mErrno = -1;
     }
 
     public MbtoolCommandException(String message, Throwable cause) {
         super(message, cause);
+        mErrno = -1;
     }
 
-    public MbtoolCommandException(Throwable cause) {
-        super(cause);
+    public MbtoolCommandException(int errno, String detailMessage) {
+        super(getMessageWithErrno(errno, detailMessage));
+        mErrno = errno;
+    }
+
+    public MbtoolCommandException(int errno, String message, Throwable cause) {
+        super(getMessageWithErrno(errno, message), cause);
+        mErrno = errno;
+    }
+
+    @NonNull
+    private static String getMessageWithErrno(int errno, String message) {
+        return message + " [errno = " + errno + "]";
+    }
+
+    public int getErrno() {
+        return mErrno;
     }
 }

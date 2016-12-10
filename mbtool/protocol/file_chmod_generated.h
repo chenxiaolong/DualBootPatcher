@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileChmodRequest;
+
 struct FileChmodResponse;
 
 struct FileChmodRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -42,8 +42,8 @@ struct FileChmodRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileChmodRequest> CreateFileChmodRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0,
-   uint32_t mode = 0) {
+    int32_t id = 0,
+    uint32_t mode = 0) {
   FileChmodRequestBuilder builder_(_fbb);
   builder_.add_mode(mode);
   builder_.add_id(id);
@@ -80,12 +80,18 @@ struct FileChmodResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileChmodResponse> CreateFileChmodResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   FileChmodResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileChmodResponse> CreateFileChmodResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreateFileChmodResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

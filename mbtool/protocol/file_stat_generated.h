@@ -5,13 +5,14 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct StructStat;
+
 struct FileStatRequest;
+
 struct FileStatResponse;
 
 struct StructStat FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -87,19 +88,19 @@ struct StructStatBuilder {
 };
 
 inline flatbuffers::Offset<StructStat> CreateStructStat(flatbuffers::FlatBufferBuilder &_fbb,
-   uint64_t st_dev = 0,
-   uint64_t st_ino = 0,
-   uint32_t st_mode = 0,
-   uint64_t st_nlink = 0,
-   uint32_t st_uid = 0,
-   uint32_t st_gid = 0,
-   uint64_t st_rdev = 0,
-   uint64_t st_size = 0,
-   uint64_t st_blksize = 0,
-   uint64_t st_blocks = 0,
-   uint64_t st_atime = 0,
-   uint64_t st_mtime = 0,
-   uint64_t st_ctime = 0) {
+    uint64_t st_dev = 0,
+    uint64_t st_ino = 0,
+    uint32_t st_mode = 0,
+    uint64_t st_nlink = 0,
+    uint32_t st_uid = 0,
+    uint32_t st_gid = 0,
+    uint64_t st_rdev = 0,
+    uint64_t st_size = 0,
+    uint64_t st_blksize = 0,
+    uint64_t st_blocks = 0,
+    uint64_t st_atime = 0,
+    uint64_t st_mtime = 0,
+    uint64_t st_ctime = 0) {
   StructStatBuilder builder_(_fbb);
   builder_.add_st_ctime(st_ctime);
   builder_.add_st_mtime(st_mtime);
@@ -142,7 +143,7 @@ struct FileStatRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileStatRequest> CreateFileStatRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0) {
+    int32_t id = 0) {
   FileStatRequestBuilder builder_(_fbb);
   builder_.add_id(id);
   return builder_.Finish();
@@ -183,14 +184,21 @@ struct FileStatResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   flatbuffers::Offset<StructStat> stat = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    flatbuffers::Offset<StructStat> stat = 0) {
   FileStatResponseBuilder builder_(_fbb);
   builder_.add_stat(stat);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    flatbuffers::Offset<StructStat> stat = 0) {
+  return CreateFileStatResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, stat);
 }
 
 }  // namespace v3

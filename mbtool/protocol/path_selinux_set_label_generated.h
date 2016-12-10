@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathSELinuxSetLabelRequest;
+
 struct PathSELinuxSetLabelResponse;
 
 struct PathSELinuxSetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -48,14 +48,21 @@ struct PathSELinuxSetLabelRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathSELinuxSetLabelRequest> CreatePathSELinuxSetLabelRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   flatbuffers::Offset<flatbuffers::String> label = 0,
-   bool follow_symlinks = false) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    flatbuffers::Offset<flatbuffers::String> label = 0,
+    bool follow_symlinks = false) {
   PathSELinuxSetLabelRequestBuilder builder_(_fbb);
   builder_.add_label(label);
   builder_.add_path(path);
   builder_.add_follow_symlinks(follow_symlinks);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathSELinuxSetLabelRequest> CreatePathSELinuxSetLabelRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    const char *label = nullptr,
+    bool follow_symlinks = false) {
+  return CreatePathSELinuxSetLabelRequest(_fbb, path ? _fbb.CreateString(path) : 0, label ? _fbb.CreateString(label) : 0, follow_symlinks);
 }
 
 struct PathSELinuxSetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -88,12 +95,18 @@ struct PathSELinuxSetLabelResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathSELinuxSetLabelResponse> CreatePathSELinuxSetLabelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   PathSELinuxSetLabelResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathSELinuxSetLabelResponse> CreatePathSELinuxSetLabelResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreatePathSELinuxSetLabelResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

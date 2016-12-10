@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathCopyRequest;
+
 struct PathCopyResponse;
 
 struct PathCopyRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -44,12 +44,18 @@ struct PathCopyRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathCopyRequest> CreatePathCopyRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> source = 0,
-   flatbuffers::Offset<flatbuffers::String> target = 0) {
+    flatbuffers::Offset<flatbuffers::String> source = 0,
+    flatbuffers::Offset<flatbuffers::String> target = 0) {
   PathCopyRequestBuilder builder_(_fbb);
   builder_.add_target(target);
   builder_.add_source(source);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathCopyRequest> CreatePathCopyRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *source = nullptr,
+    const char *target = nullptr) {
+  return CreatePathCopyRequest(_fbb, source ? _fbb.CreateString(source) : 0, target ? _fbb.CreateString(target) : 0);
 }
 
 struct PathCopyResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -82,12 +88,18 @@ struct PathCopyResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathCopyResponse> CreatePathCopyResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   PathCopyResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathCopyResponse> CreatePathCopyResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreatePathCopyResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

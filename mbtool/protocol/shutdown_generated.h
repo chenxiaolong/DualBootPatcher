@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct ShutdownRequest;
+
 struct ShutdownResponse;
 
 enum ShutdownType {
@@ -52,7 +52,7 @@ struct ShutdownRequestBuilder {
 };
 
 inline flatbuffers::Offset<ShutdownRequest> CreateShutdownRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   ShutdownType type = ShutdownType_INIT) {
+    ShutdownType type = ShutdownType_INIT) {
   ShutdownRequestBuilder builder_(_fbb);
   builder_.add_type(type);
   return builder_.Finish();
@@ -83,7 +83,7 @@ struct ShutdownResponseBuilder {
 };
 
 inline flatbuffers::Offset<ShutdownResponse> CreateShutdownResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false) {
+    bool success = false) {
   ShutdownResponseBuilder builder_(_fbb);
   builder_.add_success(success);
   return builder_.Finish();

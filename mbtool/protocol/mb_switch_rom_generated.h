@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbSwitchRomRequest;
+
 struct MbSwitchRomResponse;
 
 enum MbSwitchRomResult {
@@ -70,16 +70,24 @@ struct MbSwitchRomRequestBuilder {
 };
 
 inline flatbuffers::Offset<MbSwitchRomRequest> CreateMbSwitchRomRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> rom_id = 0,
-   flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0,
-   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0,
-   bool force_update_checksums = false) {
+    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
+    flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> blockdev_base_dirs = 0,
+    bool force_update_checksums = false) {
   MbSwitchRomRequestBuilder builder_(_fbb);
   builder_.add_blockdev_base_dirs(blockdev_base_dirs);
   builder_.add_boot_blockdev(boot_blockdev);
   builder_.add_rom_id(rom_id);
   builder_.add_force_update_checksums(force_update_checksums);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbSwitchRomRequest> CreateMbSwitchRomRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *rom_id = nullptr,
+    const char *boot_blockdev = nullptr,
+    const std::vector<flatbuffers::Offset<flatbuffers::String>> *blockdev_base_dirs = nullptr,
+    bool force_update_checksums = false) {
+  return CreateMbSwitchRomRequest(_fbb, rom_id ? _fbb.CreateString(rom_id) : 0, boot_blockdev ? _fbb.CreateString(boot_blockdev) : 0, blockdev_base_dirs ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*blockdev_base_dirs) : 0, force_update_checksums);
 }
 
 struct MbSwitchRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -111,8 +119,8 @@ struct MbSwitchRomResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbSwitchRomResponse> CreateMbSwitchRomResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   MbSwitchRomResult result = MbSwitchRomResult_SUCCEEDED) {
+    bool success = false,
+    MbSwitchRomResult result = MbSwitchRomResult_SUCCEEDED) {
   MbSwitchRomResponseBuilder builder_(_fbb);
   builder_.add_result(result);
   builder_.add_success(success);

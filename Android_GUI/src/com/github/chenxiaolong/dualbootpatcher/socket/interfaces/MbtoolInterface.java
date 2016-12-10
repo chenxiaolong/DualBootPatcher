@@ -330,7 +330,7 @@ public interface MbtoolInterface {
     /**
      * Create a directory using mbtool.
      *
-     * @param filename Absolute path
+     * @param path Absolute path
      * @param mode Unix permissions number (will be AND'ed with 0777 by mbtool for security reasons)
      * @param recursive Whether to create directories recursively
      * @throws IOException When any socket communication error occurs
@@ -339,6 +339,18 @@ public interface MbtoolInterface {
      */
     void pathMkdir(String path, int mode, boolean recursive) throws IOException, MbtoolException,
             MbtoolCommandException;
+
+    /**
+     * Get the target of a symlink.
+     *
+     * @param path Absolute path
+     * @return Target of symlink
+     * @throws IOException
+     * @throws MbtoolException
+     * @throws MbtoolCommandException
+     */
+    @NonNull
+    String pathReadlink(String path) throws IOException, MbtoolException, MbtoolCommandException;
 
     /**
      * Wipe a ROM.

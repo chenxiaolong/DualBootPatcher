@@ -36,6 +36,7 @@
 #include "mbutil/directory.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
+#include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -51,33 +52,6 @@
 #include "wipe.h"
 
 // flatbuffers
-#include "protocol/crypto_decrypt_generated.h"
-#include "protocol/crypto_get_pw_type_generated.h"
-#include "protocol/file_chmod_generated.h"
-#include "protocol/file_close_generated.h"
-#include "protocol/file_open_generated.h"
-#include "protocol/file_read_generated.h"
-#include "protocol/file_seek_generated.h"
-#include "protocol/file_selinux_get_label_generated.h"
-#include "protocol/file_selinux_set_label_generated.h"
-#include "protocol/file_stat_generated.h"
-#include "protocol/file_write_generated.h"
-#include "protocol/path_chmod_generated.h"
-#include "protocol/path_copy_generated.h"
-#include "protocol/path_delete_generated.h"
-#include "protocol/path_mkdir_generated.h"
-#include "protocol/path_selinux_get_label_generated.h"
-#include "protocol/path_selinux_set_label_generated.h"
-#include "protocol/path_get_directory_size_generated.h"
-#include "protocol/mb_get_booted_rom_id_generated.h"
-#include "protocol/mb_get_installed_roms_generated.h"
-#include "protocol/mb_get_version_generated.h"
-#include "protocol/mb_set_kernel_generated.h"
-#include "protocol/mb_switch_rom_generated.h"
-#include "protocol/mb_wipe_rom_generated.h"
-#include "protocol/mb_get_packages_count_generated.h"
-#include "protocol/reboot_generated.h"
-#include "protocol/shutdown_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
@@ -650,6 +624,35 @@ static bool v3_path_mkdir(int fd, const v3::Request *msg)
     rb.add_response_type(v3::ResponseType_PathMkdirResponse);
     rb.add_response(response.Union());
     builder.Finish(rb.Finish());
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_path_readlink(int fd, const v3::Request *msg)
+{
+    auto request = static_cast<const v3::PathReadlinkRequest *>(msg->request());
+    if (!request->path()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    std::string target;
+    bool ret = util::read_link(request->path()->c_str(), &target);
+    int saved_errno = errno;
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::PathReadlinkError> error;
+
+    if (!ret) {
+        error = v3::CreatePathReadlinkErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
+    }
+
+    auto response = v3::CreatePathReadlinkResponseDirect(
+            builder, ret ? target.c_str() : nullptr, error);
+
+    // Wrap response
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathReadlinkResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -1444,6 +1447,7 @@ static RequestMap request_map[] = {
     { v3::RequestType_PathCopyRequest, v3_path_copy },
     { v3::RequestType_PathDeleteRequest, v3_path_delete },
     { v3::RequestType_PathMkdirRequest, v3_path_mkdir },
+    { v3::RequestType_PathReadlinkRequest, v3_path_readlink },
     { v3::RequestType_PathSELinuxGetLabelRequest, v3_path_selinux_get_label },
     { v3::RequestType_PathSELinuxSetLabelRequest, v3_path_selinux_set_label },
     { v3::RequestType_PathGetDirectorySizeRequest, v3_path_get_directory_size },

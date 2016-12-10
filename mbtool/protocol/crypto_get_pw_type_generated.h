@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct CryptoGetPwTypeRequest;
+
 struct CryptoGetPwTypeResponse;
 
 enum CryptoPwType {
@@ -78,7 +78,7 @@ struct CryptoGetPwTypeResponseBuilder {
 };
 
 inline flatbuffers::Offset<CryptoGetPwTypeResponse> CreateCryptoGetPwTypeResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   CryptoPwType type = CryptoPwType_DEFAULT) {
+    CryptoPwType type = CryptoPwType_DEFAULT) {
   CryptoGetPwTypeResponseBuilder builder_(_fbb);
   builder_.add_type(type);
   return builder_.Finish();

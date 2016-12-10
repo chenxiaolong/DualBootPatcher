@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileWriteRequest;
+
 struct FileWriteResponse;
 
 struct FileWriteRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -43,12 +43,18 @@ struct FileWriteRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileWriteRequest> CreateFileWriteRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0,
-   flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
+    int32_t id = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
   FileWriteRequestBuilder builder_(_fbb);
   builder_.add_data(data);
   builder_.add_id(id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileWriteRequest> CreateFileWriteRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t id = 0,
+    const std::vector<uint8_t> *data = nullptr) {
+  return CreateFileWriteRequest(_fbb, id, data ? _fbb.CreateVector<uint8_t>(*data) : 0);
 }
 
 struct FileWriteResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -85,14 +91,21 @@ struct FileWriteResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileWriteResponse> CreateFileWriteResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   uint64_t bytes_written = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    uint64_t bytes_written = 0) {
   FileWriteResponseBuilder builder_(_fbb);
   builder_.add_bytes_written(bytes_written);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileWriteResponse> CreateFileWriteResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    uint64_t bytes_written = 0) {
+  return CreateFileWriteResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, bytes_written);
 }
 
 }  // namespace v3

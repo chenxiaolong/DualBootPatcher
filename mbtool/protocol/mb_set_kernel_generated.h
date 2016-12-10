@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbSetKernelRequest;
+
 struct MbSetKernelResponse;
 
 struct MbSetKernelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -44,12 +44,18 @@ struct MbSetKernelRequestBuilder {
 };
 
 inline flatbuffers::Offset<MbSetKernelRequest> CreateMbSetKernelRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> rom_id = 0,
-   flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0) {
+    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
+    flatbuffers::Offset<flatbuffers::String> boot_blockdev = 0) {
   MbSetKernelRequestBuilder builder_(_fbb);
   builder_.add_boot_blockdev(boot_blockdev);
   builder_.add_rom_id(rom_id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbSetKernelRequest> CreateMbSetKernelRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *rom_id = nullptr,
+    const char *boot_blockdev = nullptr) {
+  return CreateMbSetKernelRequest(_fbb, rom_id ? _fbb.CreateString(rom_id) : 0, boot_blockdev ? _fbb.CreateString(boot_blockdev) : 0);
 }
 
 struct MbSetKernelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -77,7 +83,7 @@ struct MbSetKernelResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbSetKernelResponse> CreateMbSetKernelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false) {
+    bool success = false) {
   MbSetKernelResponseBuilder builder_(_fbb);
   builder_.add_success(success);
   return builder_.Finish();
