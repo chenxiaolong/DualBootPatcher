@@ -82,6 +82,9 @@ import mbtool.daemon.v3.PathGetDirectorySizeRequest;
 import mbtool.daemon.v3.PathGetDirectorySizeResponse;
 import mbtool.daemon.v3.PathMkdirRequest;
 import mbtool.daemon.v3.PathMkdirResponse;
+import mbtool.daemon.v3.PathReadlinkError;
+import mbtool.daemon.v3.PathReadlinkRequest;
+import mbtool.daemon.v3.PathReadlinkResponse;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxGetLabelResponse;
 import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
@@ -159,6 +162,9 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
             break;
         case ResponseType.PathMkdirResponse:
             table = new PathMkdirResponse();
+            break;
+        case ResponseType.PathReadlinkResponse:
+            table = new PathReadlinkResponse();
             break;
         case ResponseType.PathSELinuxGetLabelResponse:
             table = new PathSELinuxGetLabelResponse();
@@ -809,6 +815,32 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
             throw new MbtoolCommandException(
                     path + ": Failed to mkdir: " + response.errorMsg());
         }
+    }
+
+    @NonNull
+    public synchronized String pathReadlink(String path) throws IOException, MbtoolException,
+            MbtoolCommandException {
+        // Create request
+        FlatBufferBuilder builder = new FlatBufferBuilder(FBB_SIZE);
+        int fbPath = builder.createString(path);
+        int fbRequest = PathReadlinkRequest.createPathReadlinkRequest(builder, fbPath);
+
+        // Send request
+        PathReadlinkResponse response = (PathReadlinkResponse)
+                sendRequest(builder, fbRequest, RequestType.PathReadlinkRequest,
+                        ResponseType.PathReadlinkResponse);
+
+        PathReadlinkError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(error.errnoValue(), error.msg());
+        }
+
+        String target = response.target();
+        if (target == null) {
+            throw new MbtoolCommandException(path + ": Got null symlink target on success");
+        }
+
+        return target;
     }
 
     @NonNull
