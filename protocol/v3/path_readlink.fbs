@@ -1,0 +1,22 @@
+namespace mbtool.daemon.v3;
+
+table PathReadlinkError {
+    // errno value
+    errno_value : int;
+
+    // Error message
+    msg : string;
+}
+
+table PathReadlinkRequest {
+    // Path to query
+    path : string;
+}
+
+table PathReadlinkResponse {
+    // Symlink target
+    target : string;
+
+    // Error
+    error : PathReadlinkError;
+}

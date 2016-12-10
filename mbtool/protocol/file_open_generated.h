@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileOpenRequest;
+
 struct FileOpenResponse;
 
 enum FileOpenFlag {
@@ -67,14 +67,21 @@ struct FileOpenRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags = 0,
-   uint32_t perms = 0) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags = 0,
+    uint32_t perms = 0) {
   FileOpenRequestBuilder builder_(_fbb);
   builder_.add_perms(perms);
   builder_.add_flags(flags);
   builder_.add_path(path);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    const std::vector<int16_t> *flags = nullptr,
+    uint32_t perms = 0) {
+  return CreateFileOpenRequest(_fbb, path ? _fbb.CreateString(path) : 0, flags ? _fbb.CreateVector<int16_t>(*flags) : 0, perms);
 }
 
 struct FileOpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -111,14 +118,21 @@ struct FileOpenResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileOpenResponse> CreateFileOpenResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   int32_t id = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    int32_t id = 0) {
   FileOpenResponseBuilder builder_(_fbb);
   builder_.add_id(id);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileOpenResponse> CreateFileOpenResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    int32_t id = 0) {
+  return CreateFileOpenResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, id);
 }
 
 }  // namespace v3

@@ -5,13 +5,14 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbRom;
+
 struct MbGetInstalledRomsRequest;
+
 struct MbGetInstalledRomsResponse;
 
 struct MbRom FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -65,12 +66,12 @@ struct MbRomBuilder {
 };
 
 inline flatbuffers::Offset<MbRom> CreateMbRom(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> id = 0,
-   flatbuffers::Offset<flatbuffers::String> system_path = 0,
-   flatbuffers::Offset<flatbuffers::String> cache_path = 0,
-   flatbuffers::Offset<flatbuffers::String> data_path = 0,
-   flatbuffers::Offset<flatbuffers::String> version = 0,
-   flatbuffers::Offset<flatbuffers::String> build = 0) {
+    flatbuffers::Offset<flatbuffers::String> id = 0,
+    flatbuffers::Offset<flatbuffers::String> system_path = 0,
+    flatbuffers::Offset<flatbuffers::String> cache_path = 0,
+    flatbuffers::Offset<flatbuffers::String> data_path = 0,
+    flatbuffers::Offset<flatbuffers::String> version = 0,
+    flatbuffers::Offset<flatbuffers::String> build = 0) {
   MbRomBuilder builder_(_fbb);
   builder_.add_build(build);
   builder_.add_version(version);
@@ -79,6 +80,16 @@ inline flatbuffers::Offset<MbRom> CreateMbRom(flatbuffers::FlatBufferBuilder &_f
   builder_.add_system_path(system_path);
   builder_.add_id(id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbRom> CreateMbRomDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *id = nullptr,
+    const char *system_path = nullptr,
+    const char *cache_path = nullptr,
+    const char *data_path = nullptr,
+    const char *version = nullptr,
+    const char *build = nullptr) {
+  return CreateMbRom(_fbb, id ? _fbb.CreateString(id) : 0, system_path ? _fbb.CreateString(system_path) : 0, cache_path ? _fbb.CreateString(cache_path) : 0, data_path ? _fbb.CreateString(data_path) : 0, version ? _fbb.CreateString(version) : 0, build ? _fbb.CreateString(build) : 0);
 }
 
 struct MbGetInstalledRomsRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -131,10 +142,15 @@ struct MbGetInstalledRomsResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbGetInstalledRomsResponse> CreateMbGetInstalledRomsResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<MbRom>>> roms = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<MbRom>>> roms = 0) {
   MbGetInstalledRomsResponseBuilder builder_(_fbb);
   builder_.add_roms(roms);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbGetInstalledRomsResponse> CreateMbGetInstalledRomsResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<flatbuffers::Offset<MbRom>> *roms = nullptr) {
+  return CreateMbGetInstalledRomsResponse(_fbb, roms ? _fbb.CreateVector<flatbuffers::Offset<MbRom>>(*roms) : 0);
 }
 
 }  // namespace v3

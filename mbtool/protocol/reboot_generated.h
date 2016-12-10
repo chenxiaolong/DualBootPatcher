@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct RebootRequest;
+
 struct RebootResponse;
 
 enum RebootType {
@@ -62,14 +62,21 @@ struct RebootRequestBuilder {
 };
 
 inline flatbuffers::Offset<RebootRequest> CreateRebootRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> arg = 0,
-   RebootType type = RebootType_FRAMEWORK,
-   bool confirm = false) {
+    flatbuffers::Offset<flatbuffers::String> arg = 0,
+    RebootType type = RebootType_FRAMEWORK,
+    bool confirm = false) {
   RebootRequestBuilder builder_(_fbb);
   builder_.add_arg(arg);
   builder_.add_type(type);
   builder_.add_confirm(confirm);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<RebootRequest> CreateRebootRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *arg = nullptr,
+    RebootType type = RebootType_FRAMEWORK,
+    bool confirm = false) {
+  return CreateRebootRequest(_fbb, arg ? _fbb.CreateString(arg) : 0, type, confirm);
 }
 
 struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -97,7 +104,7 @@ struct RebootResponseBuilder {
 };
 
 inline flatbuffers::Offset<RebootResponse> CreateRebootResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false) {
+    bool success = false) {
   RebootResponseBuilder builder_(_fbb);
   builder_.add_success(success);
   return builder_.Finish();

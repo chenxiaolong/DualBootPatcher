@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathMkdirRequest;
+
 struct PathMkdirResponse;
 
 struct PathMkdirRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -47,14 +47,21 @@ struct PathMkdirRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathMkdirRequest> CreatePathMkdirRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   uint32_t mode = 0,
-   bool recursive = false) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    uint32_t mode = 0,
+    bool recursive = false) {
   PathMkdirRequestBuilder builder_(_fbb);
   builder_.add_mode(mode);
   builder_.add_path(path);
   builder_.add_recursive(recursive);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathMkdirRequest> CreatePathMkdirRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    uint32_t mode = 0,
+    bool recursive = false) {
+  return CreatePathMkdirRequest(_fbb, path ? _fbb.CreateString(path) : 0, mode, recursive);
 }
 
 struct PathMkdirResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -87,12 +94,18 @@ struct PathMkdirResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathMkdirResponse> CreatePathMkdirResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
   PathMkdirResponseBuilder builder_(_fbb);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathMkdirResponse> CreatePathMkdirResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr) {
+  return CreatePathMkdirResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0);
 }
 
 }  // namespace v3

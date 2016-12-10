@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct FileReadRequest;
+
 struct FileReadResponse;
 
 struct FileReadRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -42,8 +42,8 @@ struct FileReadRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileReadRequest> CreateFileReadRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t id = 0,
-   uint64_t count = 0) {
+    int32_t id = 0,
+    uint64_t count = 0) {
   FileReadRequestBuilder builder_(_fbb);
   builder_.add_count(count);
   builder_.add_id(id);
@@ -89,16 +89,24 @@ struct FileReadResponseBuilder {
 };
 
 inline flatbuffers::Offset<FileReadResponse> CreateFileReadResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   uint64_t bytes_read = 0,
-   flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    uint64_t bytes_read = 0,
+    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> data = 0) {
   FileReadResponseBuilder builder_(_fbb);
   builder_.add_bytes_read(bytes_read);
   builder_.add_data(data);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileReadResponse> CreateFileReadResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    uint64_t bytes_read = 0,
+    const std::vector<uint8_t> *data = nullptr) {
+  return CreateFileReadResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, bytes_read, data ? _fbb.CreateVector<uint8_t>(*data) : 0);
 }
 
 }  // namespace v3

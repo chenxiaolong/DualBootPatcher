@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathSELinuxGetLabelRequest;
+
 struct PathSELinuxGetLabelResponse;
 
 struct PathSELinuxGetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -43,12 +43,18 @@ struct PathSELinuxGetLabelRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathSELinuxGetLabelRequest> CreatePathSELinuxGetLabelRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   bool follow_symlinks = false) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    bool follow_symlinks = false) {
   PathSELinuxGetLabelRequestBuilder builder_(_fbb);
   builder_.add_path(path);
   builder_.add_follow_symlinks(follow_symlinks);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathSELinuxGetLabelRequest> CreatePathSELinuxGetLabelRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    bool follow_symlinks = false) {
+  return CreatePathSELinuxGetLabelRequest(_fbb, path ? _fbb.CreateString(path) : 0, follow_symlinks);
 }
 
 struct PathSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -86,14 +92,21 @@ struct PathSELinuxGetLabelResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   flatbuffers::Offset<flatbuffers::String> label = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    flatbuffers::Offset<flatbuffers::String> label = 0) {
   PathSELinuxGetLabelResponseBuilder builder_(_fbb);
   builder_.add_label(label);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabelResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    const char *label = nullptr) {
+  return CreatePathSELinuxGetLabelResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, label ? _fbb.CreateString(label) : 0);
 }
 
 }  // namespace v3

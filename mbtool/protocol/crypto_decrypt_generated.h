@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct CryptoDecryptRequest;
+
 struct CryptoDecryptResponse;
 
 struct CryptoDecryptRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -39,10 +39,15 @@ struct CryptoDecryptRequestBuilder {
 };
 
 inline flatbuffers::Offset<CryptoDecryptRequest> CreateCryptoDecryptRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> password = 0) {
+    flatbuffers::Offset<flatbuffers::String> password = 0) {
   CryptoDecryptRequestBuilder builder_(_fbb);
   builder_.add_password(password);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<CryptoDecryptRequest> CreateCryptoDecryptRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *password = nullptr) {
+  return CreateCryptoDecryptRequest(_fbb, password ? _fbb.CreateString(password) : 0);
 }
 
 struct CryptoDecryptResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -70,7 +75,7 @@ struct CryptoDecryptResponseBuilder {
 };
 
 inline flatbuffers::Offset<CryptoDecryptResponse> CreateCryptoDecryptResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false) {
+    bool success = false) {
   CryptoDecryptResponseBuilder builder_(_fbb);
   builder_.add_success(success);
   return builder_.Finish();

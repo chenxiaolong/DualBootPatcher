@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct PathGetDirectorySizeRequest;
+
 struct PathGetDirectorySizeResponse;
 
 struct PathGetDirectorySizeRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -45,12 +45,18 @@ struct PathGetDirectorySizeRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathGetDirectorySizeRequest> CreatePathGetDirectorySizeRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> exclusions = 0) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> exclusions = 0) {
   PathGetDirectorySizeRequestBuilder builder_(_fbb);
   builder_.add_exclusions(exclusions);
   builder_.add_path(path);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathGetDirectorySizeRequest> CreatePathGetDirectorySizeRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    const std::vector<flatbuffers::Offset<flatbuffers::String>> *exclusions = nullptr) {
+  return CreatePathGetDirectorySizeRequest(_fbb, path ? _fbb.CreateString(path) : 0, exclusions ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*exclusions) : 0);
 }
 
 struct PathGetDirectorySizeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -87,14 +93,21 @@ struct PathGetDirectorySizeResponseBuilder {
 };
 
 inline flatbuffers::Offset<PathGetDirectorySizeResponse> CreatePathGetDirectorySizeResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   uint64_t size = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    uint64_t size = 0) {
   PathGetDirectorySizeResponseBuilder builder_(_fbb);
   builder_.add_size(size);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathGetDirectorySizeResponse> CreatePathGetDirectorySizeResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    uint64_t size = 0) {
+  return CreatePathGetDirectorySizeResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, size);
 }
 
 }  // namespace v3

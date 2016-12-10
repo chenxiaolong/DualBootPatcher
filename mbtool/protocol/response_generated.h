@@ -28,6 +28,7 @@
 #include "path_delete_generated.h"
 #include "path_get_directory_size_generated.h"
 #include "path_mkdir_generated.h"
+#include "path_readlink_generated.h"
 #include "path_selinux_get_label_generated.h"
 #include "path_selinux_set_label_generated.h"
 #include "reboot_generated.h"
@@ -37,237 +38,11 @@
 namespace mbtool {
 namespace daemon {
 namespace v3 {
-struct CryptoDecryptRequest;
-struct CryptoDecryptResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct CryptoGetPwTypeRequest;
-struct CryptoGetPwTypeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileChmodRequest;
-struct FileChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileCloseRequest;
-struct FileCloseResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileOpenRequest;
-struct FileOpenResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileReadRequest;
-struct FileReadResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSeekRequest;
-struct FileSeekResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct StructStat;
-struct FileStatRequest;
-struct FileStatResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileWriteRequest;
-struct FileWriteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxGetLabelRequest;
-struct FileSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct FileSELinuxSetLabelRequest;
-struct FileSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathChmodRequest;
-struct PathChmodResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathCopyRequest;
-struct PathCopyResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathDeleteRequest;
-struct PathDeleteResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathMkdirRequest;
-struct PathMkdirResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxGetLabelRequest;
-struct PathSELinuxGetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathSELinuxSetLabelRequest;
-struct PathSELinuxSetLabelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct PathGetDirectorySizeRequest;
-struct PathGetDirectorySizeResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct SignedExecRequest;
-struct SignedExecOutputResponse;
-struct SignedExecResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetVersionRequest;
-struct MbGetVersionResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbRom;
-struct MbGetInstalledRomsRequest;
-struct MbGetInstalledRomsResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetBootedRomIdRequest;
-struct MbGetBootedRomIdResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbSwitchRomRequest;
-struct MbSwitchRomResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbSetKernelRequest;
-struct MbSetKernelResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbWipeRomRequest;
-struct MbWipeRomResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct MbGetPackagesCountRequest;
-struct MbGetPackagesCountResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct RebootRequest;
-struct RebootResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-namespace mbtool {
-namespace daemon {
-namespace v3 {
-struct ShutdownRequest;
-struct ShutdownResponse;
-}  // namespace v3
-}  // namespace daemon
-}  // namespace mbtool
-
-namespace mbtool {
-namespace daemon {
-namespace v3 {
 
 struct Invalid;
+
 struct Unsupported;
+
 struct Response;
 
 enum ResponseType {
@@ -303,12 +78,13 @@ enum ResponseType {
   ResponseType_PathMkdirResponse = 29,
   ResponseType_CryptoDecryptResponse = 30,
   ResponseType_CryptoGetPwTypeResponse = 31,
+  ResponseType_PathReadlinkResponse = 32,
   ResponseType_MIN = ResponseType_NONE,
-  ResponseType_MAX = ResponseType_CryptoGetPwTypeResponse
+  ResponseType_MAX = ResponseType_PathReadlinkResponse
 };
 
 inline const char **EnumNamesResponseType() {
-  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", "PathDeleteResponse", "PathMkdirResponse", "CryptoDecryptResponse", "CryptoGetPwTypeResponse", nullptr };
+  static const char *names[] = { "NONE", "Invalid", "Unsupported", "FileChmodResponse", "FileCloseResponse", "FileOpenResponse", "FileReadResponse", "FileSeekResponse", "FileStatResponse", "FileWriteResponse", "FileSELinuxGetLabelResponse", "FileSELinuxSetLabelResponse", "PathChmodResponse", "PathCopyResponse", "PathSELinuxGetLabelResponse", "PathSELinuxSetLabelResponse", "PathGetDirectorySizeResponse", "MbGetVersionResponse", "MbGetInstalledRomsResponse", "MbGetBootedRomIdResponse", "MbSwitchRomResponse", "MbSetKernelResponse", "MbWipeRomResponse", "MbGetPackagesCountResponse", "RebootResponse", "SignedExecOutputResponse", "SignedExecResponse", "ShutdownResponse", "PathDeleteResponse", "PathMkdirResponse", "CryptoDecryptResponse", "CryptoGetPwTypeResponse", "PathReadlinkResponse", nullptr };
   return names;
 }
 
@@ -392,8 +168,8 @@ struct ResponseBuilder {
 };
 
 inline flatbuffers::Offset<Response> CreateResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   ResponseType response_type = ResponseType_NONE,
-   flatbuffers::Offset<void> response = 0) {
+    ResponseType response_type = ResponseType_NONE,
+    flatbuffers::Offset<void> response = 0) {
   ResponseBuilder builder_(_fbb);
   builder_.add_response(response);
   builder_.add_response_type(response_type);
@@ -434,13 +210,14 @@ inline bool VerifyResponseType(flatbuffers::Verifier &verifier, const void *unio
     case ResponseType_PathMkdirResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathMkdirResponse *>(union_obj));
     case ResponseType_CryptoDecryptResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::CryptoDecryptResponse *>(union_obj));
     case ResponseType_CryptoGetPwTypeResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::CryptoGetPwTypeResponse *>(union_obj));
+    case ResponseType_PathReadlinkResponse: return verifier.VerifyTable(reinterpret_cast<const mbtool::daemon::v3::PathReadlinkResponse *>(union_obj));
     default: return false;
   }
 }
 
 inline const mbtool::daemon::v3::Response *GetResponse(const void *buf) { return flatbuffers::GetRoot<mbtool::daemon::v3::Response>(buf); }
 
-inline bool VerifyResponseBuffer(flatbuffers::Verifier &verifier) { return verifier.VerifyBuffer<mbtool::daemon::v3::Response>(); }
+inline bool VerifyResponseBuffer(flatbuffers::Verifier &verifier) { return verifier.VerifyBuffer<mbtool::daemon::v3::Response>(nullptr); }
 
 inline void FinishResponseBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::Offset<mbtool::daemon::v3::Response> root) { fbb.Finish(root); }
 
