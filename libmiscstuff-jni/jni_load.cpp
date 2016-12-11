@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -17,28 +17,22 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <jni.h>
 
-#include "mbcommon/common.h"
-
-#ifdef __cplusplus
-#include <cinttypes>
-#include <cstdbool>
+#include "mblog/android_logger.h"
+#include "mblog/logging.h"
 
 extern "C" {
-#else
-#include <inttypes.h>
-#include <stdbool.h>
-#endif
 
-MB_EXPORT bool extract_archive(const char *filename, const char *target);
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    (void) vm;
+    (void) reserved;
 
-MB_EXPORT bool find_string_in_file(const char *path, const char *str, int *result);
+    mb::log::set_log_tag("libmiscstuff");
+    mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
 
-MB_EXPORT void mblog_set_logcat();
-
-MB_EXPORT char * read_link(const char *path);
-
-#ifdef __cplusplus
+    return JNI_VERSION_1_6;
 }
-#endif
+
+}

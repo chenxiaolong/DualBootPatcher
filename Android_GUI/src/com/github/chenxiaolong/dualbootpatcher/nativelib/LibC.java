@@ -17,8 +17,13 @@
 
 package com.github.chenxiaolong.dualbootpatcher.nativelib;
 
+import com.sun.jna.LastErrorException;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+
+import java.util.Arrays;
+import java.util.List;
 
 // NOTE: Almost no checking of parameters is performed on both the Java and C side of this native
 //       wrapper. As a rule of thumb, don't pass null to any function.
@@ -31,8 +36,31 @@ public class LibC {
             Native.register(CWrapper.class, "c");
         }
 
+        public static class mntent extends Structure {
+            public String mnt_fsname;
+            public String mnt_dir;
+            public String mnt_type;
+            public String mnt_opts;
+            public int mnt_freq;
+            public int mnt_passno;
+
+            @Override
+            protected List getFieldOrder() {
+                return Arrays.asList("mnt_fsname", "mnt_dir", "mnt_type", "mnt_opts", "mnt_freq",
+                        "mnt_passno");
+            }
+        }
+
         public static native void free(Pointer ptr);
 
         public static native /* pid_t */ int getpid();
+
+        // bionic does not provide setmntent
+        public static native Pointer fopen(String file, String mode) throws LastErrorException;
+
+        // bionic does not provide endmntent
+        public static native Pointer fclose(Pointer stream) throws LastErrorException;
+
+        public static native mntent getmntent(Pointer stream);
     }
 }

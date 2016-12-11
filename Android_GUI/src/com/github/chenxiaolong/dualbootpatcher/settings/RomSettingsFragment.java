@@ -48,7 +48,7 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServi
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;

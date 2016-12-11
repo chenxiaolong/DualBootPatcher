@@ -28,7 +28,7 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 
 import org.apache.commons.io.Charsets;
 
@@ -169,8 +169,12 @@ public class PatcherUtils {
                 org.apache.commons.io.FileUtils.deleteQuietly(d);
             }
 
-            LibMiscStuff.INSTANCE.extract_archive(targetFile.getAbsolutePath(),
-                    context.getFilesDir().getAbsolutePath());
+            try {
+                LibMiscStuff.extractArchive(targetFile.getAbsolutePath(),
+                        context.getFilesDir().getAbsolutePath());
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to extract data archive", e);
+            }
 
             // Delete archive
             targetFile.delete();

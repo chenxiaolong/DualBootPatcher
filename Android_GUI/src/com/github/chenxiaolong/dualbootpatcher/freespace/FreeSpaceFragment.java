@@ -36,8 +36,8 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff.mntent;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC.CWrapper.mntent;
 import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar;
 import com.sun.jna.Pointer;
 
@@ -105,9 +105,9 @@ public class FreeSpaceFragment extends Fragment {
     private void refreshMounts() {
         mMounts.clear();
 
-        Pointer stream = LibMiscStuff.INSTANCE.setmntent("/proc/mounts", "r");
+        Pointer stream = LibC.CWrapper.fopen("/proc/mounts", "r");
         mntent ent;
-        while ((ent = LibMiscStuff.INSTANCE.getmntent(stream)) != null) {
+        while ((ent = LibC.CWrapper.getmntent(stream)) != null) {
             MountInfo info = new MountInfo();
             info.mountpoint = ent.mnt_dir;
             info.fsname = ent.mnt_fsname;
@@ -162,7 +162,7 @@ public class FreeSpaceFragment extends Fragment {
             mMounts.add(info);
         }
 
-        LibMiscStuff.INSTANCE.endmntent(stream);
+        LibC.CWrapper.fclose(stream);
 
         mAdapter.notifyDataSetChanged();
     }
