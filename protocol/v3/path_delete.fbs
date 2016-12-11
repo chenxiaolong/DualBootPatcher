@@ -7,14 +7,28 @@ enum PathDeleteFlag : short {
     RECURSIVE
 }
 
+table PathDeleteError {
+    // errno value
+    errno_value : int;
+
+    // strerror(errno)
+    msg : string;
+}
+
 table PathDeleteRequest {
     // Path to open
     path : string;
+
     // Delete flag
     flag : PathDeleteFlag = REMOVE;
 }
 
 table PathDeleteResponse {
+    // Deprecated
     success : bool;
+    // Deprecated
     error_msg : string;
+
+    // Error
+    error : PathDeleteError;
 }

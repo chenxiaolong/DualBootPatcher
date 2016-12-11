@@ -6,16 +6,26 @@ enum RebootType : short {
     DIRECT
 }
 
+table RebootError {
+    // Currently, no additional details are provided
+}
+
 table RebootRequest {
     // Argument for reboot (Only valid for RebootType::INIT and
     // RebootType::DIRECT)
     arg : string;
+
     // Reboot mechanism
     type : RebootType = FRAMEWORK;
+
     // Confirm reboot? (Only valid for RebootType::Framework)
     confirm : bool;
 }
 
 table RebootResponse {
+    // Deprecated
     success : bool;
+
+    // Error
+    error : RebootError;
 }

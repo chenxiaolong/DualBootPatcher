@@ -9,9 +9,55 @@ namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct PathSELinuxGetLabelError;
+
 struct PathSELinuxGetLabelRequest;
 
 struct PathSELinuxGetLabelResponse;
+
+struct PathSELinuxGetLabelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ERRNO_VALUE = 4,
+    VT_MSG = 6
+  };
+  int32_t errno_value() const { return GetField<int32_t>(VT_ERRNO_VALUE, 0); }
+  const flatbuffers::String *msg() const { return GetPointer<const flatbuffers::String *>(VT_MSG); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           verifier.Verify(msg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct PathSELinuxGetLabelErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_errno_value(int32_t errno_value) { fbb_.AddElement<int32_t>(PathSELinuxGetLabelError::VT_ERRNO_VALUE, errno_value, 0); }
+  void add_msg(flatbuffers::Offset<flatbuffers::String> msg) { fbb_.AddOffset(PathSELinuxGetLabelError::VT_MSG, msg); }
+  PathSELinuxGetLabelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  PathSELinuxGetLabelErrorBuilder &operator=(const PathSELinuxGetLabelErrorBuilder &);
+  flatbuffers::Offset<PathSELinuxGetLabelError> Finish() {
+    auto o = flatbuffers::Offset<PathSELinuxGetLabelError>(fbb_.EndTable(start_, 2));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<PathSELinuxGetLabelError> CreatePathSELinuxGetLabelError(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    flatbuffers::Offset<flatbuffers::String> msg = 0) {
+  PathSELinuxGetLabelErrorBuilder builder_(_fbb);
+  builder_.add_msg(msg);
+  builder_.add_errno_value(errno_value);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathSELinuxGetLabelError> CreatePathSELinuxGetLabelErrorDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    const char *msg = nullptr) {
+  return CreatePathSELinuxGetLabelError(_fbb, errno_value, msg ? _fbb.CreateString(msg) : 0);
+}
 
 struct PathSELinuxGetLabelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -61,11 +107,13 @@ struct PathSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
   enum {
     VT_SUCCESS = 4,
     VT_ERROR_MSG = 6,
-    VT_LABEL = 8
+    VT_LABEL = 8,
+    VT_ERROR = 10
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   const flatbuffers::String *label() const { return GetPointer<const flatbuffers::String *>(VT_LABEL); }
+  const PathSELinuxGetLabelError *error() const { return GetPointer<const PathSELinuxGetLabelError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
@@ -73,6 +121,8 @@ struct PathSELinuxGetLabelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers
            verifier.Verify(error_msg()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, VT_LABEL) &&
            verifier.Verify(label()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -83,10 +133,11 @@ struct PathSELinuxGetLabelResponseBuilder {
   void add_success(bool success) { fbb_.AddElement<uint8_t>(PathSELinuxGetLabelResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(PathSELinuxGetLabelResponse::VT_ERROR_MSG, error_msg); }
   void add_label(flatbuffers::Offset<flatbuffers::String> label) { fbb_.AddOffset(PathSELinuxGetLabelResponse::VT_LABEL, label); }
+  void add_error(flatbuffers::Offset<PathSELinuxGetLabelError> error) { fbb_.AddOffset(PathSELinuxGetLabelResponse::VT_ERROR, error); }
   PathSELinuxGetLabelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PathSELinuxGetLabelResponseBuilder &operator=(const PathSELinuxGetLabelResponseBuilder &);
   flatbuffers::Offset<PathSELinuxGetLabelResponse> Finish() {
-    auto o = flatbuffers::Offset<PathSELinuxGetLabelResponse>(fbb_.EndTable(start_, 3));
+    auto o = flatbuffers::Offset<PathSELinuxGetLabelResponse>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
@@ -94,8 +145,10 @@ struct PathSELinuxGetLabelResponseBuilder {
 inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabelResponse(flatbuffers::FlatBufferBuilder &_fbb,
     bool success = false,
     flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-    flatbuffers::Offset<flatbuffers::String> label = 0) {
+    flatbuffers::Offset<flatbuffers::String> label = 0,
+    flatbuffers::Offset<PathSELinuxGetLabelError> error = 0) {
   PathSELinuxGetLabelResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_label(label);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
@@ -105,8 +158,9 @@ inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabe
 inline flatbuffers::Offset<PathSELinuxGetLabelResponse> CreatePathSELinuxGetLabelResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
     bool success = false,
     const char *error_msg = nullptr,
-    const char *label = nullptr) {
-  return CreatePathSELinuxGetLabelResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, label ? _fbb.CreateString(label) : 0);
+    const char *label = nullptr,
+    flatbuffers::Offset<PathSELinuxGetLabelError> error = 0) {
+  return CreatePathSELinuxGetLabelResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, label ? _fbb.CreateString(label) : 0, error);
 }
 
 }  // namespace v3

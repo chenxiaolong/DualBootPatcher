@@ -20,27 +20,32 @@ public final class FileReadResponse extends Table {
   public int data(int j) { int o = __offset(10); return o != 0 ? bb.get(__vector(o) + j * 1) & 0xFF : 0; }
   public int dataLength() { int o = __offset(10); return o != 0 ? __vector_len(o) : 0; }
   public ByteBuffer dataAsByteBuffer() { return __vector_as_bytebuffer(10, 1); }
+  public FileReadError error() { return error(new FileReadError()); }
+  public FileReadError error(FileReadError obj) { int o = __offset(12); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createFileReadResponse(FlatBufferBuilder builder,
       boolean success,
       int error_msgOffset,
       long bytes_read,
-      int dataOffset) {
-    builder.startObject(4);
+      int dataOffset,
+      int errorOffset) {
+    builder.startObject(5);
     FileReadResponse.addBytesRead(builder, bytes_read);
+    FileReadResponse.addError(builder, errorOffset);
     FileReadResponse.addData(builder, dataOffset);
     FileReadResponse.addErrorMsg(builder, error_msgOffset);
     FileReadResponse.addSuccess(builder, success);
     return FileReadResponse.endFileReadResponse(builder);
   }
 
-  public static void startFileReadResponse(FlatBufferBuilder builder) { builder.startObject(4); }
+  public static void startFileReadResponse(FlatBufferBuilder builder) { builder.startObject(5); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
   public static void addErrorMsg(FlatBufferBuilder builder, int errorMsgOffset) { builder.addOffset(1, errorMsgOffset, 0); }
   public static void addBytesRead(FlatBufferBuilder builder, long bytesRead) { builder.addLong(2, bytesRead, 0); }
   public static void addData(FlatBufferBuilder builder, int dataOffset) { builder.addOffset(3, dataOffset, 0); }
   public static int createDataVector(FlatBufferBuilder builder, byte[] data) { builder.startVector(1, data.length, 1); for (int i = data.length - 1; i >= 0; i--) builder.addByte(data[i]); return builder.endVector(); }
   public static void startDataVector(FlatBufferBuilder builder, int numElems) { builder.startVector(1, numElems, 1); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(4, errorOffset, 0); }
   public static int endFileReadResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

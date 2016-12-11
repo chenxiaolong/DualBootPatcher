@@ -5,11 +5,19 @@ enum ShutdownType : short {
     DIRECT
 }
 
+table ShutdownError {
+    // Currently, no additional details are provided
+}
+
 table ShutdownRequest {
     // Shutdown mechanism
     type : ShutdownType = INIT;
 }
 
 table ShutdownResponse {
+    // Deprecated
     success : bool;
+
+    // Error
+    error : ShutdownError;
 }

@@ -14,16 +14,21 @@ public final class ShutdownResponse extends Table {
   public ShutdownResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
 
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
+  public ShutdownError error() { return error(new ShutdownError()); }
+  public ShutdownError error(ShutdownError obj) { int o = __offset(6); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createShutdownResponse(FlatBufferBuilder builder,
-      boolean success) {
-    builder.startObject(1);
+      boolean success,
+      int errorOffset) {
+    builder.startObject(2);
+    ShutdownResponse.addError(builder, errorOffset);
     ShutdownResponse.addSuccess(builder, success);
     return ShutdownResponse.endShutdownResponse(builder);
   }
 
-  public static void startShutdownResponse(FlatBufferBuilder builder) { builder.startObject(1); }
+  public static void startShutdownResponse(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(1, errorOffset, 0); }
   public static int endShutdownResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

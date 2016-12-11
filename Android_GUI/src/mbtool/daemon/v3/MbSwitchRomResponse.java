@@ -15,19 +15,24 @@ public final class MbSwitchRomResponse extends Table {
 
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public short result() { int o = __offset(6); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
+  public MbSwitchRomError error() { return error(new MbSwitchRomError()); }
+  public MbSwitchRomError error(MbSwitchRomError obj) { int o = __offset(8); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createMbSwitchRomResponse(FlatBufferBuilder builder,
       boolean success,
-      short result) {
-    builder.startObject(2);
+      short result,
+      int errorOffset) {
+    builder.startObject(3);
+    MbSwitchRomResponse.addError(builder, errorOffset);
     MbSwitchRomResponse.addResult(builder, result);
     MbSwitchRomResponse.addSuccess(builder, success);
     return MbSwitchRomResponse.endMbSwitchRomResponse(builder);
   }
 
-  public static void startMbSwitchRomResponse(FlatBufferBuilder builder) { builder.startObject(2); }
+  public static void startMbSwitchRomResponse(FlatBufferBuilder builder) { builder.startObject(3); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
   public static void addResult(FlatBufferBuilder builder, short result) { builder.addShort(1, result, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(2, errorOffset, 0); }
   public static int endMbSwitchRomResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

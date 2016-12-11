@@ -17,22 +17,27 @@ public final class PathGetDirectorySizeResponse extends Table {
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
   public long size() { int o = __offset(8); return o != 0 ? bb.getLong(o + bb_pos) : 0; }
+  public PathGetDirectorySizeError error() { return error(new PathGetDirectorySizeError()); }
+  public PathGetDirectorySizeError error(PathGetDirectorySizeError obj) { int o = __offset(10); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createPathGetDirectorySizeResponse(FlatBufferBuilder builder,
       boolean success,
       int error_msgOffset,
-      long size) {
-    builder.startObject(3);
+      long size,
+      int errorOffset) {
+    builder.startObject(4);
     PathGetDirectorySizeResponse.addSize(builder, size);
+    PathGetDirectorySizeResponse.addError(builder, errorOffset);
     PathGetDirectorySizeResponse.addErrorMsg(builder, error_msgOffset);
     PathGetDirectorySizeResponse.addSuccess(builder, success);
     return PathGetDirectorySizeResponse.endPathGetDirectorySizeResponse(builder);
   }
 
-  public static void startPathGetDirectorySizeResponse(FlatBufferBuilder builder) { builder.startObject(3); }
+  public static void startPathGetDirectorySizeResponse(FlatBufferBuilder builder) { builder.startObject(4); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
   public static void addErrorMsg(FlatBufferBuilder builder, int errorMsgOffset) { builder.addOffset(1, errorMsgOffset, 0); }
   public static void addSize(FlatBufferBuilder builder, long size) { builder.addLong(2, size, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(3, errorOffset, 0); }
   public static int endPathGetDirectorySizeResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

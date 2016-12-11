@@ -31,7 +31,7 @@ public class MbtoolUtils {
     static {
         if (BuildConfig.BUILD_TYPE.equals("ci")) {
             // Snapshot builds
-            sMinVersionMap.put(Feature.DAEMON, Version.from("9.1.0.r49"));
+            sMinVersionMap.put(Feature.DAEMON, Version.from("9.1.0.r54"));
             sMinVersionMap.put(Feature.APP_SHARING, Version.from("8.0.0.r2155"));
             sMinVersionMap.put(Feature.IN_APP_INSTALLATION, Version.from("8.0.0.r2859"));
         } else {
