@@ -27,50 +27,15 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/vfs.h>
 
 #include <archive.h>
 #include <archive_entry.h>
-
-#include <android/log.h>
 
 #include "mblog/android_logger.h"
 #include "mblog/logging.h"
 
 
 extern "C" {
-
-int64_t get_mnt_total_size(const char *mountpoint) {
-    struct statfs sfs;
-
-    if (statfs(mountpoint, &sfs) < 0) {
-        return 0;
-    }
-
-    return sfs.f_bsize * sfs.f_blocks;
-}
-
-int64_t get_mnt_avail_size(const char *mountpoint) {
-    struct statfs sfs;
-
-    if (statfs(mountpoint, &sfs) < 0) {
-        return 0;
-    }
-
-    return sfs.f_bsize * sfs.f_bavail;
-}
-
-bool is_same_file(const char *path1, const char *path2)
-{
-    struct stat sb1;
-    struct stat sb2;
-
-    if (stat(path1, &sb1) < 0 || stat(path2, &sb2) < 0) {
-        return false;
-    }
-
-    return sb1.st_dev == sb2.st_dev && sb1.st_ino == sb2.st_ino;
-}
 
 bool extract_archive(const char *filename, const char *target)
 {

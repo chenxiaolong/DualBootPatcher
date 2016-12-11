@@ -31,11 +31,6 @@ extern "C" {
 #include <stdbool.h>
 #endif
 
-MB_EXPORT int64_t get_mnt_total_size(const char *mountpoint);
-MB_EXPORT int64_t get_mnt_avail_size(const char *mountpoint);
-
-MB_EXPORT bool is_same_file(const char *path1, const char *path2);
-
 MB_EXPORT bool extract_archive(const char *filename, const char *target);
 
 MB_EXPORT bool find_string_in_file(const char *path, const char *str, int *result);

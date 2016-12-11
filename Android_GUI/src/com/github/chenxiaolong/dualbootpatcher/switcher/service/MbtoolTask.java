@@ -171,7 +171,7 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                     return false;
                 }
 
-                String fdSource = "/proc/" + LibC.getpid() + "/fd/" + pfd.getFd();
+                String fdSource = "/proc/" + LibC.CWrapper.getpid() + "/fd/" + pfd.getFd();
                 String fdTarget;
                 try {
                     fdTarget = iface.pathReadlink(fdSource);

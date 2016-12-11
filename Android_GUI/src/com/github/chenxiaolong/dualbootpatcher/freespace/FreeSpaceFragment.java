@@ -20,12 +20,15 @@ package com.github.chenxiaolong.dualbootpatcher.freespace;
 import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.StatFs;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -138,8 +141,23 @@ public class FreeSpaceFragment extends Fragment {
                 continue;
             }
 
-            info.totalSpace = LibMiscStuff.INSTANCE.get_mnt_total_size(info.mountpoint);
-            info.availSpace = LibMiscStuff.INSTANCE.get_mnt_avail_size(info.mountpoint);
+            StatFs statFs;
+
+            try {
+                statFs = new StatFs(info.mountpoint);
+            } catch (IllegalArgumentException e) {
+                // Thrown if Os.statvfs() throws ErrnoException
+                Log.e(TAG, "Exception during statfs of " + info.mountpoint + ": " + e.getMessage());
+                continue;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                info.totalSpace = statFs.getBlockSizeLong() * statFs.getBlockCountLong();
+                info.availSpace = statFs.getBlockSizeLong() * statFs.getAvailableBlocksLong();
+            } else {
+                info.totalSpace = statFs.getBlockSize() * statFs.getBlockCount();
+                info.availSpace = statFs.getBlockSize() * statFs.getAvailableBlocks();
+            }
 
             mMounts.add(info);
         }

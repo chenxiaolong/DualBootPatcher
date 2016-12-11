@@ -49,11 +49,6 @@ public class LibMiscStuff {
         mntent getmntent(Pointer stream);
         int endmntent(Pointer stream);
 
-        long get_mnt_total_size(String mountpoint);
-        long get_mnt_avail_size(String mountpoint);
-
-        boolean is_same_file(String path1, String path2);
-
         boolean extract_archive(String filename, String target);
 
         boolean find_string_in_file(String path, String str, IntByReference result);

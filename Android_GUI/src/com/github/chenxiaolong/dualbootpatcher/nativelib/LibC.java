@@ -25,11 +25,14 @@ import com.sun.jna.Pointer;
 
 @SuppressWarnings("JniMissingFunction")
 public class LibC {
-    static {
-        Native.register(LibC.class, "c");
+    @SuppressWarnings({"WeakerAccess", "unused"})
+    public static class CWrapper {
+        static {
+            Native.register(CWrapper.class, "c");
+        }
+
+        public static native void free(Pointer ptr);
+
+        public static native /* pid_t */ int getpid();
     }
-
-    public static native void free(Pointer ptr);
-
-    public static native /* pid_t */ int getpid();
 }
