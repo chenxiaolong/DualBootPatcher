@@ -9,6 +9,8 @@ namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct RebootError;
+
 struct RebootRequest;
 
 struct RebootResponse;
@@ -27,6 +29,29 @@ inline const char **EnumNamesRebootType() {
 }
 
 inline const char *EnumNameRebootType(RebootType e) { return EnumNamesRebootType()[static_cast<int>(e)]; }
+
+struct RebootError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct RebootErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  RebootErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  RebootErrorBuilder &operator=(const RebootErrorBuilder &);
+  flatbuffers::Offset<RebootError> Finish() {
+    auto o = flatbuffers::Offset<RebootError>(fbb_.EndTable(start_, 0));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<RebootError> CreateRebootError(flatbuffers::FlatBufferBuilder &_fbb) {
+  RebootErrorBuilder builder_(_fbb);
+  return builder_.Finish();
+}
 
 struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -81,12 +106,16 @@ inline flatbuffers::Offset<RebootRequest> CreateRebootRequestDirect(flatbuffers:
 
 struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
-    VT_SUCCESS = 4
+    VT_SUCCESS = 4,
+    VT_ERROR = 6
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const RebootError *error() const { return GetPointer<const RebootError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -95,17 +124,20 @@ struct RebootResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_success(bool success) { fbb_.AddElement<uint8_t>(RebootResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error(flatbuffers::Offset<RebootError> error) { fbb_.AddOffset(RebootResponse::VT_ERROR, error); }
   RebootResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   RebootResponseBuilder &operator=(const RebootResponseBuilder &);
   flatbuffers::Offset<RebootResponse> Finish() {
-    auto o = flatbuffers::Offset<RebootResponse>(fbb_.EndTable(start_, 1));
+    auto o = flatbuffers::Offset<RebootResponse>(fbb_.EndTable(start_, 2));
     return o;
   }
 };
 
 inline flatbuffers::Offset<RebootResponse> CreateRebootResponse(flatbuffers::FlatBufferBuilder &_fbb,
-    bool success = false) {
+    bool success = false,
+    flatbuffers::Offset<RebootError> error = 0) {
   RebootResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_success(success);
   return builder_.Finish();
 }

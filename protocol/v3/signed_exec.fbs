@@ -5,6 +5,11 @@ namespace mbtool.daemon.v3;
 // mbtool commands are interactive, so this does not handle stdin, does not open
 // a PTY, etc. stdout and stderr lines will be returned.
 
+table SignedExecError {
+    // Error message
+    msg : string;
+}
+
 table SignedExecRequest {
     // Path to binary
     binary_path : string;
@@ -29,8 +34,18 @@ enum SignedExecResult : short {
 }
 
 table SignedExecResponse {
+    // Execution result
     result : SignedExecResult;
+
+    // Deprecated
     error_msg : string;
+
+    // Process exit status (if result == PROCESS_EXITED)
     exit_status : int;
+
+    // Process kill signal (if result == PROCESS_KILLED_BY_SIGNAL)
     term_sig : int;
+
+    // Error
+    error : SignedExecError;
 }

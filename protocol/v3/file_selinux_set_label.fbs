@@ -1,15 +1,27 @@
 namespace mbtool.daemon.v3;
 
+table FileSELinuxSetLabelError {
+    // errno value
+    errno_value : int;
+
+    // strerror(errno)
+    msg : string;
+}
+
 table FileSELinuxSetLabelRequest {
     // Opened file ID
     id : int;
+
     // SELinux label
     label : string;
 }
 
 table FileSELinuxSetLabelResponse {
-    // Whether the SELinux label was successfully set
+    // Deprecated
     success : bool;
-    // Most likely the output of strerror(errno) if the file could not be opened
+    // Deprecated
     error_msg : string;
+
+    // Error
+    error : FileSELinuxSetLabelError;
 }

@@ -18,22 +18,27 @@ public final class FileSELinuxGetLabelResponse extends Table {
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
   public String label() { int o = __offset(8); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer labelAsByteBuffer() { return __vector_as_bytebuffer(8, 1); }
+  public FileSELinuxGetLabelError error() { return error(new FileSELinuxGetLabelError()); }
+  public FileSELinuxGetLabelError error(FileSELinuxGetLabelError obj) { int o = __offset(10); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createFileSELinuxGetLabelResponse(FlatBufferBuilder builder,
       boolean success,
       int error_msgOffset,
-      int labelOffset) {
-    builder.startObject(3);
+      int labelOffset,
+      int errorOffset) {
+    builder.startObject(4);
+    FileSELinuxGetLabelResponse.addError(builder, errorOffset);
     FileSELinuxGetLabelResponse.addLabel(builder, labelOffset);
     FileSELinuxGetLabelResponse.addErrorMsg(builder, error_msgOffset);
     FileSELinuxGetLabelResponse.addSuccess(builder, success);
     return FileSELinuxGetLabelResponse.endFileSELinuxGetLabelResponse(builder);
   }
 
-  public static void startFileSELinuxGetLabelResponse(FlatBufferBuilder builder) { builder.startObject(3); }
+  public static void startFileSELinuxGetLabelResponse(FlatBufferBuilder builder) { builder.startObject(4); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
   public static void addErrorMsg(FlatBufferBuilder builder, int errorMsgOffset) { builder.addOffset(1, errorMsgOffset, 0); }
   public static void addLabel(FlatBufferBuilder builder, int labelOffset) { builder.addOffset(2, labelOffset, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(3, errorOffset, 0); }
   public static int endFileSELinuxGetLabelResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

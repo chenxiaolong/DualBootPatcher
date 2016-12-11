@@ -16,6 +16,7 @@ enum MbWipeTarget : short {
 table MbWipeRomRequest {
     // ROM to wipe
     rom_id : string;
+
     // List of WipeFlags
     targets : [MbWipeTarget];
 }
@@ -23,6 +24,7 @@ table MbWipeRomRequest {
 table MbWipeRomResponse {
     // WipeTargets that were successfully wiped
     succeeded : [MbWipeTarget];
+
     // WipeTargets that failed to wipe
     failed : [MbWipeTarget];
 }

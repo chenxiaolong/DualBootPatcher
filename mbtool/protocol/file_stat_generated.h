@@ -11,6 +11,8 @@ namespace v3 {
 
 struct StructStat;
 
+struct FileStatError;
+
 struct FileStatRequest;
 
 struct FileStatResponse;
@@ -118,6 +120,50 @@ inline flatbuffers::Offset<StructStat> CreateStructStat(flatbuffers::FlatBufferB
   return builder_.Finish();
 }
 
+struct FileStatError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ERRNO_VALUE = 4,
+    VT_MSG = 6
+  };
+  int32_t errno_value() const { return GetField<int32_t>(VT_ERRNO_VALUE, 0); }
+  const flatbuffers::String *msg() const { return GetPointer<const flatbuffers::String *>(VT_MSG); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           verifier.Verify(msg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct FileStatErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_errno_value(int32_t errno_value) { fbb_.AddElement<int32_t>(FileStatError::VT_ERRNO_VALUE, errno_value, 0); }
+  void add_msg(flatbuffers::Offset<flatbuffers::String> msg) { fbb_.AddOffset(FileStatError::VT_MSG, msg); }
+  FileStatErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  FileStatErrorBuilder &operator=(const FileStatErrorBuilder &);
+  flatbuffers::Offset<FileStatError> Finish() {
+    auto o = flatbuffers::Offset<FileStatError>(fbb_.EndTable(start_, 2));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<FileStatError> CreateFileStatError(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    flatbuffers::Offset<flatbuffers::String> msg = 0) {
+  FileStatErrorBuilder builder_(_fbb);
+  builder_.add_msg(msg);
+  builder_.add_errno_value(errno_value);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileStatError> CreateFileStatErrorDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    const char *msg = nullptr) {
+  return CreateFileStatError(_fbb, errno_value, msg ? _fbb.CreateString(msg) : 0);
+}
+
 struct FileStatRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_ID = 4
@@ -153,11 +199,13 @@ struct FileStatResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_SUCCESS = 4,
     VT_ERROR_MSG = 6,
-    VT_STAT = 8
+    VT_STAT = 8,
+    VT_ERROR = 10
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   const StructStat *stat() const { return GetPointer<const StructStat *>(VT_STAT); }
+  const FileStatError *error() const { return GetPointer<const FileStatError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
@@ -165,6 +213,8 @@ struct FileStatResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.Verify(error_msg()) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, VT_STAT) &&
            verifier.VerifyTable(stat()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -175,10 +225,11 @@ struct FileStatResponseBuilder {
   void add_success(bool success) { fbb_.AddElement<uint8_t>(FileStatResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileStatResponse::VT_ERROR_MSG, error_msg); }
   void add_stat(flatbuffers::Offset<StructStat> stat) { fbb_.AddOffset(FileStatResponse::VT_STAT, stat); }
+  void add_error(flatbuffers::Offset<FileStatError> error) { fbb_.AddOffset(FileStatResponse::VT_ERROR, error); }
   FileStatResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileStatResponseBuilder &operator=(const FileStatResponseBuilder &);
   flatbuffers::Offset<FileStatResponse> Finish() {
-    auto o = flatbuffers::Offset<FileStatResponse>(fbb_.EndTable(start_, 3));
+    auto o = flatbuffers::Offset<FileStatResponse>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
@@ -186,8 +237,10 @@ struct FileStatResponseBuilder {
 inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponse(flatbuffers::FlatBufferBuilder &_fbb,
     bool success = false,
     flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-    flatbuffers::Offset<StructStat> stat = 0) {
+    flatbuffers::Offset<StructStat> stat = 0,
+    flatbuffers::Offset<FileStatError> error = 0) {
   FileStatResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_stat(stat);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
@@ -197,8 +250,9 @@ inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponse(flatbuffers:
 inline flatbuffers::Offset<FileStatResponse> CreateFileStatResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
     bool success = false,
     const char *error_msg = nullptr,
-    flatbuffers::Offset<StructStat> stat = 0) {
-  return CreateFileStatResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, stat);
+    flatbuffers::Offset<StructStat> stat = 0,
+    flatbuffers::Offset<FileStatError> error = 0) {
+  return CreateFileStatResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, stat, error);
 }
 
 }  // namespace v3

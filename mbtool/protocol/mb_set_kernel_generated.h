@@ -9,9 +9,34 @@ namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct MbSetKernelError;
+
 struct MbSetKernelRequest;
 
 struct MbSetKernelResponse;
+
+struct MbSetKernelError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           verifier.EndTable();
+  }
+};
+
+struct MbSetKernelErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  MbSetKernelErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  MbSetKernelErrorBuilder &operator=(const MbSetKernelErrorBuilder &);
+  flatbuffers::Offset<MbSetKernelError> Finish() {
+    auto o = flatbuffers::Offset<MbSetKernelError>(fbb_.EndTable(start_, 0));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<MbSetKernelError> CreateMbSetKernelError(flatbuffers::FlatBufferBuilder &_fbb) {
+  MbSetKernelErrorBuilder builder_(_fbb);
+  return builder_.Finish();
+}
 
 struct MbSetKernelRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -60,12 +85,16 @@ inline flatbuffers::Offset<MbSetKernelRequest> CreateMbSetKernelRequestDirect(fl
 
 struct MbSetKernelResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
-    VT_SUCCESS = 4
+    VT_SUCCESS = 4,
+    VT_ERROR = 6
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
+  const MbSetKernelError *error() const { return GetPointer<const MbSetKernelError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -74,17 +103,20 @@ struct MbSetKernelResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_success(bool success) { fbb_.AddElement<uint8_t>(MbSetKernelResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
+  void add_error(flatbuffers::Offset<MbSetKernelError> error) { fbb_.AddOffset(MbSetKernelResponse::VT_ERROR, error); }
   MbSetKernelResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   MbSetKernelResponseBuilder &operator=(const MbSetKernelResponseBuilder &);
   flatbuffers::Offset<MbSetKernelResponse> Finish() {
-    auto o = flatbuffers::Offset<MbSetKernelResponse>(fbb_.EndTable(start_, 1));
+    auto o = flatbuffers::Offset<MbSetKernelResponse>(fbb_.EndTable(start_, 2));
     return o;
   }
 };
 
 inline flatbuffers::Offset<MbSetKernelResponse> CreateMbSetKernelResponse(flatbuffers::FlatBufferBuilder &_fbb,
-    bool success = false) {
+    bool success = false,
+    flatbuffers::Offset<MbSetKernelError> error = 0) {
   MbSetKernelResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_success(success);
   return builder_.Finish();
 }

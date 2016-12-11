@@ -16,19 +16,24 @@ public final class PathDeleteResponse extends Table {
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
+  public PathDeleteError error() { return error(new PathDeleteError()); }
+  public PathDeleteError error(PathDeleteError obj) { int o = __offset(8); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
 
   public static int createPathDeleteResponse(FlatBufferBuilder builder,
       boolean success,
-      int error_msgOffset) {
-    builder.startObject(2);
+      int error_msgOffset,
+      int errorOffset) {
+    builder.startObject(3);
+    PathDeleteResponse.addError(builder, errorOffset);
     PathDeleteResponse.addErrorMsg(builder, error_msgOffset);
     PathDeleteResponse.addSuccess(builder, success);
     return PathDeleteResponse.endPathDeleteResponse(builder);
   }
 
-  public static void startPathDeleteResponse(FlatBufferBuilder builder) { builder.startObject(2); }
+  public static void startPathDeleteResponse(FlatBufferBuilder builder) { builder.startObject(3); }
   public static void addSuccess(FlatBufferBuilder builder, boolean success) { builder.addBoolean(0, success, false); }
   public static void addErrorMsg(FlatBufferBuilder builder, int errorMsgOffset) { builder.addOffset(1, errorMsgOffset, 0); }
+  public static void addError(FlatBufferBuilder builder, int errorOffset) { builder.addOffset(2, errorOffset, 0); }
   public static int endPathDeleteResponse(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;
