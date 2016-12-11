@@ -42,8 +42,6 @@ MB_EXPORT bool find_string_in_file(const char *path, const char *str, int *resul
 
 MB_EXPORT void mblog_set_logcat();
 
-MB_EXPORT int get_pid();
-
 MB_EXPORT char * read_link(const char *path);
 
 #ifdef __cplusplus

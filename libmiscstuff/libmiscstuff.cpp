@@ -210,11 +210,6 @@ void mblog_set_logcat()
     mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
 }
 
-int get_pid()
-{
-    return getpid();
-}
-
 char * read_link(const char *path)
 {
     size_t buf_size = 64;

@@ -29,5 +29,7 @@ public class LibC {
         Native.register(LibC.class, "c");
     }
 
-    static native void free(Pointer ptr);
+    public static native void free(Pointer ptr);
+
+    public static native /* pid_t */ int getpid();
 }

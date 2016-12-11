@@ -60,8 +60,6 @@ public class LibMiscStuff {
 
         void mblog_set_logcat();
 
-        int get_pid();
-
         Pointer read_link(String path) throws LastErrorException;
     }
 

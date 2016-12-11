@@ -27,7 +27,7 @@ import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -171,7 +171,7 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                     return false;
                 }
 
-                String fdSource = "/proc/" + LibMiscStuff.INSTANCE.get_pid() + "/fd/" + pfd.getFd();
+                String fdSource = "/proc/" + LibC.getpid() + "/fd/" + pfd.getFd();
                 String fdTarget;
                 try {
                     fdTarget = iface.pathReadlink(fdSource);
