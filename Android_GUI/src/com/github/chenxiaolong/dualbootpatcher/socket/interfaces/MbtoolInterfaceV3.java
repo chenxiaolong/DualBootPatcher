@@ -38,33 +38,44 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
+import mbtool.daemon.v3.FileChmodError;
 import mbtool.daemon.v3.FileChmodRequest;
 import mbtool.daemon.v3.FileChmodResponse;
+import mbtool.daemon.v3.FileCloseError;
 import mbtool.daemon.v3.FileCloseRequest;
 import mbtool.daemon.v3.FileCloseResponse;
+import mbtool.daemon.v3.FileOpenError;
 import mbtool.daemon.v3.FileOpenRequest;
 import mbtool.daemon.v3.FileOpenResponse;
+import mbtool.daemon.v3.FileReadError;
 import mbtool.daemon.v3.FileReadRequest;
 import mbtool.daemon.v3.FileReadResponse;
+import mbtool.daemon.v3.FileSELinuxGetLabelError;
 import mbtool.daemon.v3.FileSELinuxGetLabelRequest;
 import mbtool.daemon.v3.FileSELinuxGetLabelResponse;
+import mbtool.daemon.v3.FileSELinuxSetLabelError;
 import mbtool.daemon.v3.FileSELinuxSetLabelRequest;
 import mbtool.daemon.v3.FileSELinuxSetLabelResponse;
+import mbtool.daemon.v3.FileSeekError;
 import mbtool.daemon.v3.FileSeekRequest;
 import mbtool.daemon.v3.FileSeekResponse;
+import mbtool.daemon.v3.FileStatError;
 import mbtool.daemon.v3.FileStatRequest;
 import mbtool.daemon.v3.FileStatResponse;
+import mbtool.daemon.v3.FileWriteError;
 import mbtool.daemon.v3.FileWriteRequest;
 import mbtool.daemon.v3.FileWriteResponse;
 import mbtool.daemon.v3.MbGetBootedRomIdRequest;
 import mbtool.daemon.v3.MbGetBootedRomIdResponse;
 import mbtool.daemon.v3.MbGetInstalledRomsRequest;
 import mbtool.daemon.v3.MbGetInstalledRomsResponse;
+import mbtool.daemon.v3.MbGetPackagesCountError;
 import mbtool.daemon.v3.MbGetPackagesCountRequest;
 import mbtool.daemon.v3.MbGetPackagesCountResponse;
 import mbtool.daemon.v3.MbGetVersionRequest;
 import mbtool.daemon.v3.MbGetVersionResponse;
 import mbtool.daemon.v3.MbRom;
+import mbtool.daemon.v3.MbSetKernelError;
 import mbtool.daemon.v3.MbSetKernelRequest;
 import mbtool.daemon.v3.MbSetKernelResponse;
 import mbtool.daemon.v3.MbSwitchRomRequest;
@@ -72,23 +83,31 @@ import mbtool.daemon.v3.MbSwitchRomResponse;
 import mbtool.daemon.v3.MbSwitchRomResult;
 import mbtool.daemon.v3.MbWipeRomRequest;
 import mbtool.daemon.v3.MbWipeRomResponse;
+import mbtool.daemon.v3.PathChmodError;
 import mbtool.daemon.v3.PathChmodRequest;
 import mbtool.daemon.v3.PathChmodResponse;
+import mbtool.daemon.v3.PathCopyError;
 import mbtool.daemon.v3.PathCopyRequest;
 import mbtool.daemon.v3.PathCopyResponse;
+import mbtool.daemon.v3.PathDeleteError;
 import mbtool.daemon.v3.PathDeleteRequest;
 import mbtool.daemon.v3.PathDeleteResponse;
+import mbtool.daemon.v3.PathGetDirectorySizeError;
 import mbtool.daemon.v3.PathGetDirectorySizeRequest;
 import mbtool.daemon.v3.PathGetDirectorySizeResponse;
+import mbtool.daemon.v3.PathMkdirError;
 import mbtool.daemon.v3.PathMkdirRequest;
 import mbtool.daemon.v3.PathMkdirResponse;
 import mbtool.daemon.v3.PathReadlinkError;
 import mbtool.daemon.v3.PathReadlinkRequest;
 import mbtool.daemon.v3.PathReadlinkResponse;
+import mbtool.daemon.v3.PathSELinuxGetLabelError;
 import mbtool.daemon.v3.PathSELinuxGetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxGetLabelResponse;
+import mbtool.daemon.v3.PathSELinuxSetLabelError;
 import mbtool.daemon.v3.PathSELinuxSetLabelRequest;
 import mbtool.daemon.v3.PathSELinuxSetLabelResponse;
+import mbtool.daemon.v3.RebootError;
 import mbtool.daemon.v3.RebootRequest;
 import mbtool.daemon.v3.RebootResponse;
 import mbtool.daemon.v3.RebootType;
@@ -96,9 +115,11 @@ import mbtool.daemon.v3.Request;
 import mbtool.daemon.v3.RequestType;
 import mbtool.daemon.v3.Response;
 import mbtool.daemon.v3.ResponseType;
+import mbtool.daemon.v3.ShutdownError;
 import mbtool.daemon.v3.ShutdownRequest;
 import mbtool.daemon.v3.ShutdownResponse;
 import mbtool.daemon.v3.ShutdownType;
+import mbtool.daemon.v3.SignedExecError;
 import mbtool.daemon.v3.SignedExecOutputResponse;
 import mbtool.daemon.v3.SignedExecRequest;
 import mbtool.daemon.v3.SignedExecResponse;
@@ -273,8 +294,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileChmodRequest,
                         ResponseType.FileChmodResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: chmod failed: " + response.errorMsg());
+        FileChmodError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: chmod failed: " + error.msg());
         }
     }
 
@@ -291,8 +314,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileCloseRequest,
                         ResponseType.FileCloseResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: close failed: " + response.errorMsg());
+        FileCloseError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: close failed: " + error.msg());
         }
     }
 
@@ -315,8 +340,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileOpenRequest,
                         ResponseType.FileOpenResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + path + "]: open failed: " + response.errorMsg());
+        FileOpenError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + path + "]: open failed: " + error.msg());
         }
 
         return response.id();
@@ -337,8 +364,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileReadRequest,
                         ResponseType.FileReadResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: read failed: " + response.errorMsg());
+        FileReadError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: read failed: " + error.msg());
         }
 
         return response.dataAsByteBuffer();
@@ -359,8 +388,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileSeekRequest,
                         ResponseType.FileSeekResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: seek failed: " + response.errorMsg());
+        FileSeekError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: seek failed: " + error.msg());
         }
 
         return response.offset();
@@ -380,8 +411,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileStatRequest,
                         ResponseType.FileStatResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: stat failed: " + response.errorMsg());
+        FileStatError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: stat failed: " + error.msg());
         }
 
         StructStat ss = response.stat();
@@ -417,8 +450,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileWriteRequest,
                         ResponseType.FileWriteResponse);
 
-        if (!response.success()) {
-            throw new MbtoolCommandException("[" + id + "]: write failed: " + response.errorMsg());
+        FileWriteError error = response.error();
+        if (error != null) {
+            throw new MbtoolCommandException(
+                    error.errnoValue(), "[" + id + "]: write failed: " + error.msg());
         }
 
         return response.bytesWritten();
@@ -438,9 +473,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileSELinuxGetLabelRequest,
                         ResponseType.FileSELinuxGetLabelResponse);
 
-        if (!response.success()) {
+        FileSELinuxGetLabelError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "[" + id + "]: SELinux get label failed: " + response.errorMsg());
+                    error.errnoValue(), "[" + id + "]: SELinux get label failed: " + error.msg());
         }
 
         String label = response.label();
@@ -465,9 +501,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.FileSELinuxSetLabelRequest,
                         ResponseType.FileSELinuxSetLabelResponse);
 
-        if (!response.success()) {
+        FileSELinuxSetLabelError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "[" + id + "]: SELinux set label failed: " + response.errorMsg());
+                    error.errnoValue(), "[" + id + "]: SELinux set label failed: " + error.msg());
         }
     }
 
@@ -633,7 +670,12 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.MbSetKernelRequest,
                         ResponseType.MbSetKernelResponse);
 
-        return response.success() ? SetKernelResult.SUCCEEDED : SetKernelResult.FAILED;
+        MbSetKernelError error = response.error();
+        if (error != null) {
+            return SetKernelResult.FAILED;
+        }
+
+        return SetKernelResult.SUCCEEDED;
     }
 
     public synchronized void rebootViaFramework(boolean confirm) throws IOException,
@@ -650,7 +692,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.RebootRequest,
                         ResponseType.RebootResponse);
 
-        if (!response.success()) {
+        RebootError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to reboot via framework");
         }
     }
@@ -670,7 +713,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.RebootRequest,
                         ResponseType.RebootResponse);
 
-        if (!response.success()) {
+        RebootError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to reboot via init");
         }
     }
@@ -690,7 +734,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.RebootRequest,
                         ResponseType.RebootResponse);
 
-        if (!response.success()) {
+        RebootError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to reboot directly via mbtool");
         }
     }
@@ -708,7 +753,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.ShutdownRequest,
                         ResponseType.ShutdownResponse);
 
-        if (!response.success()) {
+        ShutdownError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to shut down via init");
         }
     }
@@ -726,7 +772,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.ShutdownRequest,
                         ResponseType.ShutdownResponse);
 
-        if (!response.success()) {
+        ShutdownError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to shut down directly via mbtool");
         }
     }
@@ -747,9 +794,11 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathCopyRequest,
                         ResponseType.PathCopyResponse);
 
-        if (!response.success()) {
+        PathCopyError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to copy from " + source + " to " + target + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to copy from " + source + " to " + target + ": " +
+                    error.msg());
         }
     }
 
@@ -768,9 +817,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathDeleteRequest,
                         ResponseType.PathDeleteResponse);
 
-        if (!response.success()) {
+        PathDeleteError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to delete " + path + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to delete " + path + ": " + error.msg());
         }
     }
 
@@ -789,9 +839,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathChmodRequest,
                         ResponseType.PathChmodResponse);
 
-        if (!response.success()) {
+        PathChmodError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to chmod " + filename + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to chmod " + filename + ": " + error.msg());
         }
     }
 
@@ -811,9 +862,10 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathMkdirRequest,
                         ResponseType.PathMkdirResponse);
 
-        if (!response.success()) {
+        PathMkdirError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    path + ": Failed to mkdir: " + response.errorMsg());
+                    error.errnoValue(), path + ": Failed to mkdir: " + error.msg());
         }
     }
 
@@ -832,7 +884,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
 
         PathReadlinkError error = response.error();
         if (error != null) {
-            throw new MbtoolCommandException(error.errnoValue(), error.msg());
+            throw new MbtoolCommandException(
+                    error.errnoValue(), path + ": Failed to resolve symlink: " + error.msg());
         }
 
         String target = response.target();
@@ -889,7 +942,8 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.MbGetPackagesCountRequest,
                         ResponseType.MbGetPackagesCountResponse);
 
-        if (!response.success()) {
+        MbGetPackagesCountError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException("Failed to get packages counts");
         }
 
@@ -916,9 +970,11 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathSELinuxGetLabelRequest,
                         ResponseType.PathSELinuxGetLabelResponse);
 
-        if (!response.success()) {
+        PathSELinuxGetLabelError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to get SELinux label for " + path + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to get SELinux label for " + path + ": " +
+                    error.msg());
         }
 
         String label = response.label();
@@ -946,9 +1002,11 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathSELinuxSetLabelRequest,
                         ResponseType.PathSELinuxSetLabelResponse);
 
-        if (!response.success()) {
+        PathSELinuxSetLabelError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to set SELinux label for " + path + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to set SELinux label for " + path + ": " +
+                    error.msg());
         }
     }
 
@@ -977,9 +1035,11 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
                 sendRequest(builder, fbRequest, RequestType.PathGetDirectorySizeRequest,
                         ResponseType.PathGetDirectorySizeResponse);
 
-        if (!response.success()) {
+        PathGetDirectorySizeError error = response.error();
+        if (error != null) {
             throw new MbtoolCommandException(
-                    "Failed to set directory size for " + path + ": " + response.errorMsg());
+                    error.errnoValue(), "Failed to get directory size for " + path + ": " +
+                    error.msg());
         }
 
         return response.size();
@@ -1050,16 +1110,23 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
 
             if (root.responseType() == ResponseType.SignedExecResponse) {
                 SignedExecResponse response = (SignedExecResponse) table;
+                SignedExecError error = response.error();
 
                 SignedExecCompletion result = new SignedExecCompletion();
                 result.result = response.result();
-                result.errorMsg = response.errorMsg();
                 result.exitStatus = response.exitStatus();
                 result.termSig = response.termSig();
+                if (error != null) {
+                    result.errorMsg = error.msg();
+                }
 
                 if (response.result() != SignedExecResult.PROCESS_EXITED
                         && response.result() != SignedExecResult.PROCESS_KILLED_BY_SIGNAL) {
-                    Log.e(TAG, "Signed exec error: " + response.errorMsg());
+                    if (error != null) {
+                        Log.e(TAG, "Signed exec error: " + error.msg());
+                    } else {
+                        Log.e(TAG, "No signed exec error given");
+                    }
                 }
 
                 return result;
