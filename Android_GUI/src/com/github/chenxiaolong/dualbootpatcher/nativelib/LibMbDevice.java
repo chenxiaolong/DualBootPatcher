@@ -328,7 +328,7 @@ public class LibMbDevice {
                 devices[i] = new Device(new CDevice(cDevices[i]), true);
             }
 
-            LibC.free(p);
+            LibC.CWrapper.free(p);
             return devices;
         }
 

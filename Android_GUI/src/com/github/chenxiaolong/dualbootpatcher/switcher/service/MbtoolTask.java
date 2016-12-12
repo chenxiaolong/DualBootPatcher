@@ -27,7 +27,8 @@ import com.github.chenxiaolong.dualbootpatcher.AnsiStuff;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute;
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.Constants;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -124,7 +125,9 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 deleteWithPrejudice(zipInstaller.getAbsolutePath(), iface);
                 deleteWithPrejudice(zipInstallerSig.getAbsolutePath(), iface);
             } catch (MbtoolCommandException e) {
-                // Ignore because we can't detect ENOENT yet
+                if (e.getErrno() != Constants.ENOENT) {
+                    throw e;
+                }
             }
 
             if (DEBUG_USE_ALTERNATE_MBTOOL) {
@@ -171,7 +174,7 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                     return false;
                 }
 
-                String fdSource = "/proc/" + LibMiscStuff.INSTANCE.get_pid() + "/fd/" + pfd.getFd();
+                String fdSource = "/proc/" + LibC.CWrapper.getpid() + "/fd/" + pfd.getFd();
                 String fdTarget;
                 try {
                     fdTarget = iface.pathReadlink(fdSource);
@@ -219,7 +222,10 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 deleteWithPrejudice(zipInstaller.getAbsolutePath(), iface);
                 deleteWithPrejudice(zipInstallerSig.getAbsolutePath(), iface);
             } catch (Exception e) {
-                // Ignore because we can't detect ENOENT yet
+                if (e instanceof MbtoolCommandException &&
+                        ((MbtoolCommandException) e).getErrno() != Constants.ENOENT) {
+                    Log.e(TAG, "Failed to clean up", e);
+                }
             }
         }
     }

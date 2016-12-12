@@ -30,6 +30,7 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CFileIn
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CRamdiskPatcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.sun.jna.Callback;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -53,7 +54,7 @@ public class LibMbp {
     static class CWrapper {
         static {
             Native.register(CWrapper.class, "mbp");
-            LibMiscStuff.INSTANCE.mblog_set_logcat();
+            LibMiscStuff.mblogSetLogcat();
         }
 
         // BEGIN: ctypes.h

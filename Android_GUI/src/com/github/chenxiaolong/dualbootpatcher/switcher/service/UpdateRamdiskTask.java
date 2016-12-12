@@ -31,7 +31,7 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -41,7 +41,6 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.google.common.base.Charsets;
-import com.sun.jna.ptr.IntByReference;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -173,10 +172,12 @@ public final class UpdateRamdiskTask extends BaseServiceTask {
                     Log.w(TAG, "Failed to set SELinux label of temp vold copy", e);
                 }
 
-                IntByReference result = new IntByReference();
-                if (LibMiscStuff.INSTANCE.find_string_in_file(
-                        tempVold.getAbsolutePath(), "/system/bin/mount.exfat", result)) {
-                    return result.getValue() != 0 ? UsesExfat.YES : UsesExfat.NO;
+                try {
+                    return LibMiscStuff.findStringInFile(
+                            tempVold.getAbsolutePath(), "/system/bin/mount.exfat")
+                            ? UsesExfat.YES : UsesExfat.NO;
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to determine if vold uses fuse-exfat", e);
                 }
             }
         } catch (MbtoolCommandException e) {

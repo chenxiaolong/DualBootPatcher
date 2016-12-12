@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.nativelib;
 
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.sun.jna.Native;
 
 @SuppressWarnings("unused")
@@ -25,7 +26,7 @@ public class LibMbcommon {
     private static class CWrapper {
         static {
             Native.register(CWrapper.class, "mbcommon");
-            LibMiscStuff.INSTANCE.mblog_set_logcat();
+            LibMiscStuff.mblogSetLogcat();
         }
 
         // BEGIN: mbcommon/version.h
