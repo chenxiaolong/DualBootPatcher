@@ -50,6 +50,11 @@ if(MBP_TOP_LEVEL_BUILD)
                  "-DANDROID_CCACHE=${MBP_CCACHE_PATH}")
         endif()
 
+        if(MBP_CI_VERSION)
+            list(APPEND INTERNAL_COMMON_OPTIONS
+                 "-DMBP_CI_VERSION=${MBP_CI_VERSION}")
+        endif()
+
         set(INTERNAL_ANDROID_APP_OPTIONS
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
