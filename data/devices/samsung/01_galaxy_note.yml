@@ -152,6 +152,8 @@
   codenames:
     - hllte
     - hlltexx
+    - hl3g
+    - hl3gxx
   architecture: armeabi-v7a
 
   block_devs:
