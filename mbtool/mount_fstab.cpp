@@ -560,6 +560,13 @@ static bool mount_target(const char *source, const char *target, bool bind)
         return false;
     }
 
+    // Create source directory for bind mount if it doesn't already exist.
+    // This can happen if the user accidentally wipes /cache, for example.
+    if (bind && !util::mkdir_recursive(source, 0755) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", source, strerror(errno));
+        return false;
+    }
+
     bool ret;
 
     if (bind) {
