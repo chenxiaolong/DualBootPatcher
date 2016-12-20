@@ -176,8 +176,11 @@
   id: A6020
   codenames:
     - A6020
+    - A6020a40
     - a6020a40
+    - A6020a46
     - a6020a46
+    - A6020a26
     - a6020a26
   architecture: arm64-v8a
 
