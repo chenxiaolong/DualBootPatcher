@@ -106,9 +106,18 @@
   <!--Positive dialog button shown for the above two messages-->
   <!--Negative dialog button shown for the above two messages-->
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
-  <!--ZIP flash activity title-->
-  <!--Title of pending action card for installing a zip file-->
-  <!--Subtitle text in pending action card showing the selected filename-->
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <!--In-app flashing activity title-->
+  <!--FAB button text for adding a patched file to flash-->
+  <!--FAB button text for adding a backup to flash-->
+  <!--Title of pending action card for flashing a file-->
+  <!--Title of pending action card for restoring a backup-->
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
   <!--Subtitle text in pending action card showing the installation location-->
   <!--Title shown in dialog asking for the installation location of a zip file-->
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
@@ -121,6 +130,8 @@
   <!--Dialog button for keeping the current installation location-->
   <!--Dialog button for changing the installation location-->
   <!--Message shown in the first-use dialog for zip flashing-->
+  <!--Dialog description when choosing a backup to restore-->
+  <!--Toast message shown if there are no backups available-->
   <!--ROM details item showing which slot the ROM is installed to-->
   <!--ROM details item showing the version of the ROM-->
   <!--ROM details item showing the build name of the ROM-->
@@ -134,6 +145,18 @@
   <!--ROM details item showing the size of the cache directory or image-->
   <!--ROM details item showing the size of the data directory or image-->
   <!--ROM details item value shown when calculating the directory or image sizes-->
+  <!--Backup ROM activity title-->
+  <!--Restore ROM activity title-->
+  <!--Backup targets dialog description-->
+  <!--Restore targets dialog description-->
+  <!--Backup/restore target for ROM's /system files-->
+  <!--Backup/restore target for ROM's /cache files-->
+  <!--Backup/restore target for ROM's /data files-->
+  <!--Backup/restore target for ROM's boot image-->
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <!--Backup name input dialog description-->
+  <!--Backup name input field hint for backup name dialog-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
   <!--Title of the device selection box in the patcher-->
@@ -185,7 +208,6 @@ arquivos a serem adaptados.</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
-  <!--Title for preference category for boot options-->
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Atualizar o Ramdisk</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -202,6 +224,21 @@ Deseja reiniciar agora?</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <!--Toast popup message shown when the user forces a ramdisk update-->
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <!--Title for the preference to install the Boot UI-->
+  <!--Title for the preference to update the Boot UI-->
+  <!--Title for the preference to uninstall the Boot UI-->
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <!--Title for the preference to change the backup directory-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Adaptador</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -210,8 +247,13 @@ Deseja reiniciar agora?</string>
   <string name="rom_settings_show_reboot_title">Mostrar botão Reiniciar</string>
   <!--Title for the preference to choose the initial screen to show when opening the app-->
   <!--Description for the initial screen preference-->
+  <!--Title for the preference to use the dark theme-->
   <!--Title for the preference to enable receiving intents from third party applications-->
   <!--Description for the preference to enable receiving intents from third party applications-->
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <!--Description for the preference to set the number of parallel patching operations-->
   <!--Title for the dialog box explaining individual application sharing-->
   <!--Description for the dialog box explaining individual application sharing-->
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
@@ -222,6 +264,11 @@ Deseja reiniciar agora?</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <!--Confirm dialog message shown when updating mbtool failed-->
   <!--Word/phrase for Search (used in action bars)-->
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">Nenhum(a)</string>

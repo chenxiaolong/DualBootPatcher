@@ -22,6 +22,8 @@
 
 #include <cassert>
 
+#include <mbdevice/json.h>
+#include <mbdevice/validate.h>
 #include <mbp/errors.h>
 
 #include <QtCore/QStringBuilder>
@@ -69,9 +71,9 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
 
     QString lastDeviceId = d->settings.value(
             QStringLiteral("last_device"), QString()).toString();
-    std::vector<mbp::Device *> devices = d->pc->devices();
-    for (size_t i = 0; i < devices.size(); ++i) {
-        if (lastDeviceId.toStdString() == devices[i]->id()) {
+    for (size_t i = 0; i < d->devices.size(); ++i) {
+        if (strcmp(mb_device_id(d->devices[i].get()),
+                   lastDeviceId.toUtf8().data()) == 0) {
             d->deviceSel->setCurrentIndex(i);
             break;
         }
@@ -117,7 +119,9 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    d->device = d->pc->devices()[index];
+    if (index < d->devices.size()) {
+        d->device = d->devices[index].get();
+    }
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
         d->state = MainWindowPrivate::ChoseFile;
@@ -154,9 +158,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     Q_D(MainWindow);
 
-    int deviceIndex = d->deviceSel->currentIndex();
-    d->settings.setValue(QStringLiteral("last_device"),
-                         QString::fromStdString(d->pc->devices()[deviceIndex]->id()));
+    if (!d->devices.empty()) {
+        int deviceIndex = d->deviceSel->currentIndex();
+        const char *id = mb_device_id(d->devices[deviceIndex].get());
+        d->settings.setValue(QStringLiteral("last_device"),
+                             QString::fromUtf8(id));
+    }
 
     QWidget::closeEvent(event);
 }
@@ -188,12 +195,21 @@ void MainWindow::onButtonClicked(QAbstractButton *button)
 {
     Q_D(MainWindow);
 
-    if (button == d->chooseFileBtn) {
-        chooseFile();
-    } else if (button == d->chooseAnotherFileBtn) {
-        chooseFile();
-    } else if (button == d->startPatchingBtn) {
+    if (button == d->startPatchingBtn) {
         startPatching();
+    }
+}
+
+void MainWindow::onChooseFileItemClicked(QAction *action)
+{
+    Q_D(MainWindow);
+
+    if (action == d->chooseFlashableZip) {
+        d->patcherId = QStringLiteral("MultiBootPatcher");
+        chooseFile(tr("Flashable zips (*.zip)"));
+    } else if (action == d->chooseOdinImage) {
+        d->patcherId = QStringLiteral("OdinPatcher");
+        chooseFile(tr("Odin images (*.zip *.tar.md5 *.tar.md5.gz *.tar.md5.xz)"));
     }
 }
 
@@ -306,8 +322,14 @@ void MainWindow::addWidgets()
     d->messageLbl->setWordWrap(true);
     d->messageLbl->setMaximumWidth(550);
 
+    d->chooseFileMenu = new QMenu(d->mainContainer);
+    d->chooseFlashableZip = d->chooseFileMenu->addAction(tr("Flashable zip"));
+    d->chooseOdinImage = d->chooseFileMenu->addAction(tr("Odin image"));
+
     d->chooseFileBtn = new QPushButton(tr("Choose file"), d->mainContainer);
+    d->chooseFileBtn->setMenu(d->chooseFileMenu);
     d->chooseAnotherFileBtn = new QPushButton(tr("Choose another file"), d->mainContainer);
+    d->chooseAnotherFileBtn->setMenu(d->chooseFileMenu);
     d->startPatchingBtn = new QPushButton(tr("Start patching"), d->mainContainer);
 
     d->buttons = new QDialogButtonBox(d->mainContainer);
@@ -393,17 +415,49 @@ void MainWindow::setWidgetActions()
     // Buttons
     connect(d->buttons, &QDialogButtonBox::clicked,
             this, &MainWindow::onButtonClicked);
+
+    // Choose file button menu
+    connect(d->chooseFileMenu, &QMenu::triggered,
+            this, &MainWindow::onChooseFileItemClicked);
 }
 
 void MainWindow::populateDevices()
 {
     Q_D(MainWindow);
 
-    // Populate devices
-    for (mbp::Device *device : d->pc->devices()) {
-        d->deviceSel->addItem(QStringLiteral("%1 - %2")
-                .arg(QString::fromStdString(device->id()))
-                .arg(QString::fromStdString(device->name())));
+    // TODO: This shouldn't be done in the GUI thread
+    QString path(QString::fromStdString(d->pc->dataDirectory())
+            % QStringLiteral("/devices.json"));
+    QFile file(path);
+
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray contents = file.readAll();
+        file.close();
+
+        MbDeviceJsonError error;
+        Device **devices =
+                mb_device_new_list_from_json(contents.data(), &error);
+
+        if (devices) {
+            for (Device **iter = devices; *iter; ++iter) {
+                if (mb_device_validate(*iter) == 0) {
+                    d->deviceSel->addItem(QStringLiteral("%1 - %2")
+                            .arg(QString::fromUtf8(mb_device_id(*iter)))
+                            .arg(QString::fromUtf8(mb_device_name(*iter))));
+                    d->devices.emplace_back(*iter, mb_device_free);
+                } else {
+                    // Clean up unusable devices
+                    mb_device_free(*iter);
+                }
+            }
+            // No need for array anymore
+            free(devices);
+        } else {
+            qWarning("Failed to load devices");
+        }
+    } else {
+        qWarning("%s: Failed to open file: %s",
+                 path.toUtf8().data(), file.errorString().toUtf8().data());
     }
 }
 
@@ -445,13 +499,13 @@ void MainWindow::populateInstallationLocations()
     d->instLocSel->addItem(tr("Extsd-slot"));
 }
 
-void MainWindow::chooseFile()
+void MainWindow::chooseFile(const QString &patterns)
 {
     Q_D(MainWindow);
 
     QString fileName = QFileDialog::getOpenFileName(this, QString(),
             d->settings.value(QStringLiteral("last_dir")).toString(),
-            tr("Zip files and Odin tarballs (*.zip *.tar.md5 *.tar.md5.gz *.tar.md5.xz)"));
+            patterns);
     if (fileName.isNull()) {
         return;
     }
@@ -539,7 +593,6 @@ void MainWindow::startPatching()
     QFileInfo qFileInfo(d->fileName);
     QString suffix;
     QString outputName;
-    bool isOdin = false;
 
     for (const QString &suffix : suffixes) {
         if (d->fileName.endsWith(suffix)) {
@@ -549,7 +602,6 @@ void MainWindow::startPatching()
                     % QStringLiteral("_")
                     % romId
                     % QStringLiteral(".zip");
-            isOdin = suffix.contains(QStringLiteral(".tar.md5"));
             break;
         }
     }
@@ -571,11 +623,7 @@ void MainWindow::startPatching()
     fileInfo->setDevice(d->device);
     fileInfo->setRomId(romId.toUtf8().constData());
 
-    if (isOdin) {
-        d->patcher = d->pc->createPatcher("OdinPatcher");
-    } else {
-        d->patcher = d->pc->createPatcher("MultiBootPatcher");
-    }
+    d->patcher = d->pc->createPatcher(d->patcherId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
@@ -594,6 +642,8 @@ static QString errorToString(const mbp::ErrorCode &error) {
     switch (error) {
     case mbp::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
+    case mbp::ErrorCode::MemoryAllocationError:
+        return QObject::tr("Failed to allocate memory");
     case mbp::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
     case mbp::ErrorCode::AutoPatcherCreateError:
@@ -602,10 +652,16 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to create ramdisk patcher");
     case mbp::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
+    case mbp::ErrorCode::FileCloseError:
+        return QObject::tr("Failed to close file");
     case mbp::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file");
     case mbp::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file");
+    case mbp::ErrorCode::FileSeekError:
+        return QObject::tr("Failed to seek file");
+    case mbp::ErrorCode::FileTellError:
+        return QObject::tr("Failed to get file position");
     case mbp::ErrorCode::BootImageParseError:
         return QObject::tr("Failed to parse boot image");
     case mbp::ErrorCode::BootImageApplyBumpError:
@@ -634,6 +690,8 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to free archive header memory");
     case mbp::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
+    case mbp::ErrorCode::BootImageTooLargeError:
+        return QObject::tr("Boot image is too large");
     default:
         assert(false);
     }

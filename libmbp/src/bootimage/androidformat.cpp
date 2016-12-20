@@ -27,6 +27,8 @@
 #include "mbp/private/stringutils.h"
 #include "external/sha.h"
 
+#define SAMSUNG_SEANDROID_MAGIC         "SEANDROIDENFORCE"
+
 namespace mbp
 {
 
@@ -199,11 +201,12 @@ bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
     hdr.page_size = mI10e->pageSize;
     hdr.dt_size = mI10e->hdrDtSize;
     hdr.unused = mI10e->hdrUnused;
-    // -1 for null byte
-    std::strcpy(reinterpret_cast<char *>(hdr.name),
-                mI10e->boardName.substr(0, BOOT_NAME_SIZE - 1).c_str());
-    std::strcpy(reinterpret_cast<char *>(hdr.cmdline),
-                mI10e->cmdline.substr(0, BOOT_ARGS_SIZE - 1).c_str());
+    std::strncpy(reinterpret_cast<char *>(hdr.name),
+                 mI10e->boardName.c_str(), BOOT_NAME_SIZE - 1);
+    hdr.name[BOOT_NAME_SIZE - 1] = '\0';
+    std::strncpy(reinterpret_cast<char *>(hdr.cmdline),
+                 mI10e->cmdline.c_str(), BOOT_ARGS_SIZE - 1);
+    hdr.cmdline[BOOT_ARGS_SIZE - 1] = '\0';
 
     // Update SHA1
     updateSha1Hash(&hdr, mI10e);
@@ -269,6 +272,9 @@ bool AndroidFormat::createImage(std::vector<unsigned char> *dataOut)
         paddingSize = skipPadding(mI10e->dtImage.size(), hdr.page_size);
         data.insert(data.end(), paddingSize, 0);
     }
+
+    data.insert(data.end(), SAMSUNG_SEANDROID_MAGIC,
+                SAMSUNG_SEANDROID_MAGIC + strlen(SAMSUNG_SEANDROID_MAGIC));
 
     dataOut->swap(data);
     return true;

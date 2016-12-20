@@ -46,13 +46,23 @@ namespace util
 
 struct fstab_rec
 {
+    // Block device to mount
     std::string blk_device;
+    // Mount point
     std::string mount_point;
+    // Filesystem type
     std::string fs_type;
+    // Flags for mount()
     unsigned long flags;
+    // Filesystem options for mount()
     std::string fs_options;
+    // Flags for fs_mgr
     unsigned long fs_mgr_flags;
+    // Options for vold
     std::string vold_args;
+    // Original mount arguments from fstab
+    std::string mount_args;
+    // Original line from fstab file
     std::string orig_line;
 };
 

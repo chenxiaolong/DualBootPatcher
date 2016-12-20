@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "mbp/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/patcherinterface.h"
 
@@ -40,6 +39,8 @@ public:
 
     static const std::string UpdaterScript;
 
+    static const std::string SystemTransferList;
+
     virtual ErrorCode error() const override;
 
     virtual std::string id() const override;
@@ -48,6 +49,9 @@ public:
     virtual std::vector<std::string> existingFiles() const override;
 
     virtual bool patchFiles(const std::string &directory) override;
+
+    bool patchUpdater(const std::string &directory);
+    bool patchTransferList(const std::string &directory);
 
 private:
     class Impl;

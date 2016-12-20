@@ -17,32 +17,39 @@
 
 package com.github.chenxiaolong.dualbootpatcher.settings;
 
+import android.app.Activity;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
+import com.github.chenxiaolong.dualbootpatcher.Constants;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.MainApplication;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherService;
@@ -50,6 +57,10 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
         .BootUIActionTaskListener;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
@@ -58,20 +69,26 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     private static final String PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog";
     private static final String CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog";
 
+    private static final String EXTRA_TASK_ID_CHECK_SUPPORTED = "task_id_check_supported";
     private static final String EXTRA_TASK_ID_GET_VERSION = "task_id_get_version";
     private static final String EXTRA_TASK_ID_INSTALL = "task_id_install";
     private static final String EXTRA_TASK_ID_UNINSTALL = "task_id_uninstall";
 
+    private static final String KEY_BACKUP_DIRECTORY = "backup_directory";
     private static final String KEY_BOOT_UI_INSTALL = "boot_ui_install";
     private static final String KEY_BOOT_UI_UNINSTALL = "boot_ui_uninstall";
     private static final String KEY_PARALLEL_PATCHING = "parallel_patching_threads";
     private static final String KEY_USE_DARK_THEME = "use_dark_theme";
 
+    private static final int REQUEST_BACKUP_DIRECTORY = 1000;
+
+    private Preference mBackupDirectoryPref;
     private Preference mBootUIInstallPref;
     private Preference mBootUIUninstallPref;
     private Preference mParallelPatchingPref;
     private Preference mUseDarkThemePref;
 
+    private int mTaskIdCheckSupported = -1;
     private int mTaskIdGetVersion = -1;
     private int mTaskIdInstall = -1;
     private int mTaskIdUninstall = -1;
@@ -98,6 +115,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         int threads = getPreferenceManager().getSharedPreferences().getInt(
                 KEY_PARALLEL_PATCHING, PatcherService.DEFAULT_PATCHING_THREADS);
 
+        mBackupDirectoryPref = findPreference(KEY_BACKUP_DIRECTORY);
+        mBackupDirectoryPref.setOnPreferenceClickListener(this);
+        updateBackupDirectorySummary();
+
         mBootUIInstallPref = findPreference(KEY_BOOT_UI_INSTALL);
         mBootUIInstallPref.setEnabled(false);
         mBootUIInstallPref.setSummary(R.string.please_wait);
@@ -117,6 +138,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         mUseDarkThemePref.setOnPreferenceChangeListener(this);
 
         if (savedInstanceState != null) {
+            mTaskIdCheckSupported = savedInstanceState.getInt(EXTRA_TASK_ID_CHECK_SUPPORTED);
             mTaskIdGetVersion = savedInstanceState.getInt(EXTRA_TASK_ID_GET_VERSION);
             mTaskIdInstall = savedInstanceState.getInt(EXTRA_TASK_ID_INSTALL);
             mTaskIdUninstall = savedInstanceState.getInt(EXTRA_TASK_ID_UNINSTALL);
@@ -126,6 +148,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        outState.putInt(EXTRA_TASK_ID_CHECK_SUPPORTED, mTaskIdCheckSupported);
         outState.putInt(EXTRA_TASK_ID_GET_VERSION, mTaskIdGetVersion);
         outState.putInt(EXTRA_TASK_ID_INSTALL, mTaskIdInstall);
         outState.putInt(EXTRA_TASK_ID_UNINSTALL, mTaskIdUninstall);
@@ -146,6 +169,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         super.onStop();
 
         if (getActivity().isFinishing()) {
+            if (mTaskIdCheckSupported >= 0) {
+                removeCachedTaskId(mTaskIdCheckSupported);
+                mTaskIdCheckSupported = -1;
+            }
             if (mTaskIdGetVersion >= 0) {
                 removeCachedTaskId(mTaskIdGetVersion);
                 mTaskIdGetVersion = -1;
@@ -154,6 +181,9 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
         // If we connected to the service and registered the callback, now we unregister it
         if (mService != null) {
+            if (mTaskIdCheckSupported >= 0) {
+                mService.removeCallback(mTaskIdCheckSupported, mCallback);
+            }
             if (mTaskIdGetVersion >= 0) {
                 mService.removeCallback(mTaskIdGetVersion, mCallback);
             }
@@ -180,9 +210,13 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         }
         mTaskIdsToRemove.clear();
 
-        if (mTaskIdGetVersion < 0) {
-            getVersionIfSupported();
+        if (mTaskIdCheckSupported < 0) {
+            checkSupported();
         } else {
+            mService.addCallback(mTaskIdCheckSupported, mCallback);
+        }
+
+        if (mTaskIdGetVersion >= 0) {
             mService.addCallback(mTaskIdGetVersion, mCallback);
         }
 
@@ -208,15 +242,15 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         }
     }
 
-    private void getVersionIfSupported() {
-        boolean supported = false;
+    private void checkSupported() {
+        mTaskIdCheckSupported = mService.bootUIAction(BootUIAction.CHECK_SUPPORTED);
+        mService.addCallback(mTaskIdCheckSupported, mCallback);
+        mService.enqueueTaskId(mTaskIdCheckSupported);
+    }
 
-        PatcherConfig pc = new PatcherConfig();
-        Device device = PatcherUtils.getCurrentDevice(getActivity(), pc);
-        if (device != null && device.isBootUISupported()) {
-            supported = true;
-        }
-        pc.destroy();
+    private void onCheckedSupported(boolean supported) {
+        removeCachedTaskId(mTaskIdCheckSupported);
+        mTaskIdCheckSupported = -1;
 
         if (supported) {
             if (mTaskIdGetVersion < 0) {
@@ -288,7 +322,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             d.dismiss();
         }
 
-        getVersionIfSupported();
+        checkSupported();
 
         Toast.makeText(getActivity(),
                 success ? R.string.rom_settings_boot_ui_install_success :
@@ -312,7 +346,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             d.dismiss();
         }
 
-        getVersionIfSupported();
+        checkSupported();
 
         Toast.makeText(getActivity(),
                 success ? R.string.rom_settings_boot_ui_uninstall_success :
@@ -321,7 +355,11 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
 
     @Override
     public boolean onPreferenceClick(Preference preference) {
-        if (preference == mBootUIInstallPref) {
+        if (preference == mBackupDirectoryPref) {
+            Intent intent = FileUtils.getFileTreeOpenIntent(getActivity());
+            startActivityForResult(intent, REQUEST_BACKUP_DIRECTORY);
+            return true;
+        } else if (preference == mBootUIInstallPref) {
             mTaskIdInstall = mService.bootUIAction(BootUIAction.INSTALL);
             mService.addCallback(mTaskIdInstall, mCallback);
             mService.enqueueTaskId(mTaskIdInstall);
@@ -369,12 +407,46 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         return false;
     }
 
+    @Override
+    public void onActivityResult(int request, int result, Intent data) {
+        switch (request) {
+        case REQUEST_BACKUP_DIRECTORY:
+            if (data != null && result == Activity.RESULT_OK) {
+                Uri treeDocumentUri = FileUtils.getDocumentUriFromTreeUri(data.getData());
+                if (treeDocumentUri != null) {
+                    new SetBackupPathTask().execute(treeDocumentUri);
+                }
+            }
+            break;
+        default:
+            super.onActivityResult(request, result, data);
+            break;
+        }
+    }
+
+    private void updateBackupDirectorySummary() {
+        mBackupDirectoryPref.setSummary(getPreferenceManager().getSharedPreferences().getString(
+                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY));
+    }
+
     private void updateParallelPatchingSummary(int threads) {
         String summary = getString(R.string.rom_settings_parallel_patching_desc, threads);
         mParallelPatchingPref.setSummary(summary);
     }
 
     private class ServiceEventCallback implements BootUIActionTaskListener {
+        @Override
+        public void onBootUICheckedSupported(int taskId, final boolean supported) {
+            if (taskId == mTaskIdCheckSupported) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onCheckedSupported(supported);
+                    }
+                });
+            }
+        }
+
         @Override
         public void onBootUIHaveVersion(int taskId, final Version version) {
             if (taskId == mTaskIdGetVersion) {
@@ -421,6 +493,55 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                     startActivity(intent);
                 }
             });
+        }
+    }
+
+    private class SetBackupPathTask extends AsyncTask<Uri, Void, String> {
+        private ContentResolver mCR;
+
+        @Override
+        protected void onPreExecute() {
+            mCR = getActivity().getContentResolver();
+        }
+
+        @Override
+        protected String doInBackground(Uri... params) {
+            // The input URI was already converted from a tree URI to a document URI. Linux lets us
+            // open directories with open() so we can simply read the symlink from /proc/self/fd/.
+
+            Uri uri = params[0];
+
+            ParcelFileDescriptor pfd = null;
+            try {
+                pfd = mCR.openFileDescriptor(uri, "r");
+                if (pfd != null) {
+                    return LibMiscStuff.readLink("/proc/self/fd/" + pfd.getFd());
+                }
+            } catch (FileNotFoundException e) {
+                Log.w(TAG, "URI not found: " + uri, e);
+                return null;
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to read fd link for: " + uri, e);
+                return null;
+            } finally {
+                IOUtils.closeQuietly(pfd);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String path) {
+            mCR = null;
+
+            if (isAdded()) {
+                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+                Editor editor = prefs.edit();
+                editor.putString(Constants.Preferences.BACKUP_DIRECTORY, path);
+                editor.apply();
+
+                updateBackupDirectorySummary();
+            }
         }
     }
 }

@@ -25,8 +25,6 @@
 class TWFunc
 {
 public:
-    static std::vector<std::string> decode_list(const std::string &encoded);
-
     static std::string get_resource_path(const std::string &res_path);
 
     static void Fixup_Time_On_Boot();

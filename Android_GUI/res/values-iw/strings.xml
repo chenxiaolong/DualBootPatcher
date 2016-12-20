@@ -1,0 +1,427 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">מטלא (פאצ׳ר) דו - מערכת הפעלה</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">מטלא (פאצ׳ר) דו - מערכת הפעלה (ניפוי - \"די באג\")</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">מטלא (פאצ׳ר) דו - מערכת הפעלה (תמונת מצב \"סנפשוט\")</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">נא חכה עד שכל הפעולות יתומו</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">גרסא %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">מקור הקוד</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">פורום xda</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">רשיונות</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">תודה רבה לכל מי שעזר לגרום למטלא (פאצ׳ר) הזה להיות מציאות!</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">לא יכול להתחבר לmbtool</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">האפליקציה לא הצליחה ליצור חיבור עם הmbtool. זה יכול לקרות עקב חוסר גישה להרשאות מערכת (root), או שהramdisk לא מעודכן. \n\n לחץ לנסות שנית.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">מערכות הפעלה</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">הטלא (פאצ׳) קובץ זיפ</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">שטח אחסון פנוי</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">הגדרות</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">שיתוף ישומים</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">הפעלה מחדש</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">אודות הישום</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">יציאה</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">פתח את מגירת הניווט</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">סגור את מגירת הניווט</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">ראשי</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">משני</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">רב חלקי %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s חלק מידע (data)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s חלק כרטיס הזיכרון</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">אין אפשרות לאמת את גרסאת מערכת הפעלתך</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">החלפת מערת הפעלה</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">מגדיר את הקרנל</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">מערכת ההפעלה הוחלפה בהצלחה</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">החלפת מערכת ההפעלה נכשלה</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">קבצי הבדיקה אינם תואמים</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">חסרים קבצי הבדיקה</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">הקרנל הוגדר בהצלחה</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">הגדרת הקרנל נכשלה</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">ישום אחר מנסה להחליף ל%s
+המשך?</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">אין אפשרות לקבוע את חלק ההפעלה מכיוןן ששם הקוד \"%s\" אינו מוכר.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">קבצי הבדיקה \"SHA512\" לboot.img או *.img של מערכת הפעלה זו אינם תואמים עם קבצי הבדיקה המצופים שנמצאים ב/sdcard/MultiBoot/%s/. יתכן כי ישום אחר עשה זאת בזדון. המשך בהחלפת מערכת ההפעלה?</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">קבצי הבדיקה \"SHA512\" לboot.img או *.img של מערכת הפעלה זו אינם קיימים ב/sdcard/MultiBoot/%s/. כנראה שמצב זה קרה עקב עדכון הישום. המשך בהחלפת מערכת ההפעלה?</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">גרסא אינה ידועה</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">גרסאת הבילד אינה ידועה</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">עדכן את הראמדיסק</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">הגדר את הקרנל</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">גבה מערכת הפעלה</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">הוסף למסך הבית</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">ערוך שם</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">שנה תמונה</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">מחק תמונה</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">מחק את מערכת ההפעלה</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">%s הוסף בהצלחה למסך הבית</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">האם תרצה שמכשירך יאותחל לאחר החלפת מערכת ההפעלה?</string>
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">מערכת</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">מטמון</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">דאטה</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">מטמון דאלויק</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">קבצי רב - הפעלה</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">מחק מטרות</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">מוחק מטרות</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">%s נמחקו בהצלחה</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">מחיקת %s נכשלה</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">התחלת מחיקת מערכת ההפעלה נכשלה</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">לא חלו מחיקות משום שלא הוגדרו מטרות</string>
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">לא ניתן למחוק את מערכת ההפעלה הפועלת כעת</string>
+  <!--Switcher service notification title-->
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">טעינת התמונות הממוזערות והשמות של מערכות ההפעלה נכשלה משום שאין הרשאה לגשץ לקבצים</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">סמל מערכת ההפעלה</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">הגדר את הקרנל?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">הקרנל שרץ בזה הרגע יוגדר עבור %s</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">שנה שם %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">תן שם חדש עבור %s. באי כתיבת שם יאותחל שמו.</string>
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">הקרנל עדיין לא הוגדר עבור מערכת ההפעלה הנוכחית. התרצה להגדיר אותו כעת?</string>
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">הקרנל השמור שוננ מהקרנל שרץ כעת. התרצה להגדיר את הקרנל כעת?</string>
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">הגדר עכשיו</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">הגדר מאוחר יותר</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">מערכת ההפעלה הנוכחית היא %1$s, אבל אתה מנסה להגדיר את הקרנל עבור %2$s. בבקשה אשר את הפעולה.</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">עשה פלאש לקבצי הזיפ</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <!--FAB button text for adding a backup to flash-->
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">התקן את קבצי הזיפ</string>
+  <!--Title of pending action card for restoring a backup-->
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">קובץ הזיפ: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">מיקום: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">מיקום ההתקנה:</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">מאמת קובץ זיפ</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">הקובץ הנבחר לא נמצא.</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">אין אפשרות לקרוא את הקובץ הנבחר.</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">נוכח כי הקובץ הנבחר אינו מוטלא עבור רב - הפעלה. נא הטלא אותו לפני ההפלאשה שלו.</string>
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">קובץ הזיפ צריך להיות מוטלה עם %s או גרסא חדשה יותר כדי להשתמש בהפלאשת - תוך - אפליקציה.</string>
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">כדי למנוע את קריסת מערכת ההפעלה הנוכחית, הפלאשת קובץ זיפ עליה אינו מותר.</string>
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">הקובץ המקורי הוטלא עבור התקנה ל%s. התרצה להחליף את מקום ההתקנה?</string>
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">שמור מיקום</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">שנה מיקום</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">כדי לעשות פלאש לקובץ זיפ דרך הישום, רק הוסף את הזיפ המוטלא על ידי לחיצה על כפתור ההוספה הגדול. \n\nאת סדר ההפלאשה ניתן לשנות על ידי לחיצה ארוכה על הקובץ, ועל מנת למחוק קבצים ניתן להחליק אותם הצידה.\n\nנא לשים לב:
+ תכונה זו עדיין נסיונית. אנא גבה את מכשירך לפני שתמשיך.</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <!--Toast message shown if there are no backups available-->
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">חלקה</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">גרסא</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">בילד</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">מצב הmbtool</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">ישומים</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s יישומי מערכת, %2$s ישומים מעודכנים, %3$s ישומי משתמש</string>
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">מיקום המערכת</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">מיקום המטמון</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">מיקום הדאטה</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">גודל המערכת</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">גודל המטמון</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">גודל הדאטה</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">מחשב...</string>
+  <!--Backup ROM activity title-->
+  <!--Restore ROM activity title-->
+  <!--Backup targets dialog description-->
+  <!--Restore targets dialog description-->
+  <!--Backup/restore target for ROM's /system files-->
+  <!--Backup/restore target for ROM's /cache files-->
+  <!--Backup/restore target for ROM's /data files-->
+  <!--Backup/restore target for ROM's boot image-->
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <!--Backup name input dialog description-->
+  <!--Backup name input field hint for backup name dialog-->
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">המטלא (פאצ׳ר) אינו יכול לטלאות ללא אישורי כתיבה וקריאה לשטח האחסון. אנא אפשר גישה זו על מנת שתוכל לטלאות קבצים.</string>
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">קובץ הפלט הנבחר כבר נמצא בתור.</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">מכשיר:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">הגדרות חלוקה:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">הסבר:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">הצלחה</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">נכשל (קוד שגיאה %s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">מחכה</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">בתור</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">מבוטל</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">אפשרויות מטלא (פאצ׳ר)</string>
+  <!--Name for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade">עדכון מערכת הפעלה ראשית</string>
+  <!--Description for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade_desc">עדכן את מערכת ההפעלה הראשית מבלי לפגוע בתפקוד מערכות הפעלה אחרות</string>
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">מתקין את מערכת ההפעלה ל%s</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">הכנס זיהוי</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">הכנס זיהוי למעלה</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">חלקת הזיהוי אינה יכולה להיות ריקה</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">חלקת הזיהוי חייבת להכיל אך ורק אותיות בשפה באנגלית ו/או מספרים.</string>
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">חלקת דאטה</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">חלקת כרטיס זיכרון</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">אין דפדפן קבצים</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">אין דפדפן קבצים מתאים מותקן. אנא התקן אחד כדי שתהיה אפשרות לבחור קובץ לטליאה</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">הסתיים</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">קבצים %1$s/%2$s</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">גודל כולל:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">תפוס:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">פנוי:</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">שיתוף ישומים יחידים</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">שתף ישומים יחידים</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">שתף ישומים בכמה מערכות הפעלה (מצריך הפעלה מחדש)</string>
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">נהל ישומים משותפים</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">בחר אילו ישומים ישותפו עבור שיתוף ישומים יחידים.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">אין אפשרות לשמור את הגדרות שיתוף הישומים משום שכשלה השגת הרשאת הגישה לאחסון המכשיר. אנא אפשר גישה זו כדי להשתמש בתכונת שיתוף הישומים.</string>
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">יש לעדכן את הmbtool כדי להשתמש בתכונת שיתןף הישומים. נא עדכן את ramdisk.</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">עדכן את הramdisk.</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">לramdisk אין כעת את גרסאת הmbtool.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">לramdisk קיימת גרסא ישנה של הmbtool.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">הramdisk עדכני.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">עדכון הramdisk צלח</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">עדכון הramdisk צלח, התרצה להפעיל מחדש את מכשירך?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">עדכון הramdisk צלח</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">עדכון הramdisk כשל</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">עדכון הramdisk כשל, היומנים נשמרו לMultiBoot/ramdisk-update.log באחסון הפנימי של המכשיר.</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">כעת אתה צעד %1$d מכפיית עדכון הramdisk.</item>
+    <item quantity="other">כעת אתה %1$d צעדים מכפיית עדכון הramdisk.</item>
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">כופה את עדכון הramdisk.</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <!--Title for the preference to install the Boot UI-->
+  <!--Title for the preference to update the Boot UI-->
+  <!--Title for the preference to uninstall the Boot UI-->
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <!--Title for the preference to change the backup directory-->
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">מטלא</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">הראה כפתור יציאה</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">הראה כפתור הפעלה מחדש</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">מסך ראשי</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">המסך הראשון שיופיע בעת התחלת הישום</string>
+  <!--Title for the preference to use the dark theme-->
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">אפשר קבלת מטרות</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">אפשר לישומים אחרים לשלוח מטרות לישום הזה כדי לבצע פעולות, כגון החלפת מערכות הפעלה וטליאת קבצים.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">שיתוף ישומים יחידים</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">שיתוף ישומים מאפשר למידע של ישומים להיות ממוקם באחסון משותף שכל מערכת הפעלה יכולה לגשת אליו. שימוש במידע משותף מסנכרן את המידע בכל מערכות ההפעלה (לדוגמה: כרטיסיות \"כרום\"). \n\nנא לשים לב: יש להפעיל מחדש את המכשיר כדי שהשינויים יתממשו.\n\nכדי להשתמש ביכולת שיתוף הישומים, הגדרת שיתוף הישומים צריכה להיות מופעלת בכל מערכת הפעלה. לדוגמה: במערכת ההפעלה הראשית הפעל שיתוף מידע לכרום. כעת כרום ישתמש במידע מהאחסון המשותף. אחר כך היכנס למערכת הפעלה אחרת וגם שם אפשר שיתוף מידע לכרום. עכשיו כרום משתמש באחסון המידע המשותף.</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">מידע משותף</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">לא משותף</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">השתמש במידע משותף</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">בחר אם הישום ישתמש בנתיב מידע משותף.</string>
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">מערכות הפעלה נוספות המשתמשות במידע המשותף: %s</string>
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">השינויים יחולו בהפעלה מחדש הבאה.</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">הישום \"%s\" אינו משותף עוד.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">נמנעה הבקשה מהישום. כדי לאפשר לישומים אחרים לשלוח בקשות, בחר את האפשרות בהגדרות \"מטלא דו - מערכת הפעלה\"</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">חיפוש</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">אין מידע</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">אישור</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">ביטול</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">המשך</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">כן</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">לא</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">נסה שנית</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">אתחל עכשיו</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">אתחל מאוחר יותר</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">לא ידוע</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">אל תציג שוב</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">נא חכה</string>
+</resources>

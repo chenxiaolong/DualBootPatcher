@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <getopt.h>
@@ -211,12 +212,20 @@ static const char PackUsage[] =
 
 static std::string error_to_string(const mbp::ErrorCode &error) {
     switch (error) {
+    case mbp::ErrorCode::MemoryAllocationError:
+        return "Failed to allocate memory";
     case mbp::ErrorCode::FileOpenError:
         return "Failed to open file";
+    case mbp::ErrorCode::FileCloseError:
+        return "Failed to close file";
     case mbp::ErrorCode::FileReadError:
         return "Failed to read from file";
     case mbp::ErrorCode::FileWriteError:
         return "Failed to write to file";
+    case mbp::ErrorCode::FileSeekError:
+        return "Failed to seek file";
+    case mbp::ErrorCode::FileTellError:
+        return "Failed to get file position";
     case mbp::ErrorCode::BootImageParseError:
         return "Failed to parse boot image";
     case mbp::ErrorCode::BootImageApplyBumpError:
@@ -248,6 +257,7 @@ static std::string error_to_string(const mbp::ErrorCode &error) {
     case mbp::ErrorCode::AutoPatcherCreateError:
     case mbp::ErrorCode::RamdiskPatcherCreateError:
     case mbp::ErrorCode::PatchingCancelled:
+    case mbp::ErrorCode::BootImageTooLargeError:
     default:
         assert(false);
     }

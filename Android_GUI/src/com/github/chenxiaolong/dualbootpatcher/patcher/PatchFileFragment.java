@@ -24,14 +24,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
@@ -53,8 +51,8 @@ import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils.UriMetadata;
 import com.github.chenxiaolong.dualbootpatcher.MenuUtils;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -65,7 +63,7 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog
         .GenericYesNoDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatchFileItemAdapter
         .PatchFileItemClickListener;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog
@@ -74,9 +72,10 @@ import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService.PatcherEve
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback;
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
         .OnItemMovedOrDismissedListener;
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,11 +97,11 @@ public class PatchFileFragment extends Fragment implements
     private static final String PROGRESS_DIALOG_QUERYING_METADATA =
             PatchFileFragment.class.getCanonicalName() + ".progress.querying_metadata";
 
+    private static final String EXTRA_SELECTED_PATCHER_ID = "selected_patcher_id";
     private static final String EXTRA_SELECTED_INPUT_URI = "selected_input_file";
     private static final String EXTRA_SELECTED_OUTPUT_URI = "selected_output_file";
     private static final String EXTRA_SELECTED_INPUT_FILE_NAME = "selected_input_file_name";
     private static final String EXTRA_SELECTED_INPUT_FILE_SIZE = "selected_input_file_size";
-    private static final String EXTRA_SELECTED_IS_ODIN = "selected_is_odin";
     private static final String EXTRA_SELECTED_TASK_ID = "selected_task_id";
     private static final String EXTRA_SELECTED_DEVICE = "selected_device";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
@@ -124,7 +123,9 @@ public class PatchFileFragment extends Fragment implements
     /** Main files list */
     private RecyclerView mRecycler;
     /** FAB */
-    private FloatingActionButton mFAB;
+    private FloatingActionMenu mFAB;
+    private FloatingActionButton mFABAddZip;
+    private FloatingActionButton mFABAddOdin;
     /** Loading progress spinner */
     private ProgressBar mProgressBar;
     /** Add zip message */
@@ -160,6 +161,8 @@ public class PatchFileFragment extends Fragment implements
     /** Item touch callback for dragging and swiping */
     DragSwipeItemTouchCallback mItemTouchCallback;
 
+    /** Selected patcher ID */
+    private String mSelectedPatcherId;
     /** Selected input file */
     private Uri mSelectedInputUri;
     /** Selected output file */
@@ -168,8 +171,6 @@ public class PatchFileFragment extends Fragment implements
     private String mSelectedInputFileName;
     /** Selected input file's size */
     private long mSelectedInputFileSize;
-    /** Selected file is Odin image */
-    private boolean mSelectedIsOdin;
     /** Task ID of selected patcher item */
     private int mSelectedTaskId;
     /** Target device */
@@ -203,11 +204,11 @@ public class PatchFileFragment extends Fragment implements
         super.onActivityCreated(savedInstanceState);
 
         if (savedInstanceState != null) {
+            mSelectedPatcherId = savedInstanceState.getString(EXTRA_SELECTED_PATCHER_ID);
             mSelectedInputUri = savedInstanceState.getParcelable(EXTRA_SELECTED_INPUT_URI);
             mSelectedOutputUri = savedInstanceState.getParcelable(EXTRA_SELECTED_OUTPUT_URI);
             mSelectedInputFileName = savedInstanceState.getString(EXTRA_SELECTED_INPUT_FILE_NAME);
             mSelectedInputFileSize = savedInstanceState.getLong(EXTRA_SELECTED_INPUT_FILE_SIZE);
-            mSelectedIsOdin = savedInstanceState.getBoolean(EXTRA_SELECTED_IS_ODIN);
             mSelectedTaskId = savedInstanceState.getInt(EXTRA_SELECTED_TASK_ID);
             mSelectedDevice = savedInstanceState.getParcelable(EXTRA_SELECTED_DEVICE);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
@@ -216,7 +217,9 @@ public class PatchFileFragment extends Fragment implements
 
         // Initialize UI elements
         mRecycler = (RecyclerView) getActivity().findViewById(R.id.files_list);
-        mFAB = (FloatingActionButton) getActivity().findViewById(R.id.fab);
+        mFAB = (FloatingActionMenu) getActivity().findViewById(R.id.fab);
+        mFABAddZip = (FloatingActionButton) getActivity().findViewById(R.id.fab_add_flashable_zip);
+        mFABAddOdin = (FloatingActionButton) getActivity().findViewById(R.id.fab_add_odin_image);
         mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
         mAddZipMessage = (TextView) getActivity().findViewById(R.id.add_zip_message);
 
@@ -232,14 +235,18 @@ public class PatchFileFragment extends Fragment implements
         }
 
         // Set up listener for the FAB
-        mFAB.setOnClickListener(new OnClickListener() {
+        mFABAddZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (PermissionUtils.supportsRuntimePermissions()) {
-                    requestPermissions();
-                } else {
-                    selectInputUri();
-                }
+                startFileSelection(PatcherUtils.PATCHER_ID_MULTIBOOTPATCHER);
+                mFAB.close(true);
+            }
+        });
+        mFABAddOdin.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startFileSelection(PatcherUtils.PATCHER_ID_ODINPATCHER);
+                mFAB.close(true);
             }
         });
 
@@ -251,6 +258,9 @@ public class PatchFileFragment extends Fragment implements
         LinearLayoutManager llm = new LinearLayoutManager(getActivity());
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mRecycler.setLayoutManager(llm);
+
+        // Hide FAB initially
+        mFAB.hideMenuButton(false);
 
         // Show loading progress bar
         updateLoadingStatus();
@@ -275,11 +285,11 @@ public class PatchFileFragment extends Fragment implements
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
+        outState.putString(EXTRA_SELECTED_PATCHER_ID, mSelectedPatcherId);
         outState.putParcelable(EXTRA_SELECTED_INPUT_URI, mSelectedInputUri);
         outState.putParcelable(EXTRA_SELECTED_OUTPUT_URI, mSelectedOutputUri);
         outState.putString(EXTRA_SELECTED_INPUT_FILE_NAME, mSelectedInputFileName);
         outState.putLong(EXTRA_SELECTED_INPUT_FILE_SIZE, mSelectedInputFileSize);
-        outState.putBoolean(EXTRA_SELECTED_IS_ODIN, mSelectedIsOdin);
         outState.putInt(EXTRA_SELECTED_TASK_ID, mSelectedTaskId);
         outState.putParcelable(EXTRA_SELECTED_DEVICE, mSelectedDevice);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
@@ -524,12 +534,12 @@ public class PatchFileFragment extends Fragment implements
     private void updateLoadingStatus() {
         if (mShowingProgress) {
             mRecycler.setVisibility(View.GONE);
-            mFAB.setVisibility(View.GONE);
+            mFAB.hideMenuButton(true);
             mAddZipMessage.setVisibility(View.GONE);
             mProgressBar.setVisibility(View.VISIBLE);
         } else {
             mRecycler.setVisibility(View.VISIBLE);
-            mFAB.setVisibility(View.VISIBLE);
+            mFAB.showMenuButton(true);
             mAddZipMessage.setVisibility(View.VISIBLE);
             mProgressBar.setVisibility(View.GONE);
         }
@@ -656,6 +666,16 @@ public class PatchFileFragment extends Fragment implements
         dialog.show(getFragmentManager(), DIALOG_PATCHER_OPTIONS);
     }
 
+    private void startFileSelection(String patcherId) {
+        mSelectedPatcherId = patcherId;
+
+        if (PermissionUtils.supportsRuntimePermissions()) {
+            requestPermissions();
+        } else {
+            selectInputUri();
+        }
+    }
+
     private void requestPermissions() {
         FragmentCompat.requestPermissions(PatchFileFragment.this,
                 PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
@@ -693,7 +713,7 @@ public class PatchFileFragment extends Fragment implements
      * @see {@link #onSelectedInputUri(Uri)}
      */
     private void selectInputUri() {
-        Intent intent = FileUtils.getFileOpenIntent(getActivity());
+        Intent intent = FileUtils.getFileOpenIntent(getActivity(), "*/*");
         startActivityForResult(intent, ACTIVITY_REQUEST_INPUT_FILE);
     }
 
@@ -713,8 +733,9 @@ public class PatchFileFragment extends Fragment implements
     private void selectOutputFile() {
         String baseName;
         String extension;
-        if (mSelectedIsOdin) {
-            baseName = mSelectedInputFileName.replaceAll("\\.tar\\.md5(\\.gz|\\.xz)?$", "");
+        if (mSelectedPatcherId.equals(PatcherUtils.PATCHER_ID_ODINPATCHER)) {
+            baseName = mSelectedInputFileName.replaceAll(
+                    "(\\.tar\\.md5(\\.gz|\\.xz)?|\\.zip)$", "");
             extension = "zip";
         } else {
             baseName = FilenameUtils.getBaseName(mSelectedInputFileName);
@@ -731,7 +752,7 @@ public class PatchFileFragment extends Fragment implements
             sb.append(extension);
         }
         String desiredName = sb.toString();
-        Intent intent = FileUtils.getFileSaveIntent(getActivity(), desiredName);
+        Intent intent = FileUtils.getFileSaveIntent(getActivity(), "*/*", desiredName);
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE);
     }
 
@@ -827,10 +848,6 @@ public class PatchFileFragment extends Fragment implements
         mSelectedInputFileName = metadata.displayName;
         mSelectedInputFileSize = metadata.size;
 
-        mSelectedIsOdin = mSelectedInputFileName.endsWith(".tar.md5")
-                || mSelectedInputFileName.endsWith(".tar.md5.gz")
-                || mSelectedInputFileName.endsWith(".tar.md5.xz");
-
         // Open patcher options
         showPatcherOptionsDialog(-1);
     }
@@ -898,11 +915,7 @@ public class PatchFileFragment extends Fragment implements
             @Override
             public void run() {
                 final PatchFileItem pf = new PatchFileItem();
-                if (mSelectedIsOdin) {
-                    pf.patcherId = "OdinPatcher";
-                } else {
-                    pf.patcherId = "MultiBootPatcher";
-                }
+                pf.patcherId = mSelectedPatcherId;
                 pf.device = mSelectedDevice;
                 pf.inputUri = mSelectedInputUri;
                 pf.outputUri = mSelectedOutputUri;
@@ -1053,13 +1066,6 @@ public class PatchFileFragment extends Fragment implements
         }
     }
 
-    private static class UriMetadata {
-        Uri uri;
-        String displayName;
-        long size;
-        String mimeType;
-    }
-
     /**
      * Task to query the display name, size, and MIME type of a list of openable URIs.
      */
@@ -1074,32 +1080,7 @@ public class PatchFileFragment extends Fragment implements
 
         @Override
         protected UriMetadata[] doInBackground(Uri... params) {
-            UriMetadata[] metadatas = new UriMetadata[params.length];
-            for (int i = 0; i < metadatas.length; i++) {
-                UriMetadata metadata = new UriMetadata();
-                metadatas[i] = metadata;
-                metadata.uri = params[i];
-                metadata.mimeType = mCR.getType(metadata.uri);
-
-                Cursor cursor = mCR.query(metadata.uri, null, null, null, null, null);
-                try {
-                    if (cursor != null && cursor.moveToFirst()) {
-                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
-
-                        metadata.displayName = cursor.getString(nameIndex);
-                        if (cursor.isNull(sizeIndex)) {
-                            metadata.size = -1;
-                        } else {
-                            metadata.size = cursor.getLong(sizeIndex);
-                        }
-                    }
-                } finally {
-                    IOUtils.closeQuietly(cursor);
-                }
-            }
-
-            return metadatas;
+            return FileUtils.queryUriMetadata(mCR, params);
         }
 
         @Override

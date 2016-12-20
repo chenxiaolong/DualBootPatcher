@@ -1,17 +1,30 @@
 namespace mbtool.daemon.v3;
 
+table PathSELinuxSetLabelError {
+    // errno value
+    errno_value : int;
+
+    // strerror(errno)
+    msg : string;
+}
+
 table PathSELinuxSetLabelRequest {
     // Path to set label for
     path : string;
+
     // SELinux label
     label : string;
+
     // Whether to follow symlinks
     follow_symlinks : bool;
 }
 
 table PathSELinuxSetLabelResponse {
-    // Whether the SELinux label was successfully set
+    // Deprecated
     success : bool;
-    // Most likely the output of strerror(errno) if the file could not be opened
+    // Deprecated
     error_msg : string;
+
+    // Error
+    error : PathSELinuxSetLabelError;
 }

@@ -36,11 +36,14 @@
 #include "mbutil/directory.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
+#include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
+#include "decrypt.h"
+#include "init.h"
 #include "packages.h"
 #include "reboot.h"
 #include "roms.h"
@@ -49,31 +52,6 @@
 #include "wipe.h"
 
 // flatbuffers
-#include "protocol/file_chmod_generated.h"
-#include "protocol/file_close_generated.h"
-#include "protocol/file_open_generated.h"
-#include "protocol/file_read_generated.h"
-#include "protocol/file_seek_generated.h"
-#include "protocol/file_selinux_get_label_generated.h"
-#include "protocol/file_selinux_set_label_generated.h"
-#include "protocol/file_stat_generated.h"
-#include "protocol/file_write_generated.h"
-#include "protocol/path_chmod_generated.h"
-#include "protocol/path_copy_generated.h"
-#include "protocol/path_delete_generated.h"
-#include "protocol/path_mkdir_generated.h"
-#include "protocol/path_selinux_get_label_generated.h"
-#include "protocol/path_selinux_set_label_generated.h"
-#include "protocol/path_get_directory_size_generated.h"
-#include "protocol/mb_get_booted_rom_id_generated.h"
-#include "protocol/mb_get_installed_roms_generated.h"
-#include "protocol/mb_get_version_generated.h"
-#include "protocol/mb_set_kernel_generated.h"
-#include "protocol/mb_switch_rom_generated.h"
-#include "protocol/mb_wipe_rom_generated.h"
-#include "protocol/mb_get_packages_count_generated.h"
-#include "protocol/reboot_generated.h"
-#include "protocol/shutdown_generated.h"
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
@@ -110,9 +88,62 @@ static bool v3_send_response_unsupported(int fd)
     return v3_send_response(fd, builder);
 }
 
+static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
+{
+    auto request = static_cast<const v3::CryptoDecryptRequest *>(
+            msg->request());
+    if (!request->password()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoDecryptResponse> response;
+
+    std::string block_dev = decrypt_userdata(request->password()->c_str());
+    bool ret = !block_dev.empty() && mount_userdata(block_dev.c_str());
+
+    response = v3::CreateCryptoDecryptResponse(builder, ret);
+
+    // Wrap response
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_CryptoDecryptResponse, response.Union()));
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_crypto_get_pw_type(int fd, const v3::Request *msg)
+{
+    (void) msg;
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::CryptoGetPwTypeResponse> response;
+
+    v3::CryptoPwType v3_pw_type = v3::CryptoPwType_UNKNOWN;
+
+    std::string pw_type = decrypt_get_pw_type();
+    if (pw_type == CRYPTFS_PW_TYPE_DEFAULT) {
+        v3_pw_type = v3::CryptoPwType_DEFAULT;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PASSWORD) {
+        v3_pw_type = v3::CryptoPwType_PASSWORD;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PATTERN) {
+        v3_pw_type = v3::CryptoPwType_PATTERN;
+    } else if (pw_type == CRYPTFS_PW_TYPE_PIN) {
+        v3_pw_type = v3::CryptoPwType_PIN;
+    }
+
+    response = v3::CreateCryptoGetPwTypeResponse(builder, v3_pw_type);
+
+    // Wrap response
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_CryptoGetPwTypeResponse,
+            response.Union()));
+
+    return v3_send_response(fd, builder);
+}
+
 static bool v3_file_chmod(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileChmodRequest *) msg->request();
+    auto request = static_cast<const v3::FileChmodRequest *>(msg->request());
     if (fd_map.find(request->id()) == fd_map.end()) {
         return v3_send_response_invalid(fd);
     }
@@ -127,27 +158,29 @@ static bool v3_file_chmod(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileChmodResponse> response;
+    fb::Offset<v3::FileChmodError> error;
 
-    if (fchmod(ffd, mode) < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileChmodResponse(builder, false, error);
-    } else {
-        response = v3::CreateFileChmodResponse(builder, true);
+    bool ret = fchmod(ffd, mode) == 0;
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreateFileChmodErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileChmodResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileChmodResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileChmodResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_close(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileCloseRequest *) msg->request();
+    auto request = static_cast<const v3::FileCloseRequest *>(msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end()) {
         return v3_send_response_invalid(fd);
@@ -158,27 +191,29 @@ static bool v3_file_close(int fd, const v3::Request *msg)
     fd_map.erase(it);
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileCloseResponse> response;
+    fb::Offset<v3::FileCloseError> error;
 
-    if (close(ffd) < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileCloseResponse(builder, false, error);
-    } else {
-        response = v3::CreateFileCloseResponse(builder, true);
+    bool ret = close(ffd) == 0;
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreateFileCloseErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileCloseResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileCloseResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileCloseResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_open(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileOpenRequest *) msg->request();
+    auto request = static_cast<const v3::FileOpenRequest *>(msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -206,31 +241,35 @@ static bool v3_file_open(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileOpenResponse> response;
+    fb::Offset<v3::FileOpenError> error;
+    int id = -1;
 
     int ffd = open(request->path()->c_str(), flags, request->perms());
-    if (ffd < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileOpenResponse(builder, false, error);
-    } else {
+    int saved_errno = errno;
+
+    if (ffd >= 0) {
         // Assign a new ID
-        int id = fd_count++;
-        response = v3::CreateFileOpenResponse(builder, true, 0, id);
+        id = fd_count++;
         fd_map[id] = ffd;
+    } else {
+        error = v3::CreateFileOpenErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileOpenResponseDirect(
+            builder, ffd >= 0, ffd >= 0 ? nullptr : strerror(saved_errno), id,
+            error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileOpenResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileOpenResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_read(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileReadRequest *) msg->request();
+    auto request = static_cast<const v3::FileReadRequest *>(msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end()) {
         return v3_send_response_invalid(fd);
@@ -241,29 +280,34 @@ static bool v3_file_read(int fd, const v3::Request *msg)
     std::vector<unsigned char> buf(request->count());
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileReadResponse> response;
+    fb::Offset<v3::FileReadError> error;
+    fb::Offset<fb::Vector<unsigned char>> data;
 
-    auto ret = read(ffd, buf.data(), buf.size());
-    if (ret < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileReadResponse(builder, false, error);
+    ssize_t ret = read(ffd, buf.data(), buf.size());
+    int saved_errno = errno;
+
+    if (ret >= 0) {
+        data = builder.CreateVector(buf.data(), ret);
     } else {
-        auto data = builder.CreateVector(buf.data(), ret);
-        response = v3::CreateFileReadResponse(builder, true, 0, ret, data);
+        error = v3::CreateFileReadErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileReadResponse(
+            builder, ret >= 0,
+            ret >= 0 ? 0 : builder.CreateString(strerror(saved_errno)),
+            ret, data, error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileReadResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileReadResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_seek(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileSeekRequest *) msg->request();
+    auto request = static_cast<const v3::FileSeekRequest *>(msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end()) {
         return v3_send_response_invalid(fd);
@@ -284,30 +328,34 @@ static bool v3_file_seek(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileSeekResponse> response;
+    fb::Offset<v3::FileSeekError> error;
 
     // Ahh, posix...
     errno = 0;
-    off_t ret = lseek(ffd, offset, whence);
-    if (ret < 0 || errno) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileSeekResponse(builder, false, error);
-    } else {
-        response = v3::CreateFileSeekResponse(builder, true, 0, ret);
+    off_t new_offset = lseek(ffd, offset, whence);
+    int saved_errno = errno;
+    bool ret = new_offset >= 0 && saved_errno == 0;
+
+    if (!ret) {
+        error = v3::CreateFileSeekErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileSeekResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), new_offset,
+            error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileSeekResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileSeekResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileSELinuxGetLabelRequest *) msg->request();
+    auto request = static_cast<const v3::FileSELinuxGetLabelRequest *>(
+            msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end()) {
         return v3_send_response_invalid(fd);
@@ -316,32 +364,33 @@ static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
     int ffd = it->second;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileSELinuxGetLabelResponse> response;
-
+    fb::Offset<v3::FileSELinuxGetLabelError> error;
     std::string label;
 
-    if (!util::selinux_fget_context(ffd, &label)) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileSELinuxGetLabelResponse(
-                builder, false, error, 0);
-    } else {
-        auto fb_label = builder.CreateString(label);
-        response = v3::CreateFileSELinuxGetLabelResponse(
-                builder, true, 0, fb_label);
+    bool ret = util::selinux_fget_context(ffd, &label);
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreateFileSELinuxGetLabelErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileSELinuxGetLabelResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno),
+            ret ? label.c_str() : nullptr, error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathSELinuxGetLabelResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathSELinuxGetLabelResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_selinux_set_label(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileSELinuxSetLabelRequest *) msg->request();
+    auto request = static_cast<const v3::FileSELinuxSetLabelRequest *>(
+            msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end() || !request->label()) {
         return v3_send_response_invalid(fd);
@@ -350,27 +399,30 @@ static bool v3_file_selinux_set_label(int fd, const v3::Request *msg)
     int ffd = it->second;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileSELinuxSetLabelResponse> response;
+    fb::Offset<v3::FileSELinuxSetLabelError> error;
 
-    if (!util::selinux_fset_context(ffd, request->label()->c_str())) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileSELinuxSetLabelResponse(builder, false, error);
-    } else {
-        response = v3::CreateFileSELinuxSetLabelResponse(builder, true);
+    bool ret = util::selinux_fset_context(ffd, request->label()->c_str());
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreateFileSELinuxSetLabelErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileSELinuxSetLabelResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileSELinuxSetLabelResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileSELinuxSetLabelResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_stat(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileStatRequest *) msg->request();
+    auto request = static_cast<const v3::FileStatRequest *>(msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end()) {
         return v3_send_response_invalid(fd);
@@ -379,14 +431,14 @@ static bool v3_file_stat(int fd, const v3::Request *msg)
     int ffd = it->second;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileStatResponse> response;
-
+    fb::Offset<v3::FileStatError> error;
+    fb::Offset<v3::StructStat> statbuf;
     struct stat sb;
 
-    if (fstat(ffd, &sb) < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileStatResponse(builder, false, error);
-    } else {
+    bool ret = fstat(ffd, &sb) == 0;
+    int saved_errno = errno;
+
+    if (ret) {
         v3::StructStatBuilder ssb(builder);
         ssb.add_st_dev(sb.st_dev);
         ssb.add_st_ino(sb.st_ino);
@@ -401,23 +453,26 @@ static bool v3_file_stat(int fd, const v3::Request *msg)
         ssb.add_st_atime(sb.st_atime);
         ssb.add_st_mtime(sb.st_mtime);
         ssb.add_st_ctime(sb.st_ctime);
-        auto fb_ssb = ssb.Finish();
-
-        response = v3::CreateFileStatResponse(builder, true, 0, fb_ssb);
+        statbuf = ssb.Finish();
+    } else {
+        error = v3::CreateFileStatErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileStatResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), statbuf,
+            error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileStatResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileStatResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_file_write(int fd, const v3::Request *msg)
 {
-    auto request = (v3::FileWriteRequest *) msg->request();
+    auto request = static_cast<const v3::FileWriteRequest *>(msg->request());
     auto it = fd_map.find(request->id());
     if (it == fd_map.end() || !request->data()) {
         return v3_send_response_invalid(fd);
@@ -426,28 +481,30 @@ static bool v3_file_write(int fd, const v3::Request *msg)
     int ffd = it->second;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::FileWriteResponse> response;
+    fb::Offset<v3::FileWriteError> error;
 
-    auto ret = write(ffd, request->data()->Data(), request->data()->size());
+    ssize_t ret = write(ffd, request->data()->Data(), request->data()->size());
+    int saved_errno = errno;
+
     if (ret < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreateFileWriteResponse(builder, false, error);
-    } else {
-        response = v3::CreateFileWriteResponse(builder, true, 0, ret);
+        error = v3::CreateFileWriteErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreateFileWriteResponseDirect(
+            builder, ret >= 0, ret >= 0 ? nullptr : strerror(saved_errno), ret,
+            error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_FileWriteResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_FileWriteResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_chmod(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathChmodRequest *) msg->request();
+    auto request = static_cast<const v3::PathChmodRequest *>(msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -460,54 +517,58 @@ static bool v3_path_chmod(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathChmodResponse> response;
+    fb::Offset<v3::PathChmodError> error;
 
-    if (chmod(request->path()->c_str(), mode) < 0) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathChmodResponse(builder, false, error);
-    } else {
-        response = v3::CreatePathChmodResponse(builder, true);
+    bool ret = chmod(request->path()->c_str(), mode) == 0;
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreatePathChmodErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathChmodResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathChmodResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathChmodResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_copy(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathCopyRequest *) msg->request();
+    auto request = static_cast<const v3::PathCopyRequest *>(msg->request());
     if (!request->source() || !request->target()) {
         return v3_send_response_invalid(fd);
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathCopyResponse> response;
+    fb::Offset<v3::PathCopyError> error;
 
-    if (util::copy_contents(request->source()->c_str(),
-                            request->target()->c_str())) {
-        response = v3::CreatePathCopyResponse(builder, true);
-    } else {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathCopyResponse(builder, false, error);
+    bool ret = util::copy_contents(
+            request->source()->c_str(), request->target()->c_str());
+    int saved_errno = errno;
+
+    if (!ret) {
+        error = v3::CreatePathCopyErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathCopyResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathCopyResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathCopyResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_delete(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathDeleteRequest *) msg->request();
+    auto request = static_cast<const v3::PathDeleteRequest *>(msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -525,7 +586,7 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
         saved_errno = errno;
         break;
     case v3::PathDeleteFlag_RMDIR:
-        ret = unlink(request->path()->c_str()) == 0;
+        ret = rmdir(request->path()->c_str()) == 0;
         saved_errno = errno;
         break;
     case v3::PathDeleteFlag_RECURSIVE:
@@ -537,27 +598,26 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathDeleteResponse> response;
+    fb::Offset<v3::PathDeleteError> error;
 
-    if (ret) {
-        response = v3::CreatePathDeleteResponse(builder, true);
-    } else {
-        auto error = builder.CreateString(strerror(saved_errno));
-        response = v3::CreatePathDeleteResponse(builder, false, error);
+    if (!ret) {
+        error = v3::CreatePathDeleteErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathDeleteResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathDeleteResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathDeleteResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_mkdir(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathMkdirRequest *) msg->request();
+    auto request = static_cast<const v3::PathMkdirRequest *>(msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -570,7 +630,7 @@ static bool v3_path_mkdir(int fd, const v3::Request *msg)
     }
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathMkdirResponse> response;
+    fb::Offset<v3::PathMkdirError> error;
 
     bool ret;
     if (request->recursive()) {
@@ -578,26 +638,56 @@ static bool v3_path_mkdir(int fd, const v3::Request *msg)
     } else {
         ret = mkdir(request->path()->c_str(), mode) == 0;
     }
+    int saved_errno = errno;
 
     if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathMkdirResponse(builder, false, error);
-    } else {
-        response = v3::CreatePathMkdirResponse(builder, true);
+        error = v3::CreatePathMkdirErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathMkdirResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathMkdirResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathMkdirResponse, response.Union()));
+
+    return v3_send_response(fd, builder);
+}
+
+static bool v3_path_readlink(int fd, const v3::Request *msg)
+{
+    auto request = static_cast<const v3::PathReadlinkRequest *>(msg->request());
+    if (!request->path()) {
+        return v3_send_response_invalid(fd);
+    }
+
+    std::string target;
+    bool ret = util::read_link(request->path()->c_str(), &target);
+    int saved_errno = errno;
+
+    fb::FlatBufferBuilder builder;
+    fb::Offset<v3::PathReadlinkError> error;
+
+    if (!ret) {
+        error = v3::CreatePathReadlinkErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
+    }
+
+    auto response = v3::CreatePathReadlinkResponseDirect(
+            builder, ret ? target.c_str() : nullptr, error);
+
+    // Wrap response
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathReadlinkResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathSELinuxGetLabelRequest *) msg->request();
+    auto request = static_cast<const v3::PathSELinuxGetLabelRequest *>(
+            msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -609,32 +699,32 @@ static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
     } else {
         ret = util::selinux_lget_context(request->path()->c_str(), &label);
     }
+    int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathSELinuxGetLabelResponse> response;
+    fb::Offset<v3::PathSELinuxGetLabelError> error;
 
     if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathSELinuxGetLabelResponse(
-                builder, false, error, 0);
-    } else {
-        auto fb_label = builder.CreateString(label);
-        response = v3::CreatePathSELinuxGetLabelResponse(
-                builder, true, 0, fb_label);
+        error = v3::CreatePathSELinuxGetLabelErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathSELinuxGetLabelResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno),
+            ret ? label.c_str() : nullptr, error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathSELinuxGetLabelResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathSELinuxGetLabelResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_path_selinux_set_label(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathSELinuxSetLabelRequest *) msg->request();
+    auto request = static_cast<const v3::PathSELinuxSetLabelRequest *>(
+            msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -647,22 +737,23 @@ static bool v3_path_selinux_set_label(int fd, const v3::Request *msg)
         ret = util::selinux_lset_context(request->path()->c_str(),
                                          request->label()->c_str());
     }
+    int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathSELinuxSetLabelResponse> response;
+    fb::Offset<v3::PathSELinuxSetLabelError> error;
 
     if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathSELinuxSetLabelResponse(builder, false, error);
-    } else {
-        response = v3::CreatePathSELinuxSetLabelResponse(builder, true);
+        error = v3::CreatePathSELinuxSetLabelErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathSELinuxSetLabelResponseDirect(
+            builder, ret, ret ? nullptr : strerror(errno), error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathSELinuxSetLabelResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathSELinuxSetLabelResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -718,7 +809,8 @@ private:
 
 static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
 {
-    auto request = (v3::PathGetDirectorySizeRequest *) msg->request();
+    auto request = static_cast<const v3::PathGetDirectorySizeRequest *>(
+            msg->request());
     if (!request->path()) {
         return v3_send_response_invalid(fd);
     }
@@ -732,31 +824,33 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
 
     DirectorySizeGetter dsg(request->path()->c_str(), std::move(exclusions));
     bool ret = dsg.run();
+    int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
-    fb::Offset<v3::PathGetDirectorySizeResponse> response;
+    fb::Offset<v3::PathGetDirectorySizeError> error;
 
     if (!ret) {
-        auto error = builder.CreateString(strerror(errno));
-        response = v3::CreatePathGetDirectorySizeResponse(
-                builder, false, error);
-    } else {
-        response = v3::CreatePathGetDirectorySizeResponse(
-                builder, true, 0, dsg.total());
+        error = v3::CreatePathGetDirectorySizeErrorDirect(
+                builder, saved_errno, strerror(saved_errno));
     }
 
+    auto response = v3::CreatePathGetDirectorySizeResponseDirect(
+            builder, ret, ret ? nullptr : strerror(saved_errno), dsg.total(),
+            error);
+
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_PathGetDirectorySizeResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_PathGetDirectorySizeResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
-static void signed_exec_output_cb(const std::string &line, void *data)
+static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 {
-    int *fd_ptr = (int *) data;
+    (void) error;
+
+    int *fd_ptr = (int *) userdata;
     // TODO: Send line
 
     fb::FlatBufferBuilder builder;
@@ -766,10 +860,9 @@ static void signed_exec_output_cb(const std::string &line, void *data)
     auto response = v3::CreateSignedExecOutputResponse(builder, line_id);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_SignedExecOutputResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_SignedExecOutputResponse,
+            response.Union()));
 
     if (!v3_send_response(*fd_ptr, builder)) {
         // Can't kill the connection from this callback (yet...)
@@ -779,7 +872,7 @@ static void signed_exec_output_cb(const std::string &line, void *data)
 
 static bool v3_signed_exec(int fd, const v3::Request *msg)
 {
-    auto request = (v3::SignedExecRequest *) msg->request();
+    auto request = static_cast<const v3::SignedExecRequest *>(msg->request());
     if (!request->binary_path() || !request->signature_path()) {
         return v3_send_response_invalid(fd);
     }
@@ -788,8 +881,9 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
+    size_t nargs;
+    const char **argv;
     int status;
-    std::vector<std::string> argv;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
     // Variables that are part of the response
@@ -886,23 +980,43 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     }
 
     // Build arguments
-    if (request->arg0()) {
-        argv.push_back(request->arg0()->str());
-    } else {
-        argv.push_back(target_binary);
-    }
+    nargs = 2; // argv[0] + NULL-terminator
     if (request->args()) {
-        for (auto const &arg : *request->args()) {
-            argv.push_back(arg->str());
+        nargs += request->args()->size();
+    }
+
+    argv = (const char **) malloc(nargs * sizeof(const char *));
+    if (!argv) {
+        result = v3::SignedExecResult_OTHER_ERROR;
+        error_msg = util::format("%s", strerror(errno));
+        LOGE("%s", error_msg.c_str());
+        goto done;
+    }
+
+    {
+        size_t i = 0;
+        if (request->arg0()) {
+            argv[i++] = request->arg0()->c_str();
+        } else {
+            argv[i++] = target_binary.c_str();
         }
+        if (request->args()) {
+            for (auto const &arg : *request->args()) {
+                argv[i++] = arg->c_str();
+            }
+        }
+        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command2(target_binary, argv, std::string(),
-                                &signed_exec_output_cb, &fd);
+    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
+                               &signed_exec_output_cb, &fd);
+
+    free(argv);
+
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -919,19 +1033,21 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 done:
     fb::FlatBufferBuilder builder;
     fb::Offset<fb::String> error_msg_id = 0;
+    fb::Offset<v3::SignedExecError> error;
+
     if (!error_msg.empty()) {
         error_msg_id = builder.CreateString(error_msg);
+
+        error = v3::CreateSignedExecError(builder, error_msg_id);
     }
 
     // Create response
     auto response = v3::CreateSignedExecResponse(
-            builder, result, error_msg_id, exit_status, term_sig);
+            builder, result, error_msg_id, exit_status, term_sig, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_SignedExecResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_SignedExecResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -951,10 +1067,9 @@ static bool v3_mb_get_booted_rom_id(int fd, const v3::Request *msg)
     auto response = v3::CreateMbGetBootedRomIdResponse(builder, id);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbGetBootedRomIdResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbGetBootedRomIdResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -1016,14 +1131,13 @@ static bool v3_mb_get_installed_roms(int fd, const v3::Request *msg)
     }
 
     // Create response
-    auto fb_roms_vec = builder.CreateVector(fb_roms);
-    auto response = v3::CreateMbGetInstalledRomsResponse(builder, fb_roms_vec);
+    auto response = v3::CreateMbGetInstalledRomsResponseDirect(
+            builder, &fb_roms);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbGetInstalledRomsResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbGetInstalledRomsResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -1035,50 +1149,51 @@ static bool v3_mb_get_version(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Get version
-    auto version = builder.CreateString(mb::version());
-    auto response = v3::CreateMbGetVersionResponse(builder, version);
+    auto response = v3::CreateMbGetVersionResponseDirect(
+            builder, mb::version());
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbGetVersionResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbGetVersionResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_mb_set_kernel(int fd, const v3::Request *msg)
 {
-    auto request = (v3::MbSetKernelRequest *) msg->request();
+    auto request = static_cast<const v3::MbSetKernelRequest *>(msg->request());
     if (!request->rom_id() || !request->boot_blockdev()) {
         return v3_send_response_invalid(fd);
     }
 
     fb::FlatBufferBuilder builder;
+    fb::Offset<v3::MbSetKernelError> error;
 
-    bool success = set_kernel(request->rom_id()->c_str(),
-                              request->boot_blockdev()->c_str());
+    bool ret = set_kernel(request->rom_id()->c_str(),
+                          request->boot_blockdev()->c_str());
+
+    if (!ret) {
+        error = v3::CreateMbSetKernelError(builder);
+    }
 
     // Create response
-    auto response = v3::CreateMbSetKernelResponse(builder, success);
+    auto response = v3::CreateMbSetKernelResponse(builder, ret, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbSetKernelResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbSetKernelResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
 {
-    auto request = (v3::MbSwitchRomRequest *) msg->request();
+    auto request = static_cast<const v3::MbSwitchRomRequest *>(msg->request());
     if (!request->rom_id() || !request->boot_blockdev()) {
         return v3_send_response_invalid(fd);
     }
 
-    std::vector<std::string> block_dev_dirs;
+    std::vector<const char *> block_dev_dirs;
 
     if (request->blockdev_base_dirs()) {
         for (auto const &base_dir : *request->blockdev_base_dirs()) {
@@ -1089,10 +1204,11 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
     bool force_update_checksums = request->force_update_checksums();
 
     fb::FlatBufferBuilder builder;
+    fb::Offset<v3::MbSwitchRomError> error;
 
     SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
                                      request->boot_blockdev()->c_str(),
-                                     block_dev_dirs,
+                                     block_dev_dirs.data(),
                                      force_update_checksums);
 
     bool success = ret == SwitchRomResult::SUCCEEDED;
@@ -1112,21 +1228,24 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
         break;
     }
 
+    if (!success) {
+        error = v3::CreateMbSwitchRomError(builder);
+    }
+
     // Create response
-    auto response = v3::CreateMbSwitchRomResponse(builder, success, fb_ret);
+    auto response = v3::CreateMbSwitchRomResponse(
+            builder, success, fb_ret, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbSwitchRomResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbSwitchRomResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_mb_wipe_rom(int fd, const v3::Request *msg)
 {
-    auto request = (v3::MbWipeRomRequest *) msg->request();
+    auto request = static_cast<const v3::MbWipeRomRequest *>(msg->request());
     if (!request->rom_id()) {
         return v3_send_response_invalid(fd);
     }
@@ -1188,23 +1307,20 @@ static bool v3_mb_wipe_rom(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Create response
-    auto fb_succeeded = builder.CreateVector(succeeded);
-    auto fb_failed = builder.CreateVector(failed);
-    auto response = v3::CreateMbWipeRomResponse(
-            builder, fb_succeeded, fb_failed);
+    auto response = v3::CreateMbWipeRomResponseDirect(
+            builder, &succeeded, &failed);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbWipeRomResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbWipeRomResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
 {
-    auto request = (v3::MbGetPackagesCountRequest *) msg->request();
+    auto request = static_cast<const v3::MbGetPackagesCountRequest *>(
+            msg->request());
     if (!request->rom_id()) {
         return v3_send_response_invalid(fd);
     }
@@ -1222,14 +1338,15 @@ static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
     packages_xml += "/system/packages.xml";
 
     fb::FlatBufferBuilder builder;
-    v3::MbGetPackagesCountResponseBuilder response_builder(builder);
+    fb::Offset<v3::MbGetPackagesCountError> error;
+    unsigned int system_pkgs = 0;
+    unsigned int update_pkgs = 0;
+    unsigned int other_pkgs = 0;
 
     Packages pkgs;
-    if (pkgs.load_xml(packages_xml)) {
-        unsigned int system_pkgs = 0;
-        unsigned int update_pkgs = 0;
-        unsigned int other_pkgs = 0;
+    bool ret = pkgs.load_xml(packages_xml);
 
+    if (ret) {
         for (std::shared_ptr<Package> pkg : pkgs.pkgs) {
             bool is_system = (pkg->pkg_flags & Package::FLAG_SYSTEM)
                     || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM);
@@ -1244,31 +1361,27 @@ static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
                 ++other_pkgs;
             }
         }
-
-        response_builder.add_success(true);
-        response_builder.add_system_packages(system_pkgs);
-        response_builder.add_system_update_packages(update_pkgs);
-        response_builder.add_non_system_packages(other_pkgs);
     } else {
-        response_builder.add_success(false);
+        error = v3::CreateMbGetPackagesCountError(builder);
     }
 
-    auto response = response_builder.Finish();
+    auto response = v3::CreateMbGetPackagesCountResponse(
+            builder, ret, system_pkgs, update_pkgs, other_pkgs, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_MbGetPackagesCountResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_MbGetPackagesCountResponse,
+            response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_reboot(int fd, const v3::Request *msg)
 {
-    auto request = (v3::RebootRequest *) msg->request();
+    auto request = static_cast<const v3::RebootRequest *>(msg->request());
 
     fb::FlatBufferBuilder builder;
+    fb::Offset<v3::RebootError> error;
 
     std::string reboot_arg;
     if (request->arg()) {
@@ -1277,63 +1390,68 @@ static bool v3_reboot(int fd, const v3::Request *msg)
 
     // The client probably won't get the chance to see the success message, but
     // we'll still send it for the sake of symmetry
-    bool success = false;
+    bool ret = false;
     switch (request->type()) {
     case v3::RebootType_FRAMEWORK:
-        success = reboot_via_framework(request->confirm());
+        ret = reboot_via_framework(request->confirm());
         break;
     case v3::RebootType_INIT:
-        success = reboot_via_init(reboot_arg);
+        ret = reboot_via_init(reboot_arg);
         break;
     case v3::RebootType_DIRECT:
-        success = reboot_directly(reboot_arg);
+        ret = reboot_directly(reboot_arg);
         break;
     default:
         LOGE("Invalid reboot type: %d", request->type());
         return v3_send_response_invalid(fd);
     }
 
+    if (!ret) {
+        error = v3::CreateRebootError(builder);
+    }
+
     // Create response
-    auto response = v3::CreateRebootResponse(builder, success);
+    auto response = v3::CreateRebootResponse(builder, ret, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_RebootResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_RebootResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
 
 static bool v3_shutdown(int fd, const v3::Request *msg)
 {
-    auto request = (v3::ShutdownRequest *) msg->request();
+    auto request = static_cast<const v3::ShutdownRequest *>(msg->request());
 
     fb::FlatBufferBuilder builder;
+    fb::Offset<v3::ShutdownError> error;
 
     // The client probably won't get the chance to see the success message, but
     // we'll still send it for the sake of symmetry
-    bool success = false;
+    bool ret = false;
     switch (request->type()) {
     case v3::ShutdownType_INIT:
-        success = shutdown_via_init();
+        ret = shutdown_via_init();
         break;
     case v3::ShutdownType_DIRECT:
-        success = shutdown_directly();
+        ret = shutdown_directly();
         break;
     default:
         LOGE("Invalid shutdown type: %d", request->type());
         return v3_send_response_invalid(fd);
     }
 
+    if (!ret) {
+        error = v3::CreateShutdownError(builder);
+    }
+
     // Create response
-    auto response = v3::CreateShutdownResponse(builder, success);
+    auto response = v3::CreateShutdownResponse(builder, ret, error);
 
     // Wrap response
-    v3::ResponseBuilder rb(builder);
-    rb.add_response_type(v3::ResponseType_ShutdownResponse);
-    rb.add_response(response.Union());
-    builder.Finish(rb.Finish());
+    builder.Finish(v3::CreateResponse(
+            builder, v3::ResponseType_ShutdownResponse, response.Union()));
 
     return v3_send_response(fd, builder);
 }
@@ -1347,6 +1465,8 @@ struct RequestMap
 };
 
 static RequestMap request_map[] = {
+    { v3::RequestType_CryptoDecryptRequest, v3_crypto_decrypt },
+    { v3::RequestType_CryptoGetPwTypeRequest, v3_crypto_get_pw_type },
     { v3::RequestType_FileChmodRequest, v3_file_chmod },
     { v3::RequestType_FileCloseRequest, v3_file_close },
     { v3::RequestType_FileOpenRequest, v3_file_open },
@@ -1360,6 +1480,7 @@ static RequestMap request_map[] = {
     { v3::RequestType_PathCopyRequest, v3_path_copy },
     { v3::RequestType_PathDeleteRequest, v3_path_delete },
     { v3::RequestType_PathMkdirRequest, v3_path_mkdir },
+    { v3::RequestType_PathReadlinkRequest, v3_path_readlink },
     { v3::RequestType_PathSELinuxGetLabelRequest, v3_path_selinux_get_label },
     { v3::RequestType_PathSELinuxSetLabelRequest, v3_path_selinux_set_label },
     { v3::RequestType_PathGetDirectorySizeRequest, v3_path_get_directory_size },

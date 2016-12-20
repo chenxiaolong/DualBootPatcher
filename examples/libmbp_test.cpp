@@ -17,12 +17,18 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cassert>
+#include <memory>
 
+#include <cstring>
+
+#include <mbdevice/json.h>
+#include <mbdevice/validate.h>
 #include <mblog/logging.h>
 #include <mbp/patcherconfig.h>
 #include <mbp/patcherinterface.h>
 
+
+typedef std::unique_ptr<Device, void (*)(Device *)> ScopedDevice;
 
 class BasicLogger : public mb::log::BaseLogger
 {
@@ -35,6 +41,56 @@ public:
     }
 };
 
+static bool file_read_all(const std::string &path,
+                          std::vector<unsigned char> *data_out)
+{
+    FILE *fp = fopen(path.c_str(), "rb");
+    if (!fp) {
+        return false;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    auto size = ftell(fp);
+    rewind(fp);
+
+    std::vector<unsigned char> data(size);
+    if (fread(data.data(), size, 1, fp) != 1) {
+        fclose(fp);
+        return false;
+    }
+
+    data_out->swap(data);
+
+    fclose(fp);
+    return true;
+}
+
+static Device * get_device(const char *path)
+{
+    std::vector<unsigned char> contents;
+    if (!file_read_all(path, &contents)) {
+        fprintf(stderr, "%s: Failed to read file: %s\n", path, strerror(errno));
+        return nullptr;
+    }
+    contents.push_back('\0');
+
+    MbDeviceJsonError error;
+    Device *device = mb_device_new_from_json(
+            (const char *) contents.data(), &error);
+    if (!device) {
+        fprintf(stderr, "%s: Failed to load devices\n", path);
+        return nullptr;
+    }
+
+    if (mb_device_validate(device) != 0) {
+        fprintf(stderr, "%s: Validation failed\n", path);
+        mb_device_free(device);
+        return nullptr;
+    }
+
+    return device;
+}
+
 static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
 {
     (void) userdata;
@@ -43,38 +99,29 @@ static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
 
 int main(int argc, char *argv[]) {
     if (argc != 6) {
-        fprintf(stderr, "Usage: %s <patcher id> <device> <rom id> "
+        fprintf(stderr, "Usage: %s <patcher id> <device file> <rom id> "
                 "<input path> <output path>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
     const char *patcher_id = argv[1];
-    const char *device_name = argv[2];
+    const char *device_file = argv[2];
     const char *rom_id = argv[3];
     const char *input_path = argv[4];
     const char *output_path = argv[5];
 
     mb::log::log_set_logger(std::make_shared<BasicLogger>());
 
-    mbp::PatcherConfig pc;
-    pc.setDataDirectory("data");
-
-    mbp::Device *device = nullptr;
-
-    for (mbp::Device *d : pc.devices()) {
-        if (d->id() == device_name) {
-            device = d;
-            break;
-        }
-    }
-
+    ScopedDevice device(get_device(device_file), mb_device_free);
     if (!device) {
-        fprintf(stderr, "Invalid device: %s\n", device_name);
         return EXIT_FAILURE;
     }
 
+    mbp::PatcherConfig pc;
+    pc.setDataDirectory("data");
+
     mbp::FileInfo fi;
-    fi.setDevice(device);
+    fi.setDevice(device.get());
     fi.setInputPath(input_path);
     fi.setOutputPath(output_path);
     fi.setRomId(rom_id);

@@ -54,6 +54,8 @@ protected:
 protected:
     enum ThreadType { THREAD_NONE, THREAD_ACTION, THREAD_CANCEL };
 
+    enum class AutobootSignal { NONE, CANCEL, SKIP };
+
     int getKeyByName(const std::string& key);
     int doAction(const Action& action);
     ThreadType getThreadType(const Action& action);
@@ -84,8 +86,10 @@ protected:
     int setbrightness(const std::string& arg);
 
     // (originally) threaded actions
+    int decrypt(const std::string& arg);
     int autoboot(const std::string& arg);
     int autoboot_cancel(const std::string& arg);
+    int autoboot_skip(const std::string& arg);
 
     int switch_rom(const std::string& arg);
     int resize(const std::string& arg);
@@ -94,5 +98,5 @@ protected:
 private:
     static MonotonicCond s_autoboot_cond;
     static pthread_mutex_t s_autoboot_mutex;
-    static volatile bool s_autoboot_canceled;
+    static volatile AutobootSignal s_autoboot_signal;
 };

@@ -1,0 +1,173 @@
+---
+- name: Lenovo K3 Note
+  id: k50
+  codenames:
+    - K50
+    - K50a40
+    - K50t5
+    - K50-t5
+    - K50-T5
+    - K3 Note
+    - aio_otfp
+    - aio_otfp_m
+  architecture: arm64-v8a
+  flags:
+    - FSTAB_SKIP_SDCARD0
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p17
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p18
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p19
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/mmcblk0boot0
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/uboot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+
+- name: Lenovo Vibe Z2 Pro
+  id: K920
+  codenames:
+    - kingdom_row
+    - kingdomt
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p10
+
+
+- name: Lenovo ZUK Z1
+  id: Z1
+  codenames:
+    - Z1
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p22
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p10
+
+- name: Lenovo Vibe P1 Turbo
+  id: P1a42
+  codenames:
+    - P1a42
+    - passion_row
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+
+- name: Lenovo Vibe P1
+  id: P1a41
+  codenames:
+    - P1a41
+    - passion_row
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery

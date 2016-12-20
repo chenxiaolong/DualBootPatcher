@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+
+<language>
+    <display>Русский</display>
+
+    <resources>
+        <!-- Font overrides - only change these if your language requires special characters -->
+        <resource name="font_l" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="font_m" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="font_s" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="fixed" type="fontoverride" filename="DroidSansMono.ttf" scale="100" />
+
+        <!-- Title shown in action bar on the main page -->
+        <string name="app_name">DualBootPatcher</string>
+
+        <!-- Button on main page for navigating to Switch ROM page -->
+        <string name="title_switch_rom">Прошивки</string>
+        <string name="title_decrypt_passwd_test">Тест пароля</string>
+        <string name="title_decrypt_pattern_test">Тест графического ключа</string>
+        <string name="title_settings">Настройки</string>
+        <string name="title_advanced">Дополнительно</string>
+        <string name="title_reboot">Перезагрузка</string>
+
+        <!--
+            Switch ROM pages
+        -->
+
+        <!-- Title of Switch ROM page (primary header) -->
+        <string name="switch_rom_main_title">Выбрать прошивку</string>
+        <!-- Description of Switch ROM page (secondary header) -->
+        <string name="switch_rom_main_desc">Список прошивок</string>
+        <!-- Title of Switching ROM progress page (primary header) -->
+        <string name="switch_rom_switching_title">Выбор прошивки</string>
+        <!-- Description of Switching ROM progress page (secondary header) -->
+        <string name="switch_rom_switching_desc">Подождите...</string>
+        <!-- Title above list of ROMs -->
+        <string name="switch_rom_list_title">Установленные прошивки</string>
+        <!-- Error shown when the path to the boot partition could not be found -->
+        <string name="switch_rom_unknown_boot_partition">Не удалось определить расположение загрузочного раздела</string>
+        <!-- Status text shown when switching is not needed -->
+        <string name="switch_rom_not_needed">Переключение не нужно; уже выбрана {1}</string>
+        <!-- Status text shown when switching to a ROM -->
+        <string name="switch_rom_switching_to">Переключение на {1}...</string>
+        <!-- Result text when switching to a ROM succeeds. {1} is the ROM ID -->
+        <string name="switch_rom_result_succeeded">Успешно переключено на {1}</string>
+        <!-- Result text when switching to a ROM fails. {1} is the ROM ID -->
+        <string name="switch_rom_result_failed">Не удалось переключиться на {1}</string>
+        <!-- Result text when the checksum for the boot image does not match. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_invalid">Контрольная сумма образа не соответствует для {1}</string>
+        <!-- Result text when the checksum for the boot image is missing. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_not_found">Отсутствует контрольная сумма образа для {1}</string>
+        <!-- Result text when an unknown error occurs while switching to a ROM. {1} is the ROM ID -->
+        <string name="switch_rom_result_unknown">Неопознанная ошибка при переключении на {1}</string>
+        <!-- Swipe to switch ROM (slider text) -->
+        <string name="switch_rom_swipe_to_switch">Проведите для переключения</string>
+
+        <!--
+            Reboot page
+        -->
+
+        <string name="reboot_system">Система</string>
+        <string name="reboot_recovery">Рекавери</string>
+        <string name="reboot_bootloader">Загрузчик</string>
+        <string name="reboot_download">Режим загрузки</string>
+        <string name="reboot_poweroff">Выключить</string>
+
+        <!--
+            Settings pages
+        -->
+
+        <string name="settings_general_title">Основные</string>
+        <string name="settings_general_use24clock">Использовать  24-часовой формат времени</string>
+        <string name="settings_general_rev_navbar">Инвертировать порядок навигационных кнопок</string>
+        <string name="settings_general_autoboot_timeout">Тайм-аут автозагрузки в секундах:</string>
+        <string name="settings_general_restore_defaults">Сброс настроек</string>
+
+        <string name="settings_tz_title">Часовой пояс</string>
+        <string name="settings_tz_select_tz">Выбор часового пояса:</string>
+        <string name="settings_tz_select_offset">Выбор смещения (как правило 0): %tw_time_zone_guioffset%</string>
+        <string name="settings_tz_use_dst">Использовать летнее время (DST)</string>
+        <string name="settings_tz_current_tz">Текущий часовой пояс: %tw_time_zone%</string>
+        <string name="settings_tz_set_tz">Установ.часовой пояс</string>
+
+        <string name="settings_tz_offset_none">None</string>
+        <string name="settings_tz_offset_15">15</string>
+        <string name="settings_tz_offset_30">30</string>
+        <string name="settings_tz_offset_45">45</string>
+
+        <string name="utcm11">(UTC -11) о. Мидуэй, Самоа</string>
+	<string name="utcm10">(UTC -10) Гавайи</string>
+	<string name="utcm9">(UTC -9) Аляска</string>
+	<string name="utcm8">(UTC -8) Тихоокеанский часовой пояс</string>
+	<string name="utcm7">(UTC -7) Горное время (США и Канада), Аризона</string>
+	<string name="utcm6">(UTC -6) Центральное время (США и Канада), Центральная Америка</string>
+	<string name="utcm5">(UTC -5) Восточное время (США и Канада), Индиана (восток)</string>
+	<string name="utcm4">(UTC -4)  Атлантическое время (Канада), Каракас</string>
+	<string name="utcm3">(UTC -3) Бразилия, Буэнос-Айрес</string>
+	<string name="utcm2">(UTC -2) Среднеатлантическое время</string>
+	<string name="utcm1">(UTC -1) Азорские о-ва, о-ва Зелёного мыса</string>
+	<string name="utc0">(UTC  0) Лондон, Дублин, Лиссабон</string>
+	<string name="utcp1">(UTC +1) Берлин, Брюссель, Париж</string>
+	<string name="utcp2">(UTC +2) Киев, Минск, Рига, Таллин, Стамбул</string>
+	<string name="utcp3">(UTC +3) Москва, Санкт-Петербург, Волгоград, Багдад</string>
+	<string name="utcp4">(UTC +4) Баку, Ереван, Тбилиси, Абу-Даби, Мускат</string>
+	<string name="utcp5">(UTC +5) Ташкент, Исламабад, Карачи</string>
+	<string name="utcp6">(UTC +6) Алматы, Астана, Дхака, Екатеринбург</string>
+	<string name="utcp7">(UTC +7) Омск, Новосибирск, Бангкок, Джакарта, Ханой</string>
+	<string name="utcp8">(UTC +8) Красноярск, Пекин, Улан-Батор, Иркутск</string>
+	<string name="utcp9">(UTC +9) Осака, Саппоро, Токио, Сеул, Якутск</string>
+	<string name="utcp10">(UTC +10) Гуам, Канберра, Мельбурн, Сидней</string>
+	<string name="utcp11">(UTC +11) Владивосток, Сахалин, Соломоновы о-ва</string>
+	<string name="utcp12">(UTC +12) Магадан, Камчатка, Фиджи, Маршаловы о-ва</string>
+
+        <string name="settings_screen_title">Экран</string>
+        <string name="settings_screen_enable_timeout">Включить таймаут экрана</string>
+        <string name="settings_screen_timeout_slider">Выключение экрана через n сек:</string>
+        <string name="settings_screen_brightness_slider">Яркость: %tw_brightness_pct%%</string>
+
+        <string name="settings_vib_title">Вибрация</string>
+        <string name="settings_vib_button_slider">Вибрация при нажатии кнопок</string>
+        <string name="settings_vib_keyboard_slider">Вибрация при работе с клавиатурой:</string>
+        <string name="settings_vib_action_slider">Вибрация при завершении действия:</string>
+
+        <string name="settings_language_title">Язык</string>
+        <string name="settings_language_select_language">Выбор языка:</string>
+        <string name="settings_language_set_language">Установить язык</string>
+
+        <!--
+            Advanced page
+        -->
+
+        <string name="advanced_reload_theme">Перезагрузить тему</string>
+
+        <!--
+            Screen lock overlay page
+        -->
+
+        <string name="swipe_to_unlock">Сдвиньте для разблокировки</string>
+
+        <!--
+            Decryption pages
+        -->
+
+        <string name="decrypt_title">Дешифрование</string>
+        <string name="decrypt_desc">Дешифровать данные</string>
+        <string name="decrypt_attempting_desc">Попытка дешифрования данных</string>
+        <string name="decrypt_select_language">Выберите язык</string>
+        <string name="decrypt_enter_password">Введите пароль.</string>
+        <string name="decrypt_failed_password">Неправильный пароль, введите снова!</string>
+        <string name="decrypt_enter_pattern">Введите графический ключ.</string>
+        <string name="decrypt_failed_pattern">Неправильный граф. ключ, введите снова!</string>
+
+        <!--
+            Autoboot page
+        -->
+
+        <string name="autoboot_header">Автоматическая загрузка %tw_rom_id%</string>
+        <string name="autoboot_welcome">Добро пожаловать в {1}</string>
+        <string name="autoboot_version_bootui">Версия загрузочного интерфейса: {1}</string>
+        <string name="autoboot_version_mbtool">Версия mbtool: {1}</string>
+        <string name="autoboot_autobooting_to">Автозагрузка в {1}</string>
+        <string name="autoboot_booting_in">Загрузка через {1} секунд...</string>
+        <string name="autoboot_canceled">Автозагрузка отменена</string>
+        <string name="autoboot_booting_now">Загрузка...</string>
+        <string name="autoboot_skip_countdown">Пропустить отсчет</string>
+
+        <!--
+            Generic strings
+        -->
+
+        <string name="failed">Не удалось</string>
+        <string name="succeeded">Готово</string>
+        <string name="cancel">Отмена</string>
+        <string name="ok">OK</string>
+        <string name="back">Назад</string>
+
+        <!--
+            Status bar strings
+        -->
+
+        <string name="status_bar_cpu_temp">ЦПУ: %tw_cpu_temp% &#xB0;C</string>
+        <string name="status_bar_battery_percent">Аккумулятор: %tw_battery%</string>
+
+        <!--
+            Other miscellaneous strings
+        -->
+
+        <string name="mbtool_connection_error">Ошибка подключения к mbtool</string>
+        <string name="reboot_system_button">Перезагрузить систему</string>
+        <string name="base_pkg_err">Не удалось загрузить базовые пакеты.</string>
+        <string name="screenshot_saved">Изображение сохранено в {1}</string>
+        <string name="screenshot_err">Не удалось сделать снимок экрана!</string>
+        <string name="theme_ver_err">Версия пользовательской темы не подходит. Будет использована стандартная тема.</string>
+    </resources>
+</language>

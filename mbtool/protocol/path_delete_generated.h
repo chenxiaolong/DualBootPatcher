@@ -5,12 +5,14 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct PathDeleteError;
+
 struct PathDeleteRequest;
+
 struct PathDeleteResponse;
 
 enum PathDeleteFlag {
@@ -28,6 +30,50 @@ inline const char **EnumNamesPathDeleteFlag() {
 }
 
 inline const char *EnumNamePathDeleteFlag(PathDeleteFlag e) { return EnumNamesPathDeleteFlag()[static_cast<int>(e)]; }
+
+struct PathDeleteError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ERRNO_VALUE = 4,
+    VT_MSG = 6
+  };
+  int32_t errno_value() const { return GetField<int32_t>(VT_ERRNO_VALUE, 0); }
+  const flatbuffers::String *msg() const { return GetPointer<const flatbuffers::String *>(VT_MSG); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           verifier.Verify(msg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct PathDeleteErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_errno_value(int32_t errno_value) { fbb_.AddElement<int32_t>(PathDeleteError::VT_ERRNO_VALUE, errno_value, 0); }
+  void add_msg(flatbuffers::Offset<flatbuffers::String> msg) { fbb_.AddOffset(PathDeleteError::VT_MSG, msg); }
+  PathDeleteErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  PathDeleteErrorBuilder &operator=(const PathDeleteErrorBuilder &);
+  flatbuffers::Offset<PathDeleteError> Finish() {
+    auto o = flatbuffers::Offset<PathDeleteError>(fbb_.EndTable(start_, 2));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<PathDeleteError> CreatePathDeleteError(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    flatbuffers::Offset<flatbuffers::String> msg = 0) {
+  PathDeleteErrorBuilder builder_(_fbb);
+  builder_.add_msg(msg);
+  builder_.add_errno_value(errno_value);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathDeleteError> CreatePathDeleteErrorDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    const char *msg = nullptr) {
+  return CreatePathDeleteError(_fbb, errno_value, msg ? _fbb.CreateString(msg) : 0);
+}
 
 struct PathDeleteRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -59,26 +105,36 @@ struct PathDeleteRequestBuilder {
 };
 
 inline flatbuffers::Offset<PathDeleteRequest> CreatePathDeleteRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
   PathDeleteRequestBuilder builder_(_fbb);
   builder_.add_path(path);
   builder_.add_flag(flag);
   return builder_.Finish();
 }
 
+inline flatbuffers::Offset<PathDeleteRequest> CreatePathDeleteRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    PathDeleteFlag flag = PathDeleteFlag_REMOVE) {
+  return CreatePathDeleteRequest(_fbb, path ? _fbb.CreateString(path) : 0, flag);
+}
+
 struct PathDeleteResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_SUCCESS = 4,
-    VT_ERROR_MSG = 6
+    VT_ERROR_MSG = 6,
+    VT_ERROR = 8
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
+  const PathDeleteError *error() const { return GetPointer<const PathDeleteError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -88,21 +144,31 @@ struct PathDeleteResponseBuilder {
   flatbuffers::uoffset_t start_;
   void add_success(bool success) { fbb_.AddElement<uint8_t>(PathDeleteResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(PathDeleteResponse::VT_ERROR_MSG, error_msg); }
+  void add_error(flatbuffers::Offset<PathDeleteError> error) { fbb_.AddOffset(PathDeleteResponse::VT_ERROR, error); }
   PathDeleteResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PathDeleteResponseBuilder &operator=(const PathDeleteResponseBuilder &);
   flatbuffers::Offset<PathDeleteResponse> Finish() {
-    auto o = flatbuffers::Offset<PathDeleteResponse>(fbb_.EndTable(start_, 2));
+    auto o = flatbuffers::Offset<PathDeleteResponse>(fbb_.EndTable(start_, 3));
     return o;
   }
 };
 
 inline flatbuffers::Offset<PathDeleteResponse> CreatePathDeleteResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    flatbuffers::Offset<PathDeleteError> error = 0) {
   PathDeleteResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<PathDeleteResponse> CreatePathDeleteResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    flatbuffers::Offset<PathDeleteError> error = 0) {
+  return CreatePathDeleteResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, error);
 }
 
 }  // namespace v3

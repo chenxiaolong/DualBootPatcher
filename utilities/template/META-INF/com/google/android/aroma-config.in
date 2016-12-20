@@ -130,7 +130,7 @@ then
     if prop("romoperations.prop", "selected") == "1" then
         write("/tmp/dbu/cmd.sh",
               "#!/sbin/sh\n" +
-              "/tmp/dbu/mbtool utilities switch --force " + getvar("romid") + "\n");
+              "/tmp/dbu/utilities_cmd.sh switch --force " + getvar("romid") + "\n");
     else
         checkbox(
             "<~operations.title> (" + getvar("romname") + ")",
@@ -150,27 +150,27 @@ then
         if prop("romoperations.prop", "item.0.1") == "1" then
             write("/tmp/dbu/cmd.sh",
                   read("/tmp/dbu/cmd.sh") +
-                  "/tmp/dbu/mbtool utilities wipe-system " + getvar("romid") + "\n");
+                  "/tmp/dbu/utilities_cmd.sh wipe-system " + getvar("romid") + "\n");
         endif;
         if prop("romoperations.prop", "item.0.2") == "1" then
             write("/tmp/dbu/cmd.sh",
                   read("/tmp/dbu/cmd.sh") +
-                  "/tmp/dbu/mbtool utilities wipe-cache " + getvar("romid") + "\n");
+                  "/tmp/dbu/utilities_cmd.sh wipe-cache " + getvar("romid") + "\n");
         endif;
         if prop("romoperations.prop", "item.0.3") == "1" then
             write("/tmp/dbu/cmd.sh",
                   read("/tmp/dbu/cmd.sh") +
-                  "/tmp/dbu/mbtool utilities wipe-data " + getvar("romid") + "\n");
+                  "/tmp/dbu/utilities_cmd.sh wipe-data " + getvar("romid") + "\n");
         endif;
         if prop("romoperations.prop", "item.0.4") == "1" then
             write("/tmp/dbu/cmd.sh",
                   read("/tmp/dbu/cmd.sh") +
-                  "/tmp/dbu/mbtool utilities wipe-dalvik-cache " + getvar("romid") + "\n");
+                  "/tmp/dbu/utilities_cmd.sh wipe-dalvik-cache " + getvar("romid") + "\n");
         endif;
         if prop("romoperations.prop", "item.0.5") == "1" then
             write("/tmp/dbu/cmd.sh",
                   read("/tmp/dbu/cmd.sh") +
-                  "/tmp/dbu/mbtool utilities wipe-multiboot " + getvar("romid") + "\n");
+                  "/tmp/dbu/utilities_cmd.sh wipe-multiboot " + getvar("romid") + "\n");
         endif;
     endif;
 else

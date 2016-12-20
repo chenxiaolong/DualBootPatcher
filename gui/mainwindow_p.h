@@ -22,10 +22,12 @@
 
 #include "mainwindow.h"
 
+#include <mbdevice/device.h>
 #include <mbp/patcherconfig.h>
 #include <mbp/patcherinterface.h>
 
 #include <memory>
+#include <vector>
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -34,9 +36,12 @@
 #include <QtWidgets/QDialogButtonBox>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QtWidgets/QMenu>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
+
+typedef std::unique_ptr<Device, void (*)(Device *)> ScopedDevice;
 
 class InstallLocation
 {
@@ -69,10 +74,12 @@ public:
     State state = FirstRun;
 
     // Selected file
+    QString patcherId;
     QString fileName;
     bool autoMode;
 
     mbp::PatcherConfig *pc = nullptr;
+    std::vector<ScopedDevice> devices;
 
     // Selected patcher
     mbp::Patcher *patcher = nullptr;
@@ -87,7 +94,7 @@ public:
     PatcherTask *task;
 
     // Selected device
-    mbp::Device *device = nullptr;
+    Device *device = nullptr;
 
     // List of installation locations
     QList<InstallLocation> instLocs;
@@ -110,6 +117,11 @@ public:
     // Progress
     QLabel *detailsLbl;
     QProgressBar *progressBar;
+
+    // Menus
+    QMenu *chooseFileMenu;
+    QAction *chooseFlashableZip;
+    QAction *chooseOdinImage;
 
     // Buttons
     QDialogButtonBox *buttons;

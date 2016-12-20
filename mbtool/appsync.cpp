@@ -144,213 +144,6 @@ static bool load_config_files()
     return true;
 }
 
-static bool copy_avtab_rules(policydb_t *pdb,
-                             const char *from_target_name,
-                             const char *to_target_name)
-{
-    std::vector<std::pair<avtab_key_t, avtab_datum_t>> to_add;
-
-    type_datum_t *from_target, *to_target;
-
-    if (strcmp(from_target_name, to_target_name) == 0) {
-        LOGW("Types %s and %s are equal. Not copying rules",
-             from_target_name, to_target_name);
-        return true;
-    }
-
-    from_target = (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) from_target_name);
-    if (!from_target) {
-        LOGE("(From) Target type %s does not exist", from_target_name);
-        return false;
-    }
-
-    to_target = (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) to_target_name);
-    if (!to_target) {
-        LOGE("(To) Target type %s does not exist", to_target_name);
-        return false;
-    }
-
-    // Gather rules to copy
-    for (uint32_t i = 0; i < pdb->te_avtab.nslot; ++i) {
-        for (avtab_ptr_t cur = pdb->te_avtab.htable[i]; cur; cur = cur->next) {
-            if (!(cur->key.specified & AVTAB_ALLOWED)) {
-                continue;
-            }
-
-            if (cur->key.target_type == from_target->s.value) {
-                avtab_key_t copy = cur->key;
-                copy.target_type = to_target->s.value;
-
-                to_add.push_back(std::make_pair(std::move(copy), cur->datum));
-            }
-        }
-    }
-
-    avtab_datum_t *datum;
-    for (auto &pair : to_add) {
-        datum = avtab_search(&pdb->te_avtab, &pair.first);
-
-        if (!datum) {
-            // Create new avtab rule if the key doesn't exist
-            if (avtab_insert(&pdb->te_avtab, &pair.first, &pair.second) != 0) {
-                // This should absolutely never happen unless libsepol has a bug
-                LOGE("Failed to add rule to avtab");
-                return false;
-            }
-        } else {
-            // Add additional perms if the key already exists
-            datum->data |= pair.second.data;
-        }
-    }
-
-    return true;
-}
-
-/*!
- * \brief Patch SEPolicy to allow media_data_file-labeled /data/media to work on
- *        Android >= 5.0
- */
-static bool fix_data_media_rules(policydb_t *pdb)
-{
-    static const char *expected_type = "media_rw_data_file";
-    const char *path = INTERNAL_STORAGE;
-
-    if (!hashtab_search(pdb->p_types.table, (hashtab_key_t) expected_type)) {
-        LOGW("Type %s doesn't exist. Won't touch /data/media related rules",
-             expected_type);
-        return true;
-    }
-
-    std::string context;
-    if (!util::selinux_lget_context(path, &context)) {
-        LOGE("Failed to get context of %s: %s", path, strerror(errno));
-        path = "/data/media";
-        if (!util::selinux_lget_context(path, &context)) {
-            LOGE("Failed to get context of %s: %s", path, strerror(errno));
-            return false;
-        }
-    }
-
-    std::vector<std::string> pieces = util::split(context, ":");
-    if (pieces.size() < 3) {
-        LOGE("Malformed context string on %s: %s", path, context.c_str());
-        return false;
-    }
-    std::string type = pieces[2];
-
-    LOGV("Copying %s rules to %s because of improper %s SELinux label",
-         expected_type, type.c_str(), path);
-    return copy_avtab_rules(pdb, expected_type, type.c_str());
-}
-
-static bool patch_sepolicy()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        LOGE("Failed to initialize policydb");
-        return false;
-    }
-
-    auto destroy_pdb = util::finally([&]{
-        policydb_destroy(&pdb);
-    });
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        LOGE("Failed to read SELinux policy file: %s", SELINUX_POLICY_FILE);
-        return false;
-    }
-
-    LOGD("Policy version: %u", pdb.policyvers);
-
-    // Make init context permissive
-    util::selinux_make_permissive(&pdb, "init");
-
-    // Allow installd to connect to our socket
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "accept");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "listen");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "read");
-    util::selinux_add_rule(&pdb, "installd", "init", "unix_stream_socket", "write");
-
-    // Allow access to non-'media_rw_data_file' labeled /data/media
-    fix_data_media_rules(&pdb);
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        LOGE("Failed to write SELinux policy file: %s", SELINUX_LOAD_FILE);
-        return false;
-    }
-
-    return true;
-}
-
-static void patch_sepolicy_wrapper()
-{
-    struct stat sb;
-    if (stat("/sys/fs/selinux", &sb) < 0) {
-        LOGV("SELinux not supported. No need to modify policy");
-    } else {
-        LOGV("Patching SELinux policy to allow installd connection");
-        int attempt;
-        for (attempt = 0; attempt < 5; ++attempt) {
-            LOGV("Patching SELinux policy [Attempt %d/%d]", attempt + 1, 5);
-            if (!patch_sepolicy()) {
-                sleep(1);
-            } else {
-                break;
-            }
-        }
-
-        if (attempt == 5) {
-            LOGW("Failed to patch current SELinux policy");
-        }
-    }
-}
-
-static unsigned long get_api_version(void)
-{
-    std::string api_str;
-    util::file_get_property("/system/build.prop",
-                            "ro.build.version.sdk",
-                            &api_str, "");
-
-    char *temp;
-    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
-    if (*temp == '\0') {
-        return api;
-    } else {
-        return 0;
-    }
-}
-
-static void create_layout_version()
-{
-    // Prevent installd from dying because it can't unmount /data/media for
-    // multi-user migration. Since <= 4.2 devices aren't supported anyway,
-    // we'll bypass this.
-    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
-    if (fp) {
-        const char *layout_version;
-        if (get_api_version() >= 21) {
-            layout_version = "3";
-        } else {
-            layout_version = "2";
-        }
-
-        fwrite(layout_version, 1, strlen(layout_version), fp.get());
-        fp.reset();
-    } else {
-        LOGE("Failed to open /data/.layout_version to disable migration");
-    }
-
-    if (!util::selinux_set_context(
-            "/data/.layout_version", "u:object_r:install_data_file:s0")) {
-        LOGE("%s: Failed to set SELinux context: %s",
-             "/data/.layout_version", strerror(errno));
-    }
-}
-
 static bool prepare_appsync()
 {
     // Detect directory locations
@@ -1034,9 +827,6 @@ static bool hijack_socket(bool can_appsync)
     // Put the new fd in the environment
     put_socket_to_env(SOCKET_PATH, new_fd);
 
-    // Patch SELinux policy
-    patch_sepolicy_wrapper();
-
     LOGD("Launching installd");
     pid_t pid = spawn_installd();
     if (pid < 0) {
@@ -1149,11 +939,11 @@ int appsync_main(int argc, char *argv[])
 
     LOGI("=== APPSYNC VERSION %s ===", version());
 
-    LOGI("Creating /data/.layout_version");
-    create_layout_version();
-
     LOGI("Calling restorecon on /data/media/obb");
-    util::run_command({ "restorecon", "-R", "-F", "/data/media/obb" });
+    const char *restorecon[] =
+            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
+    util::run_command(restorecon[0], restorecon, nullptr, nullptr, nullptr,
+                      nullptr);
 
     bool can_appsync = false;
 

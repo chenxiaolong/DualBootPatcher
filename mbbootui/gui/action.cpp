@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
@@ -43,14 +44,13 @@
 #include "gui/gui.h"
 #include "gui/hardwarekeyboard.hpp"
 
-void curtainClose();
-
 GUIAction::mapFunc GUIAction::mf;
 std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 
 MonotonicCond GUIAction::s_autoboot_cond;
 pthread_mutex_t GUIAction::s_autoboot_mutex = PTHREAD_MUTEX_INITIALIZER;
-volatile bool GUIAction::s_autoboot_canceled = false;
+volatile GUIAction::AutobootSignal GUIAction::s_autoboot_signal =
+    GUIAction::AutobootSignal::NONE;
 
 static void *ActionThread_work_wrapper(void *data);
 
@@ -165,6 +165,7 @@ GUIAction::GUIAction(xml_node<>* node)
         ADD_ACTION(setbrightness);
         ADD_ACTION(setlanguage);
         ADD_ACTION(autoboot_cancel);
+        ADD_ACTION(autoboot_skip);
 
         // remember actions that run in the caller thread
         for (auto it = mf.cbegin(); it != mf.cend(); ++it) {
@@ -172,6 +173,7 @@ GUIAction::GUIAction(xml_node<>* node)
         }
 
         // These actions will run in a separate thread
+        ADD_ACTION(decrypt);
         ADD_ACTION(autoboot);
         ADD_ACTION(switch_rom);
     }
@@ -238,7 +240,7 @@ GUIAction::GUIAction(xml_node<>* node)
     }
 }
 
-int GUIAction::NotifyTouch(TOUCH_STATE state __unused, int x __unused, int y __unused)
+int GUIAction::NotifyTouch(TOUCH_STATE state, int x __unused, int y __unused)
 {
     if (state == TOUCH_RELEASE) {
         doActions();
@@ -404,8 +406,6 @@ void GUIAction::operation_end(const int operation_status)
 
 int GUIAction::reboot(const std::string& arg)
 {
-    //curtainClose(); this sometimes causes a crash
-
     sync();
     DataManager::SetValue(TW_GUI_DONE, 1);
     DataManager::SetValue(TW_EXIT_ACTION, arg);
@@ -611,14 +611,42 @@ int GUIAction::setbrightness(const std::string& arg)
     return TWFunc::Set_Brightness(arg);
 }
 
+int GUIAction::decrypt(const std::string& arg __unused)
+{
+    int status = 0;
+
+    operation_start("Decrypt");
+
+    LOGV("Attempting to decrypt device");
+
+    std::string password;
+    DataManager::GetValue(TW_CRYPTO_PASSWORD, password);
+
+    // Try decrypting
+    bool decrypted;
+    if (!mbtool_interface->crypto_decrypt(password, &decrypted)) {
+        LOGW("Failed to ask mbtool to decrypt the device");
+        status = 1;
+    } else if (!decrypted) {
+        LOGW("Failed to decrypt device (incorrect password?)");
+        status = 1;
+    } else {
+        LOGV("Successfully decrypted device");
+        DataManager::SetValue(TW_IS_ENCRYPTED, 0);
+    }
+
+    operation_end(status);
+    return 0;
+}
+
 int GUIAction::autoboot(const std::string& arg __unused)
 {
     struct timespec wait_end;
     struct timespec now;
-    bool canceled = false;
+    AutobootSignal signal = AutobootSignal::NONE;
 
     pthread_mutex_lock(&s_autoboot_mutex);
-    s_autoboot_canceled = false;
+    s_autoboot_signal = AutobootSignal::NONE;
     pthread_mutex_unlock(&s_autoboot_mutex);
 
     operation_start("autoboot");
@@ -629,7 +657,9 @@ int GUIAction::autoboot(const std::string& arg __unused)
 
     gui_msg(Msg("autoboot_autobooting_to")(DataManager::GetStrValue(TW_ROM_ID)));
 
-    for (int i = 5; i > 0; --i) {
+    int timeout = DataManager::GetIntValue(TW_AUTOBOOT_TIMEOUT);
+
+    for (int i = timeout; i > 0; --i) {
         gui_msg(Msg("autoboot_booting_in")(i));
 
         clock_gettime(CLOCK_MONOTONIC, &now);
@@ -644,17 +674,17 @@ int GUIAction::autoboot(const std::string& arg __unused)
         } else {
             ::sleep(1);
         }
-        if (s_autoboot_canceled) {
-            canceled = true;
+        if (s_autoboot_signal != AutobootSignal::NONE) {
+            signal = s_autoboot_signal;
         }
         pthread_mutex_unlock(&s_autoboot_mutex);
 
-        if (canceled) {
+        if (signal != AutobootSignal::NONE) {
             break;
         }
     }
 
-    if (canceled) {
+    if (signal == AutobootSignal::CANCEL) {
         gui_msg("autoboot_canceled");
 
         operation_end(0);
@@ -678,7 +708,19 @@ int GUIAction::autoboot_cancel(const std::string& arg __unused)
     if (cond) {
         pthread_cond_signal(s_autoboot_cond);
     }
-    s_autoboot_canceled = true;
+    s_autoboot_signal = AutobootSignal::CANCEL;
+    pthread_mutex_unlock(&s_autoboot_mutex);
+    return 0;
+}
+
+int GUIAction::autoboot_skip(const std::string& arg __unused)
+{
+    pthread_mutex_lock(&s_autoboot_mutex);
+    pthread_cond_t *cond = s_autoboot_cond;
+    if (cond) {
+        pthread_cond_signal(s_autoboot_cond);
+    }
+    s_autoboot_signal = AutobootSignal::SKIP;
     pthread_mutex_unlock(&s_autoboot_mutex);
     return 0;
 }
@@ -703,34 +745,31 @@ int GUIAction::switch_rom(const std::string& arg)
         // Call mbtool to switch ROMs
         gui_msg(Msg("switch_rom_switching_to")(arg));
 
-        std::unordered_map<std::string, std::string> props;
-        mb::util::file_get_all_properties("/default.prop", &props);
+        const char * const *boot_devs = mb_device_boot_block_devs(tw_device);
+        const char *block_dev = nullptr;
 
-        std::vector<std::string> boot_devs;
-        std::vector<std::string> base_dirs;
-
-        auto it = props.find("ro.patcher.blockdevs.boot");
-        if (it != props.end()) {
-            boot_devs = TWFunc::decode_list(it->second);
-        }
-
-        it = props.find("ro.patcher.blockdevs.base");
-        if (it != props.end()) {
-            base_dirs = TWFunc::decode_list(it->second);
-        }
-
-        std::string block_dev;
-
-        for (const std::string &path : boot_devs) {
-            if (mb::util::path_exists(path.c_str(), true)) {
-                block_dev = path;
-                break;
+        if (boot_devs) {
+            for (auto it = boot_devs; *it; ++it) {
+                if (mb::util::path_exists(*it, true)) {
+                    block_dev = *it;
+                    break;
+                }
             }
         }
 
-        if (block_dev.empty()) {
+        if (!block_dev) {
             gui_msg(Msg(msg::kError, "switch_rom_unknown_boot_partition"));
             ret = 1;
+        }
+
+        std::vector<std::string> base_dirs;
+        const char * const *c_base_dirs =
+                mb_device_block_dev_base_dirs(tw_device);
+
+        if (c_base_dirs) {
+            for (auto it = c_base_dirs; *it; ++it) {
+                base_dirs.push_back(*it);
+            }
         }
 
         SwitchRomResult result;

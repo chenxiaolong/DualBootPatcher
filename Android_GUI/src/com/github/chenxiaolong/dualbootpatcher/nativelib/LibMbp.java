@@ -21,20 +21,21 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.CWrapper.CDevice;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CAutoPatcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CBootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CCpioFile;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CDevice;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CFileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CPatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CWrapper.CRamdiskPatcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.sun.jna.Callback;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
-import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
@@ -49,16 +50,16 @@ public class LibMbp {
     /** Log (almost) all native method calls and their parameters */
     private static final boolean DEBUG = false;
 
+    @SuppressWarnings("JniMissingFunction")
     static class CWrapper {
         static {
             Native.register(CWrapper.class, "mbp");
-            LibMiscStuff.INSTANCE.mblog_set_logcat();
+            LibMiscStuff.mblogSetLogcat();
         }
 
         // BEGIN: ctypes.h
         public static class CBootImage extends PointerType {}
         public static class CCpioFile extends PointerType {}
-        public static class CDevice extends PointerType {}
         public static class CFileInfo extends PointerType {}
         public static class CPatcherConfig extends PointerType {}
 
@@ -148,34 +149,6 @@ public class LibMbp {
         static native boolean mbp_cpiofile_add_file_from_data(CCpioFile cpio, Pointer data, /* size_t */ int size, String name, int perms);
         // END: ccpiofile.h
 
-        // BEGIN: cdevice.h
-        static native CDevice mbp_device_create();
-        static native void mbp_device_destroy(CDevice device);
-        static native Pointer mbp_device_id(CDevice device);
-        static native void mbp_device_set_id(CDevice device, String id);
-        static native Pointer mbp_device_codenames(CDevice device);
-        static native void mbp_device_set_codenames(CDevice device, StringArray names);
-        static native Pointer mbp_device_name(CDevice device);
-        static native void mbp_device_set_name(CDevice device, String name);
-        static native Pointer mbp_device_architecture(CDevice device);
-        static native void mbp_device_set_architecture(CDevice device, String arch);
-        static native Pointer mbp_device_block_dev_base_dirs(CDevice device);
-        static native void mbp_device_set_block_dev_base_dirs(CDevice device, StringArray dirs);
-        static native Pointer mbp_device_system_block_devs(CDevice device);
-        static native void mbp_device_set_system_block_devs(CDevice device, StringArray block_devs);
-        static native Pointer mbp_device_cache_block_devs(CDevice device);
-        static native void mbp_device_set_cache_block_devs(CDevice device, StringArray block_devs);
-        static native Pointer mbp_device_data_block_devs(CDevice device);
-        static native void mbp_device_set_data_block_devs(CDevice device, StringArray block_devs);
-        static native Pointer mbp_device_boot_block_devs(CDevice device);
-        static native void mbp_device_set_boot_block_devs(CDevice device, StringArray block_devs);
-        static native Pointer mbp_device_recovery_block_devs(CDevice device);
-        static native void mbp_device_set_recovery_block_devs(CDevice device, StringArray block_devs);
-        static native Pointer mbp_device_extra_block_devs(CDevice device);
-        static native void mbp_device_set_extra_block_devs(CDevice device, StringArray block_devs);
-        static native boolean mbp_device_boot_ui_supported(CDevice device);
-        // END: cdevice.h
-
         // BEGIN: cfileinfo.h
         static native CFileInfo mbp_fileinfo_create();
         static native void mbp_fileinfo_destroy(CFileInfo info);
@@ -197,8 +170,6 @@ public class LibMbp {
         static native Pointer mbp_config_temp_directory(CPatcherConfig pc);
         static native void mbp_config_set_data_directory(CPatcherConfig pc, String path);
         static native void mbp_config_set_temp_directory(CPatcherConfig pc, String path);
-        static native Pointer mbp_config_version(CPatcherConfig pc);
-        static native Pointer mbp_config_devices(CPatcherConfig pc);
         static native Pointer mbp_config_patchers(CPatcherConfig pc);
         static native Pointer mbp_config_autopatchers(CPatcherConfig pc);
         static native Pointer mbp_config_ramdiskpatchers(CPatcherConfig pc);
@@ -1018,250 +989,6 @@ public class LibMbp {
         }
     }
 
-    public static class Device implements Parcelable {
-        private static final HashMap<CDevice, Integer> sInstances = new HashMap<>();
-        private CDevice mCDevice;
-        private boolean mDestroyable;
-
-        public Device() {
-            mCDevice = CWrapper.mbp_device_create();
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCDevice);
-            }
-            mDestroyable = true;
-            validate(mCDevice, Device.class, "(Constructor)");
-        }
-
-        Device(CDevice cDevice, boolean destroyable) {
-            ensureNotNull(cDevice);
-
-            mCDevice = cDevice;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCDevice);
-            }
-            mDestroyable = destroyable;
-            validate(mCDevice, Device.class, "(Constructor)", destroyable);
-        }
-
-        public void destroy() {
-            synchronized (sInstances) {
-                validate(mCDevice, Device.class, "destroy", mDestroyable);
-                if (mCDevice != null && decrementRefCount(sInstances, mCDevice) && mDestroyable) {
-                    validate(mCDevice, Device.class, "(Destroyed)");
-                    CWrapper.mbp_device_destroy(mCDevice);
-                }
-                mCDevice = null;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return o instanceof Device && mCDevice.equals(((Device) o).mCDevice);
-        }
-
-        @Override
-        public int hashCode() {
-            int hashCode = 1;
-            hashCode = 31 * hashCode + mCDevice.hashCode();
-            hashCode = 31 * hashCode + (mDestroyable ? 1 : 0);
-            return hashCode;
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            destroy();
-            super.finalize();
-        }
-
-        CDevice getPointer() {
-            validate(mCDevice, Device.class, "getPointer");
-            return mCDevice;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            long peer = Pointer.nativeValue(mCDevice.getPointer());
-            out.writeLong(peer);
-            out.writeInt(mDestroyable ? 1 : 0);
-        }
-
-        private Device(Parcel in) {
-            long peer = in.readLong();
-            mCDevice = new CDevice();
-            mCDevice.setPointer(new Pointer(peer));
-            mDestroyable = in.readInt() != 0;
-            synchronized (sInstances) {
-                incrementRefCount(sInstances, mCDevice);
-            }
-            validate(mCDevice, Device.class, "(Constructor)");
-        }
-
-        public static final Parcelable.Creator<Device> CREATOR
-                = new Parcelable.Creator<Device>() {
-            public Device createFromParcel(Parcel in) {
-                return new Device(in);
-            }
-
-            public Device[] newArray(int size) {
-                return new Device[size];
-            }
-        };
-
-        public String getId() {
-            validate(mCDevice, Device.class, "getId");
-            Pointer p = CWrapper.mbp_device_id(mCDevice);
-            return getStringAndFree(p);
-        }
-
-        public void setId(String id) {
-            validate(mCDevice, Device.class, "setId", id);
-            ensureNotNull(id);
-
-            CWrapper.mbp_device_set_id(mCDevice, id);
-        }
-
-        public String[] getCodenames() {
-            validate(mCDevice, Device.class, "getCodenames");
-            Pointer p = CWrapper.mbp_device_codenames(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setCodenames(String[] names) {
-            validate(mCDevice, Device.class, "setCodenames", (Object) names);
-            ensureNotNull(names);
-
-            CWrapper.mbp_device_set_codenames(mCDevice, new StringArray(names));
-        }
-
-        public String getName() {
-            validate(mCDevice, Device.class, "getName");
-            Pointer p = CWrapper.mbp_device_name(mCDevice);
-            return getStringAndFree(p);
-        }
-
-        public void setName(String name) {
-            validate(mCDevice, Device.class, "setName", name);
-            ensureNotNull(name);
-
-            CWrapper.mbp_device_set_name(mCDevice, name);
-        }
-
-        public String getArchitecture() {
-            validate(mCDevice, Device.class, "getArchitecture");
-            Pointer p = CWrapper.mbp_device_architecture(mCDevice);
-            return getStringAndFree(p);
-        }
-
-        public void setArchitecture(String arch) {
-            validate(mCDevice, Device.class, "setArchitecture", arch);
-            ensureNotNull(arch);
-
-            CWrapper.mbp_device_set_architecture(mCDevice, arch);
-        }
-
-        public String[] getBlockDevBaseDirs() {
-            validate(mCDevice, Device.class, "getBlockDevBaseDirs");
-            Pointer p = CWrapper.mbp_device_block_dev_base_dirs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setBlockDevBaseDirs(String[] dirs) {
-            validate(mCDevice, Device.class, "setBlockDevBaseDirs", (Object) dirs);
-            ensureNotNull(dirs);
-
-            CWrapper.mbp_device_set_block_dev_base_dirs(mCDevice, new StringArray(dirs));
-        }
-
-        public String[] getSystemBlockDevs() {
-            validate(mCDevice, Device.class, "getSystemBlockDevs");
-            Pointer p = CWrapper.mbp_device_system_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setSystemBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setSystemBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_system_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public String[] getCacheBlockDevs() {
-            validate(mCDevice, Device.class, "getCacheBlockDevs");
-            Pointer p = CWrapper.mbp_device_cache_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setCacheBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setCacheBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_cache_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public String[] getDataBlockDevs() {
-            validate(mCDevice, Device.class, "getDataBlockDevs");
-            Pointer p = CWrapper.mbp_device_data_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setDataBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setDataBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_data_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public String[] getBootBlockDevs() {
-            validate(mCDevice, Device.class, "getBootBlockDevs");
-            Pointer p = CWrapper.mbp_device_boot_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setBootBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setBootBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_boot_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public String[] getRecoveryBlockDevs() {
-            validate(mCDevice, Device.class, "getRecoveryBlockDevs");
-            Pointer p = CWrapper.mbp_device_recovery_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setRecoveryBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setRecoveryBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_recovery_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public String[] getExtraBlockDevs() {
-            validate(mCDevice, Device.class, "getExtraBlockDevs");
-            Pointer p = CWrapper.mbp_device_extra_block_devs(mCDevice);
-            return getStringArrayAndFree(p);
-        }
-
-        public void setExtraBlockDevs(String[] blockDevs) {
-            validate(mCDevice, Device.class, "setExtraBlockDevs", (Object) blockDevs);
-            ensureNotNull(blockDevs);
-
-            CWrapper.mbp_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
-        }
-
-        public boolean isBootUISupported() {
-            validate(mCDevice, Device.class, "isBootUISupported");
-
-            return CWrapper.mbp_device_boot_ui_supported(mCDevice);
-        }
-    }
-
     public static class FileInfo implements Parcelable {
         private static final HashMap<CFileInfo, Integer> sInstances = new HashMap<>();
         private CFileInfo mCFileInfo;
@@ -1517,28 +1244,6 @@ public class LibMbp {
             ensureNotNull(path);
 
             CWrapper.mbp_config_set_temp_directory(mCPatcherConfig, path);
-        }
-
-        public String getVersion() {
-            validate(mCPatcherConfig, PatcherConfig.class, "getVersion");
-            Pointer p = CWrapper.mbp_config_version(mCPatcherConfig);
-            return getStringAndFree(p);
-        }
-
-        public Device[] getDevices() {
-            validate(mCPatcherConfig, PatcherConfig.class, "getDevices");
-            Pointer p = CWrapper.mbp_config_devices(mCPatcherConfig);
-            Pointer[] ps = p.getPointerArray(0);
-
-            Device[] devices = new Device[ps.length];
-
-            for (int i = 0; i < devices.length; i++) {
-                CDevice cDevice = new CDevice();
-                cDevice.setPointer(ps[i]);
-                devices[i] = new Device(cDevice, false);
-            }
-
-            return devices;
         }
 
         public String[] getPatchers() {

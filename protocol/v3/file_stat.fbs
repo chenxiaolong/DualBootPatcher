@@ -29,13 +29,28 @@ table StructStat {
     st_ctime : ulong;
 }
 
+table FileStatError {
+    // errno value
+    errno_value : int;
+
+    // strerror(errno)
+    msg : string;
+}
+
 table FileStatRequest {
     // Opened file ID
     id : int;
 }
 
 table FileStatResponse {
+    // Deprecated
     success : bool;
+    // Deprecated
     error_msg : string;
+
+    // Stat structure
     stat : StructStat;
+
+    // Error
+    error : FileStatError;
 }

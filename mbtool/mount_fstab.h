@@ -19,34 +19,37 @@
 
 #pragma once
 
+#include "mbdevice/device.h"
+
 #include "roms.h"
 
 namespace mb
 {
 
-enum MountFlags : int
+enum MountFlags : unsigned int
 {
     // Rewrite fstab file to remove mounted entries
-    MOUNT_FLAG_REWRITE_FSTAB            = 0x1,
+    MOUNT_FLAG_REWRITE_FSTAB            = 1u << 1,
     // Prevent the use of generic fstab entries for fstab files that are missing
     // entries for /system, /cache, or /data
-    MOUNT_FLAG_NO_GENERIC_ENTRIES       = 0x2,
+    MOUNT_FLAG_NO_GENERIC_ENTRIES       = 1u << 2,
     // Unmount mount points that were successfully mounted if a later entry in
     // the fstab file fails to mount (affects only the mount points mounted in
     // the current invocation of the function)
-    MOUNT_FLAG_UNMOUNT_ON_FAILURE       = 0x4,
+    MOUNT_FLAG_UNMOUNT_ON_FAILURE       = 1u << 3,
 
-    // Skip /system
-    MOUNT_FLAG_SKIP_SYSTEM              = 0x100,
-    // Skip /cache
-    MOUNT_FLAG_SKIP_CACHE               = 0x200,
-    // Skip /data
-    MOUNT_FLAG_SKIP_DATA                = 0x400,
-    // Skip external SD
-    MOUNT_FLAG_SKIP_EXTERNAL_SD         = 0x800,
+    // Mount /system
+    MOUNT_FLAG_MOUNT_SYSTEM             = 1u << 10,
+    // Mount /cache
+    MOUNT_FLAG_MOUNT_CACHE              = 1u << 11,
+    // Mount /data
+    MOUNT_FLAG_MOUNT_DATA               = 1u << 12,
+    // Mount external SD
+    MOUNT_FLAG_MOUNT_EXTERNAL_SD        = 1u << 13,
 };
 
-bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags);
+bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                 Device *device, int flags);
 bool mount_rom(const std::shared_ptr<Rom> &rom);
 
 }

@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbGetVersionRequest;
+
 struct MbGetVersionResponse;
 
 struct MbGetVersionRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -62,10 +62,15 @@ struct MbGetVersionResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbGetVersionResponse> CreateMbGetVersionResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> version = 0) {
+    flatbuffers::Offset<flatbuffers::String> version = 0) {
   MbGetVersionResponseBuilder builder_(_fbb);
   builder_.add_version(version);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbGetVersionResponse> CreateMbGetVersionResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *version = nullptr) {
+  return CreateMbGetVersionResponse(_fbb, version ? _fbb.CreateString(version) : 0);
 }
 
 }  // namespace v3

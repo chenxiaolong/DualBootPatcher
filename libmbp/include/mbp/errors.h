@@ -33,6 +33,7 @@ enum ErrorCode
 #endif
     // Generic
     NoError = 0,
+    MemoryAllocationError = 1,
 
     // PatcherCreation
     PatcherCreateError = 50,

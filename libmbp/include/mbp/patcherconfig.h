@@ -24,7 +24,6 @@
 #include "mbcommon/common.h"
 
 #include "cpiofile.h"
-#include "device.h"
 #include "errors.h"
 #include "fileinfo.h"
 
@@ -50,8 +49,6 @@ public:
     void setDataDirectory(std::string path);
     void setTempDirectory(std::string path);
 
-    std::string version() const;
-    std::vector<Device *> devices() const;
     std::vector<std::string> patchers() const;
     std::vector<std::string> autoPatchers() const;
     std::vector<std::string> ramdiskPatchers() const;

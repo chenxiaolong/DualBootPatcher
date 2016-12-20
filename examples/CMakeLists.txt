@@ -9,6 +9,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         libmbp_test
         mbp-shared
         mbpio-static
+        mbdevice-shared
     )
 
     if(NOT MSVC)

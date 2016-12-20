@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbGetBootedRomIdRequest;
+
 struct MbGetBootedRomIdResponse;
 
 struct MbGetBootedRomIdRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -62,10 +62,15 @@ struct MbGetBootedRomIdResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbGetBootedRomIdResponse> CreateMbGetBootedRomIdResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> rom_id = 0) {
+    flatbuffers::Offset<flatbuffers::String> rom_id = 0) {
   MbGetBootedRomIdResponseBuilder builder_(_fbb);
   builder_.add_rom_id(rom_id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbGetBootedRomIdResponse> CreateMbGetBootedRomIdResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *rom_id = nullptr) {
+  return CreateMbGetBootedRomIdResponse(_fbb, rom_id ? _fbb.CreateString(rom_id) : 0);
 }
 
 }  // namespace v3

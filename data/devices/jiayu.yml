@@ -1,0 +1,130 @@
+---
+- name: Jiayu S3
+  id: h560
+  codenames:
+    - h560
+    - s3_h560
+    - Jiayu_S3
+    - Jiayu-S3
+    - JY_S3
+    - JY-S3
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p17
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p18
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p19
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/uboot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+
+- name: Jiayu S3plus
+  id: n560a
+  codenames:
+    - n560a
+    - S3H
+    - s3plus_n560a
+    - JY_S3
+    - JY-S3
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/uboot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    theme: portrait_hdpi

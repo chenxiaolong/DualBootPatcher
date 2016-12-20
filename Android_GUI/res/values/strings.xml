@@ -179,6 +179,9 @@
     <!-- Toast message shown if the user attempts to wipe any target for the current ROM -->
     <string name="wipe_rom_no_wipe_current_rom">The currently running ROM cannot be wiped.</string>
 
+    <!-- Switcher service notification title -->
+    <string name="switcher_service_background_service">Background service</string>
+
     <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot. -->
     <string name="switcher_storage_permission_required">The ROM thumbnails and names cannot be
         loaded because the storage permissions were denied.</string>
@@ -213,43 +216,67 @@
     <string name="set_kernel_mismatched_rom">The currently selected ROM is %1$s, but you are trying
         to set the kernel for %2$s. Please confirm that this is what you want.</string>
 
-    <!-- ZIP flash activity title -->
-    <string name="zip_flashing_title">Flash ZIP files</string>
-    <!-- Title of pending action card for installing a zip file -->
-    <string name="zip_flashing_install_zip">Install zip file</string>
-    <!-- Subtitle text in pending action card showing the selected filename -->
-    <string name="zip_flashing_zip_file">Zip file: %s</string>
+    <!-- In-app flashing output activity title - shown when backing up a single ROM -->
+    <string name="in_app_flashing_title_backup_rom">Backup ROM</string>
+    <!-- In-app flashing output activity title - shown when restoring a single ROM -->
+    <string name="in_app_flashing_title_restore_rom">Restore ROM</string>
+    <!-- In-app flashing output activity title - shown when flashing a single file -->
+    <string name="in_app_flashing_title_flash_file">Flash file</string>
+    <!-- In-app flashing output activity title - shown when flashing multiple files/backups -->
+    <string name="in_app_flashing_title_flash_files">Flash files</string>
+    <!-- In-app flashing activity title -->
+    <string name="in_app_flashing_title">In-app flashing</string>
+    <!-- FAB button text for adding a patched file to flash -->
+    <string name="in_app_flashing_fab_add_patched_file">Add patched file</string>
+    <!-- FAB button text for adding a backup to flash -->
+    <string name="in_app_flashing_fab_add_backup">Add backup</string>
+    <!-- Title of pending action card for flashing a file -->
+    <string name="in_app_flashing_action_flash_file">Flash file</string>
+    <!-- Title of pending action card for restoring a backup -->
+    <string name="in_app_flashing_action_restore_backup">Restore backup</string>
+    <!-- [Flash file] Subtitle text in pending action card showing the selected filename -->
+    <string name="in_app_flashing_filename">Filename: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the selected backup name -->
+    <string name="in_app_flashing_backup_name">Backup name: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the restore targets -->
+    <string name="in_app_flashing_restore_targets">Targets: %s</string>
     <!-- Subtitle text in pending action card showing the installation location -->
-    <string name="zip_flashing_location">Location: %s</string>
+    <string name="in_app_flashing_location">ROM ID: %s</string>
     <!-- Title shown in dialog asking for the installation location of a zip file -->
-    <string name="zip_flashing_dialog_installation_location">Installation location:</string>
+    <string name="in_app_flashing_dialog_installation_location">Installation location:</string>
     <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
-    <string name="zip_flashing_dialog_verifying_zip">Verifying zip</string>
+    <string name="in_app_flashing_dialog_verifying_zip">Verifying zip</string>
     <!-- Error message shown when the selected zip file is not found -->
-    <string name="zip_flashing_error_zip_not_found">The selected zip file was not found.</string>
+    <string name="in_app_flashing_error_zip_not_found">The selected zip file was not found.</string>
     <!-- Error message shown when the selected zip file could not be read -->
-    <string name="zip_flashing_error_zip_read_fail">Could not read the selected zip file.</string>
+    <string name="in_app_flashing_error_zip_read_fail">Could not read the selected zip file.</string>
     <!-- Error message shown when the selected zip file isn't patched -->
-    <string name="zip_flashing_error_not_multiboot">The zip file doesn\'t appear to be patched for
-        multiboot. Please patch the file before flashing it.</string>
+    <string name="in_app_flashing_error_not_multiboot">The zip file doesn\'t appear to be patched
+        for multiboot. Please patch the file before flashing it.</string>
     <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
-    <string name="zip_flashing_error_version_too_old">The zip file needs to be patched with %s or
+    <string name="in_app_flashing_error_version_too_old">The zip file needs to be patched with %s or
         newer in order to use in-app flashing.</string>
     <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
-    <string name="zip_flashing_error_no_overwrite_rom">To prevent the current system from crashing
-        or rebooting, flashing a zip on top of the current ROM is not allowed.</string>
+    <string name="in_app_flashing_error_no_overwrite_rom">To prevent the current system from
+        crashing or rebooting, flashing on top of the current ROM is not allowed.</string>
     <!-- Dialog message asking if the user wants to change the installation location of the zip -->
-    <string name="zip_flashing_change_install_location_desc">The zip was originally patched for
+    <string name="in_app_flashing_change_install_location_desc">The zip was originally patched for
         installation to %s. Would you like to change the installation location?</string>
     <!-- Dialog button for keeping the current installation location -->
-    <string name="zip_flashing_keep_current_location">Keep location</string>
+    <string name="in_app_flashing_keep_current_location">Keep location</string>
     <!-- Dialog button for changing the installation location -->
-    <string name="zip_flashing_change_install_location">Change location</string>
+    <string name="in_app_flashing_change_install_location">Change location</string>
     <!-- Message shown in the first-use dialog for zip flashing -->
-    <string name="zip_flashing_dialog_first_use">To flash a zip file using in-app flashing, just
-        add the patched zip file by tapping big plus icon.\n\nThe flashing order can be changed by
-        tapping and holding the file and a file can be removed by swiping it away.\n\nNOTE:
-        This feature is still experimental. Please backup before continuing!</string>
+    <string name="in_app_flashing_dialog_first_use">The in-app flasher can flash both patched files
+        and DualBootPatcher backups. Just tap the plus button to start flashing.\n\nThe pending
+        actions can be dragged or swiped away to change the flash order or remove them from the
+        queue.\n\nNOTE: This feature is still experimental. Please backup before continuing!</string>
+    <!-- Dialog description when choosing a backup to restore -->
+    <string name="in_app_flashing_select_backup_dialog_desc">Choose a backup from the list to
+        restore.</string>
+    <!-- Toast message shown if there are no backups available -->
+    <string name="in_app_flashing_no_backups_available">There are no backups available to
+        restore.</string>
 
     <!-- ROM details item showing which slot the ROM is installed to -->
     <string name="rom_details_info_slot">Slot</string>
@@ -278,6 +305,43 @@
     <string name="rom_details_info_data_size">Data size</string>
     <!-- ROM details item value shown when calculating the directory or image sizes -->
     <string name="rom_details_info_calculating">Calculating…</string>
+
+    <!-- Backup ROM activity title -->
+    <string name="br_backup_title">Backup ROM</string>
+    <!-- Restore ROM activity title -->
+    <string name="br_restore_title">Restore ROM</string>
+
+    <!-- Backup targets dialog description -->
+    <string name="br_backup_targets_dialog_desc">Select targets that should be backed up.</string>
+    <!-- Restore targets dialog description -->
+    <string name="br_restore_targets_dialog_desc">Select targets that should be restored.</string>
+
+    <!-- Backup/restore target for ROM's /system files -->
+    <string name="br_target_system">System</string>
+    <!-- Backup/restore target for ROM's /cache files -->
+    <string name="br_target_cache">Cache</string>
+    <!-- Backup/restore target for ROM's /data files -->
+    <string name="br_target_data">Data</string>
+    <!-- Backup/restore target for ROM's boot image -->
+    <string name="br_target_boot">Boot image</string>
+    <!-- Backup/restore target for ROM's multiboot configuration files -->
+    <string name="br_target_config">MultiBoot configs</string>
+    <!-- Toast message shown if no backup/restore targets are selected -->
+    <string name="br_no_target_selected">No backup/restore targets selected.</string>
+
+    <!-- Backup name input dialog description -->
+    <string name="br_name_dialog_desc">Enter a name for the backup. It cannot contain the forward
+        slash (\"/\") or be \".\" or \"..\".</string>
+    <!-- Backup name input field hint for backup name dialog -->
+    <string name="br_name_dialog_hint">Enter backup name…</string>
+
+    <!-- Text shown on blank background when no files have been added for patching yet -->
+    <string name="patcher_background_message">Tap the FAB to add files to patch.</string>
+
+    <!-- Label for FAB to add a flashable zip -->
+    <string name="patcher_add_flashable_zip">Add flashable zip</string>
+    <!-- Label for FAB to add an Odin image -->
+    <string name="patcher_add_odin_image">Add Odin image</string>
 
     <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
     <string name="patcher_storage_permission_required">The patcher cannot patch files without read
@@ -451,6 +515,11 @@
     <string name="rom_settings_boot_ui_update_ramdisk_msg">The Boot UI has been successfully
         installed.\n\nPlease ensure that the ramdisk has been updated in every ROM. Otherwise, the
         Boot UI will not run during boot.</string>
+
+    <!-- Title for the section in ROM Settings to change backup/restore settings -->
+    <string name="rom_settings_backup_title">Backup/Restore (EXPERIMENTAL)</string>
+    <!-- Title for the preference to change the backup directory -->
+    <string name="rom_settings_backup_change_directory">Change backup directory</string>
 
     <!-- Title for the section in ROM Settings to change settings related to the patcher -->
     <string name="rom_settings_patcher_title">Patcher</string>

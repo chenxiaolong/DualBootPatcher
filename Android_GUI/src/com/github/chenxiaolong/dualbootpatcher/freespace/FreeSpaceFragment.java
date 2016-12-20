@@ -20,12 +20,15 @@ package com.github.chenxiaolong.dualbootpatcher.freespace;
 import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.StatFs;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.ViewHolder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,8 +36,8 @@ import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff.mntent;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC.CWrapper.mntent;
 import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar;
 import com.sun.jna.Pointer;
 
@@ -102,9 +105,9 @@ public class FreeSpaceFragment extends Fragment {
     private void refreshMounts() {
         mMounts.clear();
 
-        Pointer stream = LibMiscStuff.INSTANCE.setmntent("/proc/mounts", "r");
+        Pointer stream = LibC.CWrapper.fopen("/proc/mounts", "r");
         mntent ent;
-        while ((ent = LibMiscStuff.INSTANCE.getmntent(stream)) != null) {
+        while ((ent = LibC.CWrapper.getmntent(stream)) != null) {
             MountInfo info = new MountInfo();
             info.mountpoint = ent.mnt_dir;
             info.fsname = ent.mnt_fsname;
@@ -138,13 +141,28 @@ public class FreeSpaceFragment extends Fragment {
                 continue;
             }
 
-            info.totalSpace = LibMiscStuff.INSTANCE.get_mnt_total_size(info.mountpoint);
-            info.availSpace = LibMiscStuff.INSTANCE.get_mnt_avail_size(info.mountpoint);
+            StatFs statFs;
+
+            try {
+                statFs = new StatFs(info.mountpoint);
+            } catch (IllegalArgumentException e) {
+                // Thrown if Os.statvfs() throws ErrnoException
+                Log.e(TAG, "Exception during statfs of " + info.mountpoint + ": " + e.getMessage());
+                continue;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                info.totalSpace = statFs.getBlockSizeLong() * statFs.getBlockCountLong();
+                info.availSpace = statFs.getBlockSizeLong() * statFs.getAvailableBlocksLong();
+            } else {
+                info.totalSpace = statFs.getBlockSize() * statFs.getBlockCount();
+                info.availSpace = statFs.getBlockSize() * statFs.getAvailableBlocks();
+            }
 
             mMounts.add(info);
         }
 
-        LibMiscStuff.INSTANCE.endmntent(stream);
+        LibC.CWrapper.fclose(stream);
 
         mAdapter.notifyDataSetChanged();
     }

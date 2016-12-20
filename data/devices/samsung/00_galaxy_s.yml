@@ -1,0 +1,680 @@
+---
+- name: Samsung Galaxy S 3 Neo (Qcom)
+  id: s3ve3g
+  codenames:
+    - s3ve3g
+    - s3ve3gds
+    - s3ve3gdd
+    - s3ve3jv
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy S 3 (Qcom)
+  id: d2
+  codenames:
+    - d2
+    - d2lte
+    - d2att
+    - d2can
+    - d2cri
+    - d2ltetmo
+    - d2mtr
+    - d2spi
+    - d2spr
+    - d2tfnspr
+    - d2tfnvzw
+    - d2tmo
+    - d2usc
+    - d2vmu
+    - d2vzw
+    - d2xar
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p14
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p17
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p15
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p18
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+
+
+- name: Samsung Galaxy S 3 (i9300)
+  id: m0
+  codenames:
+    - m0
+    - i9300
+    - GT-I9300
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p9
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p8
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p12
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p6
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+      - /dev/block/mmcblk0p7
+
+
+- name: Samsung Galaxy S 3 (i9305)
+  id: m3
+  codenames:
+    - m3
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p16
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p9
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+
+
+- name: Samsung Galaxy S 3 Mini
+  id: golden
+  codenames:
+    - golden
+  architecture: armeabi-v7a
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p22
+    cache:
+      - /dev/block/mmcblk0p23
+    data:
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/mmcblk0p21
+
+
+- name: Samsung Galaxy S 4 (Qcom)
+  id: jflte
+  codenames:
+    # Regular variant
+    - jflte
+    - jflteatt
+    - jfltecan
+    - jfltecri
+    - jfltecsp
+    - jflterefreshspr
+    - jfltespr
+    - jfltetmo
+    - jflteusc
+    - jfltevzw
+    - jfltexx
+    - jfltezm
+    # Active variant
+    - jactivelte
+    # Google Edition variant
+    - jgedlte
+    # GT-I9507
+    - jftddxx
+    # GT-I9515
+    - jfvelte
+    - jfveltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p16
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p18
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p21
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+  crypto:
+    supported: true
+    header_path: footer
+
+
+- name: Samsung Galaxy S 4 (Exynos)
+  id: i9500
+  codenames:
+    # i9500
+    - ja3g
+    - jalte
+    # SHV-E300S/K
+    - jaltektt
+    - jalteskt
+    # For OpenRecovery (TWRP)
+    - i9500
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy S 4 LTE-A
+  id: ks01lte
+  codenames:
+    - ks01lte
+    - ks01ltektt
+    - ks01lteskt
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy S 4 Active (SKT Variant)
+  id: jactivelteskt
+  codenames:
+    - jactivelteskt
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/data
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy S 4 Mini
+  id: serrano
+  codenames:
+    # Regular variant
+    - serrano3g
+    - serrano3gxx
+    # Duos variant
+    - serranods
+    - serranodsxx
+    # LTE variant
+    - serranolte
+    - serranoltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p13
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+
+
+- name: Samsung Galaxy S 5 (Qcom)
+  id: klte
+  codenames:
+    - klte
+    - kltecan
+    - kltedv
+    - kltespr
+    - kltetmo
+    - klteusc
+    - kltevzw
+    - kltexx
+    - kltekdi
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p15
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p14
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    pixel_format: RGBX_8888
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/devices/mdp.0/qcom,mdss_fb_primary.191/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+
+
+- name: Samsung Galaxy S 5 Mini (Qcom)
+  id: kmini3g
+  codenames:
+    - kmini3g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy S 5 (Exynos)
+  id: k3g
+  codenames:
+    - k3g
+    - k3gxx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/12200000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/12200000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/12200000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/12200000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/12200000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/12200000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/12200000.dwmmc0/by-name/RADIO
+      - /dev/block/platform/12200000.dwmmc0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy S 5 Mini LTE (Exynos)
+  id: kminilte
+  codenames:
+    - kminilte
+    - kminiltexx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc.0/by-name
+    system:
+      - /dev/block/platform/dw_mmc.0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/dw_mmc.0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/dw_mmc.0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/dw_mmc.0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/dw_mmc.0/by-name/RADIO
+      - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
+
+
+- name: Samsung Galaxy S 5 Broadband LTE-A
+  id: lentislte
+  codenames:
+    - lentislte
+    - lentislteskt
+    - lentisltektt
+    - lentisltelgt
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+
+
+- name: Samsung Galaxy S 5 4G+
+  id: kccat6
+  codenames:
+    - kccat6
+    - kccat6xx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p18
+
+
+- name: Samsung Galaxy S 6 Flat/Edge
+  id: zerolte
+  codenames:
+    # Regular variant
+    - zeroflte
+    - zerofltebmc
+    - zerofltetmo
+    - zerofltexx
+    # Edge variant
+    - zerolte
+    - zeroltebmc
+    - zeroltetmo
+    - zeroltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda15
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda16
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda17
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda5
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda6
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+
+- name: Samsung Galaxy S 6 Flat/Edge (Sprint)
+  id: zeroltespr
+  codenames:
+    # Regular variant
+    - zerofltespr
+    # Edge variant
+    - zeroltespr
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda18
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda19
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda21
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda8
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda9
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+
+- name: Samsung Galaxy S 6 Edge+
+  id: zenlte
+  codenames:
+    - zenlte
+    - zenltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda14
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda15
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda17
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda5
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda6
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+
+- name: Samsung Galaxy S 7 Flat/Edge (Exynos)
+  id: herolte
+  codenames:
+    # Regular variant
+    - herolte
+    - heroltexx
+    - heroltebmc
+    - heroltektt
+    - heroltelgt
+    - herolteskt
+    # Edge variant
+    - hero2lte
+    - hero2ltexx
+    - hero2ltebmc
+    - hero2ltektt
+    - hero2ltelgt
+    - hero2lteskt
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+      - /dev/block/platform/155a0000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/platform/155a0000.ufs/by-name/SYSTEM
+      - /dev/block/sda14
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/platform/155a0000.ufs/by-name/CACHE
+      - /dev/block/sda15
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/platform/155a0000.ufs/by-name/USERDATA
+      - /dev/block/sda18
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/platform/155a0000.ufs/by-name/BOOT
+      - /dev/block/sda5
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/platform/155a0000.ufs/by-name/RECOVERY
+      - /dev/block/sda6
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+      - /dev/block/platform/155a0000.ufs/by-name/RADIO
+      - /dev/block/sda8
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi

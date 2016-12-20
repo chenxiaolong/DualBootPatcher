@@ -39,8 +39,6 @@ MB_EXPORT char * mbp_config_temp_directory(const CPatcherConfig *pc);
 MB_EXPORT void mbp_config_set_data_directory(CPatcherConfig *pc, char *path);
 MB_EXPORT void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path);
 
-MB_EXPORT char * mbp_config_version(const CPatcherConfig *pc);
-MB_EXPORT CDevice ** mbp_config_devices(const CPatcherConfig *pc);
 MB_EXPORT char ** mbp_config_patchers(const CPatcherConfig *pc);
 MB_EXPORT char ** mbp_config_autopatchers(const CPatcherConfig *pc);
 MB_EXPORT char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);

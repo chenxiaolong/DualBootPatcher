@@ -20,6 +20,7 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,6 +46,7 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.github.chenxiaolong.dualbootpatcher.Constants;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -65,6 +67,9 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupNameInputDialog.BackupNameInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog
+        .BackupRestoreTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
         .CacheRomThumbnailTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog
@@ -85,6 +90,9 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.UpdateRamdiskResultDialo
         .UpdateRamdiskResultDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDialog
         .WipeTargetsSelectionDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
         .CacheWallpaperTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
@@ -100,7 +108,11 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 import mbtool.daemon.v3.MbWipeTarget;
 
@@ -113,7 +125,10 @@ public class RomDetailActivity extends AppCompatActivity implements
         SetKernelConfirmDialogListener,
         UpdateRamdiskResultDialogListener,
         WipeTargetsSelectionDialogListener,
-        ConfirmChecksumIssueDialogListener, ServiceConnection {
+        ConfirmChecksumIssueDialogListener,
+        BackupRestoreTargetsSelectionDialogListener,
+        BackupNameInputDialogListener,
+        ServiceConnection {
     private static final String TAG = RomDetailActivity.class.getSimpleName();
 
     private static final int MENU_EDIT_NAME = Menu.FIRST;
@@ -158,12 +173,16 @@ public class RomDetailActivity extends AppCompatActivity implements
             RomDetailActivity.class.getCanonicalName() + ".confirm.set_kernel";
     private static final String CONFIRM_DIALOG_MISMATCHED_KERNEL =
             RomDetailActivity.class.getCanonicalName() + ".confirm.mismatched_kernel";
+    private static final String CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS =
+            RomDetailActivity.class.getCanonicalName() + ".confirm.backup_restore_targets";
     private static final String CONFIRM_DIALOG_WIPE_TARGETS =
             RomDetailActivity.class.getCanonicalName() + ".confirm.wipe_targets";
     private static final String CONFIRM_DIALOG_CHECKSUM_ISSUE =
             RomDetailActivity.class.getCanonicalName() + ".confirm.checksum_issue";
     private static final String CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION =
             RomDetailActivity.class.getCanonicalName() + ".confirm.unknown_boot_partition";
+    private static final String INPUT_DIALOG_BACKUP_NAME =
+            RomDetailActivity.class.getCanonicalName() + ".input.backup_name";
 
     private static final int REQUEST_IMAGE = 1234;
     private static final int REQUEST_MBTOOL_ERROR = 2345;
@@ -182,6 +201,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private static final String EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details";
     private static final String EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_reomve";
     private static final String EXTRA_STATE_RESULT_INTENT = "state.result_intent";
+    private static final String EXTRA_STATE_BACKUP_TARGETS = "state.backup_targets";
     // Result extras
     public static final String EXTRA_RESULT_WIPED_ROM = "result.wiped_rom";
 
@@ -194,6 +214,8 @@ public class RomDetailActivity extends AppCompatActivity implements
     private RomInformation mRomInfo;
     private RomInformation mBootedRomInfo;
     private String mActiveRomId;
+
+    private String[] mBackupTargets;
 
     private ArrayList<Item> mItems = new ArrayList<>();
     private RomDetailAdapter mAdapter;
@@ -246,6 +268,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             mTaskIdsToRemove = savedInstanceState.getIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE);
             mResultIntent = savedInstanceState.getParcelable(EXTRA_STATE_RESULT_INTENT);
             setResult(RESULT_OK, mResultIntent);
+            mBackupTargets = savedInstanceState.getStringArray(EXTRA_STATE_BACKUP_TARGETS);
         }
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -286,6 +309,9 @@ public class RomDetailActivity extends AppCompatActivity implements
         outState.putInt(EXTRA_STATE_TASK_ID_GET_ROM_DETAILS, mTaskIdGetRomDetails);
         outState.putIntegerArrayList(EXTRA_STATE_TASK_IDS_TO_REMOVE, mTaskIdsToRemove);
         outState.putParcelable(EXTRA_STATE_RESULT_INTENT, mResultIntent);
+        if (mBackupTargets != null) {
+            outState.putStringArray(EXTRA_STATE_BACKUP_TARGETS, mBackupTargets);
+        }
     }
 
     @Override
@@ -654,6 +680,12 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
     }
 
+    public void onSelectedBackupRom() {
+        BackupRestoreTargetsSelectionDialog d =
+                BackupRestoreTargetsSelectionDialog.newInstanceFromActivity(Action.BACKUP);
+        d.show(getFragmentManager(), CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS);
+    }
+
     public void onSelectedWipeRom() {
         if (mBootedRomInfo != null && mBootedRomInfo.getId().equals(mRomInfo.getId())) {
             createSnackbar(R.string.wipe_rom_no_wipe_current_rom, Snackbar.LENGTH_LONG).show();
@@ -716,6 +748,40 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onSelectedBackupRestoreTargets(String[] targets) {
+        if (targets.length == 0) {
+            createSnackbar(R.string.br_no_target_selected, Snackbar.LENGTH_LONG).show();
+            return;
+        }
+
+        mBackupTargets = targets;
+
+        DateFormat df = new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss", Locale.US);
+        String suggestedName = df.format(new Date()) + '_' + mRomInfo.getId();
+
+        // Prompt for back up name
+        BackupNameInputDialog d = BackupNameInputDialog.newInstanceFromActivity(suggestedName);
+        d.show(getFragmentManager(), INPUT_DIALOG_BACKUP_NAME);
+    }
+
+    @Override
+    public void onSelectedBackupName(String name) {
+        SharedPreferences prefs = getSharedPreferences("settings", 0);
+
+        String backupDir = prefs.getString(
+                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+
+        BackupRestoreParams params = new BackupRestoreParams(
+                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDir, false);
+        MbtoolAction action = new MbtoolAction(params);
+
+        // Start backup
+        Intent intent = new Intent(this, MbtoolTaskOutputActivity.class);
+        intent.putExtra(MbtoolTaskOutputFragment.PARAM_ACTIONS, new MbtoolAction[] { action });
+        startActivity(intent);
+    }
+
+    @Override
     public void onSelectedWipeTargets(short[] targets) {
         if (targets.length == 0) {
             createSnackbar(R.string.wipe_rom_none_selected, Snackbar.LENGTH_LONG).show();
@@ -740,7 +806,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             onSelectedSetKernel();
             break;
         case ACTION_BACKUP:
-            createSnackbar("WIP :)", Snackbar.LENGTH_LONG).show();
+            onSelectedBackupRom();
             break;
         case ACTION_ADD_TO_HOME_SCREEN:
             onSelectedAddToHomeScreen();

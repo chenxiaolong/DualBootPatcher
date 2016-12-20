@@ -1,12 +1,19 @@
 namespace mbtool.daemon.v3;
 
+table MbSwitchRomError {
+    // Currently, no additional details are provided
+}
+
 table MbSwitchRomRequest {
     // ROM ID to switch to
     rom_id : string;
+
     // Path to the boot partition's block device
     boot_blockdev : string;
+
     // List of block device search paths
     blockdev_base_dirs : [string];
+
     // Force update checksums
     force_update_checksums : bool;
 }
@@ -19,6 +26,12 @@ enum MbSwitchRomResult : short {
 }
 
 table MbSwitchRomResponse {
+    // Deprecated
     success : bool;
+
+    // Result
     result : MbSwitchRomResult;
+
+    // Error
+    error : MbSwitchRomError;
 }

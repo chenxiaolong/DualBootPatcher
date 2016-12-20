@@ -193,36 +193,33 @@ bool fix_multiboot_permissions(void)
     return true;
 }
 
-std::vector<std::string> decode_list(const std::string &encoded)
+bool switch_context(const std::string &context)
 {
-    std::vector<std::string> result;
-    std::string buf;
+    std::string current;
 
-    bool escaped = false;
-    for (char c : encoded) {
-        if (!escaped) {
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            } else if (c == ',') {
-                result.push_back(buf);
-                buf.clear();
-                continue;
-            }
-        }
-
-        buf += c;
-        escaped = false;
+    if (!util::selinux_get_process_attr(
+            0, util::SELinuxAttr::CURRENT, &current)) {
+        LOGE("Failed to get current process context: %s", strerror(errno));
+        // Don't fail if SELinux is not supported
+        return errno == ENOENT;
     }
 
-    if (escaped) {
-        // Invalid string
-        return {};
+    LOGI("Current process context: %s", current.c_str());
+
+    if (current == context) {
+        LOGV("Not switching process context");
+        return true;
     }
 
-    result.push_back(buf);
+    LOGV("Setting process context: %s", context.c_str());
 
-    return result;
+    if (!util::selinux_set_process_attr(
+            0, util::SELinuxAttr::CURRENT, context)) {
+        LOGE("Failed to set current process context: %s", strerror(errno));
+        return false;
+    }
+
+    return true;
 }
 
 }

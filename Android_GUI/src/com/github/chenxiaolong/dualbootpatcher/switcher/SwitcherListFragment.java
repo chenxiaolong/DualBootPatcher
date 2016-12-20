@@ -42,7 +42,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
-import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
@@ -71,6 +70,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.views.SwipeRefreshLayoutWorkaround;
+import com.github.clans.fab.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -196,7 +196,7 @@ public class SwitcherListFragment extends Fragment implements
         mFabFlashZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), ZipFlashingActivity.class);
+                Intent intent = new Intent(getActivity(), InAppFlashingActivity.class);
                 startActivityForResult(intent, REQUEST_FLASH_ZIP);
             }
         });
@@ -448,7 +448,7 @@ public class SwitcherListFragment extends Fragment implements
         mActiveRomId = null;
         setErrorVisibility(false);
         setRomListVisibility(false);
-        setFabVisibility(false);
+        setFabVisibility(false, true);
         setLoadingSpinnerVisibility(true);
 
         removeCachedTaskId(mTaskIdGetRomsState);
@@ -525,7 +525,7 @@ public class SwitcherListFragment extends Fragment implements
         mCardListView.setLayoutManager(llm);
 
         setRomListVisibility(false);
-        setFabVisibility(false);
+        setFabVisibility(false, false);
     }
 
     /**
@@ -561,8 +561,12 @@ public class SwitcherListFragment extends Fragment implements
      *
      * @param visible Visibility
      */
-    private void setFabVisibility(boolean visible) {
-        mFabFlashZip.setVisibility(visible ? View.VISIBLE : View.GONE);
+    private void setFabVisibility(boolean visible, boolean animate) {
+        if (visible) {
+            mFabFlashZip.show(animate);
+        } else {
+            mFabFlashZip.hide(animate);
+        }
     }
 
     private void removeCachedTaskId(int taskId) {
@@ -630,10 +634,10 @@ public class SwitcherListFragment extends Fragment implements
 
         if (roms != null && roms.length > 0) {
             Collections.addAll(mRoms, roms);
-            setFabVisibility(true);
+            setFabVisibility(true, true);
         } else {
             setErrorVisibility(true);
-            setFabVisibility(false);
+            setFabVisibility(false, true);
         }
 
         mCurrentRom = currentRom;

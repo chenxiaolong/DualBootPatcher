@@ -49,6 +49,9 @@ const std::string StandardPatcher::Id
 const std::string StandardPatcher::UpdaterScript
         = "META-INF/com/google/android/updater-script";
 
+const std::string StandardPatcher::SystemTransferList
+        = "system.transfer.list";
+
 #define MOUNT_FMT \
         "(run_program(\"/update-binary-tool\", \"mount\", \"%s\") == 0)"
 #define UNMOUNT_FMT \
@@ -86,14 +89,14 @@ std::vector<std::string> StandardPatcher::newFiles() const
 
 std::vector<std::string> StandardPatcher::existingFiles() const
 {
-    return { UpdaterScript };
+    return { UpdaterScript, SystemTransferList };
 }
 
-static bool findItemsInString(const std::string &haystack,
-                              const std::vector<std::string> &needles)
+static bool findItemsInString(const char *haystack,
+                              const char * const *needles)
 {
-    for (auto const &needle : needles) {
-        if (haystack.find(needle) != std::string::npos) {
+    for (auto iter = needles; *iter; ++iter) {
+        if (strstr(haystack, *iter)) {
             return true;
         }
     }
@@ -244,9 +247,9 @@ replaceEdifyMount(std::vector<EdifyToken *> *tokens,
                   const std::vector<EdifyToken *>::iterator funcName,
                   const std::vector<EdifyToken *>::iterator leftParen,
                   const std::vector<EdifyToken *>::iterator rightParen,
-                  const std::vector<std::string> &systemDevs,
-                  const std::vector<std::string> &cacheDevs,
-                  const std::vector<std::string> &dataDevs)
+                  const char * const *systemDevs,
+                  const char * const *cacheDevs,
+                  const char * const *dataDevs)
 {
     // For the mount() edify function, replace with the corresponding
     // update-binary-tool command
@@ -259,12 +262,12 @@ replaceEdifyMount(std::vector<EdifyToken *> *tokens,
         const std::string str = token->string();
 
         bool isSystem = str.find("/system") != std::string::npos
-                || findItemsInString(str, systemDevs);
+                || findItemsInString(str.c_str(), systemDevs);
         bool isCache = str.find("/cache") != std::string::npos
-                || findItemsInString(str, cacheDevs);
+                || findItemsInString(str.c_str(), cacheDevs);
         bool isData = str.find("/data") != std::string::npos
                 || str.find("/userdata") != std::string::npos
-                || findItemsInString(str, dataDevs);
+                || findItemsInString(str.c_str(), dataDevs);
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
@@ -298,9 +301,9 @@ replaceEdifyUnmount(std::vector<EdifyToken *> *tokens,
                     const std::vector<EdifyToken *>::iterator funcName,
                     const std::vector<EdifyToken *>::iterator leftParen,
                     const std::vector<EdifyToken *>::iterator rightParen,
-                    const std::vector<std::string> &systemDevs,
-                    const std::vector<std::string> &cacheDevs,
-                    const std::vector<std::string> &dataDevs)
+                    const char * const *systemDevs,
+                    const char * const *cacheDevs,
+                    const char * const *dataDevs)
 {
     // For the unmount() edify function, replace with the corresponding
     // update-binary-tool command
@@ -313,12 +316,12 @@ replaceEdifyUnmount(std::vector<EdifyToken *> *tokens,
         const std::string str = token->string();
 
         bool isSystem = str.find("/system") != std::string::npos
-                || findItemsInString(str, systemDevs);
+                || findItemsInString(str.c_str(), systemDevs);
         bool isCache = str.find("/cache") != std::string::npos
-                || findItemsInString(str, cacheDevs);
+                || findItemsInString(str.c_str(), cacheDevs);
         bool isData = str.find("/data") != std::string::npos
                 || str.find("/userdata") != std::string::npos
-                || findItemsInString(str, dataDevs);
+                || findItemsInString(str.c_str(), dataDevs);
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
@@ -352,9 +355,9 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
                        const std::vector<EdifyToken *>::iterator funcName,
                        const std::vector<EdifyToken *>::iterator leftParen,
                        const std::vector<EdifyToken *>::iterator rightParen,
-                       const std::vector<std::string> &systemDevs,
-                       const std::vector<std::string> &cacheDevs,
-                       const std::vector<std::string> &dataDevs)
+                       const char * const *systemDevs,
+                       const char * const *cacheDevs,
+                       const char * const *dataDevs)
 {
     bool foundReboot = false;
     bool foundMount = false;
@@ -390,16 +393,16 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         }
 
         if (unescaped.find("/system") != std::string::npos
-                || findItemsInString(unescaped, systemDevs)) {
+                || findItemsInString(unescaped.c_str(), systemDevs)) {
             isSystem = true;
         }
         if (unescaped.find("/cache") != std::string::npos
-                || findItemsInString(unescaped, cacheDevs)) {
+                || findItemsInString(unescaped.c_str(), cacheDevs)) {
             isCache = true;
         }
         if (unescaped.find("/data") != std::string::npos
                 || unescaped.find("/userdata") != std::string::npos
-                || findItemsInString(unescaped, dataDevs)) {
+                || findItemsInString(unescaped.c_str(), dataDevs)) {
             isData = true;
         }
     }
@@ -501,9 +504,9 @@ replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
                    const std::vector<EdifyToken *>::iterator funcName,
                    const std::vector<EdifyToken *>::iterator leftParen,
                    const std::vector<EdifyToken *>::iterator rightParen,
-                   const std::vector<std::string> &systemDevs,
-                   const std::vector<std::string> &cacheDevs,
-                   const std::vector<std::string> &dataDevs)
+                   const char * const *systemDevs,
+                   const char * const *cacheDevs,
+                   const char * const *dataDevs)
 {
     // For the format() edify function, replace with the corresponding
     // update-binary-tool command
@@ -516,12 +519,12 @@ replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
         const std::string str = token->string();
 
         bool isSystem = str.find("/system") != std::string::npos
-                || findItemsInString(str, systemDevs);
+                || findItemsInString(str.c_str(), systemDevs);
         bool isCache = str.find("/cache") != std::string::npos
-                || findItemsInString(str, cacheDevs);
+                || findItemsInString(str.c_str(), cacheDevs);
         bool isData = str.find("/data") != std::string::npos
                 || str.find("/userdata") != std::string::npos
-                || findItemsInString(str, dataDevs);
+                || findItemsInString(str.c_str(), dataDevs);
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
@@ -539,9 +542,27 @@ replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
 
 bool StandardPatcher::patchFiles(const std::string &directory)
 {
-    std::string contents;
+    if (!patchUpdater(directory)) {
+        return false;
+    }
 
-    FileUtils::readToString(directory + "/" + UpdaterScript, &contents);
+    if (!patchTransferList(directory)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool StandardPatcher::patchUpdater(const std::string &directory)
+{
+    std::string contents;
+    std::string path;
+
+    path += directory;
+    path += "/";
+    path += UpdaterScript;
+
+    FileUtils::readToString(path, &contents);
 
     if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
         // Ignore any script with a shebang line
@@ -561,9 +582,9 @@ bool StandardPatcher::patchFiles(const std::string &directory)
 #endif
 
     Device *device = m_impl->info->device();
-    auto const systemDevs = device->systemBlockDevs();
-    auto const cacheDevs = device->cacheBlockDevs();
-    auto const dataDevs = device->dataBlockDevs();
+    auto systemDevs = mb_device_system_block_devs(device);
+    auto cacheDevs = mb_device_cache_block_devs(device);
+    auto dataDevs = mb_device_data_block_devs(device);
 
     std::vector<EdifyToken *>::iterator begin = tokens.begin();
     std::vector<EdifyToken *>::iterator end;
@@ -610,12 +631,42 @@ bool StandardPatcher::patchFiles(const std::string &directory)
     EdifyTokenizer::dump(tokens);
 #endif
 
-    FileUtils::writeFromString(directory + "/" + UpdaterScript,
-                               EdifyTokenizer::untokenize(tokens));
+    FileUtils::writeFromString(path, EdifyTokenizer::untokenize(tokens));
 
     for (EdifyToken *t : tokens) {
         delete t;
     }
+
+    return true;
+}
+
+bool StandardPatcher::patchTransferList(const std::string &directory)
+{
+    std::string contents;
+    std::string path;
+    std::vector<std::string> lines;
+
+    path += directory;
+    path += "/";
+    path += SystemTransferList;
+
+    auto ret = FileUtils::readToString(path, &contents);
+    if (ret != ErrorCode::NoError) {
+        return ret == ErrorCode::FileOpenError;
+    }
+
+    lines = StringUtils::split(contents, '\n');
+
+    for (auto it = lines.begin(); it != lines.end();) {
+        if (StringUtils::starts_with(*it, "erase ")) {
+            it = lines.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    contents = StringUtils::join(lines, "\n");
+    FileUtils::writeFromString(path, contents);
 
     return true;
 }

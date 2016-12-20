@@ -17,13 +17,23 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
 
 #include <sys/stat.h>
+
+struct BlockDevInfo
+{
+    std::string path;           // Path to block device
+    std::string partition_name; // Partition name (system, cache, data, etc.)
+    int partition_num = -1;     // Partition number
+    int major = -1;             // Block device major number
+    int minor = -1;             // Block device minor number
+};
 
 void handle_device_fd();
 void device_init(bool dry_run);
 void device_close();
 int get_device_fd();
 
-const std::unordered_map<std::string, std::string> * get_devices_map();
+std::unordered_map<std::string, BlockDevInfo> get_block_dev_mappings();

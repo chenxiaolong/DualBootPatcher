@@ -1,5 +1,5 @@
-# We don't need the keys for building signtool
-if(${MBP_BUILD_TARGET} STREQUAL signtool)
+# We don't need the keys for building the host tools
+if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     return()
 endif()
 
@@ -147,5 +147,5 @@ function(add_sign_files_target name)
         COMMENT "File signing target '${name}'"
         VERBATIM
     )
-    add_dependencies(${name} signtool)
+    add_dependencies(${name} hosttools)
 endfunction()

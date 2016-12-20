@@ -14,10 +14,9 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-set(MBP_CORE_SOURCES
+set(MBP_SOURCES
     src/bootimage.cpp
     src/cpiofile.cpp
-    src/device.cpp
     src/fileinfo.cpp
     src/patcherconfig.cpp
     # Boot image parsers
@@ -33,7 +32,6 @@ set(MBP_CORE_SOURCES
     src/cwrapper/cbootimage.cpp
     src/cwrapper/ccommon.cpp
     src/cwrapper/ccpiofile.cpp
-    src/cwrapper/cdevice.cpp
     src/cwrapper/cfileinfo.cpp
     src/cwrapper/cpatcherconfig.cpp
     src/cwrapper/cpatcherinterface.cpp
@@ -46,7 +44,7 @@ set(MBP_CORE_SOURCES
     src/private/stringutils.cpp
     # Autopatchers
     src/autopatchers/standardpatcher.cpp
-    src/autopatchers/xposedpatcher.cpp
+    src/autopatchers/mountcmdpatcher.cpp
     # Patchers
     src/patchers/mbtoolupdater.cpp
     src/patchers/multibootpatcher.cpp
@@ -54,30 +52,8 @@ set(MBP_CORE_SOURCES
     # Ramdisk patchers
     src/ramdiskpatchers/core.cpp
     src/ramdiskpatchers/default.cpp
-    src/ramdiskpatchers/pepper.cpp
     # SHA1 library
     external/sha.cpp
-)
-
-set(MBP_DEVICE_SOURCES
-    devices/asus.cpp
-    devices/google.cpp
-    devices/huawei.cpp
-    devices/lenovo.cpp
-    devices/lg.cpp
-    devices/motorola.cpp
-    devices/nexus.cpp
-    devices/oneplus.cpp
-    devices/samsung.cpp
-    devices/sony.cpp
-    devices/xiaomi.cpp
-    devices/pantech.cpp
-    devices/jiayu.cpp
-)
-
-set(MBP_SOURCES
-    ${MBP_CORE_SOURCES}
-    ${MBP_DEVICE_SOURCES}
 )
 
 if(WIN32)
@@ -152,9 +128,10 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
     target_link_libraries(
         mbp-shared
         mbpio-static
+        mbdevice-shared
         mblog-shared
         mbcommon-shared
-        minizip
+        minizip-shared
         ${ADDITIONAL_LIBRARIES}
         ${LIBARCHIVE_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}

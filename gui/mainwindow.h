@@ -52,6 +52,7 @@ private slots:
     void onInstallationLocationSelected(int index);
     void onInstallationLocationIdChanged(const QString &text);
     void onButtonClicked(QAbstractButton *button);
+    void onChooseFileItemClicked(QAction *action);
 
     // Progress
     void onProgressUpdated(uint64_t bytes, uint64_t maxBytes);
@@ -72,7 +73,7 @@ private:
     void populateDevices();
     void populateInstallationLocations();
 
-    void chooseFile();
+    void chooseFile(const QString &patterns);
     void startPatching();
 
     void updateWidgetsVisibility();

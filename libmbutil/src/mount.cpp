@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,10 +21,12 @@
 
 #include <memory>
 #include <vector>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/vfs.h>
@@ -32,6 +34,7 @@
 
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
+#include "mbutil/blkid.h"
 #include "mbutil/directory.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
@@ -83,13 +86,14 @@ bool is_mounted(const std::string &mountpoint)
 
 bool unmount_all(const std::string &dir)
 {
+    std::vector<std::string> to_unmount;
     int failed;
     struct mntent ent;
     char buf[1024];
-    std::string mnt_dir;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
+        to_unmount.clear();
 
         autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
         if (!fp) {
@@ -98,18 +102,24 @@ bool unmount_all(const std::string &dir)
         }
 
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            mnt_dir = get_deleted_mount_path(ent.mnt_dir);
+            std::string mnt_dir = get_deleted_mount_path(ent.mnt_dir);
             if (starts_with(mnt_dir, dir)) {
-                //LOGD("Attempting to unmount %s", mnt_dir.c_str());
-
-                if (!util::umount(mnt_dir.c_str())) {
-                    LOGE("Failed to unmount %s: %s",
-                         mnt_dir.c_str(), strerror(errno));
-                    ++failed;
-                }
+                to_unmount.push_back(std::move(mnt_dir));
             }
         }
 
+        // Unmount in reverse order
+        for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
+            LOGD("Attempting to unmount %s", it->c_str());
+
+            if (!util::umount(it->c_str())) {
+                LOGE("%s: Failed to unmount: %s",
+                     it->c_str(), strerror(errno));
+                ++failed;
+            }
+        }
+
+        // No more matching mount points
         if (failed == 0) {
             return true;
         }
@@ -117,60 +127,8 @@ bool unmount_all(const std::string &dir)
         // Retry
     }
 
-    LOGE("Failed to unmount %d partitions", failed);
+    LOGE("Failed to unmount %d mount points", failed);
     return false;
-}
-
-/*!
- * \brief Bind mount a directory
- *
- * This function will create or chmod the source and target directories before
- * performing the bind mount. If the source or target directories don't exist,
- * they will be created (recursively) with the specified permissions. If the
- * directories already exist, they will be chmod'ed with the specified mode
- * (parent directories will not be touched).
- *
- * \param source Source path
- * \param source_perms Permissions for source path
- * \param target Target path
- * \param target_perms Permissions for target path
- *
- * \return True if bind mount is successful. False, otherwise.
- */
-bool bind_mount(const std::string &source, mode_t source_perms,
-                const std::string &target, mode_t target_perms)
-{
-    struct stat sb;
-
-    if (stat(source.c_str(), &sb) < 0
-            && !mkdir_recursive(source, source_perms)) {
-        LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (stat(target.c_str(), &sb) < 0
-            && !mkdir_recursive(target, target_perms)) {
-        LOGE("Failed to create %s: %s", target.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (chmod(source.c_str(), source_perms) < 0) {
-        LOGE("Failed to chmod %s: %s", source.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (chmod(target.c_str(), target_perms) < 0) {
-        LOGE("Failed to chmod %s: %s", target.c_str(), strerror(errno));
-        return false;
-    }
-
-    if (::mount(source.c_str(), target.c_str(), "", MS_BIND, "") < 0) {
-        LOGE("Failed to bind mount %s to %s: %s",
-             source.c_str(), target.c_str(), strerror(errno));
-        return false;
-    }
-
-    return true;
 }
 
 /*!
@@ -198,9 +156,21 @@ bool mount(const char *source, const char *target, const char *fstype,
     bool need_loopdev = false;
     struct stat sb;
 
-    if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))
-            && stat(source, &sb) == 0 && S_ISREG(sb.st_mode)) {
-        need_loopdev = true;
+    if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
+        if (stat(source, &sb) >= 0) {
+            if (S_ISREG(sb.st_mode)) {
+                need_loopdev = true;
+            }
+            if (fstype && strcmp(fstype, "auto") == 0
+                    && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
+                if (!blkid_get_fs_type(source, &fstype) || !fstype) {
+                    return false;
+                } else if (strcmp(fstype, "ext") == 0) {
+                    // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
+                    fstype = "ext4";
+                }
+            }
+        }
     }
 
     if (need_loopdev) {
@@ -268,6 +238,8 @@ bool umount(const char *target)
 
     int ret = ::umount(target);
 
+    int saved_errno = errno;
+
     if (!source.empty()) {
         struct stat sb;
 
@@ -281,6 +253,8 @@ bool umount(const char *target)
             }
         }
     }
+
+    errno = saved_errno;
 
     return ret == 0;
 }

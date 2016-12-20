@@ -35,6 +35,8 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mbdevice/json.h"
+
 #include "mblog/logging.h"
 
 #include "mbpio/file.h"
@@ -76,6 +78,8 @@ public:
     int fd = -1;
 #endif
 
+    std::unordered_set<std::string> added_files;
+
     // Callbacks
     ProgressUpdatedCallback progressCb;
     DetailsUpdatedCallback detailsCb;
@@ -87,7 +91,9 @@ public:
 
     bool patchTar();
 
-    bool processContents();
+    bool processBootImage(archive *a, archive_entry *entry);
+    bool processSparseFile(archive *a, archive_entry *entry);
+    bool processContents(archive *a, int depth);
     bool openInputArchive();
     bool closeInputArchive();
     bool openOutputArchive();
@@ -95,6 +101,8 @@ public:
 
     void updateProgress(uint64_t bytes, uint64_t maxBytes);
     void updateDetails(const std::string &msg);
+
+    static la_ssize_t laNestedReadCb(archive *a, void *userdata, const void **buffer);
 
     static la_ssize_t laReadCb(archive *a, void *userdata, const void **buffer);
     static la_int64_t laSkipCb(archive *a, void *userdata, la_int64_t request);
@@ -264,34 +272,40 @@ bool OdinPatcher::Impl::patchTar()
 
     if (cancelled) return false;
 
-    if (!processContents()) {
+    if (!processContents(aInput, 0)) {
         return false;
     }
 
     std::vector<CopySpec> toCopy{
         {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater",
+                    + mb_device_architecture(info->device())
+                    + "/odinupdater",
             "META-INF/com/google/android/update-binary.orig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/odinupdater.sig",
+                    + mb_device_architecture(info->device())
+                    + "/odinupdater.sig",
             "META-INF/com/google/android/update-binary.orig.sig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse",
+                    + mb_device_architecture(info->device())
+                    + "/fuse-sparse",
             "fuse-sparse"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/fuse-sparse.sig",
+                    + mb_device_architecture(info->device())
+                    + "/fuse-sparse.sig",
             "fuse-sparse.sig"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
             pc->dataDirectory() + "/binaries/android/"
-                    + info->device()->architecture() + "/mbtool_recovery.sig",
+                    + mb_device_architecture(info->device())
+                    + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
             pc->dataDirectory() + "/scripts/bb-wrapper.sh",
@@ -323,7 +337,7 @@ bool OdinPatcher::Impl::patchTar()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->device(), info->romId());
+            MultiBootPatcher::createInfoProp(pc, info->romId());
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -334,18 +348,19 @@ bool OdinPatcher::Impl::patchTar()
 
     if (cancelled) return false;
 
-    updateDetails("block_devs.prop");
+    updateDetails("multiboot/device.json");
 
-    std::string blockDevsProp;
-    blockDevsProp += "system=";
-    blockDevsProp += info->device()->systemBlockDevs()[0];
-    blockDevsProp += "\n";
-    blockDevsProp += "boot=";
-    blockDevsProp += info->device()->bootBlockDevs()[0];
-    blockDevsProp += "\n";
+    char *json = mb_device_to_json(info->device());
+    if (!json) {
+        error = ErrorCode::MemoryAllocationError;
+        return false;
+    }
+
     result = MinizipUtils::addFile(
-            zf, "block_devs.prop", std::vector<unsigned char>(
-                    blockDevsProp.begin(), blockDevsProp.end()));
+            zf, "multiboot/device.json",
+            std::vector<unsigned char>(json, json + strlen(json)));
+    free(json);
+
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
@@ -356,15 +371,161 @@ bool OdinPatcher::Impl::patchTar()
     return true;
 }
 
-bool OdinPatcher::Impl::processContents()
+bool OdinPatcher::Impl::processBootImage(archive *a, archive_entry *entry)
 {
-    archive_entry *entry;
-    int laRet;
-    int mzRet;
+    // Boot images should never be over about 50 MiB. This check is here
+    // so the patcher won't try to read a multi-gigabyte system image
+    // into RAM
+    la_int64_t size = archive_entry_size(entry);
+    if (size > 50 * 1024 * 1024) {
+        LOGE("Boot image exceeds 50 MiB: %" PRId64, size);
+        error = ErrorCode::BootImageTooLargeError;
+        return false;
+    }
+
+    std::vector<unsigned char> data(size);
+
+    if (archive_read_data(a, data.data(), data.size()) != data.size()) {
+        LOGE("libarchive: Failed to read data: %s",
+             archive_error_string(a));
+        error = ErrorCode::ArchiveReadDataError;
+        return false;
+    }
+
+    if (!MultiBootPatcher::patchBootImage(pc, info, &data, &error)) {
+        return false;
+    }
+
+    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
+    const char *name = archive_entry_pathname(entry);
+
+    auto errorRet = MinizipUtils::addFile(zf, name, data);
+    if (errorRet != ErrorCode::NoError) {
+        error = errorRet;
+        return false;
+    }
+
+    return true;
+}
+
+bool OdinPatcher::Impl::processSparseFile(archive *a, archive_entry *entry)
+{
+    const char *name = archive_entry_pathname(entry);
+    std::string zipName(name);
+    if (StringUtils::ends_with(name, ".ext4")) {
+        zipName.erase(zipName.size() - 5);
+    }
+    zipName += ".sparse";
+
+    // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
+    int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
+
+    zip_fileinfo zi;
+    memset(&zi, 0, sizeof(zi));
 
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
-    while ((laRet = archive_read_next_header(aInput, &entry)) == ARCHIVE_OK) {
+    // Open file in output zip
+    int mzRet = zipOpenNewFileInZip2_64(
+        zf,                    // file
+        zipName.c_str(),       // filename
+        &zi,                   // zip_fileinfo
+        nullptr,               // extrafield_local
+        0,                     // size_extrafield_local
+        nullptr,               // extrafield_global
+        0,                     // size_extrafield_global
+        nullptr,               // comment
+        Z_DEFLATED,            // method
+        Z_DEFAULT_COMPRESSION, // level
+        0,                     // raw
+        zip64                  // zip64
+    );
+    if (mzRet != ZIP_OK) {
+        LOGE("minizip: Failed to open new file in output zip: %s",
+             MinizipUtils::zipErrorString(mzRet).c_str());
+        error = ErrorCode::ArchiveWriteHeaderError;
+        return false;
+    }
+
+    la_ssize_t nRead;
+    char buf[10240];
+    while ((nRead = archive_read_data(a, buf, sizeof(buf))) > 0) {
+        if (cancelled) return false;
+
+        mzRet = zipWriteInFileInZip(zf, buf, nRead);
+        if (mzRet != ZIP_OK) {
+            LOGE("minizip: Failed to write %s in output zip: %s",
+                 zipName.c_str(),
+                 MinizipUtils::zipErrorString(mzRet).c_str());
+            error = ErrorCode::ArchiveWriteDataError;
+            zipCloseFileInZip(zf);
+            return false;
+        }
+    }
+
+    if (nRead != 0) {
+        LOGE("libarchive: Failed to read %s: %s",
+             name, archive_error_string(a));
+        error = ErrorCode::ArchiveReadDataError;
+        zipCloseFileInZip(zf);
+        return false;
+    }
+
+    // Close file in output zip
+    mzRet = zipCloseFileInZip(zf);
+    if (mzRet != ZIP_OK) {
+        LOGE("minizip: Failed to close file in output zip: %s",
+             MinizipUtils::zipErrorString(mzRet).c_str());
+        error = ErrorCode::ArchiveWriteDataError;
+        return false;
+    }
+
+    return true;
+}
+
+static const char * indent(int depth)
+{
+    static char buf[16];
+    memset(buf, ' ', sizeof(buf));
+
+    if (depth * 2 < sizeof(buf) - 1) {
+        buf[depth * 2] = '\0';
+    } else {
+        buf[sizeof(buf) - 1] = '\0';
+    }
+
+    return buf;
+}
+
+struct NestedCtx
+{
+    archive *nested;
+    archive *parent;
+    char buf[10240];
+
+    NestedCtx(archive *a) : nested(archive_read_new()), parent(a)
+    {
+    }
+
+    ~NestedCtx()
+    {
+        if (nested) {
+            archive_read_free(nested);
+        }
+    }
+};
+
+bool OdinPatcher::Impl::processContents(archive *a, int depth)
+{
+    if (depth > 1) {
+        LOGW("Not traversing nested archive: depth > 1");
+        return true;
+    }
+
+    archive_entry *entry;
+    int laRet;
+
+    while ((laRet = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
         if (cancelled) return false;
 
         const char *name = archive_entry_pathname(entry);
@@ -374,130 +535,66 @@ bool OdinPatcher::Impl::processContents()
 
         updateDetails(name);
 
+        // Certain files may be duplicated. For example, the cache.img file is
+        // shipped on both the CSC and HOME_CSC tarballs.
+        if (added_files.find(name) != added_files.end()) {
+            LOGV("%sSkipping duplicate file: %s", indent(depth), name);
+            continue;
+        }
+
         if (strcmp(name, "boot.img") == 0) {
-            LOGD("Handling boot.img");
+            LOGV("%sHandling boot image: %s", indent(depth), name);
+            added_files.insert(name);
 
-            // Boot images should never be over about 30 MiB. This check is here
-            // so the patcher won't try to read a multi-gigabyte system image
-            // into RAM
-            la_int64_t size = archive_entry_size(entry);
-            if (size > 30 * 1024 * 1024) {
-                LOGE("Boot image exceeds 30 MiB: %" PRId64, size);
-                error = ErrorCode::BootImageTooLargeError;
+            if (!processBootImage(a, entry)) {
+                return false;
+            }
+        } else if (StringUtils::starts_with(name, "cache.img")
+                || StringUtils::starts_with(name, "system.img")) {
+            LOGV("%sHandling sparse image: %s", indent(depth), name);
+            added_files.insert(name);
+
+            if (!processSparseFile(a, entry)) {
+                return false;
+            }
+        } else if (StringUtils::ends_with(name, ".tar.md5")) {
+            LOGV("%sHandling nested tarball: %s", indent(depth), name);
+
+            NestedCtx ctx(a);
+            if (!ctx.nested) {
+                error = ErrorCode::MemoryAllocationError;
                 return false;
             }
 
-            std::vector<unsigned char> data;
-            if (size > 0) {
-                data.reserve(size);
-            }
-            char buf[10240];
-            la_ssize_t n;
-            while ((n = archive_read_data(aInput, buf, sizeof(buf))) > 0) {
-                data.insert(data.end(), buf, buf + n);
-            }
-            if (n != 0) {
-                LOGE("libarchive: Failed to read data: %s",
-                     archive_error_string(aInput));
-                error = ErrorCode::ArchiveReadDataError;
+            archive_read_support_format_tar(ctx.nested);
+
+            int ret = archive_read_open2(ctx.nested, &ctx, nullptr,
+                                         &laNestedReadCb, nullptr, nullptr);
+            if (ret != ARCHIVE_OK) {
+                LOGE("libarchive: Failed to open nested archive: %s: %s",
+                     name, archive_error_string(ctx.nested));
+                error = ErrorCode::ArchiveReadOpenError;
                 return false;
             }
 
-            if (!MultiBootPatcher::patchBootImage(pc, info, &data, &error)) {
+            if (!processContents(ctx.nested, depth + 1)) {
                 return false;
             }
+        } else {
+            LOGD("%sSkipping unneeded file: %s", indent(depth), name);
 
-            auto errorRet = MinizipUtils::addFile(zf, name, data);
-            if (errorRet != ErrorCode::NoError) {
-                error = errorRet;
-                return false;
-            }
-
-            continue;
-        } else if (!StringUtils::starts_with(name, "cache.img")
-                && !StringUtils::starts_with(name, "system.img")) {
-            LOGD("Skipping %s", name);
-            if (archive_read_data_skip(aInput) != ARCHIVE_OK) {
+            if (archive_read_data_skip(a) != ARCHIVE_OK) {
                 LOGE("libarchive: Failed to skip data: %s",
-                     archive_error_string(aInput));
+                     archive_error_string(a));
                 error = ErrorCode::ArchiveReadDataError;
                 return false;
             }
-            continue;
-        }
-
-        LOGD("Handling %s", name);
-
-        std::string zipName(name);
-        if (StringUtils::ends_with(name, ".ext4")) {
-            zipName.erase(zipName.size() - 5);
-        }
-        zipName += ".sparse";
-
-        // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
-        int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
-
-        zip_fileinfo zi;
-        memset(&zi, 0, sizeof(zi));
-
-        // Open file in output zip
-        mzRet = zipOpenNewFileInZip2_64(
-            zf,                    // file
-            zipName.c_str(),       // filename
-            &zi,                   // zip_fileinfo
-            nullptr,               // extrafield_local
-            0,                     // size_extrafield_local
-            nullptr,               // extrafield_global
-            0,                     // size_extrafield_global
-            nullptr,               // comment
-            Z_DEFLATED,            // method
-            Z_DEFAULT_COMPRESSION, // level
-            0,                     // raw
-            zip64                  // zip64
-        );
-        if (mzRet != ZIP_OK) {
-            LOGE("minizip: Failed to open new file in output zip: %s",
-                 MinizipUtils::zipErrorString(mzRet).c_str());
-            error = ErrorCode::ArchiveWriteHeaderError;
-            return false;
-        }
-
-        la_ssize_t nRead;
-        char buf[10240];
-        while ((nRead = archive_read_data(aInput, buf, sizeof(buf))) > 0) {
-            if (cancelled) return false;
-
-            mzRet = zipWriteInFileInZip(zf, buf, nRead);
-            if (mzRet != ZIP_OK) {
-                LOGE("minizip: Failed to write %s in output zip: %s",
-                     zipName.c_str(),
-                     MinizipUtils::zipErrorString(mzRet).c_str());
-                error = ErrorCode::ArchiveWriteDataError;
-                zipCloseFileInZip(zf);
-                return false;
-            }
-        }
-        if (nRead != 0) {
-            LOGE("libarchive: Failed to read %s: %s",
-                 name, archive_error_string(aInput));
-            error = ErrorCode::ArchiveReadDataError;
-            zipCloseFileInZip(zf);
-            return false;
-        }
-
-        // Close file in output zip
-        mzRet = zipCloseFileInZip(zf);
-        if (mzRet != ZIP_OK) {
-            LOGE("minizip: Failed to close file in output zip: %s",
-                 MinizipUtils::zipErrorString(mzRet).c_str());
-            error = ErrorCode::ArchiveWriteDataError;
-            return false;
         }
     }
 
     if (laRet != ARCHIVE_EOF) {
         LOGE("libarchive: Failed to read header: %s",
-             archive_error_string(aInput));
+             archive_error_string(a));
         error = ErrorCode::ArchiveReadHeaderError;
         return false;
     }
@@ -513,9 +610,7 @@ bool OdinPatcher::Impl::openInputArchive()
 
     aInput = archive_read_new();
 
-    // TODO: Eventually support tar within a zip since many people distribute
-    //       stock firmware packages in this format
-    //archive_read_support_format_zip(aInput);
+    archive_read_support_format_zip(aInput);
     archive_read_support_format_tar(aInput);
     archive_read_support_filter_gzip(aInput);
     archive_read_support_filter_xz(aInput);
@@ -612,6 +707,18 @@ void OdinPatcher::Impl::updateDetails(const std::string &msg)
     if (detailsCb) {
         detailsCb(msg, userData);
     }
+}
+
+la_ssize_t OdinPatcher::Impl::laNestedReadCb(archive *a, void *userdata,
+                                             const void **buffer)
+{
+    (void) a;
+
+    NestedCtx *ctx = static_cast<NestedCtx *>(userdata);
+
+    *buffer = ctx->buf;
+
+    return archive_read_data(ctx->parent, ctx->buf, sizeof(ctx->buf));
 }
 
 la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,

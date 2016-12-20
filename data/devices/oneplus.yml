@@ -1,0 +1,185 @@
+---
+- name: OnePlus One
+  id: bacon
+  codenames:
+    - bacon
+    - A0001
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p14
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p16
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p28
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/aboot
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/msm_sdcc.1/by-name/dbi
+      - /dev/block/mmcblk0p3
+      - /dev/block/platform/msm_sdcc.1/by-name/LOGO
+      - /dev/block/mmcblk0p22
+      - /dev/block/platform/msm_sdcc.1/by-name/modem
+      - /dev/block/mmcblk0p1
+      - /dev/block/platform/msm_sdcc.1/by-name/oppostanvbk
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/msm_sdcc.1/by-name/reserve4
+      - /dev/block/mmcblk0p27
+      - /dev/block/platform/msm_sdcc.1/by-name/rpm
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/msm_sdcc.1/by-name/sbl1
+      - /dev/block/mmcblk0p2
+      - /dev/block/platform/msm_sdcc.1/by-name/tz
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+
+- name: OnePlus 2
+  id: OnePlus2
+  codenames:
+    - OnePlus2
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/f9824900.sdhci/by-name
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/f9824900.sdhci/by-name/system
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p42
+    cache:
+      - /dev/block/platform/f9824900.sdhci/by-name/cache
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p41
+    data:
+      - /dev/block/platform/f9824900.sdhci/by-name/userdata
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p43
+    boot:
+      - /dev/block/platform/f9824900.sdhci/by-name/boot
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p35
+    recovery:
+      - /dev/block/platform/f9824900.sdhci/by-name/recovery
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p36
+    extra:
+      # TrustZone
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/platform/f9824900.sdhci/by-name/tz
+      - /dev/block/platform/soc.0/f9824900.sdhci/by-name/tz
+      - /dev/block/mmcblk0p29
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+
+
+- name: OnePlus 3
+  id: OnePlus3
+  codenames:
+    - OnePlus3
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/624000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/624000.ufshc/by-name
+      - /dev/block/sde20
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/624000.ufshc/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
+      - /dev/block/sda15
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/624000.ufshc/by-name/boot
+      - /dev/block/sde18
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
+      - /dev/block/sde21
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 80
+
+  crypto:
+    supported: true
+    header_path: footer
+
+
+- name: OnePlus X
+  id: onyx
+  codenames:
+    - OnePlus
+    - ONE
+    - onyx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p15
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p28
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p16

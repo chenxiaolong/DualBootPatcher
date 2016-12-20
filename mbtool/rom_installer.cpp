@@ -46,7 +46,9 @@
 #include "multiboot.h"
 
 
-static const char *sepolicy_bak_path = "/sepolicy.rom-installer";
+#define DEBUG_LEAVE_STDIN_OPEN 0
+#define DEBUG_ENABLE_PASSTHROUGH 0
+
 
 namespace mb
 {
@@ -79,7 +81,13 @@ private:
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
                            std::FILE *log_fp) :
-    Installer(zip_file, "/chroot", "/multiboot", 3, -1),
+    Installer(zip_file, "/chroot", "/multiboot", 3,
+#if DEBUG_ENABLE_PASSTHROUGH
+              STDOUT_FILENO
+#else
+              -1
+#endif
+             ),
     _rom_id(std::move(rom_id)),
     _log_fp(log_fp)
 {
@@ -126,15 +134,15 @@ std::unordered_map<std::string, std::string> RomInstaller::get_properties()
             continue;
         }
 
-        std::string value;
-        util::get_property(prop, &value, "");
-        if (!value.empty()) {
+        char value[PROP_VALUE_MAX];
+        int n = util::property_get(prop.c_str(), value, "");
+        if (n > 0) {
             props[prop] = value;
 
             LOGD("Property '%s' does not exist in recovery's default.prop",
                  prop.c_str());
             LOGD("- '%s'='%s' will be set in chroot environment",
-                 prop.c_str(), value.c_str());
+                 prop.c_str(), value);
         }
     }
 
@@ -148,20 +156,53 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // installed though, so we'll open the recovery partition with libmbp and
     // extract its /sbin with libarchive into the chroot's /sbin.
 
+    std::string block_dev(_recovery_block_dev);
     mbp::BootImage bi;
-    if (!bi.loadFile(_recovery_block_dev)) {
+    mbp::CpioFile innerCpio;
+    const unsigned char *ramdisk_data;
+    std::size_t ramdisk_size;
+    bool using_boot = false;
+
+    // Check if the device has a combined boot/recovery partition. If the
+    // FOTAKernel partition is listed, it will be used instead of the combined
+    // ramdisk from the boot image
+    bool combined = mb_device_flags(_device)
+            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    if (combined && block_dev.empty()) {
+        block_dev = _boot_block_dev;
+        using_boot = true;
+    }
+
+    if (block_dev.empty()) {
+        display_msg("Could not determine the recovery block device");
+        return ProceedState::Fail;
+    }
+
+    if (!bi.loadFile(block_dev)) {
         display_msg("Failed to load recovery partition image");
         return ProceedState::Fail;
     }
 
-    const unsigned char *ramdisk_data;
-    std::size_t ramdisk_size;
+    // Load ramdisk
     bi.ramdiskImageC(&ramdisk_data, &ramdisk_size);
+
+    if (using_boot) {
+        if (!innerCpio.load(ramdisk_data, ramdisk_size)) {
+            display_msg("Failed to load ramdisk from combined boot image");
+            return ProceedState::Fail;
+        }
+
+        if (!innerCpio.contentsC("sbin/ramdisk-recovery.cpio",
+                                 &ramdisk_data, &ramdisk_size)) {
+            display_msg("Could not find recovery ramdisk in combined boot image");
+            return ProceedState::Fail;
+        }
+    }
 
     autoclose::archive in(archive_read_new(), archive_read_free);
     autoclose::archive out(archive_write_disk_new(), archive_write_free);
 
-    if (!in | !out) {
+    if (!in || !out) {
         LOGE("Out of memory");
         return ProceedState::Fail;
     }
@@ -220,6 +261,32 @@ Installer::ProceedState RomInstaller::on_checked_device()
         LOGE("Archive extraction ended without reaching EOF: %s",
              archive_error_string(in.get()));
         return ProceedState::Fail;
+    }
+
+    // Create fake /etc/fstab file to please installers that read the file
+    std::string etc_fstab(in_chroot("/etc/fstab"));
+    if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
+        autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
+        if (fp) {
+            auto system_devs = mb_device_system_block_devs(_device);
+            auto cache_devs = mb_device_cache_block_devs(_device);
+            auto data_devs = mb_device_data_block_devs(_device);
+
+            // Set block device if it's provided and non-empty
+            const char *system_dev =
+                    system_devs && system_devs[0] && system_devs[0][0]
+                    ? system_devs[0] : "dummy";
+            const char *cache_dev =
+                    cache_devs && cache_devs[0] && cache_devs[0][0]
+                    ? cache_devs[0] : "dummy";
+            const char *data_dev =
+                    data_devs && data_devs[0] && data_devs[0][0]
+                    ? data_devs[0] : "dummy";
+
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+        }
     }
 
     // Load recovery properties
@@ -285,102 +352,6 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
                 "internal storage.");
 }
 
-static bool backup_sepolicy(const std::string backup_path)
-{
-    if (!util::copy_contents(SELINUX_POLICY_FILE, backup_path)) {
-        fprintf(stderr, "Failed to backup current SELinux policy: %s\n",
-                strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
-static bool restore_sepolicy(const std::string &backup_path)
-{
-    int fd = open(backup_path.c_str(), O_RDONLY | O_CLOEXEC);
-    if (fd < 0) {
-        fprintf(stderr, "Failed to open backup SELinux policy file: %s\n",
-                strerror(errno));
-        return false;
-    }
-
-    auto close_fd = util::finally([&] {
-        close(fd);
-    });
-
-    struct stat sb;
-
-    if (fstat(fd, &sb) < 0) {
-        fprintf(stderr, "Failed to stat backup SELinux policy file: %s\n",
-                strerror(errno));
-        return false;
-    }
-
-    void *map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (map == MAP_FAILED) {
-        fprintf(stderr, "Failed to mmap backup SELinux policy file: %s\n",
-                strerror(errno));
-        return false;
-    }
-
-    auto unmap_map = util::finally([&] {
-        munmap(map, sb.st_size);
-    });
-
-    // Write policy
-    int fd_out = open(SELINUX_LOAD_FILE, O_WRONLY);
-    if (fd_out < 0) {
-        fprintf(stderr, "Failed to open %s: %s\n",
-                SELINUX_LOAD_FILE, strerror(errno));
-        return false;
-    }
-
-    auto close_fd_out = util::finally([&] {
-        close(fd_out);
-    });
-
-    if (write(fd_out, map, sb.st_size) < 0) {
-        fprintf(stderr, "Failed to write to %s: %s\n",
-                SELINUX_LOAD_FILE, strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
-static bool patch_sepolicy()
-{
-    policydb_t pdb;
-
-    if (policydb_init(&pdb) < 0) {
-        fprintf(stderr, "Failed to initialize policydb\n");
-        return false;
-    }
-
-    if (!util::selinux_read_policy(SELINUX_POLICY_FILE, &pdb)) {
-        fprintf(stderr, "Failed to read SELinux policy file: %s\n",
-                SELINUX_POLICY_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    printf("SELinux policy version: %d\n", pdb.policyvers);
-
-    util::selinux_make_all_permissive(&pdb);
-
-    if (!util::selinux_write_policy(SELINUX_LOAD_FILE, &pdb)) {
-        fprintf(stderr, "Failed to write SELinux policy file: %s\n",
-                SELINUX_LOAD_FILE);
-        policydb_destroy(&pdb);
-        return false;
-    }
-
-    policydb_destroy(&pdb);
-
-    return true;
-}
-
 static void rom_installer_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -397,6 +368,12 @@ int rom_installer_main(int argc, char *argv[])
     if (unshare(CLONE_NEWNS) < 0) {
         fprintf(stderr, "unshare() failed: %s\n", strerror(errno));
         return EXIT_FAILURE;
+    }
+
+    if (mount("", "/", "", MS_PRIVATE | MS_REC, "") < 0) {
+        fprintf(stderr, "Failed to set private mount propagation: %s\n",
+                strerror(errno));
+        return false;
     }
 
     // Make stdout unbuffered
@@ -449,18 +426,6 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    // Translate paths
-    char *emu_source_path = getenv("EMULATED_STORAGE_SOURCE");
-    char *emu_target_path = getenv("EMULATED_STORAGE_TARGET");
-    if (emu_source_path && emu_target_path) {
-        if (util::starts_with(zip_file, emu_target_path)) {
-            printf("Zip path uses EMULATED_STORAGE_TARGET\n");
-            zip_file.erase(0, strlen(emu_target_path));
-            zip_file.insert(0, emu_source_path);
-        }
-    }
-
-
     // Make sure install type is valid
     if (!Roms::is_valid(rom_id)) {
         fprintf(stderr, "Invalid ROM ID: %s\n", rom_id.c_str());
@@ -491,36 +456,17 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    // Since many stock ROMs, most notably TouchWiz, don't allow setting SELinux
-    // to be globally permissive, we'll do the next best thing: modify the
-    // policy to make every type permissive.
+    // We do not need to patch the SELinux policy or switch to mb_exec because
+    // the daemon will guarantee that we run in that context. We'll just warn if
+    // this happens to not be the case (eg. debugging via command line).
 
-    bool selinux_supported = true;
-    bool backup_successful = true;
-
-    struct stat sb;
-    if (stat("/sys/fs/selinux", &sb) < 0) {
-        printf("SELinux not supported. No need to modify policy\n");
-        selinux_supported = false;
+    std::string context;
+    if (util::selinux_get_process_attr(
+            0, util::SELinuxAttr::CURRENT, &context)
+            && context != MB_EXEC_CONTEXT) {
+        fprintf(stderr, "WARNING: Not running under %s context\n",
+                MB_EXEC_CONTEXT);
     }
-
-    if (selinux_supported) {
-        backup_successful = backup_sepolicy(sepolicy_bak_path);
-
-        printf("Patching SELinux policy to make all types permissive\n");
-        if (!patch_sepolicy()) {
-            fprintf(stderr, "Failed to patch current SELinux policy\n");
-        }
-    }
-
-    auto restore_selinux = util::finally([&] {
-        if (selinux_supported && backup_successful) {
-            printf("Restoring backup SELinux policy\n");
-            if (!restore_sepolicy(sepolicy_bak_path)) {
-                fprintf(stderr, "Failed to restore SELinux policy\n");
-            }
-        }
-    });
 
 
     autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_INSTALLER, "wb"));
@@ -533,11 +479,13 @@ int rom_installer_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // Close stdin
+#if !DEBUG_LEAVE_STDIN_OPEN
     int fd = open("/dev/null", O_RDONLY);
     if (fd >= 0) {
         dup2(fd, STDIN_FILENO);
         close(fd);
     }
+#endif
 
     // mbtool logging
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));

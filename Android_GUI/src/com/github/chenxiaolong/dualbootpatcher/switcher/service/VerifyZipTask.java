@@ -18,15 +18,17 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
+import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult;
 
 public final class VerifyZipTask extends BaseServiceTask {
     private static final String TAG = VerifyZipTask.class.getSimpleName();
 
-    private final String mPath;
+    private final Uri mUri;
 
     private final Object mStateLock = new Object();
     private boolean mFinished;
@@ -35,20 +37,22 @@ public final class VerifyZipTask extends BaseServiceTask {
     private String mRomId;
 
     public interface VerifyZipTaskListener extends BaseServiceTaskListener {
-        void onVerifiedZip(int taskId, String path, VerificationResult result, String romId);
+        void onVerifiedZip(int taskId, Uri uri, VerificationResult result, String romId);
     }
 
-    public VerifyZipTask(int taskId, Context context, String path) {
+    public VerifyZipTask(int taskId, Context context, Uri uri) {
         super(taskId, context);
-        mPath = path;
+        mUri = uri;
     }
 
     @Override
     public void execute() {
-        Log.d(TAG, "Verifying zip file: " + mPath);
+        Log.d(TAG, "Verifying zip file: " + mUri);
 
-        VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(mPath);
-        String romId = SwitcherUtils.getTargetInstallLocation(mPath);
+        VerificationResult result = SwitcherUtils.verifyZipMbtoolVersion(getContext(), mUri);
+        String romId = SwitcherUtils.getTargetInstallLocation(getContext(), mUri);
+
+        LogUtils.dump("verify-zip.log");
 
         synchronized (mStateLock) {
             mResult = result;
@@ -74,7 +78,7 @@ public final class VerifyZipTask extends BaseServiceTask {
             @Override
             public void call(BaseServiceTaskListener listener) {
                 ((VerifyZipTaskListener) listener).onVerifiedZip(
-                        getTaskId(), mPath, mResult, mRomId);
+                        getTaskId(), mUri, mResult, mRomId);
             }
         });
     }

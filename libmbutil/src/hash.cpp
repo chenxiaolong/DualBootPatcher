@@ -33,15 +33,16 @@ namespace util
 {
 
 /*!
- * \brief Compute SHA1 hash of a file
+ * \brief Compute SHA512 hash of a file
  *
  * \param path Path to file
- * \param digest `unsigned char` array of size `SHA_DIGEST_SIZE` to store
+ * \param digest `unsigned char` array of size `SHA512_DIGEST_LENGTH` to store
  *               computed hash value
  *
  * \return true on success, false on failure and errno set appropriately
  */
-bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH])
+bool sha512_hash(const std::string &path,
+                 unsigned char digest[SHA512_DIGEST_LENGTH])
 {
     autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
@@ -52,15 +53,15 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH])
     unsigned char buf[10240];
     size_t n;
 
-    SHA_CTX ctx;
-    if (!SHA1_Init(&ctx)) {
-        LOGE("openssl: SHA1_Init() failed");
+    SHA512_CTX ctx;
+    if (!SHA512_Init(&ctx)) {
+        LOGE("openssl: SHA512_Init() failed");
         return false;
     }
 
     while ((n = fread(buf, 1, sizeof(buf), fp.get())) > 0) {
-        if (!SHA1_Update(&ctx, buf, n)) {
-            LOGE("openssl: SHA1_Update() failed");
+        if (!SHA512_Update(&ctx, buf, n)) {
+            LOGE("openssl: SHA512_Update() failed");
             return false;
         }
         if (n < sizeof(buf)) {
@@ -74,8 +75,8 @@ bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH])
         return false;
     }
 
-    if (!SHA1_Final(digest, &ctx)) {
-        LOGE("openssl: SHA1_Final() failed");
+    if (!SHA512_Final(digest, &ctx)) {
+        LOGE("openssl: SHA512_Final() failed");
         return false;
     }
 

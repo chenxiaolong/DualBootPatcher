@@ -5,12 +5,14 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct FileOpenError;
+
 struct FileOpenRequest;
+
 struct FileOpenResponse;
 
 enum FileOpenFlag {
@@ -31,6 +33,50 @@ inline const char **EnumNamesFileOpenFlag() {
 }
 
 inline const char *EnumNameFileOpenFlag(FileOpenFlag e) { return EnumNamesFileOpenFlag()[static_cast<int>(e)]; }
+
+struct FileOpenError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_ERRNO_VALUE = 4,
+    VT_MSG = 6
+  };
+  int32_t errno_value() const { return GetField<int32_t>(VT_ERRNO_VALUE, 0); }
+  const flatbuffers::String *msg() const { return GetPointer<const flatbuffers::String *>(VT_MSG); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           verifier.Verify(msg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct FileOpenErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_errno_value(int32_t errno_value) { fbb_.AddElement<int32_t>(FileOpenError::VT_ERRNO_VALUE, errno_value, 0); }
+  void add_msg(flatbuffers::Offset<flatbuffers::String> msg) { fbb_.AddOffset(FileOpenError::VT_MSG, msg); }
+  FileOpenErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  FileOpenErrorBuilder &operator=(const FileOpenErrorBuilder &);
+  flatbuffers::Offset<FileOpenError> Finish() {
+    auto o = flatbuffers::Offset<FileOpenError>(fbb_.EndTable(start_, 2));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<FileOpenError> CreateFileOpenError(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    flatbuffers::Offset<flatbuffers::String> msg = 0) {
+  FileOpenErrorBuilder builder_(_fbb);
+  builder_.add_msg(msg);
+  builder_.add_errno_value(errno_value);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileOpenError> CreateFileOpenErrorDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    int32_t errno_value = 0,
+    const char *msg = nullptr) {
+  return CreateFileOpenError(_fbb, errno_value, msg ? _fbb.CreateString(msg) : 0);
+}
 
 struct FileOpenRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -67,9 +113,9 @@ struct FileOpenRequestBuilder {
 };
 
 inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> path = 0,
-   flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags = 0,
-   uint32_t perms = 0) {
+    flatbuffers::Offset<flatbuffers::String> path = 0,
+    flatbuffers::Offset<flatbuffers::Vector<int16_t>> flags = 0,
+    uint32_t perms = 0) {
   FileOpenRequestBuilder builder_(_fbb);
   builder_.add_perms(perms);
   builder_.add_flags(flags);
@@ -77,21 +123,32 @@ inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequest(flatbuffers::F
   return builder_.Finish();
 }
 
+inline flatbuffers::Offset<FileOpenRequest> CreateFileOpenRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *path = nullptr,
+    const std::vector<int16_t> *flags = nullptr,
+    uint32_t perms = 0) {
+  return CreateFileOpenRequest(_fbb, path ? _fbb.CreateString(path) : 0, flags ? _fbb.CreateVector<int16_t>(*flags) : 0, perms);
+}
+
 struct FileOpenResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
     VT_SUCCESS = 4,
     VT_ERROR_MSG = 6,
-    VT_ID = 8
+    VT_ID = 8,
+    VT_ERROR = 10
   };
   bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   int32_t id() const { return GetField<int32_t>(VT_ID, 0); }
+  const FileOpenError *error() const { return GetPointer<const FileOpenError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<int32_t>(verifier, VT_ID) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -102,23 +159,34 @@ struct FileOpenResponseBuilder {
   void add_success(bool success) { fbb_.AddElement<uint8_t>(FileOpenResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(FileOpenResponse::VT_ERROR_MSG, error_msg); }
   void add_id(int32_t id) { fbb_.AddElement<int32_t>(FileOpenResponse::VT_ID, id, 0); }
+  void add_error(flatbuffers::Offset<FileOpenError> error) { fbb_.AddOffset(FileOpenResponse::VT_ERROR, error); }
   FileOpenResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   FileOpenResponseBuilder &operator=(const FileOpenResponseBuilder &);
   flatbuffers::Offset<FileOpenResponse> Finish() {
-    auto o = flatbuffers::Offset<FileOpenResponse>(fbb_.EndTable(start_, 3));
+    auto o = flatbuffers::Offset<FileOpenResponse>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
 
 inline flatbuffers::Offset<FileOpenResponse> CreateFileOpenResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   bool success = false,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   int32_t id = 0) {
+    bool success = false,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    int32_t id = 0,
+    flatbuffers::Offset<FileOpenError> error = 0) {
   FileOpenResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_id(id);
   builder_.add_error_msg(error_msg);
   builder_.add_success(success);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<FileOpenResponse> CreateFileOpenResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    bool success = false,
+    const char *error_msg = nullptr,
+    int32_t id = 0,
+    flatbuffers::Offset<FileOpenError> error = 0) {
+  return CreateFileOpenResponse(_fbb, success, error_msg ? _fbb.CreateString(error_msg) : 0, id, error);
 }
 
 }  // namespace v3

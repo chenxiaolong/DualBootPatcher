@@ -132,6 +132,7 @@ Continuare</string>
   <string name="wipe_rom_none_selected">Nessun wipe è stato effettuato perchè nessuna opzione è stata selezionata.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM attualmente in uso non può essere eliminata.</string>
+  <!--Switcher service notification title-->
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">Il nome ed i thumbnail non possono essere caricati perchè è stato negato l\'accesso alla memoria interna.</string>
   <!--Accessibility text for the ROM logo images-->
@@ -154,36 +155,47 @@ Continuare</string>
   <string name="set_kernel_later">Imposta dopo</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <string name="set_kernel_mismatched_rom">La ROM attualmente selezionata è %1$s ma, si sta tentando di impostare il kernel per la %2$s. Per favore confermare ciò che si intende fare.</string>
-  <!--ZIP flash activity title-->
-  <string name="zip_flashing_title">Flasha File ZIP</string>
-  <!--Title of pending action card for installing a zip file-->
-  <string name="zip_flashing_install_zip">Installa File ZIP</string>
-  <!--Subtitle text in pending action card showing the selected filename-->
-  <string name="zip_flashing_zip_file">File ZIP: %s</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">Flasha File ZIP</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <!--FAB button text for adding a backup to flash-->
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">Installa File ZIP</string>
+  <!--Title of pending action card for restoring a backup-->
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">File ZIP: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
   <!--Subtitle text in pending action card showing the installation location-->
-  <string name="zip_flashing_location">Posizione: %s</string>
+  <string name="in_app_flashing_location">Posizione: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
-  <string name="zip_flashing_dialog_installation_location">Luogo d\'installazione:</string>
+  <string name="in_app_flashing_dialog_installation_location">Luogo d\'installazione:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
-  <string name="zip_flashing_dialog_verifying_zip">Verificando lo ZIP</string>
+  <string name="in_app_flashing_dialog_verifying_zip">Verificando lo ZIP</string>
   <!--Error message shown when the selected zip file is not found-->
-  <string name="zip_flashing_error_zip_not_found">Il file ZIP selezionato non è stato trovato.</string>
+  <string name="in_app_flashing_error_zip_not_found">Il file ZIP selezionato non è stato trovato.</string>
   <!--Error message shown when the selected zip file could not be read-->
-  <string name="zip_flashing_error_zip_read_fail">Impossibile leggere il file ZIP selezionato.</string>
+  <string name="in_app_flashing_error_zip_read_fail">Impossibile leggere il file ZIP selezionato.</string>
   <!--Error message shown when the selected zip file isn't patched-->
-  <string name="zip_flashing_error_not_multiboot">Il file ZIP sembra non essere patchato per il multiboot. Per favore, patcha il file prima di flasharlo.</string>
+  <string name="in_app_flashing_error_not_multiboot">Il file ZIP sembra non essere patchato per il multiboot. Per favore, patcha il file prima di flasharlo.</string>
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
-  <string name="zip_flashing_error_version_too_old">Il file ZIP deve essere patchato con %s o superiore per poter essere flashato direttamente dall\'app.</string>
+  <string name="in_app_flashing_error_version_too_old">Il file ZIP deve essere patchato con %s o superiore per poter essere flashato direttamente dall\'app.</string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
-  <string name="zip_flashing_error_no_overwrite_rom">Per evitare che il sistema vada in crash o si riavvii, non è permesso flashare file ZIP sulla ROM corrente.</string>
+  <string name="in_app_flashing_error_no_overwrite_rom">Per evitare che il sistema vada in crash o si riavvii, non è permesso flashare file ZIP sulla ROM corrente.</string>
   <!--Dialog message asking if the user wants to change the installation location of the zip-->
-  <string name="zip_flashing_change_install_location_desc">Lo ZIP è stato originariamente patchato per essere installato in %s. Vorresti cambiare il luogo di destinazione?</string>
+  <string name="in_app_flashing_change_install_location_desc">Lo ZIP è stato originariamente patchato per essere installato in %s. Vorresti cambiare il luogo di destinazione?</string>
   <!--Dialog button for keeping the current installation location-->
-  <string name="zip_flashing_keep_current_location">Mantieni</string>
+  <string name="in_app_flashing_keep_current_location">Mantieni</string>
   <!--Dialog button for changing the installation location-->
-  <string name="zip_flashing_change_install_location">Cambia</string>
+  <string name="in_app_flashing_change_install_location">Cambia</string>
   <!--Message shown in the first-use dialog for zip flashing-->
-  <string name="zip_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
+  <string name="in_app_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <!--Toast message shown if there are no backups available-->
   <!--ROM details item showing which slot the ROM is installed to-->
   <string name="rom_details_info_slot">Slot</string>
   <!--ROM details item showing the version of the ROM-->
@@ -211,6 +223,21 @@ Continuare</string>
   <string name="rom_details_info_data_size">Dimensione dati</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
   <string name="rom_details_info_calculating">Calcolando...</string>
+  <!--Backup ROM activity title-->
+  <!--Restore ROM activity title-->
+  <!--Backup targets dialog description-->
+  <!--Restore targets dialog description-->
+  <!--Backup/restore target for ROM's /system files-->
+  <!--Backup/restore target for ROM's /cache files-->
+  <!--Backup/restore target for ROM's /data files-->
+  <!--Backup/restore target for ROM's boot image-->
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <!--Backup name input dialog description-->
+  <!--Backup name input field hint for backup name dialog-->
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <!--Label for FAB to add a flashable zip-->
+  <!--Label for FAB to add an Odin image-->
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">Il patcher non può patchare i file senza l\'accesso alla memoria interna. Per favore, garantisci l\'accesso per patchare i file.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
@@ -287,8 +314,6 @@ Continuare</string>
   <string name="a_s_settings_storage_permission_required">La configurazione della condivisione delle app non può essere salvata perchè l\'accesso alla memoria interna è stato negato. Per favore, garantisci l\'accesso per salvare la configurazione.</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
   <string name="a_s_settings_version_too_old">Per poter usufruire delle funzioni di condivisione delle app, bisogna aggiornare l\'mbtool. Per favore, aggiorna il ramdisk.</string>
-  <!--Title for preference category for boot options-->
-  <string name="rom_settings_booting_title">Opzioni del kernel</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Aggiorna ramdisk</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -314,6 +339,21 @@ Continuare</string>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Aggiornamento ramdisk</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <!--Title for the preference to install the Boot UI-->
+  <!--Title for the preference to update the Boot UI-->
+  <!--Title for the preference to uninstall the Boot UI-->
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <!--Title for the preference to change the backup directory-->
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -324,10 +364,15 @@ Continuare</string>
   <string name="rom_settings_initial_screen_title">Schermata iniziale</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Schermata da visualizzare all\'avvio dell\'app.</string>
+  <!--Title for the preference to use the dark theme-->
   <!--Title for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_title">Permetti intent in entrata</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Permetti ad App di terzi di inviare intent per eseguire azioni, come ad esempio effettuare lo switch delle ROM o patchare file.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <!--Description for the preference to set the number of parallel patching operations-->
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -349,6 +394,11 @@ Continuare</string>
   <string name="indiv_app_sharing_app_no_longer_shared">L\'app \'%s\' non è più condivisa.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">Negato intent da app di terze parti. Per ricevere intent dalle altre app, attiva l\'opzione nelle impostazioni del Patcher.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <!--Confirm dialog message shown when updating mbtool failed-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Cerca</string>
   <!--Word/phrase for None (used in eg. a list)-->

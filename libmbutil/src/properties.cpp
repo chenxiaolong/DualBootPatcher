@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <pthread.h>
 #include <sys/stat.h>
 
 #if __ANDROID_API__ >= 21
@@ -35,10 +36,25 @@
 #include "mbutil/finally.h"
 #include "mbutil/string.h"
 
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include "mbutil/external/_system_properties.h"
+
+#if !DYNAMICALLY_LINKED
+#define __system_property_get       mb__system_property_get
+#define __system_property_set       mb__system_property_set
+#define __system_property_find      mb__system_property_find
+#define __system_property_read      mb__system_property_read
+#define __system_property_find_nth  mb__system_property_find_nth
+#define __system_property_foreach   mb__system_property_foreach
+#endif
+
 namespace mb
 {
 namespace util
 {
+
+static bool initialized = false;
+static pthread_mutex_t initialized_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #if DYNAMICALLY_LINKED
 static const char *libc_path = nullptr;
@@ -123,6 +139,16 @@ static void dlclose_libc(void)
         libc_handle = nullptr;
     }
 }
+#else
+void initialize_properties()
+{
+    pthread_mutex_lock(&initialized_lock);
+    if (!initialized) {
+        mb__system_properties_init();
+        initialized = true;
+    }
+    pthread_mutex_unlock(&initialized_lock);
+}
 #endif
 
 int libc_system_property_get(const char *name, char *value)
@@ -137,6 +163,8 @@ int libc_system_property_get(const char *name, char *value)
     auto __system_property_get =
             reinterpret_cast<int (*)(const char *, char *)>(
                     SYMBOL__system_property_get);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_get(name, value);
@@ -153,6 +181,8 @@ int libc_system_property_set(const char *key, const char *value)
     auto __system_property_set =
             reinterpret_cast<int (*)(const char *, const char *)>(
                     SYMBOL__system_property_set);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_set(key, value);
@@ -169,6 +199,8 @@ const prop_info *libc_system_property_find(const char *name)
     auto __system_property_find =
             reinterpret_cast<const prop_info * (*)(const char *)>(
                     SYMBOL__system_property_find);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_find(name);
@@ -187,6 +219,8 @@ int libc_system_property_read(const prop_info *pi, char *name, char *value)
     auto __system_property_read =
             reinterpret_cast<int (*)(const prop_info *, char *, char *)>(
                     SYMBOL__system_property_read);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_read(pi, name, value);
@@ -203,6 +237,8 @@ const prop_info *libc_system_property_find_nth(unsigned n)
     auto __system_property_find_nth =
             reinterpret_cast<const prop_info * (*)(unsigned)>(
                     SYMBOL__system_property_find_nth);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_find_nth(n);
@@ -221,37 +257,88 @@ int libc_system_property_foreach(
     auto __system_property_foreach =
             reinterpret_cast<int (*)(void (*)(const prop_info *, void *), void*)>(
                     SYMBOL__system_property_foreach);
+#else
+    initialize_properties();
 #endif
 
     return __system_property_foreach(propfn, cookie);
 }
 
-void get_property(const std::string &name,
-                  std::string *value_out,
-                  const std::string &default_value)
+// BEGIN: Code partially based on libcutils properties.c
+
+int property_get(const char *key, char *value_out, const char *default_value)
 {
-    std::vector<char> value(MB_PROP_VALUE_MAX);
-    int len = libc_system_property_get(name.c_str(), value.data());
-    if (len == 0) {
-        *value_out = default_value;
+    int n = libc_system_property_get(key, value_out);
+
+    if (n > 0) {
+        return n;
     } else {
-        *value_out = value.data();
+        n = strlen(default_value);
+        if (n >= PROP_VALUE_MAX) {
+            n = PROP_VALUE_MAX - 1;
+        }
+        memcpy(value_out, default_value, n);
+        value_out[n] = '\0';
     }
+
+    return n;
 }
 
-bool set_property(const std::string &name,
-                  const std::string &value)
+int property_set(const char *key, const char *value)
 {
-    if (name.size() >= MB_PROP_NAME_MAX - 1) {
-        return false;
-    }
-    if (value.size() >= MB_PROP_VALUE_MAX - 1) {
-        return false;
+    return libc_system_property_set(key, value);
+}
+
+bool property_get_bool(const char *key, bool default_value)
+{
+    char buf[PROP_VALUE_MAX];
+    bool result = default_value;
+
+    int n = property_get(key, buf, "");
+    if (n == 1) {
+        if (buf[0] == '0' || buf[0] == 'n') {
+            result = false;
+        } else if (buf[0] == '1' || buf[0] == 'y') {
+            result = true;
+        }
+    } else if (n > 1) {
+         if (strcmp(buf, "no") == 0
+                || strcmp(buf, "false") == 0
+                || strcmp(buf, "off") == 0) {
+            result = false;
+        } else if (strcmp(buf, "yes") == 0
+                || strcmp(buf, "true") == 0
+                || strcmp(buf, "on") == 0) {
+            result = true;
+        }
     }
 
-    int ret = libc_system_property_set(name.c_str(), value.c_str());
-    return ret == 0;
+    return result;
 }
+
+struct property_list_cb_data
+{
+    property_list_cb propfn;
+    void *cookie;
+};
+
+static void property_list_callback(const prop_info *pi, void *cookie)
+{
+    char name[PROP_NAME_MAX];
+    char value[PROP_VALUE_MAX];
+    property_list_cb_data *data = static_cast<property_list_cb_data *>(cookie);
+
+    libc_system_property_read(pi, name, value);
+    data->propfn(name, value, data->cookie);
+}
+
+int property_list(property_list_cb propfn, void *cookie)
+{
+    property_list_cb_data data = { propfn, cookie };
+    return libc_system_property_foreach(property_list_callback, &data);
+}
+
+// END: Code partially based on libcutils properties.c
 
 static void _add_property(const prop_info *pi, void *cookie)
 {

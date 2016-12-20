@@ -17,6 +17,8 @@
 
 #include "initwrapper/devices.h"
 
+#include <mutex>
+
 #include <cstdlib>
 #include <cstring>
 
@@ -26,13 +28,13 @@
 #include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
-#include <sys/system_properties.h>
 #include <unistd.h>
 
 #include "mblog/logging.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/directory.h"
 #include "mbutil/string.h"
+#include "mbutil/external/system_properties.h"
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
@@ -41,7 +43,7 @@
 
 #define DEVPATH_LEN 96
 
-#define UEVENT_LOGGING 1
+#define UEVENT_LOGGING 0
 
 static char bootdevice[PROP_VALUE_MAX];
 static int device_fd = -1;
@@ -70,7 +72,8 @@ struct platform_node {
 
 static std::vector<platform_node> platform_names;
 
-static std::unordered_map<std::string, std::string> device_map;
+static std::unordered_map<std::string, BlockDevInfo> block_dev_mappings;
+static std::mutex block_dev_mappings_guard;
 
 static mode_t get_device_perm(const char *path,
                               const std::vector<std::string> &links,
@@ -488,7 +491,6 @@ static void handle_device(const char *action, const char *devpath,
                           const std::vector<std::string> &links)
 {
     if (strcmp(action, "add") == 0) {
-        device_map[path] = devpath;
         make_device(devpath, path, block, major, minor, links);
         for (const std::string &link : links) {
             if (!dry_run) {
@@ -498,7 +500,6 @@ static void handle_device(const char *action, const char *devpath,
     }
 
     if (strcmp(action, "remove") == 0) {
-        device_map.erase(path);
         for (const std::string &link : links) {
             if (!dry_run) {
                 remove_link(devpath, link.c_str());
@@ -570,6 +571,26 @@ static void handle_block_device_event(struct uevent *uevent)
 
     handle_device(uevent->action, devpath, uevent->path, 1,
             uevent->major, uevent->minor, links);
+
+    // Add/remove block device mapping
+    if (strcmp(uevent->action, "add") == 0) {
+        BlockDevInfo info;
+        info.path = devpath;
+        info.partition_num = uevent->partition_num;
+        info.major = uevent->major;
+        info.minor = uevent->minor;
+
+        if (uevent->partition_name) {
+            info.partition_name = uevent->partition_name;
+        }
+
+        std::lock_guard<std::mutex> lock(block_dev_mappings_guard);
+        block_dev_mappings.emplace(
+                std::make_pair(uevent->path, std::move(info)));
+    } else if (strcmp(uevent->action, "remove") == 0) {
+        std::lock_guard<std::mutex> lock(block_dev_mappings_guard);
+        block_dev_mappings.erase(uevent->path);
+    }
 }
 
 static bool assemble_devpath(char *devpath, const char *dirname,
@@ -861,7 +882,8 @@ int get_device_fd()
     return device_fd;
 }
 
-const std::unordered_map<std::string, std::string> * get_devices_map()
+std::unordered_map<std::string, BlockDevInfo> get_block_dev_mappings()
 {
-    return &device_map;
+    std::lock_guard<std::mutex> lock(block_dev_mappings_guard);
+    return block_dev_mappings;
 }

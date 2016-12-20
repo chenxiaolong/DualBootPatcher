@@ -5,12 +5,12 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
 struct MbWipeRomRequest;
+
 struct MbWipeRomResponse;
 
 enum MbWipeTarget {
@@ -61,12 +61,18 @@ struct MbWipeRomRequestBuilder {
 };
 
 inline flatbuffers::Offset<MbWipeRomRequest> CreateMbWipeRomRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> rom_id = 0,
-   flatbuffers::Offset<flatbuffers::Vector<int16_t>> targets = 0) {
+    flatbuffers::Offset<flatbuffers::String> rom_id = 0,
+    flatbuffers::Offset<flatbuffers::Vector<int16_t>> targets = 0) {
   MbWipeRomRequestBuilder builder_(_fbb);
   builder_.add_targets(targets);
   builder_.add_rom_id(rom_id);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbWipeRomRequest> CreateMbWipeRomRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *rom_id = nullptr,
+    const std::vector<int16_t> *targets = nullptr) {
+  return CreateMbWipeRomRequest(_fbb, rom_id ? _fbb.CreateString(rom_id) : 0, targets ? _fbb.CreateVector<int16_t>(*targets) : 0);
 }
 
 struct MbWipeRomResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -100,12 +106,18 @@ struct MbWipeRomResponseBuilder {
 };
 
 inline flatbuffers::Offset<MbWipeRomResponse> CreateMbWipeRomResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::Vector<int16_t>> succeeded = 0,
-   flatbuffers::Offset<flatbuffers::Vector<int16_t>> failed = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<int16_t>> succeeded = 0,
+    flatbuffers::Offset<flatbuffers::Vector<int16_t>> failed = 0) {
   MbWipeRomResponseBuilder builder_(_fbb);
   builder_.add_failed(failed);
   builder_.add_succeeded(succeeded);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<MbWipeRomResponse> CreateMbWipeRomResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<int16_t> *succeeded = nullptr,
+    const std::vector<int16_t> *failed = nullptr) {
+  return CreateMbWipeRomResponse(_fbb, succeeded ? _fbb.CreateVector<int16_t>(*succeeded) : 0, failed ? _fbb.CreateVector<int16_t>(*failed) : 0);
 }
 
 }  // namespace v3

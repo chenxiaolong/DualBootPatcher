@@ -24,12 +24,16 @@
 #include <unistd.h>
 
 #include "mbcommon/version.h"
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
 #include "mblog/logging.h"
-#include "mbp/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
+#include "mbutil/file.h"
+#include "mbutil/finally.h"
+#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -50,6 +54,8 @@
 
 #define APPEND_TO_LOG               1
 
+#define MAX_LOG_SIZE                (1024 * 1024) /* 1MiB */
+
 #define MBBOOTUI_BASE_PATH          "/raw/cache/multiboot/bootui"
 #define MBBOOTUI_LOG_PATH           MBBOOTUI_BASE_PATH "/exec.log"
 #define MBBOOTUI_SCREENSHOTS_PATH   MBBOOTUI_BASE_PATH "/screenshots";
@@ -60,13 +66,16 @@
 
 #define DEFAULT_PROP_PATH           "/default.prop"
 
-#define PROP_PATCHER_DEVICE         "ro.patcher.device"
+#define DEVICE_JSON_PATH            "/device.json"
+
+#define PROP_CRYPTO_STATE           "state.multiboot.crypto"
+#define CRYPTO_STATE_ENCRYPTED      "encrypted"
+#define CRYPTO_STATE_DECRYPTED      "decrypted"
+#define CRYPTO_STATE_ERROR          "error"
 
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
 static mbp::PatcherConfig pc;
-static mbp::Device *device = nullptr;
-static std::vector<const char *> gfx_backends;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
@@ -94,27 +103,24 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 
 static bool detect_device()
 {
-    std::string codename;
-    mb::util::file_get_property(DEFAULT_PROP_PATH, PROP_PATCHER_DEVICE,
-                                &codename, std::string());
+    std::vector<unsigned char> contents;
+    if (!mb::util::file_read_all(DEVICE_JSON_PATH, &contents)) {
+        LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
+        return false;
+    }
+    contents.push_back('\0');
 
-    if (codename.empty()) {
-        LOGE("%s: Missing '%s' property",
-             DEFAULT_PROP_PATH, PROP_PATCHER_DEVICE);
+    MbDeviceJsonError error;
+    tw_device = mb_device_new_from_json(
+            (const char *) contents.data(), &error);
+    if (!tw_device) {
+        LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
     }
 
-    for (mbp::Device *d : pc.devices()) {
-        auto codenames = d->codenames();
-        auto it = std::find(codenames.begin(), codenames.end(), codename);
-        if (it != codenames.end()) {
-            device = d;
-            break;
-        }
-    }
-
-    if (!device) {
-        LOGE("Unknown device: %s", codename.c_str());
+    if (mb_device_validate(tw_device) != 0) {
+        LOGE("%s: Validation failed", DEVICE_JSON_PATH);
+        mb_device_free(tw_device);
         return false;
     }
 
@@ -234,96 +240,93 @@ struct mapping
 
 static mapping flag_map[] =
 {
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_SWAP_XY,           TW_FLAG_TOUCHSCREEN_SWAP_XY           },
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_FLIP_X,            TW_FLAG_TOUCHSCREEN_FLIP_X            },
-    { mbp::Device::FLAG_TW_TOUCHSCREEN_FLIP_Y,            TW_FLAG_TOUCHSCREEN_FLIP_Y            },
-    { mbp::Device::FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH, TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH },
-    { mbp::Device::FLAG_TW_SCREEN_BLANK_ON_BOOT,          TW_FLAG_SCREEN_BLANK_ON_BOOT          },
-    { mbp::Device::FLAG_TW_BOARD_HAS_FLIPPED_SCREEN,      TW_FLAG_BOARD_HAS_FLIPPED_SCREEN      },
-    { mbp::Device::FLAG_TW_IGNORE_MAJOR_AXIS_0,           TW_FLAG_IGNORE_MAJOR_AXIS_0           },
-    { mbp::Device::FLAG_TW_IGNORE_MT_POSITION_0,          TW_FLAG_IGNORE_MT_POSITION_0          },
-    { mbp::Device::FLAG_TW_IGNORE_ABS_MT_TRACKING_ID,     TW_FLAG_IGNORE_ABS_MT_TRACKING_ID     },
-    { mbp::Device::FLAG_TW_NEW_ION_HEAP,                  TW_FLAG_NEW_ION_HEAP                  },
-    { mbp::Device::FLAG_TW_NO_SCREEN_BLANK,               TW_FLAG_NO_SCREEN_BLANK               },
-    { mbp::Device::FLAG_TW_NO_SCREEN_TIMEOUT,             TW_FLAG_NO_SCREEN_TIMEOUT             },
-    { mbp::Device::FLAG_TW_ROUND_SCREEN,                  TW_FLAG_ROUND_SCREEN                  },
-    { mbp::Device::FLAG_TW_NO_CPU_TEMP,                   TW_FLAG_NO_CPU_TEMP                   },
-    { mbp::Device::FLAG_TW_QCOM_RTC_FIX,                  TW_FLAG_QCOM_RTC_FIX                  },
-    { mbp::Device::FLAG_TW_HAS_DOWNLOAD_MODE,             TW_FLAG_HAS_DOWNLOAD_MODE             },
-    { mbp::Device::FLAG_TW_PREFER_LCD_BACKLIGHT,          TW_FLAG_PREFER_LCD_BACKLIGHT          },
+    { FLAG_TW_TOUCHSCREEN_SWAP_XY,           TW_FLAG_TOUCHSCREEN_SWAP_XY           },
+    { FLAG_TW_TOUCHSCREEN_FLIP_X,            TW_FLAG_TOUCHSCREEN_FLIP_X            },
+    { FLAG_TW_TOUCHSCREEN_FLIP_Y,            TW_FLAG_TOUCHSCREEN_FLIP_Y            },
+    { FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH, TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH },
+    { FLAG_TW_SCREEN_BLANK_ON_BOOT,          TW_FLAG_SCREEN_BLANK_ON_BOOT          },
+    { FLAG_TW_BOARD_HAS_FLIPPED_SCREEN,      TW_FLAG_BOARD_HAS_FLIPPED_SCREEN      },
+    { FLAG_TW_IGNORE_MAJOR_AXIS_0,           TW_FLAG_IGNORE_MAJOR_AXIS_0           },
+    { FLAG_TW_IGNORE_MT_POSITION_0,          TW_FLAG_IGNORE_MT_POSITION_0          },
+    { FLAG_TW_IGNORE_ABS_MT_TRACKING_ID,     TW_FLAG_IGNORE_ABS_MT_TRACKING_ID     },
+    { FLAG_TW_NEW_ION_HEAP,                  TW_FLAG_NEW_ION_HEAP                  },
+    { FLAG_TW_NO_SCREEN_BLANK,               TW_FLAG_NO_SCREEN_BLANK               },
+    { FLAG_TW_NO_SCREEN_TIMEOUT,             TW_FLAG_NO_SCREEN_TIMEOUT             },
+    { FLAG_TW_ROUND_SCREEN,                  TW_FLAG_ROUND_SCREEN                  },
+    { FLAG_TW_NO_CPU_TEMP,                   TW_FLAG_NO_CPU_TEMP                   },
+    { FLAG_TW_QCOM_RTC_FIX,                  TW_FLAG_QCOM_RTC_FIX                  },
+    { FLAG_TW_HAS_DOWNLOAD_MODE,             TW_FLAG_HAS_DOWNLOAD_MODE             },
+    { FLAG_TW_PREFER_LCD_BACKLIGHT,          TW_FLAG_PREFER_LCD_BACKLIGHT          },
     {0, 0}
 };
 
 static void load_device_config()
 {
-    const mbp::Device::TwOptions *opts = device->twOptions();
+    uint64_t flags = mb_device_tw_flags(tw_device);
+    enum TwPixelFormat pixel_fomat =
+            mb_device_tw_pixel_format(tw_device);
+    enum TwForcePixelFormat force_pixel_format =
+            mb_device_tw_force_pixel_format(tw_device);
 
     for (auto iter = flag_map; iter->libmbp != 0; ++iter) {
-        if (opts->flags & iter->libmbp) {
+        if (flags & iter->libmbp) {
             tw_flags |= iter->bootui;
         }
     }
 
-    switch (opts->pixelFormat) {
-    case mbp::Device::TwPixelFormat::DEFAULT:
+    switch (pixel_fomat) {
+    case TW_PIXEL_FORMAT_DEFAULT:
         tw_pixel_format = TW_PXFMT_DEFAULT;
         break;
-    case mbp::Device::TwPixelFormat::ABGR_8888:
+    case TW_PIXEL_FORMAT_ABGR_8888:
         tw_pixel_format = TW_PXFMT_ABGR_8888;
         break;
-    case mbp::Device::TwPixelFormat::RGBX_8888:
+    case TW_PIXEL_FORMAT_RGBX_8888:
         tw_pixel_format = TW_PXFMT_RGBX_8888;
         break;
-    case mbp::Device::TwPixelFormat::BGRA_8888:
+    case TW_PIXEL_FORMAT_BGRA_8888:
         tw_pixel_format = TW_PXFMT_BGRA_8888;
         break;
-    case mbp::Device::TwPixelFormat::RGBA_8888:
+    case TW_PIXEL_FORMAT_RGBA_8888:
         tw_pixel_format = TW_PXFMT_RGBA_8888;
         break;
     }
 
-    switch (opts->forcePixelFormat) {
-    case mbp::Device::TwForcePixelFormat::NONE:
+    switch (force_pixel_format) {
+    case TW_FORCE_PIXEL_FORMAT_NONE:
         tw_force_pixel_format = TW_FORCE_PXFMT_NONE;
         break;
-    case mbp::Device::TwForcePixelFormat::RGB_565:
+    case TW_FORCE_PIXEL_FORMAT_RGB_565:
         tw_force_pixel_format = TW_FORCE_PXFMT_RGB_565;
         break;
     }
 
-    tw_overscan_percent = opts->overscanPercent;
-    tw_default_x_offset = opts->defaultXOffset;
-    tw_default_y_offset = opts->defaultYOffset;
+    tw_overscan_percent = mb_device_tw_overscan_percent(tw_device);
+    tw_default_x_offset = mb_device_tw_default_x_offset(tw_device);
+    tw_default_y_offset = mb_device_tw_default_y_offset(tw_device);
+    tw_brightness_path = mb_device_tw_brightness_path(tw_device);
+    tw_secondary_brightness_path = mb_device_tw_secondary_brightness_path(tw_device);
+    tw_max_brightness = mb_device_tw_max_brightness(tw_device);
+    tw_default_brightness = mb_device_tw_default_brightness(tw_device);
+    tw_custom_battery_path = mb_device_tw_battery_path(tw_device);
+    tw_custom_cpu_temp_path = mb_device_tw_cpu_temp_path(tw_device);
+    tw_input_blacklist = mb_device_tw_input_blacklist(tw_device);
+    tw_whitelist_input = mb_device_tw_input_whitelist(tw_device);
 
-    if (!opts->brightnessPath.empty()) {
-        tw_brightness_path = opts->brightnessPath.c_str();
+    tw_graphics_backends = mb_device_tw_graphics_backends(tw_device);
+    tw_graphics_backends_length = 0;
+    for (auto it = tw_graphics_backends; *it; ++it) {
+        tw_graphics_backends_length++;
     }
-    if (!opts->secondaryBrightnessPath.empty()) {
-        tw_secondary_brightness_path = opts->secondaryBrightnessPath.c_str();
-    }
-    tw_max_brightness = opts->maxBrightness;
-    tw_default_brightness = opts->defaultBrightness;
+}
 
-    if (!opts->batteryPath.empty()) {
-        tw_custom_battery_path = opts->batteryPath.c_str();
-    }
-    if (!opts->cpuTempPath.empty()) {
-        tw_custom_cpu_temp_path = opts->cpuTempPath.c_str();
-    }
-
-    if (!opts->inputBlacklist.empty()) {
-        tw_input_blacklist = opts->inputBlacklist.c_str();
-    }
-    if (!opts->inputWhitelist.empty()) {
-        tw_whitelist_input = opts->inputWhitelist.c_str();
-    }
-
-    for (auto const &backend : opts->graphicsBackends) {
-        gfx_backends.push_back(backend.c_str());
-    }
-
-    tw_graphics_backends = gfx_backends.data();
-    tw_graphics_backends_length = gfx_backends.size();
+static void load_other_config()
+{
+    // Get Android version (needed for pattern input)
+    std::string value;
+    mb::util::file_get_property("/raw/system/build.prop",
+                                "ro.build.version.sdk", &value, "0");
+    mb::util::str_to_snum(value.c_str(), 10, &tw_android_sdk_version);
 }
 
 static void log_startup()
@@ -410,6 +413,8 @@ static void log_startup()
             LOGV("  - %s", tw_graphics_backends[i]);
         }
     }
+
+    LOGV("- tw_android_sdk_version:       %d", tw_android_sdk_version);
 }
 
 static void usage(FILE *stream)
@@ -468,6 +473,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Rotate log if it is too large
+    struct stat sb;
+    if (stat(MBBOOTUI_LOG_PATH, &sb) == 0 && sb.st_size > MAX_LOG_SIZE) {
+        rename(MBBOOTUI_LOG_PATH, MBBOOTUI_LOG_PATH ".prev");
+    }
+
     if (!no_log_file && !redirect_output_to_file(MBBOOTUI_LOG_PATH, 0600)) {
         return EXIT_FAILURE;
     }
@@ -487,18 +498,19 @@ int main(int argc, char *argv[])
     }
 
     // Check if device supports the boot UI
-    if (!device->twOptions()->supported) {
+    if (!mb_device_tw_supported(tw_device)) {
         LOGW("Boot UI is not supported for the device");
         return EXIT_FAILURE;
     }
 
     // Load device configuration options
     load_device_config();
+    load_other_config();
 
     log_startup();
 
     if (!extract_theme(argv[optind], MBBOOTUI_THEME_PATH,
-                       device->twOptions()->theme)) {
+                       mb_device_tw_theme(tw_device))) {
         LOGE("Failed to extract theme");
         return EXIT_FAILURE;
     }
@@ -518,11 +530,6 @@ int main(int argc, char *argv[])
     mbtool_interface->version(&mbtool_version);
     DataManager::SetValue(TW_MBTOOL_VERSION, mbtool_version);
 
-    // Set ROM ID
-    std::string rom_id;
-    mbtool_interface->get_booted_rom_id(&rom_id);
-    DataManager::SetValue(TW_ROM_ID, rom_id);
-
     LOGV("Loading graphics system...");
     if (gui_init() < 0) {
         LOGE("Failed to load graphics system");
@@ -531,6 +538,78 @@ int main(int argc, char *argv[])
 
     LOGV("Loading resources...");
     gui_loadResources();
+
+    LOGV("Checking for encryption...");
+    char crypto_state[PROP_VALUE_MAX];
+    mb::util::property_get(PROP_CRYPTO_STATE, crypto_state,
+                           CRYPTO_STATE_DECRYPTED);
+
+    if (strcmp(crypto_state, CRYPTO_STATE_ENCRYPTED) == 0) {
+        LOGV("Data appears to be encrypted");
+
+        int is_encrypted = 1;
+
+        // Ask mbtool for password type
+        std::string pw_type;
+        if (!mbtool_interface->crypto_get_pw_type(&pw_type)) {
+            LOGE("Failed to ask mbtool for the crypto password type");
+            return EXIT_FAILURE;
+        }
+
+        // If password type is unknown, assume "password"
+        if (pw_type.empty()) {
+            LOGW("Crypto password type is unknown. Assuming 'password'");
+            pw_type = "password";
+        }
+
+        // Try default password
+        if (pw_type == "default") {
+            bool ret;
+            if (!mbtool_interface->crypto_decrypt("default_password", &ret)) {
+                LOGE("Failed to ask mbtool to decrypt userdata");
+                return EXIT_FAILURE;
+            }
+
+            if (ret) {
+                LOGV("Successfully decrypted device with default password");
+                is_encrypted = 0;
+            } else {
+                LOGW("Failed to decrypt device with default password despite "
+                     "password type being 'default'");
+                pw_type = "password";
+            }
+        }
+
+        DataManager::SetValue(TW_IS_ENCRYPTED, is_encrypted);
+        DataManager::SetValue(TW_CRYPTO_PWTYPE, pw_type);
+        DataManager::SetValue(TW_CRYPTO_PASSWORD, "");
+        DataManager::SetValue("tw_crypto_display", "");
+
+        if (is_encrypted) {
+            LOGV("Showing decrypt page first due to encrypted device");
+            gui_startPage("decrypt", 1, 1);
+        }
+
+        if (DataManager::GetIntValue(TW_IS_ENCRYPTED) != 0) {
+            LOGE("Decrypt page exited, but device is still encrypted");
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_ERROR);
+            return EXIT_FAILURE;
+        } else {
+            LOGV("Decrypt page exited and device was successfully decrypted");
+            mb::util::property_set(PROP_CRYPTO_STATE, CRYPTO_STATE_DECRYPTED);
+        }
+    }
+
+    // Set ROM ID. This must happen after decryption or else the current ROM
+    // will not be detected if it is a data-slot. mbtool's ROM detection code
+    // doesn't fully trust the "ro.multiboot.romid" property and will do some
+    // additional checks to ensure that the value is correct.
+    std::string rom_id;
+    mbtool_interface->get_booted_rom_id(&rom_id);
+    if (rom_id.empty()) {
+        LOGW("Could not determine ROM ID");
+    }
+    DataManager::SetValue(TW_ROM_ID, rom_id);
 
     LOGV("Loading user settings...");
     DataManager::ReadSettingsFile();

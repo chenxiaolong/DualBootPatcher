@@ -21,6 +21,9 @@
 
 #include <algorithm>
 
+#include <cstring>
+
+#include "mbdevice/json.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/private/stringutils.h"
 
@@ -71,8 +74,11 @@ bool CoreRP::patchRamdisk()
 {
     return addMbtool()
             && addExfat()
+            && addFsckWrapper()
+            && addFileContextsTool()
             && setUpInitWrapper()
-            && addBlockDevProps();
+            && removeBlockDevProps()
+            && addDeviceJson();
 }
 
 bool CoreRP::addMbtool()
@@ -81,7 +87,7 @@ bool CoreRP::addMbtool()
     const std::string sig("mbtool.sig");
     std::string mbtoolPath(m_impl->pc->dataDirectory());
     mbtoolPath += "/binaries/android/";
-    mbtoolPath += m_impl->info->device()->architecture();
+    mbtoolPath += mb_device_architecture(m_impl->info->device());
     mbtoolPath += "/mbtool";
     std::string sigPath(mbtoolPath);
     sigPath += ".sig";
@@ -107,7 +113,7 @@ bool CoreRP::addExfat()
 
     std::string mountPath(m_impl->pc->dataDirectory());
     mountPath += "/binaries/android/";
-    mountPath += m_impl->info->device()->architecture();
+    mountPath += mb_device_architecture(m_impl->info->device());
     mountPath += "/mount.exfat";
     std::string sigPath(mountPath);
     sigPath += ".sig";
@@ -121,6 +127,52 @@ bool CoreRP::addExfat()
             || !m_impl->cpio->addFile(sigPath, mountSig, 0640)
             || !m_impl->cpio->addSymlink("mount.exfat", fsck)
             || !m_impl->cpio->addSymlink("mount.exfat.sig", fsckSig)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::addFsckWrapper()
+{
+    const std::string wrapper("sbin/fsck-wrapper");
+    const std::string sig("sbin/fsck-wrapper.sig");
+    std::string wrapperPath(m_impl->pc->dataDirectory());
+    wrapperPath += "/binaries/android/";
+    wrapperPath += mb_device_architecture(m_impl->info->device());
+    wrapperPath += "/fsck-wrapper";
+    std::string sigPath(wrapperPath);
+    sigPath += ".sig";
+
+    m_impl->cpio->remove(wrapper);
+    m_impl->cpio->remove(sig);
+
+    if (!m_impl->cpio->addFile(wrapperPath, wrapper, 0750)
+            || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
+
+    return true;
+}
+
+bool CoreRP::addFileContextsTool()
+{
+    const std::string tool("sbin/file-contexts-tool");
+    const std::string sig("sbin/file-contexts-tool.sig");
+    std::string toolPath(m_impl->pc->dataDirectory());
+    toolPath += "/binaries/android/";
+    toolPath += mb_device_architecture(m_impl->info->device());
+    toolPath += "/file-contexts-tool";
+    std::string sigPath(toolPath);
+    sigPath += ".sig";
+
+    m_impl->cpio->remove(tool);
+    m_impl->cpio->remove(sig);
+
+    if (!m_impl->cpio->addFile(toolPath, tool, 0750)
+            || !m_impl->cpio->addFile(sigPath, sig, 0640)) {
         m_impl->error = m_impl->cpio->error();
         return false;
     }
@@ -145,46 +197,8 @@ bool CoreRP::setUpInitWrapper()
     return true;
 }
 
-static std::string encode_list(const std::vector<std::string> &list)
+bool CoreRP::removeBlockDevProps()
 {
-    // We processing char-by-char, so avoid unnecessary reallocations
-    std::size_t size = 0;
-    for (const std::string &item : list) {
-        size += item.size();
-        size += std::count(item.begin(), item.end(), ',');
-    }
-    if (size == 0) {
-        return std::string();
-    }
-    size += list.size() - 1;
-
-    std::string result;
-    result.reserve(size);
-
-    bool first = true;
-    for (const std::string &item : list) {
-        if (!first) {
-            result += ',';
-        } else {
-            first = false;
-        }
-        for (char c : item) {
-            if (c == ',' || c == '\\') {
-                result += '\\';
-            }
-            result += c;
-        }
-    }
-
-    return result;
-}
-
-bool CoreRP::addBlockDevProps()
-{
-    if (!m_impl->info->device()) {
-        return true;
-    }
-
     std::vector<unsigned char> contents;
     m_impl->cpio->contents("default.prop", &contents);
 
@@ -197,39 +211,34 @@ bool CoreRP::addBlockDevProps()
         }
     }
 
-    Device *device = m_impl->info->device();
-    std::string encoded;
-
-    encoded = "ro.patcher.blockdevs.base=";
-    encoded += encode_list(device->blockDevBaseDirs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.system=";
-    encoded += encode_list(device->systemBlockDevs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.cache=";
-    encoded += encode_list(device->cacheBlockDevs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.data=";
-    encoded += encode_list(device->dataBlockDevs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.boot=";
-    encoded += encode_list(device->bootBlockDevs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.recovery=";
-    encoded += encode_list(device->recoveryBlockDevs());
-    lines.push_back(encoded);
-
-    encoded = "ro.patcher.blockdevs.extra=";
-    encoded += encode_list(device->extraBlockDevs());
-    lines.push_back(encoded);
-
     contents = StringUtils::joinData(lines, '\n');
     m_impl->cpio->setContents("default.prop", std::move(contents));
+
+    return true;
+}
+
+bool CoreRP::addDeviceJson()
+{
+    Device *device = m_impl->info->device();
+    if (!device) {
+        return true;
+    }
+
+    char *json = mb_device_to_json(device);
+    if (!json) {
+        m_impl->error = ErrorCode::MemoryAllocationError;
+        return false;
+    }
+
+    std::vector<unsigned char> contents(json, json + strlen(json));
+    free(json);
+
+    m_impl->cpio->remove("device.json");
+
+    if (!m_impl->cpio->addFile(contents, "device.json", 0644)) {
+        m_impl->error = m_impl->cpio->error();
+        return false;
+    }
 
     return true;
 }

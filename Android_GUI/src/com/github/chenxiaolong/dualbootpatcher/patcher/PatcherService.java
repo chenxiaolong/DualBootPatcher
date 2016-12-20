@@ -28,7 +28,8 @@ import android.util.Log;
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbcommon;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
@@ -174,7 +175,6 @@ public class PatcherService extends ThreadPoolService {
      * This will:
      * - Extract the data archive
      * - Clean up old data directories
-     * - Create an singleton instance of {@link PatcherConfig} in {@link PatcherUtils#sPC}
      *
      * After the task finishes, {@link PatcherEventListener#onPatcherInitialized()} will be called
      * on all registered callbacks.
@@ -501,6 +501,8 @@ public class PatcherService extends ThreadPoolService {
     private static final class PatchFileTask extends BaseTask implements ProgressListener {
         /** Task ID */
         private final int mTaskId;
+        /** libmbp {@link PatcherConfig} object */
+        private PatcherConfig mPC;
         /** libmbp {@link Patcher} object */
         private Patcher mPatcher;
         /** Whether this task has already been executed */
@@ -582,13 +584,20 @@ public class PatcherService extends ThreadPoolService {
             mState.set(PatchFileState.IN_PROGRESS);
             getService().onPatcherStarted(mTaskId);
 
+            // Create patcher instance
+            synchronized (this) {
+                mPC = PatcherUtils.newPatcherConfig(getService());
+                mPatcher = mPC.createPatcher(mPatcherId);
+            }
+
             ContentResolver cr = getService().getContentResolver();
 
             String inputName = queryDisplayName(cr, mInputUri);
             String outputName = queryDisplayName(cr, mOutputUri);
 
             Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
-            Log.d(TAG, "libmbp version: " + PatcherUtils.sPC.getVersion());
+            Log.d(TAG, "libmbp version: " + LibMbcommon.getVersion() +
+                    " (" + LibMbcommon.getGitVersion() + ")");
             Log.d(TAG, "Patching file:");
             Log.d(TAG, "- Patcher ID:  " + mPatcherId);
             Log.d(TAG, "- Input URI:   " + mInputUri);
@@ -601,10 +610,6 @@ public class PatcherService extends ThreadPoolService {
             // Make sure patcher is extracted first
             PatcherUtils.initializePatcher(getService());
 
-            // Create patcher instance
-            synchronized (this) {
-                mPatcher = PatcherUtils.sPC.createPatcher(mPatcherId);
-            }
             FileInfo fileInfo = new FileInfo();
             ParcelFileDescriptor pfdIn = null;
             ParcelFileDescriptor pfdOut = null;
@@ -650,8 +655,10 @@ public class PatcherService extends ThreadPoolService {
             } finally {
                 // Ensure we destroy allocated objects on the C++ side
                 synchronized (this) {
-                    PatcherUtils.sPC.destroyPatcher(mPatcher);
+                    mPC.destroyPatcher(mPatcher);
                     mPatcher = null;
+                    mPC.destroy();
+                    mPC = null;
                 }
                 fileInfo.destroy();
 

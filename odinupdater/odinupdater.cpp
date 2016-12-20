@@ -17,6 +17,8 @@
  * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <vector>
+
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
@@ -31,9 +33,14 @@
 // libmbsparse
 #include "mbsparse/sparse.h"
 
+// libmbdevice
+#include "mbdevice/json.h"
+#include "mbdevice/validate.h"
+
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
+#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
@@ -48,8 +55,8 @@
 #define SYSTEM_SPARSE_FILE      "system.img.sparse"
 #define CACHE_SPARSE_FILE       "cache.img.sparse"
 #define BOOT_IMAGE_FILE         "boot.img"
-#define BLOCK_DEVS_FILE         "block_devs.prop"
 #define FUSE_SPARSE_FILE        "fuse-sparse"
+#define DEVICE_JSON_FILE        "multiboot/device.json"
 
 #define TEMP_CACHE_SPARSE_FILE  "/tmp/cache.img.ext4"
 #define TEMP_CACHE_MOUNT_FILE   "/tmp/cache.img"
@@ -67,8 +74,8 @@ static int output_fd;
 static const char *zip_file;
 
 static char sales_code[10];
-static char system_block_dev[1024];
-static char boot_block_dev[1024];
+static std::string system_block_dev;
+static std::string boot_block_dev;
 
 __attribute__((format(printf, 1, 2)))
 void ui_print(const char *fmt, ...)
@@ -121,7 +128,9 @@ void info(const char *fmt, ...)
 static bool mount_system()
 {
     // mbtool will redirect the call
-    int status = mb::util::run_command({ "mount", "/system" });
+    const char *argv[] = { "mount", "/system", nullptr };
+    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -136,7 +145,9 @@ static bool mount_system()
 static bool umount_system()
 {
     // mbtool will redirect the call
-    int status = mb::util::run_command({ "umount", "/system" });
+    const char *argv[] = { "umount", "/system", nullptr };
+    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -225,111 +236,97 @@ static bool load_block_devs()
     system_block_dev[0] = '\0';
     boot_block_dev[0] = '\0';
 
-    archive *a = archive_read_new();
-    if (!a) {
-        error("Out of memory");
-        return false;
-    }
+    Device *device;
 
-    if (!la_open_zip(a, zip_file)) {
-        archive_read_free(a);
-        return false;
-    }
-
-    archive_entry *entry;
-    if (!la_skip_to(a, BLOCK_DEVS_FILE, &entry)) {
-        archive_read_free(a);
-        return false;
-    }
-
-    char buf[10240];
-    la_ssize_t n;
-
-    n = archive_read_data(a, buf, sizeof(buf) - 1);
-    if (n < 0) {
-        error("libarchive: %s: Failed to read %s: %s",
-              zip_file, BLOCK_DEVS_FILE, archive_error_string(a));
-        archive_read_free(a);
-        return false;
-    }
-    buf[n] = '\0';
-
-    archive_read_free(a);
-
-    char *save_ptr_newline;
-    char *line;
-
-    for (line = strtok_r(buf, "\n", &save_ptr_newline); line;
-            line = strtok_r(nullptr, "\n", &save_ptr_newline)) {
-        if (line[0] == '\0' || line[0] == '#') {
-            /* Skip comments and empty lines */
-            continue;
-        }
-
-        char *equals = strchr(line, '=');
-        if (!equals) {
-            error("%s: Invalid line: %s", BLOCK_DEVS_FILE, line);
+    {
+        archive *a = archive_read_new();
+        if (!a) {
+            error("Out of memory");
             return false;
         }
 
-        *equals = '\0';
+        auto close_archive = mb::util::finally([&]{
+            archive_read_free(a);
+        });
 
-        char *key = line;
-        char *value = equals + 1;
-        size_t value_size = strlen(value);
-        char *dest;
-        size_t max_size;
-
-        if (strcmp(key, PROP_SYSTEM_DEV) == 0) {
-            dest = system_block_dev;
-            max_size = sizeof(system_block_dev);
-        } else if (strcmp(key, PROP_BOOT_DEV) == 0) {
-            dest = boot_block_dev;
-            max_size = sizeof(boot_block_dev);
-        } else {
-            error("%s: Invalid property '%s'",
-                  BLOCK_DEVS_FILE, key);
+        if (!la_open_zip(a, zip_file)) {
             return false;
         }
 
-        if (value_size > max_size - 1) {
-            error("%s: Value for property '%s' is too long",
-                  BLOCK_DEVS_FILE, key);
+        archive_entry *entry;
+        if (!la_skip_to(a, DEVICE_JSON_FILE, &entry)) {
             return false;
         }
-        memcpy(dest, value, value_size);
-        dest[value_size] = '\0';
+
+        static const size_t max_size = 10240;
+
+        if (archive_entry_size(entry) >= max_size) {
+            error("%s is too large", DEVICE_JSON_FILE);
+            return false;
+        }
+
+        std::vector<char> buf(max_size);
+        la_ssize_t n;
+
+        n = archive_read_data(a, buf.data(), buf.size() - 1);
+        if (n < 0) {
+            error("libarchive: %s: Failed to read %s: %s",
+                  zip_file, DEVICE_JSON_FILE, archive_error_string(a));
+            return false;
+        }
+
+        // Buffer is already NULL-terminated
+        MbDeviceJsonError ret;
+        device = mb_device_new_from_json(buf.data(), &ret);
+        if (!device) {
+            error("Failed to load %s", DEVICE_JSON_FILE);
+            return false;
+        }
     }
 
-    if (!system_block_dev[0]) {
-        error("%s: No system block device specified",
-              BLOCK_DEVS_FILE);
-        return false;
-    }
-    if (!boot_block_dev[0]) {
-        error("%s: No boot block device specified",
-              BLOCK_DEVS_FILE);
+    auto free_device = mb::util::finally([&]{
+        mb_device_free(device);
+    });
+
+    auto flags = mb_device_validate(device);
+    if (flags != 0) {
+        error("Device definition file is invalid: %" PRIu64, flags);
         return false;
     }
 
-    info("System block device: %s", system_block_dev);
-    info("Boot block device: %s", boot_block_dev);
+    auto system_devs = mb_device_system_block_devs(device);
+    auto boot_devs = mb_device_boot_block_devs(device);
 
     struct stat sb;
-    if (stat(system_block_dev, &sb) < 0) {
-        error("%s: Failed to stat: %s", system_block_dev, strerror(errno));
-        return false;
-    } else if (!S_ISBLK(sb.st_mode)) {
-        error("%s: Not a block device", system_block_dev);
+
+    if (system_devs) {
+        for (auto it = system_devs; *it; ++it) {
+            if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
+                system_block_dev = *it;
+                break;
+            }
+        }
+    }
+    if (boot_devs) {
+        for (auto it = boot_devs; *it; ++it) {
+            if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
+                boot_block_dev = *it;
+                break;
+            }
+        }
+    }
+
+    if (system_block_dev.empty()) {
+        error("%s: No system block device specified", DEVICE_JSON_FILE);
         return false;
     }
-    if (stat(boot_block_dev, &sb) < 0) {
-        error("%s: Failed to stat: %s", boot_block_dev, strerror(errno));
-        return false;
-    } else if (!S_ISBLK(sb.st_mode)) {
-        error("%s: Not a block device", boot_block_dev);
+    if (boot_block_dev.empty()) {
+        error("%s: No boot block device specified", DEVICE_JSON_FILE);
         return false;
     }
+
+    info("System block device: %s", system_block_dev.c_str());
+    info("Boot block device: %s", boot_block_dev.c_str());
 
     return true;
 }
@@ -719,6 +716,8 @@ error:
 static bool flash_csc()
 {
     int status;
+    bool unmounted_dir = false;
+    bool unmounted_file = false;
 
     if (!extract_raw_file(CACHE_SPARSE_FILE, TEMP_CACHE_SPARSE_FILE)) {
         goto error;
@@ -738,11 +737,16 @@ static bool flash_csc()
     close(open(TEMP_CACHE_MOUNT_FILE, O_CREAT | O_WRONLY | O_CLOEXEC, 0600));
 
     // Mount sparse file with fuse-sparse
-    status = mb::util::run_command({
-        TEMP_FUSE_SPARSE_FILE,
-        TEMP_CACHE_SPARSE_FILE,
-        TEMP_CACHE_MOUNT_FILE
-    });
+    {
+        const char *argv[] = {
+            TEMP_FUSE_SPARSE_FILE,
+            TEMP_CACHE_SPARSE_FILE,
+            TEMP_CACHE_MOUNT_FILE,
+            nullptr
+        };
+        status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
+                                       nullptr, nullptr);
+    }
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         goto error;
@@ -784,8 +788,46 @@ static bool flash_csc()
     }
 
     umount_system();
-    mb::util::umount(TEMP_CACHE_MOUNT_DIR);
-    umount(TEMP_CACHE_MOUNT_FILE);
+
+    // Looping is necessary in Touchwiz, which sometimes fails to unmount the
+    // fuse mountpoint on the first try (kernel bug?)
+    static constexpr int max_attempts = 5;
+
+    for (int attempt = 1; attempt <= max_attempts; ++attempt) {
+        bool success = true;
+
+        info("[Attempt %d/%d] Unmounting %s",
+             attempt, max_attempts, TEMP_CACHE_MOUNT_DIR);
+        if (!unmounted_dir) {
+            unmounted_dir = mb::util::umount(TEMP_CACHE_MOUNT_DIR);
+            if (!unmounted_dir) {
+                error("WARNING: Failed to unmount %s: %s",
+                      TEMP_CACHE_MOUNT_DIR, strerror(errno));
+                success = false;
+            }
+        }
+
+        info("[Attempt %d/%d] Unmounting %s",
+             attempt, max_attempts, TEMP_CACHE_MOUNT_FILE);
+        if (!unmounted_file) {
+            unmounted_file = mb::util::umount(TEMP_CACHE_MOUNT_FILE);
+            if (!unmounted_file) {
+                error("WARNING: Failed to unmount %s: %s",
+                      TEMP_CACHE_MOUNT_FILE, strerror(errno));
+                success = false;
+            }
+        }
+
+        if (success) {
+            info("Successfully unmounted temporary cache image mountpoints");
+            break;
+        } else if (attempt != max_attempts) {
+            info("[Attempt %d/%d] Waiting 1 second before next attempt",
+                 attempt, max_attempts);
+            sleep(1);
+        }
+    }
+
     return true;
 
 error_system_mounted:
@@ -826,7 +868,7 @@ static bool flash_zip()
     }
 
     // Unmount system
-    if (!umount_system()) {
+    if (mb::util::is_mounted("/system") && !umount_system()) {
         ui_print("Failed to unmount /system");
         return false;
     }
@@ -836,7 +878,7 @@ static bool flash_zip()
     ui_print("[DEBUG] Skipping flashing of system image");
 #else
     ui_print("Flashing system image");
-    if (!extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev)) {
+    if (!extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str())) {
         ui_print("Failed to flash system image");
         return false;
     }
@@ -860,7 +902,7 @@ static bool flash_zip()
     ui_print("[DEBUG] Skipping flashing of boot image");
 #else
     ui_print("Flashing boot image");
-    if (!extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev)) {
+    if (!extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev.c_str())) {
         ui_print("Failed to flash boot image");
         return false;
     }

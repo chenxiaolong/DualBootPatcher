@@ -1,5 +1,7 @@
 #!/sbin/sh
 
+set -e
+
 interface="${1}"
 updater_fd="${2}"
 zipfile="${3}"
@@ -9,9 +11,9 @@ ui_print() {
     echo -en "ui_print\n" > /proc/self/fd/"${updater_fd}"
 }
 
-mount /system
-mount /cache
-mount /data
+mount /system || :
+mount /cache || :
+mount /data || :
 
 rm -rf /tmp/dbu/
 mkdir -p /tmp/dbu/
@@ -19,9 +21,15 @@ cd /tmp/dbu/
 
 unzip "${zipfile}"
 
+cat > utilities_cmd.sh <<EOF
+#!/sbin/sh
+/tmp/dbu/mbtool utilities --device /tmp/dbu/devices.json "\${@}"
+EOF
+
+chmod 755 utilities_cmd.sh mbtool
+
 ui_print "Generating AROMA config based on installed ROMS"
-chmod 755 /tmp/dbu/mbtool
-/tmp/dbu/mbtool utilities generate /tmp/dbu/template /tmp/dbu/aroma.zip
+./utilities_cmd.sh generate /tmp/dbu/template /tmp/dbu/aroma.zip
 
 ui_print "Starting AROMA"
 chmod 755 template/META-INF/com/google/android/update-binary

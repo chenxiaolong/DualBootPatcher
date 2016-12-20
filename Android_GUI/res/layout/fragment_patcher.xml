@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
-   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
    *
    * This program is free software: you can redistribute it and/or modify
    * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:gravity="center"
-        android:text="Tap the FAB to add files to patch." />
+        android:text="@string/patcher_background_message" />
 
     <!-- List of files to patch -->
     <android.support.v7.widget.RecyclerView
@@ -51,8 +51,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- FAB to add more files to patch -->
-        <com.getbase.floatingactionbutton.FloatingActionButton
+        <!-- FAB to add files to patch -->
+        <com.github.clans.fab.FloatingActionMenu
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -60,9 +60,28 @@
             android:layout_marginBottom="@dimen/fab_margin_bottom"
             android:layout_marginEnd="@dimen/fab_margin_end"
             app:layout_behavior="com.github.chenxiaolong.dualbootpatcher.views.FloatingActionButtonBehavior"
-            fab:fab_colorNormal="@color/fab_pink"
-            fab:fab_colorPressed="@color/fab_pink_pressed"
-            fab:fab_icon="@drawable/ic_content_add_white_48dp"
-            fab:fab_plusIconColor="@color/fab_pink_plus" />
+            fab:menu_colorNormal="@color/fab_pink"
+            fab:menu_colorPressed="@color/fab_pink_pressed">
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab_add_odin_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_plus_white_24dp"
+                fab:fab_colorNormal="@color/fab_pink"
+                fab:fab_colorPressed="@color/fab_pink_pressed"
+                fab:fab_size="mini"
+                fab:fab_label="@string/patcher_add_odin_image" />
+
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab_add_flashable_zip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_plus_white_24dp"
+                fab:fab_colorNormal="@color/fab_pink"
+                fab:fab_colorPressed="@color/fab_pink_pressed"
+                fab:fab_size="mini"
+                fab:fab_label="@string/patcher_add_flashable_zip" />
+        </com.github.clans.fab.FloatingActionMenu>
     </android.support.design.widget.CoordinatorLayout>
 </RelativeLayout>

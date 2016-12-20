@@ -23,34 +23,31 @@
 
 #include <sepol/policydb/policydb.h>
 
-#define SELINUX_ENFORCE_FILE "/sys/fs/selinux/enforce"
-#define SELINUX_POLICY_FILE "/sys/fs/selinux/policy"
-#define SELINUX_LOAD_FILE "/sys/fs/selinux/load"
+#define SELINUX_ENFORCE_FILE            "/sys/fs/selinux/enforce"
+#define SELINUX_POLICY_FILE             "/sys/fs/selinux/policy"
+#define SELINUX_LOAD_FILE               "/sys/fs/selinux/load"
+
+#define SELINUX_MOUNT_POINT             "/sys/fs/selinux"
+#define SELINUX_FS_TYPE                 "selinuxfs"
+#define SELINUX_DEFAULT_POLICY_FILE     "/sepolicy"
 
 namespace mb
 {
 namespace util
 {
 
-struct SelinuxRule
+enum class SELinuxAttr
 {
-    std::string source;
-    std::string target;
-    std::string klass;
-    std::string perm;
+    CURRENT,
+    EXEC,
+    FSCREATE,
+    KEYCREATE,
+    PREV,
+    SOCKCREATE,
 };
 
-bool selinux_mount();
-bool selinux_unmount();
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
 bool selinux_write_policy(const std::string &path, policydb_t *pdb);
-void selinux_make_all_permissive(policydb_t *pdb);
-bool selinux_make_permissive(policydb_t *pdb, const std::string &type_str);
-bool selinux_add_rule(policydb_t *pdb,
-                      const std::string &source_str,
-                      const std::string &target_str,
-                      const std::string &class_str,
-                      const std::string &perm_str);
 bool selinux_get_context(const std::string &path, std::string *context);
 bool selinux_lget_context(const std::string &path, std::string *context);
 bool selinux_fget_context(int fd, std::string *context);
@@ -63,6 +60,10 @@ bool selinux_lset_context_recursive(const std::string &path,
                                     const std::string &context);
 bool selinux_get_enforcing(int *value);
 bool selinux_set_enforcing(int value);
+bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
+                              std::string *context_out);
+bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
+                              const std::string &context);
 
 }
 }

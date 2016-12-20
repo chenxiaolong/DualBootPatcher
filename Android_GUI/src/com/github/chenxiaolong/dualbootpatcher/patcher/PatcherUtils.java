@@ -25,11 +25,15 @@ import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
 import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
+import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiscStuff;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
+
+import org.apache.commons.io.Charsets;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class PatcherUtils {
@@ -40,7 +44,13 @@ public class PatcherUtils {
     private static final String PREFIX_DATA_SLOT = "data-slot-";
     private static final String PREFIX_EXTSD_SLOT = "extsd-slot-";
 
-    public static PatcherConfig sPC;
+    public static final String PATCHER_ID_MULTIBOOTPATCHER = "MultiBootPatcher";
+    public static final String PATCHER_ID_ODINPATCHER = "OdinPatcher";
+
+    private static boolean sInitialized;
+
+    private static Device[] sDevices;
+    private static Device sCurrentDevice;
 
     private static String sTargetFile;
     private static String sTargetDir;
@@ -62,32 +72,72 @@ public class PatcherUtils {
     }
 
     public synchronized static void initializePatcher(Context context) {
-        if (sPC == null) {
+        if (!sInitialized) {
             extractPatcher(context);
-
-            sPC = new PatcherConfig();
-            sPC.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
-            sPC.setTempDirectory(context.getCacheDir().getAbsolutePath());
+            sInitialized = true;
         }
     }
 
-    public synchronized static Device getCurrentDevice(Context context, PatcherConfig pc) {
-        String realCodename = RomUtils.getDeviceCodename(context);
+    public static PatcherConfig newPatcherConfig(Context context) {
+        PatcherConfig pc = new PatcherConfig();
+        pc.setDataDirectory(getTargetDirectory(context).getAbsolutePath());
+        pc.setTempDirectory(context.getCacheDir().getAbsolutePath());
+        return pc;
+    }
 
-        Device device = null;
-        for (Device d : pc.getDevices()) {
-            for (String codename : d.getCodenames()) {
-                if (realCodename.equals(codename)) {
-                    device = d;
-                    break;
+    public synchronized static Device[] getDevices(Context context) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+        initializePatcher(context);
+
+        if (sDevices == null) {
+            File path = new File(getTargetDirectory(context) + File.separator + "devices.json");
+            try {
+                String json = org.apache.commons.io.FileUtils.readFileToString(
+                        path, Charsets.UTF_8);
+
+                Device[] devices = Device.newListFromJson(json);
+                ArrayList<Device> validDevices = new ArrayList<>();
+
+                if (devices != null) {
+                    for (Device d : devices) {
+                        if (d.validate() == 0) {
+                            validDevices.add(d);
+                        }
+                    }
                 }
-            }
-            if (device != null) {
-                break;
+
+                if (!validDevices.isEmpty()) {
+                    sDevices = validDevices.toArray(new Device[validDevices.size()]);
+                }
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to read " + path, e);
             }
         }
 
-        return device;
+        return sDevices;
+    }
+
+    public synchronized static Device getCurrentDevice(Context context) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        if (sCurrentDevice == null) {
+            String realCodename = RomUtils.getDeviceCodename(context);
+            Device[] devices = getDevices(context);
+
+            if (devices != null) {
+                outer:
+                for (Device d : devices) {
+                    for (String codename : d.getCodenames()) {
+                        if (realCodename.equals(codename)) {
+                            sCurrentDevice = d;
+                            break outer;
+                        }
+                    }
+                }
+            }
+        }
+
+        return sCurrentDevice;
     }
 
     public synchronized static void extractPatcher(Context context) {
@@ -119,8 +169,12 @@ public class PatcherUtils {
                 org.apache.commons.io.FileUtils.deleteQuietly(d);
             }
 
-            LibMiscStuff.INSTANCE.extract_archive(targetFile.getAbsolutePath(),
-                    context.getFilesDir().getAbsolutePath());
+            try {
+                LibMiscStuff.extractArchive(targetFile.getAbsolutePath(),
+                        context.getFilesDir().getAbsolutePath());
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to extract data archive", e);
+            }
 
             // Delete archive
             targetFile.delete();
@@ -167,7 +221,7 @@ public class PatcherUtils {
     }
 
     public static InstallLocation[] getNamedInstallLocations(Context context) {
-        //ThreadUtils.enforceExecutionOnNonMainThread();
+        ThreadUtils.enforceExecutionOnNonMainThread();
 
         Log.d(TAG, "Looking for named ROMs");
 

@@ -5,13 +5,16 @@
 
 #include "flatbuffers/flatbuffers.h"
 
-
 namespace mbtool {
 namespace daemon {
 namespace v3 {
 
+struct SignedExecError;
+
 struct SignedExecRequest;
+
 struct SignedExecOutputResponse;
+
 struct SignedExecResponse;
 
 enum SignedExecResult {
@@ -29,6 +32,43 @@ inline const char **EnumNamesSignedExecResult() {
 }
 
 inline const char *EnumNameSignedExecResult(SignedExecResult e) { return EnumNamesSignedExecResult()[static_cast<int>(e)]; }
+
+struct SignedExecError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum {
+    VT_MSG = 4
+  };
+  const flatbuffers::String *msg() const { return GetPointer<const flatbuffers::String *>(VT_MSG); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           verifier.Verify(msg()) &&
+           verifier.EndTable();
+  }
+};
+
+struct SignedExecErrorBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_msg(flatbuffers::Offset<flatbuffers::String> msg) { fbb_.AddOffset(SignedExecError::VT_MSG, msg); }
+  SignedExecErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  SignedExecErrorBuilder &operator=(const SignedExecErrorBuilder &);
+  flatbuffers::Offset<SignedExecError> Finish() {
+    auto o = flatbuffers::Offset<SignedExecError>(fbb_.EndTable(start_, 1));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<SignedExecError> CreateSignedExecError(flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::String> msg = 0) {
+  SignedExecErrorBuilder builder_(_fbb);
+  builder_.add_msg(msg);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<SignedExecError> CreateSignedExecErrorDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *msg = nullptr) {
+  return CreateSignedExecError(_fbb, msg ? _fbb.CreateString(msg) : 0);
+}
 
 struct SignedExecRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
@@ -72,16 +112,24 @@ struct SignedExecRequestBuilder {
 };
 
 inline flatbuffers::Offset<SignedExecRequest> CreateSignedExecRequest(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> binary_path = 0,
-   flatbuffers::Offset<flatbuffers::String> signature_path = 0,
-   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> args = 0,
-   flatbuffers::Offset<flatbuffers::String> arg0 = 0) {
+    flatbuffers::Offset<flatbuffers::String> binary_path = 0,
+    flatbuffers::Offset<flatbuffers::String> signature_path = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> args = 0,
+    flatbuffers::Offset<flatbuffers::String> arg0 = 0) {
   SignedExecRequestBuilder builder_(_fbb);
   builder_.add_arg0(arg0);
   builder_.add_args(args);
   builder_.add_signature_path(signature_path);
   builder_.add_binary_path(binary_path);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<SignedExecRequest> CreateSignedExecRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *binary_path = nullptr,
+    const char *signature_path = nullptr,
+    const std::vector<flatbuffers::Offset<flatbuffers::String>> *args = nullptr,
+    const char *arg0 = nullptr) {
+  return CreateSignedExecRequest(_fbb, binary_path ? _fbb.CreateString(binary_path) : 0, signature_path ? _fbb.CreateString(signature_path) : 0, args ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*args) : 0, arg0 ? _fbb.CreateString(arg0) : 0);
 }
 
 struct SignedExecOutputResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -110,10 +158,15 @@ struct SignedExecOutputResponseBuilder {
 };
 
 inline flatbuffers::Offset<SignedExecOutputResponse> CreateSignedExecOutputResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   flatbuffers::Offset<flatbuffers::String> line = 0) {
+    flatbuffers::Offset<flatbuffers::String> line = 0) {
   SignedExecOutputResponseBuilder builder_(_fbb);
   builder_.add_line(line);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<SignedExecOutputResponse> CreateSignedExecOutputResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    const char *line = nullptr) {
+  return CreateSignedExecOutputResponse(_fbb, line ? _fbb.CreateString(line) : 0);
 }
 
 struct SignedExecResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -121,12 +174,14 @@ struct SignedExecResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_RESULT = 4,
     VT_ERROR_MSG = 6,
     VT_EXIT_STATUS = 8,
-    VT_TERM_SIG = 10
+    VT_TERM_SIG = 10,
+    VT_ERROR = 12
   };
   SignedExecResult result() const { return static_cast<SignedExecResult>(GetField<int16_t>(VT_RESULT, 0)); }
   const flatbuffers::String *error_msg() const { return GetPointer<const flatbuffers::String *>(VT_ERROR_MSG); }
   int32_t exit_status() const { return GetField<int32_t>(VT_EXIT_STATUS, 0); }
   int32_t term_sig() const { return GetField<int32_t>(VT_TERM_SIG, 0); }
+  const SignedExecError *error() const { return GetPointer<const SignedExecError *>(VT_ERROR); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int16_t>(verifier, VT_RESULT) &&
@@ -134,6 +189,8 @@ struct SignedExecResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.Verify(error_msg()) &&
            VerifyField<int32_t>(verifier, VT_EXIT_STATUS) &&
            VerifyField<int32_t>(verifier, VT_TERM_SIG) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
 };
@@ -145,25 +202,37 @@ struct SignedExecResponseBuilder {
   void add_error_msg(flatbuffers::Offset<flatbuffers::String> error_msg) { fbb_.AddOffset(SignedExecResponse::VT_ERROR_MSG, error_msg); }
   void add_exit_status(int32_t exit_status) { fbb_.AddElement<int32_t>(SignedExecResponse::VT_EXIT_STATUS, exit_status, 0); }
   void add_term_sig(int32_t term_sig) { fbb_.AddElement<int32_t>(SignedExecResponse::VT_TERM_SIG, term_sig, 0); }
+  void add_error(flatbuffers::Offset<SignedExecError> error) { fbb_.AddOffset(SignedExecResponse::VT_ERROR, error); }
   SignedExecResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   SignedExecResponseBuilder &operator=(const SignedExecResponseBuilder &);
   flatbuffers::Offset<SignedExecResponse> Finish() {
-    auto o = flatbuffers::Offset<SignedExecResponse>(fbb_.EndTable(start_, 4));
+    auto o = flatbuffers::Offset<SignedExecResponse>(fbb_.EndTable(start_, 5));
     return o;
   }
 };
 
 inline flatbuffers::Offset<SignedExecResponse> CreateSignedExecResponse(flatbuffers::FlatBufferBuilder &_fbb,
-   SignedExecResult result = SignedExecResult_PROCESS_EXITED,
-   flatbuffers::Offset<flatbuffers::String> error_msg = 0,
-   int32_t exit_status = 0,
-   int32_t term_sig = 0) {
+    SignedExecResult result = SignedExecResult_PROCESS_EXITED,
+    flatbuffers::Offset<flatbuffers::String> error_msg = 0,
+    int32_t exit_status = 0,
+    int32_t term_sig = 0,
+    flatbuffers::Offset<SignedExecError> error = 0) {
   SignedExecResponseBuilder builder_(_fbb);
+  builder_.add_error(error);
   builder_.add_term_sig(term_sig);
   builder_.add_exit_status(exit_status);
   builder_.add_error_msg(error_msg);
   builder_.add_result(result);
   return builder_.Finish();
+}
+
+inline flatbuffers::Offset<SignedExecResponse> CreateSignedExecResponseDirect(flatbuffers::FlatBufferBuilder &_fbb,
+    SignedExecResult result = SignedExecResult_PROCESS_EXITED,
+    const char *error_msg = nullptr,
+    int32_t exit_status = 0,
+    int32_t term_sig = 0,
+    flatbuffers::Offset<SignedExecError> error = 0) {
+  return CreateSignedExecResponse(_fbb, result, error_msg ? _fbb.CreateString(error_msg) : 0, exit_status, term_sig, error);
 }
 
 }  // namespace v3

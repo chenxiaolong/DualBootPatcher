@@ -30,15 +30,18 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         fuse-sparse
         PROPERTIES
         LINK_FLAGS "-static"
+        LINK_SEARCH_START_STATIC ON
     )
 
     target_link_libraries(
         odinupdater
         mbsparse-static
         mbutil-static
+        mbdevice-static
         mblog-static
         ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
+        ${MBP_JANSSON_LIBRARIES}
     )
     target_link_libraries(
         fuse-sparse

@@ -370,6 +370,7 @@ void DataManager::SetDefaultValues()
     mPersist.SetValue(TW_TIME_ZONE_GUIDST, "1");
     mData.SetValue(TW_ACTION_BUSY, "0");
     mData.SetValue(TW_IS_ENCRYPTED, "0");
+    mData.SetValue(TW_CRYPTO_PASSWORD, "0");
     mData.SetValue("tw_terminal_state", "0");
     mData.SetValue("tw_background_thread_running", "0");
     mPersist.SetValue(TW_MILITARY_TIME, "0");
@@ -468,6 +469,9 @@ void DataManager::SetDefaultValues()
     }
 
     mPersist.SetValue(TW_LANGUAGE, "en");
+
+    // Set default autoboot timeout to 5 seconds
+    mPersist.SetValue(TW_AUTOBOOT_TIMEOUT, 5);
 
     pthread_mutex_unlock(&m_valuesLock);
 }

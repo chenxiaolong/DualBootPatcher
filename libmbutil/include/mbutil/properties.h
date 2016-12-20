@@ -22,10 +22,8 @@
 #include <string>
 #include <unordered_map>
 
-#include <sys/system_properties.h>
-
-#define MB_PROP_NAME_MAX  PROP_NAME_MAX
-#define MB_PROP_VALUE_MAX PROP_VALUE_MAX
+#include "mbutil/integer.h"
+#include "mbutil/external/system_properties.h"
 
 namespace mb
 {
@@ -42,11 +40,38 @@ int libc_system_property_foreach(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie);
 
-void get_property(const std::string &name,
-                  std::string *value_out,
-                  const std::string &default_value);
-bool set_property(const std::string &name,
-                  const std::string &value);
+int property_get(const char *key, char *value_out, const char *default_value);
+int property_set(const char *key, const char *value);
+
+bool property_get_bool(const char *key, bool default_value);
+
+template<typename SIntType>
+inline SIntType property_get_snum(const char *key, SIntType default_value)
+{
+    char buf[PROP_VALUE_MAX];
+    SIntType value;
+
+    int n = property_get(key, buf, "");
+    return (n >= 0 && str_to_snum(buf, 10, value))
+            ? value : default_value;
+}
+
+template<typename UIntType>
+inline UIntType property_get_unum(const char *key, UIntType default_value)
+{
+    char buf[PROP_VALUE_MAX];
+    UIntType value;
+
+    int n = property_get(key, buf, "");
+    return (n >= 0 && str_to_unum(buf, 10, value))
+            ? value : default_value;
+}
+
+typedef void (*property_list_cb)(const char *key, const char *value,
+                                 void *cookie);
+
+int property_list(property_list_cb propfn, void *cookie);
+
 bool get_all_properties(std::unordered_map<std::string, std::string> *map);
 bool file_get_property(const std::string &path,
                        const std::string &key,

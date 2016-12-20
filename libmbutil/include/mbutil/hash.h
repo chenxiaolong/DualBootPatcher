@@ -28,7 +28,8 @@ namespace mb
 namespace util
 {
 
-bool sha1_hash(const std::string &path, unsigned char digest[SHA_DIGEST_LENGTH]);
+bool sha512_hash(const std::string &path,
+                 unsigned char digest[SHA512_DIGEST_LENGTH]);
 
 }
 }

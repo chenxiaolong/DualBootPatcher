@@ -6,6 +6,9 @@ The following packages are needed for compiling apk for Android:
 - Android SDK
 - Android NDK
 - cmake
+- jansson
+- yaml-cpp
+- OpenSSL
 
 At this time, the host system must be running Linux (though I have not tried compiling on Windows or OS X).
 

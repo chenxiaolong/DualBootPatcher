@@ -37,8 +37,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
+#include "mbutil/blkid.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
@@ -67,6 +69,9 @@
 #define EXT4_TEMP_IMAGE             "/temp.ext4"
 
 #define WRAPPED_BINARIES_DIR        "/wrapped"
+
+#define FSCK_WRAPPER                "/sbin/fsck-wrapper"
+#define FSCK_WRAPPER_SIG            "/sbin/fsck-wrapper.sig"
 
 
 namespace mb
@@ -115,12 +120,12 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
         }
 
         // Try mounting
-        int ret = mount(rec.blk_device.c_str(),
-                        mount_point,
-                        rec.fs_type.c_str(),
-                        rec.flags,
-                        rec.fs_options.c_str());
-        if (ret < 0) {
+        bool ret = util::mount(rec.blk_device.c_str(),
+                               mount_point,
+                               rec.fs_type.c_str(),
+                               rec.flags,
+                               rec.fs_options.c_str());
+        if (!ret) {
             LOGE("Failed to mount %s (%s) at %s: %s",
                  rec.blk_device.c_str(), rec.fs_type.c_str(),
                  mount_point, strerror(errno));
@@ -143,34 +148,26 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
  * \brief Get list of generic /system fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_system_entries()
+static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_SYSTEM_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/system";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_RDONLY;
-        result.back().fs_options = "noauto_da_alloc,nodiscard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/system";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_RDONLY;
-        result.back().fs_options = "background_gc=off,nodiscard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_system_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/system";
+            result.back().fs_type = "auto";
+            result.back().flags = MS_RDONLY;
+            result.back().fs_options = "";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -180,34 +177,26 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries()
  * \brief Get list of generic /cache fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_cache_entries()
+static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_CACHE_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/cache";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/cache";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "background_gc=on,discard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_cache_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/cache";
+            result.back().fs_type = "auto";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -217,34 +206,26 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries()
  * \brief Get list of generic /data fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_data_entries()
+static std::vector<util::fstab_rec> generic_fstab_data_entries(Device *device)
 {
-    std::string encoded;
-    util::file_get_property(DEFAULT_PROP_PATH, PROP_BLOCK_DEV_DATA_PATHS,
-                            &encoded, "");
-    std::vector<std::string> block_devs = decode_list(encoded);
-
     std::vector<util::fstab_rec> result;
+    const char * const *devs = nullptr;
 
-    for (const std::string &block_dev : block_devs) {
-        // ext4 entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/data";
-        result.back().fs_type = "ext4";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "noauto_da_alloc,discard,data=ordered,errors=panic";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
-        // f2fs entry
-        result.emplace_back();
-        result.back().blk_device = block_dev;
-        result.back().mount_point = "/data";
-        result.back().fs_type = "f2fs";
-        result.back().flags = MS_NOSUID | MS_NODEV;
-        result.back().fs_options = "background_gc=on,discard";
-        result.back().fs_mgr_flags = 0;
-        result.back().vold_args = "check";
+    if (device) {
+        devs = mb_device_data_block_devs(device);
+    }
+
+    if (devs) {
+        for (auto it = devs; *it; ++it) {
+            result.emplace_back();
+            result.back().blk_device = *it;
+            result.back().mount_point = "/data";
+            result.back().fs_type = "auto";
+            result.back().flags = MS_NOSUID | MS_NODEV;
+            result.back().fs_options = "";
+            result.back().fs_mgr_flags = 0;
+            result.back().vold_args = "check";
+        }
     }
 
     return result;
@@ -261,13 +242,20 @@ static bool path_matches(const char *path, const char *pattern)
     }
 }
 
-static void dump(const std::string &line, void *data)
+static void dump(const char *line, bool error, void *userdata)
 {
-    (void) data;
+    (void) error;
+    (void) userdata;
+
+    size_t size = strlen(line);
+
     std::string copy;
-    if (!line.empty() && line.back() == '\n') {
-        copy.assign(line.begin(), line.end() - 1);
+    if (size > 0 && line[size - 1] == '\n') {
+        copy.assign(line, line + size - 1);
+    } else {
+        copy.assign(line, line + size);
     }
+
     LOGD("Command output: %s", copy.c_str());
 }
 
@@ -298,23 +286,31 @@ static bool mount_exfat_fuse(const char *source, const char *target)
         return false;
     }
 
-    // Run filesystem checks
-    util::run_command_cb({
+    char mount_args[100];
+
+    snprintf(mount_args, sizeof(mount_args),
+             "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
+             uid, uid, 0007, 0007, "noexec", "rw");
+
+    const char *fsck_argv[] = {
         "/sbin/fsck.exfat",
-        source
-    }, &dump, nullptr);
+        source,
+        nullptr
+    };
+    const char *mount_argv[] = {
+        "/sbin/mount.exfat",
+        "-o", mount_args,
+        source, target,
+        nullptr
+    };
+
+    // Run filesystem checks
+    util::run_command(fsck_argv[0], fsck_argv, nullptr, nullptr, &dump,
+                      nullptr);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command_cb({
-        "/sbin/mount.exfat",
-        "-o",
-        util::format(
-            "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
-            uid, uid, 0007, 0007, "noexec", "rw"
-        ),
-        source,
-        target
-    }, &dump, nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, nullptr, nullptr,
+                                &dump, nullptr);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));
@@ -425,19 +421,30 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
              DEFAULT_PROP_PATH, strerror(errno));
     }
 
-    LOGD("Using fuse-exfat: %d", use_fuse_exfat);
+    const char *fstype;
+    if (!util::blkid_get_fs_type(block_dev, &fstype)) {
+        LOGE("%s: Failed to detect filesystem type: %s",
+             block_dev, strerror(errno));
+    } else if (!fstype) {
+        LOGE("%s: Unknown filesystem", block_dev);
+    } else if (strcmp(fstype, "exfat") == 0) {
+        LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
-    if (use_fuse_exfat && mount_exfat_fuse(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_exfat_kernel(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_vfat(block_dev, mount_point)) {
-        return true;
-    }
-    if (mount_ext4(block_dev, mount_point)) {
-        return true;
+        auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
+        if (func(block_dev, mount_point)) {
+            return true;
+        }
+    } else if (strcmp(fstype, "vfat") == 0) {
+        if (mount_vfat(block_dev, mount_point)) {
+            return true;
+        }
+    } else if (strcmp(fstype, "ext") == 0) {
+        // Assume ext4
+        if (mount_ext4(block_dev, mount_point)) {
+            return true;
+        }
+    } else {
+        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype);
     }
 
     return false;
@@ -493,55 +500,83 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
         return false;
     }
 
-    // If an actual SD card was found and the mount operation failed, then set
-    // to false. This way, the function won't fail if no SD card is inserted.
-    bool failed = false;
+    // We can't wait for a block device path to appear since we don't know the
+    // block device path. Thus, we'll match the paths a number of times with a
+    // delay between each attempt.
+    static const int max_attempts = 10;
 
-    auto const *devices_map = get_devices_map();
+    for (int i = 0; i < max_attempts; ++i) {
+        LOGV("[Attempt %d/%d] Finding and mounting external SD",
+             i + 1, max_attempts);
 
-    for (const util::fstab_rec &rec : extsd_recs) {
-        std::vector<std::string> patterns =
-                split_patterns(rec.blk_device.c_str());
-        for (const std::string &pattern : patterns) {
-            bool matched = false;
+        auto devices_map = get_block_dev_mappings();
 
-            for (auto const &pair : *devices_map) {
-                if (path_matches(pair.first.c_str(), pattern.c_str())) {
-                    matched = true;
-                    const std::string &block_dev = pair.second;
+        for (const util::fstab_rec &rec : extsd_recs) {
+            std::vector<std::string> patterns =
+                    split_patterns(rec.blk_device.c_str());
 
-                    if (try_extsd_mount(block_dev.c_str(), mount_point)) {
-                        return true;
-                    } else {
-                        failed = true;
+            // Match sysfs path pattern
+            for (const std::string &pattern : patterns) {
+                LOGD("Matching devices against pattern: %s", pattern.c_str());
+
+                for (auto const &pair : devices_map) {
+                    const BlockDevInfo &info = pair.second;
+
+                    if (path_matches(pair.first.c_str(), pattern.c_str())
+                            && info.partition_num == 1) {
+                        LOGV("Matched external SD block dev: "
+                             "major=%d; minor=%d; name=%s; number=%d; path=%s",
+                             info.major, info.minor, info.partition_name.c_str(),
+                             info.partition_num, info.path.c_str());
+
+                        return try_extsd_mount(info.path.c_str(), mount_point);
                     }
-
-                    // Keep trying ...
                 }
             }
+        }
 
-            if (!matched) {
-                LOGE("Failed to find block device corresponding to %s",
-                     pattern.c_str());
-            }
+        if (i < max_attempts - 1) {
+            LOGW("No external SD patterns were matched; waiting 1 second");
+            sleep(1);
         }
     }
 
-    return !failed;
+    LOGE("No external SD patterns were matched after %d attempts",
+         max_attempts);
+
+    return false;
 }
 
-static bool mount_image(const char *image, const char *mount_point,
-                        mode_t perms)
+static bool mount_target(const char *source, const char *target, bool bind)
 {
-    if (!util::mkdir_recursive(mount_point, perms)) {
-        LOGE("%s: Failed to create directory: %s",
-             mount_point, strerror(errno));
+    struct stat sb;
+
+    if (lstat(target, &sb) == 0 && S_ISLNK(sb.st_mode)) {
+        unlink(target);
+    }
+
+    if (!util::mkdir_recursive(target, 0755) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", target, strerror(errno));
         return false;
     }
 
-    // Our image files are always ext4 images
-    if (!util::mount(image, mount_point, "ext4", 0, "")) {
-        LOGE("%s: Failed to mount image: %s", image, strerror(errno));
+    // Create source directory for bind mount if it doesn't already exist.
+    // This can happen if the user accidentally wipes /cache, for example.
+    if (bind && !util::mkdir_recursive(source, 0755) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", source, strerror(errno));
+        return false;
+    }
+
+    bool ret;
+
+    if (bind) {
+        ret = util::mount(source, target, "", MS_BIND, "");
+    } else {
+        ret = util::mount(source, target, "auto", 0, "");
+    }
+
+    if (!ret) {
+        LOGE("%s: Failed to mount: %s: %s", target, source, strerror(errno));
         return false;
     }
 
@@ -565,7 +600,7 @@ static bool mount_all_system_images()
             mount_point += rom->id;
             std::string system_path(rom->full_system_path());
 
-            if (!mount_image(system_path.c_str(), mount_point.c_str(), 0771)) {
+            if (!mount_target(system_path.c_str(), mount_point.c_str(), false)) {
                 LOGW("Failed to mount image for %s", rom->id.c_str());
                 failed = true;
             }
@@ -575,102 +610,51 @@ static bool mount_all_system_images()
     return !failed;
 }
 
-static bool create_ext4_temp_fs(const char *mount_point)
-{
-    struct stat sb;
-    if (stat(EXT4_TEMP_IMAGE, &sb) < 0) {
-        if (errno == ENOENT) {
-            int ret = util::run_command_cb({
-                "/system/bin/make_ext4fs",
-                "-l",
-                "20M",
-                EXT4_TEMP_IMAGE
-            }, &dump, nullptr);
-            if (ret < 0) {
-                LOGE("Failed to run make_ext4fs");
-                return false;
-            } else if (WEXITSTATUS(ret) != 0) {
-                LOGE("make_ext4fs returned non-zero exit status: %d",
-                     WEXITSTATUS(ret));
-                return false;
-            }
-        } else {
-            LOGE("%s: Failed to stat: %s", EXT4_TEMP_IMAGE, strerror(errno));
-        }
-    }
-
-    return util::mount(EXT4_TEMP_IMAGE, mount_point, "ext4", MS_NOSUID, "");
-}
-
-static bool create_tmpfs_temp_fs(const char *mount_point)
-{
-    return util::mount("tmpfs", mount_point, "tmpfs", MS_NOSUID, "mode=0755");
-}
-
-static bool create_temporary_fs(const char *mount_point)
-{
-    if (!create_ext4_temp_fs(mount_point)) {
-        LOGW("Failed to create ext4-backed temporary filesystem");
-        if (!create_tmpfs_temp_fs(mount_point)) {
-            LOGW("Failed to create tmpfs-backed temporary filesystem");
-            return false;
-        }
-    }
-    return true;
-}
-
 static bool disable_fsck(const char *fsck_binary)
 {
+    SigVerifyResult result;
+    result = verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG);
+    if (result != SigVerifyResult::VALID) {
+        LOGE("%s: Invalid signature", FSCK_WRAPPER);
+        return false;
+    }
+
     struct stat sb;
     if (stat(fsck_binary, &sb) < 0) {
         LOGE("%s: Failed to stat: %s", fsck_binary, strerror(errno));
         return errno == ENOENT;
     }
 
-    std::string filename = util::base_name(fsck_binary);
-    std::string path(WRAPPED_BINARIES_DIR);
-    path += "/";
-    path += filename;
+    std::string target(WRAPPED_BINARIES_DIR);
+    target += "/";
+    target += util::base_name(fsck_binary);
 
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wbe"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), strerror(errno));
+    if (!util::copy_file(FSCK_WRAPPER, target, 0)) {
+        LOGE("Failed to copy %s to %s: %s",
+             FSCK_WRAPPER, target.c_str(), strerror(errno));
         return false;
     }
 
-    fprintf(
-        fp.get(),
-        "#!/system/bin/sh\n"
-        "echo %s was disabled by mbtool because performing an online fsck while the\n"
-        "echo partition is mounted is not possible. This is done to ensure that vold\n"
-        "echo does not fail the filesystem checks and make the external SD invisible to the OS.\n"
-        "echo If the filesystem checks must be completed, it will need to be done from a\n"
-        "echo computer or from recovery.\n"
-        "exit 0",
-        filename.c_str()
-    );
-
     // Copy permissions
-    fchown(fileno(fp.get()), sb.st_uid, sb.st_gid);
-    fchmod(fileno(fp.get()), sb.st_mode);
+    chown(target.c_str(), sb.st_uid, sb.st_gid);
+    chmod(target.c_str(), sb.st_mode);
 
     // Copy SELinux label
     std::string context;
     if (util::selinux_get_context(fsck_binary, &context)) {
         LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
-        if (!util::selinux_fset_context(fileno(fp.get()), context)) {
+        if (!util::selinux_set_context(target.c_str(), context)) {
             LOGW("%s: Failed to set SELinux label: %s",
-                 path.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
         }
     } else {
         LOGW("%s: Failed to get SELinux label: %s",
              fsck_binary, strerror(errno));
     }
 
-    if (mount(path.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
+    if (mount(target.c_str(), fsck_binary, "", MS_BIND | MS_RDONLY, "") < 0) {
         LOGE("Failed to bind mount %s to %s: %s",
-             path.c_str(), fsck_binary, strerror(errno));
+             target.c_str(), fsck_binary, strerror(errno));
         return false;
     }
 
@@ -719,12 +703,9 @@ static bool copy_mount_exfat()
     return true;
 }
 
-static bool wrap_binaries()
+static bool wrap_extsd_binaries()
 {
     if (mkdir(WRAPPED_BINARIES_DIR, 0755) < 0 && errno != EEXIST) {
-        return false;
-    }
-    if (!create_temporary_fs(WRAPPED_BINARIES_DIR)) {
         return false;
     }
 
@@ -733,6 +714,9 @@ static bool wrap_binaries()
     // Online fsck is not possible so we'll have to prevent Vold from trying
     // to run fsck_msdos and failing.
     if (!disable_fsck("/system/bin/fsck_msdos")) {
+        ret = false;
+    }
+    if (!disable_fsck("/system/bin/fsck_msdos_mtk")) {
         ret = false;
     }
     if (!disable_fsck("/system/bin/fsck.exfat")) {
@@ -767,8 +751,8 @@ struct FstabRecs
     std::vector<util::fstab_rec> extsd;
 };
 
-bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
-                   FstabRecs *recs)
+bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                   Device *device, int flags, FstabRecs *recs)
 {
     std::vector<util::fstab_rec> fstab;
 
@@ -785,29 +769,34 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
         return false;
     }
 
+    bool include_sdcard0 = !(mb_device_flags(device) & FLAG_FSTAB_SKIP_SDCARD0);
+
     for (auto it = fstab.begin(); it != fstab.end();) {
         LOGD("fstab: %s", it->orig_line.c_str());
 
         if (util::path_compare(it->mount_point, "/system") == 0
-                && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+                && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGD("-> /system entry");
             recs->system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
-                && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+                && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGD("-> /cache entry");
             recs->cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
-                && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+                && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGD("-> /data entry");
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
-        } else if ((it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
+        } else if (it->vold_args.find("emmc@intsd") == std::string::npos
+                && ((include_sdcard0 && it->vold_args.find("voldmanaged=sdcard0") != std::string::npos)
+                || it->vold_args.find("voldmanaged=sdcard1") != std::string::npos
+                || it->vold_args.find("voldmanaged=sdcard") != std::string::npos
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
-                && !(flags & MOUNT_FLAG_SKIP_EXTERNAL_SD)) {
+                && (flags & MOUNT_FLAG_MOUNT_EXTERNAL_SD)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
             recs->extsd.push_back(*it);
@@ -825,23 +814,23 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
     if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
-        if (recs->system.empty() && !(flags & MOUNT_FLAG_SKIP_SYSTEM)) {
+        if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
             LOGW("No /system fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_system_entries();
+            auto entries = generic_fstab_system_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && !(flags & MOUNT_FLAG_SKIP_CACHE)) {
+        if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_cache_entries();
+            auto entries = generic_fstab_cache_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && !(flags & MOUNT_FLAG_SKIP_DATA)) {
+        if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
             LOGW("No /data fstab entries found. Adding generic entries");
-            auto entries = generic_fstab_data_entries();
+            auto entries = generic_fstab_data_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->data.push_back(std::move(rec));
             }
@@ -861,9 +850,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
         }
     }
 
-    // TODO: util::bind_mount() chmod's the source directory. Once that is
-    // removed, we can use read-only system partitions again
-    if (rom /* && rom->cache_source == Rom::Source::SYSTEM */) {
+    if (rom && rom->cache_source == Rom::Source::SYSTEM) {
         for (util::fstab_rec &rec : recs->system) {
             rec.flags &= ~MS_RDONLY;
         }
@@ -880,17 +867,18 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags,
  *
  * \return Whether all of the
  */
-bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
+bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                 Device *device, int flags)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
 
-    if (!process_fstab(path, rom, flags, &recs)) {
+    if (!process_fstab(path, rom, device, flags, &recs)) {
         return false;
     }
 
     // Partitions are mounted in /raw
-    if (mkdir("/raw", 0755) < 0) {
+    if (mkdir("/raw", 0755) < 0 && errno != EEXIST) {
         LOGE("Failed to create /raw: %s", strerror(errno));
         return false;
     }
@@ -927,15 +915,21 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
         }
     }
 
-    // Mount external SD
-    if (ret && !recs.extsd.empty()) {
+    // Mount external SD only if ROM is installed on the external SD. This is
+    // necessary because mount_extsd_fstab_entries() blocks until an SD card is
+    // found or a timeout occurs.
+    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
+            || rom->cache_source == Rom::Source::EXTERNAL_SD
+            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (!require_extsd) {
+        LOGV("Skipping extsd mount because ROM is not an extsd-slot");
+    }
+
+    if (ret && !recs.extsd.empty() && require_extsd) {
         if (mount_extsd_fstab_entries(recs.extsd, EXTSD_MOUNT_POINT, 0755)) {
-            // Only add to list if an SD card exists and is mounted
-            if (util::is_mounted(EXTSD_MOUNT_POINT)) {
-                successful.push_back(EXTSD_MOUNT_POINT);
-            }
+            successful.push_back(EXTSD_MOUNT_POINT);
         } else {
-            LOGE("Failed to mount external SD");
+            LOGE("Failed to mount " EXTSD_MOUNT_POINT);
             ret = false;
         }
     }
@@ -949,7 +943,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom, int flags)
     }
 
     // Rewrite fstab file
-    if (flags & MOUNT_FLAG_REWRITE_FSTAB) {
+    if (ret && (flags & MOUNT_FLAG_REWRITE_FSTAB)) {
         int fd = open(path, O_RDWR | O_TRUNC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
@@ -980,41 +974,36 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
         return false;
     }
 
-    if (rom->system_is_image) {
-        if (!mount_image(target_system.c_str(), "/system", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_system, 0771, "/system", 0771)) {
-            return false;
-        }
+    if (!mount_target(target_system.c_str(), "/system", !rom->system_is_image)) {
+        return false;
     }
-    if (rom->cache_is_image) {
-        if (!mount_image(target_cache.c_str(), "/cache", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_cache, 0771, "/cache", 0771)) {
-            return false;
-        }
+
+    if (!mount_target(target_cache.c_str(), "/cache", !rom->cache_is_image)) {
+        return false;
     }
-    if (rom->data_is_image) {
-        if (!mount_image(target_data.c_str(), "/data", 0771)) {
-            return false;
-        }
-    } else {
-        if (!util::bind_mount(target_data, 0771, "/data", 0771)) {
-            return false;
-        }
+
+    if (!mount_target(target_data.c_str(), "/data", !rom->data_is_image)) {
+        return false;
     }
 
     // Bind mount internal SD directory
-    if (!util::bind_mount("/raw/data/media", 0771, "/data/media", 0771)) {
+    util::mkdir_recursive("/raw/data/media", 0771);
+    util::mkdir_recursive("/data/media", 0771);
+
+    if (!util::mount("/raw/data/media", "/data/media", "", MS_BIND, "")) {
         return false;
     }
 
     mount_all_system_images();
-    wrap_binaries();
+
+    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
+            || rom->cache_source == Rom::Source::EXTERNAL_SD
+            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    if (require_extsd) {
+        wrap_extsd_binaries();
+    } else {
+        LOGV("Skipping external SD binaries wrapping");
+    }
 
     return true;
 }

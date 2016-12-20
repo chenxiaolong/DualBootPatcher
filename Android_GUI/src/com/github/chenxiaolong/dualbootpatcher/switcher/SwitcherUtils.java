@@ -19,6 +19,9 @@ package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -27,10 +30,12 @@ import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipEntry;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile;
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature;
@@ -44,10 +49,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.Properties;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import mbtool.daemon.v3.FileOpenFlag;
 
@@ -72,7 +74,7 @@ public class SwitcherUtils {
             if (id >= 0) {
                 try {
                     iface.fileClose(id);
-                } catch (MbtoolCommandException e) {
+                } catch (Exception e) {
                     // Ignore
                 }
             }
@@ -83,85 +85,55 @@ public class SwitcherUtils {
 
     public static String getBootPartition(Context context, MbtoolInterface iface)
             throws IOException, MbtoolException {
-        String realCodename = RomUtils.getDeviceCodename(context);
-        String bootBlockDev = null;
+        Device device = PatcherUtils.getCurrentDevice(context);
 
-        PatcherConfig pc = new PatcherConfig();
-        for (Device d : pc.getDevices()) {
-            boolean matches = false;
-
-            for (String codename : d.getCodenames()) {
-                if (realCodename.equals(codename)) {
-                    matches = true;
-                    break;
+        if (device != null) {
+            for (String blockDev : device.getBootBlockDevs()) {
+                if (pathExists(iface, blockDev)) {
+                    return blockDev;
                 }
-            }
-
-            if (matches) {
-                String[] bootBlockDevs = d.getBootBlockDevs();
-                for (String blockDev : bootBlockDevs) {
-                    if (pathExists(iface, blockDev)) {
-                        bootBlockDev = blockDev;
-                        break;
-                    }
-                }
-                if (bootBlockDev == null && bootBlockDevs.length > 0) {
-                    bootBlockDev = bootBlockDevs[0];
-                }
-                break;
             }
         }
-        pc.destroy();
-
-        return bootBlockDev;
-    }
-
-    public static String[] getBlockDevSearchDirs(Context context) {
-        String realCodename = RomUtils.getDeviceCodename(context);
-        PatcherConfig pc = new PatcherConfig();
-        for (Device d : pc.getDevices()) {
-            boolean matches = false;
-
-            for (String codename : d.getCodenames()) {
-                if (realCodename.equals(codename)) {
-                    matches = true;
-                    break;
-                }
-            }
-
-            if (matches) {
-                String[] dirs = d.getBlockDevBaseDirs();
-                pc.destroy();
-                return dirs;
-            }
-        }
-        pc.destroy();
 
         return null;
     }
 
-    public static VerificationResult verifyZipMbtoolVersion(String zipFile) {
+    public static String[] getBlockDevSearchDirs(Context context) {
+        Device device = PatcherUtils.getCurrentDevice(context);
+
+        if (device != null) {
+            return device.getBlockDevBaseDirs();
+        }
+
+        return null;
+    }
+
+    public static VerificationResult verifyZipMbtoolVersion(@NonNull Context context,
+                                                            @NonNull Uri uri) {
         ThreadUtils.enforceExecutionOnNonMainThread();
 
-        ZipFile zf = null;
+        ParcelFileDescriptor pfd = null;
+        MiniZipInputFile mzif = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                return VerificationResult.ERROR_ZIP_READ_FAIL;
+            }
+
+            mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
 
             boolean isMultiboot = false;
-
             Properties prop = null;
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().startsWith(ZIP_MULTIBOOT_DIR)) {
+            MiniZipEntry entry;
+            while ((entry = mzif.nextEntry()) != null) {
+                if (entry.getName().startsWith(ZIP_MULTIBOOT_DIR)) {
                     isMultiboot = true;
                 }
-                if (ze.getName().equals(ZIP_INFO_PROP)) {
+                if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zf.getInputStream(ze));
+                    prop.load(mzif.getInputStream());
                     break;
                 }
             }
@@ -192,32 +164,32 @@ public class SwitcherUtils {
             e.printStackTrace();
             return VerificationResult.ERROR_VERSION_TOO_OLD;
         } finally {
-            //IOUtils.closeQuietly(zf);
-            if (zf != null) {
-                try {
-                    zf.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-            }
+            IOUtils.closeQuietly(mzif);
+            IOUtils.closeQuietly(pfd);
         }
     }
 
-    public static String getTargetInstallLocation(String zipFile) {
-        ZipFile zf = null;
+    public static String getTargetInstallLocation(@NonNull Context context, @NonNull Uri uri) {
+        ThreadUtils.enforceExecutionOnNonMainThread();
+
+        ParcelFileDescriptor pfd = null;
+        MiniZipInputFile mzif = null;
 
         try {
-            zf = new ZipFile(zipFile);
+            pfd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                return null;
+            }
+
+            mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
 
             Properties prop = null;
 
-            final Enumeration<? extends ZipEntry> entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                final ZipEntry ze = entries.nextElement();
-
-                if (ze.getName().equals(ZIP_INFO_PROP)) {
+            MiniZipEntry entry;
+            while ((entry = mzif.nextEntry()) != null) {
+                if (entry.getName().equals(ZIP_INFO_PROP)) {
                     prop = new Properties();
-                    prop.load(zf.getInputStream(ze));
+                    prop.load(mzif.getInputStream());
                     break;
                 }
             }
@@ -234,14 +206,8 @@ public class SwitcherUtils {
             e.printStackTrace();
             return null;
         } finally {
-            //IOUtils.closeQuietly(zf);
-            if (zf != null) {
-                try {
-                    zf.close();
-                } catch (IOException e) {
-                    // Ignore
-                }
-            }
+            IOUtils.closeQuietly(mzif);
+            IOUtils.closeQuietly(pfd);
         }
     }
 
@@ -386,6 +352,7 @@ public class SwitcherUtils {
         }
 
         try {
+            //noinspection OctalInteger
             iface.pathChmod(targetFile.getAbsolutePath(), 0644);
         } catch (MbtoolCommandException e) {
             Log.e(TAG, "Failed to chmod " + targetFile, e);
