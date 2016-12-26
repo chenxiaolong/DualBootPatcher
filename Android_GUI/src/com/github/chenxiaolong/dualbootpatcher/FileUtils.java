@@ -235,17 +235,7 @@ public class FileUtils {
             i = context.getAssets().open(src);
             o = new FileOutputStream(dest);
 
-            // byte[] buffer = new byte[4096];
-            // int length;
-            // while ((length = i.read(buffer)) > 0) {
-            // o.write(buffer, 0, length);
-            // }
-
-            int length = i.available();
-            byte[] buffer = new byte[length];
-            i.read(buffer);
-            o.write(buffer);
-            o.flush();
+            IOUtils.copy(i, o);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
