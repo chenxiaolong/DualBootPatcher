@@ -40,7 +40,6 @@ import com.github.chenxiaolong.dualbootpatcher.pathchooser.PathChooserActivity;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -228,7 +227,7 @@ public class FileUtils {
         return intent;
     }
 
-    public static void extractAsset(Context context, String src, File dest) {
+    public static void extractAsset(Context context, String src, File dest) throws IOException {
         InputStream i = null;
         FileOutputStream o = null;
         try {
@@ -236,16 +235,15 @@ public class FileUtils {
             o = new FileOutputStream(dest);
 
             IOUtils.copy(i, o);
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
             IOUtils.closeQuietly(i);
             IOUtils.closeQuietly(o);
         }
     }
 
-    public static boolean zipExtractFile(@NonNull Context context, @NonNull Uri uri,
-                                         @NonNull String filename, @NonNull String destFile) {
+    public static void zipExtractFile(@NonNull Context context, @NonNull Uri uri,
+                                         @NonNull String filename, @NonNull String destFile)
+            throws IOException {
         ParcelFileDescriptor pfd = null;
         MiniZipInputFile mzif = null;
         FileOutputStream fos = null;
@@ -253,7 +251,7 @@ public class FileUtils {
         try {
             pfd = context.getContentResolver().openFileDescriptor(uri, "r");
             if (pfd == null) {
-                return false;
+                throw new IOException("Failed to open URI: " + uri);
             }
 
             mzif = new MiniZipInputFile("/proc/self/fd/" + pfd.getFd());
@@ -263,20 +261,14 @@ public class FileUtils {
                 if (entry.getName().equals(filename)) {
                     fos = new FileOutputStream(destFile);
                     IOUtils.copy(mzif.getInputStream(), fos);
-                    return true;
+                    return;
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         } finally {
             IOUtils.closeQuietly(mzif);
             IOUtils.closeQuietly(fos);
             IOUtils.closeQuietly(pfd);
         }
-
-        return false;
     }
 
     private static class Base2Abbrev {

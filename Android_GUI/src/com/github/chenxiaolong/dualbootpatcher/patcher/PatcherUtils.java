@@ -162,7 +162,11 @@ public class PatcherUtils {
         File targetDir = getTargetDirectory(context);
 
         if (BuildConfig.BUILD_TYPE.equals("debug") || !targetDir.exists()) {
-            FileUtils.extractAsset(context, sTargetFile, targetFile);
+            try {
+                FileUtils.extractAsset(context, sTargetFile, targetFile);
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to extract data archive from assets", e);
+            }
 
             // Remove all previous files
             for (File d : context.getFilesDir().listFiles()) {

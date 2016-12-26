@@ -182,15 +182,18 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 }
             } else {
                 printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
-
-                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY,
-                        zipInstaller.getPath())) {
+                try {
+                    FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY,
+                        zipInstaller.getPath());
+                } catch (IOException e) {
                     printBoldText(Color.RED, "Failed to extract update-binary\n");
                     return false;
                 }
                 printBoldText(Color.YELLOW, "Extracting mbtool signature from the zip file\n");
-                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY_SIG,
-                        zipInstallerSig.getPath())) {
+                try {
+                    FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY_SIG,
+                            zipInstallerSig.getPath());
+                } catch (IOException e) {
                     printBoldText(Color.RED, "Failed to extract update-binary.sig\n");
                     return false;
                 }
