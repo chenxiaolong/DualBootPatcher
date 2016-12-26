@@ -264,7 +264,7 @@ public class GenericInputDialog extends DialogFragment implements MaterialDialog
         }
 
         @NonNull
-        public GenericInputDialog buildFromActivity(String tag) {
+        public GenericInputDialog buildFromActivity(@Nullable String tag) {
             Bundle args = new Bundle();
             args.putSerializable(ARG_BUILDER, this);
             args.putSerializable(ARG_TARGET, DialogListenerTarget.ACTIVITY);

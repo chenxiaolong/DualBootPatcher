@@ -435,10 +435,13 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         } else {
             mAddType = Type.BACKUP_RESTORE;
 
-            GenericSingleChoiceDialog d = GenericSingleChoiceDialog.newInstanceFromFragment(
-                    this, 0, null, getString(R.string.in_app_flashing_select_backup_dialog_desc),
-                    getString(R.string.ok), getString(R.string.cancel), backupNames);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
+            GenericSingleChoiceDialog.Builder builder = new GenericSingleChoiceDialog.Builder();
+            builder.message(R.string.in_app_flashing_select_backup_dialog_desc);
+            builder.positive(R.string.ok);
+            builder.negative(R.string.cancel);
+            builder.choices(backupNames);
+            builder.buildFromFragment(CONFIRM_DIALOG_SELECT_BACKUP, this).show(
+                    getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
         }
     }
 
@@ -488,9 +491,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
                 throw new IllegalStateException("Invalid verification result ID");
             }
 
-            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
-                    null, -1, null, error, null);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(error);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         }
     }
 
@@ -527,9 +531,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             if (data != null && resultCode == Activity.RESULT_OK) {
                 mSelectedUri = data.getData();
 
-                GenericProgressDialog d = GenericProgressDialog.newInstance(
-                        R.string.in_app_flashing_dialog_verifying_zip, R.string.please_wait);
-                d.show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
+                GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+                builder.title(R.string.in_app_flashing_dialog_verifying_zip);
+                builder.message(R.string.please_wait);
+                builder.build().show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
 
                 queryUriMetadata();
             }
@@ -566,7 +571,9 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         GenericProgressDialog dialog = (GenericProgressDialog)
                 getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
         if (dialog == null) {
-            dialog = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            dialog = builder.build();
             dialog.show(getFragmentManager(), PROGRESS_DIALOG_QUERYING_METADATA);
         }
     }
@@ -593,7 +600,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     @Override
-    public void onConfirmSingleChoice(int id, int index, String text) {
+    public void onConfirmSingleChoice(@Nullable String tag, int index, String text) {
         mSelectedBackupName = text;
 
         // Adk for restore targets
@@ -666,9 +673,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
-            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
-                    null, -1, null, getString(R.string.in_app_flashing_error_no_overwrite_rom), null);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.in_app_flashing_error_no_overwrite_rom);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         } else {
             mActivityCallback.onReady(true);
 

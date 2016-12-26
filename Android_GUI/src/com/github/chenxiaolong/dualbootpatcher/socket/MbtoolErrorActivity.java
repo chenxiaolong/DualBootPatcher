@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -178,20 +179,28 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
         DialogFragment dialog;
 
         switch (mReason) {
-        case DAEMON_NOT_RUNNING:
-            dialog = GenericProgressDialog.newInstance(0, R.string.mbtool_dialog_starting_mbtool);
+        case DAEMON_NOT_RUNNING: {
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.mbtool_dialog_starting_mbtool);
+            dialog = builder.build();
             startMbtoolUpdate();
             break;
-        case SIGNATURE_CHECK_FAIL:
-            dialog = GenericYesNoDialog.newInstanceFromActivity(0, null,
-                    getString(R.string.mbtool_dialog_signature_check_fail),
-                    getString(R.string.proceed), getString(R.string.cancel));
+        }
+        case SIGNATURE_CHECK_FAIL: {
+            GenericYesNoDialog.Builder builder = new GenericYesNoDialog.Builder();
+            builder.message(R.string.mbtool_dialog_signature_check_fail);
+            builder.positive(R.string.proceed);
+            builder.negative(R.string.cancel);
+            dialog = builder.buildFromActivity(DIALOG_TAG);
             break;
+        }
         case INTERFACE_NOT_SUPPORTED:
         case VERSION_TOO_OLD:
-            dialog = GenericYesNoDialog.newInstanceFromActivity(0, null,
-                    getString(R.string.mbtool_dialog_version_too_old),
-                    getString(R.string.proceed), getString(R.string.cancel));
+            GenericYesNoDialog.Builder builder = new GenericYesNoDialog.Builder();
+            builder.message(R.string.mbtool_dialog_version_too_old);
+            builder.positive(R.string.proceed);
+            builder.negative(R.string.cancel);
+            dialog = builder.buildFromActivity(DIALOG_TAG);
             break;
         default:
             throw new IllegalStateException("Invalid mbtool error reason: " + mReason.name());
@@ -211,9 +220,10 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
         }
 
         if (!success) {
-            dialog = GenericConfirmDialog.newInstanceFromActivity(
-                    0, null, getString(R.string.mbtool_dialog_update_failed),
-                    getString(R.string.ok));
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.mbtool_dialog_update_failed);
+            builder.buttonText(R.string.ok);
+            dialog = builder.buildFromActivity(DIALOG_TAG);
             dialog.show(getFragmentManager(), DIALOG_TAG);
         } else {
             exit(true);
@@ -229,11 +239,11 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
     }
 
     @Override
-    public void onConfirmYesNo(int id, boolean choice) {
-        if (id == 0 && choice) {
-            DialogFragment dialog = GenericProgressDialog.newInstance(
-                    0, R.string.mbtool_dialog_updating_mbtool);
-            dialog.show(getFragmentManager(), DIALOG_TAG);
+    public void onConfirmYesNo(@Nullable String tag, boolean choice) {
+        if (DIALOG_TAG.equals(tag) && choice) {
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.mbtool_dialog_updating_mbtool);
+            builder.build().show(getFragmentManager(), DIALOG_TAG);
 
             startMbtoolUpdate();
         } else {
@@ -242,8 +252,8 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
     }
 
     @Override
-    public void onConfirmOk(int id) {
-        if (id == 0) {
+    public void onConfirmOk(@Nullable String tag) {
+        if (DIALOG_TAG.equals(tag)) {
             exit(false);
         } else {
             finish();

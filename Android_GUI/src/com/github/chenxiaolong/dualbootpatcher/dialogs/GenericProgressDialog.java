@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,36 +20,39 @@ package com.github.chenxiaolong.dualbootpatcher.dialogs;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
-public class GenericProgressDialog extends DialogFragment {
-    private static final String ARG_TITLE_RES_ID = "rom";
-    private static final String ARG_MESSAGE_RES_ID = "message";
+import java.io.Serializable;
 
-    public static GenericProgressDialog newInstance(int titleResId, int messageResId) {
-        GenericProgressDialog frag = new GenericProgressDialog();
-        Bundle args = new Bundle();
-        args.putInt(ARG_TITLE_RES_ID, titleResId);
-        args.putInt(ARG_MESSAGE_RES_ID, messageResId);
-        frag.setArguments(args);
-        return frag;
-    }
+public class GenericProgressDialog extends DialogFragment {
+    private static final String ARG_BUILDER = "builder";
+
+    private Builder mBuilder;
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        int titleResId = getArguments().getInt(ARG_TITLE_RES_ID);
-        int messageResId = getArguments().getInt(ARG_MESSAGE_RES_ID);
+        Bundle args = getArguments();
+        mBuilder = (Builder) args.getSerializable(ARG_BUILDER);
 
-        MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity())
-                .progress(true, 0);
+        MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
 
-        if (titleResId != 0) {
-            builder.title(titleResId);
+        if (mBuilder.mTitle != null) {
+            builder.title(mBuilder.mTitle);
+        } else if (mBuilder.mTitleResId != 0) {
+            builder.title(mBuilder.mTitleResId);
         }
-        if (messageResId != 0) {
-            builder.content(messageResId);
+
+        if (mBuilder.mMessage != null) {
+            builder.content(mBuilder.mMessage);
+        } else if (mBuilder.mMessageResId != 0) {
+            builder.content(mBuilder.mMessageResId);
         }
+
+        builder.progress(true, 0);
 
         Dialog dialog = builder.build();
 
@@ -57,5 +60,54 @@ public class GenericProgressDialog extends DialogFragment {
         dialog.setCanceledOnTouchOutside(false);
 
         return dialog;
+    }
+
+    public static class Builder implements Serializable {
+        @Nullable
+        String mTitle;
+        @StringRes
+        int mTitleResId;
+        @Nullable
+        String mMessage;
+        @StringRes
+        int mMessageResId;
+
+        @NonNull
+        public Builder title(@Nullable String title) {
+            mTitle = title;
+            mTitleResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder title(@StringRes int titleResId) {
+            mTitle = null;
+            mTitleResId = titleResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@Nullable String message) {
+            mMessage = message;
+            mMessageResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@StringRes int messageResId) {
+            mMessage = null;
+            mMessageResId = messageResId;
+            return this;
+        }
+
+        @NonNull
+        public GenericProgressDialog build() {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+
+            GenericProgressDialog dialog = new GenericProgressDialog();
+            dialog.setArguments(args);
+            return dialog;
+        }
     }
 }

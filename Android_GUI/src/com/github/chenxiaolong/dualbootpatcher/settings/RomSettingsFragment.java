@@ -323,10 +323,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                         R.string.rom_settings_boot_ui_install_failure, Toast.LENGTH_LONG).show();
 
         if (success) {
-            GenericConfirmDialog d2 = GenericConfirmDialog.newInstanceFromFragment(
-                    null, 0, null, getString(R.string.rom_settings_boot_ui_update_ramdisk_msg),
-                    getString(R.string.ok));
-            d2.show(getFragmentManager(), CONFIRM_DIALOG_BOOT_UI);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.rom_settings_boot_ui_update_ramdisk_msg);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_BOOT_UI);
         }
     }
 
@@ -358,16 +358,18 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             mService.addCallback(mTaskIdInstall, mCallback);
             mService.enqueueTaskId(mTaskIdInstall);
 
-            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         } else if (preference == mBootUIUninstallPref) {
             mTaskIdUninstall = mService.bootUIAction(BootUIAction.UNINSTALL);
             mService.addCallback(mTaskIdUninstall, mCallback);
             mService.enqueueTaskId(mTaskIdUninstall);
 
-            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         }
 
