@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -67,7 +68,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.BackupNameInputDialog.BackupNameInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupNameInputDialog
+        .BackupNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog
         .BackupRestoreTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -768,11 +770,11 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onSelectedBackupName(String name) {
         SharedPreferences prefs = getSharedPreferences("settings", 0);
 
-        String backupDir = prefs.getString(
-                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+        Uri backupDirUri = Uri.parse(prefs.getString(Constants.Preferences.BACKUP_DIRECTORY_URI,
+                Constants.Defaults.BACKUP_DIRECTORY_URI));
 
         BackupRestoreParams params = new BackupRestoreParams(
-                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDir, false);
+                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDirUri, false);
         MbtoolAction action = new MbtoolAction(params);
 
         // Start backup

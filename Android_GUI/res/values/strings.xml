@@ -604,6 +604,15 @@
     <string name="mbtool_dialog_update_failed">Failed to update mbtool. Many operations, such as
         switching ROMs will not work.</string>
 
+    <!-- Path chooser dialog textbox hint for entering a filename -->
+    <string name="path_chooser_enter_a_filename">Enter a filename</string>
+    <!-- Path chooser dialog button to select a directory -->
+    <string name="path_chooser_choose_label">Choose</string>
+    <!-- Path chooser dialog button to save a file -->
+    <string name="path_chooser_save_label">Save</string>
+    <!-- Path chooser dialog button to create a new folder -->
+    <string name="path_chooser_new_folder_label">New folder</string>
+
     <!-- Word/phrase for Search (used in action bars) -->
     <string name="search">Search</string>
     <!-- Word/phrase for None (used in eg. a list) -->
