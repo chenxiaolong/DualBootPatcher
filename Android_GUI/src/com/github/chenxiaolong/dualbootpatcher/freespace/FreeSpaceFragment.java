@@ -35,13 +35,13 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.github.chenxiaolong.dualbootpatcher.FileUtils;
+import com.github.chenxiaolong.dualbootpatcher.FileUtils.MountEntry;
 import com.github.chenxiaolong.dualbootpatcher.R;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC.CWrapper.mntent;
 import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar;
-import com.sun.jna.Pointer;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -61,6 +61,31 @@ public class FreeSpaceFragment extends Fragment {
             Color.parseColor("#E65100"),
             Color.parseColor("#607D8B")
     };
+
+    private static final HashSet<String> SKIPPED_FSTYPES = new HashSet<>();
+    private static final HashSet<String> SKIPPED_FSNAMES = new HashSet<>();
+
+    static {
+        SKIPPED_FSTYPES.add("cgroup");
+        SKIPPED_FSTYPES.add("debugfs");
+        SKIPPED_FSTYPES.add("devpts");
+        SKIPPED_FSTYPES.add("proc");
+        SKIPPED_FSTYPES.add("pstore");
+        SKIPPED_FSTYPES.add("rootfs");
+        SKIPPED_FSTYPES.add("selinuxfs");
+        SKIPPED_FSTYPES.add("sysfs");
+        SKIPPED_FSTYPES.add("tmpfs");
+
+        SKIPPED_FSNAMES.add("debugfs");
+        SKIPPED_FSNAMES.add("devpts");
+        SKIPPED_FSNAMES.add("none");
+        SKIPPED_FSNAMES.add("proc");
+        SKIPPED_FSNAMES.add("pstore");
+        SKIPPED_FSNAMES.add("rootfs");
+        SKIPPED_FSNAMES.add("selinuxfs");
+        SKIPPED_FSNAMES.add("sysfs");
+        SKIPPED_FSNAMES.add("tmpfs");
+    }
 
     public static FreeSpaceFragment newInstance() {
         return new FreeSpaceFragment();
@@ -105,36 +130,25 @@ public class FreeSpaceFragment extends Fragment {
     private void refreshMounts() {
         mMounts.clear();
 
-        Pointer stream = LibC.CWrapper.fopen("/proc/mounts", "r");
-        mntent ent;
-        while ((ent = LibC.CWrapper.getmntent(stream)) != null) {
+        MountEntry[] entries;
+
+        try {
+            entries = FileUtils.getMounts();
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to get mount entries", e);
+            return;
+        }
+
+        for (MountEntry entry : entries) {
             MountInfo info = new MountInfo();
-            info.mountpoint = ent.mnt_dir;
-            info.fsname = ent.mnt_fsname;
-            info.fstype = ent.mnt_type;
+            info.mountpoint = entry.mnt_dir;
+            info.fsname = entry.mnt_fsname;
+            info.fstype = entry.mnt_type;
 
             // Ignore irrelevant filesystems
-            if ("cgroup".equals(info.fstype)
-                    || "debugfs".equals(info.fstype)
-                    || "devpts".equals(info.fstype)
-                    || "proc".equals(info.fstype)
-                    || "pstore".equals(info.fstype)
-                    || "rootfs".equals(info.fstype)
-                    || "selinuxfs".equals(info.fstype)
-                    || "sysfs".equals(info.fstype)
-                    || "tmpfs".equals(info.fstype)) {
-                continue;
-            } else if ("debugfs".equals(info.fsname)
-                    || "devpts".equals(info.fsname)
-                    || "none".equals(info.fsname)
-                    || "proc".equals(info.fsname)
-                    || "pstore".equals(info.fsname)
-                    || "rootfs".equals(info.fsname)
-                    || "selinuxfs".equals(info.fsname)
-                    || "sysfs".equals(info.fsname)
-                    || "tmpfs".equals(info.fsname)) {
-                continue;
-            } else if (info.mountpoint.startsWith("/mnt")
+            if (SKIPPED_FSTYPES.contains(info.fstype)
+                    || SKIPPED_FSNAMES.contains(info.fsname)
+                    || info.mountpoint.startsWith("/mnt")
                     || info.mountpoint.startsWith("/dev")
                     || info.mountpoint.startsWith("/proc")
                     || info.mountpoint.startsWith("/data/data")) {
@@ -161,8 +175,6 @@ public class FreeSpaceFragment extends Fragment {
 
             mMounts.add(info);
         }
-
-        LibC.CWrapper.fclose(stream);
 
         mAdapter.notifyDataSetChanged();
     }

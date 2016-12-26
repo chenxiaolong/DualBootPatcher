@@ -38,11 +38,16 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInput
 import com.github.chenxiaolong.dualbootpatcher.pathchooser.PathChooserActivity;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
+import org.apache.commons.lang3.text.translate.LookupTranslator;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FileUtils {
@@ -54,6 +59,19 @@ public class FileUtils {
 
     private static final boolean FORCE_PATH_CHOOSER = false;
     private static final boolean FORCE_GET_CONTENT = false;
+
+    private static final String PROC_MOUNTS = "/proc/mounts";
+
+    // According to the getmntent(3) manpage and the glibc source code, these are the only escaped
+    // values
+    private static final CharSequenceTranslator UNESCAPE_MOUNT_ENTRY =
+            new LookupTranslator(new String[][] {
+                    {"\\040", " "},
+                    {"\\011", "\t"},
+                    {"\\012", "\n"},
+                    {"\\134", "\\"},
+                    {"\\\\", "\\"}
+            });
 
     private static boolean canHandleIntent(PackageManager pm, Intent intent) {
         List<ResolveInfo> list = pm.queryIntentActivities(intent, 0);
@@ -379,5 +397,53 @@ public class FileUtils {
         }
 
         return df;
+    }
+
+    public static class MountEntry {
+        public String mnt_fsname;
+        public String mnt_dir;
+        public String mnt_type;
+        public String mnt_opts;
+        public int mnt_freq;
+        public int mnt_passno;
+    }
+
+    @NonNull
+    public static MountEntry[] getMounts() throws IOException {
+        ArrayList<MountEntry> entries = new ArrayList<>();
+        BufferedReader br = null;
+
+        try {
+            br = new BufferedReader(new FileReader(PROC_MOUNTS));
+
+            for (String line; (line = br.readLine()) != null;) {
+                String[] pieces = line.split("[ \t]");
+                if (pieces.length != 6) {
+                    throw new IOException("Illegal mount entry: " + line);
+                }
+
+                MountEntry entry = new MountEntry();
+                entry.mnt_fsname = UNESCAPE_MOUNT_ENTRY.translate(pieces[0]);
+                entry.mnt_dir = UNESCAPE_MOUNT_ENTRY.translate(pieces[1]);
+                entry.mnt_type = UNESCAPE_MOUNT_ENTRY.translate(pieces[2]);
+                entry.mnt_opts = UNESCAPE_MOUNT_ENTRY.translate(pieces[3]);
+                try {
+                    entry.mnt_freq = Integer.parseInt(pieces[4]);
+                } catch (NumberFormatException e) {
+                    throw new IOException("Illegal mnt_freq value: " + pieces[4], e);
+                }
+                try {
+                    entry.mnt_passno = Integer.parseInt(pieces[5]);
+                } catch (NumberFormatException e) {
+                    throw new IOException("Illegal mnt_passno value: " + pieces[5], e);
+                }
+
+                entries.add(entry);
+            }
+
+            return entries.toArray(new MountEntry[entries.size()]);
+        } finally {
+            IOUtils.closeQuietly(br);
+        }
     }
 }
