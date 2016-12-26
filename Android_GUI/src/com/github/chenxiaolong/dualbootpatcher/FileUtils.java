@@ -290,13 +290,13 @@ public class FileUtils {
     }
 
     private static final Base2Abbrev[] BASE2_ABBREVS = new Base2Abbrev[] {
-            new Base2Abbrev(1l << 60, R.string.format_exbibytes),
-            new Base2Abbrev(1l << 50, R.string.format_pebibytes),
-            new Base2Abbrev(1l << 40, R.string.format_tebibytes),
-            new Base2Abbrev(1l << 30, R.string.format_gibibytes),
-            new Base2Abbrev(1l << 20, R.string.format_mebibytes),
-            new Base2Abbrev(1l << 10, R.string.format_kibibytes),
-            new Base2Abbrev(1l,       R.string.format_bytes)
+            new Base2Abbrev(1L << 60, R.string.format_exbibytes),
+            new Base2Abbrev(1L << 50, R.string.format_pebibytes),
+            new Base2Abbrev(1L << 40, R.string.format_tebibytes),
+            new Base2Abbrev(1L << 30, R.string.format_gibibytes),
+            new Base2Abbrev(1L << 20, R.string.format_mebibytes),
+            new Base2Abbrev(1L << 10, R.string.format_kibibytes),
+            new Base2Abbrev(1L,       R.string.format_bytes)
     };
 
     @NonNull
