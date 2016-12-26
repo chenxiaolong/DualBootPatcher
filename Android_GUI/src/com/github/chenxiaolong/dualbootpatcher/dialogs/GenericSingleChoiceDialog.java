@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,10 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.ArrayRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 import android.view.View;
 
 import com.afollestad.materialdialogs.DialogAction;
@@ -29,128 +32,242 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ListCallbackSingleChoice;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 
-public class GenericSingleChoiceDialog extends DialogFragment {
-    private static final String ARG_ID = "id";
-    private static final String ARG_TITLE = "title";
-    private static final String ARG_MESSAGE = "message";
-    private static final String ARG_POSITIVE = "positive";
-    private static final String ARG_NEGATIVE = "negative";
-    private static final String ARG_CHOICES = "choices";
+import java.io.Serializable;
+
+public class GenericSingleChoiceDialog extends DialogFragment implements ListCallbackSingleChoice, SingleButtonCallback {
+    private static final String ARG_BUILDER = "builder";
+    private static final String ARG_TARGET = "target";
+    private static final String ARG_TAG = "tag";
+
+    private static final String EXTRA_SELECTED_INDEX = "selected_index";
+    private static final String EXTRA_SELECTED_TEXT = "selected_text";
+
+    private Builder mBuilder;
+    private DialogListenerTarget mTarget;
+    private String mTag;
+
+    private String mSelectedText;
 
     public interface GenericSingleChoiceDialogListener {
-        void onConfirmSingleChoice(int id, int index, String text);
+        void onConfirmSingleChoice(@Nullable String tag, int index, String text);
     }
 
-    public static GenericSingleChoiceDialog newInstanceFromFragment(Fragment parent, int id,
-                                                                    String title, String message,
-                                                                    String positive,
-                                                                    String negative,
-                                                                    String[] choices) {
-        if (parent != null) {
-            if (!(parent instanceof GenericSingleChoiceDialogListener)) {
-                throw new IllegalStateException(
-                        "Parent fragment must implement GenericSingleChoiceDialogListener");
-            }
-        }
-
-        GenericSingleChoiceDialog frag = new GenericSingleChoiceDialog();
-        frag.setTargetFragment(parent, 0);
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_POSITIVE, positive);
-        args.putString(ARG_NEGATIVE, negative);
-        args.putStringArray(ARG_CHOICES, choices);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    public static GenericSingleChoiceDialog newInstanceFromActivity(int id,
-                                                                    String title, String message,
-                                                                    String positive,
-                                                                    String negative,
-                                                                    String[] choices) {
-        GenericSingleChoiceDialog frag = new GenericSingleChoiceDialog();
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_POSITIVE, positive);
-        args.putString(ARG_NEGATIVE, negative);
-        args.putStringArray(ARG_CHOICES, choices);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    GenericSingleChoiceDialogListener getOwner() {
-        Fragment f = getTargetFragment();
-        if (f == null) {
-            if (!(getActivity() instanceof GenericSingleChoiceDialogListener)) {
-                throw new IllegalStateException(
-                        "Activity must implement GenericSingleChoiceDialogListener");
-            }
+    @Nullable
+    private GenericSingleChoiceDialogListener getOwner() {
+        switch (mTarget) {
+        case ACTIVITY:
             return (GenericSingleChoiceDialogListener) getActivity();
-        } else {
+        case FRAGMENT:
             return (GenericSingleChoiceDialogListener) getTargetFragment();
+        case NONE:
+        default:
+            return null;
         }
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        final int id = getArguments().getInt(ARG_ID);
-        String title = getArguments().getString(ARG_TITLE);
-        String message = getArguments().getString(ARG_MESSAGE);
-        String positive = getArguments().getString(ARG_POSITIVE);
-        String negative = getArguments().getString(ARG_NEGATIVE);
-        final String[] choices = getArguments().getStringArray(ARG_CHOICES);
+        Bundle args = getArguments();
+        mBuilder = (Builder) args.getSerializable(ARG_BUILDER);
+        mTarget = (DialogListenerTarget) args.getSerializable(ARG_TARGET);
+        mTag = args.getString(ARG_TAG);
+
+        int selectedIndex = -1;
+
+        if (savedInstanceState != null) {
+            selectedIndex = savedInstanceState.getInt(EXTRA_SELECTED_INDEX, -1);
+            mSelectedText = savedInstanceState.getString(EXTRA_SELECTED_TEXT);
+        }
 
         MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
 
-        if (title != null) {
-            builder.title(title);
-        }
-        if (message != null) {
-            builder.content(message);
-        }
-        if (positive != null) {
-            builder.positiveText(positive);
-        }
-        if (negative != null) {
-            builder.negativeText(negative);
+        if (mBuilder.mTitle != null) {
+            builder.title(mBuilder.mTitle);
+        } else if (mBuilder.mTitleResId != 0) {
+            builder.title(mBuilder.mTitleResId);
         }
 
-        builder.items((CharSequence[]) choices);
-        builder.itemsCallbackSingleChoice(-1, new ListCallbackSingleChoice() {
-            @Override
-            public boolean onSelection(MaterialDialog dialog, View itemView, int which,
-                                       CharSequence text) {
-                dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
-                return true;
-            }
-        });
+        if (mBuilder.mMessage != null) {
+            builder.content(mBuilder.mMessage);
+        } else if (mBuilder.mMessageResId != 0) {
+            builder.content(mBuilder.mMessageResId);
+        }
+
+        if (mBuilder.mPositive != null) {
+            builder.positiveText(mBuilder.mPositive);
+        } else if (mBuilder.mPositiveResId != 0) {
+            builder.positiveText(mBuilder.mPositiveResId);
+        }
+
+        if (mBuilder.mNegative != null) {
+            builder.negativeText(mBuilder.mNegative);
+        } else if (mBuilder.mNegativeResId != 0) {
+            builder.negativeText(mBuilder.mNegativeResId);
+        }
+
+        if (mBuilder.mChoices != null) {
+            builder.items((CharSequence[]) mBuilder.mChoices);
+        } else if (mBuilder.mChoicesResId != 0) {
+            builder.items(mBuilder.mChoicesResId);
+        }
+
+        builder.itemsCallbackSingleChoice(selectedIndex, this);
         builder.alwaysCallSingleChoiceCallback();
 
-        builder.onPositive(new SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                GenericSingleChoiceDialogListener owner = getOwner();
-                if (owner != null) {
-                    int index = dialog.getSelectedIndex();
-                    String text = choices[index];
-                    owner.onConfirmSingleChoice(id, index, text);
-                }
-            }
-        });
+        builder.onPositive(this);
 
         MaterialDialog dialog = builder.build();
 
         // Nothing selected by default, so don't enable OK button
-        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(selectedIndex >= 0);
 
         setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
 
         return dialog;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        MaterialDialog dialog = (MaterialDialog) getDialog();
+        if (dialog != null) {
+            outState.putInt(EXTRA_SELECTED_INDEX, dialog.getSelectedIndex());
+        }
+        outState.putString(EXTRA_SELECTED_TEXT, mSelectedText);
+    }
+
+    @Override
+    public boolean onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
+        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+        mSelectedText = text.toString();
+        return true;
+    }
+
+    @Override
+    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+        GenericSingleChoiceDialogListener owner = getOwner();
+        if (owner != null) {
+            int index = dialog.getSelectedIndex();
+            owner.onConfirmSingleChoice(mTag, index, mSelectedText);
+        }
+    }
+
+    public static class Builder implements Serializable {
+        @Nullable
+        String mTitle;
+        @StringRes
+        int mTitleResId;
+        @Nullable
+        String mMessage;
+        @StringRes
+        int mMessageResId;
+        @Nullable
+        String mPositive;
+        @StringRes
+        int mPositiveResId;
+        @Nullable
+        String mNegative;
+        @StringRes
+        int mNegativeResId;
+        @Nullable
+        String[] mChoices;
+        @ArrayRes
+        int mChoicesResId;
+
+        @NonNull
+        public Builder title(@Nullable String title) {
+            mTitle = title;
+            mTitleResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder title(@StringRes int titleResId) {
+            mTitle = null;
+            mTitleResId = titleResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@Nullable String message) {
+            mMessage = message;
+            mMessageResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@StringRes int messageResId) {
+            mMessage = null;
+            mMessageResId = messageResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder positive(@Nullable String text) {
+            mPositive = text;
+            mPositiveResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder positive(@StringRes int textResId) {
+            mPositive = null;
+            mPositiveResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder negative(@Nullable String text) {
+            mNegative = text;
+            mNegativeResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder negative(@StringRes int textResId) {
+            mNegative = null;
+            mNegativeResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder choices(@Nullable String... choices) {
+            mChoices = choices;
+            mChoicesResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder choices(@ArrayRes int choicesResId) {
+            mChoices = null;
+            mChoicesResId = choicesResId;
+            return this;
+        }
+
+        @NonNull
+        public GenericSingleChoiceDialog buildFromFragment(@Nullable String tag,
+                                                           @NonNull Fragment parent) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.FRAGMENT);
+            args.putString(ARG_TAG, tag);
+
+            GenericSingleChoiceDialog dialog = new GenericSingleChoiceDialog();
+            dialog.setTargetFragment(parent, 0);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        public GenericSingleChoiceDialog buildFromActivity(@Nullable String tag) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.ACTIVITY);
+            args.putString(ARG_TAG, tag);
+
+            GenericSingleChoiceDialog dialog = new GenericSingleChoiceDialog();
+            dialog.setArguments(args);
+            return dialog;
+        }
     }
 }

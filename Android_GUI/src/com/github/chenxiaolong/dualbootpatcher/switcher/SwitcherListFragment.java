@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
@@ -351,11 +352,11 @@ public class SwitcherListFragment extends Fragment implements
         GenericYesNoDialog dialog = (GenericYesNoDialog)
                 getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
-                    PERMISSIONS_REQUEST_STORAGE, null,
-                    getString(R.string.switcher_storage_permission_required),
-                    getString(R.string.try_again),
-                    getString(R.string.cancel));
+            GenericYesNoDialog.Builder builder = new GenericYesNoDialog.Builder();
+            builder.message(R.string.switcher_storage_permission_required);
+            builder.positive(R.string.try_again);
+            builder.negative(R.string.cancel);
+            dialog = builder.buildFromFragment(YES_NO_DIALOG_PERMISSIONS, this);
             dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
         }
     }
@@ -364,16 +365,17 @@ public class SwitcherListFragment extends Fragment implements
         GenericConfirmDialog dialog = (GenericConfirmDialog)
                 getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericConfirmDialog.newInstanceFromFragment(this,
-                    PERMISSIONS_REQUEST_STORAGE, null,
-                    getString(R.string.switcher_storage_permission_required), null);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.switcher_storage_permission_required);
+            builder.buttonText(R.string.ok);
+            dialog = builder.buildFromFragment(CONFIRM_DIALOG_PERMISSIONS, this);
             dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
         }
     }
 
     @Override
-    public void onConfirmYesNo(int id, boolean choice) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
+    public void onConfirmYesNo(@Nullable String tag, boolean choice) {
+        if (YES_NO_DIALOG_PERMISSIONS.equals(tag)) {
             if (choice) {
                 requestPermissions();
             } else {
@@ -383,8 +385,8 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     @Override
-    public void onConfirmOk(int id) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
+    public void onConfirmOk(@Nullable String tag) {
+        if (CONFIRM_DIALOG_PERMISSIONS.equals(tag)) {
             onPermissionsDenied();
         }
     }
@@ -765,9 +767,10 @@ public class SwitcherListFragment extends Fragment implements
         String codename = RomUtils.getDeviceCodename(getActivity());
         String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
-        GenericConfirmDialog gcd = GenericConfirmDialog.newInstanceFromFragment(
-                null, -1, null, message, null);
-        gcd.show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
+        GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+        builder.message(message);
+        builder.buttonText(R.string.ok);
+        builder.build().show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 
     @Override
@@ -792,9 +795,10 @@ public class SwitcherListFragment extends Fragment implements
         mPerformingAction = true;
         updateKeepScreenOnStatus();
 
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.switching_rom, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.switching_rom);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(romId, forceChecksumsUpdate);
         mService.addCallback(mTaskIdSwitchRom, mCallback);
@@ -805,9 +809,10 @@ public class SwitcherListFragment extends Fragment implements
         mPerformingAction = true;
         updateKeepScreenOnStatus();
 
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.setting_kernel, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.setting_kernel);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(info.getId());
         mService.addCallback(mTaskIdSetKernel, mCallback);

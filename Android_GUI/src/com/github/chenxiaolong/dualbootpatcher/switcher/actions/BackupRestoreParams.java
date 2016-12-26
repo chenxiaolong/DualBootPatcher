@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher.actions;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -30,19 +31,19 @@ public class BackupRestoreParams implements Parcelable {
     private String mRomId;
     private String[] mTargets;
     private String mBackupName;
-    private String mBackupDir;
+    private Uri mBackupDirUri;
     private boolean mForce;
 
     public BackupRestoreParams() {
     }
 
     public BackupRestoreParams(Action action, String romId, String[] targets, String backupName,
-                               String backupDir, boolean force) {
+                               Uri backupDirUri, boolean force) {
         mAction = action;
         mRomId = romId;
         mTargets = targets;
         mBackupName = backupName;
-        mBackupDir = backupDir;
+        mBackupDirUri = backupDirUri;
         mForce = force;
     }
 
@@ -51,7 +52,7 @@ public class BackupRestoreParams implements Parcelable {
         mRomId = in.readString();
         mTargets = in.createStringArray();
         mBackupName = in.readString();
-        mBackupDir = in.readString();
+        mBackupDirUri = in.readParcelable(Uri.class.getClassLoader());
         mForce = in.readInt() != 0;
     }
 
@@ -66,7 +67,7 @@ public class BackupRestoreParams implements Parcelable {
         dest.writeString(mRomId);
         dest.writeStringArray(mTargets);
         dest.writeString(mBackupName);
-        dest.writeString(mBackupDir);
+        dest.writeParcelable(mBackupDirUri, 0);
         dest.writeInt(mForce ? 1 : 0);
     }
 
@@ -116,12 +117,12 @@ public class BackupRestoreParams implements Parcelable {
         mBackupName = backupName;
     }
 
-    public String getBackupDir() {
-        return mBackupDir;
+    public Uri getBackupDirUri() {
+        return mBackupDirUri;
     }
 
-    public void setBackupDir(String backupDir) {
-        mBackupDir = backupDir;
+    public void setBackupDirUri(Uri backupDirUri) {
+        mBackupDirUri = backupDirUri;
     }
 
     public boolean getForce() {
