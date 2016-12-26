@@ -30,8 +30,6 @@ public final class LibMiscStuff {
 
     public static native void mblogSetLogcat();
 
-    public static native String readLink(String path) throws IOException;
-
     static {
         System.loadLibrary("miscstuff-jni");
     }
