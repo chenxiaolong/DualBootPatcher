@@ -264,7 +264,12 @@ public class PathChooserDialog extends DialogFragment implements SingleButtonCal
 
         mContents.clear();
         if (contents != null) {
-            Collections.addAll(mContents, contents);
+            for (File file : contents) {
+                // Only add directories if choosing a directory. Otherwise, add everything
+                if (file.isDirectory() || mBuilder.mType != Type.OPEN_DIRECTORY) {
+                    mContents.add(file);
+                }
+            }
         }
 
         mNames.clear();
