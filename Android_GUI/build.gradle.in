@@ -134,7 +134,6 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'commons-io:commons-io:2.4'
     compile project(":emulatorview")
-    compile project(":neuteredsaf")
     compile files('@MBP_PREBUILTS_BINARY_DIR@/jna/@JNA_VER@/all/jna.jar')
     compile files('libs/RootTools-4.1.jar')
 

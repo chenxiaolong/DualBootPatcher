@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -67,7 +68,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
 import com.github.chenxiaolong.dualbootpatcher.switcher.AddToHomeScreenOptionsDialog
         .AddToHomeScreenOptionsDialogListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.BackupNameInputDialog.BackupNameInputDialogListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.BackupNameInputDialog
+        .BackupNameInputDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog
         .BackupRestoreTargetsSelectionDialogListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask
@@ -734,9 +736,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     @Override
     public void onConfirmUpdatedRamdisk(boolean reboot) {
         if (reboot) {
-            GenericProgressDialog progressDialog = GenericProgressDialog.newInstance(
-                    0, R.string.please_wait);
-            progressDialog.show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
 
             new Thread() {
                 @Override
@@ -768,11 +770,11 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onSelectedBackupName(String name) {
         SharedPreferences prefs = getSharedPreferences("settings", 0);
 
-        String backupDir = prefs.getString(
-                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
+        Uri backupDirUri = Uri.parse(prefs.getString(Constants.Preferences.BACKUP_DIRECTORY_URI,
+                Constants.Defaults.BACKUP_DIRECTORY_URI));
 
         BackupRestoreParams params = new BackupRestoreParams(
-                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDir, false);
+                Action.BACKUP, mRomInfo.getId(), mBackupTargets, name, backupDirUri, false);
         MbtoolAction action = new MbtoolAction(params);
 
         // Start backup
@@ -1027,9 +1029,10 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void switchRom(boolean forceChecksumsUpdate) {
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.switching_rom, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.switching_rom);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(mRomInfo.getId(), forceChecksumsUpdate);
         mService.addCallback(mTaskIdSwitchRom, mCallback);
@@ -1037,9 +1040,10 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void setKernel() {
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.setting_kernel, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.setting_kernel);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(mRomInfo.getId());
         mService.addCallback(mTaskIdSetKernel, mCallback);
@@ -1047,9 +1051,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void updateRamdisk() {
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                0, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
 
         mTaskIdUpdateRamdisk = mService.updateRamdisk(mRomInfo);
         mService.addCallback(mTaskIdUpdateRamdisk, mCallback);
@@ -1057,9 +1061,10 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private void wipeRom(short[] targets) {
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.wiping_targets, R.string.please_wait);
-        d.show(getFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.wiping_targets);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
 
         mTaskIdWipeRom = mService.wipeRom(mRomInfo.getId(), targets);
         mService.addCallback(mTaskIdWipeRom, mCallback);
@@ -1076,9 +1081,10 @@ public class RomDetailActivity extends AppCompatActivity implements
         String codename = RomUtils.getDeviceCodename(this);
         String message = String.format(getString(R.string.unknown_boot_partition), codename);
 
-        GenericConfirmDialog gcd = GenericConfirmDialog.newInstanceFromFragment(
-                null, -1, null, message, null);
-        gcd.show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
+        GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+        builder.message(message);
+        builder.buttonText(R.string.ok);
+        builder.build().show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 
     private Snackbar createSnackbar(String text, int duration) {

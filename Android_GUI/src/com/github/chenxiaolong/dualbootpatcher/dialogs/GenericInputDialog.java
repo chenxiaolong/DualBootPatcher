@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,13 +25,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 
 import java.io.Serializable;
 
-public class GenericYesNoDialog extends DialogFragment implements SingleButtonCallback {
+public class GenericInputDialog extends DialogFragment implements MaterialDialog.InputCallback {
     private static final String ARG_BUILDER = "builder";
     private static final String ARG_TARGET = "target";
     private static final String ARG_TAG = "tag";
@@ -40,17 +38,17 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
     private DialogListenerTarget mTarget;
     private String mTag;
 
-    public interface GenericYesNoDialogListener {
-        void onConfirmYesNo(@Nullable String tag, boolean choice);
+    public interface GenericInputDialogListener {
+        void onConfirmInput(@Nullable String tag, String text);
     }
 
     @Nullable
-    private GenericYesNoDialogListener getOwner() {
+    private GenericInputDialogListener getOwner() {
         switch (mTarget) {
         case ACTIVITY:
-            return (GenericYesNoDialogListener) getActivity();
+            return (GenericInputDialogListener) getActivity();
         case FRAGMENT:
-            return (GenericYesNoDialogListener) getTargetFragment();
+            return (GenericInputDialogListener) getTargetFragment();
         case NONE:
         default:
             return null;
@@ -65,6 +63,9 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
         mTag = args.getString(ARG_TAG);
 
         MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
+
+        CharSequence hint = null;
+        CharSequence prefill = null;
 
         if (mBuilder.mTitle != null) {
             builder.title(mBuilder.mTitle);
@@ -90,8 +91,23 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
             builder.negativeText(mBuilder.mNegativeResId);
         }
 
-        builder.onPositive(this);
-        builder.onNegative(this);
+        if (mBuilder.mHint != null) {
+            hint = mBuilder.mHint;
+        } else if (mBuilder.mHintResId != 0) {
+            hint = getText(mBuilder.mHintResId);
+        }
+
+        if (mBuilder.mPrefill != null) {
+            prefill = mBuilder.mPrefill;
+        } else if (mBuilder.mPrefillResId != 0) {
+            prefill = getText(mBuilder.mPrefillResId);
+        }
+
+        if (mBuilder.mInputType != 0) {
+            builder.inputType(mBuilder.mInputType);
+        }
+
+        builder.input(hint, prefill, mBuilder.mAllowEmpty, this);
 
         Dialog dialog = builder.build();
 
@@ -102,19 +118,10 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
     }
 
     @Override
-    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-        GenericYesNoDialogListener owner = getOwner();
-        if (owner == null) {
-            return;
-        }
-
-        switch (which) {
-        case POSITIVE:
-            owner.onConfirmYesNo(mTag, true);
-            break;
-        case NEGATIVE:
-            owner.onConfirmYesNo(mTag, false);
-            break;
+    public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
+        GenericInputDialogListener owner = getOwner();
+        if (owner != null) {
+            owner.onConfirmInput(mTag, input.toString());
         }
     }
 
@@ -135,6 +142,16 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
         String mNegative;
         @StringRes
         int mNegativeResId;
+        @Nullable
+        String mHint;
+        @StringRes
+        int mHintResId;
+        @Nullable
+        String mPrefill;
+        @StringRes
+        int mPrefillResId;
+        boolean mAllowEmpty = true;
+        int mInputType;
 
         @NonNull
         public Builder title(@Nullable String title) {
@@ -193,27 +210,67 @@ public class GenericYesNoDialog extends DialogFragment implements SingleButtonCa
         }
 
         @NonNull
-        public GenericYesNoDialog buildFromFragment(@Nullable String tag,
+        public Builder hint(@Nullable String text) {
+            mHint = text;
+            mHintResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder hint(@StringRes int textResId) {
+            mHint = null;
+            mHintResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder prefill(@Nullable String text) {
+            mPrefill = text;
+            mPrefillResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder prefill(@StringRes int textResId) {
+            mPrefill = null;
+            mPrefillResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder allowEmpty(boolean allowEmpty) {
+            mAllowEmpty = allowEmpty;
+            return this;
+        }
+
+        @NonNull
+        public Builder inputType(int type) {
+            mInputType = type;
+            return this;
+        }
+
+        @NonNull
+        public GenericInputDialog buildFromFragment(@Nullable String tag,
                                                     @NonNull Fragment parent) {
             Bundle args = new Bundle();
             args.putSerializable(ARG_BUILDER, this);
             args.putSerializable(ARG_TARGET, DialogListenerTarget.FRAGMENT);
             args.putString(ARG_TAG, tag);
 
-            GenericYesNoDialog dialog = new GenericYesNoDialog();
+            GenericInputDialog dialog = new GenericInputDialog();
             dialog.setTargetFragment(parent, 0);
             dialog.setArguments(args);
             return dialog;
         }
 
         @NonNull
-        public GenericYesNoDialog buildFromActivity(@Nullable String tag) {
+        public GenericInputDialog buildFromActivity(@Nullable String tag) {
             Bundle args = new Bundle();
             args.putSerializable(ARG_BUILDER, this);
             args.putSerializable(ARG_TARGET, DialogListenerTarget.ACTIVITY);
             args.putString(ARG_TAG, tag);
 
-            GenericYesNoDialog dialog = new GenericYesNoDialog();
+            GenericInputDialog dialog = new GenericInputDialog();
             dialog.setArguments(args);
             return dialog;
         }

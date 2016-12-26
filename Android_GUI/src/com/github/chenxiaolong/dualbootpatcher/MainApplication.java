@@ -26,8 +26,6 @@ import android.util.Log;
 import com.squareup.leakcanary.LeakCanary;
 import com.squareup.leakcanary.RefWatcher;
 
-import io.noobdev.neuteredsaf.DocumentsApplication;
-
 public class MainApplication extends Application {
     private static final String TAG = MainApplication.class.getSimpleName();
 
@@ -58,18 +56,11 @@ public class MainApplication extends Application {
         });
 
         mRefWatcher = LeakCanary.install(this);
-        DocumentsApplication.install(this);
 
         SharedPreferences prefs = getSharedPreferences("settings", 0);
         boolean useDarkTheme = prefs.getBoolean("use_dark_theme", false);
 
         setUseDarkTheme(useDarkTheme);
-    }
-
-    @Override
-    public void onTrimMemory(int level) {
-        super.onTrimMemory(level);
-        DocumentsApplication.onTrimMemory(level);
     }
 
     public static boolean getUseDarkTheme() {

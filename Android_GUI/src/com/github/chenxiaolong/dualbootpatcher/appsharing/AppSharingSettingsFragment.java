@@ -29,6 +29,7 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v13.app.FragmentCompat;
 import android.widget.Toast;
 
@@ -169,11 +170,11 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         GenericYesNoDialog dialog = (GenericYesNoDialog)
                 getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
-                    PERMISSIONS_REQUEST_STORAGE, null,
-                    getString(R.string.a_s_settings_storage_permission_required),
-                    getString(R.string.try_again),
-                    getString(R.string.cancel));
+            GenericYesNoDialog.Builder builder = new GenericYesNoDialog.Builder();
+            builder.message(R.string.a_s_settings_storage_permission_required);
+            builder.positive(R.string.try_again);
+            builder.negative(R.string.cancel);
+            dialog = builder.buildFromFragment(YES_NO_DIALOG_PERMISSIONS, this);
             dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
         }
     }
@@ -182,9 +183,10 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         GenericConfirmDialog dialog = (GenericConfirmDialog)
                 getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericConfirmDialog.newInstanceFromFragment(this,
-                    PERMISSIONS_REQUEST_STORAGE, null,
-                    getString(R.string.a_s_settings_storage_permission_required), null);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.a_s_settings_storage_permission_required);
+            builder.buttonText(R.string.ok);
+            dialog = builder.buildFromFragment(CONFIRM_DIALOG_PERMISSIONS, this);
             dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
         }
     }
@@ -217,8 +219,8 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
 
 
     @Override
-    public void onConfirmYesNo(int id, boolean choice) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
+    public void onConfirmYesNo(@Nullable String tag, boolean choice) {
+        if (YES_NO_DIALOG_PERMISSIONS.equals(tag)) {
             if (choice) {
                 requestPermissions();
             } else {
@@ -228,8 +230,8 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     }
 
     @Override
-    public void onConfirmOk(int id) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
+    public void onConfirmOk(@Nullable String tag) {
+        if (CONFIRM_DIALOG_PERMISSIONS.equals(tag)) {
             onPermissionsDenied();
         }
     }

@@ -15,22 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff;
+package com.github.chenxiaolong.dualbootpatcher.dialogs;
 
-import java.io.IOException;
-
-@SuppressWarnings("JniMissingFunction")
-public final class LibMiscStuff {
-    private LibMiscStuff() {
-    }
-
-    public static native void extractArchive(String filename, String target) throws IOException;
-
-    public static native boolean findStringInFile(String path, String jstr) throws IOException;
-
-    public static native void mblogSetLogcat();
-
-    static {
-        System.loadLibrary("miscstuff-jni");
-    }
+public enum DialogListenerTarget {
+    NONE,
+    ACTIVITY,
+    FRAGMENT,
 }
