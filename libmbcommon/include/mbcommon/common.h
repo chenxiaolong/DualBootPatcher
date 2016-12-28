@@ -46,3 +46,11 @@
 #ifdef _MSC_VER
 #  define strdup _strdup
 #endif
+
+#ifdef __cplusplus
+#  define MB_BEGIN_C_DECLS extern "C" {
+#  define MB_END_C_DECLS }
+#else
+#  define MB_BEGIN_C_DECLS
+#  define MB_END_C_DECLS
+#endif

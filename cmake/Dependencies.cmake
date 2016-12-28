@@ -93,6 +93,7 @@ else()
     include(cmake/dependencies/libdrm.cmake)
     include(cmake/dependencies/safe-iop.cmake)
     include(cmake/dependencies/android-system-core.cmake)
+    include(cmake/dependencies/iconv.cmake)
 endif()
 
 include(cmake/dependencies/jansson.cmake)
