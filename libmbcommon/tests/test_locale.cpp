@@ -129,6 +129,54 @@ TEST(LocaleTest, ConvertPartialString)
     free(mbs_result);
 }
 
+TEST(LocaleTest, ConvertLargeString)
+{
+    std::string str1_mbs;
+    std::wstring str1_wcs;
+    std::string str2_utf8;
+    std::wstring str2_wcs;
+
+    std::string str1_mbs_pattern("Hello!");
+    std::wstring str1_wcs_pattern(L"Hello!");
+    std::string str2_utf8_pattern("\xe4\xbd\xa0\xe5\xa5\xbd");
+    std::wstring str2_wcs_pattern(L"你好");
+
+    str1_mbs.reserve(str1_mbs_pattern.size() * 1024 * 1024 + 1);
+    str1_wcs.reserve(str1_wcs_pattern.size() * 1024 * 1024 + 1);
+    str2_utf8.reserve(str2_utf8_pattern.size() * 1024 * 1024 * 1);
+    str2_wcs.reserve(str2_wcs_pattern.size() * 1024 * 1024 + 1);
+
+    for (int i = 0; i < 1024 * 1024; ++i) {
+        str1_mbs += str1_mbs_pattern;
+        str1_wcs += str1_wcs_pattern;
+        str2_utf8 += str2_utf8_pattern;
+        str2_wcs += str2_wcs_pattern;
+    }
+
+    char *mbs_result;
+    wchar_t *wcs_result;
+
+    wcs_result = mb::mbs_to_wcs(str1_mbs.c_str());
+    ASSERT_NE(wcs_result, nullptr);
+    ASSERT_EQ(wcs_result, str1_wcs);
+    free(wcs_result);
+
+    mbs_result = mb::wcs_to_mbs(str1_wcs.c_str());
+    ASSERT_NE(mbs_result, nullptr);
+    ASSERT_EQ(mbs_result, str1_mbs);
+    free(mbs_result);
+
+    wcs_result = mb::utf8_to_wcs(str2_utf8.c_str());
+    ASSERT_NE(wcs_result, nullptr);
+    ASSERT_EQ(wcs_result, str2_wcs);
+    free(wcs_result);
+
+    mbs_result = mb::wcs_to_utf8(str2_wcs.c_str());
+    ASSERT_NE(mbs_result, nullptr);
+    ASSERT_EQ(mbs_result, str2_utf8);
+    free(mbs_result);
+}
+
 TEST(LocaleTest, ConvertInvalidUtf8String)
 {
     const char *utf8_str = "\xe4\xbd\xa0\xe5\xa5";
