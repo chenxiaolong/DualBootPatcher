@@ -19,7 +19,7 @@
 
 #include "mbp/private/win32.h"
 
-#include "mbpio/private/utf8.h"
+#include "mbcommon/locale.h"
 
 
 namespace mbp
@@ -43,7 +43,13 @@ std::string win32ErrorToString(DWORD win32Error)
     std::wstring message(messageBuffer, size);
     LocalFree(messageBuffer);
 
-    return utf8::utf16ToUtf8(message);
+    std::string result;
+    char *temp = mb::wcs_to_utf8(message.c_str());
+    if (temp) {
+        result = temp;
+        free(temp);
+    }
+    return result;
 }
 
 }

@@ -32,6 +32,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         mbpio-static
         mbsparse-shared
         mblog-shared
+        mbcommon-shared
     )
 
     if(NOT MSVC)

@@ -29,13 +29,14 @@
 #include <time.h>
 #endif
 
+#include "mbcommon/locale.h"
+
 #include "mblog/logging.h"
 
 #include "mbpio/directory.h"
 #include "mbpio/error.h"
 #include "mbpio/file.h"
 #include "mbpio/path.h"
-#include "mbpio/private/utf8.h"
 
 #include "minizip/ioapi_buf.h"
 #if defined(_WIN32)
@@ -161,8 +162,15 @@ MinizipUtils::UnzCtx * MinizipUtils::openInputFile(std::string path)
     }
 
 #if defined(MINIZIP_WIN32)
+    wchar_t *wPath = mb::utf8_to_wcs(path.c_str());
+    if (!wPath) {
+        free(ctx);
+        return nullptr;
+    }
+
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
-    ctx->path = utf8::utf8ToUtf16(path);
+    ctx->path = wPath;
+    free(wPath);
 #elif defined(MINIZIP_ANDROID)
     fill_android_filefunc64(&ctx->buf.filefunc64);
     ctx->path = std::move(path);
@@ -189,8 +197,15 @@ MinizipUtils::ZipCtx * MinizipUtils::openOutputFile(std::string path)
     }
 
 #if defined(MINIZIP_WIN32)
+    wchar_t *wPath = mb::utf8_to_wcs(path.c_str());
+    if (!wPath) {
+        free(ctx);
+        return nullptr;
+    }
+
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
-    ctx->path = utf8::utf8ToUtf16(path);
+    ctx->path = wPath;
+    free(wPath);
 #elif defined(MINIZIP_ANDROID)
     fill_android_filefunc64(&ctx->buf.filefunc64);
     ctx->path = std::move(path);
@@ -569,8 +584,14 @@ static bool getFileTime(const std::string &filename,
     HANDLE hFind;
     WIN32_FIND_DATAW ff32;
 
-    std::wstring wFilename = utf8::utf8ToUtf16(filename);
-    hFind = FindFirstFileW(wFilename.c_str(), &ff32);
+    wchar_t *wFilename = mb::utf8_to_wcs(filename.c_str());
+    if (!wFilename) {
+        return false;
+    }
+
+    hFind = FindFirstFileW(wFilename, &ff32);
+    free(wFilename);
+
     if (hFind != INVALID_HANDLE_VALUE)
     {
         FileTimeToLocalFileTime(&ff32.ftLastWriteTime, &ftLocal);

@@ -24,7 +24,8 @@
 
 #include <windows.h>
 
-#include "mbpio/private/utf8.h"
+#include "mbcommon/locale.h"
+
 #include "mbpio/win32/error.h"
 
 namespace io
@@ -59,7 +60,11 @@ bool FileWin32::open(const char *filename, int mode)
         return false;
     }
 
-    std::wstring wFilename = utf8::utf8ToUtf16(filename);
+    wchar_t *wFilename = mb::utf8_to_wcs(filename);
+    if (!wFilename) {
+        m_impl->error = ErrorInvalidFilename;
+        return false;
+    }
 
     DWORD dwDesiredAccess = 0;
     DWORD dwShareMode = 0;
@@ -83,11 +88,12 @@ bool FileWin32::open(const char *filename, int mode)
         break;
     default:
         m_impl->error = ErrorInvalidOpenMode;
+        free(wFilename);
         return false;
     }
 
     handle = CreateFileW(
-        (LPCWSTR) wFilename.c_str(),    // lpFileName
+        (LPCWSTR) wFilename,            // lpFileName
         dwDesiredAccess,                // dwDesiredAccess
         dwShareMode,                    // dwShareMode
         nullptr,                        // lpSecurityAttributes
@@ -95,6 +101,8 @@ bool FileWin32::open(const char *filename, int mode)
         dwFlagsAndAttributes,           // dwFlagsAndAttributes
         nullptr                         // hTemplateFile
     );
+
+    free(wFilename);
 
     if (handle == INVALID_HANDLE_VALUE) {
         m_impl->error = ErrorPlatformError;
@@ -294,7 +302,13 @@ int FileWin32::error()
 
 std::string FileWin32::platformErrorString()
 {
-    return utf8::utf16ToUtf8(m_impl->win32ErrorString);
+    std::string result;
+    char *temp = mb::wcs_to_utf8(m_impl->win32ErrorString.c_str());
+    if (temp) {
+        result = temp;
+        free(temp);
+    }
+    return result;
 }
 
 }

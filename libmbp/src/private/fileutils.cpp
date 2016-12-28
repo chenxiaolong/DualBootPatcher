@@ -24,10 +24,11 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/locale.h"
+
 #include "mblog/logging.h"
 
 #include "mbpio/file.h"
-#include "mbpio/private/utf8.h"
 
 #ifdef _WIN32
 #include "mbp/private/win32.h"
@@ -175,29 +176,40 @@ std::string FileUtils::systemTemporaryDir()
 {
 #ifdef _WIN32
     const wchar_t *value;
+    std::wstring wPath;
+    std::string path;
 
     if ((value = _wgetenv(L"TMP")) && directoryExists(value)) {
-        return utf8::utf16ToUtf8(value);
+        wPath = value;
+        goto done;
     }
     if ((value = _wgetenv(L"TEMP")) && directoryExists(value)) {
-        return utf8::utf16ToUtf8(value);
+        wPath = value;
+        goto done;
     }
     if ((value = _wgetenv(L"LOCALAPPDATA"))) {
-        std::wstring path(value);
-        path += L"\\Temp";
-        if (directoryExists(path.c_str())) {
-            return utf8::utf16ToUtf8(path);
+        wPath = value;
+        wPath += L"\\Temp";
+        if (directoryExists(wPath.c_str())) {
+            goto done;
         }
     }
     if ((value = _wgetenv(L"USERPROFILE"))) {
-        std::wstring path(value);
-        path += L"\\Temp";
-        if (directoryExists(path.c_str())) {
-            return utf8::utf16ToUtf8(path);
+        wPath = value;
+        wPath += L"\\Temp";
+        if (directoryExists(wPath.c_str())) {
+            goto done;
         }
     }
 
-    return std::string();
+done:
+    char *temp = mb::wcs_to_utf8(wPath.c_str());
+    if (temp) {
+        path = temp;
+        free(temp);
+    }
+
+    return path;
 #else
     const char *value;
 
@@ -273,12 +285,20 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         }
 
         // This is not particularly fast, but it'll do for now
-        std::wstring wBuf = utf8::utf8ToUtf16(buf.data());
+        wchar_t *wBuf = mb::utf8_to_wcs(buf.data());
+        if (!wBuf) {
+            LOGE("Failed to convert UTF-8 to WCS: %s",
+                 win32ErrorToString(GetLastError()).c_str());
+            break;
+        }
 
         ret = CreateDirectoryW(
-            wBuf.c_str(),       // lpPathName
+            wBuf,               // lpPathName
             nullptr             // lpSecurityAttributes
         );
+
+        free(wBuf);
+
         if (ret) {
             newPath = buf.data();
             break;

@@ -19,7 +19,7 @@
 
 #include "mbpio/win32/error.h"
 
-#include "mbpio/private/utf8.h"
+#include "mbcommon/locale.h"
 
 namespace io
 {
@@ -49,7 +49,13 @@ std::wstring errorToWString(DWORD win32Error)
 
 std::string errorToString(DWORD win32Error)
 {
-    return utf8::utf16ToUtf8(errorToWString(win32Error));
+    std::string result;
+    char *temp = mb::wcs_to_utf8(errorToWString(win32Error).c_str());
+    if (temp) {
+        result = temp;
+        free(temp);
+    }
+    return result;
 }
 
 }

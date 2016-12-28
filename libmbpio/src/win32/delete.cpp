@@ -21,9 +21,10 @@
 
 #include <windows.h>
 
+#include "mbcommon/locale.h"
+
 #include "mbpio/error.h"
 #include "mbpio/private/string.h"
-#include "mbpio/private/utf8.h"
 #include "mbpio/win32/error.h"
 
 namespace io
@@ -65,8 +66,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
         DWORD error = GetLastError();
         if (error != ERROR_FILE_NOT_FOUND) {
             setLastError(Error::PlatformError, priv::format(
-                    "%s: FindFirstFileExW() failed: %s",
-                    utf8::utf16ToUtf8(path).c_str(),
+                    "FindFirstFileExW() failed: %s",
                     errorToString(error).c_str()));
             return false;
         }
@@ -89,8 +89,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
                     if (!DeleteFileW(childPath.c_str())) {
                         DWORD error = GetLastError();
                         setLastError(Error::PlatformError, priv::format(
-                                "%s: DeleteFileW() failed: %s",
-                                utf8::utf16ToUtf8(childPath).c_str(),
+                                "DeleteFileW() failed: %s",
                                 errorToString(error).c_str()));
                         return false;
                     }
@@ -102,8 +101,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
                 DWORD error = GetLastError();
                 if (error != ERROR_NO_MORE_FILES) {
                     setLastError(Error::PlatformError, priv::format(
-                            "%s: FindNextFileW() failed: %s",
-                            utf8::utf16ToUtf8(path).c_str(),
+                            "FindNextFileW() failed: %s",
                             errorToString(error).c_str()));
                     return false;
                 }
@@ -115,8 +113,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
     if (!RemoveDirectoryW(path.c_str())) {
         DWORD error = GetLastError();
         setLastError(Error::PlatformError, priv::format(
-                "%s: RemoveDirectoryW() failed: %s",
-                utf8::utf16ToUtf8(path).c_str(),
+                "RemoveDirectoryW() failed: %s",
                 errorToString(error).c_str()));
         return false;
     }
@@ -126,8 +123,14 @@ static bool win32RecursiveDelete(const std::wstring &path)
 
 bool deleteRecursively(const std::string &path)
 {
-    std::wstring wPath = utf8::utf8ToUtf16(path);
-    return win32RecursiveDelete(wPath);
+    wchar_t *wPath = mb::utf8_to_wcs(path.c_str());
+    if (!wPath) {
+        return false;
+    }
+
+    bool ret = win32RecursiveDelete(wPath);
+    free(wPath);
+    return ret;
 }
 
 }

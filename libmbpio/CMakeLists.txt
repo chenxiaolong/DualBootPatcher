@@ -5,7 +5,6 @@ set(MBP_IO_SOURCES
     src/directory.cpp
     src/error.cpp
     src/path.cpp
-    src/private/utf8.cpp
     src/private/filebase.cpp
     src/private/string.cpp
 )
