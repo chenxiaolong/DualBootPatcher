@@ -39,6 +39,7 @@
 
 #include <jansson.h>
 
+#include "mbcommon/common.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
@@ -470,7 +471,7 @@ static bool do_remove(const std::vector<std::string> &args)
 {
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
-    __attribute__((unused))
+    MB_UNUSED
     const int userid = strtol(args[1].c_str(), nullptr, 10);
 
     for (auto it = config.shared_pkgs.begin();

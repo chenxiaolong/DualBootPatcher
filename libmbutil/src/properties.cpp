@@ -31,6 +31,7 @@
 #include <dlfcn.h>
 #endif
 
+#include "mbcommon/common.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
@@ -131,7 +132,7 @@ static void dlopen_libc(void)
     SYMBOL__system_property_foreach = get_libc_symbol("__system_property_foreach");
 }
 
-__attribute__((unused))
+MB_UNUSED
 static void dlclose_libc(void)
 {
     if (libc_handle) {

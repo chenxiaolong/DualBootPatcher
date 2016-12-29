@@ -32,6 +32,7 @@
 
 #include <proc/readproc.h>
 
+#include "mbcommon/common.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
@@ -370,7 +371,7 @@ static bool daemon_init()
     return true;
 }
 
-__attribute__((noreturn))
+MB_NO_RETURN
 static void run_daemon_fork()
 {
     pid_t pid = fork();

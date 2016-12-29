@@ -77,7 +77,7 @@ static char sales_code[10];
 static std::string system_block_dev;
 static std::string boot_block_dev;
 
-__attribute__((format(printf, 1, 2)))
+MB_PRINTF(1, 2)
 void ui_print(const char *fmt, ...)
 {
     va_list ap;
@@ -105,7 +105,7 @@ void set_progress(double frac)
     dprintf(output_fd, "set_progress %f\n", frac);
 }
 
-__attribute__((format(printf, 1, 2)))
+MB_PRINTF(1, 2)
 void error(const char *fmt, ...)
 {
     va_list ap;
@@ -115,7 +115,7 @@ void error(const char *fmt, ...)
     fputc('\n', stderr);
 }
 
-__attribute__((format(printf, 1, 2)))
+MB_PRINTF(1, 2)
 void info(const char *fmt, ...)
 {
     va_list ap;
@@ -357,7 +357,7 @@ static bool cb_zip_read(void *buf, uint64_t size, uint64_t *bytes_read,
 }
 
 #if DEBUG_SKIP_FLASH_SYSTEM
-__attribute__((unused))
+MB_UNUSED
 #endif
 static bool extract_sparse_file(const char *zip_filename,
                                 const char *out_filename)

@@ -22,12 +22,14 @@
 #include <string>
 #include <vector>
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
 namespace util
 {
 
-__attribute__((format(printf, 1, 2)))
+MB_PRINTF(1, 2)
 std::string format(const char *fmt, ...);
 std::string formatv(const char *fmt, va_list ap);
 

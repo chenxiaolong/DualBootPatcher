@@ -22,6 +22,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "mbcommon/common.h"
 #include "mblog/logging.h"
 
 #include "mbp/private/stringutils.h"
@@ -166,7 +167,7 @@ EdifyTokenWhitespace::EdifyTokenWhitespace(std::string str)
 {
     assert(!str.empty());
 
-    for (char c __attribute__((unused)) : str) {
+    for (char c MB_UNUSED : str) {
         // Should never fail
         assert(std::isspace(c));
     }

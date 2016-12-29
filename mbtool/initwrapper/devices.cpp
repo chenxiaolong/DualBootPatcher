@@ -30,6 +30,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "mbcommon/common.h"
 #include "mblog/logging.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/directory.h"
@@ -38,8 +39,6 @@
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
-
-#define UNUSED __attribute__((__unused__))
 
 #define DEVPATH_LEN 96
 
@@ -87,7 +86,7 @@ static mode_t get_device_perm(const char *path,
 }
 
 static void make_device(const char *path,
-                        const char *upath UNUSED,
+                        const char *upath MB_UNUSED,
                         int block, int major, int minor,
                         const std::vector<std::string> &links)
 {

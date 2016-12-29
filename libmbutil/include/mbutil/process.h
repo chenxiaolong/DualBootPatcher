@@ -19,6 +19,8 @@
 
 #include <sys/types.h>
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
 namespace util
@@ -26,7 +28,7 @@ namespace util
 
 bool set_process_title_init(int argc, char *argv[]);
 bool set_process_title(const char *str, size_t size, size_t *size_out);
-__attribute__((format(printf, 2, 3)))
+MB_PRINTF(2, 3)
 bool set_process_title_v(size_t *exceeded_out, const char *fmt, ...);
 
 }
