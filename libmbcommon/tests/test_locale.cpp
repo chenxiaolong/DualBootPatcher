@@ -183,11 +183,3 @@ TEST(LocaleTest, ConvertInvalidUtf8String)
 
     ASSERT_EQ(mb::utf8_to_wcs(utf8_str), nullptr);
 }
-
-int main(int argc, char *argv[])
-{
-    setlocale(LC_ALL, "");
-
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

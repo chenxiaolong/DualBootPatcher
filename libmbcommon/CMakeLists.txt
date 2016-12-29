@@ -14,6 +14,12 @@ set(MBCOMMON_SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
 )
 
+set(MBCOMMON_TESTS_SOURCES
+    tests/test_endian.cpp
+    tests/test_locale.cpp
+    tests/test_main.cpp
+)
+
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
     # Build static library
 
@@ -41,16 +47,16 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     endif()
 
     if(MBP_ENABLE_TESTS)
-        add_executable(mbcommon-static_test_locale tests/test_locale.cpp)
+        add_executable(mbcommon-static_tests ${MBCOMMON_TESTS_SOURCES})
         target_link_libraries(
-            mbcommon-static_test_locale
+            mbcommon-static_tests
             mbcommon-static
             ${GTEST_BOTH_LIBRARIES}
         )
 
         if(NOT MSVC)
             set_target_properties(
-                mbcommon-static_test_locale
+                mbcommon-static_tests
                 PROPERTIES
                 CXX_STANDARD 11
                 CXX_STANDARD_REQUIRED 1
@@ -58,8 +64,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         endif()
 
         add_test(
-            NAME mbcommon-static_test_locale
-            COMMAND mbcommon-static_test_locale
+            NAME mbcommon-static_tests
+            COMMAND mbcommon-static_tests
         )
     endif()
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app
@@ -107,16 +113,16 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
     )
 
     if(MBP_ENABLE_TESTS)
-        add_executable(mbcommon-shared_test_locale tests/test_locale.cpp)
+        add_executable(mbcommon-shared_tests ${MBCOMMON_TESTS_SOURCES})
         target_link_libraries(
-            mbcommon-shared_test_locale
+            mbcommon-shared_tests
             mbcommon-shared
             ${GTEST_BOTH_LIBRARIES}
         )
 
         if(NOT MSVC)
             set_target_properties(
-                mbcommon-shared_test_locale
+                mbcommon-shared_tests
                 PROPERTIES
                 CXX_STANDARD 11
                 CXX_STANDARD_REQUIRED 1
@@ -124,8 +130,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         endif()
 
         add_test(
-            NAME mbcommon-shared_test_locale
-            COMMAND mbcommon-shared_test_locale
+            NAME mbcommon-shared_tests
+            COMMAND mbcommon-shared_tests
         )
     endif()
 endif()
