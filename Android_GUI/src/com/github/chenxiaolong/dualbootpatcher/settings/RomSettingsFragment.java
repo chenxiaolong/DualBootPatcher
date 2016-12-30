@@ -26,17 +26,16 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.ParcelFileDescriptor;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
-import android.util.Log;
+import android.provider.DocumentsContract;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -48,7 +47,6 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServi
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog;
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherService;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolErrorActivity;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException.Reason;
@@ -57,10 +55,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
         .BootUIActionTaskListener;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
@@ -329,10 +323,10 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                         R.string.rom_settings_boot_ui_install_failure, Toast.LENGTH_LONG).show();
 
         if (success) {
-            GenericConfirmDialog d2 = GenericConfirmDialog.newInstanceFromFragment(
-                    null, 0, null, getString(R.string.rom_settings_boot_ui_update_ramdisk_msg),
-                    getString(R.string.ok));
-            d2.show(getFragmentManager(), CONFIRM_DIALOG_BOOT_UI);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.rom_settings_boot_ui_update_ramdisk_msg);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_BOOT_UI);
         }
     }
 
@@ -364,16 +358,18 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
             mService.addCallback(mTaskIdInstall, mCallback);
             mService.enqueueTaskId(mTaskIdInstall);
 
-            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         } else if (preference == mBootUIUninstallPref) {
             mTaskIdUninstall = mService.bootUIAction(BootUIAction.UNINSTALL);
             mService.addCallback(mTaskIdUninstall, mCallback);
             mService.enqueueTaskId(mTaskIdUninstall);
 
-            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_BOOT_UI);
             return true;
         }
 
@@ -412,10 +408,21 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
         switch (request) {
         case REQUEST_BACKUP_DIRECTORY:
             if (data != null && result == Activity.RESULT_OK) {
-                Uri treeDocumentUri = FileUtils.getDocumentUriFromTreeUri(data.getData());
-                if (treeDocumentUri != null) {
-                    new SetBackupPathTask().execute(treeDocumentUri);
+                Uri uri = data.getData();
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
+                        && FileUtils.SAF_SCHEME.equals(uri.getScheme())
+                        && FileUtils.SAF_AUTHORITY.equals(uri.getScheme())) {
+                    ContentResolver cr = getActivity().getContentResolver();
+                    cr.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 }
+
+                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+                Editor editor = prefs.edit();
+                editor.putString(Constants.Preferences.BACKUP_DIRECTORY_URI, uri.toString());
+                editor.apply();
+
+                updateBackupDirectorySummary();
             }
             break;
         default:
@@ -425,8 +432,29 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     }
 
     private void updateBackupDirectorySummary() {
-        mBackupDirectoryPref.setSummary(getPreferenceManager().getSharedPreferences().getString(
-                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY));
+        SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+        String savedUri = prefs.getString(Constants.Preferences.BACKUP_DIRECTORY_URI,
+                Constants.Defaults.BACKUP_DIRECTORY_URI);
+        Uri uri = Uri.parse(savedUri);
+
+        String name = null;
+
+        if (FileUtils.FILE_SCHEME.equals(uri.getScheme())) {
+            name = uri.getPath();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                && FileUtils.SAF_SCHEME.equals(uri.getScheme())
+                && FileUtils.SAF_AUTHORITY.equals(uri.getAuthority())) {
+            String documentId = DocumentsContract.getTreeDocumentId(uri);
+            String[] parts = documentId.split(":");
+
+            if (parts.length == 2) {
+                name = "[" + parts[0] + "] /" + parts[1];
+            } else {
+                name = documentId;
+            }
+        }
+
+        mBackupDirectoryPref.setSummary(name);
     }
 
     private void updateParallelPatchingSummary(int threads) {
@@ -493,55 +521,6 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
                     startActivity(intent);
                 }
             });
-        }
-    }
-
-    private class SetBackupPathTask extends AsyncTask<Uri, Void, String> {
-        private ContentResolver mCR;
-
-        @Override
-        protected void onPreExecute() {
-            mCR = getActivity().getContentResolver();
-        }
-
-        @Override
-        protected String doInBackground(Uri... params) {
-            // The input URI was already converted from a tree URI to a document URI. Linux lets us
-            // open directories with open() so we can simply read the symlink from /proc/self/fd/.
-
-            Uri uri = params[0];
-
-            ParcelFileDescriptor pfd = null;
-            try {
-                pfd = mCR.openFileDescriptor(uri, "r");
-                if (pfd != null) {
-                    return LibMiscStuff.readLink("/proc/self/fd/" + pfd.getFd());
-                }
-            } catch (FileNotFoundException e) {
-                Log.w(TAG, "URI not found: " + uri, e);
-                return null;
-            } catch (IOException e) {
-                Log.w(TAG, "Failed to read fd link for: " + uri, e);
-                return null;
-            } finally {
-                IOUtils.closeQuietly(pfd);
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String path) {
-            mCR = null;
-
-            if (isAdded()) {
-                SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-                Editor editor = prefs.edit();
-                editor.putString(Constants.Preferences.BACKUP_DIRECTORY, path);
-                editor.apply();
-
-                updateBackupDirectorySummary();
-            }
         }
     }
 }

@@ -14,6 +14,3 @@
 [submodule "external/minizip"]
 	path = external/minizip
 	url = https://github.com/chenxiaolong/minizip.git
-[submodule "external/neuteredsaf"]
-	path = external/neuteredsaf
-	url = https://github.com/chenxiaolong/neuteredsaf.git

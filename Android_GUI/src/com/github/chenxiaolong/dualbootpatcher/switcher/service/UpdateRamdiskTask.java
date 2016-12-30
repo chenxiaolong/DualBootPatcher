@@ -40,8 +40,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SetKernelResult;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SwitchRomResult;
-import com.google.common.base.Charsets;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 

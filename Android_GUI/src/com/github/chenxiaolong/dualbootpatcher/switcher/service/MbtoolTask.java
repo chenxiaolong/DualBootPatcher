@@ -18,8 +18,11 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher.service;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
+import android.support.annotation.NonNull;
+import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -84,12 +87,12 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         mActions = actions;
     }
 
-    private void deleteWithPrejudice(String path, MbtoolInterface iface)
+    private void deleteWithPrejudice(@NonNull String path, @NonNull MbtoolInterface iface)
             throws IOException, MbtoolException, MbtoolCommandException {
         iface.pathDelete(path, PathDeleteFlag.REMOVE);
     }
 
-    private String translateEmulatedPath(String path) {
+    private String translateEmulatedPath(@NonNull String path) {
         String emuSourcePath = System.getenv("EMULATED_STORAGE_SOURCE");
         String emuTargetPath = System.getenv("EMULATED_STORAGE_TARGET");
 
@@ -101,6 +104,34 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         }
 
         return path;
+    }
+
+    private String getPathFromUri(@NonNull Uri uri, @NonNull MbtoolInterface iface)
+            throws IOException, MbtoolException {
+        // Get URI from DocumentFile, which will handle the translation of tree URIs to document
+        // URIs, which continuing to work with file:// URIs
+        DocumentFile df = FileUtils.getDocumentFile(getContext(), uri);
+        uri = df.getUri();
+
+        ParcelFileDescriptor pfd = null;
+        try {
+            pfd = getContext().getContentResolver().openFileDescriptor(uri, "r");
+            if (pfd == null) {
+                printBoldText(Color.RED, "Failed to open: " + uri);
+                return null;
+            }
+
+            String fdSource = "/proc/" + LibC.CWrapper.getpid() + "/fd/" + pfd.getFd();
+            try {
+                return iface.pathReadlink(fdSource);
+            } catch (MbtoolCommandException e) {
+                printBoldText(Color.RED, "Failed to resolve symlink: " + fdSource + ": " +
+                        e.getMessage() + "\n");
+                return null;
+            }
+        } finally {
+            IOUtils.closeQuietly(pfd);
+        }
     }
 
     private boolean performRomInstallation(RomInstallerParams params, MbtoolInterface iface)
@@ -151,51 +182,37 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
                 }
             } else {
                 printBoldText(Color.YELLOW, "Extracting mbtool ROM installer from the zip file\n");
-
-                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY,
-                        zipInstaller.getPath())) {
+                try {
+                    FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY,
+                        zipInstaller.getPath());
+                } catch (IOException e) {
                     printBoldText(Color.RED, "Failed to extract update-binary\n");
                     return false;
                 }
                 printBoldText(Color.YELLOW, "Extracting mbtool signature from the zip file\n");
-                if (!FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY_SIG,
-                        zipInstallerSig.getPath())) {
+                try {
+                    FileUtils.zipExtractFile(getContext(), params.getUri(), UPDATE_BINARY_SIG,
+                            zipInstallerSig.getPath());
+                } catch (IOException e) {
                     printBoldText(Color.RED, "Failed to extract update-binary.sig\n");
                     return false;
                 }
             }
 
-            ParcelFileDescriptor pfd = null;
-            SignedExecCompletion completion;
-            try {
-                pfd = getContext().getContentResolver().openFileDescriptor(params.getUri(), "r");
-                if (pfd == null) {
-                    printBoldText(Color.RED, "Failed to open: " + params.getUri());
-                    return false;
-                }
-
-                String fdSource = "/proc/" + LibC.CWrapper.getpid() + "/fd/" + pfd.getFd();
-                String fdTarget;
-                try {
-                    fdTarget = iface.pathReadlink(fdSource);
-                } catch (MbtoolCommandException e) {
-                    printBoldText(Color.RED, "Failed to resolve symlink: " + fdSource + ": " +
-                            e.getMessage() + "\n");
-                    return false;
-                }
-
-                String[] args = new String[]{"--romid", params.getRomId(),
-                        translateEmulatedPath(fdTarget)};
-
-                printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
-                        + TextUtils.join(", ", args) + "]\n");
-
-                completion = iface.signedExec(
-                        zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
-                        "rom-installer", args, this);
-            } finally {
-                IOUtils.closeQuietly(pfd);
+            String zipPath = getPathFromUri(params.getUri(), iface);
+            if (zipPath == null) {
+                return false;
             }
+
+            String[] args = new String[]{"--romid", params.getRomId(),
+                    translateEmulatedPath(zipPath)};
+
+            printBoldText(Color.YELLOW, "Running rom-installer with arguments: ["
+                    + TextUtils.join(", ", args) + "]\n");
+
+            SignedExecCompletion completion = iface.signedExec(
+                    zipInstaller.getAbsolutePath(), zipInstallerSig.getAbsolutePath(),
+                    "rom-installer", args, this);
 
             switch (completion.result) {
             case SignedExecResult.PROCESS_EXITED:
@@ -246,7 +263,7 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         printBoldText(Color.MAGENTA, "- ROM ID: " + params.getRomId() + "\n");
         printBoldText(Color.MAGENTA, "- Targets: " + Arrays.toString(params.getTargets()) + "\n");
         printBoldText(Color.MAGENTA, "- Backup name: " + params.getBackupName() + "\n");
-        printBoldText(Color.MAGENTA, "- Backup dir: " + params.getBackupDir() + "\n");
+        printBoldText(Color.MAGENTA, "- Backup dir URI: " + params.getBackupDirUri() + "\n");
         printBoldText(Color.MAGENTA, "- Force/overwrite: " + params.getForce() + "\n");
 
         printSeparator();
@@ -255,6 +272,14 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
         PatcherUtils.extractPatcher(getContext());
 
         printSeparator();
+
+        String backupDir = null;
+        if (params.getBackupDirUri() != null) {
+            backupDir = getPathFromUri(params.getBackupDirUri(), iface);
+            if (backupDir == null) {
+                return false;
+            }
+        }
 
         String abi;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -295,15 +320,18 @@ public final class MbtoolTask extends BaseServiceTask implements SignedExecOutpu
             args.add("-n");
             args.add(params.getBackupName());
         }
-        if (params.getBackupDir() != null) {
+        if (backupDir != null) {
             args.add("-d");
-            args.add(translateEmulatedPath(params.getBackupDir()));
+            args.add(translateEmulatedPath(backupDir));
         }
         if (params.getForce()) {
             args.add("-f");
         }
 
         String[] argsArray = args.toArray(new String[args.size()]);
+
+        printBoldText(Color.YELLOW, "Running " + argv0 + " with arguments: ["
+                + TextUtils.join(", ", args) + "]\n");
 
         SignedExecCompletion completion = iface.signedExec(
                 mbtoolRecovery.getAbsolutePath(), mbtoolRecoverySig.getAbsolutePath(),

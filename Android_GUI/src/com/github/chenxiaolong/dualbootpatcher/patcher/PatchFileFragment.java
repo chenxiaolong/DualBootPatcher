@@ -31,6 +31,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
@@ -685,11 +686,11 @@ public class PatchFileFragment extends Fragment implements
         GenericYesNoDialog dialog = (GenericYesNoDialog)
                 getFragmentManager().findFragmentByTag(YES_NO_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericYesNoDialog.newInstanceFromFragment(this,
-                    PERMISSIONS_REQUEST_STORAGE, null,
-                    getString(R.string.patcher_storage_permission_required),
-                    getString(R.string.try_again),
-                    getString(R.string.cancel));
+            GenericYesNoDialog.Builder builder = new GenericYesNoDialog.Builder();
+            builder.message(R.string.patcher_storage_permission_required);
+            builder.positive(R.string.try_again);
+            builder.negative(R.string.cancel);
+            dialog = builder.buildFromFragment(YES_NO_DIALOG_PERMISSIONS, this);
             dialog.show(getFragmentManager(), YES_NO_DIALOG_PERMISSIONS);
         }
     }
@@ -698,8 +699,10 @@ public class PatchFileFragment extends Fragment implements
         GenericConfirmDialog dialog = (GenericConfirmDialog)
                 getFragmentManager().findFragmentByTag(CONFIRM_DIALOG_PERMISSIONS);
         if (dialog == null) {
-            dialog = GenericConfirmDialog.newInstanceFromFragment(null, -1, null,
-                    getString(R.string.patcher_storage_permission_required), null);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.patcher_storage_permission_required);
+            builder.buttonText(R.string.ok);
+            dialog = builder.build();
             dialog.show(getFragmentManager(), CONFIRM_DIALOG_PERMISSIONS);
         }
     }
@@ -777,7 +780,9 @@ public class PatchFileFragment extends Fragment implements
         GenericProgressDialog dialog = (GenericProgressDialog)
                 getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
         if (dialog == null) {
-            dialog = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            dialog = builder.build();
             dialog.show(getFragmentManager(), PROGRESS_DIALOG_QUERYING_METADATA);
         }
     }
@@ -873,8 +878,8 @@ public class PatchFileFragment extends Fragment implements
     }
 
     @Override
-    public void onConfirmYesNo(int id, boolean choice) {
-        if (id == PERMISSIONS_REQUEST_STORAGE) {
+    public void onConfirmYesNo(@Nullable String tag, boolean choice) {
+        if (YES_NO_DIALOG_PERMISSIONS.equals(tag)) {
             if (choice) {
                 requestPermissions();
             }

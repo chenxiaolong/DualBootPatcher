@@ -36,6 +36,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.provider.DocumentFile;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -92,7 +94,6 @@ import com.github.clans.fab.FloatingActionMenu;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -108,7 +109,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     private static final String EXTRA_PENDING_ACTIONS = "pending_actions";
     private static final String EXTRA_SELECTED_URI = "selected_uri";
     private static final String EXTRA_SELECTED_URI_FILE_NAME = "selected_uri_file_name";
-    private static final String EXTRA_SELECTED_BACKUP_DIR = "selected_backup_dir";
+    private static final String EXTRA_SELECTED_BACKUP_DIR_URI = "selected_backup_uri";
     private static final String EXTRA_SELECTED_BACKUP_NAME = "selected_backup_name";
     private static final String EXTRA_SELECTED_BACKUP_TARGETS = "selected_backup_targets";
     private static final String EXTRA_SELECTED_ROM_ID = "selected_rom_id";
@@ -147,7 +148,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     private Uri mSelectedUri;
     private String mSelectedUriFileName;
-    private String mSelectedBackupDir;
+    private Uri mSelectedBackupDirUri;
     private String mSelectedBackupName;
     private String[] mSelectedBackupTargets;
     private String mSelectedRomId;
@@ -244,7 +245,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         if (savedInstanceState != null) {
             mSelectedUri = savedInstanceState.getParcelable(EXTRA_SELECTED_URI);
             mSelectedUriFileName = savedInstanceState.getString(EXTRA_SELECTED_URI_FILE_NAME);
-            mSelectedBackupDir = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_DIR);
+            mSelectedBackupDirUri = savedInstanceState.getParcelable(EXTRA_SELECTED_BACKUP_DIR_URI);
             mSelectedBackupName = savedInstanceState.getString(EXTRA_SELECTED_BACKUP_NAME);
             mSelectedBackupTargets = savedInstanceState.getStringArray(EXTRA_SELECTED_BACKUP_TARGETS);
             mSelectedRomId = savedInstanceState.getString(EXTRA_SELECTED_ROM_ID);
@@ -286,7 +287,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
         outState.putParcelable(EXTRA_SELECTED_URI, mSelectedUri);
         outState.putString(EXTRA_SELECTED_URI_FILE_NAME, mSelectedUriFileName);
-        outState.putString(EXTRA_SELECTED_BACKUP_DIR, mSelectedBackupDir);
+        outState.putParcelable(EXTRA_SELECTED_BACKUP_DIR_URI, mSelectedBackupDirUri);
         outState.putString(EXTRA_SELECTED_BACKUP_NAME, mSelectedBackupName);
         outState.putStringArray(EXTRA_SELECTED_BACKUP_TARGETS, mSelectedBackupTargets);
         outState.putString(EXTRA_SELECTED_ROM_ID, mSelectedRomId);
@@ -392,19 +393,23 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     public void onLoaderReset(Loader<LoaderResult> loader) {
     }
 
-    private static String[] getDirectories(String path) {
+    @Nullable
+    private static String[] getDirectories(Context context, Uri uri) {
         final ArrayList<String> filenames = new ArrayList<>();
-        File[] files = new File(path).listFiles();
+        DocumentFile directory = FileUtils.getDocumentFile(context, uri);
+        DocumentFile[] files = directory.listFiles();
 
         if (files == null) {
             return null;
         }
 
-        for (File file : files) {
+        for (DocumentFile file : files) {
             if (file.isDirectory()) {
                 filenames.add(file.getName());
             }
         }
+
+        Collections.sort(filenames);
 
         return filenames.toArray(new String[filenames.size()]);
     }
@@ -418,9 +423,11 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     private void addBackup() {
-        mSelectedBackupDir = mPrefs.getString(
-                Constants.Preferences.BACKUP_DIRECTORY, Constants.Defaults.BACKUP_DIRECTORY);
-        String[] backupNames = getDirectories(mSelectedBackupDir);
+        mSelectedBackupDirUri = Uri.parse(mPrefs.getString(
+                Constants.Preferences.BACKUP_DIRECTORY_URI,
+                Constants.Defaults.BACKUP_DIRECTORY_URI));
+
+        String[] backupNames = getDirectories(getActivity(), mSelectedBackupDirUri);
 
         if (backupNames == null || backupNames.length == 0) {
             Toast.makeText(getActivity(), R.string.in_app_flashing_no_backups_available,
@@ -428,10 +435,13 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         } else {
             mAddType = Type.BACKUP_RESTORE;
 
-            GenericSingleChoiceDialog d = GenericSingleChoiceDialog.newInstanceFromFragment(
-                    this, 0, null, getString(R.string.in_app_flashing_select_backup_dialog_desc),
-                    getString(R.string.ok), getString(R.string.cancel), backupNames);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
+            GenericSingleChoiceDialog.Builder builder = new GenericSingleChoiceDialog.Builder();
+            builder.message(R.string.in_app_flashing_select_backup_dialog_desc);
+            builder.positive(R.string.ok);
+            builder.negative(R.string.cancel);
+            builder.choices(backupNames);
+            builder.buildFromFragment(CONFIRM_DIALOG_SELECT_BACKUP, this).show(
+                    getFragmentManager(), CONFIRM_DIALOG_SELECT_BACKUP);
         }
     }
 
@@ -481,9 +491,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
                 throw new IllegalStateException("Invalid verification result ID");
             }
 
-            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
-                    null, -1, null, error, null);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(error);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         }
     }
 
@@ -520,9 +531,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             if (data != null && resultCode == Activity.RESULT_OK) {
                 mSelectedUri = data.getData();
 
-                GenericProgressDialog d = GenericProgressDialog.newInstance(
-                        R.string.in_app_flashing_dialog_verifying_zip, R.string.please_wait);
-                d.show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
+                GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+                builder.title(R.string.in_app_flashing_dialog_verifying_zip);
+                builder.message(R.string.please_wait);
+                builder.build().show(getFragmentManager(), PROGRESS_DIALOG_VERIFY_ZIP);
 
                 queryUriMetadata();
             }
@@ -559,7 +571,9 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         GenericProgressDialog dialog = (GenericProgressDialog)
                 getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_QUERYING_METADATA);
         if (dialog == null) {
-            dialog = GenericProgressDialog.newInstance(0, R.string.please_wait);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            dialog = builder.build();
             dialog.show(getFragmentManager(), PROGRESS_DIALOG_QUERYING_METADATA);
         }
     }
@@ -586,7 +600,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
     }
 
     @Override
-    public void onConfirmSingleChoice(int id, int index, String text) {
+    public void onConfirmSingleChoice(@Nullable String tag, int index, String text) {
         mSelectedBackupName = text;
 
         // Adk for restore targets
@@ -659,9 +673,10 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
 
     private void onHaveRomId() {
         if (mSelectedRomId.equals(mCurrentRomId)) {
-            GenericConfirmDialog d = GenericConfirmDialog.newInstanceFromFragment(
-                    null, -1, null, getString(R.string.in_app_flashing_error_no_overwrite_rom), null);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
+            GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
+            builder.message(R.string.in_app_flashing_error_no_overwrite_rom);
+            builder.buttonText(R.string.ok);
+            builder.build().show(getFragmentManager(), CONFIRM_DIALOG_ERROR);
         } else {
             mActivityCallback.onReady(true);
 
@@ -673,7 +688,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
                 action = new MbtoolAction(params);
             } else if (mAddType == Type.BACKUP_RESTORE) {
                 BackupRestoreParams params = new BackupRestoreParams(Action.RESTORE, mSelectedRomId,
-                        mSelectedBackupTargets, mSelectedBackupName, mSelectedBackupDir, false);
+                        mSelectedBackupTargets, mSelectedBackupName, mSelectedBackupDirUri, false);
                 action = new MbtoolAction(params);
             }
 
