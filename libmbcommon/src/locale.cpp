@@ -218,7 +218,8 @@ static char * iconv_convert(const char *from_code, const char *to_code,
                 new_out_size = SIZE_MAX - unit_size;
             }
 
-            new_out_buf = static_cast<char *>(realloc(out_buf, new_out_size));
+            new_out_buf = static_cast<char *>(realloc(
+                    out_buf, new_out_size + unit_size));
             if (!new_out_buf) {
                 goto done;
             }
