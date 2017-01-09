@@ -17,6 +17,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop
             bootimgtool
             mbp-shared
             mbpio-static
+            mbcommon-shared
         )
     else()
         target_link_libraries(
@@ -24,6 +25,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop
             mbp-static
             mbpio-static
             mblog-static
+            mbcommon-static
         )
 
         set_target_properties(

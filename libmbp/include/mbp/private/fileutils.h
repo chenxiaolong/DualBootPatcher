@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "mbcommon/file.h"
+
 #include "mbp/errors.h"
 
 
@@ -31,6 +33,8 @@ namespace mbp
 class FileUtils
 {
 public:
+    static ErrorCode openFile(MbFile *file, const std::string &path, int mode);
+
     static ErrorCode readToMemory(const std::string &path,
                                   std::vector<unsigned char> *contents);
     static ErrorCode readToString(const std::string &path,

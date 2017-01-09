@@ -681,6 +681,8 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
 std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
                                              const std::string &romId)
 {
+    (void) pc;
+
     std::string out;
 
     out +=
