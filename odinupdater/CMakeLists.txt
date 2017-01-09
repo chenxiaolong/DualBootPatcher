@@ -45,8 +45,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
     target_link_libraries(
         fuse-sparse
-        mbpio-static
         mbsparse-static
+        mbcommon-static
         mblog-static
         ${MBP_FUSE_LIBRARIES}
     )
