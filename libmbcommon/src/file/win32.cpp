@@ -31,6 +31,11 @@
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
+/*!
+ * \file mbcommon/file/win32.h
+ * \brief Open file with Win32 `HANDLE` API
+ */
+
 MB_BEGIN_C_DECLS
 
 static void free_ctx(Win32FileCtx *ctx)
@@ -429,6 +434,25 @@ int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
     return open_ctx(file, ctx);
 }
 
+/*!
+ * Open MbFile handle from Win32 `HANDLE`.
+ *
+ * If \p owned is true, then the MbFile handle will take ownership of the
+ * Win32 `HANDLE`. In other words, the Win32 `HANDLE` will be closed when the
+ * MbFile handle is closed.
+ *
+ * The \p append parameter exists because the Win32 API does not have a native
+ * append mode.
+ *
+ * \param file MbFile handle
+ * \param handle Win32 `HANDLE`
+ * \param owned Whether the Win32 `HANDLE` should be owned by the MbFile handle
+ * \param append Whether append mode should be enabled
+ *
+ * \return
+ *   * #MB_FILE_OK if the Win32 `HANDLE` was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_HANDLE(struct MbFile *file,
                         HANDLE handle, bool owned, bool append)
 {
@@ -437,6 +461,19 @@ int mb_file_open_HANDLE(struct MbFile *file,
     return _mb_file_open_HANDLE(&vtable, file, handle, owned, append);
 }
 
+/*!
+ * Open MbFile handle from a multi-byte filename.
+ *
+ * \p filename is converted to WCS using mb::mbs_to_wcs() before being used.
+ *
+ * \param file MbFile handle
+ * \param filename MBS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_HANDLE_filename(struct MbFile *file, const char *filename,
                                  int mode)
 {
@@ -445,6 +482,19 @@ int mb_file_open_HANDLE_filename(struct MbFile *file, const char *filename,
     return _mb_file_open_HANDLE_filename(&vtable, file, filename, mode);
 }
 
+/*!
+ * Open MbFile handle from a wide-character filename.
+ *
+ * \p filename is used directly without any conversions.
+ *
+ * \param file MbFile handle
+ * \param filename WCS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_HANDLE_filename_w(struct MbFile *file, const wchar_t *filename,
                                    int mode)
 {

@@ -30,17 +30,11 @@
 MB_BEGIN_C_DECLS
 
 enum MbFileOpenMode {
-    // "r"
     MB_FILE_OPEN_READ_ONLY          = 0,
-    // "r+"
     MB_FILE_OPEN_READ_WRITE         = 1,
-    // "w"
     MB_FILE_OPEN_WRITE_ONLY         = 2,
-    // "w+"
     MB_FILE_OPEN_READ_WRITE_TRUNC   = 3,
-    // "a"
     MB_FILE_OPEN_APPEND             = 4,
-    // "a+"
     MB_FILE_OPEN_READ_APPEND        = 5,
 };
 

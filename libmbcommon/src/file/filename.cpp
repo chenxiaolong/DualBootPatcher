@@ -27,6 +27,70 @@
 #  include "mbcommon/file/posix_p.h"
 #endif
 
+/*!
+ * \file mbcommon/file/filename.h
+ * \brief Open file with filename
+ *
+ * * On Windows systems, the mbcommon/file/win32.h API is used
+ * * On Android systems, the mbcommon/file/fd.h API is used
+ * * On other Unix-like systems, the mbcommon/file/posix.h API is used
+ */
+
+/*!
+ * \enum MbFileOpenMode
+ *
+ * \brief Possible file open modes
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_READ_ONLY
+ *
+ * \brief Open file for reading.
+ *
+ * The file pointer is set to the beginning of the file.
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_READ_WRITE
+ *
+ * \brief Open file for reading and writing.
+ *
+ * The file pointer is set to the beginning of the file.
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_WRITE_ONLY
+ *
+ * \brief Truncate file and open for writing.
+ *
+ * The file pointer is set to the beginning of the file.
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_READ_WRITE_TRUNC
+ *
+ * \brief Truncate file and open for reading and writing.
+ *
+ * The file pointer is set to the beginning of the file.
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_APPEND
+ *
+ * \brief Open file for appending.
+ *
+ * The file pointer is set to the end of the file.
+ */
+
+/*!
+ * \var MbFileOpenMode::MB_FILE_OPEN_READ_APPEND
+ *
+ * \brief Open file for reading and appending.
+ *
+ * The file pointer is initially set to the beginning of the file, but writing
+ * always occurs at the end of the file.
+ */
+
 MB_BEGIN_C_DECLS
 
 typedef int (*VtableOpenFunc)(SysVtable *vtable, struct MbFile *file,
@@ -68,12 +132,40 @@ int _mb_file_open_filename_w(SysVtable *vtable, struct MbFile *file,
     return vtable_open_w_func(vtable, file, filename, mode);
 }
 
+/*!
+ * Open MbFile handle from a multi-byte filename.
+ *
+ * On Unix-like systems, \p filename is used directly. On Windows systems,
+ * \p filename is converted to WCS using mb::mbs_to_wcs() before being used.
+ *
+ * \param file MbFile handle
+ * \param filename MBS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_filename(struct MbFile *file,
                           const char *filename, int mode)
 {
     return open_func(file, filename, mode);
 }
 
+/*!
+ * Open MbFile handle from a wide-character filename.
+ *
+ * On Unix-like systems, \p filename is converted to MBS using mb::wcs_to_mbs()
+ * before begin used. On Windows systems, \p filename is used directly.
+ *
+ * \param file MbFile handle
+ * \param filename WCS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_filename_w(struct MbFile *file,
                             const wchar_t *filename, int mode)
 {

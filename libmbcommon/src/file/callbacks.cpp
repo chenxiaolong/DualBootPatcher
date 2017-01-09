@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -18,6 +18,11 @@
  */
 
 #include "mbcommon/file/callbacks.h"
+
+/*!
+ * \file mbcommon/file/callbacks.h
+ * \brief Open file with callbacks
+ */
 
 MB_BEGIN_C_DECLS
 

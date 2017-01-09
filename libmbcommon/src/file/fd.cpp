@@ -36,6 +36,11 @@
 #define DEFAULT_MODE \
     (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
+/*!
+ * \file mbcommon/file/fd.h
+ * \brief Open file with POSIX file descriptors API
+ */
+
 MB_BEGIN_C_DECLS
 
 static void free_ctx(FdFileCtx *ctx)
@@ -346,6 +351,22 @@ int _mb_file_open_fd_filename_w(SysVtable *vtable, struct MbFile *file,
     return open_ctx(file, ctx);
 }
 
+/*!
+ * Open MbFile handle from file descriptor.
+ *
+ * If \p owned is true, then the MbFile handle will take ownership of the file
+ * descriptor. In other words, the file descriptor will be closed when the
+ * MbFile handle is closed.
+ *
+ * \param file MbFile handle
+ * \param fd File descriptor
+ * \param owned Whether the file descriptor should be owned by the MbFile
+ *              handle
+ *
+ * \return
+ *   * #MB_FILE_OK if the file descriptor was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_fd(struct MbFile *file, int fd, bool owned)
 {
     SysVtable vtable{};
@@ -353,6 +374,21 @@ int mb_file_open_fd(struct MbFile *file, int fd, bool owned)
     return _mb_file_open_fd(&vtable, file, fd, owned);
 }
 
+/*!
+ * Open MbFile handle from a multi-byte filename.
+ *
+ * On Unix-like systems, \p filename is directly passed to `open()`. On Windows
+ * systems, \p filename is converted to WCS using mb::mbs_to_wcs() before being
+ * passed to `_wopen()`.
+ *
+ * \param file MbFile handle
+ * \param filename MBS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_fd_filename(struct MbFile *file, const char *filename,
                              int mode)
 {
@@ -361,6 +397,21 @@ int mb_file_open_fd_filename(struct MbFile *file, const char *filename,
     return _mb_file_open_fd_filename(&vtable, file, filename, mode);
 }
 
+/*!
+ * Open MbFile handle from a wide-character filename.
+ *
+ * On Unix-like systems, \p filename is converted to MBS using mb::wcs_to_mbs()
+ * before being passed to `open()`. On Windows systems, \p filename is directly
+ * passed to `_wopen()`.
+ *
+ * \param file MbFile handle
+ * \param filename WCS filename
+ * \param mode Open mode (\ref MbFileOpenMode)
+ *
+ * \return
+ *   * #MB_FILE_OK if the file was successfully opened
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
 int mb_file_open_fd_filename_w(struct MbFile *file, const wchar_t *filename,
                                int mode)
 {
