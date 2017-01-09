@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -32,6 +32,7 @@ struct FileWin32Test : testing::Test
     SysVtable _vtable;
 
     int _n_CloseHandle = 0;
+    int _n_CreateFileW = 0;
     int _n_ReadFile = 0;
     int _n_SetEndOfFile = 0;
     int _n_SetFilePointerEx = 0;
@@ -41,6 +42,7 @@ struct FileWin32Test : testing::Test
     {
         // These all fail by default
         _vtable.fn_CloseHandle = _CloseHandle;
+        _vtable.fn_CreateFileW = _CreateFileW;
         _vtable.fn_ReadFile = _ReadFile;
         _vtable.fn_SetEndOfFile = _SetEndOfFile;
         _vtable.fn_SetFilePointerEx = _SetFilePointerEx;
@@ -63,6 +65,27 @@ struct FileWin32Test : testing::Test
 
         SetLastError(ERROR_INVALID_HANDLE);
         return FALSE;
+    }
+
+    static HANDLE _CreateFileW(void *userdata, LPCWSTR lpFileName,
+                               DWORD dwDesiredAccess, DWORD dwShareMode,
+                               LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                               DWORD dwCreationDisposition,
+                               DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+    {
+        (void) lpFileName;
+        (void) dwDesiredAccess;
+        (void) dwShareMode;
+        (void) lpSecurityAttributes;
+        (void) dwCreationDisposition;
+        (void) dwFlagsAndAttributes;
+        (void) hTemplateFile;
+
+        FileWin32Test *test = static_cast<FileWin32Test *>(userdata);
+        ++test->_n_CreateFileW;
+
+        SetLastError(ERROR_INVALID_HANDLE);
+        return INVALID_HANDLE_VALUE;
     }
 
     static BOOL _ReadFile(void *userdata, HANDLE hFile, LPVOID lpBuffer,
@@ -133,9 +156,97 @@ struct FileWin32Test : testing::Test
 TEST_F(FileWin32Test, OpenNoVtable)
 {
     memset(&_vtable, 0, sizeof(_vtable));
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, false, &_vtable),
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, false, false),
               MB_FILE_FATAL);
     ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INTERNAL_ERROR);
+}
+
+TEST_F(FileWin32Test, OpenFilenameMbsSuccess)
+{
+    _vtable.fn_CreateFileW = [](void *userdata, LPCWSTR lpFileName,
+                                DWORD dwDesiredAccess, DWORD dwShareMode,
+                                LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                DWORD dwCreationDisposition,
+                                DWORD dwFlagsAndAttributes,
+                                HANDLE hTemplateFile) -> HANDLE {
+        (void) lpFileName;
+        (void) dwDesiredAccess;
+        (void) dwShareMode;
+        (void) lpSecurityAttributes;
+        (void) dwCreationDisposition;
+        (void) dwFlagsAndAttributes;
+        (void) hTemplateFile;
+
+        FileWin32Test *test = static_cast<FileWin32Test *>(userdata);
+        ++test->_n_CreateFileW;
+
+        return reinterpret_cast<HANDLE>(1);
+    };
+
+    ASSERT_EQ(_mb_file_open_HANDLE_filename(&_vtable, _file, "x",
+                                            MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+    ASSERT_EQ(_n_CreateFileW, 1);
+}
+
+TEST_F(FileWin32Test, OpenFilenameMbsFailure)
+{
+    ASSERT_EQ(_mb_file_open_HANDLE_filename(&_vtable, _file, "x",
+                                            MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(_n_CreateFileW, 1);
+}
+
+TEST_F(FileWin32Test, OpenFilenameMbsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_HANDLE_filename(&_vtable, _file, "x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
+{
+    _vtable.fn_CreateFileW = [](void *userdata, LPCWSTR lpFileName,
+                                DWORD dwDesiredAccess, DWORD dwShareMode,
+                                LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                DWORD dwCreationDisposition,
+                                DWORD dwFlagsAndAttributes,
+                                HANDLE hTemplateFile) -> HANDLE {
+        (void) lpFileName;
+        (void) dwDesiredAccess;
+        (void) dwShareMode;
+        (void) lpSecurityAttributes;
+        (void) dwCreationDisposition;
+        (void) dwFlagsAndAttributes;
+        (void) hTemplateFile;
+
+        FileWin32Test *test = static_cast<FileWin32Test *>(userdata);
+        ++test->_n_CreateFileW;
+
+        return reinterpret_cast<HANDLE>(1);
+    };
+
+    ASSERT_EQ(_mb_file_open_HANDLE_filename_w(&_vtable, _file, L"x",
+                                              MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+    ASSERT_EQ(_n_CreateFileW, 1);
+}
+
+TEST_F(FileWin32Test, OpenFilenameWcsFailure)
+{
+    ASSERT_EQ(_mb_file_open_HANDLE_filename_w(&_vtable, _file, L"x",
+                                              MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(_n_CreateFileW, 1);
+}
+
+TEST_F(FileWin32Test, OpenFilenameWcsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_HANDLE_filename_w(&_vtable, _file, L"x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_F(FileWin32Test, CloseUnownedFile)
@@ -149,7 +260,7 @@ TEST_F(FileWin32Test, CloseUnownedFile)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, false, &_vtable),
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, false, false),
               MB_FILE_OK);
 
     // Ensure that the close callback is not called
@@ -168,7 +279,8 @@ TEST_F(FileWin32Test, CloseOwnedFile)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
@@ -177,7 +289,8 @@ TEST_F(FileWin32Test, CloseOwnedFile)
 
 TEST_F(FileWin32Test, CloseFailure)
 {
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_FAILED);
@@ -202,7 +315,8 @@ TEST_F(FileWin32Test, ReadSuccess)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -230,7 +344,8 @@ TEST_F(FileWin32Test, ReadSuccessMaxSize)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the read callback is called
     size_t n;
@@ -259,7 +374,8 @@ TEST_F(FileWin32Test, ReadEof)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -271,7 +387,8 @@ TEST_F(FileWin32Test, ReadEof)
 
 TEST_F(FileWin32Test, ReadFailure)
 {
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -298,7 +415,8 @@ TEST_F(FileWin32Test, WriteSuccess)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -325,7 +443,8 @@ TEST_F(FileWin32Test, WriteSuccessMaxSize)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -354,7 +473,8 @@ TEST_F(FileWin32Test, WriteEof)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -365,13 +485,70 @@ TEST_F(FileWin32Test, WriteEof)
 
 TEST_F(FileWin32Test, WriteFailure)
 {
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
     ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_FAILED);
     ASSERT_EQ(_n_WriteFile, 1);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
+}
+
+TEST_F(FileWin32Test, WriteAppendSuccess)
+{
+    _vtable.fn_SetFilePointerEx = [](void *userdata, HANDLE hFile,
+                                     LARGE_INTEGER liDistanceToMove,
+                                     PLARGE_INTEGER lpNewFilePointer,
+                                     DWORD dwMoveMethod) -> BOOL {
+        (void) hFile;
+        (void) liDistanceToMove;
+        (void) lpNewFilePointer;
+        (void) dwMoveMethod;
+
+        FileWin32Test *test = static_cast<FileWin32Test *>(userdata);
+        ++test->_n_SetFilePointerEx;
+
+        lpNewFilePointer->QuadPart = 0;
+        return TRUE;
+    };
+    _vtable.fn_WriteFile = [](void *userdata, HANDLE hFile, LPCVOID lpBuffer,
+                              DWORD nNumberOfBytesToWrite,
+                              LPDWORD lpNumberOfBytesWritten,
+                              LPOVERLAPPED lpOverlapped) -> BOOL {
+        (void) hFile;
+        (void) lpBuffer;
+        (void) lpOverlapped;
+
+        FileWin32Test *test = static_cast<FileWin32Test *>(userdata);
+        ++test->_n_WriteFile;
+
+        *lpNumberOfBytesWritten = nNumberOfBytesToWrite;
+        return TRUE;
+    };
+
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, true),
+              MB_FILE_OK);
+
+    // Ensure that the seek and write callbacks are called
+    size_t n;
+    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_OK);
+    ASSERT_EQ(n, 1);
+    ASSERT_EQ(_n_SetFilePointerEx, 1);
+    ASSERT_EQ(_n_WriteFile, 1);
+}
+
+TEST_F(FileWin32Test, WriteAppendSeekFailure)
+{
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, true),
+              MB_FILE_OK);
+
+    // Ensure that the seek callback is called
+    size_t n;
+    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(_n_SetFilePointerEx, 1);
+    ASSERT_EQ(_n_WriteFile, 0);
 }
 
 TEST_F(FileWin32Test, SeekSuccess)
@@ -392,7 +569,8 @@ TEST_F(FileWin32Test, SeekSuccess)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     uint64_t offset;
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, &offset), MB_FILE_OK);
@@ -419,7 +597,8 @@ TEST_F(FileWin32Test, SeekSuccessLargeFile)
         return TRUE;
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
     uint64_t offset;
@@ -429,9 +608,10 @@ TEST_F(FileWin32Test, SeekSuccessLargeFile)
 }
 #undef LFS_SIZE
 
-TEST_F(FileWin32Test, SeekFseekFailed)
+TEST_F(FileWin32Test, SeekFailed)
 {
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
@@ -474,7 +654,8 @@ TEST_F(FileWin32Test, TruncateSuccess)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_OK);
     ASSERT_EQ(_n_SetEndOfFile, 1);
@@ -509,7 +690,8 @@ TEST_F(FileWin32Test, TruncateFailed)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
@@ -519,7 +701,8 @@ TEST_F(FileWin32Test, TruncateFailed)
 
 TEST_F(FileWin32Test, TruncateFirstSeekFailed)
 {
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
@@ -551,7 +734,8 @@ TEST_F(FileWin32Test, TruncateSecondSeekFailed)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);
@@ -594,7 +778,8 @@ TEST_F(FileWin32Test, TruncateThirdSeekFailed)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_HANDLE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_HANDLE(&_vtable, _file, nullptr, true, false),
+              MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FATAL);
     ASSERT_EQ(mb_file_error(_file), -ERROR_INVALID_HANDLE);

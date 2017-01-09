@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,18 +24,44 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "mbcommon/locale.h"
 
 #include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/fd_p.h"
 
+#define DEFAULT_MODE \
+    (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+
 MB_BEGIN_C_DECLS
+
+static void free_ctx(FdFileCtx *ctx)
+{
+    free(ctx->filename);
+    free(ctx);
+}
 
 static int fd_open_cb(struct MbFile *file, void *userdata)
 {
     FdFileCtx *ctx = static_cast<FdFileCtx *>(userdata);
     struct stat sb;
+
+    if (ctx->filename) {
+#ifdef _WIN32
+        ctx->fd = ctx->vtable.fn_wopen(
+#else
+        ctx->fd = ctx->vtable.fn_open(
+#endif
+                ctx->vtable.userdata, ctx->filename, ctx->flags, DEFAULT_MODE);
+        if (ctx->fd < 0) {
+            mb_file_set_error(file, -errno, "Failed to open file: %s",
+                              strerror(errno));
+            return MB_FILE_FAILED;
+        }
+    }
 
     if (ctx->vtable.fn_fstat(ctx->vtable.userdata, ctx->fd, &sb) < 0) {
         mb_file_set_error(file, -errno,
@@ -56,14 +82,14 @@ static int fd_close_cb(struct MbFile *file, void *userdata)
     FdFileCtx *ctx = static_cast<FdFileCtx *>(userdata);
     int ret = MB_FILE_OK;
 
-    if (ctx->owned && ctx->vtable.fn_close(
+    if (ctx->owned && ctx->fd >= 0 && ctx->vtable.fn_close(
             ctx->vtable.userdata, ctx->fd) < 0) {
         mb_file_set_error(file, -errno,
                           "Failed to close file: %s", strerror(errno));
         ret = MB_FILE_FAILED;
     }
 
-    free(ctx);
+    free_ctx(ctx);
 
     return ret;
 }
@@ -142,19 +168,29 @@ static int fd_truncate_cb(struct MbFile *file, void *userdata,
     return MB_FILE_OK;
 }
 
-int _mb_file_open_fd(struct MbFile *file, int fd, bool owned,
-                     SysVtable *vtable)
+static bool check_vtable(SysVtable *vtable, bool needs_open)
 {
-    if (!vtable
-            || !vtable->fn_fstat
-            || !vtable->fn_close
-            || !vtable->fn_ftruncate64
-            || !vtable->fn_lseek64
-            || !vtable->fn_read
-            || !vtable->fn_write) {
+    return vtable
+#ifdef _WIN32
+            && (needs_open ? !!vtable->fn_wopen : true)
+#else
+            && (needs_open ? !!vtable->fn_open : true)
+#endif
+            && vtable->fn_fstat
+            && vtable->fn_close
+            && vtable->fn_ftruncate64
+            && vtable->fn_lseek64
+            && vtable->fn_read
+            && vtable->fn_write;
+}
+
+static FdFileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
+                              bool needs_open)
+{
+    if (!check_vtable(vtable, needs_open)) {
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Invalid or incomplete vtable");
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
     FdFileCtx *ctx = static_cast<FdFileCtx *>(calloc(1, sizeof(FdFileCtx)));
@@ -162,13 +198,16 @@ int _mb_file_open_fd(struct MbFile *file, int fd, bool owned,
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Failed to allocate FdFileCtx: %s",
                           strerror(errno));
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
-    ctx->fd = fd;
-    ctx->owned = owned;
     ctx->vtable = *vtable;
 
+    return ctx;
+}
+
+static int open_ctx(struct MbFile *file, FdFileCtx *ctx)
+{
     return mb_file_open_callbacks(file,
                                   &fd_open_cb,
                                   &fd_close_cb,
@@ -179,11 +218,155 @@ int _mb_file_open_fd(struct MbFile *file, int fd, bool owned,
                                   ctx);
 }
 
+static int convert_mode(int mode)
+{
+    int ret = 0;
+
+#ifdef _WIN32
+    ret |= O_NOINHERIT | O_BINARY;
+#else
+    ret |= O_CLOEXEC;
+#endif
+
+    switch (mode) {
+    case MB_FILE_OPEN_READ_ONLY:
+        ret |= O_RDONLY;
+        break;
+    case MB_FILE_OPEN_READ_WRITE:
+        ret |= O_RDWR;
+        break;
+    case MB_FILE_OPEN_WRITE_ONLY:
+        ret |= O_WRONLY | O_CREAT | O_TRUNC;
+        break;
+    case MB_FILE_OPEN_READ_WRITE_TRUNC:
+        ret |= O_RDWR | O_CREAT | O_TRUNC;
+        break;
+    case MB_FILE_OPEN_APPEND:
+        ret |= O_WRONLY | O_CREAT | O_APPEND;
+        break;
+    case MB_FILE_OPEN_READ_APPEND:
+        ret |= O_RDWR | O_CREAT | O_APPEND;
+        break;
+    default:
+        ret = -1;
+        break;
+    }
+
+    return ret;
+}
+
+int _mb_file_open_fd(SysVtable *vtable, struct MbFile *file, int fd, bool owned)
+{
+    FdFileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->fd = fd;
+    ctx->owned = owned;
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_fd_filename(SysVtable *vtable, struct MbFile *file,
+                              const char *filename, int mode)
+{
+    FdFileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+#ifdef _WIN32
+    ctx->filename = mb::mbs_to_wcs(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Failed to convert MBS filename or mode to WCS");
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#else
+    ctx->filename = strdup(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
+                          "Failed to allocate string: %s", strerror(errno));
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#endif
+
+    ctx->flags = convert_mode(mode);
+    if (ctx->flags < 0) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_fd_filename_w(SysVtable *vtable, struct MbFile *file,
+                                const wchar_t *filename, int mode)
+{
+    FdFileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+#ifdef _WIN32
+    ctx->filename = wcsdup(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
+                          "Failed to allocate string: %s", strerror(errno));
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#else
+    ctx->filename = mb::wcs_to_mbs(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Failed to convert WCS filename or mode to MBS");
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#endif
+
+    ctx->flags = convert_mode(mode);
+    if (ctx->flags < 0) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
 int mb_file_open_fd(struct MbFile *file, int fd, bool owned)
 {
     SysVtable vtable{};
     _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_fd(file, fd, owned, &vtable);
+    return _mb_file_open_fd(&vtable, file, fd, owned);
+}
+
+int mb_file_open_fd_filename(struct MbFile *file, const char *filename,
+                             int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_fd_filename(&vtable, file, filename, mode);
+}
+
+int mb_file_open_fd_filename_w(struct MbFile *file, const wchar_t *filename,
+                               int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_fd_filename_w(&vtable, file, filename, mode);
 }
 
 MB_END_C_DECLS

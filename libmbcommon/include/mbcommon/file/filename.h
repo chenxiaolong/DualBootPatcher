@@ -19,40 +19,34 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
+#include "mbcommon/file.h"
 
-#include "mbcommon/file/win32.h"
-#include "mbcommon/file/vtable_p.h"
+#ifdef __cplusplus
+#  include <cwchar>
+#else
+#  include <wchar.h>
+#endif
 
-/*! \cond INTERNAL */
 MB_BEGIN_C_DECLS
 
-struct Win32FileCtx
-{
-    HANDLE handle;
-    bool owned;
-    LPWSTR filename;
-    LPWSTR error;
-
-    // For CreateFileW
-    DWORD access;
-    DWORD sharing;
-    SECURITY_ATTRIBUTES sa;
-    DWORD creation;
-    DWORD attrib;
-
-    bool append;
-
-    SysVtable vtable;
+enum MbFileOpenMode {
+    // "r"
+    MB_FILE_OPEN_READ_ONLY          = 0,
+    // "r+"
+    MB_FILE_OPEN_READ_WRITE         = 1,
+    // "w"
+    MB_FILE_OPEN_WRITE_ONLY         = 2,
+    // "w+"
+    MB_FILE_OPEN_READ_WRITE_TRUNC   = 3,
+    // "a"
+    MB_FILE_OPEN_APPEND             = 4,
+    // "a+"
+    MB_FILE_OPEN_READ_APPEND        = 5,
 };
 
-int _mb_file_open_HANDLE(SysVtable *vtable, struct MbFile *file, HANDLE handle,
-                         bool owned, bool append);
-
-int _mb_file_open_HANDLE_filename(SysVtable *vtable, struct MbFile *file,
-                                  const char *filename, int mode);
-int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                    const wchar_t *filename, int mode);
+MB_EXPORT int mb_file_open_filename(struct MbFile *file,
+                                    const char *filename, int mode);
+MB_EXPORT int mb_file_open_filename_w(struct MbFile *file,
+                                      const wchar_t *filename, int mode);
 
 MB_END_C_DECLS
-/*! \endcond */

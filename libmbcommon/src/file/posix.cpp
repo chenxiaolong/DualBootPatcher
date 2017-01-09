@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/locale.h"
+
 #include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/posix_p.h"
 
@@ -36,11 +38,31 @@ static_assert(sizeof(off_t) > 4, "Not compiling with LFS support!");
 
 MB_BEGIN_C_DECLS
 
+static void free_ctx(PosixFileCtx *ctx)
+{
+    free(ctx->filename);
+    free(ctx);
+}
+
 static int posix_open_cb(struct MbFile *file, void *userdata)
 {
     PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
     struct stat sb;
     int fd;
+
+    if (ctx->filename) {
+#ifdef _WIN32
+        ctx->fp = ctx->vtable.fn_wfopen(
+#else
+        ctx->fp = ctx->vtable.fn_fopen(
+#endif
+                ctx->vtable.userdata, ctx->filename, ctx->mode);
+        if (!ctx->fp) {
+            mb_file_set_error(file, -errno, "Failed to open file: %s",
+                              strerror(errno));
+            return MB_FILE_FAILED;
+        }
+    }
 
     fd = ctx->vtable.fn_fileno(ctx->vtable.userdata, ctx->fp);
     if (fd >= 0) {
@@ -64,7 +86,7 @@ static int posix_close_cb(struct MbFile *file, void *userdata)
     PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
     int ret = MB_FILE_OK;
 
-    if (ctx->owned && ctx->vtable.fn_fclose(
+    if (ctx->owned && ctx->fp && ctx->vtable.fn_fclose(
             ctx->vtable.userdata, ctx->fp) == EOF) {
         mb_file_set_error(file, -errno,
                           "Failed to close file: %s", strerror(errno));
@@ -72,7 +94,7 @@ static int posix_close_cb(struct MbFile *file, void *userdata)
     }
 
     // Clean up resources
-    free(ctx);
+    free_ctx(ctx);
 
     return ret;
 }
@@ -174,22 +196,32 @@ static int posix_truncate_cb(struct MbFile *file, void *userdata,
     return MB_FILE_OK;
 }
 
-int _mb_file_open_FILE(struct MbFile *file, FILE *fp, bool owned,
-                       SysVtable *vtable)
+static bool check_vtable(SysVtable *vtable, bool needs_fopen)
 {
-    if (!vtable
-            || !vtable->fn_fstat
-            || !vtable->fn_fclose
-            || !vtable->fn_ferror
-            || !vtable->fn_fileno
-            || !vtable->fn_fread
-            || !vtable->fn_fseeko
-            || !vtable->fn_ftello
-            || !vtable->fn_fwrite
-            || !vtable->fn_ftruncate64) {
+    return vtable
+            && vtable->fn_fstat
+            && vtable->fn_fclose
+            && vtable->fn_ferror
+            && vtable->fn_fileno
+#ifdef _WIN32
+            && (needs_fopen ? !!vtable->fn_wfopen : true)
+#else
+            && (needs_fopen ? !!vtable->fn_fopen : true)
+#endif
+            && vtable->fn_fread
+            && vtable->fn_fseeko
+            && vtable->fn_ftello
+            && vtable->fn_fwrite
+            && vtable->fn_ftruncate64;
+}
+
+static PosixFileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
+                                 bool needs_fopen)
+{
+    if (!check_vtable(vtable, needs_fopen)) {
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Invalid or incomplete vtable");
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
     PosixFileCtx *ctx = static_cast<PosixFileCtx *>(
@@ -198,13 +230,16 @@ int _mb_file_open_FILE(struct MbFile *file, FILE *fp, bool owned,
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Failed to allocate PosixFileCtx: %s",
                           strerror(errno));
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
-    ctx->fp = fp;
-    ctx->owned = owned;
     ctx->vtable = *vtable;
 
+    return ctx;
+}
+
+static int open_ctx(struct MbFile *file, PosixFileCtx *ctx)
+{
     return mb_file_open_callbacks(file,
                                   &posix_open_cb,
                                   &posix_close_cb,
@@ -215,11 +250,161 @@ int _mb_file_open_FILE(struct MbFile *file, FILE *fp, bool owned,
                                   ctx);
 }
 
+#ifdef _WIN32
+static const wchar_t * convert_mode(int mode)
+{
+    switch (mode) {
+    case MB_FILE_OPEN_READ_ONLY:
+        return L"rbN";
+    case MB_FILE_OPEN_READ_WRITE:
+        return L"r+bN";
+    case MB_FILE_OPEN_WRITE_ONLY:
+        return L"wbN";
+    case MB_FILE_OPEN_READ_WRITE_TRUNC:
+        return L"w+bN";
+    case MB_FILE_OPEN_APPEND:
+        return L"abN";
+    case MB_FILE_OPEN_READ_APPEND:
+        return L"a+bN";
+    default:
+        return nullptr;
+    }
+}
+#else
+static const char * convert_mode(int mode)
+{
+    switch (mode) {
+    case MB_FILE_OPEN_READ_ONLY:
+        return "rbe";
+    case MB_FILE_OPEN_READ_WRITE:
+        return "r+be";
+    case MB_FILE_OPEN_WRITE_ONLY:
+        return "wbe";
+    case MB_FILE_OPEN_READ_WRITE_TRUNC:
+        return "w+be";
+    case MB_FILE_OPEN_APPEND:
+        return "abe";
+    case MB_FILE_OPEN_READ_APPEND:
+        return "a+be";
+    default:
+        return nullptr;
+    }
+}
+#endif
+
+int _mb_file_open_FILE(SysVtable *vtable, struct MbFile *file, FILE *fp,
+                       bool owned)
+{
+    PosixFileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->fp = fp;
+    ctx->owned = owned;
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_FILE_filename(SysVtable *vtable, struct MbFile *file,
+                                const char *filename, int mode)
+{
+    PosixFileCtx *ctx = create_ctx(file, vtable, true);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+#ifdef _WIN32
+    ctx->filename = mb::mbs_to_wcs(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Failed to convert MBS filename to WCS");
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#else
+    ctx->filename = strdup(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
+                          "Failed to allocate string: %s", strerror(errno));
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#endif
+
+    ctx->mode = convert_mode(mode);
+    if (!ctx->mode) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_FILE_filename_w(SysVtable *vtable, struct MbFile *file,
+                                  const wchar_t *filename, int mode)
+{
+    PosixFileCtx *ctx = create_ctx(file, vtable, true);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+#ifdef _WIN32
+    ctx->filename = wcsdup(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
+                          "Failed to allocate string: %s", strerror(errno));
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#else
+    ctx->filename = mb::wcs_to_mbs(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Failed to convert WCS filename to MBS");
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+#endif
+
+    ctx->mode = convert_mode(mode);
+    if (!ctx->mode) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
 int mb_file_open_FILE(struct MbFile *file, FILE *fp, bool owned)
 {
     SysVtable vtable{};
     _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_FILE(file, fp, owned, &vtable);
+    return _mb_file_open_FILE(&vtable, file, fp, owned);
+}
+
+int mb_file_open_FILE_filename(struct MbFile *file, const char *filename,
+                               int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_FILE_filename(&vtable, file, filename, mode);
+}
+
+int mb_file_open_FILE_filename_w(struct MbFile *file, const wchar_t *filename,
+                                 int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_FILE_filename_w(&vtable, file, filename, mode);
 }
 
 MB_END_C_DECLS

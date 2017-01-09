@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -27,6 +27,11 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
+#  ifdef __cplusplus
+#    include <cwchar>
+#  else
+#    include <wchar.h>
+#  endif
 #  include <windows.h>
 #endif
 
@@ -40,6 +45,20 @@ MB_BEGIN_C_DECLS
 // symbols as macros.
 struct SysVtable
 {
+    // fcntl.h
+#ifdef _WIN32
+    typedef int (*PosixWopenFn)(void *userdata, const wchar_t *path, int flags,
+                                mode_t mode);
+#else
+    typedef int (*PosixOpenFn)(void *userdata, const char *path, int flags,
+                               mode_t mode);
+#endif
+#ifdef _WIN32
+    PosixWopenFn fn_wopen;
+#else
+    PosixOpenFn fn_open;
+#endif
+
     // sys/stat.h
     typedef int (*PosixFstatFn)(void *userdata, int fildes, struct stat *buf);
     PosixFstatFn fn_fstat;
@@ -48,19 +67,33 @@ struct SysVtable
     typedef int (*PosixFcloseFn)(void *userdata, FILE *stream);
     typedef int (*PosixFerrorFn)(void *userdata, FILE *stream);
     typedef int (*PosixFilenoFn)(void *userdata, FILE *stream);
+#ifndef _WIN32
+    typedef FILE * (*PosixFopenFn)(void *userdata, const char *path,
+                                   const char *mode);
+#endif
     typedef size_t (*PosixFreadFn)(void *userdata, void *ptr, size_t size,
                                    size_t nmemb, FILE *stream);
     typedef int (*PosixFseekoFn)(void *userdata, FILE *stream, off_t offset,
                                  int whence);
     typedef off_t (*PosixFtelloFn)(void *userdata, FILE *stream);
+#ifdef _WIN32
+    typedef FILE * (*PosixWfopenFn)(void *userdata, const wchar_t *filename,
+                                    const wchar_t *mode);
+#endif
     typedef size_t (*PosixFwriteFn)(void *userdata, const void *ptr,
                                     size_t size, size_t nmemb, FILE *stream);
     PosixFcloseFn fn_fclose;
     PosixFerrorFn fn_ferror;
     PosixFilenoFn fn_fileno;
+#ifndef _WIN32
+    PosixFopenFn fn_fopen;
+#endif
     PosixFreadFn fn_fread;
     PosixFseekoFn fn_fseeko;
     PosixFtelloFn fn_ftello;
+#ifdef _WIN32
+    PosixWfopenFn fn_wfopen;
+#endif
     PosixFwriteFn fn_fwrite;
 
     // unistd.h
@@ -81,6 +114,13 @@ struct SysVtable
 #ifdef _WIN32
     // windows.h
     typedef BOOL (*Win32CloseHandleFn)(void *userdata, HANDLE hObject);
+    typedef HANDLE (*Win32CreateFileWFn)(void *userdata, LPCWSTR lpFileName,
+                                         DWORD dwDesiredAccess,
+                                         DWORD dwShareMode,
+                                         LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                         DWORD dwCreationDisposition,
+                                         DWORD dwFlagsAndAttributes,
+                                         HANDLE hTemplateFile);
     typedef BOOL (*Win32ReadFileFn)(void *userdata, HANDLE hFile,
                                     LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
                                     LPDWORD lpNumberOfBytesRead,
@@ -96,6 +136,7 @@ struct SysVtable
                                      LPDWORD lpNumberOfBytesWritten,
                                      LPOVERLAPPED lpOverlapped);
     Win32CloseHandleFn fn_CloseHandle;
+    Win32CreateFileWFn fn_CreateFileW;
     Win32ReadFileFn fn_ReadFile;
     Win32SetEndOfFileFn fn_SetEndOfFile;
     Win32SetFilePointerExFn fn_SetFilePointerEx;

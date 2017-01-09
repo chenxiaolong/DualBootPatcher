@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "mbcommon/file.h"
+#include "mbcommon/file/filename.h"
 
 #ifdef __cplusplus
 #  include <cstdbool>
@@ -33,5 +33,10 @@ MB_BEGIN_C_DECLS
 
 MB_EXPORT int mb_file_open_FILE(struct MbFile *file,
                                 FILE *fp, bool owned);
+
+MB_EXPORT int mb_file_open_FILE_filename(struct MbFile *file,
+                                         const char *filename, int mode);
+MB_EXPORT int mb_file_open_FILE_filename_w(struct MbFile *file,
+                                           const wchar_t *filename, int mode);
 
 MB_END_C_DECLS

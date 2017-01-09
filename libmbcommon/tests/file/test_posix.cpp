@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -28,7 +28,14 @@ struct FilePosixTest : testing::Test
 {
     MbFile *_file;
     SysVtable _vtable;
+    // Dummy fp that's never dereferenced
+    FILE *_fp = reinterpret_cast<FILE *>(-1);
 
+#ifdef _WIN32
+    int _n_wfopen = 0;
+#else
+    int _n_fopen = 0;
+#endif
     int _n_fstat = 0;
     int _n_fclose = 0;
     int _n_ferror = 0;
@@ -44,6 +51,11 @@ struct FilePosixTest : testing::Test
     FilePosixTest() : _file(mb_file_new())
     {
         // These all fail by default
+#ifdef _WIN32
+        _vtable.fn_wfopen = _wfopen;
+#else
+        _vtable.fn_fopen = _fopen;
+#endif
         _vtable.fn_fstat = _fstat;
         _vtable.fn_fclose = _fclose;
         _vtable.fn_ferror = _ferror;
@@ -61,6 +73,33 @@ struct FilePosixTest : testing::Test
     {
         mb_file_free(_file);
     }
+
+#ifdef _WIN32
+    static FILE * _wfopen(void *userdata, const wchar_t *filename,
+                          const wchar_t *mode)
+    {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_wfopen;
+
+        errno = EIO;
+        return nullptr;
+    }
+#else
+    static FILE * _fopen(void *userdata, const char *filename, const char *mode)
+    {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fopen;
+
+        errno = EIO;
+        return nullptr;
+    }
+#endif
 
     static int _fstat(void *userdata, int fildes, struct stat *buf)
     {
@@ -179,9 +218,120 @@ struct FilePosixTest : testing::Test
 TEST_F(FilePosixTest, OpenNoVtable)
 {
     memset(&_vtable, 0, sizeof(_vtable));
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, false, &_vtable),
-              MB_FILE_FATAL);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, false), MB_FILE_FATAL);
     ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INTERNAL_ERROR);
+}
+
+TEST_F(FilePosixTest, OpenFilenameMbsSuccess)
+{
+#ifdef _WIN32
+    _vtable.fn_wfopen = [](void *userdata, const wchar_t *filename,
+                           const wchar_t *mode) -> FILE * {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_wfopen;
+
+        return test->_fp;
+    };
+#else
+    _vtable.fn_fopen = [](void *userdata, const char *filename,
+                          const char *mode) -> FILE * {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fopen;
+
+        return test->_fp;
+    };
+#endif
+
+    ASSERT_EQ(_mb_file_open_FILE_filename(&_vtable, _file, "x",
+                                          MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wfopen, 1);
+#else
+    ASSERT_EQ(_n_fopen, 1);
+#endif
+}
+
+TEST_F(FilePosixTest, OpenFilenameMbsFailure)
+{
+    ASSERT_EQ(_mb_file_open_FILE_filename(&_vtable, _file, "x",
+                                          MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -EIO);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wfopen, 1);
+#else
+    ASSERT_EQ(_n_fopen, 1);
+#endif
+}
+
+TEST_F(FilePosixTest, OpenFilenameMbsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_FILE_filename(&_vtable, _file, "x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
+{
+#ifdef _WIN32
+    _vtable.fn_wfopen = [](void *userdata, const wchar_t *filename,
+                           const wchar_t *mode) -> FILE * {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_wfopen;
+
+        return test->_fp;
+    };
+#else
+    _vtable.fn_fopen = [](void *userdata, const char *filename,
+                          const char *mode) -> FILE * {
+        (void) filename;
+        (void) mode;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fopen;
+
+        return test->_fp;
+    };
+#endif
+
+    ASSERT_EQ(_mb_file_open_FILE_filename_w(&_vtable, _file, L"x",
+                                            MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wfopen, 1);
+#else
+    ASSERT_EQ(_n_fopen, 1);
+#endif
+}
+
+TEST_F(FilePosixTest, OpenFilenameWcsFailure)
+{
+    ASSERT_EQ(_mb_file_open_FILE_filename_w(&_vtable, _file, L"x",
+                                            MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -EIO);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wfopen, 1);
+#else
+    ASSERT_EQ(_n_fopen, 1);
+#endif
+}
+
+TEST_F(FilePosixTest, OpenFilenameWcsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_FILE_filename_w(&_vtable, _file, L"x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_F(FilePosixTest, OpenFstatFailed)
@@ -195,8 +345,7 @@ TEST_F(FilePosixTest, OpenFstatFailed)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, false, &_vtable),
-              MB_FILE_FAILED);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, false), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
     ASSERT_EQ(_n_fileno, 1);
     ASSERT_EQ(_n_fstat, 1);
@@ -223,8 +372,7 @@ TEST_F(FilePosixTest, OpenDirectory)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, false, &_vtable),
-              MB_FILE_FAILED);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, false), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EISDIR);
     ASSERT_EQ(_n_fileno, 1);
     ASSERT_EQ(_n_fstat, 1);
@@ -251,7 +399,7 @@ TEST_F(FilePosixTest, OpenFile)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, false, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, false), MB_FILE_OK);
     ASSERT_EQ(_n_fileno, 1);
     ASSERT_EQ(_n_fstat, 1);
 }
@@ -267,7 +415,7 @@ TEST_F(FilePosixTest, CloseUnownedFile)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, false, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, false), MB_FILE_OK);
 
     // Ensure that the close callback is not called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
@@ -285,7 +433,7 @@ TEST_F(FilePosixTest, CloseOwnedFile)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
@@ -294,7 +442,7 @@ TEST_F(FilePosixTest, CloseOwnedFile)
 
 TEST_F(FilePosixTest, CloseFailure)
 {
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_FAILED);
@@ -316,7 +464,7 @@ TEST_F(FilePosixTest, ReadSuccess)
         return nmemb;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -341,7 +489,7 @@ TEST_F(FilePosixTest, ReadEof)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -353,7 +501,7 @@ TEST_F(FilePosixTest, ReadEof)
 
 TEST_F(FilePosixTest, ReadFailure)
 {
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -383,7 +531,7 @@ TEST_F(FilePosixTest, ReadFailureEINTR)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -408,7 +556,7 @@ TEST_F(FilePosixTest, WriteSuccess)
         return nmemb;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -432,7 +580,7 @@ TEST_F(FilePosixTest, WriteEof)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -443,7 +591,7 @@ TEST_F(FilePosixTest, WriteEof)
 
 TEST_F(FilePosixTest, WriteFailure)
 {
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -472,7 +620,7 @@ TEST_F(FilePosixTest, WriteFailureEINTR)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -511,7 +659,7 @@ TEST_F(FilePosixTest, SeekSuccess)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     uint64_t offset;
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, &offset), MB_FILE_OK);
@@ -544,7 +692,7 @@ TEST_F(FilePosixTest, SeekSuccessLargeFile)
         return LFS_SIZE;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
     uint64_t offset;
@@ -579,7 +727,7 @@ TEST_F(FilePosixTest, SeekFseekFailed)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
@@ -610,7 +758,7 @@ TEST_F(FilePosixTest, SeekFtellFailed)
         return -1;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
@@ -646,7 +794,7 @@ TEST_F(FilePosixTest, SeekSecondFtellFailed)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
@@ -690,7 +838,7 @@ TEST_F(FilePosixTest, SeekSecondFtellFatal)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FATAL);
     ASSERT_EQ(mb_file_error(_file), -EIO);
@@ -725,7 +873,7 @@ TEST_F(FilePosixTest, TruncateSuccess)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_OK);
     ASSERT_EQ(_n_fileno, 2);
@@ -734,7 +882,7 @@ TEST_F(FilePosixTest, TruncateSuccess)
 
 TEST_F(FilePosixTest, TruncateUnsupported)
 {
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_UNSUPPORTED);
     ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_UNSUPPORTED);
@@ -759,7 +907,7 @@ TEST_F(FilePosixTest, TruncateFailed)
         }
     };
 
-    ASSERT_EQ(_mb_file_open_FILE(_file, nullptr, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);

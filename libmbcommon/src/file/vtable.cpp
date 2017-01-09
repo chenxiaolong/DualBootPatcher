@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,9 +19,28 @@
 
 #include "mbcommon/file/vtable_p.h"
 
+#include <fcntl.h>
 #include <unistd.h>
 
 MB_BEGIN_C_DECLS
+
+// fcntl.h
+
+#ifdef _WIN32
+static int _default_wopen(void *userdata, const wchar_t *path, int flags,
+                          mode_t mode)
+{
+    (void) userdata;
+    return _wopen(path, flags, mode);
+}
+#else
+static int _default_open(void *userdata, const char *path, int flags,
+                         mode_t mode)
+{
+    (void) userdata;
+    return open(path, flags, mode);
+}
+#endif
 
 // sys/stat.h
 
@@ -51,6 +70,14 @@ static int _default_fileno(void *userdata, FILE *stream)
     return fileno(stream);
 }
 
+#ifndef _WIN32
+static FILE * _default_fopen(void *userdata, const char *path, const char *mode)
+{
+    (void) userdata;
+    return fopen(path, mode);
+}
+#endif
+
 static size_t _default_fread(void *userdata, void *ptr, size_t size,
                              size_t nmemb, FILE *stream)
 {
@@ -70,6 +97,15 @@ static off_t _default_ftello(void *userdata, FILE *stream)
     (void) userdata;
     return ftello(stream);
 }
+
+#ifdef _WIN32
+static FILE * _default_wfopen(void *userdata, const wchar_t *filename,
+                              const wchar_t *mode)
+{
+    (void) userdata;
+    return _wfopen(filename, mode);
+}
+#endif
 
 static size_t _default_fwrite(void *userdata, const void *ptr, size_t size,
                               size_t nmemb, FILE *stream)
@@ -119,6 +155,20 @@ static BOOL _default_CloseHandle(void *userdata, HANDLE hObject)
     return CloseHandle(hObject);
 }
 
+static HANDLE _default_CreateFileW(void *userdata, LPCWSTR lpFileName,
+                                   DWORD dwDesiredAccess,
+                                   DWORD dwShareMode,
+                                   LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                   DWORD dwCreationDisposition,
+                                   DWORD dwFlagsAndAttributes,
+                                   HANDLE hTemplateFile)
+{
+    (void) userdata;
+    return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode,
+                       lpSecurityAttributes, dwCreationDisposition,
+                       dwFlagsAndAttributes, hTemplateFile);
+}
+
 static BOOL _default_ReadFile(void *userdata, HANDLE hFile, LPVOID lpBuffer,
                               DWORD nNumberOfBytesToRead,
                               LPDWORD lpNumberOfBytesRead,
@@ -158,15 +208,27 @@ static BOOL _default_WriteFile(void *userdata, HANDLE hFile, LPCVOID lpBuffer,
 
 void _vtable_fill_system_funcs(SysVtable *vtable)
 {
+    // fcntl.h
+#ifdef _WIN32
+    vtable->fn_wopen = _default_wopen;
+#else
+    vtable->fn_open = _default_open;
+#endif
     // sys/stat.h
     vtable->fn_fstat = _default_fstat;
     // stdio.h
     vtable->fn_fclose = _default_fclose;
     vtable->fn_ferror = _default_ferror;
     vtable->fn_fileno = _default_fileno;
+#ifndef _WIN32
+    vtable->fn_fopen = _default_fopen;
+#endif
     vtable->fn_fread = _default_fread;
     vtable->fn_fseeko = _default_fseeko;
     vtable->fn_ftello = _default_ftello;
+#ifdef _WIN32
+    vtable->fn_wfopen = _default_wfopen;
+#endif
     vtable->fn_fwrite = _default_fwrite;
     // unistd.h
     vtable->fn_close = _default_close;
@@ -177,6 +239,7 @@ void _vtable_fill_system_funcs(SysVtable *vtable)
 #ifdef _WIN32
     // windows.h
     vtable->fn_CloseHandle = _default_CloseHandle;
+    vtable->fn_CreateFileW = _default_CreateFileW;
     vtable->fn_ReadFile = _default_ReadFile;
     vtable->fn_SetEndOfFile = _default_SetEndOfFile;
     vtable->fn_SetFilePointerEx = _default_SetFilePointerEx;

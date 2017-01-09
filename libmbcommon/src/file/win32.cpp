@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,12 +24,20 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/locale.h"
+
 #include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/win32_p.h"
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
 MB_BEGIN_C_DECLS
+
+static void free_ctx(Win32FileCtx *ctx)
+{
+    free(ctx->filename);
+    free(ctx);
+}
 
 LPCWSTR win32_error_string(Win32FileCtx *ctx, DWORD error_code)
 {
@@ -57,8 +65,19 @@ LPCWSTR win32_error_string(Win32FileCtx *ctx, DWORD error_code)
 
 static int win32_open_cb(struct MbFile *file, void *userdata)
 {
-    (void) file;
-    (void) userdata;
+    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
+
+    if (ctx->filename) {
+        ctx->handle = ctx->vtable.fn_CreateFileW(
+                ctx->vtable.userdata, ctx->filename, ctx->access, ctx->sharing,
+                &ctx->sa, ctx->creation, ctx->attrib, nullptr);
+        if (ctx->handle == INVALID_HANDLE_VALUE) {
+            mb_file_set_error(file, -errno, "Failed to open file: %ls",
+                              win32_error_string(ctx, GetLastError()));
+            return MB_FILE_FAILED;
+        }
+    }
+
     return MB_FILE_OK;
 }
 
@@ -75,7 +94,7 @@ static int win32_close_cb(struct MbFile *file, void *userdata)
         ret = MB_FILE_FAILED;
     }
 
-    free(ctx);
+    free_ctx(ctx);
 
     return ret;
 }
@@ -102,43 +121,12 @@ static int win32_read_cb(struct MbFile *file, void *userdata,
 
     if (!ret) {
         mb_file_set_error(file, -GetLastError(),
-                          "Failed to read file: %s",
+                          "Failed to read file: %ls",
                           win32_error_string(ctx, GetLastError()));
         return MB_FILE_FAILED;
     }
 
     *bytes_read = n;
-    return MB_FILE_OK;
-}
-
-static int win32_write_cb(struct MbFile *file, void *userdata,
-                          const void *buf, size_t size,
-                          size_t *bytes_written)
-{
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
-    DWORD n = 0;
-
-    if (size > UINT_MAX) {
-        size = UINT_MAX;
-    }
-
-    bool ret = ctx->vtable.fn_WriteFile(
-        ctx->vtable.userdata,   // userdata
-        ctx->handle,            // hFile
-        buf,                    // lpBuffer
-        size,                   // nNumberOfBytesToWrite
-        &n,                     // lpNumberOfBytesWritten
-        nullptr                 // lpOverlapped
-    );
-
-    if (!ret) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to write file: %s",
-                          win32_error_string(ctx, GetLastError()));
-        return MB_FILE_FAILED;
-    }
-
-    *bytes_written = n;
     return MB_FILE_OK;
 }
 
@@ -179,12 +167,53 @@ static int win32_seek_cb(struct MbFile *file, void *userdata,
 
     if (!ret) {
         mb_file_set_error(file, -GetLastError(),
-                          "Failed to seek file: %s",
+                          "Failed to seek file: %ls",
                           win32_error_string(ctx, GetLastError()));
         return MB_FILE_FAILED;
     }
 
     *new_offset = new_pos.QuadPart;
+    return MB_FILE_OK;
+}
+
+static int win32_write_cb(struct MbFile *file, void *userdata,
+                          const void *buf, size_t size,
+                          size_t *bytes_written)
+{
+    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
+    DWORD n = 0;
+
+    // We have to seek manually in append mode because the Win32 API has no
+    // native append mode.
+    if (ctx->append) {
+        uint64_t pos;
+        int seek_ret = win32_seek_cb(file, userdata, 0, SEEK_END, &pos);
+        if (seek_ret != MB_FILE_OK) {
+            return seek_ret;
+        }
+    }
+
+    if (size > UINT_MAX) {
+        size = UINT_MAX;
+    }
+
+    bool ret = ctx->vtable.fn_WriteFile(
+        ctx->vtable.userdata,   // userdata
+        ctx->handle,            // hFile
+        buf,                    // lpBuffer
+        size,                   // nNumberOfBytesToWrite
+        &n,                     // lpNumberOfBytesWritten
+        nullptr                 // lpOverlapped
+    );
+
+    if (!ret) {
+        mb_file_set_error(file, -GetLastError(),
+                          "Failed to write file: %ls",
+                          win32_error_string(ctx, GetLastError()));
+        return MB_FILE_FAILED;
+    }
+
+    *bytes_written = n;
     return MB_FILE_OK;
 }
 
@@ -211,7 +240,7 @@ static int win32_truncate_cb(struct MbFile *file, void *userdata,
     // Truncate
     if (!ctx->vtable.fn_SetEndOfFile(ctx->vtable.userdata, ctx->handle)) {
         mb_file_set_error(file, -GetLastError(),
-                          "Failed to set EOF position: %s",
+                          "Failed to set EOF position: %ls",
                           win32_error_string(ctx, GetLastError()));
         ret = MB_FILE_FAILED;
     }
@@ -227,18 +256,24 @@ static int win32_truncate_cb(struct MbFile *file, void *userdata,
     return ret;
 }
 
-int _mb_file_open_HANDLE(struct MbFile *file, HANDLE handle, bool owned,
-                         SysVtable *vtable)
+static bool check_vtable(SysVtable *vtable, bool needs_open)
 {
-    if (!vtable
-            || !vtable->fn_CloseHandle
-            || !vtable->fn_ReadFile
-            || !vtable->fn_SetEndOfFile
-            || !vtable->fn_SetFilePointerEx
-            || !vtable->fn_WriteFile) {
+    return vtable
+            && vtable->fn_CloseHandle
+            && (needs_open ? !!vtable->fn_CreateFileW : true)
+            && vtable->fn_ReadFile
+            && vtable->fn_SetEndOfFile
+            && vtable->fn_SetFilePointerEx
+            && vtable->fn_WriteFile;
+}
+
+static Win32FileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
+                                 bool needs_open)
+{
+    if (!check_vtable(vtable, needs_open)) {
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Invalid or incomplete vtable");
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
     Win32FileCtx *ctx = static_cast<Win32FileCtx *>(
@@ -247,13 +282,16 @@ int _mb_file_open_HANDLE(struct MbFile *file, HANDLE handle, bool owned,
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Failed to allocate Win32FileCtx: %s",
                           strerror(errno));
-        return MB_FILE_FATAL;
+        return nullptr;
     }
 
-    ctx->handle = handle;
-    ctx->owned = owned;
     ctx->vtable = *vtable;
 
+    return ctx;
+}
+
+static int open_ctx(struct MbFile *file, Win32FileCtx *ctx)
+{
     return mb_file_open_callbacks(file,
                                   &win32_open_cb,
                                   &win32_close_cb,
@@ -264,12 +302,155 @@ int _mb_file_open_HANDLE(struct MbFile *file, HANDLE handle, bool owned,
                                   ctx);
 }
 
+static bool convert_mode(Win32FileCtx *ctx, int mode)
+{
+    DWORD access = 0;
+    // Match open()/_wopen() behavior
+    DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE;
+    SECURITY_ATTRIBUTES sa;
+    DWORD creation = 0;
+    DWORD attrib = 0;
+    // Win32 does not have a native append mode
+    bool append = false;
+
+    switch (mode) {
+    case MB_FILE_OPEN_READ_ONLY:
+        access = GENERIC_READ;
+        creation = OPEN_EXISTING;
+        break;
+    case MB_FILE_OPEN_READ_WRITE:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = OPEN_EXISTING;
+        break;
+    case MB_FILE_OPEN_WRITE_ONLY:
+        access = GENERIC_WRITE;
+        creation = CREATE_ALWAYS;
+        break;
+    case MB_FILE_OPEN_READ_WRITE_TRUNC:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = CREATE_ALWAYS;
+        break;
+    case MB_FILE_OPEN_APPEND:
+        access = GENERIC_WRITE;
+        creation = OPEN_ALWAYS;
+        append = true;
+        break;
+    case MB_FILE_OPEN_READ_APPEND:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = OPEN_ALWAYS;
+        append = true;
+        break;
+    default:
+        return false;
+    }
+
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = nullptr;
+    sa.bInheritHandle = false;
+
+    ctx->access = access;
+    ctx->sharing = sharing;
+    ctx->sa = sa;
+    ctx->creation = creation;
+    ctx->attrib = attrib;
+    ctx->append = append;
+
+    return true;
+}
+
+int _mb_file_open_HANDLE(SysVtable *vtable, struct MbFile *file, HANDLE handle,
+                         bool owned, bool append)
+{
+    Win32FileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->handle = handle;
+    ctx->owned = owned;
+    ctx->append = append;
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_HANDLE_filename(SysVtable *vtable, struct MbFile *file,
+                                  const char *filename, int mode)
+{
+    Win32FileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+    ctx->filename = mb::mbs_to_wcs(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Failed to convert MBS filename or mode to WCS");
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    if (!convert_mode(ctx, mode)) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
+int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
+                                    const wchar_t *filename, int mode)
+{
+    Win32FileCtx *ctx = create_ctx(file, vtable, false);
+    if (!ctx) {
+        return MB_FILE_FATAL;
+    }
+
+    ctx->owned = true;
+
+    ctx->filename = wcsdup(filename);
+    if (!ctx->filename) {
+        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
+                          "Failed to allocate string: %s", strerror(errno));
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    if (!convert_mode(ctx, mode)) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Invalid mode: %d", mode);
+        free_ctx(ctx);
+        return MB_FILE_FATAL;
+    }
+
+    return open_ctx(file, ctx);
+}
+
 int mb_file_open_HANDLE(struct MbFile *file,
-                        HANDLE handle, bool owned)
+                        HANDLE handle, bool owned, bool append)
 {
     SysVtable vtable{};
     _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_HANDLE(file, handle, owned, &vtable);
+    return _mb_file_open_HANDLE(&vtable, file, handle, owned, append);
+}
+
+int mb_file_open_HANDLE_filename(struct MbFile *file, const char *filename,
+                                 int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_HANDLE_filename(&vtable, file, filename, mode);
+}
+
+int mb_file_open_HANDLE_filename_w(struct MbFile *file, const wchar_t *filename,
+                                   int mode)
+{
+    SysVtable vtable{};
+    _vtable_fill_system_funcs(&vtable);
+    return _mb_file_open_HANDLE_filename_w(&vtable, file, filename, mode);
 }
 
 MB_END_C_DECLS

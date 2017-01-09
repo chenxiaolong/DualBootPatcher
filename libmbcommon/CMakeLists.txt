@@ -12,6 +12,7 @@ configure_file(
 set(MBCOMMON_SOURCES
     src/file/callbacks.cpp
     src/file/fd.cpp
+    src/file/filename.cpp
     src/file/posix.cpp
     src/file/vtable.cpp
     src/file.cpp

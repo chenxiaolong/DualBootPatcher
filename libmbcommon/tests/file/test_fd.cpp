@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,6 +21,8 @@
 
 #include <climits>
 
+#include <fcntl.h>
+
 #include "mbcommon/file.h"
 #include "mbcommon/file/fd.h"
 #include "mbcommon/file/fd_p.h"
@@ -31,6 +33,11 @@ struct FileFdTest : testing::Test
     MbFile *_file;
     SysVtable _vtable;
 
+#ifdef _WIN32
+    int _n_wopen = 0;
+#else
+    int _n_open = 0;
+#endif
     int _n_fstat = 0;
     int _n_close = 0;
     int _n_ftruncate64 = 0;
@@ -41,6 +48,11 @@ struct FileFdTest : testing::Test
     FileFdTest() : _file(mb_file_new())
     {
         // These all fail by default
+#ifdef _WIN32
+        _vtable.fn_wopen = _wopen;
+#else
+        _vtable.fn_open = _open;
+#endif
         _vtable.fn_fstat = _fstat;
         _vtable.fn_close = _close;
         _vtable.fn_ftruncate64 = _ftruncate64;
@@ -55,6 +67,35 @@ struct FileFdTest : testing::Test
     {
         mb_file_free(_file);
     }
+
+#ifdef _WIN32
+    static int _wopen(void *userdata, const wchar_t *path, int flags,
+                      mode_t mode)
+    {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_wopen;
+
+        errno = EIO;
+        return -1;
+    }
+#else
+    static int _open(void *userdata, const char *path, int flags, mode_t mode)
+    {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_open;
+
+        errno = EIO;
+        return -1;
+    }
+#endif
 
     static int _fstat(void *userdata, int fildes, struct stat *buf)
     {
@@ -146,13 +187,135 @@ struct FileFdTest : testing::Test
 TEST_F(FileFdTest, OpenNoVtable)
 {
     memset(&_vtable, 0, sizeof(_vtable));
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, false, &_vtable), MB_FILE_FATAL);
+    ASSERT_EQ(_mb_file_open_fd( &_vtable, _file, 0, false), MB_FILE_FATAL);
     ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INTERNAL_ERROR);
+}
+
+TEST_F(FileFdTest, OpenFilenameMbsSuccess)
+{
+#ifdef _WIN32
+    _vtable.fn_wopen = [](void *userdata, const wchar_t *path, int flags,
+                          mode_t mode) -> int {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_wopen;
+
+        return 0;
+    };
+#else
+    _vtable.fn_open = [](void *userdata, const char *path, int flags,
+                         mode_t mode) -> int {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_open;
+
+        return 0;
+    };
+#endif
+    _vtable.fn_fstat = _fstat_file;
+
+    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x",
+                                        MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wopen, 1);
+#else
+    ASSERT_EQ(_n_open, 1);
+#endif
+}
+
+TEST_F(FileFdTest, OpenFilenameMbsFailure)
+{
+    _vtable.fn_fstat = _fstat_file;
+
+    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x",
+                                        MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -EIO);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wopen, 1);
+#else
+    ASSERT_EQ(_n_open, 1);
+#endif
+}
+
+TEST_F(FileFdTest, OpenFilenameMbsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
+}
+
+TEST_F(FileFdTest, OpenFilenameWcsSuccess)
+{
+#ifdef _WIN32
+    _vtable.fn_wopen = [](void *userdata, const wchar_t *path, int flags,
+                          mode_t mode) -> int {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_wopen;
+
+        return 0;
+    };
+#else
+    _vtable.fn_open = [](void *userdata, const char *path, int flags,
+                         mode_t mode) -> int {
+        (void) path;
+        (void) flags;
+        (void) mode;
+
+        FileFdTest *test = static_cast<FileFdTest *>(userdata);
+        ++test->_n_open;
+
+        return 0;
+    };
+#endif
+    _vtable.fn_fstat = _fstat_file;
+
+    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x",
+                                          MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_OK);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wopen, 1);
+#else
+    ASSERT_EQ(_n_open, 1);
+#endif
+}
+
+TEST_F(FileFdTest, OpenFilenameWcsFailure)
+{
+    _vtable.fn_fstat = _fstat_file;
+
+    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x",
+                                          MB_FILE_OPEN_READ_ONLY),
+              MB_FILE_FAILED);
+    ASSERT_EQ(mb_file_error(_file), -EIO);
+#ifdef _WIN32
+    ASSERT_EQ(_n_wopen, 1);
+#else
+    ASSERT_EQ(_n_open, 1);
+#endif
+}
+
+TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
+{
+    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x", -1),
+              MB_FILE_FATAL);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
 }
 
 TEST_F(FileFdTest, OpenFstatFailed)
 {
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, false, &_vtable), MB_FILE_FAILED);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
     ASSERT_EQ(_n_fstat, 1);
 }
@@ -169,7 +332,7 @@ TEST_F(FileFdTest, OpenDirectory)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, false, &_vtable), MB_FILE_FAILED);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EISDIR);
     ASSERT_EQ(_n_fstat, 1);
 }
@@ -178,7 +341,7 @@ TEST_F(FileFdTest, OpenFile)
 {
     _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, false, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_OK);
     ASSERT_EQ(_n_fstat, 1);
 }
 
@@ -195,7 +358,7 @@ TEST_F(FileFdTest, CloseUnownedFile)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, false, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_OK);
 
     // Ensure that the close callback is not called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
@@ -215,7 +378,7 @@ TEST_F(FileFdTest, CloseOwnedFile)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
@@ -226,7 +389,7 @@ TEST_F(FileFdTest, CloseFailure)
 {
     _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the close callback is called
     ASSERT_EQ(mb_file_close(_file), MB_FILE_FAILED);
@@ -249,7 +412,7 @@ TEST_F(FileFdTest, ReadSuccess)
         return count;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -275,7 +438,7 @@ TEST_F(FileFdTest, ReadSuccessMaxSize)
         return count;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     size_t n;
@@ -302,7 +465,7 @@ TEST_F(FileFdTest, ReadEof)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -316,7 +479,7 @@ TEST_F(FileFdTest, ReadFailure)
 {
     _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -343,7 +506,7 @@ TEST_F(FileFdTest, ReadFailureEINTR)
         return -1;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the read callback is called
     char c;
@@ -368,7 +531,7 @@ TEST_F(FileFdTest, WriteSuccess)
         return count;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -393,7 +556,7 @@ TEST_F(FileFdTest, WriteSuccessMaxSize)
         return count;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -420,7 +583,7 @@ TEST_F(FileFdTest, WriteEof)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -433,7 +596,7 @@ TEST_F(FileFdTest, WriteFailure)
 {
     _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -459,7 +622,7 @@ TEST_F(FileFdTest, WriteFailureEINTR)
         return -1;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the write callback is called
     size_t n;
@@ -484,7 +647,7 @@ TEST_F(FileFdTest, SeekSuccess)
         return 10;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     uint64_t offset;
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, &offset), MB_FILE_OK);
@@ -509,7 +672,7 @@ TEST_F(FileFdTest, SeekSuccessLargeFile)
         return LFS_SIZE;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
     uint64_t offset;
@@ -536,7 +699,7 @@ TEST_F(FileFdTest, SeekFseekFailed)
         return -1;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);
@@ -557,7 +720,7 @@ TEST_F(FileFdTest, TruncateSuccess)
         return 0;
     };
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_OK);
     ASSERT_EQ(_n_ftruncate64, 1);
@@ -567,7 +730,7 @@ TEST_F(FileFdTest, TruncateFailed)
 {
     _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd(_file, -1, true, &_vtable), MB_FILE_OK);
+    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
 
     ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
     ASSERT_EQ(mb_file_error(_file), -EIO);

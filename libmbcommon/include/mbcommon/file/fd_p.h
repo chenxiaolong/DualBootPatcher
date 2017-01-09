@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,6 +21,7 @@
 
 #include "mbcommon/guard_p.h"
 
+#include "mbcommon/file/fd.h"
 #include "mbcommon/file/vtable_p.h"
 
 /*! \cond INTERNAL */
@@ -30,12 +31,23 @@ struct FdFileCtx
 {
     int fd;
     bool owned;
+#ifdef _WIN32
+    wchar_t *filename;
+#else
+    char *filename;
+#endif
+    int flags;
 
     SysVtable vtable;
 };
 
-int _mb_file_open_fd(struct MbFile *file, int fd, bool owned,
-                     SysVtable *vtable);
+int _mb_file_open_fd(SysVtable *vtable, struct MbFile *file, int fd,
+                     bool owned);
+
+int _mb_file_open_fd_filename(SysVtable *vtable, struct MbFile *file,
+                              const char *filename, int mode);
+int _mb_file_open_fd_filename_w(SysVtable *vtable, struct MbFile *file,
+                                const wchar_t *filename, int mode);
 
 MB_END_C_DECLS
 /*! \endcond */
