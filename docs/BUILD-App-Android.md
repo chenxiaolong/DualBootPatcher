@@ -34,6 +34,7 @@ In case you have not cloned this repository using the ```git clone --recursive``
    ```sh
    export ANDROID_HOME=/path/to/android-sdk
    export ANDROID_NDK_HOME=/path/to/android-ndk
+   export ANDROID_NDK=/path/to/android-ndk
    ```
 
 2. If making a release build, make a copy of `cmake/SigningConfig.prop.in` and edit it to specify the keystore path, keystore passphrase, key alias, and key passphrase.
