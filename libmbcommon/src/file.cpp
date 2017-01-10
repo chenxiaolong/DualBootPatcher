@@ -778,6 +778,7 @@ int mb_file_set_error_v(struct MbFile *file, int error_code,
     va_end(copy);
 
     if (ret < 0) {
+        free(buf);
         return MB_FILE_FAILED;
     }
 
