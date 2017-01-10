@@ -36,15 +36,6 @@ class StringUtils
 public:
     static std::string format(const char *fmt, ...) MB_PRINTF(1, 2);
 
-    static bool starts_with(const std::string &string, const std::string &prefix);
-    static bool starts_with(const char *string, const char *prefix);
-    static bool ends_with(const std::string &string, const std::string &suffix);
-    static bool ends_with(const char *string, const char *suffix);
-    static bool istarts_with(const std::string &string, const std::string &prefix);
-    static bool istarts_with(const char *string, const char *prefix);
-    static bool iends_with(const std::string &string, const std::string &suffix);
-    static bool iends_with(const char *string, const char *suffix);
-
     static std::vector<std::string> splitData(const std::vector<unsigned char> &data,
                                               unsigned char delim);
     static std::vector<std::string> split(const std::string &str, char delim);

@@ -25,6 +25,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
@@ -370,9 +371,9 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
 
         // Try to patch files that end in a common boot image extension
 
-        bool isExtImg = StringUtils::ends_with(curFile, ".img");
-        bool isExtLok = StringUtils::ends_with(curFile, ".lok");
-        bool isExtGz = StringUtils::ends_with(curFile, ".gz");
+        bool isExtImg = mb_ends_with(curFile.c_str(), ".img");
+        bool isExtLok = mb_ends_with(curFile.c_str(), ".lok");
+        bool isExtGz = mb_ends_with(curFile.c_str(), ".gz");
         // Boot images should never be over about 30 MiB. This check is here so
         // the patcher won't try to read a multi-gigabyte system image into RAM
         bool isSizeOK = fi.uncompressed_size <= 50 * 1024 * 1024;
