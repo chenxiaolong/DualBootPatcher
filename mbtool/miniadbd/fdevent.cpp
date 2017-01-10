@@ -26,6 +26,7 @@
 #include "adb_io.h"
 #include "adb_log.h"
 
+#include "mbcommon/string.h"
 #include "mbutil/string.h"
 
 /* !!! Do not enable DEBUG for the adb that will run as the server:
@@ -41,12 +42,15 @@ int SHELL_EXIT_NOTIFY_FD = -1;
 
 static void fatal(const char *fn, const char *fmt, ...)
 {
-    std::string new_fmt = mb::util::format("%s: %s", fn, fmt);
+    char *new_fmt = mb_format("%s: %s", fn, fmt);
+    if (new_fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        VLOGE(new_fmt, ap);
+        va_end(ap);
 
-    va_list ap;
-    va_start(ap, fmt);
-    VLOGE(new_fmt.c_str(), ap);
-    va_end(ap);
+        free(new_fmt);
+    }
     abort();
 }
 

@@ -23,6 +23,7 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
 #include "mbutil/chown.h"
@@ -79,8 +80,12 @@ public:
         // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            _error_msg = util::format("%s: Failed to copy directory: %s",
-                                      _curr->fts_path, strerror(errno));
+            char *msg = mb_format("%s: Failed to copy directory: %s",
+                                  _curr->fts_path, strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Skip | Action::FTS_Fail;
         }
@@ -136,8 +141,12 @@ private:
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            _error_msg = util::format("%s: Failed to copy file: %s",
-                                      _curr->fts_path, strerror(errno));
+            char *msg = mb_format("%s: Failed to copy file: %s",
+                                  _curr->fts_path, strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return false;
         }

@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/command.h"
 #include "mbutil/directory.h"
@@ -59,13 +60,14 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
             return CreateImageResult::FAILED;
         } else {
-            std::string size_str = util::format("%" PRIu64, size);
+            char size_str[64];
+            snprintf(size_str, sizeof(size_str), "%" PRIu64, size);
 
-            LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str.c_str());
+            LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str);
 
             // Create new image
             const char *argv[] =
-                    { "make_ext4fs", "-l", size_str.c_str(), path.c_str(), nullptr };
+                    { "make_ext4fs", "-l", size_str, path.c_str(), nullptr };
             int ret = util::run_command(argv[0], argv, nullptr, nullptr,
                                         &output_cb, argv);
             if (ret < 0 || WEXITSTATUS(ret) != 0) {

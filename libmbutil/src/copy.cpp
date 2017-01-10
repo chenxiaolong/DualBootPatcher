@@ -28,6 +28,7 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/finally.h"
 #include "mbutil/fts.h"
@@ -339,8 +340,12 @@ public:
         // Create the target directory if it doesn't exist
         if (mkdir(_target.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) < 0
                 && errno != EEXIST) {
-            _error_msg = format("%s: Failed to create directory: %s",
-                                _target.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create directory: %s",
+                                  _target.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -348,15 +353,23 @@ public:
         // Ensure target is a directory
 
         if (stat(_target.c_str(), &sb_target) < 0) {
-            _error_msg = format("%s: Failed to stat: %s",
-                                _target.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to stat: %s",
+                                  _target.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGE("%s", _error_msg.c_str());
             return false;
         }
 
         if (!S_ISDIR(sb_target.st_mode)) {
-            _error_msg = format("%s: Target exists but is not a directory",
-                                _target.c_str());
+            char *msg = mb_format("%s: Target exists but is not a directory",
+                                  _target.c_str());
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -369,8 +382,12 @@ public:
         // Make sure we aren't copying the target on top of itself
         if (sb_target.st_dev == _curr->fts_statp->st_dev
                 && sb_target.st_ino == _curr->fts_statp->st_ino) {
-            _error_msg = format("%s: Cannot copy on top of itself",
-                                _curr->fts_path);
+            char *msg = mb_format("%s: Cannot copy on top of itself",
+                                  _curr->fts_path);
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGE("%s", _error_msg.c_str());
             return Action::FTS_Fail | Action::FTS_Stop;
         }
@@ -409,8 +426,12 @@ public:
         // Create target directory if it doesn't exist
         if (mkdir(_curtgtpath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) < 0
                 && errno != EEXIST) {
-            _error_msg = format("%s: Failed to create directory: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create directory: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             success = false;
             skip = true;
@@ -419,8 +440,12 @@ public:
         // Ensure target path is a directory
         if (!skip && stat(_curtgtpath.c_str(), &sb) == 0
                 && !S_ISDIR(sb.st_mode)) {
-            _error_msg = format("%s: Exists but is not a directory",
-                                _curtgtpath.c_str());
+            char *msg = mb_format("%s: Exists but is not a directory",
+                                  _curtgtpath.c_str());
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             success = false;
             skip = true;
@@ -463,8 +488,12 @@ public:
 
         // Copy file contents
         if (!copy_data(_curr->fts_accpath, _curtgtpath)) {
-            _error_msg = format("%s: Failed to copy data: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to copy data: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -489,16 +518,24 @@ public:
         // Find current symlink target
         std::string symlink_path;
         if (!read_link(_curr->fts_accpath, &symlink_path)) {
-            _error_msg = format("%s: Failed to read symlink path: %s",
-                                _curr->fts_accpath, strerror(errno));
+            char *msg = mb_format("%s: Failed to read symlink path: %s",
+                                  _curr->fts_accpath, strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
 
         // Create new symlink
         if (symlink(symlink_path.c_str(), _curtgtpath.c_str()) < 0) {
-            _error_msg = format("%s: Failed to create symlink: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create symlink: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -522,8 +559,12 @@ public:
 
         if (mknod(_curtgtpath.c_str(), S_IFBLK | S_IRWXU,
                 _curr->fts_statp->st_rdev) < 0) {
-            _error_msg = format("%s: Failed to create block device: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create block device: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -547,8 +588,12 @@ public:
 
         if (mknod(_curtgtpath.c_str(), S_IFCHR | S_IRWXU,
                 _curr->fts_statp->st_rdev) < 0) {
-            _error_msg = format("%s: Failed to create character device: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create character device: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -571,8 +616,12 @@ public:
         }
 
         if (mkfifo(_curtgtpath.c_str(), S_IRWXU) < 0) {
-            _error_msg = format("%s: Failed to create FIFO pipe: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to create FIFO pipe: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -604,8 +653,12 @@ private:
     {
         // Remove existing file
         if (unlink(_curtgtpath.c_str()) < 0 && errno != ENOENT) {
-            _error_msg = format("%s: Failed to remove old path: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to remove old path: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -616,8 +669,12 @@ private:
     {
         if ((_copyflags & COPY_ATTRIBUTES)
                 && !copy_stat(_curr->fts_accpath, _curtgtpath)) {
-            _error_msg = format("%s: Failed to copy attributes: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to copy attributes: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -628,8 +685,12 @@ private:
     {
         if ((_copyflags & COPY_XATTRS)
                 && !copy_xattrs(_curr->fts_accpath, _curtgtpath)) {
-            _error_msg = format("%s: Failed to copy xattrs: %s",
-                                _curtgtpath.c_str(), strerror(errno));
+            char *msg = mb_format("%s: Failed to copy xattrs: %s",
+                                  _curtgtpath.c_str(), strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return false;
         }

@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include "mbcommon/common.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/directory.h"
@@ -364,8 +365,13 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
                 continue;
             }
 
-            links.push_back(mb::util::format(
-                    "/dev/usb/%s%.*s", uevent->subsystem, width, parent));
+            char *path = mb_format("/dev/usb/%s%.*s",
+                                   uevent->subsystem, width, parent);
+            if (path) {
+                links.push_back(path);
+                free(path);
+            }
+
             if (!dry_run) {
                 mkdir("/dev/usb", 0755);
             }
@@ -437,8 +443,13 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 
             p = strdup(mtd_name);
             sanitize(p);
-            links.push_back(mb::util::format(
-                    "/dev/block/%s/by-name/%s", type, p));
+
+            char *path = mb_format("/dev/block/%s/by-name/%s", type, p);
+            if (path) {
+                links.push_back(path);
+                free(path);
+            }
+
             free(p);
         }
 
@@ -461,25 +472,48 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
                      uevent->partition_name, p);
 #endif
             }
-            links.push_back(mb::util::format("%s/by-name/%s", link_path, p));
+
+            char *path = mb_format("%s/by-name/%s", link_path, p);
+            if (path) {
+                links.push_back(path);
+                free(path);
+            }
+
             if (is_bootdevice) {
-                links.push_back(mb::util::format(
-                        "/dev/block/bootdevice/by-name/%s", p));
+                path = mb_format("/dev/block/bootdevice/by-name/%s", p);
+                if (path) {
+                    links.push_back(path);
+                    free(path);
+                }
             }
             free(p);
         }
 
         if (uevent->partition_num >= 0) {
-            links.push_back(mb::util::format(
-                    "%s/by-num/p%d", link_path, uevent->partition_num));
+            char *path = mb_format("%s/by-num/p%d",
+                                   link_path, uevent->partition_num);
+            if (path) {
+                links.push_back(path);
+                free(path);
+            }
+
             if (is_bootdevice) {
-                links.push_back(mb::util::format(
-                        "/dev/block/bootdevice/by-num/p%d", uevent->partition_num));
+                path = mb_format("/dev/block/bootdevice/by-num/p%d",
+                                 uevent->partition_num);
+                if (path) {
+                    links.push_back(path);
+                    free(path);
+                }
             }
         }
 
         slash = strrchr(uevent->path, '/');
-        links.push_back(mb::util::format("%s/%s", link_path, slash + 1));
+
+        char *path = mb_format("%s/%s", link_path, slash + 1);
+        if (path) {
+            links.push_back(path);
+            free(path);
+        }
     }
 
     return links;

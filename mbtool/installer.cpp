@@ -41,6 +41,7 @@
 #include "external/legacy_property_service.h"
 
 // libmbcommon
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 
 // libmblog
@@ -768,7 +769,7 @@ bool Installer::change_root(const std::string &path)
 
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
             if (strcmp(ent.mnt_dir, "/") != 0
-                    && !util::starts_with(ent.mnt_dir, path.c_str())) {
+                    && !mb_starts_with(ent.mnt_dir, path.c_str())) {
                 to_unmount.push_back(ent.mnt_dir);
             }
         }
@@ -955,6 +956,13 @@ bool Installer::run_real_updater()
         }
     }
 
+    char argv1[20];
+    char argv2[20];
+
+    snprintf(argv1, sizeof(argv1), "%d", _interface);
+    snprintf(argv2, sizeof(argv2), "%d",
+             _passthrough ? _output_fd : pipe_fds[1]);
+
     // Run updater in the chroot
     std::vector<std::string> argv{
 #if DEBUG_USE_UPDATER_WRAPPER
@@ -964,8 +972,8 @@ bool Installer::run_real_updater()
 #endif
 #endif
         "/mb/updater",
-        util::format("%d", _interface),
-        util::format("%d", _passthrough ? _output_fd : pipe_fds[1]),
+        argv1,
+        argv2,
         "/mb/install.zip"
     };
 
@@ -1126,7 +1134,11 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    display_msg(util::formatv(fmt, ap));
+    char *msg = mb_format_v(fmt, ap);
+    if (msg) {
+        display_msg(std::string(msg));
+        free(msg);
+    }
     va_end(ap);
 }
 

@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/command.h"
@@ -906,8 +907,11 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("Failed to remount / as rw: %s",
-                                 strerror(errno));
+        char *msg = mb_format("Failed to remount / as rw: %s", strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -915,8 +919,12 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if ((mkdir(temp_dir, 0000) < 0 && errno != EEXIST)
             || chmod(temp_dir, 0000) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("Failed to create temp directory: %s",
-                                 strerror(errno));
+        char *msg = mb_format("Failed to create temp directory: %s",
+                              strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -927,8 +935,12 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("tmpfs", temp_dir, "tmpfs", 0, "mode=000,uid=0,gid=0") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("Failed to mount tmpfs at temp directory: %s",
-                                 strerror(errno));
+        char *msg = mb_format("Failed to mount tmpfs at temp directory: %s",
+                              strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -937,9 +949,13 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy binary to tmpfs
     if (!util::copy_file(request->binary_path()->str(), target_binary, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("%s: Failed to copy binary to tmpfs: %s",
-                                 request->binary_path()->c_str(),
-                                 strerror(errno));
+        char *msg = mb_format("%s: Failed to copy binary to tmpfs: %s",
+                              request->binary_path()->c_str(),
+                              strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -947,9 +963,13 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy signature to tmpfs
     if (!util::copy_file(request->signature_path()->str(), target_sig, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("%s: Failed to copy signature to tmpfs: %s",
-                                 request->signature_path()->c_str(),
-                                 strerror(errno));
+        char *msg = mb_format("%s: Failed to copy signature to tmpfs: %s",
+                              request->signature_path()->c_str(),
+                              strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -957,14 +977,21 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Verify signature
     sig_result = verify_signature(target_binary.c_str(), target_sig.c_str());
     if (sig_result != SigVerifyResult::VALID) {
+        char *msg;
+
         if (sig_result == SigVerifyResult::INVALID) {
             result = v3::SignedExecResult_INVALID_SIGNATURE;
-            error_msg = util::format("%s: Invalid signature",
-                                     request->binary_path()->c_str());
+            msg = mb_format("%s: Invalid signature",
+                            request->binary_path()->c_str());
         } else {
             result = v3::SignedExecResult_OTHER_ERROR;
-            error_msg = util::format("%s: Failed to verify signature",
-                                     request->binary_path()->c_str());
+            msg = mb_format("%s: Failed to verify signature",
+                            request->binary_path()->c_str());
+        }
+
+        if (msg) {
+            error_msg = msg;
+            free(msg);
         }
         LOGE("%s", error_msg.c_str());
         goto done;
@@ -973,8 +1000,12 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Make binary executable
     if (chmod(target_binary.c_str(), 0700) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("Failed to chmod binary in tmpfs: %s",
-                                 strerror(errno));
+        char *msg = mb_format("Failed to chmod binary in tmpfs: %s",
+                              strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -988,7 +1019,11 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     argv = (const char **) malloc(nargs * sizeof(const char *));
     if (!argv) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("%s", strerror(errno));
+        char *msg = mb_format("%s", strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -1025,8 +1060,11 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         term_sig = WTERMSIG(status);
     } else {
         result = v3::SignedExecResult_OTHER_ERROR;
-        error_msg = util::format("Failed to execute process: %s",
-                                 strerror(errno));
+        char *msg = mb_format("Failed to execute process: %s", strerror(errno));
+        if (msg) {
+            error_msg = msg;
+            free(msg);
+        }
         LOGE("%s", error_msg.c_str());
     }
 

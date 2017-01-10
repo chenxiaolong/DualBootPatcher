@@ -31,7 +31,6 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/path.h"
-#include "mbutil/string.h"
 
 #include "config/config.hpp"
 #include "gui/blanktimer.hpp"
@@ -539,7 +538,10 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             }
             cpuSecCheck = curTime.tv_sec + 5;
         }
-        value = mb::util::format("%lu", convert_temp);
+
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%lu", convert_temp);
+        value = buf;
         return 0;
     } else if (varName == TW_BATTERY) {
         char tmp[16];
