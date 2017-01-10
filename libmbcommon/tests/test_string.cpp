@@ -76,22 +76,22 @@ TEST(StringTest, FormatSizeT)
 TEST(StringTest, CheckStartsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello, World!", false));
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "HELLO, WORLD!", true));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"Hello, World!", false));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"HELLO, WORLD!", true));
+    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"Hello, World!"));
+    ASSERT_TRUE(mb_starts_with_w_icase(L"Hello, World!", L"HELLO, WORLD!"));
 
     // Check matching prefix
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello", false));
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "HELLO", true));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"Hello", false));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"HELLO", true));
+    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello"));
+    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", "HELLO"));
+    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"Hello"));
+    ASSERT_TRUE(mb_starts_with_w_icase(L"Hello, World!", L"HELLO"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb_starts_with("abcd", "abcde", false));
-    ASSERT_FALSE(mb_starts_with("abcd", "ABCDE", true));
-    ASSERT_FALSE(mb_starts_with_w(L"abcd", L"abcde", false));
-    ASSERT_FALSE(mb_starts_with_w(L"abcd", L"ABCDE", true));
+    ASSERT_FALSE(mb_starts_with("abcd", "abcde"));
+    ASSERT_FALSE(mb_starts_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(mb_starts_with_w(L"abcd", L"abcde"));
+    ASSERT_FALSE(mb_starts_with_w_icase(L"abcd", L"ABCDE"));
 }
 
 TEST(StringTest, CheckStartsWithNotNullTerminated)
@@ -125,64 +125,64 @@ TEST(StringTest, CheckStartsWithNotNullTerminated)
     size_t w_prefix4_len = sizeof(w_prefix4) / sizeof(wchar_t);
 
     ASSERT_TRUE(mb_starts_with_n(source, source_len,
-                                 prefix1, prefix1_len, false));
+                                 prefix1, prefix1_len));
     ASSERT_FALSE(mb_starts_with_n(source, source_len,
-                                  prefix2, prefix2_len, false));
-    ASSERT_TRUE(mb_starts_with_n(source, source_len,
-                                 prefix3, prefix3_len, true));
-    ASSERT_FALSE(mb_starts_with_n(source, source_len,
-                                  prefix4, prefix4_len, true));
+                                  prefix2, prefix2_len));
+    ASSERT_TRUE(mb_starts_with_icase_n(source, source_len,
+                                       prefix3, prefix3_len));
+    ASSERT_FALSE(mb_starts_with_icase_n(source, source_len,
+                                        prefix4, prefix4_len));
 
     ASSERT_TRUE(mb_starts_with_w_n(w_source, w_source_len,
-                                   w_prefix1, w_prefix1_len, false));
+                                   w_prefix1, w_prefix1_len));
     ASSERT_FALSE(mb_starts_with_w_n(w_source, w_source_len,
-                                    w_prefix2, w_prefix2_len, false));
-    ASSERT_TRUE(mb_starts_with_w_n(w_source, w_source_len,
-                                   w_prefix3, w_prefix3_len, true));
-    ASSERT_FALSE(mb_starts_with_w_n(w_source, w_source_len,
-                                    w_prefix4, w_prefix4_len, true));
+                                    w_prefix2, w_prefix2_len));
+    ASSERT_TRUE(mb_starts_with_w_icase_n(w_source, w_source_len,
+                                         w_prefix3, w_prefix3_len));
+    ASSERT_FALSE(mb_starts_with_w_icase_n(w_source, w_source_len,
+                                          w_prefix4, w_prefix4_len));
 }
 
 TEST(StringTest, CheckStartsWithEmpty)
 {
     // Empty prefix
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "", false));
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "", true));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"", false));
-    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L"", true));
+    ASSERT_TRUE(mb_starts_with("Hello, World!", ""));
+    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(mb_starts_with_w(L"Hello, World!", L""));
+    ASSERT_TRUE(mb_starts_with_w_icase(L"Hello, World!", L""));
 
     // Empty source
-    ASSERT_FALSE(mb_starts_with("", "abcde", false));
-    ASSERT_FALSE(mb_starts_with("", "abcde", true));
-    ASSERT_FALSE(mb_starts_with_w(L"", L"abcde", false));
-    ASSERT_FALSE(mb_starts_with_w(L"", L"abcde", true));
+    ASSERT_FALSE(mb_starts_with("", "abcde"));
+    ASSERT_FALSE(mb_starts_with_icase("", "abcde"));
+    ASSERT_FALSE(mb_starts_with_w(L"", L"abcde"));
+    ASSERT_FALSE(mb_starts_with_w_icase(L"", L"abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb_starts_with("", "", false));
-    ASSERT_TRUE(mb_starts_with("", "", true));
-    ASSERT_TRUE(mb_starts_with_w(L"", L"", false));
-    ASSERT_TRUE(mb_starts_with_w(L"", L"", true));
+    ASSERT_TRUE(mb_starts_with("", ""));
+    ASSERT_TRUE(mb_starts_with_icase("", ""));
+    ASSERT_TRUE(mb_starts_with_w(L"", L""));
+    ASSERT_TRUE(mb_starts_with_w_icase(L"", L""));
 }
 
 TEST(StringTest, CheckEndsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "Hello, World!", false));
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "HELLO, WORLD!", true));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"Hello, World!", false));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"HELLO, WORLD!", true));
+    ASSERT_TRUE(mb_ends_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"Hello, World!"));
+    ASSERT_TRUE(mb_ends_with_w_icase(L"Hello, World!", L"HELLO, WORLD!"));
 
     // Check matching suffix
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "World!", false));
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "WORLD!", true));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"World!", false));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"WORLD!", true));
+    ASSERT_TRUE(mb_ends_with("Hello, World!", "World!"));
+    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", "WORLD!"));
+    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"World!"));
+    ASSERT_TRUE(mb_ends_with_w_icase(L"Hello, World!", L"WORLD!"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb_ends_with("abcd", "abcde", false));
-    ASSERT_FALSE(mb_ends_with("abcd", "ABCDE", true));
-    ASSERT_FALSE(mb_ends_with_w(L"abcd", L"abcde", false));
-    ASSERT_FALSE(mb_ends_with_w(L"abcd", L"ABCDE", true));
+    ASSERT_FALSE(mb_ends_with("abcd", "abcde"));
+    ASSERT_FALSE(mb_ends_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(mb_ends_with_w(L"abcd", L"abcde"));
+    ASSERT_FALSE(mb_ends_with_w_icase(L"abcd", L"ABCDE"));
 }
 
 TEST(StringTest, CheckEndsWithNotNullTerminated)
@@ -210,41 +210,41 @@ TEST(StringTest, CheckEndsWithNotNullTerminated)
     size_t w_suffix4_len = sizeof(w_suffix4) / sizeof(wchar_t);
 
     ASSERT_TRUE(mb_ends_with_n(source, source_len,
-                               suffix1, suffix1_len, false));
+                               suffix1, suffix1_len));
     ASSERT_FALSE(mb_ends_with_n(source, source_len,
-                                suffix2, suffix2_len, false));
-    ASSERT_TRUE(mb_ends_with_n(source, source_len,
-                               suffix3, suffix3_len, true));
-    ASSERT_FALSE(mb_ends_with_n(source, source_len,
-                                suffix4, suffix4_len, true));
+                                suffix2, suffix2_len));
+    ASSERT_TRUE(mb_ends_with_icase_n(source, source_len,
+                                     suffix3, suffix3_len));
+    ASSERT_FALSE(mb_ends_with_icase_n(source, source_len,
+                                      suffix4, suffix4_len));
 
     ASSERT_TRUE(mb_ends_with_w_n(w_source, w_source_len,
-                                 w_suffix1, w_suffix1_len, false));
+                                 w_suffix1, w_suffix1_len));
     ASSERT_FALSE(mb_ends_with_w_n(w_source, w_source_len,
-                                  w_suffix2, w_suffix2_len, false));
-    ASSERT_TRUE(mb_ends_with_w_n(w_source, w_source_len,
-                                 w_suffix3, w_suffix3_len, true));
-    ASSERT_FALSE(mb_ends_with_w_n(w_source, w_source_len,
-                                  w_suffix4, w_suffix4_len, true));
+                                  w_suffix2, w_suffix2_len));
+    ASSERT_TRUE(mb_ends_with_w_icase_n(w_source, w_source_len,
+                                       w_suffix3, w_suffix3_len));
+    ASSERT_FALSE(mb_ends_with_w_icase_n(w_source, w_source_len,
+                                        w_suffix4, w_suffix4_len));
 }
 
 TEST(StringTest, CheckEndsWithEmpty)
 {
     // Empty suffix
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "", false));
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "", true));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"", false));
-    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L"", true));
+    ASSERT_TRUE(mb_ends_with("Hello, World!", ""));
+    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(mb_ends_with_w(L"Hello, World!", L""));
+    ASSERT_TRUE(mb_ends_with_w_icase(L"Hello, World!", L""));
 
     // Empty source
-    ASSERT_FALSE(mb_ends_with("", "abcde", false));
-    ASSERT_FALSE(mb_ends_with("", "abcde", true));
-    ASSERT_FALSE(mb_ends_with_w(L"", L"abcde", false));
-    ASSERT_FALSE(mb_ends_with_w(L"", L"abcde", true));
+    ASSERT_FALSE(mb_ends_with("", "abcde"));
+    ASSERT_FALSE(mb_ends_with_icase("", "abcde"));
+    ASSERT_FALSE(mb_ends_with_w(L"", L"abcde"));
+    ASSERT_FALSE(mb_ends_with_w_icase(L"", L"abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb_ends_with("", "", false));
-    ASSERT_TRUE(mb_ends_with("", "", true));
-    ASSERT_TRUE(mb_ends_with_w(L"", L"", false));
-    ASSERT_TRUE(mb_ends_with_w(L"", L"", true));
+    ASSERT_TRUE(mb_ends_with("", ""));
+    ASSERT_TRUE(mb_ends_with_icase("", ""));
+    ASSERT_TRUE(mb_ends_with_w(L"", L""));
+    ASSERT_TRUE(mb_ends_with_w_icase(L"", L""));
 }

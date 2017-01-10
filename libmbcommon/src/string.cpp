@@ -193,178 +193,305 @@ char * mb_format_v(const char *fmt, va_list ap)
 
 /*!
  * \brief Check if MBS string has prefix (allows non-NULL-terminated strings)
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ *        (case sensitive)
  *
  * \param string String
  * \param len_string String length
  * \param prefix Prefix
  * \param len_prefix Prefix length
- * \param case_insensitive Whether case-insensitive matching should be enabled
  *
  * \return Whether the string starts with the prefix
  */
 bool mb_starts_with_n(const char *string, size_t len_string,
-                      const char *prefix, size_t len_prefix,
-                      bool case_insensitive)
+                      const char *prefix, size_t len_prefix)
 {
-    return len_string < len_prefix ? false :
-            (case_insensitive ? strncasecmp : strncmp)
-                    (string, prefix, len_prefix) == 0;
+    return len_string < len_prefix
+            ? false
+            : strncmp(string, prefix, len_prefix) == 0;
 }
 
 /*!
- * \brief Check if MBS string has prefix
+ * \brief Check if MBS string has prefix (allows non-NULL-terminated strings)
+ *        (case insensitive)
  *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- * \param case_insensitive Whether case-insensitive matching should be enabled
- *
- * \return Whether the string starts with the prefix
- */
-bool mb_starts_with(const char *string, const char *prefix,
-                    bool case_insensitive)
-{
-    return mb_starts_with_n(string, strlen(string), prefix, strlen(prefix),
-                            case_insensitive);
-}
-
-/*!
- * \brief Check if WCS string has prefix (allows non-NULL-terminated strings)
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
  *
  * \param string String
  * \param len_string String length
  * \param prefix Prefix
  * \param len_prefix Prefix length
- * \param case_insensitive Whether case-insensitive matching should be enabled
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool mb_starts_with_icase_n(const char *string, size_t len_string,
+                            const char *prefix, size_t len_prefix)
+{
+    return len_string < len_prefix
+            ? false
+            : strncasecmp(string, prefix, len_prefix) == 0;
+}
+
+/*!
+ * \brief Check if MBS string has prefix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool mb_starts_with(const char *string, const char *prefix)
+{
+    return mb_starts_with_n(string, strlen(string), prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if MBS string has prefix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool mb_starts_with_icase(const char *string, const char *prefix)
+{
+    return mb_starts_with_icase_n(string, strlen(string),
+                                  prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if WCS string has prefix (allows non-NULL-terminated strings)
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param len_string String length
+ * \param prefix Prefix
+ * \param len_prefix Prefix length
  *
  * \return Whether the string starts with the prefix
  */
 bool mb_starts_with_w_n(const wchar_t *string, size_t len_string,
-                        const wchar_t *prefix, size_t len_prefix,
-                        bool case_insensitive)
+                        const wchar_t *prefix, size_t len_prefix)
 {
-    return len_string < len_prefix ? false :
-            (case_insensitive ? wcsncasecmp : wcsncmp)
-                    (string, prefix, len_prefix) == 0;
+    return len_string < len_prefix
+            ? false
+            : wcsncmp(string, prefix, len_prefix) == 0;
+}
+
+/*!
+ * \brief Check if WCS string has prefix (allows non-NULL-terminated strings)
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param len_string String length
+ * \param prefix Prefix
+ * \param len_prefix Prefix length
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool mb_starts_with_w_icase_n(const wchar_t *string, size_t len_string,
+                              const wchar_t *prefix, size_t len_prefix)
+{
+    return len_string < len_prefix
+            ? false
+            : wcsncasecmp(string, prefix, len_prefix) == 0;
 }
 
 /*!
  * \brief Check if WCS string has prefix
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ *        (case sensitive)
  *
  * \param string String
  * \param prefix Prefix
- * \param case_insensitive Whether case-insensitive matching should be enabled
  *
  * \return Whether the string starts with the prefix
  */
-bool mb_starts_with_w(const wchar_t *string, const wchar_t *prefix,
-                      bool case_insensitive)
+bool mb_starts_with_w(const wchar_t *string, const wchar_t *prefix)
 {
-    return mb_starts_with_w_n(string, wcslen(string), prefix, wcslen(prefix),
-                              case_insensitive);
+    return mb_starts_with_w_n(string, wcslen(string), prefix, wcslen(prefix));
+}
+
+/*!
+ * \brief Check if WCS string has prefix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool mb_starts_with_w_icase(const wchar_t *string, const wchar_t *prefix)
+{
+    return mb_starts_with_w_icase_n(string, wcslen(string),
+                                    prefix, wcslen(prefix));
 }
 
 /*!
  * \brief Check if MBS string has suffix (allows non-NULL-terminated strings)
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ *        (case sensitive)
  *
  * \param string String
  * \param len_string String length
  * \param suffix Suffix
  * \param len_suffix Suffix length
- * \param case_insensitive Whether case-insensitive matching should be enabled
  *
  * \return Whether the string ends with the suffix
  */
 bool mb_ends_with_n(const char *string, size_t len_string,
-                    const char *suffix, size_t len_suffix,
-                    bool case_insensitive)
+                    const char *suffix, size_t len_suffix)
 {
-    return len_string < len_suffix ? false :
-            (case_insensitive ? strncasecmp : strncmp)
-                    (string + len_string - len_suffix, suffix, len_suffix) == 0;
+    return len_string < len_suffix
+            ? false
+            : strncmp(string + len_string - len_suffix,
+                      suffix, len_suffix) == 0;
 }
 
 /*!
- * \brief Check if MBS string has suffix
+ * \brief Check if MBS string has suffix (allows non-NULL-terminated strings)
+ *        (case insensitive)
  *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- * \param case_insensitive Whether case-insensitive matching should be enabled
- *
- * \return Whether the string ends with the suffix
- */
-bool mb_ends_with(const char *string, const char *suffix,
-                  bool case_insensitive)
-{
-    return mb_ends_with_n(string, strlen(string), suffix, strlen(suffix),
-                          case_insensitive);
-}
-
-/*!
- * \brief Check if WCS string has suffix (allows non-NULL-terminated strings)
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
  *
  * \param string String
  * \param len_string String length
  * \param suffix Suffix
  * \param len_suffix Suffix length
- * \param case_insensitive Whether case-insensitive matching should be enabled
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool mb_ends_with_icase_n(const char *string, size_t len_string,
+                          const char *suffix, size_t len_suffix)
+{
+    return len_string < len_suffix
+            ? false
+            : strncasecmp(string + len_string - len_suffix,
+                          suffix, len_suffix) == 0;
+}
+
+/*!
+ * \brief Check if MBS string has suffix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool mb_ends_with(const char *string, const char *suffix)
+{
+    return mb_ends_with_n(string, strlen(string), suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if MBS string has suffix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool mb_ends_with_icase(const char *string, const char *suffix)
+{
+    return mb_ends_with_icase_n(string, strlen(string), suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if WCS string has suffix (allows non-NULL-terminated strings)
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param len_string String length
+ * \param suffix Suffix
+ * \param len_suffix Suffix length
  *
  * \return Whether the string ends with the suffix
  */
 bool mb_ends_with_w_n(const wchar_t *string, size_t len_string,
-                      const wchar_t *suffix, size_t len_suffix,
-                      bool case_insensitive)
+                      const wchar_t *suffix, size_t len_suffix)
 {
-    return len_string < len_suffix ? false :
-            (case_insensitive ? wcsncasecmp : wcsncmp)
-                    (string + len_string - len_suffix, suffix, len_suffix) == 0;
+    return len_string < len_suffix
+            ? false
+            : wcsncmp(string + len_string - len_suffix,
+                      suffix, len_suffix) == 0;
+}
+
+/*!
+ * \brief Check if WCS string has suffix (allows non-NULL-terminated strings)
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param len_string String length
+ * \param suffix Suffix
+ * \param len_suffix Suffix length
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool mb_ends_with_w_icase_n(const wchar_t *string, size_t len_string,
+                            const wchar_t *suffix, size_t len_suffix)
+{
+    return len_string < len_suffix
+            ? false
+            : wcsncasecmp(string + len_string - len_suffix,
+                          suffix, len_suffix) == 0;
 }
 
 /*!
  * \brief Check if WCS string has suffix
- *
- * \warning Use \p case_insensitive with care! The case-insensitive matching
- *          behavior is platform-dependent and may even fail to properly handle
- *          ASCII characters depending on the locale.
+ *        (case sensitive)
  *
  * \param string String
  * \param suffix Suffix
- * \param case_insensitive Whether case-insensitive matching should be enabled
  *
  * \return Whether the string ends with the suffix
  */
-bool mb_ends_with_w(const wchar_t *string, const wchar_t *suffix,
-                    bool case_insensitive)
+bool mb_ends_with_w(const wchar_t *string, const wchar_t *suffix)
 {
-    return mb_ends_with_w_n(string, wcslen(string), suffix, wcslen(suffix),
-                            case_insensitive);
+    return mb_ends_with_w_n(string, wcslen(string), suffix, wcslen(suffix));
+}
+
+/*!
+ * \brief Check if WCS string has suffix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool mb_ends_with_w_icase(const wchar_t *string, const wchar_t *suffix)
+{
+    return mb_ends_with_w_icase_n(string, wcslen(string),
+                                  suffix, wcslen(suffix));
 }
 
 MB_END_C_DECLS

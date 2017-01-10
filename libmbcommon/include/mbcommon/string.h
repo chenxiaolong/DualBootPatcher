@@ -56,26 +56,36 @@ MB_PRINTF(1, 2)
 MB_EXPORT char * mb_format(const char *fmt, ...);
 MB_EXPORT char * mb_format_v(const char *fmt, va_list ap);
 
+// MBS starts_with
 MB_EXPORT bool mb_starts_with_n(const char *string, size_t len_string,
-                                const char *prefix, size_t len_prefix,
-                                bool case_insensitive);
-MB_EXPORT bool mb_starts_with(const char *string, const char *prefix,
-                              bool case_insensitive);
-MB_EXPORT bool mb_starts_with_w_n(const wchar_t *string, size_t len_string,
-                                  const wchar_t *prefix, size_t len_prefix,
-                                  bool case_insensitive);
-MB_EXPORT bool mb_starts_with_w(const wchar_t *string, const wchar_t *prefix,
-                                bool case_insensitive);
+                                const char *prefix, size_t len_prefix);
+MB_EXPORT bool mb_starts_with_icase_n(const char *string, size_t len_string,
+                                      const char *prefix, size_t len_prefix);
+MB_EXPORT bool mb_starts_with(const char *string, const char *prefix);
+MB_EXPORT bool mb_starts_with_icase(const char *string, const char *prefix);
 
+// WCS starts_with
+MB_EXPORT bool mb_starts_with_w_n(const wchar_t *string, size_t len_string,
+                                  const wchar_t *prefix, size_t len_prefix);
+MB_EXPORT bool mb_starts_with_w_icase_n(const wchar_t *string, size_t len_string,
+                                        const wchar_t *prefix, size_t len_prefix);
+MB_EXPORT bool mb_starts_with_w(const wchar_t *string, const wchar_t *prefix);
+MB_EXPORT bool mb_starts_with_w_icase(const wchar_t *string, const wchar_t *prefix);
+
+// MBS ends_with
 MB_EXPORT bool mb_ends_with_n(const char *string, size_t len_string,
-                              const char *suffix, size_t len_suffix,
-                              bool case_insensitive);
-MB_EXPORT bool mb_ends_with(const char *string, const char *suffix,
-                            bool case_insensitive);
+                              const char *suffix, size_t len_suffix);
+MB_EXPORT bool mb_ends_with_icase_n(const char *string, size_t len_string,
+                                    const char *suffix, size_t len_suffix);
+MB_EXPORT bool mb_ends_with(const char *string, const char *suffix);
+MB_EXPORT bool mb_ends_with_icase(const char *string, const char *suffix);
+
+// WCS ends_with
 MB_EXPORT bool mb_ends_with_w_n(const wchar_t *string, size_t len_string,
-                                const wchar_t *suffix, size_t len_suffix,
-                                bool case_insensitive);
-MB_EXPORT bool mb_ends_with_w(const wchar_t *string, const wchar_t *suffix,
-                              bool case_insensitive);
+                                const wchar_t *suffix, size_t len_suffix);
+MB_EXPORT bool mb_ends_with_w_icase_n(const wchar_t *string, size_t len_string,
+                                      const wchar_t *suffix, size_t len_suffix);
+MB_EXPORT bool mb_ends_with_w(const wchar_t *string, const wchar_t *suffix);
+MB_EXPORT bool mb_ends_with_w_icase(const wchar_t *string, const wchar_t *suffix);
 
 MB_END_C_DECLS
