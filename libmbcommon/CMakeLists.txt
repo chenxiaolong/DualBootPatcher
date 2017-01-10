@@ -17,6 +17,7 @@ set(MBCOMMON_SOURCES
     src/file/vtable.cpp
     src/file.cpp
     src/locale.cpp
+    src/string.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
 )
 
@@ -30,6 +31,7 @@ set(MBCOMMON_TESTS_SOURCES
     tests/test_endian.cpp
     tests/test_file.cpp
     tests/test_locale.cpp
+    tests/test_string.cpp
 )
 
 if(WIN32)
