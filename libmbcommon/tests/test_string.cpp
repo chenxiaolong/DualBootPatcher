@@ -248,3 +248,202 @@ TEST(StringTest, CheckEndsWithEmpty)
     ASSERT_TRUE(mb_ends_with_w(L"", L""));
     ASSERT_TRUE(mb_ends_with_w_icase(L"", L""));
 }
+
+TEST(StringTest, InsertMemory)
+{
+    struct {
+        const void *source;
+        size_t source_size;
+        const void *target;
+        size_t target_size;
+        size_t pos;
+        const void *data;
+        size_t data_size;
+    } test_cases[] = {
+        // Insert in middle
+        { "abcd", 4, "abecd", 5, 2, "e", 1 },
+        // Insert at beginning
+        { "abcd", 4, "eabcd", 5, 0, "e", 1 },
+        // Insert at end
+        { "abcd", 4, "abcde", 5, 4, "e", 1 },
+        // Insert nothing
+        { "abcd", 4, "abcd", 4, 0, "", 0 },
+        // Insert into nothing
+        { "", 0, "a", 1, 0, "a", 1 },
+        // Insert nothing into nothing
+        { "", 0, "", 0, 0, "", 0 },
+        // End
+        { nullptr, 0, nullptr, 0, 0, nullptr, 0 },
+    };
+
+    for (auto it = test_cases; it->source; ++it) {
+        size_t buf_size = it->source_size;
+        void *buf = malloc(buf_size);
+        ASSERT_NE(buf, nullptr);
+        memcpy(buf, it->source, buf_size);
+
+        ASSERT_EQ(mb_mem_insert(&buf, &buf_size, it->pos,
+                                it->data, it->data_size), 0);
+
+        // Ensure target string matches
+        ASSERT_EQ(buf_size, it->target_size);
+        ASSERT_EQ(memcmp(it->target, buf, buf_size), 0);
+
+        free(buf);
+    }
+}
+
+TEST(StringTest, InsertMemoryOutOfRange)
+{
+    void *buf = nullptr;
+    size_t buf_size = 0;
+
+    ASSERT_LT(mb_mem_insert(&buf, &buf_size, 1, "", 0), 0);
+}
+
+TEST(StringTest, InsertString)
+{
+    struct {
+        const char *source;
+        const char *target;
+        size_t pos;
+        const char *data;
+    } test_cases[] = {
+        // Insert in middle
+        { "abcd", "abecd", 2, "e" },
+        // Insert at beginning
+        { "abcd", "eabcd", 0, "e" },
+        // Insert at end
+        { "abcd", "abcde", 4, "e" },
+        // Insert nothing
+        { "abcd", "abcd", 0, "" },
+        // Insert into nothing
+        { "", "a", 0, "a" },
+        // Insert nothing into nothing
+        { "", "", 0, "" },
+        // End
+        { nullptr, nullptr, 0, nullptr },
+    };
+
+    for (auto it = test_cases; it->source; ++it) {
+        char *buf = strdup(it->source);
+        ASSERT_NE(buf, nullptr);
+
+        ASSERT_EQ(mb_str_insert(&buf, it->pos, it->data), 0);
+
+        // Ensure target string matches
+        ASSERT_STREQ(buf, it->target);
+
+        free(buf);
+    }
+}
+
+TEST(StringTest, ReplaceMemory)
+{
+    struct {
+        const void *source;
+        size_t source_size;
+        const void *target;
+        size_t target_size;
+        const void *from;
+        size_t from_size;
+        const void *to;
+        size_t to_size;
+        size_t n;
+        size_t n_expected;
+    } test_cases[] = {
+        // Match not at beginning
+        { "abcd", 4, "aefg", 4, "bcd", 3, "efg", 3, 0, 1 },
+        // Match not at end
+        { "abcd", 4, "efgd", 4, "abc", 3, "efg", 3, 0, 1 },
+        // Full string replacement
+        { "abc", 3, "def", 3, "abc", 3, "def", 3, 0, 1 },
+        // Multiple instances
+        { "abcabcabc", 9, "defdefdef", 9, "abc", 3, "def", 3, 0, 3 },
+        // Multiple instances with limited replacements
+        { "abcabcabc", 9, "defdefabc", 9, "abc", 3, "def", 3, 2, 2 },
+        // No matches
+        { "abcabcabc", 9, "abcabcabc", 9, "def", 3, "ghi", 3, 0, 0 },
+        // Empty data
+        { "", 0, "", 0, "abc", 3, "def", 3, 0, 0 },
+        // Empty source
+        { "abc", 3, "abc", 3, "", 0, "def", 3, 0, 0 },
+        // Empty target
+        { "abc", 3, "", 0, "abc", 3, "", 0, 0, 1 },
+        // Empty everything
+        { "", 0, "", 0, "", 0, "", 0, 0, 0 },
+        // End
+        { nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, 0, 0 },
+    };
+
+    for (auto it = test_cases; it->source; ++it) {
+        size_t buf_size = it->source_size;
+        void *buf = malloc(buf_size);
+        ASSERT_NE(buf, nullptr);
+        memcpy(buf, it->source, buf_size);
+
+        size_t matches;
+        ASSERT_EQ(mb_mem_replace(&buf, &buf_size, it->from, it->from_size,
+                                 it->to, it->to_size, it->n, &matches), 0);
+
+        // Ensure target string matches
+        ASSERT_EQ(buf_size, it->target_size);
+        ASSERT_EQ(memcmp(it->target, buf, buf_size), 0);
+
+        // Ensure number of replacements matches
+        ASSERT_EQ(matches, it->n_expected);
+
+        free(buf);
+    }
+}
+
+TEST(StringTest, ReplaceString)
+{
+    struct {
+        const char *source;
+        const char *target;
+        const char *from;
+        const char *to;
+        size_t n;
+        size_t n_expected;
+    } test_cases[] = {
+        // Match not at beginning
+        { "abcd", "aefg", "bcd", "efg", 0, 1 },
+        // Match not at end
+        { "abcd", "efgd", "abc", "efg", 0, 1 },
+        // Full string replacement
+        { "abc", "def", "abc", "def", 0, 1 },
+        // Multiple instances
+        { "abcabcabc", "defdefdef", "abc", "def", 0, 3 },
+        // Multiple instances with limited replacements
+        { "abcabcabc", "defdefabc", "abc", "def", 2, 2 },
+        // No matches
+        { "abcabcabc", "abcabcabc", "def", "ghi", 0, 0 },
+        // Empty data
+        { "", "", "abc", "def", 0, 0 },
+        // Empty source
+        { "abc", "abc", "", "def", 0, 0 },
+        // Empty target
+        { "abc", "", "abc", "", 0, 1 },
+        // Empty everything
+        { "", "", "", "", 0, 0 },
+        // End
+        { nullptr, nullptr, nullptr, nullptr, 0, 0 },
+    };
+
+    for (auto it = test_cases; it->source; ++it) {
+        char *buf = strdup(it->source);
+        ASSERT_NE(buf, nullptr);
+
+        size_t matches;
+        ASSERT_EQ(mb_str_replace(&buf, it->from, it->to, it->n, &matches), 0);
+
+        // Ensure target string matches
+        ASSERT_STREQ(buf, it->target);
+
+        // Ensure number of replacements matches
+        ASSERT_EQ(matches, it->n_expected);
+
+        free(buf);
+    }
+}

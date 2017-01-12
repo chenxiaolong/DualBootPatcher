@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -30,11 +30,20 @@
 #  include <windows.h>
 #endif
 
+#ifndef __GLIBC__
+#  include "mbcommon/external/musl/memmem.h"
+#endif
+
+#include "mbcommon/string_p.h"
 #include "mbcommon/locale.h"
 
 #ifdef _WIN32
 #  define strncasecmp _strnicmp
 #  define wcsncasecmp _wcsnicmp
+#endif
+
+#ifndef __GLIBC__
+#  define memmem musl_memmem
 #endif
 
 /*!
@@ -79,6 +88,21 @@
  */
 
 MB_BEGIN_C_DECLS
+
+void * _mb_mempcpy(void *dest, const void *src, size_t n)
+{
+#if defined(_WIN32) || defined(__ANDROID__)
+    return static_cast<char *>(memcpy(dest, src, n)) + n;
+#else
+    return mempcpy(dest, src, n);
+#endif
+}
+
+void * _mb_memmem(const void *haystack, size_t haystacklen,
+                  const void *needle, size_t needlelen)
+{
+    return memmem(haystack, haystacklen, needle, needlelen);
+}
 
 // No wide-character version of the format functions is provided because it's
 // impossible to portably create an appropriately sized buffer with swprintf().
@@ -492,6 +516,252 @@ bool mb_ends_with_w_icase(const wchar_t *string, const wchar_t *suffix)
 {
     return mb_ends_with_w_icase_n(string, wcslen(string),
                                   suffix, wcslen(suffix));
+}
+
+int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
+                  const void *data, size_t data_size)
+{
+    void *buf;
+    size_t buf_size;
+
+    if (pos > *mem_size) {
+        errno = EINVAL;
+        return -1;
+    } else if (*mem_size >= SIZE_MAX - data_size) {
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    buf_size = *mem_size + data_size;
+
+    buf = static_cast<char *>(malloc(buf_size));
+    if (!buf) {
+        return -1;
+    }
+
+    void *target_ptr = buf;
+
+    // Copy data left of the insertion point
+    target_ptr = _mb_mempcpy(target_ptr, *mem, pos);
+
+    // Copy new data
+    target_ptr = _mb_mempcpy(target_ptr, data, data_size);
+
+    // Copy data right of the insertion point
+    target_ptr = _mb_mempcpy(target_ptr, static_cast<char*>(*mem) + pos,
+                             *mem_size - pos);
+
+    free(*mem);
+    *mem = buf;
+    *mem_size = buf_size;
+    return 0;
+}
+
+int mb_str_insert(char **str, size_t pos, const char *s)
+{
+    size_t str_size;
+
+    str_size = strlen(*str);
+
+    if (pos > str_size) {
+        errno = EINVAL;
+        return -1;
+    } else if (str_size == SIZE_MAX) {
+        errno = EOVERFLOW;
+        return -1;
+    }
+
+    ++str_size;
+
+    return mb_mem_insert(reinterpret_cast<void **>(str), &str_size, pos,
+                         s, strlen(s));
+}
+
+// With glibc 2.24, the first algorithm is significantly slower, usually taking
+// more than 200% of the time it takes the second algorithm. This is true across
+// every testing optimization level (-O0, -O1, -O2, -O3). Thus, it seems that
+// realloc()'ing multiple times is much, much cheaper than searching through
+// all the data twice (in most cases). Due to the dumb realloc handling, if
+// every character is replaced in a separate iteration, the second algorithm is
+// slower.
+#if 0
+int mb_mem_replace(void **mem, size_t *mem_size,
+                   const void *from, size_t from_size,
+                   const void *to, size_t to_size,
+                   size_t n, size_t *n_replaced)
+{
+    char *buf;
+    size_t buf_size = *mem_size;
+    void *target_ptr;
+    char *base_ptr = static_cast<char *>(*mem);
+    char *ptr = static_cast<char *>(*mem);
+    size_t ptr_remain = *mem_size;
+    size_t matches = 0;
+
+    // Special case for replacing nothing
+    if (from_size == 0) {
+        if (n_replaced) {
+            *n_replaced = 0;
+        }
+        return 0;
+    }
+
+    // Figure out required size
+    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
+            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
+        // No underflow if the value was found
+        buf_size -= from_size;
+        if (buf_size >= SIZE_MAX - to_size) {
+            errno = EOVERFLOW;
+            return -1;
+        }
+        buf_size += to_size;
+
+        ptr += from_size;
+        ptr_remain -= ptr - base_ptr;
+        base_ptr = ptr;
+
+        ++matches;
+    }
+
+    buf = static_cast<char *>(malloc(buf_size));
+    if (!buf) {
+        return -1;
+    }
+
+    // Reset pointers
+    base_ptr = static_cast<char *>(*mem);
+    ptr = static_cast<char *>(*mem);
+    ptr_remain = *mem_size;
+    target_ptr = buf;
+    matches = 0;
+
+    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
+            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
+        // Copy data left of the match
+        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr - base_ptr);
+
+        // Copy replacement
+        target_ptr = _mb_mempcpy(target_ptr, to, to_size);
+
+        ptr += from_size;
+        ptr_remain -= ptr - base_ptr;
+        base_ptr = ptr;
+
+        ++matches;
+    }
+
+    // Copy remainder of string
+    target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr_remain);
+
+    free(*mem);
+    *mem = buf;
+    *mem_size = buf_size;
+
+    if (n_replaced) {
+        *n_replaced = matches;
+    }
+
+    return 0;
+}
+#else
+int mb_mem_replace(void **mem, size_t *mem_size,
+                   const void *from, size_t from_size,
+                   const void *to, size_t to_size,
+                   size_t n, size_t *n_replaced)
+{
+    char *buf = nullptr;
+    size_t buf_size = 0;
+    void *target_ptr;
+    char *base_ptr = static_cast<char *>(*mem);
+    char *ptr = static_cast<char *>(*mem);
+    size_t ptr_remain = *mem_size;
+    size_t matches = 0;
+
+    // Special case for replacing nothing
+    if (from_size == 0) {
+        if (n_replaced) {
+            *n_replaced = 0;
+        }
+        return 0;
+    }
+
+    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
+            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
+        // Resize buffer to accomodate data
+        if (buf_size >= SIZE_MAX - (ptr - base_ptr)
+                || buf_size + (ptr - base_ptr) >= SIZE_MAX - to_size) {
+            free(buf);
+            errno = EOVERFLOW;
+            return -1;
+        }
+
+        size_t new_buf_size = buf_size + (ptr - base_ptr) + to_size;
+        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        if (!new_buf) {
+            free(buf);
+            return -1;
+        }
+
+        target_ptr = new_buf + buf_size;
+
+        // Copy data left of the match
+        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr - base_ptr);
+
+        // Copy replacement
+        target_ptr = _mb_mempcpy(target_ptr, to, to_size);
+
+        buf = new_buf;
+        buf_size = new_buf_size;
+
+        ptr += from_size;
+        ptr_remain -= ptr - base_ptr;
+        base_ptr = ptr;
+
+        ++matches;
+    }
+
+    // Copy remainder of string
+    if (ptr_remain > 0) {
+        if (buf_size >= SIZE_MAX - ptr_remain) {
+            free(buf);
+            errno = EOVERFLOW;
+            return -1;
+        }
+
+        size_t new_buf_size = buf_size + ptr_remain;
+        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        if (!new_buf) {
+            free(buf);
+            return -1;
+        }
+
+        target_ptr = new_buf + buf_size;
+        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr_remain);
+
+        buf = new_buf;
+        buf_size = new_buf_size;
+    }
+
+    free(*mem);
+    *mem = buf;
+    *mem_size = buf_size;
+
+    if (n_replaced) {
+        *n_replaced = matches;
+    }
+
+    return 0;
+}
+#endif
+
+int mb_str_replace(char **str, const char *from, const char *to,
+                   size_t n, size_t *n_replaced)
+{
+    size_t str_size = strlen(*str) + 1;
+
+    return mb_mem_replace(reinterpret_cast<void **>(str), &str_size,
+                          from, strlen(from), to, strlen(to), n, n_replaced);
 }
 
 MB_END_C_DECLS

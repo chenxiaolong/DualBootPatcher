@@ -52,6 +52,7 @@
 
 MB_BEGIN_C_DECLS
 
+// String formatting
 MB_PRINTF(1, 2)
 MB_EXPORT char * mb_format(const char *fmt, ...);
 MB_EXPORT char * mb_format_v(const char *fmt, va_list ap);
@@ -87,5 +88,18 @@ MB_EXPORT bool mb_ends_with_w_icase_n(const wchar_t *string, size_t len_string,
                                       const wchar_t *suffix, size_t len_suffix);
 MB_EXPORT bool mb_ends_with_w(const wchar_t *string, const wchar_t *suffix);
 MB_EXPORT bool mb_ends_with_w_icase(const wchar_t *string, const wchar_t *suffix);
+
+// String insert
+MB_EXPORT int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
+                            const void *data, size_t data_size);
+MB_EXPORT int mb_str_insert(char **str, size_t pos, const char *s);
+
+// String replace
+MB_EXPORT int mb_mem_replace(void **mem, size_t *mem_size,
+                             const void *from, size_t from_size,
+                             const void *to, size_t to_size,
+                             size_t n, size_t *n_replaced);
+MB_EXPORT int mb_str_replace(char **str, const char *from, const char *to,
+                             size_t n, size_t *n_replaced);
 
 MB_END_C_DECLS

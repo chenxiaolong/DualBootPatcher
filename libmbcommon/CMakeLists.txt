@@ -40,6 +40,10 @@ if(WIN32)
     list(APPEND MBCOMMON_TESTS_SOURCES tests/file/test_win32.cpp)
 endif()
 
+if(WIN32 OR ANDROID)
+    list(APPEND MBCOMMON_SOURCES src/external/musl/memmem.c)
+endif()
+
 add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
 
 set(variants)
