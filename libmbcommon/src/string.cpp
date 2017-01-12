@@ -577,94 +577,6 @@ int mb_str_insert(char **str, size_t pos, const char *s)
                          s, strlen(s));
 }
 
-// With glibc 2.24, the first algorithm is significantly slower, usually taking
-// more than 200% of the time it takes the second algorithm. This is true across
-// every testing optimization level (-O0, -O1, -O2, -O3). Thus, it seems that
-// realloc()'ing multiple times is much, much cheaper than searching through
-// all the data twice (in most cases). Due to the dumb realloc handling, if
-// every character is replaced in a separate iteration, the second algorithm is
-// slower.
-#if 0
-int mb_mem_replace(void **mem, size_t *mem_size,
-                   const void *from, size_t from_size,
-                   const void *to, size_t to_size,
-                   size_t n, size_t *n_replaced)
-{
-    char *buf;
-    size_t buf_size = *mem_size;
-    void *target_ptr;
-    char *base_ptr = static_cast<char *>(*mem);
-    char *ptr = static_cast<char *>(*mem);
-    size_t ptr_remain = *mem_size;
-    size_t matches = 0;
-
-    // Special case for replacing nothing
-    if (from_size == 0) {
-        if (n_replaced) {
-            *n_replaced = 0;
-        }
-        return 0;
-    }
-
-    // Figure out required size
-    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
-            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
-        // No underflow if the value was found
-        buf_size -= from_size;
-        if (buf_size >= SIZE_MAX - to_size) {
-            errno = EOVERFLOW;
-            return -1;
-        }
-        buf_size += to_size;
-
-        ptr += from_size;
-        ptr_remain -= ptr - base_ptr;
-        base_ptr = ptr;
-
-        ++matches;
-    }
-
-    buf = static_cast<char *>(malloc(buf_size));
-    if (!buf) {
-        return -1;
-    }
-
-    // Reset pointers
-    base_ptr = static_cast<char *>(*mem);
-    ptr = static_cast<char *>(*mem);
-    ptr_remain = *mem_size;
-    target_ptr = buf;
-    matches = 0;
-
-    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
-            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
-        // Copy data left of the match
-        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr - base_ptr);
-
-        // Copy replacement
-        target_ptr = _mb_mempcpy(target_ptr, to, to_size);
-
-        ptr += from_size;
-        ptr_remain -= ptr - base_ptr;
-        base_ptr = ptr;
-
-        ++matches;
-    }
-
-    // Copy remainder of string
-    target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr_remain);
-
-    free(*mem);
-    *mem = buf;
-    *mem_size = buf_size;
-
-    if (n_replaced) {
-        *n_replaced = matches;
-    }
-
-    return 0;
-}
-#else
 int mb_mem_replace(void **mem, size_t *mem_size,
                    const void *from, size_t from_size,
                    const void *to, size_t to_size,
@@ -753,7 +665,6 @@ int mb_mem_replace(void **mem, size_t *mem_size,
 
     return 0;
 }
-#endif
 
 int mb_str_replace(char **str, const char *from, const char *to,
                    size_t n, size_t *n_replaced)
