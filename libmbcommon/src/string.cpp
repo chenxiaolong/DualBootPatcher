@@ -518,6 +518,25 @@ bool mb_ends_with_w_icase(const wchar_t *string, const wchar_t *suffix)
                                   suffix, wcslen(suffix));
 }
 
+/*!
+ * \brief Insert byte sequence into byte sequence
+ *
+ * Insert (\p data, \p data_pos) into (\p *mem, \p *mem_size). It the function
+ * succeeds, \p *mem will be passed to `free()` and \p *mem and \p *mem_size
+ * will be updated to point to the newly allocated block of memory and its size.
+ * If the function fails, \p *mem will be left unchanged.
+ *
+ * \param[in,out] mem Pointer to byte sequence to modify
+ * \param[in,out] mem_size Pointer to size of bytes sequence to modify
+ * \param[in] pos Position in which to insert new byte sequence
+ *                (0 \<= \p pos \<= \p *mem_size)
+ * \param[in] data New byte sequence to insert
+ * \param[in] data_size Size of new byte sequence to insert
+ *
+ * \return
+ *   * 0 if successful
+ *   * -1 if an error occured, with `errno` set accordingly
+ */
 int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
                   const void *data, size_t data_size)
 {
@@ -557,6 +576,22 @@ int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
     return 0;
 }
 
+/*!
+ * \brief Insert string into string
+ *
+ * Insert \p s into \p *str. It the function succeeds. \p *str will be passed to
+ * `free()` and \p *str will be updated to point to the newly allocated string.
+ * If the function fails, \p *str will be left unchanged.
+ *
+ * \param[in,out] str Pointer to string to modify
+ * \param[in] pos Position in which to insert new string
+ *                (0 \<= \p pos \<= \p *mem_size)
+ * \param[in] s New string to insert
+ *
+ * \return
+ *   * 0 if successful
+ *   * -1 if an error occured, with `errno` set accordingly
+ */
 int mb_str_insert(char **str, size_t pos, const char *s)
 {
     size_t str_size;
@@ -577,6 +612,30 @@ int mb_str_insert(char **str, size_t pos, const char *s)
                          s, strlen(s));
 }
 
+/*!
+ * \brief Replace byte sequence in byte sequence
+ *
+ * Replace (\p from, \p from_size) with (\p to, \p to_size) in (\p *mem,
+ * \p *mem_size), up to \p n times if \p n \> 0. If the function succeeds,
+ * \p *mem will be passed to `free()` and \p *mem and \p *mem_size will be
+ * updated to point to the newly allocated block of memory and its size. If
+ * \p n_replaced is not NULL, the number of replacements done will be stored at
+ * the value pointed by \p n_replaced. If the function fails, \p *mem will be
+ * left unchanged.
+ *
+ * \param[in,out] mem Pointer to byte sequence to modify
+ * \param[in,out] mem_size Pointer to size of bytes sequence to modify
+ * \param[in] from Byte sequence to replace
+ * \param[in] from_size Size of byte sequence to replace
+ * \param[in] to Replacement byte sequence
+ * \param[in] to_size Size of replacement byte sequence
+ * \param[in] n Number of replacements to attempt (0 to disable limit)
+ * \param[out] n_replaced Pointer to store number of replacements made
+ *
+ * \return
+ *   * 0 if successful
+ *   * -1 if an error occured, with `errno` set accordingly
+ */
 int mb_mem_replace(void **mem, size_t *mem_size,
                    const void *from, size_t from_size,
                    const void *to, size_t to_size,
@@ -666,6 +725,25 @@ int mb_mem_replace(void **mem, size_t *mem_size,
     return 0;
 }
 
+/*!
+ * \brief Replace string in string
+ *
+ * Replace \p from with \p to in \p *str, up to \p n times if \p n \> 0. If the
+ * function succeeds, \p *str will be passed to `free()` and \p *str will be
+ * updated to point to the newly allocated string. If \p n_replaced is not NULL,
+ * the number of replacements done will be stored at the value pointed by
+ * \p n_replaced. If the function fails, \p *str will be left unchanged.
+ *
+ * \param[in,out] str Pointer to string to modify
+ * \param[in] from String to replace
+ * \param[in] to Replacement string
+ * \param[in] n Number of replacements to attempt (0 to disable limit)
+ * \param[out] n_replaced Pointer to store number of replacements made
+ *
+ * \return
+ *   * 0 if successful
+ *   * -1 if an error occured, with `errno` set accordingly
+ */
 int mb_str_replace(char **str, const char *from, const char *to,
                    size_t n, size_t *n_replaced)
 {
