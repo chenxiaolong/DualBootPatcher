@@ -21,6 +21,7 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/bootimage-common.h"
@@ -136,11 +137,11 @@ bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
 
             // Check size
             if (actual < expected) {
-                LOGE("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
+                LOGE("Expected %" MB_PRIzu " byte kernel image, but have %" MB_PRIzu " bytes",
                      expected, actual);
                 return false;
             } else if (actual != expected) {
-                LOGW("Expected %" PRIzu " byte kernel image, but have %" PRIzu " bytes",
+                LOGW("Expected %" MB_PRIzu " byte kernel image, but have %" MB_PRIzu " bytes",
                      expected, actual);
                 LOGW("Repacked boot image will not be byte-for-byte identical to original");
             }
@@ -171,7 +172,7 @@ bool MtkFormat::loadImage(const unsigned char *data, std::size_t size)
 
             // Check size
             if (actual != expected) {
-                LOGE("Expected %" PRIzu " byte ramdisk image, but have %" PRIzu " bytes",
+                LOGE("Expected %" MB_PRIzu " byte ramdisk image, but have %" MB_PRIzu " bytes",
                      expected, actual);
                 return false;
             }
@@ -252,12 +253,12 @@ bool MtkFormat::createImage(std::vector<unsigned char> *dataOut)
 
     // Check header sizes
     if (hasKernelHdr && mI10e->mtkKernelHdr.size() != sizeof(MtkHeader)) {
-        LOGE("Expected %" PRIzu " byte kernel MTK header, but have %" PRIzu " bytes",
+        LOGE("Expected %" MB_PRIzu " byte kernel MTK header, but have %" MB_PRIzu " bytes",
              sizeof(MtkHeader), mI10e->mtkKernelHdr.size());
         return false;
     }
     if (hasRamdiskHdr && mI10e->mtkRamdiskHdr.size() != sizeof(MtkHeader)) {
-        LOGE("Expected %" PRIzu " byte ramdisk MTK header, but have %" PRIzu " bytes",
+        LOGE("Expected %" MB_PRIzu " byte ramdisk MTK header, but have %" MB_PRIzu " bytes",
              sizeof(MtkHeader), mI10e->mtkRamdiskHdr.size());
         return false;
     }

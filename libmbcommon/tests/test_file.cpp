@@ -23,6 +23,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file_p.h"
+#include "mbcommon/string.h"
 
 struct FileTest : testing::Test
 {
@@ -154,7 +155,7 @@ struct FileTest : testing::Test
             if (offset < 0 && static_cast<size_t>(-offset) > test->_position) {
                 mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
                                   "Invalid SEEK_CUR offset %" PRId64
-                                  " for position %zu",
+                                  " for position %" MB_PRIzu,
                                   offset, test->_position);
                 return MB_FILE_FAILED;
             }
@@ -164,7 +165,7 @@ struct FileTest : testing::Test
             if (offset < 0 && static_cast<size_t>(-offset) > test->_buf.size()) {
                 mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
                                   "Invalid SEEK_END offset %" PRId64
-                                  " for file of size %zu",
+                                  " for file of size %" MB_PRIzu,
                                   offset, test->_buf.size());
                 return MB_FILE_FAILED;
             }

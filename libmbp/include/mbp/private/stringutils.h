@@ -24,13 +24,6 @@
 
 #include "mbcommon/common.h"
 
-// zu, zx, etc. are not supported until VS2015
-#ifdef _WIN32
-#define PRIzu "Iu"
-#else
-#define PRIzu "zu"
-#endif
-
 class StringUtils
 {
 public:
