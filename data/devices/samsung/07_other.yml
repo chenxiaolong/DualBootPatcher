@@ -79,3 +79,30 @@
     extra:
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
+
+- name: Samsung Galaxy Grand Prime VE 3G
+  id: grandprimeve3g
+  codenames:
+    - grandprimeve3g
+    - grandprimeve3gdtv
+    - grandprimeve3gub
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+    system:
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p21
