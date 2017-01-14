@@ -1,7 +1,3 @@
-[submodule "external/libarchive"]
-	path = external/libarchive
-	url = https://github.com/chenxiaolong/libarchive.git
-	branch = install
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = https://github.com/zeux/pugixml.git
