@@ -23,6 +23,7 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mbdevice/json.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/private/stringutils.h"
@@ -204,7 +205,7 @@ bool CoreRP::removeBlockDevProps()
 
     std::vector<std::string> lines = StringUtils::splitData(contents, '\n');
     for (auto it = lines.begin(); it != lines.end();) {
-        if (StringUtils::starts_with(*it, "ro.patcher.blockdevs.")) {
+        if (mb_starts_with(it->c_str(), "ro.patcher.blockdevs.")) {
             it = lines.erase(it);
         } else {
             ++it;

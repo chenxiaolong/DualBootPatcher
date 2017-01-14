@@ -18,7 +18,7 @@
 
 #include "adb_log.h"
 
-#include "mbutil/string.h"
+#include "mbcommon/string.h"
 
 void dump_hex(const void* data, size_t byte_count) {
     byte_count = std::min(byte_count, size_t(16));
@@ -27,7 +27,11 @@ void dump_hex(const void* data, size_t byte_count) {
 
     std::string line;
     for (size_t i = 0; i < byte_count; ++i) {
-        line += mb::util::format("%02x", p[i]);
+        char *tmp = mb_format("%02x", p[i]);
+        if (tmp) {
+            line += tmp;
+            free(tmp);
+        }
     }
     line.push_back(' ');
 

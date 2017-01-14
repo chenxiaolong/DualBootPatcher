@@ -15,11 +15,12 @@
 // fuse
 #include <fuse/fuse.h>
 
+// libmbcommon
+#include "mbcommon/file.h"
+#include "mbcommon/file/filename.h"
+
 // libmbsparse
 #include "mbsparse/sparse.h"
-
-// libmbpio
-#include "mbpio/file.h"
 
 #ifdef __ANDROID__
 #define OFF_T loff_t
@@ -30,9 +31,10 @@
 static char source_fd_path[50];
 static uint64_t sparse_size;
 
-struct context {
+struct context
+{
     SparseCtx *sctx;
-    io::File file;
+    MbFile *file;
     pthread_mutex_t mutex;
 };
 
@@ -42,9 +44,10 @@ struct context {
 static bool cb_open(void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    if (!ctx->file.open(source_fd_path, io::File::OpenRead)) {
+    if (mb_file_open_filename(ctx->file, source_fd_path, MB_FILE_OPEN_READ_ONLY)
+            != MB_FILE_OK) {
         fprintf(stderr, "%s: Failed to open: %s\n",
-                source_fd_path, ctx->file.errorString().c_str());
+                source_fd_path, mb_file_error_string(ctx->file));
         return false;
     }
     return true;
@@ -56,9 +59,9 @@ static bool cb_open(void *userData)
 static bool cb_close(void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    if (!ctx->file.close()) {
+    if (mb_file_close(ctx->file) != MB_FILE_OK) {
         fprintf(stderr, "%s: Failed to close: %s\n",
-                source_fd_path, ctx->file.errorString().c_str());
+                source_fd_path, mb_file_error_string(ctx->file));
         return false;
     }
     return true;
@@ -71,17 +74,17 @@ static bool cb_read(void *buf, uint64_t size, uint64_t *bytesRead,
                     void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    uint64_t total = 0;
+    size_t total = 0;
     while (size > 0) {
-        uint64_t partial;
-        if (!ctx->file.read(buf, size, &partial)) {
+        size_t partial;
+        if (mb_file_read(ctx->file, buf, size, &partial) != MB_FILE_OK) {
             fprintf(stderr, "%s: Failed to read: %s\n",
-                    source_fd_path, ctx->file.errorString().c_str());
+                    source_fd_path, mb_file_error_string(ctx->file));
             return false;
         }
         size -= partial;
         total += partial;
-        buf = (char *) buf + partial;
+        buf = static_cast<char *>(buf) + partial;
     }
     *bytesRead = total;
     return true;
@@ -93,23 +96,9 @@ static bool cb_read(void *buf, uint64_t size, uint64_t *bytesRead,
 static bool cb_seek(int64_t offset, int whence, void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    int ioWhence;
-    switch (whence) {
-    case SEEK_SET:
-        ioWhence = io::File::SeekBegin;
-        break;
-    case SEEK_CUR:
-        ioWhence = io::File::SeekCurrent;
-        break;
-    case SEEK_END:
-        ioWhence = io::File::SeekEnd;
-        break;
-    default:
-        return false;
-    }
-    if (!ctx->file.seek(offset, ioWhence)) {
+    if (mb_file_seek(ctx->file, offset, whence, nullptr) != MB_FILE_OK) {
         fprintf(stderr, "%s: Failed to seek: %s\n",
-                source_fd_path, ctx->file.errorString().c_str());
+                source_fd_path, mb_file_error_string(ctx->file));
         return false;
     }
     return true;
@@ -118,7 +107,7 @@ static bool cb_seek(int64_t offset, int whence, void *userData)
 /*!
  * \brief Open callback for fuse
  */
-static int fuse_open(const char *path, struct fuse_file_info *fi)
+static int fuse_open(const char *path, fuse_file_info *fi)
 {
     (void) path;
 
@@ -126,7 +115,7 @@ static int fuse_open(const char *path, struct fuse_file_info *fi)
         return -EROFS;
     }
 
-    struct context *ctx = new(std::nothrow) context();
+    context *ctx = new(std::nothrow) context();
     if (!ctx) {
         return -ENOMEM;
     }
@@ -137,14 +126,22 @@ static int fuse_open(const char *path, struct fuse_file_info *fi)
         return -ENOMEM;
     }
 
+    ctx->file = mb_file_new();
+    if (!ctx->file) {
+        sparseCtxFree(ctx->sctx);
+        delete ctx;
+        return -ENOMEM;
+    }
+
     if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
                     ctx)) {
         sparseCtxFree(ctx->sctx);
+        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
 
-    fi->fh = (uint64_t) ctx;
+    fi->fh = reinterpret_cast<uint64_t>(ctx);
 
     return 0;
 }
@@ -152,12 +149,13 @@ static int fuse_open(const char *path, struct fuse_file_info *fi)
 /*!
  * \brief Release callback for fuse
  */
-static int fuse_release(const char *path, struct fuse_file_info *fi)
+static int fuse_release(const char *path, fuse_file_info *fi)
 {
     (void) path;
 
-    struct context *ctx = (struct context *) fi->fh;
+    context *ctx = reinterpret_cast<context *>(fi->fh);
     sparseCtxFree(ctx->sctx);
+    mb_file_free(ctx->file);
     delete ctx;
 
     return 0;
@@ -169,7 +167,7 @@ static int fuse_release(const char *path, struct fuse_file_info *fi)
  * \warning Bad stuff will happen if \a ctx->mutex is not locked when this
  *          function is called
  */
-static int fuse_read_locked(struct context *ctx, char *buf, size_t size,
+static int fuse_read_locked(context *ctx, char *buf, size_t size,
                             OFF_T offset)
 {
     // Seek to position
@@ -189,11 +187,11 @@ static int fuse_read_locked(struct context *ctx, char *buf, size_t size,
  * \brief Read callback for fuse
  */
 static int fuse_read(const char *path, char *buf, size_t size, OFF_T offset,
-                     struct fuse_file_info *fi)
+                     fuse_file_info *fi)
 {
     (void) path;
 
-    struct context *ctx = (struct context *) fi->fh;
+    context *ctx = reinterpret_cast<context *>(fi->fh);
 
     pthread_mutex_lock(&ctx->mutex);
     int ret = fuse_read_locked(ctx, buf, size, offset);
@@ -220,7 +218,7 @@ static int fuse_getattr(const char *path, struct stat *stbuf)
  */
 static int get_sparse_file_size()
 {
-    struct context *ctx = new(std::nothrow) context();
+    context *ctx = new(std::nothrow) context();
     if (!ctx) {
         return -ENOMEM;
     }
@@ -231,20 +229,30 @@ static int get_sparse_file_size()
         return -ENOMEM;
     }
 
+    ctx->file = mb_file_new();
+    if (!ctx->file) {
+        sparseCtxFree(ctx->sctx);
+        delete ctx;
+        return -ENOMEM;
+    }
+
     if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
                     ctx)) {
         sparseCtxFree(ctx->sctx);
+        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
 
     if (!sparseSize(ctx->sctx, &sparse_size)) {
         sparseCtxFree(ctx->sctx);
+        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
 
     sparseCtxFree(ctx->sctx);
+    mb_file_free(ctx->file);
     delete ctx;
     return 0;
 }
@@ -261,7 +269,7 @@ enum
     KEY_HELP
 };
 
-static struct fuse_opt fuse_opts[] =
+static fuse_opt fuse_opts[] =
 {
     FUSE_OPT_KEY("-h",     KEY_HELP),
     FUSE_OPT_KEY("--help", KEY_HELP),
@@ -281,9 +289,9 @@ static void usage(FILE *stream, const char *progname)
 }
 
 static int fuse_opt_proc(void *data, const char *arg, int key,
-                         struct fuse_args *outargs)
+                         fuse_args *outargs)
 {
-    struct arg_ctx *ctx = static_cast<struct arg_ctx *>(data);
+    arg_ctx *ctx = static_cast<arg_ctx *>(data);
 
     switch (key) {
     case FUSE_OPT_KEY_NONOPT:
@@ -307,8 +315,8 @@ static int fuse_opt_proc(void *data, const char *arg, int key,
 
 int main(int argc, char *argv[])
 {
-    struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    struct arg_ctx arg_ctx;
+    fuse_args args = FUSE_ARGS_INIT(argc, argv);
+    arg_ctx arg_ctx;
 
     if (fuse_opt_parse(&args, &arg_ctx, fuse_opts, fuse_opt_proc) == -1) {
         return EXIT_FAILURE;
@@ -341,7 +349,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    struct fuse_operations fuse_oper;
+    fuse_operations fuse_oper;
     memset(&fuse_oper, 0, sizeof(fuse_oper));
     fuse_oper.getattr = fuse_getattr;
     fuse_oper.open    = fuse_open;

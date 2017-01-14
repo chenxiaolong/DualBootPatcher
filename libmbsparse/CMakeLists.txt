@@ -76,7 +76,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
         add_executable(test_sparse tests/test_sparse.cpp)
         target_link_libraries(
             test_sparse
-            mbpio-static
             mbsparse-shared
             ${GTEST_BOTH_LIBRARIES}
         )

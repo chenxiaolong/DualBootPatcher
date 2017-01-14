@@ -34,6 +34,8 @@
 
 #include <jni.h>
 
+#include "mbcommon/common.h"
+
 #include "mblog/android_logger.h"
 #include "mblog/logging.h"
 
@@ -46,7 +48,7 @@
 
 extern "C" {
 
-__attribute__((format(printf, 3, 4)))
+MB_PRINTF(3, 4)
 static bool throw_exception(JNIEnv *env, const char *class_name,
                             const char *fmt, ...)
 {

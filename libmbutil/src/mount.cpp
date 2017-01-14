@@ -32,6 +32,7 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
@@ -53,7 +54,7 @@ static std::string get_deleted_mount_path(const std::string &dir)
 {
     struct stat sb;
     if (lstat(dir.c_str(), &sb) < 0 && errno == ENOENT
-            && util::ends_with(dir, DELETED_SUFFIX)) {
+            && mb_ends_with(dir.c_str(), DELETED_SUFFIX)) {
         return std::string(dir.begin(), dir.end() - strlen(DELETED_SUFFIX));
     } else {
         return dir;
@@ -103,7 +104,7 @@ bool unmount_all(const std::string &dir)
 
         while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
             std::string mnt_dir = get_deleted_mount_path(ent.mnt_dir);
-            if (starts_with(mnt_dir, dir)) {
+            if (mb_starts_with(mnt_dir.c_str(), dir.c_str())) {
                 to_unmount.push_back(std::move(mnt_dir));
             }
         }

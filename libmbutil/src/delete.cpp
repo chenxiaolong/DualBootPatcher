@@ -23,6 +23,7 @@
 #include <cstring>
 #include <sys/stat.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
@@ -70,8 +71,12 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            _error_msg = format("%s: Failed to remove: %s",
-                                _curr->fts_path, strerror(errno));
+            char *msg = mb_format("%s: Failed to remove: %s",
+                                  _curr->fts_path, strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGE("%s", _error_msg.c_str());
             return false;
         }

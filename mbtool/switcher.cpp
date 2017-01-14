@@ -26,6 +26,7 @@
 
 #include <openssl/sha.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
 #include "mbutil/chown.h"
@@ -195,7 +196,7 @@ static std::string find_block_dev(const char * const *search_dirs,
 {
     struct stat sb;
 
-    if (util::starts_with(partition, "mmcblk")) {
+    if (mb_starts_with(partition.c_str(), "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -235,11 +236,11 @@ static bool add_extra_images(const char *multiboot_dir,
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !util::ends_with(name, ".img")) {
+        if (name == ".img" || !mb_ends_with(name.c_str(), ".img")) {
             // Skip non-images
             continue;
         }
-        if (util::starts_with(name, "boot.img")) {
+        if (mb_starts_with(name.c_str(), "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }

@@ -26,6 +26,7 @@
 #include "adb_log.h"
 #include "transport.h"
 
+#include "mbcommon/string.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -35,24 +36,29 @@ const char *adb_device_banner = "device";
 
 void fatal(const char *fmt, ...)
 {
-    std::string new_fmt = mb::util::format("error: %s", fmt);
+    char *new_fmt = mb_format("error: %s", fmt);
+    if (new_fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        ADB_VLOGE(ADB_CONN, new_fmt, ap);
+        va_end(ap);
 
-    va_list ap;
-    va_start(ap, fmt);
-    ADB_VLOGE(ADB_CONN, new_fmt.c_str(), ap);
-    va_end(ap);
+        free(new_fmt);
+    }
     exit(-1);
 }
 
 void fatal_errno(const char *fmt, ...)
 {
-    std::string new_fmt =
-            mb::util::format("error: %s: %s", strerror(errno), fmt);
+    char *new_fmt = mb_format("error: %s: %s", strerror(errno), fmt);
+    if (new_fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        ADB_VLOGE(ADB_CONN, new_fmt, ap);
+        va_end(ap);
 
-    va_list ap;
-    va_start(ap, fmt);
-    ADB_VLOGE(ADB_CONN, new_fmt.c_str(), ap);
-    va_end(ap);
+        free(new_fmt);
+    }
     exit(-1);
 }
 

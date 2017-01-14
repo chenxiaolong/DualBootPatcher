@@ -38,6 +38,7 @@
 #include <sepol/sepol.h>
 #undef bool
 
+#include "mbcommon/common.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
@@ -803,6 +804,7 @@ static inline bool add_rules(policydb_t *pdb,
     return true;
 }
 
+MB_UNUSED
 static inline bool remove_rules(policydb_t *pdb,
                                 const char *source,
                                 const char *target,

@@ -1,6 +1,8 @@
 include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
 git_describe(GIT_VERSION --dirty --always --tags)
 
+include_directories(${MBP_LIBICONV_INCLUDES})
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
@@ -8,70 +10,146 @@ configure_file(
 )
 
 set(MBCOMMON_SOURCES
+    src/file/callbacks.cpp
+    src/file/fd.cpp
+    src/file/filename.cpp
+    src/file/posix.cpp
+    src/file/vtable.cpp
+    src/file.cpp
+    src/locale.cpp
+    src/string.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
 )
 
+set(MBCOMMON_TESTS_SOURCES
+    # Helpers
+    tests/main.cpp
+    # Tests
+    tests/file/test_callbacks.cpp
+    tests/file/test_fd.cpp
+    tests/file/test_posix.cpp
+    tests/test_endian.cpp
+    tests/test_file.cpp
+    tests/test_locale.cpp
+    tests/test_string.cpp
+)
+
+if(WIN32)
+    list(APPEND MBCOMMON_SOURCES src/file/win32.cpp)
+
+    list(APPEND MBCOMMON_TESTS_SOURCES tests/file/test_win32.cpp)
+endif()
+
+if(WIN32 OR ANDROID)
+    list(APPEND MBCOMMON_SOURCES src/external/musl/memmem.c)
+endif()
+
+add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
+
+set(variants)
+
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # Build static library
+    list(APPEND variants static)
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop
+        OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
+    list(APPEND variants shared)
+endif()
 
-    add_library(mbcommon-static STATIC ${MBCOMMON_SOURCES})
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbcommon-${variant})
+    set(obj_target ${lib_target}-obj)
 
-    target_compile_definitions(
-        mbcommon-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
+    # Build objects
+    add_library(${obj_target} OBJECT ${MBCOMMON_SOURCES})
 
-    set_target_properties(
-        mbcommon-static
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
+    # Export symbols
+    target_compile_definitions(${obj_target} PRIVATE -DMB_LIBRARY)
 
+    # Win32 DLL export
+    if(${variant} STREQUAL shared)
+        target_compile_definitions(${obj_target} PRIVATE -DMB_DYNAMIC_LINK)
+    endif()
+
+    # Build with -fPIC
+    set_target_properties(${obj_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
+    # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            mbcommon-static
+            ${obj_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL desktop
-        OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
-    # Build shared library
 
-    add_library(mbcommon-shared SHARED ${MBCOMMON_SOURCES})
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED $<TARGET_OBJECTS:${obj_target}>)
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC $<TARGET_OBJECTS:${obj_target}>)
+    endif()
 
-    target_compile_definitions(
-        mbcommon-shared
-        PRIVATE
-        -DDMB_DYNAMIC_LINK
-        -DMB_LIBRARY
-    )
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbcommon)
 
-    set_target_properties(
-        mbcommon-shared
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbcommon
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbcommon-shared
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
+    # Link dependencies
+    if(${variant} STREQUAL shared)
+        target_link_libraries(
+            ${lib_target}
+            ${MBP_LIBICONV_LIBRARIES}
         )
     endif()
 
     # Install shared library
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        )
+    endif()
+endforeach()
 
-    install(
-        TARGETS mbcommon-shared
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-    )
+# Build tests
+if(MBP_ENABLE_TESTS)
+    foreach(variant ${variants})
+        # Link against objects so we don't have to worry about hidden symbols
+        set(obj_target mbcommon-${variant}-obj)
+
+        # Build tests
+        add_executable(
+            mbcommon_tests
+            ${MBCOMMON_TESTS_SOURCES}
+            $<TARGET_OBJECTS:${obj_target}>
+        )
+
+        # Link dependencies
+        target_link_libraries(
+            mbcommon_tests
+            ${GTEST_BOTH_LIBRARIES}
+        )
+
+        # Target C++11
+        if(NOT MSVC)
+            set_target_properties(
+                mbcommon_tests
+                PROPERTIES
+                CXX_STANDARD 11
+                CXX_STANDARD_REQUIRED 1
+            )
+        endif()
+
+        # Add to ctest
+        add_test(
+            NAME mbcommon_tests
+            COMMAND mbcommon_tests
+        )
+
+        # Only need to build the tests once
+        break()
+    endforeach()
 endif()

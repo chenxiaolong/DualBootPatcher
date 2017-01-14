@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,25 +19,6 @@
 
 #pragma once
 
-#include "mbpio/private/common.h"
-
-#if IO_PLATFORM_WINDOWS
-#include "mbpio/win32/file.h"
-#elif IO_PLATFORM_ANDROID
-#include "mbpio/android/file.h"
-#elif IO_PLATFORM_POSIX
-#include "mbpio/posix/file.h"
+#ifndef MBCOMMON_BUILD
+#error libmbcommon private headers cannot be used
 #endif
-
-namespace io
-{
-
-#if IO_PLATFORM_WINDOWS
-typedef win32::FileWin32 File;
-#elif IO_PLATFORM_ANDROID
-typedef android::FileAndroid File;
-#elif IO_PLATFORM_POSIX
-typedef posix::FilePosix File;
-#endif
-
-}

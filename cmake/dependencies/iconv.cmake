@@ -1,0 +1,6 @@
+if(ANDROID)
+    set(MBP_LIBICONV_INCLUDES
+        ${THIRD_PARTY_LIBICONV_DIR}/${ANDROID_ABI}/include)
+    set(MBP_LIBICONV_LIBRARIES
+        ${THIRD_PARTY_LIBICONV_DIR}/${ANDROID_ABI}/lib/libiconv.a)
+endif()

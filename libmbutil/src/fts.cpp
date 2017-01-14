@@ -24,6 +24,7 @@
 
 #include <sys/stat.h>
 
+#include "mbcommon/string.h"
 #include "mbutil/string.h"
 
 
@@ -84,7 +85,11 @@ bool FTSWrapper::run()
 
     _ftsp = fts_open(files, fts_flags, nullptr);
     if (!_ftsp) {
-        _error_msg = util::format("fts_open failed: %s", strerror(errno));
+        char *msg = mb_format("fts_open failed: %s", strerror(errno));
+        if (msg) {
+            _error_msg = msg;
+            free(msg);
+        }
         ret = false;
     }
 
@@ -92,11 +97,16 @@ bool FTSWrapper::run()
         switch (_curr->fts_info) {
         case FTS_NS:  // no stat()
         case FTS_DNR: // directory not read
-        case FTS_ERR: // other error
-            _error_msg = util::format("fts_read error: %s",
-                                     strerror(_curr->fts_errno));
+        case FTS_ERR: { // other error
+            char *msg = mb_format("fts_read error: %s",
+                                  strerror(_curr->fts_errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             ret = false;
             break;
+        }
 
         case FTS_DC:   // Not reached unless FTS_LOGICAL specified
                        // (FTS_PHYSICAL doesn't follow symlinks)

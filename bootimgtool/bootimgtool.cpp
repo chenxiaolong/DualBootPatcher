@@ -28,6 +28,8 @@
 
 #include <getopt.h>
 
+#include <mbcommon/common.h>
+
 #include <mblog/logging.h>
 
 #include <mbpio/directory.h>
@@ -276,7 +278,7 @@ public:
     }
 };
 
-__attribute__((format(printf, 2, 3)))
+MB_PRINTF(2, 3)
 static bool write_file_fmt(const std::string &path, const char *fmt, ...)
 {
     file_ptr fp(fopen(path.c_str(), "wb"), fclose);

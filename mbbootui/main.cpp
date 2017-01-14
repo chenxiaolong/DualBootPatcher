@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
 #include "mbdevice/validate.h"
@@ -187,9 +188,9 @@ static bool extract_theme(const std::string &path, const std::string &target,
 
         const char *suffix;
 
-        if (mb::util::starts_with(path, common_prefix)) {
+        if (mb_starts_with(path, common_prefix.c_str())) {
             suffix = path + common_prefix.size();
-        } else if (mb::util::starts_with(path, theme_prefix)) {
+        } else if (mb_starts_with(path, theme_prefix.c_str())) {
             suffix = path + theme_prefix.size();
         } else {
             LOGV("Skipping: %s", path);

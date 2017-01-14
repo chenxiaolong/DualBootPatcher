@@ -21,12 +21,14 @@
 
 #include <string>
 
+#include "mbcommon/common.h"
+
 namespace io
 {
 namespace priv
 {
 
-__attribute__((format(printf, 1, 2)))
+MB_PRINTF(1, 2)
 std::string format(const char *fmt, ...);
 
 }

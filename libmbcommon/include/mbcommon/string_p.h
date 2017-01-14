@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,20 +19,21 @@
 
 #pragma once
 
-#include "mbpio/private/common.h"
+#include "mbcommon/guard_p.h"
 
-#if IO_PLATFORM_WINDOWS
-#include <string>
-#endif
+#include <cstddef>
 
-namespace utf8
-{
+#include "mbcommon/common.h"
 
-#if IO_PLATFORM_WINDOWS
-std::string utf16ToUtf8(const wchar_t *wstr);
-std::wstring utf8ToUtf16(const char *str);
-std::string utf16ToUtf8(const std::wstring &wstr);
-std::wstring utf8ToUtf16(const std::string &str);
-#endif
+/*! \cond INTERNAL */
+MB_BEGIN_C_DECLS
 
-}
+// Wrap libc functions that aren't available on some platforms
+
+void * _mb_mempcpy(void *dest, const void *src, size_t n);
+
+void * _mb_memmem(const void *haystack, size_t haystacklen,
+                  const void *needle, size_t needlelen);
+
+MB_END_C_DECLS
+/*! \endcond */

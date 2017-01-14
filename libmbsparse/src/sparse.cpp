@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 // Enable debug logging of headers, offsets, etc.?
@@ -556,7 +557,7 @@ bool processSparseHeader(SparseCtx *ctx)
 
     // Check file header size field
     if (ctx->shdr.file_hdr_sz < sizeof(SparseHeader)) {
-        ERROR("Expected file header size to be at least %zu"
+        ERROR("Expected file header size to be at least %" MB_PRIzu
               ", but have %" PRIu32,
               sizeof(ctx->shdr), ctx->shdr.file_hdr_sz);
         return false;
@@ -564,7 +565,7 @@ bool processSparseHeader(SparseCtx *ctx)
 
     // Check chunk header size field
     if (ctx->shdr.chunk_hdr_sz < sizeof(ChunkHeader)) {
-        ERROR("Expected chunk header size to be at least %zu"
+        ERROR("Expected chunk header size to be at least %" MB_PRIzu
               ", but have %" PRIu32,
               sizeof(SparseHeader), ctx->shdr.chunk_hdr_sz);
         return false;
@@ -610,7 +611,7 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
     for (; ctx->chunk < ctx->shdr.total_chunks; ++ctx->chunk) {
         // If we don't have the chunk yet, then read it
         if (ctx->chunk >= ctx->chunks.size()) {
-            DEBUG("Reading next chunk (#%zu)", ctx->chunk);
+            DEBUG("Reading next chunk (#%" MB_PRIzu ")", ctx->chunk);
 
             // Get starting offset for chunk in source file and starting
             // offset for data in the output file
@@ -630,14 +631,14 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
 
             uint64_t diff = srcBegin - ctx->srcOffset;
             if (diff > 0 && !ctx->skipBytes(diff)) {
-                ERROR("- Failed to skip to chunk #%zu", ctx->chunk);
+                ERROR("- Failed to skip to chunk #%" MB_PRIzu, ctx->chunk);
                 return false;
             }
 
             ChunkHeader chunkHeader;
 
             if (!readFully(ctx, &chunkHeader, sizeof(ChunkHeader))) {
-                ERROR("- Failed to read chunk header for chunk %zu",
+                ERROR("- Failed to read chunk header for chunk %" MB_PRIzu,
                       ctx->chunk);
                 return false;
             }
@@ -650,7 +651,7 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
             // checks the size to make sure that the value won't underflow
             diff = ctx->shdr.chunk_hdr_sz - sizeof(ChunkHeader);
             if (!ctx->skipBytes(diff)) {
-                ERROR("- Failed to skip extra bytes in chunk #%zu's header",
+                ERROR("- Failed to skip extra bytes in chunk #%" MB_PRIzu "'s header",
                       ctx->chunk);
                 return false;
             }
@@ -659,17 +660,17 @@ bool tryMoveToChunkForOffset(SparseCtx *ctx, uint64_t offset)
                 return false;
             }
 
-            OPER("- Chunk #%zu covers source range (%" PRIu64 " - %" PRIu64 ")",
+            OPER("- Chunk #%" MB_PRIzu " covers source range (%" PRIu64 " - %" PRIu64 ")",
                  ctx->chunk, ctx->chunks[ctx->chunk].srcBegin,
                  ctx->chunks[ctx->chunk].srcEnd);
-            OPER("- Chunk #%zu covers output range (%" PRIu64 " - %" PRIu64 ")",
+            OPER("- Chunk #%" MB_PRIzu " covers output range (%" PRIu64 " - %" PRIu64 ")",
                  ctx->chunk, ctx->chunks[ctx->chunk].begin,
                  ctx->chunks[ctx->chunk].end);
 
             // Make sure the chunk does not end after the header-specified file
             // size
             if (ctx->chunks[ctx->chunk].end > ctx->fileSize) {
-                ERROR("Chunk #%zu ends (%" PRIu64 ") after the file size "
+                ERROR("Chunk #%" MB_PRIzu " ends (%" PRIu64 ") after the file size "
                       "specified in the sparse header (%" PRIu64 ")",
                       ctx->chunk, ctx->chunks[ctx->chunk].end, ctx->fileSize);
                 return false;
@@ -882,7 +883,7 @@ bool sparseRead(SparseCtx *ctx, void *buf, uint64_t size, uint64_t *bytesRead)
         uint64_t toRead = std::min(size,
                 ctx->chunks[ctx->chunk].end - ctx->outOffset);
 
-        OPER("- Reading %" PRIu64 " bytes from chunk %zu",
+        OPER("- Reading %" PRIu64 " bytes from chunk %" MB_PRIzu,
              toRead, ctx->chunk);
 
         switch (ctx->chunks[ctx->chunk].type) {
