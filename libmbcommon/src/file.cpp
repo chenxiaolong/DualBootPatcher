@@ -24,6 +24,7 @@
 #include <cstdlib>
 
 #include "mbcommon/file_p.h"
+#include "mbcommon/string.h"
 
 #define ENSURE_STATE(HANDLE, STATES) \
     do { \
@@ -755,51 +756,14 @@ int mb_file_set_error_v(struct MbFile *file, int error_code,
 {
     free(file->error_string);
 
-#ifdef _WIN32
-    int ret;
-    va_list copy;
-
-    va_copy(copy, ap);
-    ret = vsnprintf(nullptr, 0, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0 || ret == INT_MAX) {
-        return MB_FILE_FAILED;
-    }
-
-    char *buf = static_cast<char *>(malloc(ret + 1));
-    if (!buf) {
-        return MB_FILE_FAILED;
-    }
-
-    va_copy(copy, ap);
-    ret = vsnprintf(buf, ret + 1, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0) {
-        free(buf);
+    char *dup = mb_format_v(fmt, ap);
+    if (!dup) {
         return MB_FILE_FAILED;
     }
 
     file->error_code = error_code;
-    file->error_string = buf;
+    file->error_string = dup;
     return MB_FILE_OK;
-#else
-    // Yay, GNU!
-    char *result;
-    int saved_errno;
-
-    saved_errno = errno;
-
-    if (vasprintf(&result, fmt, ap) < 0) {
-        return MB_FILE_FAILED;
-    }
-
-    file->error_code = error_code;
-    file->error_string = result;
-    errno = saved_errno;
-    return MB_FILE_OK;
-#endif
 }
 
 MB_END_C_DECLS
