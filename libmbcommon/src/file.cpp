@@ -698,18 +698,16 @@ int mb_file_error(struct MbFile *file)
 /*!
  * \brief Get error string for a failed operation.
  *
- * \note An error string may or may not be set after a failed operation. Take
- *       care to handle NULL return values from this function.
- *
  * \note The return value is undefined if an operation did not fail.
  *
  * \param file MbFile handle
  *
- * \return Error string for failed operation
+ * \return Error string for failed operation. The string contents may be
+ *         undefined, but will never be NULL or an invalid string.
  */
 const char * mb_file_error_string(struct MbFile *file)
 {
-    return file->error_string;
+    return file->error_string ? file->error_string : "";
 }
 
 /*!
