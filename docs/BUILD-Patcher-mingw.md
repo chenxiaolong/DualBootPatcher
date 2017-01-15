@@ -20,6 +20,7 @@ To cross-compile DualBootPatcher, the following packages are needed:
 
 Additionally, the following mingw-compiled packages are needed:
 
+- jansson
 - qt5
 - xz
 
@@ -30,6 +31,11 @@ On Arch Linux, the following command will install some of the needed packages:
 The remaining packages will have to be installed from the AUR. I'd highly recommend against using AUR helpers for this, since they build in `/tmp/`. Some of these packages need more than 6GB of disk space to build!
 
 - android-ndk
+- mingw-w64-gtest (if tests are enabled)
+- mingw-w64-libarchive
+- mingw-w64-lz4
+- mingw-w64-lzo
+- mingw-w64-jansson
 - mingw-w64-qt5-base
 - mingw-w64-xz
 
@@ -68,16 +74,11 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     cmake .. \
         -DMBP_BUILD_TARGET=desktop \
         -DMBP_PORTABLE=ON \
-        -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-mingw.cmake \
-        -DMBP_USE_SYSTEM_LIBRARY_ZLIB=ON \
-        -DMBP_USE_SYSTEM_LIBRARY_LIBLZMA=ON \
-        -DMBP_MINGW_USE_STATIC_LIBS=ON
+        -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-mingw.cmake
     make
     ```
 
     `MBP_PORTABLE` creates a portable build that can be run on any Windows system.
-    `MBP_USE_SYSTEM_LIBRARY_*` avoids using the bundled libraries, which are statically compiled.
-    `MBP_MINGW_USE_STATIC_LIBS` tells CMake to prefer static libraries over DLLs.
 
 5. Create the distributable zip package.
 
@@ -95,18 +96,26 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
     pushd DualBootPatcher-<version>-win32
 
     dlls=(
+        libarchive.dll
+        libbz2-1.dll
         libfreetype-6.dll
         libgcc_s_sjlj-1.dll
-        libGLESv2.dll
         libglib-2.0-0.dll
+        libgraphite2.dll
         libharfbuzz-0.dll
         libiconv-2.dll
         libintl-8.dll
+        libjansson-4.dll
+        liblz4.dll
+        liblzo2-2.dll
+        liblzma-5.dll
+        libnettle-6-1.dll
         libpcre-1.dll
         libpcre16-0.dll
         libpng16-16.dll
         libstdc++-6.dll
         libwinpthread-1.dll
+        libxml2-2.dll
         Qt5Core.dll
         Qt5Gui.dll
         Qt5Widgets.dll
