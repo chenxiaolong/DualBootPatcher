@@ -9,29 +9,29 @@
   flags:
     - FSTAB_SKIP_SDCARD0
 
-  block_devs:
     base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
     system:
-    /system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
       - /dev/block/mmcblk0p20
     cache:
-    /cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
       - /dev/block/mmcblk0p21
     data:
-    /userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
       - /dev/block/mmcblk0p22
     boot:
-    /boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
       - /dev/block/mmcblk0p7
     recovery:
-    /recovery
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
-      - /dev/block/mmcblk0p8
+- /dev/block/mmcblk0p8
      extra:
     /metadata
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
