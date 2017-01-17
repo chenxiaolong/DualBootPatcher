@@ -4,10 +4,10 @@ endif()
 
 set(files
     ark.yml
+    coolpad.yml
     asus.yml
     dexp.yml
-    elephone.yml
-    coolpad.yml
+    elephone.yml 
     google.yml
     huawei.yml
     jiayu.yml
