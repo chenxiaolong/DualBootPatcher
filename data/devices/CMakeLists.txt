@@ -7,6 +7,7 @@ set(files
     asus.yml
     dexp.yml
     elephone.yml
+    coolpad.yml
     google.yml
     huawei.yml
     jiayu.yml
