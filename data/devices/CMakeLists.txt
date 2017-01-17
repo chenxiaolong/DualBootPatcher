@@ -6,7 +6,11 @@ set(files
     ark.yml
     asus.yml
     dexp.yml
+<<<<<<< HEAD
 	doogee.yml
+=======
+    doogee.yml
+>>>>>>> refs/remotes/origin/patch-1
     elephone.yml
     google.yml
     huawei.yml
