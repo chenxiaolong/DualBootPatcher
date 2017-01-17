@@ -23,10 +23,11 @@
 
 #include <cstring>
 
+#include "mbcommon/locale.h"
+
 #include "mbpio/error.h"
 #include "mbpio/private/common.h"
 #include "mbpio/private/string.h"
-#include "mbpio/private/utf8.h"
 
 #if IO_PLATFORM_WINDOWS
 #include "mbpio/win32/error.h"
@@ -52,7 +53,7 @@ bool createDirectories(const std::string &path)
     std::vector<char> temp;
     std::vector<char> copy;
 #if IO_PLATFORM_WINDOWS
-    std::wstring wTemp;
+    wchar_t *wTemp;
 #endif
 
     if (path.empty()) {
@@ -77,20 +78,24 @@ bool createDirectories(const std::string &path)
         strcat(temp.data(), pathsep);
 
 #if IO_PLATFORM_WINDOWS
-        wTemp = utf8::utf8ToUtf16(temp.data());
-        if (!CreateDirectoryW(wTemp.c_str(), nullptr)
-                && GetLastError() != ERROR_ALREADY_EXISTS) {
+        wTemp = mb::utf8_to_wcs(temp.data());
+        if (!wTemp || (!CreateDirectoryW(wTemp, nullptr)
+                && GetLastError() != ERROR_ALREADY_EXISTS)) {
+            free(wTemp);
             setLastError(Error::PlatformError, priv::format(
                     "%s: Failed to create directory: %s",
                     temp.data(), win32::errorToString(GetLastError()).c_str()));
+            return false;
+        }
+        free(wTemp);
 #else
         if (mkdir(temp.data(), 0755) < 0 && errno != EEXIST) {
             setLastError(Error::PlatformError, priv::format(
                     "%s: Failed to create directory: %s",
                     temp.data(), strerror(errno)));
-#endif
             return false;
         }
+#endif
 
         p = strtok_r(nullptr, delim, &save_ptr);
     }

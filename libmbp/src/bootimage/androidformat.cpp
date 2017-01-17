@@ -21,6 +21,7 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/bootimage-common.h"
@@ -70,7 +71,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
         return false;
     }
 
-    LOGD("Found Android boot image header at: %" PRIzu, headerIndex);
+    LOGD("Found Android boot image header at: %" MB_PRIzu, headerIndex);
 
     if (!loadHeader(data, size, headerIndex)) {
         return false;
@@ -83,7 +84,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += sizeof(BootImageHeader);
     pos += skipPadding(sizeof(BootImageHeader), mI10e->pageSize);
     if (pos + mI10e->hdrKernelSize > size) {
-        LOGE("Kernel image exceeds boot image size by %" PRIzu " bytes",
+        LOGE("Kernel image exceeds boot image size by %" MB_PRIzu " bytes",
              pos + mI10e->hdrKernelSize - size);
         return false;
     }
@@ -94,7 +95,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += mI10e->hdrKernelSize;
     pos += skipPadding(mI10e->hdrKernelSize, mI10e->pageSize);
     if (pos + mI10e->hdrRamdiskSize > size) {
-        LOGE("Ramdisk image exceeds boot image size by %" PRIzu " bytes",
+        LOGE("Ramdisk image exceeds boot image size by %" MB_PRIzu " bytes",
              pos + mI10e->hdrRamdiskSize - size);
         return false;
     }
@@ -105,7 +106,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
     pos += mI10e->hdrRamdiskSize;
     pos += skipPadding(mI10e->hdrRamdiskSize, mI10e->pageSize);
     if (pos + mI10e->hdrSecondSize > size) {
-        LOGE("Second bootloader image exceeds boot image size by %" PRIzu " bytes",
+        LOGE("Second bootloader image exceeds boot image size by %" MB_PRIzu " bytes",
              pos + mI10e->hdrSecondSize - size);
         return false;
     }
@@ -125,7 +126,7 @@ bool AndroidFormat::loadImage(const unsigned char *data, std::size_t size)
 
         LOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
         LOGE("THIS BOOT IMAGE MAY NO LONGER BE BOOTABLE. YOU HAVE BEEN WARNED");
-        LOGE("Device tree image exceeds boot image size by %" PRIzu
+        LOGE("Device tree image exceeds boot image size by %" MB_PRIzu
              " bytes and HAS BEEN TRUNCATED", diff);
         LOGE("WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING");
 
@@ -317,7 +318,7 @@ bool AndroidFormat::loadHeader(const unsigned char *data, std::size_t size,
 {
     // Make sure the file is large enough to contain the header
     if (size < headerIndex + sizeof(BootImageHeader)) {
-        LOGE("Boot image header exceeds size by %" PRIzu " bytes",
+        LOGE("Boot image header exceeds size by %" MB_PRIzu " bytes",
              headerIndex + sizeof(BootImageHeader) - size);
         return false;
     }

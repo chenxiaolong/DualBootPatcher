@@ -24,10 +24,10 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mblog/logging.h"
+#include "mbcommon/file/filename.h"
+#include "mbcommon/locale.h"
 
-#include "mbpio/file.h"
-#include "mbpio/private/utf8.h"
+#include "mblog/logging.h"
 
 #ifdef _WIN32
 #include "mbp/private/win32.h"
@@ -37,38 +37,66 @@
 #endif
 
 
+typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
+
 namespace mbp
 {
 
+ErrorCode FileUtils::openFile(MbFile *file, const std::string &path, int mode)
+{
+    int ret;
+
+#ifdef _WIN32
+    std::unique_ptr<wchar_t, decltype(free) *> wFilename{
+            mb::utf8_to_wcs(path.c_str()), free};
+    if (!wFilename) {
+        LOGE("%s: Failed to convert from UTF8 to WCS", path.c_str());
+        return ErrorCode::FileOpenError;
+    }
+
+    ret = mb_file_open_filename_w(file, wFilename.get(), mode);
+#else
+    ret = mb_file_open_filename(file, path.c_str(), mode);
+#endif
+
+    return ret == MB_FILE_OK ? ErrorCode::NoError : ErrorCode::FileOpenError;
+}
+
 /*!
-    \brief Read contents of a file into memory
-
-    \param path Path to file
-    \param contents Output vector (not modified unless reading succeeds)
-
-    \return Success or not
+ * \brief Read contents of a file into memory
+ *
+ * \param path Path to file
+ * \param contents Output vector (not modified unless reading succeeds)
+ *
+ * \return Success or not
  */
 ErrorCode FileUtils::readToMemory(const std::string &path,
                                   std::vector<unsigned char> *contents)
 {
-    io::File file;
-    if (!file.open(path, io::File::OpenRead)) {
+    ScopedMbFile file{mb_file_new(), &mb_file_free};
+
+    auto error = openFile(file.get(), path, MB_FILE_OPEN_READ_ONLY);
+    if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
-    file.seek(0, io::File::SeekEnd);
-    file.tell(&size);
-    file.seek(0, io::File::SeekBegin);
+    if (mb_file_seek(file.get(), 0, SEEK_END, &size) != MB_FILE_OK
+            || mb_file_seek(file.get(), 0, SEEK_SET, nullptr) != MB_FILE_OK) {
+        LOGE("%s: Failed to seek file: %s",
+             path.c_str(), mb_file_error_string(file.get()));
+        return ErrorCode::FileSeekError;
+    }
 
     std::vector<unsigned char> data(size);
 
-    uint64_t bytesRead;
-    if (!file.read(data.data(), data.size(), &bytesRead) || bytesRead != size) {
+    size_t bytesRead;
+    if (mb_file_read(file.get(), data.data(), data.size(), &bytesRead)
+            != MB_FILE_OK || bytesRead != size) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileReadError;
     }
 
@@ -78,35 +106,41 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
 }
 
 /*!
-    \brief Read contents of a file into a string
-
-    \param path Path to file
-    \param contents Output string (not modified unless reading succeeds)
-
-    \return Success or not
+ * \brief Read contents of a file into a string
+ *
+ * \param path Path to file
+ * \param contents Output string (not modified unless reading succeeds)
+ *
+ * \return Success or not
  */
 ErrorCode FileUtils::readToString(const std::string &path,
                                   std::string *contents)
 {
-    io::File file;
-    if (!file.open(path, io::File::OpenRead)) {
+    ScopedMbFile file{mb_file_new(), &mb_file_free};
+
+    auto error = openFile(file.get(), path, MB_FILE_OPEN_READ_ONLY);
+    if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
-    file.seek(0, io::File::SeekEnd);
-    file.tell(&size);
-    file.seek(0, io::File::SeekBegin);
+    if (mb_file_seek(file.get(), 0, SEEK_END, &size) != MB_FILE_OK
+            || mb_file_seek(file.get(), 0, SEEK_SET, nullptr) != MB_FILE_OK) {
+        LOGE("%s: Failed to seek file: %s",
+             path.c_str(), mb_file_error_string(file.get()));
+        return ErrorCode::FileSeekError;
+    }
 
     std::string data;
     data.resize(size);
 
-    uint64_t bytesRead;
-    if (!file.read(&data[0], size, &bytesRead) || bytesRead != size) {
+    size_t bytesRead;
+    if (mb_file_read(file.get(), &data[0], data.size(), &bytesRead)
+            != MB_FILE_OK || bytesRead != size) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileReadError;
     }
 
@@ -118,17 +152,21 @@ ErrorCode FileUtils::readToString(const std::string &path,
 ErrorCode FileUtils::writeFromMemory(const std::string &path,
                                      const std::vector<unsigned char> &contents)
 {
-    io::File file;
-    if (!file.open(path, io::File::OpenWrite)) {
+    ScopedMbFile file{mb_file_new(), &mb_file_free};
+
+    auto error = openFile(file.get(), path, MB_FILE_OPEN_WRITE_ONLY);
+    if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileOpenError;
     }
 
-    uint64_t bytesWritten;
-    if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
+    size_t bytesWritten;
+    if (mb_file_write(file.get(), contents.data(), contents.size(),
+                      &bytesWritten) != MB_FILE_OK
+            || bytesWritten != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileWriteError;
     }
 
@@ -138,17 +176,21 @@ ErrorCode FileUtils::writeFromMemory(const std::string &path,
 ErrorCode FileUtils::writeFromString(const std::string &path,
                                      const std::string &contents)
 {
-    io::File file;
-    if (!file.open(path, io::File::OpenWrite)) {
+    ScopedMbFile file{mb_file_new(), &mb_file_free};
+
+    auto error = openFile(file.get(), path, MB_FILE_OPEN_WRITE_ONLY);
+    if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileOpenError;
     }
 
-    uint64_t bytesWritten;
-    if (!file.write(contents.data(), contents.size(), &bytesWritten)) {
+    size_t bytesWritten;
+    if (mb_file_write(file.get(), contents.data(), contents.size(),
+                      &bytesWritten) != MB_FILE_OK
+            || bytesWritten != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.errorString().c_str());
+             path.c_str(), mb_file_error_string(file.get()));
         return ErrorCode::FileWriteError;
     }
 
@@ -175,29 +217,40 @@ std::string FileUtils::systemTemporaryDir()
 {
 #ifdef _WIN32
     const wchar_t *value;
+    std::wstring wPath;
+    std::string path;
 
     if ((value = _wgetenv(L"TMP")) && directoryExists(value)) {
-        return utf8::utf16ToUtf8(value);
+        wPath = value;
+        goto done;
     }
     if ((value = _wgetenv(L"TEMP")) && directoryExists(value)) {
-        return utf8::utf16ToUtf8(value);
+        wPath = value;
+        goto done;
     }
     if ((value = _wgetenv(L"LOCALAPPDATA"))) {
-        std::wstring path(value);
-        path += L"\\Temp";
-        if (directoryExists(path.c_str())) {
-            return utf8::utf16ToUtf8(path);
+        wPath = value;
+        wPath += L"\\Temp";
+        if (directoryExists(wPath.c_str())) {
+            goto done;
         }
     }
     if ((value = _wgetenv(L"USERPROFILE"))) {
-        std::wstring path(value);
-        path += L"\\Temp";
-        if (directoryExists(path.c_str())) {
-            return utf8::utf16ToUtf8(path);
+        wPath = value;
+        wPath += L"\\Temp";
+        if (directoryExists(wPath.c_str())) {
+            goto done;
         }
     }
 
-    return std::string();
+done:
+    char *temp = mb::wcs_to_utf8(wPath.c_str());
+    if (temp) {
+        path = temp;
+        free(temp);
+    }
+
+    return path;
 #else
     const char *value;
 
@@ -273,12 +326,20 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         }
 
         // This is not particularly fast, but it'll do for now
-        std::wstring wBuf = utf8::utf8ToUtf16(buf.data());
+        wchar_t *wBuf = mb::utf8_to_wcs(buf.data());
+        if (!wBuf) {
+            LOGE("Failed to convert UTF-8 to WCS: %s",
+                 win32ErrorToString(GetLastError()).c_str());
+            break;
+        }
 
         ret = CreateDirectoryW(
-            wBuf.c_str(),       // lpPathName
+            wBuf,               // lpPathName
             nullptr             // lpSecurityAttributes
         );
+
+        free(wBuf);
+
         if (ret) {
             newPath = buf.data();
             break;

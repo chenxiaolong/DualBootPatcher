@@ -23,6 +23,7 @@
 #include <cinttypes>
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/bootimage-common.h"
@@ -128,7 +129,7 @@ static void dumpPhdr(const Sony_Elf32_Phdr *phdr, Elf32_Half n)
 bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
 {
     if (size < sizeof(Sony_Elf32_Ehdr)) {
-        LOGE("ELF32 header exceeds size by %" PRIzu " bytes",
+        LOGE("ELF32 header exceeds size by %" MB_PRIzu " bytes",
              sizeof(Sony_Elf32_Ehdr) - size);
         return false;
     }
@@ -153,7 +154,7 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
 
     for (Elf32_Half i = 0; i < hdr->e_phnum; ++i) {
         if (offset + sizeof(Sony_Elf32_Phdr) > size) {
-            LOGE("ELF32 program segment header exceeds size by %" PRIzu " bytes",
+            LOGE("ELF32 program segment header exceeds size by %" MB_PRIzu " bytes",
                  offset + sizeof(Sony_Elf32_Phdr) - size);
             return false;
         }
@@ -164,7 +165,7 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
         offset += sizeof(Sony_Elf32_Phdr);
 
         if (phdr->p_offset + phdr->p_memsz > size) {
-            LOGE("Program segment data exceeds size by %" PRIzu " bytes",
+            LOGE("Program segment data exceeds size by %" MB_PRIzu " bytes",
                  phdr->p_offset + phdr->p_memsz - size);
             return false;
         }
@@ -398,7 +399,7 @@ bool SonyElfFormat::createImage(std::vector<unsigned char> *dataOut)
     // Write sin header and image
     if (haveSin) {
         if (mI10e->sonySinHdr.size() != sizeof(Sony_Elf32_Phdr)) {
-            LOGE("The specified sin header is not %" PRIzu " bytes",
+            LOGE("The specified sin header is not %" MB_PRIzu " bytes",
                  sizeof(Sony_Elf32_Phdr));
             return false;
         }

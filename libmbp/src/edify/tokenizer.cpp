@@ -22,6 +22,8 @@
 #include <cassert>
 #include <cstring>
 
+#include "mbcommon/common.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/private/stringutils.h"
@@ -166,7 +168,7 @@ EdifyTokenWhitespace::EdifyTokenWhitespace(std::string str)
 {
     assert(!str.empty());
 
-    for (char c __attribute__((unused)) : str) {
+    for (char c MB_UNUSED : str) {
         // Should never fail
         assert(std::isspace(c));
     }
@@ -471,7 +473,7 @@ bool EdifyTokenizer::nextToken(const char *data, std::size_t size,
             p += 1;
         }
         if (!terminated) {
-            LOGE("Unterminated quote at position %zu", curPos);
+            LOGE("Unterminated quote at position %" MB_PRIzu, curPos);
             return false;
         }
         *token = new EdifyTokenString(std::move(buf), EdifyTokenString::AlreadyQuoted);
@@ -567,7 +569,7 @@ void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
         case EdifyTokenType::Unknown:    tokenName = "Unknown";    break;
         }
 
-        LOGD("%" PRIzu ": %-20s: %s", i, tokenName, t->generate().c_str());
+        LOGD("%" MB_PRIzu ": %-20s: %s", i, tokenName, t->generate().c_str());
     }
 }
 

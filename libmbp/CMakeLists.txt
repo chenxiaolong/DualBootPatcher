@@ -1,13 +1,9 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-app)
-    include_directories(${MBP_LIBARCHIVE_LOWAPI_INCLUDES})
-else()
-    include_directories(${MBP_LIBARCHIVE_INCLUDES})
-endif()
+include_directories(${MBP_LIBARCHIVE_INCLUDES})
+include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_LZ4_INCLUDES})
 include_directories(${MBP_LZO_INCLUDES})
-include_directories(${MBP_LIBLZMA_INCLUDES})
 include_directories(${MBP_ZLIB_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
@@ -118,10 +114,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
     endif()
 
     if(${MBP_BUILD_TARGET} STREQUAL android-app)
-        set(LIBARCHIVE_LIBRARIES ${MBP_LIBARCHIVE_LOWAPI_LIBRARIES})
         set(ADDITIONAL_LIBRARIES c_compat)
     else()
-        set(LIBARCHIVE_LIBRARIES ${MBP_LIBARCHIVE_LIBRARIES})
         set(ADDITIONAL_LIBRARIES)
     endif()
 
@@ -133,7 +127,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         mbcommon-shared
         minizip-shared
         ${ADDITIONAL_LIBRARIES}
-        ${LIBARCHIVE_LIBRARIES}
+        ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
         ${MBP_LZ4_LIBRARIES}
         ${MBP_LZO_LIBRARIES}

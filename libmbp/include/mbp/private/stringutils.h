@@ -22,27 +22,12 @@
 #include <string>
 #include <vector>
 
-// zu, zx, etc. are not supported until VS2015
-#ifdef _WIN32
-#define PRIzu "Iu"
-#else
-#define PRIzu "zu"
-#endif
+#include "mbcommon/common.h"
 
 class StringUtils
 {
 public:
-    __attribute__((format(printf, 1, 2)))
-    static std::string format(const char *fmt, ...);
-
-    static bool starts_with(const std::string &string, const std::string &prefix);
-    static bool starts_with(const char *string, const char *prefix);
-    static bool ends_with(const std::string &string, const std::string &suffix);
-    static bool ends_with(const char *string, const char *suffix);
-    static bool istarts_with(const std::string &string, const std::string &prefix);
-    static bool istarts_with(const char *string, const char *prefix);
-    static bool iends_with(const std::string &string, const std::string &suffix);
-    static bool iends_with(const char *string, const char *suffix);
+    static std::string format(const char *fmt, ...) MB_PRINTF(1, 2);
 
     static std::vector<std::string> splitData(const std::vector<unsigned char> &data,
                                               unsigned char delim);

@@ -31,6 +31,8 @@
 #include <dlfcn.h>
 #endif
 
+#include "mbcommon/common.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
@@ -131,7 +133,7 @@ static void dlopen_libc(void)
     SYMBOL__system_property_foreach = get_libc_symbol("__system_property_foreach");
 }
 
-__attribute__((unused))
+MB_UNUSED
 static void dlclose_libc(void)
 {
     if (libc_handle) {
@@ -395,7 +397,7 @@ bool file_get_property(const std::string &path,
             continue;
         }
 
-        if (starts_with(line, key)) {
+        if (mb_starts_with(line, key.c_str())) {
             // Strip newline
             if (line[read - 1] == '\n') {
                 line[read - 1] = '\0';

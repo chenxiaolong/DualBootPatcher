@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -35,11 +35,14 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mbcommon/file/fd.h"
+#include "mbcommon/file/filename.h"
+#include "mbcommon/locale.h"
+#include "mbcommon/string.h"
+
 #include "mbdevice/json.h"
 
 #include "mblog/logging.h"
-
-#include "mbpio/file.h"
 
 #include "mbp/bootimage.h"
 #include "mbp/cpiofile.h"
@@ -57,6 +60,8 @@ class ar;
 namespace mbp
 {
 
+typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
+
 /*! \cond INTERNAL */
 class OdinPatcher::Impl
 {
@@ -73,7 +78,7 @@ public:
     ErrorCode error;
 
     unsigned char laBuf[10240];
-    io::File laFile;
+    ScopedMbFile laFile{mb_file_new(), &mb_file_free};
 #ifdef __ANDROID__
     int fd = -1;
 #endif
@@ -210,7 +215,7 @@ bool OdinPatcher::Impl::patchTar()
 #ifdef __ANDROID__
     static const char *prefix = "/proc/self/fd/";
     fd = -1;
-    if (StringUtils::starts_with(info->inputPath(), prefix)) {
+    if (mb_starts_with(info->inputPath().c_str(), prefix)) {
         std::string fdStr = info->inputPath().substr(strlen(prefix));
         if (!convertToInt(fdStr.c_str(), &fd)) {
             LOGE("Invalid fd: %s", fdStr.c_str());
@@ -222,51 +227,26 @@ bool OdinPatcher::Impl::patchTar()
     }
 #endif
 
-    // Get file size for progress information
-#ifdef __ANDROID__
-    if (fd > 0) {
-        off64_t offset = lseek64(fd, 0, SEEK_END);
-        if (offset < 0 || lseek64(fd, 0, SEEK_SET) < 0) {
-            LOGE("%s: Failed to seek fd: %s", info->inputPath().c_str(),
-                 strerror(errno));
-            error = ErrorCode::FileSeekError;
-            return false;
-        }
-        maxBytes = offset;
-    } else {
-#endif
-
-    io::File file;
-    if (!file.open(info->inputPath(), io::File::OpenRead)) {
-        LOGE("%s: Failed to open: %s", info->inputPath().c_str(),
-             file.errorString().c_str());
-        error = ErrorCode::FileOpenError;
-        return false;
-    }
-    if (!file.seek(0, io::File::SeekEnd)) {
-        LOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
-             file.errorString().c_str());
-        error = ErrorCode::FileReadError;
-        return false;
-    }
-    if (!file.tell(&maxBytes)) {
-        LOGE("%s: Failed to get position: %s", info->inputPath().c_str(),
-             file.errorString().c_str());
-        error = ErrorCode::FileReadError;
-        return false;
-    }
-    file.close();
-
-#ifdef __ANDROID__
-    }
-#endif
-
     updateProgress(bytes, maxBytes);
 
     if (!openInputArchive()) {
         return false;
     }
     if (!openOutputArchive()) {
+        return false;
+    }
+
+    if (cancelled) return false;
+
+    // Get file size and seek back to original location
+    uint64_t currentPos;
+    if (mb_file_seek(laFile.get(), 0, SEEK_CUR, &currentPos) != MB_FILE_OK
+            || mb_file_seek(laFile.get(), 0, SEEK_END, &maxBytes) != MB_FILE_OK
+            || mb_file_seek(laFile.get(), currentPos, SEEK_SET, nullptr)
+                    != MB_FILE_OK) {
+        LOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
+             mb_file_error_string(laFile.get()));
+        error = ErrorCode::FileSeekError;
         return false;
     }
 
@@ -385,7 +365,8 @@ bool OdinPatcher::Impl::processBootImage(archive *a, archive_entry *entry)
 
     std::vector<unsigned char> data(size);
 
-    if (archive_read_data(a, data.data(), data.size()) != data.size()) {
+    la_ssize_t ret = archive_read_data(a, data.data(), data.size());
+    if (ret < 0 || static_cast<size_t>(ret) != data.size()) {
         LOGE("libarchive: Failed to read data: %s",
              archive_error_string(a));
         error = ErrorCode::ArchiveReadDataError;
@@ -412,7 +393,7 @@ bool OdinPatcher::Impl::processSparseFile(archive *a, archive_entry *entry)
 {
     const char *name = archive_entry_pathname(entry);
     std::string zipName(name);
-    if (StringUtils::ends_with(name, ".ext4")) {
+    if (mb_ends_with(name, ".ext4")) {
         zipName.erase(zipName.size() - 5);
     }
     zipName += ".sparse";
@@ -483,7 +464,7 @@ bool OdinPatcher::Impl::processSparseFile(archive *a, archive_entry *entry)
     return true;
 }
 
-static const char * indent(int depth)
+static const char * indent(unsigned int depth)
 {
     static char buf[16];
     memset(buf, ' ', sizeof(buf));
@@ -549,15 +530,15 @@ bool OdinPatcher::Impl::processContents(archive *a, int depth)
             if (!processBootImage(a, entry)) {
                 return false;
             }
-        } else if (StringUtils::starts_with(name, "cache.img")
-                || StringUtils::starts_with(name, "system.img")) {
+        } else if (mb_starts_with(name, "cache.img")
+                || mb_starts_with(name, "system.img")) {
             LOGV("%sHandling sparse image: %s", indent(depth), name);
             added_files.insert(name);
 
             if (!processSparseFile(a, entry)) {
                 return false;
             }
-        } else if (StringUtils::ends_with(name, ".tar.md5")) {
+        } else if (mb_ends_with(name, ".tar.md5")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);
@@ -615,8 +596,8 @@ bool OdinPatcher::Impl::openInputArchive()
     archive_read_support_filter_gzip(aInput);
     archive_read_support_filter_xz(aInput);
 
-    // Our callbacks use io::File, which supports LFS on Android. Also allows
-    // progress info by counting number of bytes read.
+    // Our callbacks use the MbFile API, which supports LFS on every platform.
+    // Also allows progress info by counting number of bytes read.
     int ret = archive_read_open2(aInput, this, &Impl::laOpenCb, &Impl::laReadCb,
                                  &Impl::laSkipCb, &Impl::laCloseCb);
     if (ret != ARCHIVE_OK) {
@@ -727,41 +708,19 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
     *buffer = impl->laBuf;
-    uint64_t bytesRead;
-    bool ret = true;
+    size_t bytesRead;
 
-#ifdef __ANDROID__
-    if (impl->fd >= 0) {
-        ssize_t n = read(impl->fd, impl->laBuf, sizeof(impl->laBuf));
-        if (n < 0) {
-            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-                 strerror(errno));
-            ret = false;
-        } else {
-            bytesRead = n;
-        }
-    } else {
-#endif
-        ret = impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead);
-        if (!ret && impl->laFile.error() == io::File::ErrorEndOfFile) {
-            ret = true;
-        }
-        if (!ret) {
-            LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-                 impl->laFile.errorString().c_str());
-        }
-#ifdef __ANDROID__
-    }
-#endif
-
-    if (ret) {
-        impl->bytes += bytesRead;
-        impl->updateProgress(impl->bytes, impl->maxBytes);
-    } else {
+    if (mb_file_read(impl->laFile.get(), impl->laBuf, sizeof(impl->laBuf),
+                     &bytesRead) != MB_FILE_OK) {
+        LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
+             mb_file_error_string(impl->laFile.get()));
         impl->error = ErrorCode::FileReadError;
+        return -1;
     }
 
-    return ret ? (la_ssize_t) bytesRead : -1;
+    impl->bytes += bytesRead;
+    impl->updateProgress(impl->bytes, impl->maxBytes);
+    return static_cast<la_ssize_t>(bytesRead);
 }
 
 la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
@@ -769,54 +728,57 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
-    bool ret = true;
 
-#ifdef __ANDROID__
-    if (impl->fd >= 0) {
-        if (lseek64(impl->fd, request, SEEK_CUR) < 0) {
-            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-                 strerror(errno));
-            ret = false;
-        }
-    } else {
-#endif
-        if (!impl->laFile.seek(request, io::File::SeekCurrent)) {
-            LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-                impl->laFile.errorString().c_str());
-            ret = false;
-        }
-#ifdef __ANDROID__
-    }
-#endif
-
-    if (ret) {
-        impl->bytes += request;
-        impl->updateProgress(impl->bytes, impl->maxBytes);
-    } else {
+    if (mb_file_seek(impl->laFile.get(), request, SEEK_CUR, nullptr)
+            != MB_FILE_OK) {
+        LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
+             mb_file_error_string(impl->laFile.get()));
         impl->error = ErrorCode::FileSeekError;
+        return -1;
     }
 
-    return ret ? request : -1;
+    impl->bytes += request;
+    impl->updateProgress(impl->bytes, impl->maxBytes);
+    return request;
 }
 
 int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
+    int ret;
 
-#ifdef __ANDROID__
-    if (impl->fd >= 0) {
-        return 0;
+#ifdef _WIN32
+    std::unique_ptr<wchar_t, decltype(free) *> wFilename{
+            mb::utf8_to_wcs(impl->info->inputPath().c_str()), free};
+    if (!wFilename) {
+        LOGE("%s: Failed to convert from UTF8 to WCS",
+             impl->info->inputPath().c_str());
+        impl->error = ErrorCode::FileOpenError;
+        return -1;
     }
+
+    ret = mb_file_open_filename_w(impl->laFile.get(), wFilename.get(),
+                                  MB_FILE_OPEN_READ_ONLY);
+#else
+#  ifdef __ANDROID__
+    if (impl->fd >= 0) {
+        ret = mb_file_open_fd(impl->laFile.get(), impl->fd, false);
+    } else
+#  endif
+    ret = mb_file_open_filename(impl->laFile.get(),
+                                impl->info->inputPath().c_str(),
+                                MB_FILE_OPEN_READ_ONLY);
 #endif
 
-    bool ret = impl->laFile.open(impl->info->inputPath(), io::File::OpenRead);
-    if (!ret) {
+    if (ret != MB_FILE_OK) {
         LOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
+             mb_file_error_string(impl->laFile.get()));
         impl->error = ErrorCode::FileOpenError;
+        return -1;
     }
-    return ret ? 0 : -1;
+
+    return 0;
 }
 
 int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
@@ -824,19 +786,15 @@ int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
 
-#ifdef __ANDROID__
-    if (impl->fd >= 0) {
-        return 0;
-    }
-#endif
-
-    bool ret = impl->laFile.close();
-    if (!ret) {
+    int ret = mb_file_close(impl->laFile.get());
+    if (ret != MB_FILE_OK) {
         LOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),
-             impl->laFile.errorString().c_str());
+             mb_file_error_string(impl->laFile.get()));
         impl->error = ErrorCode::FileCloseError;
+        return -1;
     }
-    return ret ? 0 : -1;
+
+    return 0;
 }
 
 }

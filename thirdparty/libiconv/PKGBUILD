@@ -15,7 +15,7 @@
 
 pkgname=libiconv
 pkgver=1.14
-pkgrel=1
+pkgrel=2
 pkgdesc="GNU iconv() implementation"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.gnu.org/software/libiconv/"
@@ -47,7 +47,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=4.9 \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-17 \
         "${MAKEFLAGS}"
 }
 
@@ -58,7 +58,7 @@ package() {
     abi=$(android_get_abi_name)
 
     install -dm755 "${pkgdir}"/{lib,include}/
-    install -m644 include/iconv.h.inst "${pkgdir}"/include/
-    install -m644 libcharset/include/localcharset.h.inst "${pkgdir}"/include/
+    install -m644 include/iconv.h "${pkgdir}"/include/
+    install -m644 libcharset/include/localcharset.h "${pkgdir}"/include/
     install -m644 "obj/local/${abi}/libiconv.a" "${pkgdir}"/lib/
 }

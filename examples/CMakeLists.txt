@@ -29,9 +29,9 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         desparse
-        mbpio-static
         mbsparse-shared
         mblog-shared
+        mbcommon-shared
     )
 
     if(NOT MSVC)

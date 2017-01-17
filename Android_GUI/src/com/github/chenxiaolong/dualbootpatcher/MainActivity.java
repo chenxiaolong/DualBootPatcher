@@ -357,8 +357,9 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         }
 
         case R.id.nav_reboot:
-            GenericProgressDialog d = GenericProgressDialog.newInstance(0, R.string.please_wait);
-            d.show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
+            GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+            builder.message(R.string.please_wait);
+            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
 
             SwitcherUtils.reboot(this);
             break;

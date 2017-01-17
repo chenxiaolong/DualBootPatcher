@@ -23,6 +23,7 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/bootimage.h"
@@ -70,7 +71,7 @@ bool LokiFormat::loadImage(const unsigned char *data, std::size_t size)
         return false;
     }
 
-    LOGD("Found Android boot image header at: %" PRIzu, headerIndex);
+    LOGD("Found Android boot image header at: %" MB_PRIzu, headerIndex);
 
     if (!loadHeader(data, size, headerIndex)) {
         return false;
@@ -182,7 +183,7 @@ bool LokiFormat::loadLokiOldImage(const unsigned char *data, std::size_t size,
     uint32_t ramdiskAddr;
 
     if (size < mI10e->pageSize + 0x2c + sizeof(int32_t)) {
-        LOGE("Kernel size field offset exceeds boot image size by %" PRIzu "bytes",
+        LOGE("Kernel size field offset exceeds boot image size by %" MB_PRIzu "bytes",
              mI10e->pageSize + 0x2c + sizeof(int32_t) - size);
         return false;
     }
@@ -282,7 +283,7 @@ uint32_t LokiFormat::lokiOldFindGzipOffset(const unsigned char *data, std::size_
         }
     }
 
-    LOGD("Found %" PRIzu " total gzip headers",
+    LOGD("Found %" MB_PRIzu " total gzip headers",
          offsetsFlag8.size() + offsetsFlag0.size());
 
     uint32_t gzipOffset = 0;

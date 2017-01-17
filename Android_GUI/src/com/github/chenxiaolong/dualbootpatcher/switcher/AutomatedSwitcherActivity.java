@@ -264,9 +264,10 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
     }
 
     private void switchRom() {
-        GenericProgressDialog d = GenericProgressDialog.newInstance(
-                R.string.switching_rom, R.string.please_wait);
-        d.show(getFragmentManager(), "automated_switch_rom_waiting");
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.title(R.string.switching_rom);
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), "automated_switch_rom_waiting");
 
         mTaskIdSwitchRom = mService.switchRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
         mService.addCallback(mTaskIdSwitchRom, mCallback);

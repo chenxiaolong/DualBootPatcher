@@ -23,6 +23,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "mbcommon/common.h"
 #include "mbdevice/device.h"
 #include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
@@ -50,7 +51,7 @@ protected:
         Cancel
     };
 
-    __attribute__((format(printf, 2, 3)))
+    MB_PRINTF(2, 3)
     void display_msg(const char *fmt, ...);
     virtual void display_msg(const std::string &msg);
     virtual void updater_print(const std::string &msg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,111 +22,76 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
 
-public class GenericYesNoDialog extends DialogFragment {
-    private static final String ARG_ID = "id";
-    private static final String ARG_TITLE = "title";
-    private static final String ARG_MESSAGE = "message";
-    private static final String ARG_POSITIVE = "positive";
-    private static final String ARG_NEGATIVE = "negative";
+import java.io.Serializable;
+
+public class GenericYesNoDialog extends DialogFragment implements SingleButtonCallback {
+    private static final String ARG_BUILDER = "builder";
+    private static final String ARG_TARGET = "target";
+    private static final String ARG_TAG = "tag";
+
+    private Builder mBuilder;
+    private DialogListenerTarget mTarget;
+    private String mTag;
 
     public interface GenericYesNoDialogListener {
-        void onConfirmYesNo(int id, boolean choice);
+        void onConfirmYesNo(@Nullable String tag, boolean choice);
     }
 
-    public static GenericYesNoDialog newInstanceFromFragment(Fragment parent, int id, String title,
-                                                             String message, String positive,
-                                                             String negative) {
-        if (parent != null) {
-            if (!(parent instanceof GenericYesNoDialogListener)) {
-                throw new IllegalStateException(
-                        "Parent fragment must implement GenericYesNoDialogListener");
-            }
-        }
-
-        GenericYesNoDialog frag = new GenericYesNoDialog();
-        frag.setTargetFragment(parent, 0);
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_POSITIVE, positive);
-        args.putString(ARG_NEGATIVE, negative);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    public static GenericYesNoDialog newInstanceFromActivity(int id, String title, String message,
-                                                             String positive, String negative) {
-        GenericYesNoDialog frag = new GenericYesNoDialog();
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_POSITIVE, positive);
-        args.putString(ARG_NEGATIVE, negative);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    GenericYesNoDialogListener getOwner() {
-        Fragment f = getTargetFragment();
-        if (f == null) {
-            if (!(getActivity() instanceof GenericYesNoDialogListener)) {
-                throw new IllegalStateException(
-                        "Activity must implement GenericYesNoDialogListener");
-            }
+    @Nullable
+    private GenericYesNoDialogListener getOwner() {
+        switch (mTarget) {
+        case ACTIVITY:
             return (GenericYesNoDialogListener) getActivity();
-        } else {
+        case FRAGMENT:
             return (GenericYesNoDialogListener) getTargetFragment();
+        case NONE:
+        default:
+            return null;
         }
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        final int id = getArguments().getInt(ARG_ID);
-        String title = getArguments().getString(ARG_TITLE);
-        String message = getArguments().getString(ARG_MESSAGE);
-        String positive = getArguments().getString(ARG_POSITIVE);
-        String negative = getArguments().getString(ARG_NEGATIVE);
+        Bundle args = getArguments();
+        mBuilder = (Builder) args.getSerializable(ARG_BUILDER);
+        mTarget = (DialogListenerTarget) args.getSerializable(ARG_TARGET);
+        mTag = args.getString(ARG_TAG);
 
         MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
 
-        if (title != null) {
-            builder.title(title);
-        }
-        if (message != null) {
-            builder.content(message);
-        }
-        if (positive != null) {
-            builder.positiveText(positive);
-        }
-        if (negative != null) {
-            builder.negativeText(negative);
+        if (mBuilder.mTitle != null) {
+            builder.title(mBuilder.mTitle);
+        } else if (mBuilder.mTitleResId != 0) {
+            builder.title(mBuilder.mTitleResId);
         }
 
-        builder.onPositive(new SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                GenericYesNoDialogListener owner = getOwner();
-                if (owner != null) {
-                    owner.onConfirmYesNo(id, true);
-                }
-            }
-        });
-        builder.onNegative(new SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                GenericYesNoDialogListener owner = getOwner();
-                if (owner != null) {
-                    owner.onConfirmYesNo(id, false);
-                }
-            }
-        });
+        if (mBuilder.mMessage != null) {
+            builder.content(mBuilder.mMessage);
+        } else if (mBuilder.mMessageResId != 0) {
+            builder.content(mBuilder.mMessageResId);
+        }
+
+        if (mBuilder.mPositive != null) {
+            builder.positiveText(mBuilder.mPositive);
+        } else if (mBuilder.mPositiveResId != 0) {
+            builder.positiveText(mBuilder.mPositiveResId);
+        }
+
+        if (mBuilder.mNegative != null) {
+            builder.negativeText(mBuilder.mNegative);
+        } else if (mBuilder.mNegativeResId != 0) {
+            builder.negativeText(mBuilder.mNegativeResId);
+        }
+
+        builder.onPositive(this);
+        builder.onNegative(this);
 
         Dialog dialog = builder.build();
 
@@ -134,5 +99,123 @@ public class GenericYesNoDialog extends DialogFragment {
         dialog.setCanceledOnTouchOutside(false);
 
         return dialog;
+    }
+
+    @Override
+    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+        GenericYesNoDialogListener owner = getOwner();
+        if (owner == null) {
+            return;
+        }
+
+        switch (which) {
+        case POSITIVE:
+            owner.onConfirmYesNo(mTag, true);
+            break;
+        case NEGATIVE:
+            owner.onConfirmYesNo(mTag, false);
+            break;
+        }
+    }
+
+    public static class Builder implements Serializable {
+        @Nullable
+        String mTitle;
+        @StringRes
+        int mTitleResId;
+        @Nullable
+        String mMessage;
+        @StringRes
+        int mMessageResId;
+        @Nullable
+        String mPositive;
+        @StringRes
+        int mPositiveResId;
+        @Nullable
+        String mNegative;
+        @StringRes
+        int mNegativeResId;
+
+        @NonNull
+        public Builder title(@Nullable String title) {
+            mTitle = title;
+            mTitleResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder title(@StringRes int titleResId) {
+            mTitle = null;
+            mTitleResId = titleResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@Nullable String message) {
+            mMessage = message;
+            mMessageResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@StringRes int messageResId) {
+            mMessage = null;
+            mMessageResId = messageResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder positive(@Nullable String text) {
+            mPositive = text;
+            mPositiveResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder positive(@StringRes int textResId) {
+            mPositive = null;
+            mPositiveResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder negative(@Nullable String text) {
+            mNegative = text;
+            mNegativeResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder negative(@StringRes int textResId) {
+            mNegative = null;
+            mNegativeResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public GenericYesNoDialog buildFromFragment(@Nullable String tag,
+                                                    @NonNull Fragment parent) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.FRAGMENT);
+            args.putString(ARG_TAG, tag);
+
+            GenericYesNoDialog dialog = new GenericYesNoDialog();
+            dialog.setTargetFragment(parent, 0);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        public GenericYesNoDialog buildFromActivity(@Nullable String tag) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.ACTIVITY);
+            args.putString(ARG_TAG, tag);
+
+            GenericYesNoDialog dialog = new GenericYesNoDialog();
+            dialog.setArguments(args);
+            return dialog;
+        }
     }
 }

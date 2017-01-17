@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
@@ -238,7 +239,7 @@ static bool path_matches(const char *path, const char *pattern)
     if (strchr(pattern, '*')) {
         return fnmatch(pattern, path, 0) == 0;
     } else {
-        return util::starts_with(path, pattern);
+        return mb_starts_with(path, pattern);
     }
 }
 
@@ -333,7 +334,7 @@ static bool mount_exfat_fuse(const char *source, const char *target)
 static bool mount_exfat_kernel(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = util::format(
+    char *args = mb_format(
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
@@ -343,7 +344,12 @@ static bool mount_exfat_kernel(const char *source, const char *target)
             | MS_NOEXEC;
     // For Motorola: MS_RELATIME
 
-    int ret = mount(source, target, "exfat", flags, args.c_str());
+    if (!args) {
+        return false;
+    }
+
+    int ret = mount(source, target, "exfat", flags, args);
+    free(args);
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "exfat", target, strerror(errno));
@@ -358,7 +364,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
 static bool mount_vfat(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = util::format(
+    char *args = mb_format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
     int flags = MS_NODEV
@@ -369,7 +375,12 @@ static bool mount_vfat(const char *source, const char *target)
             | MS_NOATIME
             | MS_NODIRATIME;
 
-    int ret = mount(source, target, "vfat", flags, args.c_str());
+    if (!args) {
+        return false;
+    }
+
+    int ret = mount(source, target, "vfat", flags, args);
+    free(args);
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "vfat", target, strerror(errno));
@@ -557,6 +568,13 @@ static bool mount_target(const char *source, const char *target, bool bind)
 
     if (!util::mkdir_recursive(target, 0755) && errno != EEXIST) {
         LOGE("%s: Failed to create directory: %s", target, strerror(errno));
+        return false;
+    }
+
+    // Create source directory for bind mount if it doesn't already exist.
+    // This can happen if the user accidentally wipes /cache, for example.
+    if (bind && !util::mkdir_recursive(source, 0755) && errno != EEXIST) {
+        LOGE("%s: Failed to create directory: %s", source, strerror(errno));
         return false;
     }
 

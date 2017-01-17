@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+
+<language>
+    <display>Español</display>
+
+    <resources>
+        <!-- Font overrides - only change these if your language requires special characters -->
+        <resource name="font_l" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="font_m" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="font_s" type="fontoverride" filename="RobotoCondensed-Regular.ttf" scale="100" />
+        <resource name="fixed" type="fontoverride" filename="DroidSansMono.ttf" scale="100" />
+
+        <!-- Title shown in action bar on the main page -->
+        <string name="app_name">DualBootPatcher</string>
+
+        <!-- Button on main page for navigating to Switch ROM page -->
+        <string name="title_switch_rom">Cambiar ROM</string>
+        <string name="title_decrypt_passwd_test">Dec. PIN/PW Test</string>
+        <string name="title_decrypt_pattern_test">Dec. Pattern Test</string>
+        <string name="title_settings">Ajustes</string>
+        <string name="title_advanced">Avanzado</string>
+        <string name="title_reboot">Reiniciar</string>
+
+        <!--
+            Switch ROM pages
+        -->
+
+        <!-- Title of Switch ROM page (primary header) -->
+        <string name="switch_rom_main_title">Cambiar ROM</string>
+        <!-- Description of Switch ROM page (secondary header) -->
+        <string name="switch_rom_main_desc">Arrancar en otra ROM</string>
+        <!-- Title of Switching ROM progress page (primary header) -->
+        <string name="switch_rom_switching_title">Cambiando ROM</string>
+        <!-- Description of Switching ROM progress page (secondary header) -->
+        <string name="switch_rom_switching_desc">Espera por favor...</string>
+        <!-- Title above list of ROMs -->
+        <string name="switch_rom_list_title">Seleccionar ROM para arrancar</string>
+        <!-- Error shown when the path to the boot partition could not be found -->
+        <string name="switch_rom_unknown_boot_partition">No se puede determinar la ruta para la partición de arranque</string>
+        <!-- Status text shown when switching is not needed -->
+        <string name="switch_rom_not_needed">No se necesita cambiar ROMs; ya estás en {1}</string>
+        <!-- Status text shown when switching to a ROM -->
+        <string name="switch_rom_switching_to">Cambiando a {1}...</string>
+        <!-- Result text when switching to a ROM succeeds. {1} is the ROM ID -->
+        <string name="switch_rom_result_succeeded">Cambiado correctamente a {1}</string>
+        <!-- Result text when switching to a ROM fails. {1} is the ROM ID -->
+        <string name="switch_rom_result_failed">Ha fallado al cambiar a {1}</string>
+        <!-- Result text when the checksum for the boot image does not match. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_invalid">No coincide el checksum de la imagen de arranque para {1}</string>
+        <!-- Result text when the checksum for the boot image is missing. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_not_found">No se encuentra el checksum de la imagen de arranque para {1}</string>
+        <!-- Result text when an unknown error occurs while switching to a ROM. {1} is the ROM ID -->
+        <string name="switch_rom_result_unknown">Error desconocido mientras cambiaba a {1}</string>
+        <!-- Swipe to switch ROM (slider text) -->
+        <string name="switch_rom_swipe_to_switch">Deslizar para cambiar ROM</string>
+
+        <!--
+            Reboot page
+        -->
+
+        <string name="reboot_system">Sistema</string>
+        <string name="reboot_recovery">Recovery</string>
+        <string name="reboot_bootloader">Bootloader</string>
+        <string name="reboot_download">Download</string>
+        <string name="reboot_poweroff">Apagar</string>
+
+        <!--
+            Settings pages
+        -->
+
+        <string name="settings_general_title">General</string>
+        <string name="settings_general_use24clock">Usar reloj de 24 horas</string>
+        <string name="settings_general_rev_navbar">Invertir la disposición de la barra de navegación</string>
+        <string name="settings_general_autoboot_timeout">Tiempo restante para auto-iniciar en segundos:</string>
+        <string name="settings_general_restore_defaults">Restaurar por defecto</string>
+
+        <string name="settings_tz_title">Zona horaria</string>
+        <string name="settings_tz_select_tz">Seleccionar zona horaria:</string>
+        <string name="settings_tz_select_offset">Seleccionar compensación (normalmente 0): %tw_time_zone_guioffset%</string>
+        <string name="settings_tz_use_dst">Usar horario de verano (DST)</string>
+        <string name="settings_tz_current_tz">Zona horaria actual: %tw_time_zone%</string>
+        <string name="settings_tz_set_tz">Establecer zona horaria</string>
+
+        <string name="settings_tz_offset_none">Nada</string>
+        <string name="settings_tz_offset_15">15</string>
+        <string name="settings_tz_offset_30">30</string>
+        <string name="settings_tz_offset_45">45</string>
+
+        <string name="settings_tz_utcm11">(UTC -11) Samoa, Midway Island</string>
+        <string name="settings_tz_utcm10">(UTC -10) Hawaii</string>
+        <string name="settings_tz_utcm9">(UTC -9) Alaska</string>
+        <string name="settings_tz_utcm8">(UTC -8) Pacific Time</string>
+        <string name="settings_tz_utcm7">(UTC -7) Mountain Time</string>
+        <string name="settings_tz_utcm6">(UTC -6) Central Time</string>
+        <string name="settings_tz_utcm5">(UTC -5) Eastern Time</string>
+        <string name="settings_tz_utcm4">(UTC -4) Atlantic Time</string>
+        <string name="settings_tz_utcm3">(UTC -3) Brazil, Buenos Aires</string>
+        <string name="settings_tz_utcm2">(UTC -2) Mid-Atlantic</string>
+        <string name="settings_tz_utcm1">(UTC -1) Azores, Cape Verde</string>
+        <string name="settings_tz_utc0">(UTC  0) London, Dublin, Lisbon</string>
+        <string name="settings_tz_utcp1">(UTC +1) Berlin, Brussels, Paris, Madrid</string>
+        <string name="settings_tz_utcp2">(UTC +2) Athens, Istanbul, South Africa</string>
+        <string name="settings_tz_utcp3">(UTC +3) Moscow, Baghdad</string>
+        <string name="settings_tz_utcp4">(UTC +4) Abu Dhabi, Tbilisi, Muscat</string>
+        <string name="settings_tz_utcp5">(UTC +5) Yekaterinburg, Islamabad</string>
+        <string name="settings_tz_utcp6">(UTC +6) Almaty, Dhaka, Colombo</string>
+        <string name="settings_tz_utcp7">(UTC +7) Bangkok, Hanoi, Jakarta</string>
+        <string name="settings_tz_utcp8">(UTC +8) Beijing, Singapore, Hong Kong</string>
+        <string name="settings_tz_utcp9">(UTC +9) Tokyo, Seoul, Yakutsk</string>
+        <string name="settings_tz_utcp10">(UTC +10) Eastern Australia, Guam</string>
+        <string name="settings_tz_utcp11">(UTC +11) Vladivostok, Solomon Islands</string>
+        <string name="settings_tz_utcp12">(UTC +12) Auckland, Wellington, Fiji</string>
+
+        <string name="settings_screen_title">Pantalla</string>
+        <string name="settings_screen_enable_timeout">Enable screen timeout</string>
+        <string name="settings_screen_timeout_slider">Tiempo restante para apagar la pantalla en segundos:</string>
+        <string name="settings_screen_brightness_slider">Brillo: %tw_brightness_pct%%</string>
+
+        <string name="settings_vib_title">Vibración</string>
+        <string name="settings_vib_button_slider">Vibración del botón:</string>
+        <string name="settings_vib_keyboard_slider">Vibración del teclado:</string>
+        <string name="settings_vib_action_slider">Vibración de la acción:</string>
+
+        <string name="settings_language_title">Idioma</string>
+        <string name="settings_language_select_language">Selecionar idioma:</string>
+        <string name="settings_language_set_language">Establecer idioma</string>
+
+        <!--
+            Advanced page
+        -->
+
+        <string name="advanced_reload_theme">Recargar tema</string>
+
+        <!--
+            Screen lock overlay page
+        -->
+
+        <string name="swipe_to_unlock">Deslizar para desbloquear</string>
+
+        <!--
+            Decryption pages
+        -->
+
+        <string name="decrypt_title">Desencriptado</string>
+        <string name="decrypt_desc">Desencriptar datos</string>
+        <string name="decrypt_attempting_desc">Intentando desencriptar datos</string>
+        <string name="decrypt_select_language">Seleccionar idioma</string>
+        <string name="decrypt_enter_password">Introducir contraseña.</string>
+        <string name="decrypt_failed_password">Ha fallado la contraseña ¡Intentalo de nuevo por favor!</string>
+        <string name="decrypt_enter_pattern">Introducir patrón.</string>
+        <string name="decrypt_failed_pattern">Ha fallado el patrón ¡Intentalo de nuevo por favor!</string>
+
+        <!--
+            Autoboot page
+        -->
+
+        <string name="autoboot_header">Auto-arrancar a %tw_rom_id%</string>
+        <string name="autoboot_welcome">Bienvenido/a a {1}</string>
+        <string name="autoboot_version_bootui">Versión BootUI: {1}</string>
+        <string name="autoboot_version_mbtool">Versión mbtool: {1}</string>
+        <string name="autoboot_autobooting_to">Auto-arrancando a {1}</string>
+        <string name="autoboot_booting_in">Arrancando en {1} segundos...</string>
+        <string name="autoboot_canceled">Auto-arranque cancelado</string>
+        <string name="autoboot_booting_now">Arrancando ahora...</string>
+        <string name="autoboot_skip_countdown">Saltar cuenta atrás</string>
+
+        <!--
+            Generic strings
+        -->
+
+        <string name="failed">Ha fallado</string>
+        <string name="succeeded">Tuvo éxito</string>
+        <string name="cancel">Cancelar</string>
+        <string name="ok">OK</string>
+        <string name="back">Atrás</string>
+
+        <!--
+            Status bar strings
+        -->
+
+        <string name="status_bar_cpu_temp">CPU: %tw_cpu_temp% &#xB0;C</string>
+        <string name="status_bar_battery_percent">Batería: %tw_battery%</string>
+
+        <!--
+            Other miscellaneous strings
+        -->
+
+        <string name="mbtool_connection_error">Error de conexión de mbtool</string>
+        <string name="reboot_system_button">Reiniciar sistema</string>
+        <string name="base_pkg_err">Ha fallado al cargar los paquetes base.</string>
+        <string name="screenshot_saved">Captura de pantalla fué guardada en {1}</string>
+        <string name="screenshot_err">¡Ha fallado al tomar la captura de pantalla!</string>
+        <string name="theme_ver_err">No coincide la versión del tema personalizado con la versión de TWRP. Using el tema por defecto.</string>
+    </resources>
+</language>

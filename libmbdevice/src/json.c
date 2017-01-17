@@ -23,6 +23,8 @@
 
 #include <jansson.h>
 
+#include "mbcommon/string.h"
+
 #include "mbdevice/internal/array.h"
 #include "mbdevice/internal/structs.h"
 
@@ -279,7 +281,8 @@ static inline int device_set_string_array(setter_string_array fn,
     memset(array, 0, array_size);
 
     json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s[%zu]", context, index);
+        snprintf(subcontext, sizeof(subcontext),
+                 "%s[%" MB_PRIzu "]", context, index);
 
         if (!json_is_string(value)) {
             json_error_set_mismatched_type(
@@ -318,7 +321,8 @@ static int process_device_flags(struct Device *device, json_t *node,
     }
 
     json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s[%zu]", context, index);
+        snprintf(subcontext, sizeof(subcontext),
+                 "%s[%" MB_PRIzu "]", context, index);
 
         if (!json_is_string(value)) {
             json_error_set_mismatched_type(
@@ -366,7 +370,8 @@ static int process_boot_ui_flags(struct Device *device, json_t *node,
     }
 
     json_array_foreach(node, index, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s[%zu]", context, index);
+        snprintf(subcontext, sizeof(subcontext),
+                 "%s[%" MB_PRIzu "]", context, index);
 
         if (!json_is_string(value)) {
             json_error_set_mismatched_type(
@@ -750,7 +755,7 @@ struct Device ** mb_device_new_list_from_json(const char *json,
     memset(devices, 0, devices_size);
 
     json_array_foreach(root, index, elem) {
-        snprintf(context, sizeof(context), "[%zu]", index);
+        snprintf(context, sizeof(context), "[%" MB_PRIzu "]", index);
 
         devices[index] = mb_device_new();
         if (!devices[index]) {

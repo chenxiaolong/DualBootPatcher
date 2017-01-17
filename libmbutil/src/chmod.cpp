@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
@@ -76,8 +77,12 @@ private:
     bool chmod_path()
     {
         if (::chmod(_curr->fts_accpath, _perms) < 0) {
-            _error_msg = format("%s: Failed to chmod: %s",
-                                _curr->fts_path, strerror(errno));
+            char *msg = mb_format("%s: Failed to chmod: %s",
+                                  _curr->fts_path, strerror(errno));
+            if (msg) {
+                _error_msg = msg;
+                free(msg);
+            }
             LOGW("%s", _error_msg.c_str());
             return false;
         }

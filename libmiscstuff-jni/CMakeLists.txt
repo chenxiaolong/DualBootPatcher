@@ -1,4 +1,4 @@
-include_directories(${MBP_LIBARCHIVE_LOWAPI_INCLUDES})
+include_directories(${MBP_LIBARCHIVE_INCLUDES})
 
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
     set(MISCSTUFF_JNI_SOURCES
@@ -34,7 +34,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
     target_link_libraries(
         miscstuff-jni
         mblog-shared
-        ${MBP_LIBARCHIVE_LOWAPI_LIBRARIES}
+        ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
     )

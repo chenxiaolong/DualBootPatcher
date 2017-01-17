@@ -46,3 +46,22 @@
 #ifdef _MSC_VER
 #  define strdup _strdup
 #endif
+
+#ifdef __cplusplus
+#  define MB_BEGIN_C_DECLS extern "C" {
+#  define MB_END_C_DECLS }
+#else
+#  define MB_BEGIN_C_DECLS
+#  define MB_END_C_DECLS
+#endif
+
+#if defined(__GNUC__) && defined(__clang__)
+#  define MB_PRINTF(fmt_arg, var_arg) \
+    __attribute__((format(printf, fmt_arg, var_arg)))
+#  define MB_UNUSED __attribute__((unused))
+#  define MB_NO_RETURN __attribute__((noreturn))
+#else
+#  define MB_PRINTF(fmtarg, firstvararg)
+#  define MB_UNUSED
+#  define MB_NO_RETURN
+#endif

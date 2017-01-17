@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,89 +22,69 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback;
-import com.github.chenxiaolong.dualbootpatcher.R;
 
-public class GenericConfirmDialog extends DialogFragment {
-    private static final String ARG_ID = "id";
-    private static final String ARG_TITLE = "title";
-    private static final String ARG_MESSAGE = "message";
-    private static final String ARG_BUTTON_TEXT = "buttonText";
+import java.io.Serializable;
+
+public class GenericConfirmDialog extends DialogFragment implements SingleButtonCallback {
+    private static final String ARG_BUILDER = "builder";
+    private static final String ARG_TARGET = "target";
+    private static final String ARG_TAG = "tag";
+
+    private Builder mBuilder;
+    private DialogListenerTarget mTarget;
+    private String mTag;
 
     public interface GenericConfirmDialogListener {
-        void onConfirmOk(int id);
+        void onConfirmOk(@Nullable String tag);
     }
 
-    public static GenericConfirmDialog newInstanceFromFragment(Fragment parent, int id, String title,
-                                                               String message, String buttonText) {
-        GenericConfirmDialog frag = new GenericConfirmDialog();
-        if (parent instanceof GenericConfirmDialogListener) {
-            frag.setTargetFragment(parent, 0);
-        }
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_BUTTON_TEXT, buttonText);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    public static GenericConfirmDialog newInstanceFromActivity(int id, String title, String message,
-                                                               String buttonText) {
-        GenericConfirmDialog frag = new GenericConfirmDialog();
-        Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putString(ARG_TITLE, title);
-        args.putString(ARG_MESSAGE, message);
-        args.putString(ARG_BUTTON_TEXT, buttonText);
-        frag.setArguments(args);
-        return frag;
-    }
-
-    GenericConfirmDialogListener getOwner() {
-        if (getTargetFragment() instanceof GenericConfirmDialogListener) {
-            return (GenericConfirmDialogListener) getTargetFragment();
-        } else if (getActivity() instanceof GenericConfirmDialogListener) {
+    @Nullable
+    private GenericConfirmDialogListener getOwner() {
+        switch (mTarget) {
+        case ACTIVITY:
             return (GenericConfirmDialogListener) getActivity();
-        } else {
+        case FRAGMENT:
+            return (GenericConfirmDialogListener) getTargetFragment();
+        case NONE:
+        default:
             return null;
         }
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        final int id = getArguments().getInt(ARG_ID);
-        String title = getArguments().getString(ARG_TITLE);
-        String message = getArguments().getString(ARG_MESSAGE);
-        String buttonText = getArguments().getString(ARG_BUTTON_TEXT);
+        Bundle args = getArguments();
+        mBuilder = (Builder) args.getSerializable(ARG_BUILDER);
+        mTarget = (DialogListenerTarget) args.getSerializable(ARG_TARGET);
+        mTag = args.getString(ARG_TAG);
 
         MaterialDialog.Builder builder = new MaterialDialog.Builder(getActivity());
 
-        if (title != null) {
-            builder.title(title);
-        }
-        if (message != null) {
-            builder.content(message);
-        }
-        if (buttonText != null) {
-            builder.positiveText(buttonText);
-        } else {
-            builder.positiveText(R.string.ok);
+        if (mBuilder.mTitle != null) {
+            builder.title(mBuilder.mTitle);
+        } else if (mBuilder.mTitleResId != 0) {
+            builder.title(mBuilder.mTitleResId);
         }
 
-        builder.onPositive(new SingleButtonCallback() {
-            @Override
-            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                GenericConfirmDialogListener owner = getOwner();
-                if (owner != null) {
-                    owner.onConfirmOk(id);
-                }
-            }
-        });
+        if (mBuilder.mMessage != null) {
+            builder.content(mBuilder.mMessage);
+        } else if (mBuilder.mMessageResId != 0) {
+            builder.content(mBuilder.mMessageResId);
+        }
+
+        if (mBuilder.mButtonText != null) {
+            builder.positiveText(mBuilder.mButtonText);
+        } else if (mBuilder.mButtonTextResId != 0) {
+            builder.positiveText(mBuilder.mButtonTextResId);
+        }
+
+        builder.onPositive(this);
 
         Dialog dialog = builder.build();
 
@@ -112,5 +92,108 @@ public class GenericConfirmDialog extends DialogFragment {
         dialog.setCanceledOnTouchOutside(false);
 
         return dialog;
+    }
+
+    @Override
+    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+        GenericConfirmDialogListener owner = getOwner();
+        if (owner != null) {
+            owner.onConfirmOk(mTag);
+        }
+    }
+
+    public static class Builder implements Serializable {
+        @Nullable
+        String mTitle;
+        @StringRes
+        int mTitleResId;
+        @Nullable
+        String mMessage;
+        @StringRes
+        int mMessageResId;
+        @Nullable
+        String mButtonText;
+        @StringRes
+        int mButtonTextResId;
+
+        @NonNull
+        public Builder title(@Nullable String title) {
+            mTitle = title;
+            mTitleResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder title(@StringRes int titleResId) {
+            mTitle = null;
+            mTitleResId = titleResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@Nullable String message) {
+            mMessage = message;
+            mMessageResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder message(@StringRes int messageResId) {
+            mMessage = null;
+            mMessageResId = messageResId;
+            return this;
+        }
+
+        @NonNull
+        public Builder buttonText(@Nullable String text) {
+            mButtonText = text;
+            mButtonTextResId = 0;
+            return this;
+        }
+
+        @NonNull
+        public Builder buttonText(@StringRes int textResId) {
+            mButtonText = null;
+            mButtonTextResId = textResId;
+            return this;
+        }
+
+        @NonNull
+        public GenericConfirmDialog build() {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.NONE);
+            args.putString(ARG_TAG, null);
+
+            GenericConfirmDialog dialog = new GenericConfirmDialog();
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        public GenericConfirmDialog buildFromFragment(@Nullable String tag,
+                                                    @NonNull Fragment parent) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.FRAGMENT);
+            args.putString(ARG_TAG, tag);
+
+            GenericConfirmDialog dialog = new GenericConfirmDialog();
+            dialog.setTargetFragment(parent, 0);
+            dialog.setArguments(args);
+            return dialog;
+        }
+
+        @NonNull
+        public GenericConfirmDialog buildFromActivity(@Nullable String tag) {
+            Bundle args = new Bundle();
+            args.putSerializable(ARG_BUILDER, this);
+            args.putSerializable(ARG_TARGET, DialogListenerTarget.ACTIVITY);
+            args.putString(ARG_TAG, tag);
+
+            GenericConfirmDialog dialog = new GenericConfirmDialog();
+            dialog.setArguments(args);
+            return dialog;
+        }
     }
 }

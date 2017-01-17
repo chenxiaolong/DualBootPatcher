@@ -34,6 +34,8 @@
 
 #include <jni.h>
 
+#include "mbcommon/common.h"
+
 #include "mblog/android_logger.h"
 #include "mblog/logging.h"
 
@@ -46,7 +48,7 @@
 
 extern "C" {
 
-__attribute__((format(printf, 3, 4)))
+MB_PRINTF(3, 4)
 static bool throw_exception(JNIEnv *env, const char *class_name,
                             const char *fmt, ...)
 {
@@ -273,64 +275,6 @@ CLASS_METHOD(mblogSetLogcat)(JNIEnv *env, jclass clazz)
 
     mb::log::set_log_tag("libmbp");
     mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
-}
-
-JNIEXPORT jstring JNICALL
-CLASS_METHOD(readLink)(JNIEnv *env, jclass clazz, jstring jpath)
-{
-    (void) clazz;
-
-    jstring result = nullptr;
-    const char *path = nullptr;
-    size_t buf_size = 64;
-    char *buf = nullptr;
-    ssize_t n;
-
-    path = env->GetStringUTFChars(jpath, nullptr);
-    if (!path) {
-        goto done;
-    }
-
-    buf = static_cast<char *>(malloc(buf_size));
-    if (!buf) {
-        throw_exception(env, OutOfMemoryError, "Out of memory");
-        goto done;
-    }
-
-    for (;;) {
-        n = readlink(path, buf, buf_size);
-        if (n < 0) {
-            throw_exception(env, IOException,
-                            "%s: Failed to read link: %s",
-                            path, strerror(errno));
-            goto done;
-        } else if ((size_t) n == buf_size) {
-            char *new_buf = static_cast<char *>(realloc(buf, buf_size << 1));
-            if (!new_buf) {
-                throw_exception(env, OutOfMemoryError, "Out of memory");
-                goto done;
-            }
-            buf = new_buf;
-            buf_size <<= 1;
-        } else {
-            break;
-        }
-    }
-
-    // n is always less then buf_size because the buffer size is doubled when
-    // n == buf_size
-    buf[n] = '\0';
-
-    result = env->NewStringUTF(buf);
-
-done:
-    free(buf);
-
-    if (path) {
-        env->ReleaseStringUTFChars(jpath, path);
-    }
-
-    return result;
 }
 
 }

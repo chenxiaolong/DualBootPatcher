@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbp/bootimage.h"
@@ -241,7 +242,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
 
         if (path == "default.prop") {
             path = "default.recovery.prop";
-        } else if (!util::starts_with(path, "sbin/")) {
+        } else if (!mb_starts_with(path.c_str(), "sbin/")) {
             continue;
         }
 

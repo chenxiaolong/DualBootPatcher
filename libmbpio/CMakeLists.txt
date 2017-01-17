@@ -5,8 +5,6 @@ set(MBP_IO_SOURCES
     src/directory.cpp
     src/error.cpp
     src/path.cpp
-    src/private/utf8.cpp
-    src/private/filebase.cpp
     src/private/string.cpp
 )
 
@@ -16,13 +14,11 @@ if(WIN32)
         MBP_IO_SOURCES
         src/win32/delete.cpp
         src/win32/error.cpp
-        src/win32/file.cpp
     )
 elseif(ANDROID)
     list(
         APPEND
         MBP_IO_SOURCES
-        src/android/file.cpp
         src/posix/delete.cpp
     )
 else()
@@ -30,7 +26,6 @@ else()
         APPEND
         MBP_IO_SOURCES
         src/posix/delete.cpp
-        src/posix/file.cpp
     )
 endif()
 

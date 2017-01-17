@@ -21,6 +21,7 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 
 #include "mbp/edify/tokenizer.h"
@@ -376,19 +377,19 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         EdifyTokenString *token = (EdifyTokenString *)(*it);
         const std::string unescaped = token->unescapedString();
 
-        if (StringUtils::ends_with(unescaped, "reboot")) {
+        if (mb_ends_with(unescaped.c_str(), "reboot")) {
             foundReboot = true;
         }
-        if (StringUtils::ends_with(unescaped, "mount")) {
+        if (mb_ends_with(unescaped.c_str(), "mount")) {
             foundMount = true;
         }
-        if (StringUtils::ends_with(unescaped, "umount")) {
+        if (mb_ends_with(unescaped.c_str(), "umount")) {
             foundUmount = true;
         }
-        if (StringUtils::ends_with(unescaped, "/format.sh")) {
+        if (mb_ends_with(unescaped.c_str(), "/format.sh")) {
             foundFormatSh = true;
         }
-        if (StringUtils::ends_with(unescaped, "/mke2fs")) {
+        if (mb_ends_with(unescaped.c_str(), "/mke2fs")) {
             foundMke2fs = true;
         }
 
@@ -658,7 +659,7 @@ bool StandardPatcher::patchTransferList(const std::string &directory)
     lines = StringUtils::split(contents, '\n');
 
     for (auto it = lines.begin(); it != lines.end();) {
-        if (StringUtils::starts_with(*it, "erase ")) {
+        if (mb_starts_with(it->c_str(), "erase ")) {
             it = lines.erase(it);
         } else {
             ++it;

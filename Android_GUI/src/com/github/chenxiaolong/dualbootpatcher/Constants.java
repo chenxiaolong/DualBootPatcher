@@ -27,10 +27,10 @@ public final class Constants {
      */
     public static final class Defaults {
         /**
-         * Default directory for storing ROM backups.
+         * Default directory URI for storing ROM backups.
          */
-        public static final String BACKUP_DIRECTORY =
-                Environment.getExternalStorageDirectory()
+        public static final String BACKUP_DIRECTORY_URI =
+                FileUtils.FILE_SCHEME + "://" + Environment.getExternalStorageDirectory()
                         + File.separator + "MultiBoot"
                         + File.separator + "backups";
     }
@@ -39,6 +39,6 @@ public final class Constants {
      * Preference key constants.
      */
     public static final class Preferences {
-        public static final String BACKUP_DIRECTORY = "backup_directory";
+        public static final String BACKUP_DIRECTORY_URI = "backup_directory_uri";
     }
 }

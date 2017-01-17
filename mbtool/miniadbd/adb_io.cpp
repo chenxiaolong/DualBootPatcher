@@ -22,6 +22,7 @@
 #include "adb_log.h"
 #include "adb_utils.h"
 
+#include "mbcommon/string.h"
 #include "mbutil/string.h"
 
 bool SendProtocolString(int fd, const std::string& s) {
@@ -114,8 +115,15 @@ bool WriteFdExactly(int fd, const std::string& str) {
 bool WriteFdFmt(int fd, const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    std::string str = mb::util::formatv(fmt, ap);
+    char *str = mb_format_v(fmt, ap);
     va_end(ap);
 
-    return WriteFdExactly(fd, str);
+    bool ret = false;
+
+    if (str) {
+        ret = WriteFdExactly(fd, str);
+        free(str);
+    }
+
+    return ret;
 }

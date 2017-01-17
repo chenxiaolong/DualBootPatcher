@@ -47,7 +47,7 @@ namespace log
 MB_EXPORT const char * get_log_tag();
 MB_EXPORT void set_log_tag(const char *tag);
 MB_EXPORT void log_set_logger(std::shared_ptr<BaseLogger> logger);
-__attribute__((format(printf, 2, 3)))
+MB_PRINTF(2, 3)
 MB_EXPORT void log(LogLevel prio, const char *fmt, ...);
 MB_EXPORT void logv(LogLevel prio, const char *fmt, va_list ap);
 

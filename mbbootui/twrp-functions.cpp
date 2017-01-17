@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/file.h"
 #include "mbutil/reboot.h"
@@ -45,7 +46,7 @@ std::string TWFunc::get_resource_path(const std::string &res_path)
 
     if (tw_resource_path) {
         result += tw_resource_path;
-        if (!mb::util::ends_with(tw_resource_path, "/")) {
+        if (!result.empty() && result.back() != '/') {
             result += '/';
         }
         if (!res_path.empty() && res_path[0] == '/') {

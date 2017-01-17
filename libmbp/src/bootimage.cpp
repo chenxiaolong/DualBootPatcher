@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,8 +24,6 @@
 #include <cstring>
 
 #include "mblog/logging.h"
-
-#include "mbpio/file.h"
 
 #include "mbp/bootimage/androidformat.h"
 #include "mbp/bootimage/bumpformat.h"
@@ -296,26 +294,13 @@ bool BootImage::create(std::vector<unsigned char> *data) const
  */
 bool BootImage::createFile(const std::string &path)
 {
-    io::File file;
-    if (!file.open(path, io::File::OpenWrite)) {
-        LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.errorString().c_str());
-
-        m_impl->error = ErrorCode::FileOpenError;
-        return false;
-    }
-
     std::vector<unsigned char> data;
     if (!create(&data)) {
         return false;
     }
 
-    uint64_t bytesWritten;
-    if (!file.write(data.data(), data.size(), &bytesWritten)) {
-        LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.errorString().c_str());
-
-        m_impl->error = ErrorCode::FileWriteError;
+    auto error = FileUtils::writeFromMemory(path, data);
+    if (error != ErrorCode::NoError) {
         return false;
     }
 
