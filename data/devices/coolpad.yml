@@ -3,6 +3,7 @@
    id: CP8298_I00
    codenames:
      - CP8298_I00
+     - CPN3L
      - CN3L
      - Note3Lite
    architecture: arm64-v8a
@@ -33,21 +34,21 @@
        - /dev/block/mmcblk0p24
      extra:
        - /dev/block/platform/mtk-msdc.0/by-name/metadata
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
-       -/dev/block/platform/mtk-msdc.0/by-name/nvram
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
-       -/dev/block/platform/mtk-msdc.0/by-name/lk
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
-       -/dev/block/platform/mtk-msdc.0/by-name/logo
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
-       -/dev/block/platform/mtk-msdc.0/by-name/para
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
-       -/dev/block/platform/mtk-msdc.0/by-name/tee1
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
-       -/dev/block/platform/mtk-msdc.0/by-name/tee2
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
-       -/dev/block/platform/mtk-msdc.0/by-name/uboot
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
+       - /dev/block/platform/mtk-msdc.0/by-name/nvram
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
+       - /dev/block/platform/mtk-msdc.0/by-name/lk
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+       - /dev/block/platform/mtk-msdc.0/by-name/logo
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+       - /dev/block/platform/mtk-msdc.0/by-name/para
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+       - /dev/block/platform/mtk-msdc.0/by-name/tee1
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+       - /dev/block/platform/mtk-msdc.0/by-name/tee2
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+       - /dev/block/platform/mtk-msdc.0/by-name/uboot
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
        - /dev/block/mmcblk1
        - /dev/block/mmcblk1p1
  
@@ -70,6 +71,7 @@
    codenames:
      - CP8676_I02
      - CN3
+     - CPN3
      - Note3
    architecture: arm64-v8a
  
@@ -99,21 +101,21 @@
        - /dev/block/mmcblk0p24
      extra:
        - /dev/block/platform/mtk-msdc.0/by-name/metadata
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
-       -/dev/block/platform/mtk-msdc.0/by-name/nvram
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
-       -/dev/block/platform/mtk-msdc.0/by-name/lk
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
-       -/dev/block/platform/mtk-msdc.0/by-name/logo
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
-       -/dev/block/platform/mtk-msdc.0/by-name/para
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
-       -/dev/block/platform/mtk-msdc.0/by-name/tee1
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
-       -/dev/block/platform/mtk-msdc.0/by-name/tee2
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
-       -/dev/block/platform/mtk-msdc.0/by-name/uboot
-       -/dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
+       - /dev/block/platform/mtk-msdc.0/by-name/nvram
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
+       - /dev/block/platform/mtk-msdc.0/by-name/lk
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+       - /dev/block/platform/mtk-msdc.0/by-name/logo
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+       - /dev/block/platform/mtk-msdc.0/by-name/para
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+       - /dev/block/platform/mtk-msdc.0/by-name/tee1
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+       - /dev/block/platform/mtk-msdc.0/by-name/tee2
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+       - /dev/block/platform/mtk-msdc.0/by-name/uboot
+       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
        - /dev/block/mmcblk1
        - /dev/block/mmcblk1p1
  
