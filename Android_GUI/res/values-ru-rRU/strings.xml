@@ -105,7 +105,7 @@
     <!-- Message shown if the boot partition could not be detected because the device codename is
          not recognized -->
     <string name="unknown_boot_partition">Не удалось определить загрузочный раздел, так как это
-        устройство \'s codename \'%s\' не распознано.</string>
+        устройство с codename \'%s\' не распознано.</string>
 
     <!-- Dialog message shown if the images' checksums don't match with switching ROMs -->
     <string name="checksums_invalid">Контрольная сумма SHA512 для образов этой прошивки не совпадает
@@ -235,7 +235,7 @@
     <!-- Title shown in dialog asking for the installation location of a zip file -->
     <string name="in_app_flashing_dialog_installation_location">Место установки:</string>
     <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
-    <string name="in_app_flashing_dialog_verifying_zip">Проверка zip файло</string>
+    <string name="in_app_flashing_dialog_verifying_zip">Проверка zip файла</string>
     <!-- Error message shown when the selected zip file is not found -->
     <string name="in_app_flashing_error_zip_not_found">Выбранный zip файл не найден.</string>
     <!-- Error message shown when the selected zip file could not be read -->
@@ -315,7 +315,7 @@
     <!-- Backup/restore target for ROM's boot image -->
     <string name="br_target_boot">Boot image</string>
     <!-- Backup/restore target for ROM's multiboot configuration files -->
-    <string name="br_target_config">Настройеи MultiBoot</string>
+    <string name="br_target_config">Настройки MultiBoot</string>
     <!-- Toast message shown if no backup/restore targets are selected -->
     <string name="br_no_target_selected">Не выбранны объекты для восстановления/бэкапа</string>
 
