@@ -272,7 +272,9 @@ struct MbFile * mb_file_new()
 {
     struct MbFile *file = static_cast<struct MbFile *>(
             calloc(1, sizeof(struct MbFile)));
-    file->state = MbFileState::NEW;
+    if (file) {
+        file->state = MbFileState::NEW;
+    }
     return file;
 }
 
