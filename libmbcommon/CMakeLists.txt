@@ -13,6 +13,7 @@ set(MBCOMMON_SOURCES
     src/file/callbacks.cpp
     src/file/fd.cpp
     src/file/filename.cpp
+    src/file/memory.cpp
     src/file/posix.cpp
     src/file/vtable.cpp
     src/file.cpp
@@ -27,6 +28,7 @@ set(MBCOMMON_TESTS_SOURCES
     # Tests
     tests/file/test_callbacks.cpp
     tests/file/test_fd.cpp
+    tests/file/test_memory.cpp
     tests/file/test_posix.cpp
     tests/test_endian.cpp
     tests/test_file.cpp
