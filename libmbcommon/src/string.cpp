@@ -97,8 +97,8 @@ void * _mb_mempcpy(void *dest, const void *src, size_t n)
 #endif
 }
 
-void * _mb_memmem(const void *haystack, size_t haystacklen,
-                  const void *needle, size_t needlelen)
+void * mb_memmem(const void *haystack, size_t haystacklen,
+                 const void *needle, size_t needlelen)
 {
     return memmem(haystack, haystacklen, needle, needlelen);
 }
@@ -505,7 +505,7 @@ int mb_mem_replace(void **mem, size_t *mem_size,
     }
 
     while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
-            _mb_memmem(ptr, ptr_remain, from, from_size)))) {
+            mb_memmem(ptr, ptr_remain, from, from_size)))) {
         // Resize buffer to accomodate data
         if (buf_size >= SIZE_MAX - (ptr - base_ptr)
                 || buf_size + (ptr - base_ptr) >= SIZE_MAX - to_size) {
