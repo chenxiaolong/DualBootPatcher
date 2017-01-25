@@ -58,10 +58,13 @@
 #if defined(__GNUC__) && defined(__clang__)
 #  define MB_PRINTF(fmt_arg, var_arg) \
     __attribute__((format(printf, fmt_arg, var_arg)))
+#  define MB_SCANF(fmt_arg, var_arg) \
+    __attribute__((format(scanf, fmt_arg, var_arg)))
 #  define MB_UNUSED __attribute__((unused))
 #  define MB_NO_RETURN __attribute__((noreturn))
 #else
 #  define MB_PRINTF(fmtarg, firstvararg)
+#  define MB_SCANF(fmtarg, firstvararg)
 #  define MB_UNUSED
 #  define MB_NO_RETURN
 #endif
