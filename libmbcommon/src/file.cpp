@@ -282,7 +282,7 @@ struct MbFile * mb_file_new()
  * \brief Free an MbFile handle.
  *
  * If the handle has not been closed, it will be closed and the result of
- * mb_file_free() will be returned. Otherwise, MB_FILE_OK will be returned.
+ * mb_file_close() will be returned. Otherwise, #MB_FILE_OK will be returned.
  * Regardless of the return value, the handle will always be freed and should
  * no longer be used.
  *
@@ -474,20 +474,15 @@ int mb_file_open(struct MbFile *file)
  *
  * \return
  *   * #MB_FILE_OK if no error was encountered when closing the handle.
- *   * \<= #MB_FILE_WARN if the handle is opened and mb_file_close() returns an
- *     error
+ *   * \<= #MB_FILE_WARN if the handle is opened and an error occurs while
+ *     closing the file
  */
 int mb_file_close(struct MbFile *file)
 {
     int ret = MB_FILE_OK;
 
-    // Allow any state since mb_file_free() will call mb_file_close()
-    ENSURE_STATE(file, MbFileState::ANY);
-
     // Avoid double-closing or closing nothing
     if (!(file->state & (MbFileState::CLOSED | MbFileState::NEW))) {
-        file->state = MbFileState::CLOSED;
-
         if (file->close_cb) {
             ret = file->close_cb(file, file->cb_userdata);
         }
@@ -497,6 +492,8 @@ int mb_file_close(struct MbFile *file)
         // FATAL are the same anyway, aside from the fact that files can be
         // closed in the latter state.
     }
+
+    file->state = MbFileState::CLOSED;
 
     return ret;
 }
