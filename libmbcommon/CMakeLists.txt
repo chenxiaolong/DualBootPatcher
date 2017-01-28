@@ -17,6 +17,7 @@ set(MBCOMMON_SOURCES
     src/file/posix.cpp
     src/file/vtable.cpp
     src/file.cpp
+    src/file_util.cpp
     src/locale.cpp
     src/string.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
@@ -32,6 +33,7 @@ set(MBCOMMON_TESTS_SOURCES
     tests/file/test_posix.cpp
     tests/test_endian.cpp
     tests/test_file.cpp
+    tests/test_file_util.cpp
     tests/test_locale.cpp
     tests/test_string.cpp
 )
