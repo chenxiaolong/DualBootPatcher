@@ -81,6 +81,16 @@ static int posix_open_cb(struct MbFile *file, void *userdata)
             mb_file_set_error(file, -EISDIR, "Cannot open directory");
             return MB_FILE_FAILED;
         }
+
+        // Enable seekability based on file type because lseek(fd, 0, SEEK_CUR)
+        // does not always fail on non-seekable file descriptors
+        if (S_ISREG(sb.st_mode)
+#ifdef __linux__
+                || S_ISBLK(sb.st_mode)
+#endif
+        ) {
+            ctx->can_seek = true;
+        }
     }
 
     return MB_FILE_OK;
@@ -148,6 +158,12 @@ static int posix_seek_cb(struct MbFile *file, void *userdata,
 {
     PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
     off64_t old_pos, new_pos;
+
+    if (!ctx->can_seek) {
+        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
+                          "Seek not supported: %s", strerror(errno));
+        return MB_FILE_UNSUPPORTED;
+    }
 
     // Get current file position
     old_pos = ctx->vtable.fn_ftello(ctx->vtable.userdata, ctx->fp);
