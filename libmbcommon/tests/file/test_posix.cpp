@@ -658,6 +658,23 @@ TEST_F(FilePosixTest, SeekSuccess)
             return -1;
         }
     };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
+    };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
@@ -690,6 +707,23 @@ TEST_F(FilePosixTest, SeekSuccessLargeFile)
         ++test->_n_ftello;
 
         return LFS_SIZE;
+    };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
     };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
@@ -726,6 +760,23 @@ TEST_F(FilePosixTest, SeekFseekFailed)
 
         return 0;
     };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
+    };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
@@ -756,6 +807,23 @@ TEST_F(FilePosixTest, SeekFtellFailed)
 
         errno = EIO;
         return -1;
+    };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
     };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
@@ -792,6 +860,23 @@ TEST_F(FilePosixTest, SeekSecondFtellFailed)
             errno = EIO;
             return -1;
         }
+    };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
     };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
@@ -837,6 +922,23 @@ TEST_F(FilePosixTest, SeekSecondFtellFatal)
             return -1;
         }
     };
+    _vtable.fn_fileno = [](void *userdata, FILE *stream) -> int {
+        (void) stream;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fileno;
+
+        return 0;
+    };
+    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) {
+        (void) fildes;
+
+        FilePosixTest *test = static_cast<FilePosixTest *>(userdata);
+        ++test->_n_fstat;
+
+        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+        return 0;
+    };
 
     ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
 
@@ -845,6 +947,14 @@ TEST_F(FilePosixTest, SeekSecondFtellFatal)
     // fseeko will be called a second time to restore the original position
     ASSERT_EQ(_n_fseeko, 2);
     ASSERT_EQ(_n_ftello, 2);
+}
+
+TEST_F(FilePosixTest, SeekUnsupported)
+{
+    ASSERT_EQ(_mb_file_open_FILE(&_vtable, _file, _fp, true), MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_UNSUPPORTED);
+    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_UNSUPPORTED);
 }
 
 TEST_F(FilePosixTest, TruncateSuccess)

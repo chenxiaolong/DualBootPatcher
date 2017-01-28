@@ -39,6 +39,8 @@ struct PosixFileCtx
     const char *mode;
 #endif
 
+    bool can_seek;
+
     SysVtable vtable;
 };
 
