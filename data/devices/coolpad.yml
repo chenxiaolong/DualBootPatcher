@@ -1,4 +1,7 @@
-  codenames:
+
+ -  name: Coolpad Note 3 Lite
+   id: CP8298_I00
+   codenames:
      - CP8298_I00
      - CN3L
      - CPN3L
@@ -67,6 +70,8 @@
      theme: portrait_hdpi
 
 
+ -  name: Coolpad Note 3
+   id: CP8676_I02
    codenames:
      - CP8676_I02
      - CN3
