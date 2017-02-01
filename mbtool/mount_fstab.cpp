@@ -540,7 +540,9 @@ static bool mount_extsd_fstab_entries(const std::vector<util::fstab_rec> &extsd_
                              info.major, info.minor, info.partition_name.c_str(),
                              info.partition_num, info.path.c_str());
 
-                        return try_extsd_mount(info.path.c_str(), mount_point);
+                        if (try_extsd_mount(info.path.c_str(), mount_point)) {
+                            return true;
+                        }
                     }
                 }
             }
