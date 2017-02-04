@@ -91,6 +91,7 @@
   codenames:
     - NXT
     - next
+    - HWNXT
   architecture: arm64-v8a
 
   block_devs:
