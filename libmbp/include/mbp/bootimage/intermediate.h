@@ -46,8 +46,6 @@ struct BootImageIntermediate
     std::vector<unsigned char> iplImage;      // |         |      |      |     | X    |
     std::vector<unsigned char> rpmImage;      // |         |      |      |     | X    |
     std::vector<unsigned char> appsblImage;   // |         |      |      |     | X    |
-    std::vector<unsigned char> sonySinImage;  // |         |      |      |     | X    |
-    std::vector<unsigned char> sonySinHdr;    // |         |      |      |     | X    |
     // Raw header values                         |---------|------|------|-----|------|
     uint32_t hdrKernelSize = 0;               // | X       | X    | X    | X   |      |
     uint32_t hdrRamdiskSize = 0;              // | X       | X    | X    | X   |      |

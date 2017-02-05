@@ -121,10 +121,6 @@ public class LibMbp {
         static native void mbp_bootimage_set_rpm_image(CBootImage bi, Pointer data, int size);
         static native void mbp_bootimage_appsbl_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
         static native void mbp_bootimage_set_appsbl_image(CBootImage bi, Pointer data, int size);
-        static native void mbp_bootimage_sin_image(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
-        static native void mbp_bootimage_set_sin_image(CBootImage bi, Pointer data, int size);
-        static native void mbp_bootimage_sin_header(CBootImage bi, PointerByReference dataReturn, /* size_t */ IntByReference sizeReturn);
-        static native void mbp_bootimage_set_sin_header(CBootImage bi, Pointer data, int size);
         static native boolean mbp_bootimage_equals(CBootImage lhs, CBootImage rhs);
         // END: cbootimage.h
 
@@ -773,25 +769,6 @@ public class LibMbp {
             Memory mem = new Memory(data.length);
             mem.write(0, data, 0, data.length);
             CWrapper.mbp_bootimage_set_appsbl_image(mCBootImage, mem, data.length);
-        }
-
-        public byte[] getSinImage() {
-            validate(mCBootImage, BootImage.class, "getSinImage");
-            PointerByReference pData = new PointerByReference();
-            IntByReference pSize = new IntByReference();
-            CWrapper.mbp_bootimage_sin_image(mCBootImage, pData, pSize);
-            Pointer data = pData.getValue();
-            int size = pSize.getValue();
-            return data.getByteArray(0, size);
-        }
-
-        public void setSinImage(byte[] data) {
-            validate(mCBootImage, BootImage.class, "setSinImage", data.length);
-            ensureNotNull(data);
-
-            Memory mem = new Memory(data.length);
-            mem.write(0, data, 0, data.length);
-            CWrapper.mbp_bootimage_set_sin_image(mCBootImage, mem, data.length);
         }
     }
 
