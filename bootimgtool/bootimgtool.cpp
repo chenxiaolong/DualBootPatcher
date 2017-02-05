@@ -88,8 +88,6 @@ static const char UnpackUsage[] =
     "  ipl             Ipl image                                     [    S]\n"
     "  rpm             Rpm image                                     [    S]\n"
     "  appsbl          Appsbl image                                  [    S]\n"
-    "  sin             Sin image                                     [    S]\n"
-    "  sinhdr          Sin header                                    [    S]\n"
     "\n"
     "Legend:\n"
     "  [A B L M S]\n"
@@ -167,8 +165,6 @@ static const char PackUsage[] =
     "  ipl              Ipl image                                     [    S]\n"
     "  rpm              Rpm image                                     [    S]\n"
     "  appsbl           Appsbl image                                  [    S]\n"
-    "  sin              Sin image                                     [    S]\n"
-    "  sinhdr           Sin header                                    [    S]\n"
     "\n"
     "Legend:\n"
     "  [A B L M S]\n"
@@ -384,8 +380,6 @@ bool unpack_main(int argc, char *argv[])
     std::string path_ipl;
     std::string path_rpm;
     std::string path_appsbl;
-    std::string path_sin;
-    std::string path_sinhdr;
 
     // Arguments with no short options
     enum unpack_options : int
@@ -411,8 +405,6 @@ bool unpack_main(int argc, char *argv[])
         OPT_OUTPUT_IPL            = 10000 + 19,
         OPT_OUTPUT_RPM            = 10000 + 20,
         OPT_OUTPUT_APPSBL         = 10000 + 21,
-        OPT_OUTPUT_SIN            = 10000 + 22,
-        OPT_OUTPUT_SINHDR         = 10000 + 23
     };
 
     static struct option long_options[] = {
@@ -442,8 +434,6 @@ bool unpack_main(int argc, char *argv[])
         {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
         {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
         {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
-        {"output-sin",            required_argument, 0, OPT_OUTPUT_SIN},
-        {"output-sinhdr",         required_argument, 0, OPT_OUTPUT_SINHDR},
         {0, 0, 0, 0}
     };
 
@@ -475,8 +465,6 @@ bool unpack_main(int argc, char *argv[])
         case OPT_OUTPUT_IPL:            path_ipl = optarg;            break;
         case OPT_OUTPUT_RPM:            path_rpm = optarg;            break;
         case OPT_OUTPUT_APPSBL:         path_appsbl = optarg;         break;
-        case OPT_OUTPUT_SIN:            path_sin = optarg;            break;
-        case OPT_OUTPUT_SINHDR:         path_sinhdr = optarg;         break;
 
         case 'h':
             fprintf(stdout, UnpackUsage);
@@ -551,10 +539,6 @@ bool unpack_main(int argc, char *argv[])
         path_rpm = io::pathJoin({output_dir, prefix + "rpm"});
     if (path_appsbl.empty())
         path_appsbl = io::pathJoin({output_dir, prefix + "appsbl"});
-    if (path_sin.empty())
-        path_sin = io::pathJoin({output_dir, prefix + "sin"});
-    if (path_sinhdr.empty())
-        path_sinhdr = io::pathJoin({output_dir, prefix + "sinhdr"});
 
     if (!io::createDirectories(output_dir)) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
@@ -596,8 +580,6 @@ bool unpack_main(int argc, char *argv[])
     PRINT_IF(SUPPORTS_IPL_IMAGE,       "- ipl:            %s\n", path_ipl.c_str());
     PRINT_IF(SUPPORTS_RPM_IMAGE,       "- rpm:            %s\n", path_rpm.c_str());
     PRINT_IF(SUPPORTS_APPSBL_IMAGE,    "- appsbl:         %s\n", path_appsbl.c_str());
-    PRINT_IF(SUPPORTS_SONY_SIN_IMAGE,  "- sin:            %s\n", path_sin.c_str());
-    PRINT_IF(SUPPORTS_SONY_SIN_HEADER, "- sinhdr:         %s\n", path_sinhdr.c_str());
 #undef PRINT_IF
 
     /* Extract all the stuff! */
@@ -728,16 +710,6 @@ bool unpack_main(int argc, char *argv[])
         WRITE_FILE_DATA(path_appsbl, bi.appsblImage());
     }
 
-    // Write sin image
-    if (supportMask & SUPPORTS_SONY_SIN_IMAGE) {
-        WRITE_FILE_DATA(path_sin, bi.sinImage());
-    }
-
-    // Write sinhdr image
-    if (supportMask & SUPPORTS_SONY_SIN_HEADER) {
-        WRITE_FILE_DATA(path_sinhdr, bi.sinHeader());
-    }
-
 #undef WRITE_FILE_DATA
 
     printf("\nDone\n");
@@ -774,8 +746,6 @@ bool pack_main(int argc, char *argv[])
     std::string path_ipl;
     std::string path_rpm;
     std::string path_appsbl;
-    std::string path_sin;
-    std::string path_sinhdr;
     // Values
     std::unordered_map<int, bool> values;
     std::string cmdline;
@@ -800,8 +770,6 @@ bool pack_main(int argc, char *argv[])
     std::vector<unsigned char> ipl_image;
     std::vector<unsigned char> rpm_image;
     std::vector<unsigned char> appsbl_image;
-    std::vector<unsigned char> sin_image;
-    std::vector<unsigned char> sin_header;
     mbp::BootImage::Type type = mbp::BootImage::Type::Android;
 
     // Arguments with no short options
@@ -830,8 +798,6 @@ bool pack_main(int argc, char *argv[])
         OPT_INPUT_IPL            = 10000 + 20,
         OPT_INPUT_RPM            = 10000 + 21,
         OPT_INPUT_APPSBL         = 10000 + 22,
-        OPT_INPUT_SIN            = 10000 + 23,
-        OPT_INPUT_SINHDR         = 10000 + 24,
         // Values
         OPT_VALUE_CMDLINE        = 20000 + 1,
         OPT_VALUE_BOARD          = 20000 + 2,
@@ -876,8 +842,6 @@ bool pack_main(int argc, char *argv[])
         {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
         {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
         {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
-        {"input-sin",            required_argument, 0, OPT_INPUT_SIN},
-        {"input-sinhdr",         required_argument, 0, OPT_INPUT_SINHDR},
         // Value arguments
         {"value-cmdline",        required_argument, 0, OPT_VALUE_CMDLINE},
         {"value-board",          required_argument, 0, OPT_VALUE_BOARD},
@@ -923,8 +887,6 @@ bool pack_main(int argc, char *argv[])
         case OPT_INPUT_IPL:            path_ipl = optarg;            break;
         case OPT_INPUT_RPM:            path_rpm = optarg;            break;
         case OPT_INPUT_APPSBL:         path_appsbl = optarg;         break;
-        case OPT_INPUT_SIN:            path_sin = optarg;            break;
-        case OPT_INPUT_SINHDR:         path_sinhdr = optarg;         break;
 
         case OPT_VALUE_CMDLINE:
             path_cmdline.clear();
@@ -1822,48 +1784,6 @@ bool pack_main(int argc, char *argv[])
     } else {
         if (!path_appsbl.empty())
             printf(not_supported, "--input-appsbl");
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Sony SIN! image
-    ////////////////////////////////////////////////////////////////////////////
-
-    if (support_mask & SUPPORTS_SONY_SIN_IMAGE) {
-        if (path_sin.empty())
-            path_sin = io::pathJoin({input_dir, prefix + "sin"});
-
-        printf(fmt_path, "sin", path_sin.c_str());
-
-        if (!read_file_data(path_sin, &sin_image) && errno != ENOENT) {
-            fprintf(stderr, "%s: %s\n", path_sin.c_str(), strerror(errno));
-            return false;
-        }
-
-        bi.setSinImage(std::move(sin_image));
-    } else {
-        if (!path_sin.empty())
-            printf(not_supported, "--input-sin");
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    // Sony SIN! header
-    ////////////////////////////////////////////////////////////////////////////
-
-    if (support_mask & SUPPORTS_SONY_SIN_HEADER) {
-        if (path_sinhdr.empty())
-            path_sinhdr = io::pathJoin({input_dir, prefix + "sinhdr"});
-
-        printf(fmt_path, "sinhdr", path_sinhdr.c_str());
-
-        if (!read_file_data(path_sinhdr, &sin_header) && errno != ENOENT) {
-            fprintf(stderr, "%s: %s\n", path_sinhdr.c_str(), strerror(errno));
-            return false;
-        }
-
-        bi.setSinHeader(std::move(sin_header));
-    } else {
-        if (!path_sinhdr.empty())
-            printf(not_supported, "--input-sinhdr");
     }
 
     // Create boot image

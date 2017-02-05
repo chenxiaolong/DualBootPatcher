@@ -44,6 +44,4 @@
 #define SUPPORTS_IPL_IMAGE               0x20000llu
 #define SUPPORTS_RPM_IMAGE               0x40000llu
 #define SUPPORTS_APPSBL_IMAGE            0x80000llu
-#define SUPPORTS_SONY_SIN_IMAGE         0x100000llu
-#define SUPPORTS_SONY_SIN_HEADER        0x200000llu
-#define SUPPORTS_ENTRYPOINT             0x400000llu
+#define SUPPORTS_ENTRYPOINT             0x100000llu
