@@ -42,4 +42,7 @@ MB_EXPORT int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
                              MbFileSearchResultCallback result_cb,
                              void *userdata);
 
+MB_EXPORT int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
+                           uint64_t size, uint64_t *size_moved);
+
 MB_END_C_DECLS
