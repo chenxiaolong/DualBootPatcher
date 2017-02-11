@@ -25,7 +25,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "mbcommon/string.h"
+#include "mbcommon/libc/string.h"
 
 #define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
 

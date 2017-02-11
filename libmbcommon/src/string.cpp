@@ -30,19 +30,13 @@
 #  include <windows.h>
 #endif
 
-#ifndef __GLIBC__
-#  include "mbcommon/external/musl/memmem.h"
-#endif
-
 #include "mbcommon/string_p.h"
 #include "mbcommon/locale.h"
 
+#include "mbcommon/libc/string.h"
+
 #ifdef _WIN32
 #  define strncasecmp _strnicmp
-#endif
-
-#ifndef __GLIBC__
-#  define memmem musl_memmem
 #endif
 
 /*!
@@ -95,12 +89,6 @@ void * _mb_mempcpy(void *dest, const void *src, size_t n)
 #else
     return mempcpy(dest, src, n);
 #endif
-}
-
-void * mb_memmem(const void *haystack, size_t haystacklen,
-                 const void *needle, size_t needlelen)
-{
-    return memmem(haystack, haystacklen, needle, needlelen);
 }
 
 // No wide-character version of the format functions is provided because it's
