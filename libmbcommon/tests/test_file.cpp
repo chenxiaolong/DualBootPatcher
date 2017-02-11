@@ -498,6 +498,17 @@ TEST_F(FileTest, OpenNoCallback)
     ASSERT_EQ(_n_open, 0);
 }
 
+TEST_F(FileTest, CloseNewFile)
+{
+    ASSERT_EQ(_file->state, MbFileState::NEW);
+
+    set_all_callbacks();
+
+    ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
+    ASSERT_EQ(_file->state, MbFileState::CLOSED);
+    ASSERT_EQ(_n_close, 0);
+}
+
 TEST_F(FileTest, CloseFileTwice)
 {
     ASSERT_EQ(_file->state, MbFileState::NEW);

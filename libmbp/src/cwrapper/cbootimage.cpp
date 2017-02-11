@@ -656,34 +656,6 @@ void mbp_bootimage_set_appsbl_image(CBootImage *bootImage,
     bi->setAppsblImageC(data, size);
 }
 
-void mbp_bootimage_sin_image(const CBootImage *bootImage,
-                             const unsigned char **data, size_t *size)
-{
-    CCAST(bootImage);
-    bi->sinImageC(data, size);
-}
-
-void mbp_bootimage_set_sin_image(CBootImage *bootImage,
-                                 const unsigned char *data, size_t size)
-{
-    CAST(bootImage);
-    bi->setSinImageC(data, size);
-}
-
-void mbp_bootimage_sin_header(const CBootImage *bootImage,
-                              const unsigned char **data, size_t *size)
-{
-    CCAST(bootImage);
-    bi->sinHeaderC(data, size);
-}
-
-void mbp_bootimage_set_sin_header(CBootImage *bootImage,
-                                  const unsigned char *data, size_t size)
-{
-    CAST(bootImage);
-    bi->setSinHeaderC(data, size);
-}
-
 bool mbp_bootimage_equals(CBootImage *lhs, CBootImage *rhs)
 {
     const mbp::BootImage *biLhs = reinterpret_cast<const mbp::BootImage *>(lhs);

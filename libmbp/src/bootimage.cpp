@@ -897,62 +897,6 @@ void BootImage::setAppsblImageC(const unsigned char *data, std::size_t size)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Sony SIN! image
-////////////////////////////////////////////////////////////////////////////////
-
-const std::vector<unsigned char> & BootImage::sinImage() const
-{
-    return m_impl->i10e.sonySinImage;
-}
-
-void BootImage::setSinImage(std::vector<unsigned char> data)
-{
-    m_impl->i10e.sonySinImage = std::move(data);
-}
-
-void BootImage::sinImageC(const unsigned char **data, std::size_t *size) const
-{
-    *data = m_impl->i10e.sonySinImage.data();
-    *size = m_impl->i10e.sonySinImage.size();
-}
-
-void BootImage::setSinImageC(const unsigned char *data, std::size_t size)
-{
-    m_impl->i10e.sonySinImage.clear();
-    m_impl->i10e.sonySinImage.shrink_to_fit();
-    m_impl->i10e.sonySinImage.resize(size);
-    std::memcpy(m_impl->i10e.sonySinImage.data(), data, size);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Sony SIN! header
-////////////////////////////////////////////////////////////////////////////////
-
-const std::vector<unsigned char> & BootImage::sinHeader() const
-{
-    return m_impl->i10e.sonySinHdr;
-}
-
-void BootImage::setSinHeader(std::vector<unsigned char> data)
-{
-    m_impl->i10e.sonySinHdr = std::move(data);
-}
-
-void BootImage::sinHeaderC(const unsigned char **data, std::size_t *size) const
-{
-    *data = m_impl->i10e.sonySinHdr.data();
-    *size = m_impl->i10e.sonySinHdr.size();
-}
-
-void BootImage::setSinHeaderC(const unsigned char *data, std::size_t size)
-{
-    m_impl->i10e.sonySinHdr.clear();
-    m_impl->i10e.sonySinHdr.shrink_to_fit();
-    m_impl->i10e.sonySinHdr.resize(size);
-    std::memcpy(m_impl->i10e.sonySinHdr.data(), data, size);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 bool BootImage::operator==(const BootImage &other) const
 {
@@ -973,8 +917,6 @@ bool BootImage::operator==(const BootImage &other) const
             && m_impl->i10e.iplImage == other.m_impl->i10e.iplImage
             && m_impl->i10e.rpmImage == other.m_impl->i10e.rpmImage
             && m_impl->i10e.appsblImage == other.m_impl->i10e.appsblImage
-            && m_impl->i10e.sonySinImage == other.m_impl->i10e.sonySinImage
-            && m_impl->i10e.sonySinHdr == other.m_impl->i10e.sonySinHdr
             // Header's integral values
             && m_impl->i10e.hdrKernelSize == other.m_impl->i10e.hdrKernelSize
             && m_impl->i10e.kernelAddr == other.m_impl->i10e.kernelAddr
