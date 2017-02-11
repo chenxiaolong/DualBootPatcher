@@ -130,7 +130,8 @@
      cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
      graphics_backends:
        - fbdev
-     theme: portrait_hdpi
+     theme: portrait_hdpi 
+     
       
  - name: Coolpad Note 3 Plus
    id: CP8676_I03
