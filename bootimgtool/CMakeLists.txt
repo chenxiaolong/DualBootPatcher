@@ -1,63 +1,82 @@
-if(${MBP_BUILD_TARGET} STREQUAL desktop
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
-    set(BOOTIMGTOOL_SOURCES
-        bootimgtool.cpp
-    )
+set(BOOTIMGTOOL_SOURCES
+    bootimgtool.cpp
+)
 
-    add_executable(bootimgtool ${BOOTIMGTOOL_SOURCES})
+set(variants)
 
-    if (${MBP_BUILD_TARGET} STREQUAL desktop)
-        target_compile_definitions(
-            bootimgtool
-            PRIVATE
-            -DMB_DYNAMIC_LINK
-        )
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
+    list(APPEND variants static)
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
+    list(APPEND variants shared)
+endif()
 
-        target_link_libraries(
-            bootimgtool
-            mbp-shared
-            mbpio-static
-            mbcommon-shared
-        )
-    else()
-        target_link_libraries(
-            bootimgtool
-            mbp-static
-            mbpio-static
-            mblog-static
-            mbcommon-static
-        )
+foreach(variant ${variants})
+    set(bin_target bootimgtool-${variant})
+    set(obj_target ${bin_target}-obj)
 
-        set_target_properties(
-            bootimgtool
-            PROPERTIES
-            LINK_FLAGS "-static"
-            LINK_SEARCH_START_STATIC ON
-        )
+    # Build objects
+    add_library(${obj_target} OBJECT ${BOOTIMGTOOL_SOURCES})
+
+    # Win32 DLL import
+    if(${variant} STREQUAL shared)
+        target_compile_definitions(${obj_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
+    # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            bootimgtool
+            ${obj_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
 
-    # Set rpath for portable build
-    if (${MBP_PORTABLE})
+    # Build binary
+    add_executable(${bin_target} $<TARGET_OBJECTS:${obj_target}>)
+
+    # Set binary name
+    set_target_properties(${bin_target} PROPERTIES OUTPUT_NAME bootimgtool)
+
+    # Link dependencies
+    if(${variant} STREQUAL shared)
+        target_link_libraries(
+            ${bin_target}
+            mbbootimg-${variant}
+            mbpio-static
+            mbcommon-${variant}
+        )
+
+        # Set rpath for portable build
+        if (${MBP_PORTABLE})
+            set_target_properties(
+                ${bin_target}
+                PROPERTIES
+                BUILD_WITH_INSTALL_RPATH OFF
+                INSTALL_RPATH "\$ORIGIN/lib"
+            )
+        endif()
+    elseif(${variant} STREQUAL static)
+        target_link_libraries(
+            ${bin_target}
+            mbbootimg-${variant}
+            mbpio-${variant}
+            mbcommon-${variant}
+            ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        )
+
         set_target_properties(
-            bootimgtool
+            ${bin_target}
             PROPERTIES
-            BUILD_WITH_INSTALL_RPATH OFF
-            INSTALL_RPATH "\$ORIGIN/lib"
+            LINK_FLAGS "-static"
+            LINK_SEARCH_START_STATIC ON
         )
     endif()
 
+    # Install binary
     install(
-        TARGETS bootimgtool
+        TARGETS ${bin_target}
         RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
         COMPONENT Applications
     )
-endif()
+endforeach()
