@@ -55,8 +55,6 @@ uint64_t SonyElfFormat::typeSupportMask()
             | SUPPORTS_IPL_IMAGE
             | SUPPORTS_RPM_IMAGE
             | SUPPORTS_APPSBL_IMAGE
-            | SUPPORTS_SONY_SIN_IMAGE
-            | SUPPORTS_SONY_SIN_HEADER
             | SUPPORTS_ENTRYPOINT;
 }
 
@@ -199,29 +197,7 @@ bool SonyElfFormat::loadImage(const unsigned char *data, std::size_t size)
             mI10e->appsblImage.assign(begin, end);
             mI10e->appsblAddr = phdr->p_vaddr;
         } else if (phdr->p_type == SONY_E_TYPE_SIN) {
-            // There are two extra bytes unaccounted for by p_filesz and
-            // p_memsz. I don't know if they're significant or not, but they
-            // exist in every boot image I've seen.
-
-            if (phdr->p_offset + phdr->p_memsz + 2 > size) {
-                LOGW("Trailing two bytes after \"SIN!\" image are truncated");
-            } else if (*end == '\0' && *(end + 1) == '\0') {
-                LOGW("Trailing two bytes after \"SIN!\" image are zero");
-            } else {
-                end += 2;
-            }
-
-            mI10e->sonySinImage.assign(begin, end);
-
-            // Save header
-            mI10e->sonySinHdr.resize(sizeof(Sony_Elf32_Phdr));
-            std::memcpy(mI10e->sonySinHdr.data(), phdr,
-                        sizeof(Sony_Elf32_Phdr));
-
-            // Clear offset to allow unique comparison
-            Sony_Elf32_Phdr *sinPhdr = reinterpret_cast<Sony_Elf32_Phdr *>(
-                    mI10e->sonySinHdr.data());
-            sinPhdr->p_offset = 0;
+            // Ignore
         } else {
             LOGE("Invalid type and/or flags in ELF32 program segment header %u", i);
             return false;
@@ -244,12 +220,10 @@ bool SonyElfFormat::createImage(std::vector<unsigned char> *dataOut)
     bool haveIpl = !mI10e->iplImage.empty();
     bool haveRpm = !mI10e->rpmImage.empty();
     bool haveAppsbl = !mI10e->appsblImage.empty();
-    bool haveSin = !mI10e->sonySinImage.empty() && !mI10e->sonySinHdr.empty();
 
     phnum += haveKernel;
     phnum += haveRamdisk;
     phnum += haveCmdline;
-    phnum += haveSin;
 
     Elf32_Addr entrypoint = mI10e->hdrEntrypoint;
     if (entrypoint == 0 && haveKernel) {
@@ -394,41 +368,6 @@ bool SonyElfFormat::createImage(std::vector<unsigned char> *dataOut)
 
         unsigned char *phdrPtr = reinterpret_cast<unsigned char *>(&phdr);
         data.insert(data.end(), phdrPtr, phdrPtr + sizeof(Sony_Elf32_Phdr));
-    }
-
-    // Write sin header and image
-    if (haveSin) {
-        if (mI10e->sonySinHdr.size() != sizeof(Sony_Elf32_Phdr)) {
-            LOGE("The specified sin header is not %" MB_PRIzu " bytes",
-                 sizeof(Sony_Elf32_Phdr));
-            return false;
-        }
-
-        Sony_Elf32_Phdr phdr;
-        std::memcpy(&phdr, mI10e->sonySinHdr.data(), sizeof(Sony_Elf32_Phdr));
-        // The sin image directly follows the phdrs
-        phdr.p_offset = sizeof(Sony_Elf32_Ehdr)
-                + phnum * sizeof(Sony_Elf32_Phdr);
-
-        if (phdr.p_filesz + 2 == mI10e->sonySinImage.size()) {
-            LOGI("The sin image contains the two unidentified trailing bytes");
-        } else if (phdr.p_filesz != mI10e->sonySinImage.size()) {
-            LOGE("The sin image size does not match the size in the phdr");
-            return false;
-        }
-
-        if (phdr.p_offset + phdr.p_filesz >= 4096) {
-            LOGE("The sin image does not fit within the first 4096 bytes");
-            return false;
-        }
-
-        // Write header
-        unsigned char *phdrPtr = reinterpret_cast<unsigned char *>(&phdr);
-        data.insert(data.end(), phdrPtr, phdrPtr + sizeof(Sony_Elf32_Phdr));
-
-        // Write data
-        data.insert(data.end(),
-                    mI10e->sonySinImage.begin(), mI10e->sonySinImage.end());
     }
 
     // Pad to 4096 bytes

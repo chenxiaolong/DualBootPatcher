@@ -25,7 +25,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "mbcommon/string.h"
+#include "mbcommon/libc/string.h"
 
 #define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
 
@@ -37,8 +37,10 @@
 /*!
  * \typedef MbFileSearchResultCallback
  *
- * \note Do not perform any operations on \p file. It is provided only for the
- *       purposes of setting an error message.
+ * \note The file position must not change after a successful return of this
+ *       callback. If file operations need to be performed, save the file
+ *       position beforehand with mb_file_seek() and restore it afterwards. Note
+ *       that the file position is unlikely to match \p offset.
  *
  * \param file MbFile handle
  * \param offset Offset of match
@@ -230,6 +232,10 @@ int mb_file_read_discard(struct MbFile *file, uint64_t size,
  * \param max_matches Maximum number of matches or -1 to find all matches
  * \param result_cb Callback to invoke upon finding a match
  * \param userdata User callback data
+ *
+ * \return
+ *   * #MB_FILE_OK if the search completes successfully
+ *   * \<= #MB_FILE_WARN if an error occurs
  */
 int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
                    size_t bsize, const void *pattern,
@@ -394,6 +400,138 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
 done:
     free(buf);
     return ret;
+}
+
+/*!
+ * \brief Move data in file
+ *
+ * This function is equivalent to `memmove()`, except it operates on a MbFile
+ * handle. The source and destination regions can overlap. In the degenerate
+ * case where \p src == \p dest or \p size == 0, no operation will be performed,
+ * but the function will return #MB_BI_OK and set \p size_moved accordingly.
+ *
+ * \note This function is very seek-heavy and may be slow if the handle cannot
+ *       seek efficiently. It will perform two seeks per loop interation. Each
+ *       iteration moves up to 10240 bytes.
+ *
+ * \note If \p *size_moved is less than \p size, then the *first* \p *size_moved
+ *       bytes have been copied from offset \p src to offset \p dest. This is
+ *       true even if \p src \< \p dest, resulting in a backwards copy.
+ *
+ * \param[in] file MbFile handle
+ * \param[in] src Source offset
+ * \param[in] dest Destination offset
+ * \param[in] size Size of data to move
+ * \param[out] size_moved Pointer to store size of data that is moved
+ *
+ * \return
+ *   * #MB_FILE_OK if the data is successfully moved
+ *   * \<= #MB_FILE_WARN if an error occurs
+ */
+int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
+                 uint64_t size, uint64_t *size_moved)
+{
+    char buf[10240];
+    size_t n_read;
+    size_t n_written;
+    int ret;
+
+    // Check if we need to do anything
+    if (src == dest || size == 0) {
+        *size_moved = size;
+        return MB_FILE_OK;
+    }
+
+    if (src > UINT64_MAX - size || dest > UINT64_MAX - size) {
+        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
+                          "Offset + size overflows integer");
+        return MB_FILE_FAILED;
+    }
+
+    *size_moved = 0;
+
+    if (dest < src) {
+        // Copy forwards
+        while (*size_moved < size) {
+            size_t to_read = std::min<uint64_t>(
+                    sizeof(buf), size - *size_moved);
+
+            // Seek to source offset
+            ret = mb_file_seek(file, src + *size_moved, SEEK_SET, nullptr);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            // Read data from source
+            ret = mb_file_read_fully(file, buf, to_read, &n_read);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            } else if (n_read == 0) {
+                break;
+            }
+
+            // Seek to destination offset
+            ret = mb_file_seek(file, dest + *size_moved, SEEK_SET, nullptr);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            // Write data to destination
+            ret = mb_file_write_fully(file, buf, n_read, &n_written);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            *size_moved += n_written;
+
+            if (n_written < n_read) {
+                break;
+            }
+        }
+    } else {
+        // Copy backwards
+        while (*size_moved < size) {
+            size_t to_read = std::min<uint64_t>(
+                    sizeof(buf), size - *size_moved);
+
+            // Seek to source offset
+            ret = mb_file_seek(file, src + size - *size_moved - to_read,
+                               SEEK_SET, nullptr);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            // Read data form source
+            ret = mb_file_read_fully(file, buf, to_read, &n_read);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            } else if (n_read == 0) {
+                break;
+            }
+
+            // Seek to destination offset
+            ret = mb_file_seek(file, dest + size - *size_moved - n_read,
+                               SEEK_SET, nullptr);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            // Write data to destination
+            ret = mb_file_write_fully(file, buf, n_read, &n_written);
+            if (ret != MB_FILE_OK) {
+                return ret;
+            }
+
+            *size_moved += n_written;
+
+            if (n_written < n_read) {
+                // Hit EOF. Subtract bytes beyond EOF that we can't copy
+                size -= n_read - n_written;
+            }
+        }
+    }
+
+    return MB_FILE_OK;
 }
 
 MB_END_C_DECLS

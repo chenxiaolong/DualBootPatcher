@@ -19,12 +19,17 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include <cinttypes>
 
 #include "mbcommon/file/memory.h"
 #include "mbcommon/file_p.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/string.h"
+
+
+typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedFile;
 
 struct FileUtilTest : testing::Test
 {
@@ -576,6 +581,139 @@ TEST_F(FileSearchTest, FindNormal)
 
     ASSERT_EQ(mb_file_search(_file, -1, -1, 0, "a", 1, -1,
                              &_result_cb, this), MB_FILE_OK);
+}
+
+TEST(FileMoveTest, DegenerateCasesShouldSucceed)
+{
+    char buf[] = "abcdef";
+    uint64_t n;
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, sizeof(buf) - 1),
+              MB_FILE_OK);
+
+    // src == dest
+    ASSERT_EQ(mb_file_move(file.get(), 0, 0, 3, &n), MB_FILE_OK);
+
+    // size == 0
+    ASSERT_EQ(mb_file_move(file.get(), 3, 0, 0, &n), MB_FILE_OK);
+}
+
+TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
+{
+    char buf[] = "abcdef";
+    uint64_t n;
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, sizeof(buf) - 1),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), 2, 0, 3, &n), MB_FILE_OK);
+    ASSERT_EQ(n, 3);
+    ASSERT_STREQ(buf, "cdedef");
+}
+
+TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
+{
+    char buf[] = "abcdef";
+    uint64_t n;
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, sizeof(buf) - 1),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), 0, 2, 3, &n), MB_FILE_OK);
+    ASSERT_EQ(n, 3);
+    ASSERT_STREQ(buf, "ababcf");
+}
+
+TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
+{
+    char buf[] = "abcdef";
+    uint64_t n;
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, sizeof(buf) - 1),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), 2, 0, 5, &n), MB_FILE_OK);
+    ASSERT_EQ(n, 4);
+    ASSERT_STREQ(buf, "cdefef");
+}
+
+TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
+{
+    char buf[] = "abcdef";
+    uint64_t n;
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, sizeof(buf) - 1),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), 0, 2, 5, &n), MB_FILE_OK);
+    ASSERT_EQ(n, 4);
+    ASSERT_STREQ(buf, "ababcd");
+}
+
+TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
+{
+    char *buf;
+    size_t buf_size = 100000;
+    uint64_t n;
+
+    buf = static_cast<char *>(malloc(buf_size));
+    ASSERT_TRUE(!!buf);
+
+    memset(buf, 'a', buf_size / 2);
+    memset(buf + buf_size / 2, 'b', buf_size / 2);
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, buf_size),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), buf_size / 2, 0, buf_size / 2, &n),
+              MB_FILE_OK);
+    ASSERT_EQ(n, buf_size / 2);
+
+    for (size_t i = 0; i < buf_size; ++i) {
+        ASSERT_EQ(buf[i], 'b');
+    }
+
+    free(buf);
+}
+
+TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
+{
+    char *buf;
+    size_t buf_size = 100000;
+    uint64_t n;
+
+    buf = static_cast<char *>(malloc(buf_size));
+    ASSERT_TRUE(!!buf);
+
+    memset(buf, 'a', buf_size / 2);
+    memset(buf + buf_size / 2, 'b', buf_size / 2);
+
+    ScopedFile file(mb_file_new(), &mb_file_free);
+    ASSERT_TRUE(!!file);
+    ASSERT_EQ(mb_file_open_memory_static(file.get(), buf, buf_size),
+              MB_FILE_OK);
+
+    ASSERT_EQ(mb_file_move(file.get(), 0, buf_size / 2, buf_size / 2, &n),
+              MB_FILE_OK);
+    ASSERT_EQ(n, buf_size / 2);
+
+    for (size_t i = 0; i < buf_size; ++i) {
+        ASSERT_EQ(buf[i], 'a');
+    }
+
+    free(buf);
 }
 
 // TODO: Add more tests after integrating gmock

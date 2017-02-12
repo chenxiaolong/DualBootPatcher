@@ -50,10 +50,6 @@
 
 MB_BEGIN_C_DECLS
 
-// libc wrappers/shims
-MB_EXPORT void * mb_memmem(const void *haystack, size_t haystacklen,
-                           const void *needle, size_t needlelen);
-
 // String formatting
 MB_PRINTF(1, 2)
 MB_EXPORT char * mb_format(const char *fmt, ...);

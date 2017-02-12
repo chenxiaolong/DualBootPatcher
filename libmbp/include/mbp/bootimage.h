@@ -195,18 +195,6 @@ public:
     void appsblImageC(const unsigned char **data, std::size_t *size) const;
     void setAppsblImageC(const unsigned char *data, std::size_t size);
 
-    // Sony SIN! image
-    const std::vector<unsigned char> & sinImage() const;
-    void setSinImage(std::vector<unsigned char> data);
-    void sinImageC(const unsigned char **data, std::size_t *size) const;
-    void setSinImageC(const unsigned char *data, std::size_t size);
-
-    // Sony SIN! header
-    const std::vector<unsigned char> & sinHeader() const;
-    void setSinHeader(std::vector<unsigned char> data);
-    void sinHeaderC(const unsigned char **data, std::size_t *size) const;
-    void setSinHeaderC(const unsigned char *data, std::size_t size);
-
     bool operator==(const BootImage &other) const;
     bool operator!=(const BootImage &other) const;
 

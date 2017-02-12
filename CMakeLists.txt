@@ -180,6 +180,7 @@ add_subdirectory(thirdparty)
 include(cmake/Dependencies.cmake)
 
 set(MBP_GLOBAL_INCLUDE_DIRS
+    libmbbootimg/include
     libmbcommon/include
     libmbdevice/include
     libmblog/include
@@ -194,6 +195,7 @@ include_directories(${MBP_GLOBAL_INCLUDE_DIRS})
 
 add_subdirectory(hosttools)
 add_subdirectory(libmbcommon)
+add_subdirectory(libmbbootimg)
 add_subdirectory(libmbdevice)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
