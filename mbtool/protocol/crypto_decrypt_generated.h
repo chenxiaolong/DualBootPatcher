@@ -15,13 +15,10 @@ struct CryptoDecryptResponse;
 
 struct CryptoDecryptRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
-    VT_PASSWORD = 4
+
   };
-  const flatbuffers::String *password() const { return GetPointer<const flatbuffers::String *>(VT_PASSWORD); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PASSWORD) &&
-           verifier.Verify(password()) &&
            verifier.EndTable();
   }
 };
@@ -29,7 +26,6 @@ struct CryptoDecryptRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table
 struct CryptoDecryptRequestBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_password(flatbuffers::Offset<flatbuffers::String> password) { fbb_.AddOffset(CryptoDecryptRequest::VT_PASSWORD, password); }
   CryptoDecryptRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   CryptoDecryptRequestBuilder &operator=(const CryptoDecryptRequestBuilder &);
   flatbuffers::Offset<CryptoDecryptRequest> Finish() {
@@ -38,26 +34,17 @@ struct CryptoDecryptRequestBuilder {
   }
 };
 
-inline flatbuffers::Offset<CryptoDecryptRequest> CreateCryptoDecryptRequest(flatbuffers::FlatBufferBuilder &_fbb,
-    flatbuffers::Offset<flatbuffers::String> password = 0) {
+inline flatbuffers::Offset<CryptoDecryptRequest> CreateCryptoDecryptRequest(flatbuffers::FlatBufferBuilder &_fbb) {
   CryptoDecryptRequestBuilder builder_(_fbb);
-  builder_.add_password(password);
   return builder_.Finish();
-}
-
-inline flatbuffers::Offset<CryptoDecryptRequest> CreateCryptoDecryptRequestDirect(flatbuffers::FlatBufferBuilder &_fbb,
-    const char *password = nullptr) {
-  return CreateCryptoDecryptRequest(_fbb, password ? _fbb.CreateString(password) : 0);
 }
 
 struct CryptoDecryptResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
-    VT_SUCCESS = 4
+
   };
-  bool success() const { return GetField<uint8_t>(VT_SUCCESS, 0) != 0; }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
            verifier.EndTable();
   }
 };
@@ -65,7 +52,6 @@ struct CryptoDecryptResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Tabl
 struct CryptoDecryptResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_success(bool success) { fbb_.AddElement<uint8_t>(CryptoDecryptResponse::VT_SUCCESS, static_cast<uint8_t>(success), 0); }
   CryptoDecryptResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   CryptoDecryptResponseBuilder &operator=(const CryptoDecryptResponseBuilder &);
   flatbuffers::Offset<CryptoDecryptResponse> Finish() {
@@ -74,10 +60,8 @@ struct CryptoDecryptResponseBuilder {
   }
 };
 
-inline flatbuffers::Offset<CryptoDecryptResponse> CreateCryptoDecryptResponse(flatbuffers::FlatBufferBuilder &_fbb,
-    bool success = false) {
+inline flatbuffers::Offset<CryptoDecryptResponse> CreateCryptoDecryptResponse(flatbuffers::FlatBufferBuilder &_fbb) {
   CryptoDecryptResponseBuilder builder_(_fbb);
-  builder_.add_success(success);
   return builder_.Finish();
 }
 

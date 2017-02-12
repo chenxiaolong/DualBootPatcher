@@ -51,26 +51,11 @@ static void cleanup_tw_options(struct TwOptions *tw_options)
     }
 }
 
-static bool initialize_crypto_options(struct CryptoOptions *crypto_options)
-{
-    memset(crypto_options, 0, sizeof(struct CryptoOptions));
-
-    return true;
-}
-
-static void cleanup_crypto_options(struct CryptoOptions *crypto_options)
-{
-    if (crypto_options) {
-        free(crypto_options->header_path);
-    }
-}
-
 bool initialize_device(struct Device *device)
 {
     memset(device, 0, sizeof(struct Device));
 
-    return initialize_tw_options(&device->tw_options)
-            && initialize_crypto_options(&device->crypto_options);
+    return initialize_tw_options(&device->tw_options);
 }
 
 void cleanup_device(struct Device *device)
@@ -89,6 +74,5 @@ void cleanup_device(struct Device *device)
         string_array_free(device->extra_devs);
 
         cleanup_tw_options(&device->tw_options);
-        cleanup_crypto_options(&device->crypto_options);
     }
 }

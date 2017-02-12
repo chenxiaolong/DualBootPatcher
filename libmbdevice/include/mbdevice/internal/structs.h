@@ -53,13 +53,6 @@ struct TwOptions
     char *theme;
 };
 
-struct CryptoOptions
-{
-    bool supported;
-
-    char *header_path;
-};
-
 struct Device
 {
     char *id;
@@ -77,7 +70,6 @@ struct Device
     char **extra_devs;
 
     struct TwOptions tw_options;
-    struct CryptoOptions crypto_options;
 };
 
 #ifdef __cplusplus

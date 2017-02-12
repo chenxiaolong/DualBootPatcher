@@ -243,10 +243,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-  crypto:
-    supported: true
-    header_path: /dev/block/bootdevice/by-name/encrypt
-
 
 - name: LG G5 (T-Mobile)
   id: lgg5_tmo

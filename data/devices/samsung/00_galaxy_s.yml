@@ -206,10 +206,6 @@
       - fbdev
     theme: portrait_hdpi
 
-  crypto:
-    supported: true
-    header_path: footer
-
 
 - name: Samsung Galaxy S 4 (Exynos)
   id: i9500

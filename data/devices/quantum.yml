@@ -44,10 +44,6 @@
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-  crypto:
-    supported: true
-    header_path: /dev/block/mmcblk0p19
-
 
 - name: Quantum MUV PRO
   id: Q5
@@ -93,7 +89,3 @@
     default_brightness: 162
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     theme: portrait_hdpi
-
-  crypto:
-    supported: true
-    header_path: /dev/block/mmcblk0p19

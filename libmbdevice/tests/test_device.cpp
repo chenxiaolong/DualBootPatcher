@@ -82,11 +82,6 @@ TEST_F(DeviceTest, CheckDefaultValues)
     ASSERT_EQ(mb_device_tw_input_whitelist(_device), nullptr);
     ASSERT_EQ(mb_device_tw_graphics_backends(_device), nullptr);
     ASSERT_EQ(mb_device_tw_theme(_device), nullptr);
-
-    /* Crypto */
-
-    ASSERT_EQ(mb_device_crypto_supported(_device), false);
-    ASSERT_EQ(mb_device_crypto_header_path(_device), nullptr);
 }
 
 TEST_F(DeviceTest, CheckGettersSetters)
@@ -231,16 +226,6 @@ TEST_F(DeviceTest, CheckGettersSetters)
     ASSERT_STREQ(mb_device_tw_theme(_device), "portrait_hdpi");
     ASSERT_EQ(mb_device_set_tw_theme(_device, nullptr), MB_DEVICE_OK);
     ASSERT_EQ(mb_device_tw_theme(_device), nullptr);
-
-    /* Crypto */
-
-    ASSERT_EQ(mb_device_set_crypto_supported(_device, true), MB_DEVICE_OK);
-    ASSERT_EQ(mb_device_crypto_supported(_device), true);
-
-    ASSERT_EQ(mb_device_set_crypto_header_path(_device, "footer"), MB_DEVICE_OK);
-    ASSERT_STREQ(mb_device_crypto_header_path(_device), "footer");
-    ASSERT_EQ(mb_device_set_crypto_header_path(_device, nullptr), MB_DEVICE_OK);
-    ASSERT_EQ(mb_device_crypto_header_path(_device), nullptr);
 }
 
 int main(int argc, char *argv[])
