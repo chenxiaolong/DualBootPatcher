@@ -84,8 +84,8 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-	  
-	  
+
+
 - name: Huawei Mate 8
   id: NXT
   codenames:
