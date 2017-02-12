@@ -42,4 +42,24 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
             CXX_STANDARD_REQUIRED 1
         )
     endif()
+
+    # binary grep tool
+
+    add_executable(
+        bingrep
+        bingrep.cpp
+    )
+    target_link_libraries(
+        bingrep
+        mbcommon-shared
+    )
+
+    if(NOT MSVC)
+        set_target_properties(
+            bingrep
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
 endif()

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,36 +21,23 @@
 
 #include "mbcommon/guard_p.h"
 
-#include "mbcommon/file/posix.h"
-#include "mbcommon/file/vtable_p.h"
+#include "mbcommon/file/memory.h"
 
 /*! \cond INTERNAL */
 MB_BEGIN_C_DECLS
 
-struct PosixFileCtx
+struct MemoryFileCtx
 {
-    FILE *fp;
-    bool owned;
-#ifdef _WIN32
-    wchar_t *filename;
-    const wchar_t *mode;
-#else
-    char *filename;
-    const char *mode;
-#endif
+    void *data;
+    size_t size;
 
-    bool can_seek;
+    void **data_ptr;
+    size_t *size_ptr;
 
-    SysVtable vtable;
+    size_t pos;
+
+    bool fixed_size;
 };
-
-int _mb_file_open_FILE(SysVtable *vtable, struct MbFile *file, FILE *fp,
-                       bool owned);
-
-int _mb_file_open_FILE_filename(SysVtable *vtable, struct MbFile *file,
-                                const char *filename, int mode);
-int _mb_file_open_FILE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                  const wchar_t *filename, int mode);
 
 MB_END_C_DECLS
 /*! \endcond */

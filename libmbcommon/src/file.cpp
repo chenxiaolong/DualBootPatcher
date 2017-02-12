@@ -24,6 +24,7 @@
 #include <cstdlib>
 
 #include "mbcommon/file_p.h"
+#include "mbcommon/string.h"
 
 #define ENSURE_STATE(HANDLE, STATES) \
     do { \
@@ -272,7 +273,9 @@ struct MbFile * mb_file_new()
 {
     struct MbFile *file = static_cast<struct MbFile *>(
             calloc(1, sizeof(struct MbFile)));
-    file->state = MbFileState::NEW;
+    if (file) {
+        file->state = MbFileState::NEW;
+    }
     return file;
 }
 
@@ -280,7 +283,7 @@ struct MbFile * mb_file_new()
  * \brief Free an MbFile handle.
  *
  * If the handle has not been closed, it will be closed and the result of
- * mb_file_free() will be returned. Otherwise, MB_FILE_OK will be returned.
+ * mb_file_close() will be returned. Otherwise, #MB_FILE_OK will be returned.
  * Regardless of the return value, the handle will always be freed and should
  * no longer be used.
  *
@@ -472,20 +475,15 @@ int mb_file_open(struct MbFile *file)
  *
  * \return
  *   * #MB_FILE_OK if no error was encountered when closing the handle.
- *   * \<= #MB_FILE_WARN if the handle is opened and mb_file_close() returns an
- *     error
+ *   * \<= #MB_FILE_WARN if the handle is opened and an error occurs while
+ *     closing the file
  */
 int mb_file_close(struct MbFile *file)
 {
     int ret = MB_FILE_OK;
 
-    // Allow any state since mb_file_free() will call mb_file_close()
-    ENSURE_STATE(file, MbFileState::ANY);
-
     // Avoid double-closing or closing nothing
     if (!(file->state & (MbFileState::CLOSED | MbFileState::NEW))) {
-        file->state = MbFileState::CLOSED;
-
         if (file->close_cb) {
             ret = file->close_cb(file, file->cb_userdata);
         }
@@ -495,6 +493,8 @@ int mb_file_close(struct MbFile *file)
         // FATAL are the same anyway, aside from the fact that files can be
         // closed in the latter state.
     }
+
+    file->state = MbFileState::CLOSED;
 
     return ret;
 }
@@ -698,18 +698,16 @@ int mb_file_error(struct MbFile *file)
 /*!
  * \brief Get error string for a failed operation.
  *
- * \note An error string may or may not be set after a failed operation. Take
- *       care to handle NULL return values from this function.
- *
  * \note The return value is undefined if an operation did not fail.
  *
  * \param file MbFile handle
  *
- * \return Error string for failed operation
+ * \return Error string for failed operation. The string contents may be
+ *         undefined, but will never be NULL or an invalid string.
  */
 const char * mb_file_error_string(struct MbFile *file)
 {
-    return file->error_string;
+    return file->error_string ? file->error_string : "";
 }
 
 /*!
@@ -756,51 +754,14 @@ int mb_file_set_error_v(struct MbFile *file, int error_code,
 {
     free(file->error_string);
 
-#ifdef _WIN32
-    int ret;
-    va_list copy;
-
-    va_copy(copy, ap);
-    ret = vsnprintf(nullptr, 0, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0 || ret == INT_MAX) {
-        return MB_FILE_FAILED;
-    }
-
-    char *buf = static_cast<char *>(malloc(ret + 1));
-    if (!buf) {
-        return MB_FILE_FAILED;
-    }
-
-    va_copy(copy, ap);
-    ret = vsnprintf(buf, ret + 1, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0) {
-        free(buf);
+    char *dup = mb_format_v(fmt, ap);
+    if (!dup) {
         return MB_FILE_FAILED;
     }
 
     file->error_code = error_code;
-    file->error_string = buf;
+    file->error_string = dup;
     return MB_FILE_OK;
-#else
-    // Yay, GNU!
-    char *result;
-    int saved_errno;
-
-    saved_errno = errno;
-
-    if (vasprintf(&result, fmt, ap) < 0) {
-        return MB_FILE_FAILED;
-    }
-
-    file->error_code = error_code;
-    file->error_string = result;
-    errno = saved_errno;
-    return MB_FILE_OK;
-#endif
 }
 
 MB_END_C_DECLS

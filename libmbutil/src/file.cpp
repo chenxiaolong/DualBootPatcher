@@ -94,7 +94,7 @@ bool file_first_line(const std::string &path,
         return false;
     }
 
-    if (line[read - 1] == '\n') {
+    if (read > 0 && line[read - 1] == '\n') {
         line[read - 1] = '\0';
         --read;
     }
