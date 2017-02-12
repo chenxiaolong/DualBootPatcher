@@ -158,12 +158,3 @@
     # Available choices:
     # - portrait_hdpi
     theme: portrait_hdpi
-
-  # Crypto section (optional).
-  crypto:
-    # Whether the device supports AOSP-style encryption (optional).
-    supported: true
-
-    # Crypto header path (optional). This is the 'encryptable=<value>' or
-    # 'forceencrypt=<value>' value in the fstab file.
-    header_path: footer

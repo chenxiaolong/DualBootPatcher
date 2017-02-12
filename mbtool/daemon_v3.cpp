@@ -43,7 +43,6 @@
 #include "mbutil/socket.h"
 #include "mbutil/string.h"
 
-#include "decrypt.h"
 #include "init.h"
 #include "packages.h"
 #include "reboot.h"
@@ -86,59 +85,6 @@ static bool v3_send_response_unsupported(int fd)
     auto response = v3::CreateResponse(builder, v3::ResponseType_Unsupported,
                                        v3::CreateUnsupported(builder).Union());
     builder.Finish(response);
-    return v3_send_response(fd, builder);
-}
-
-static bool v3_crypto_decrypt(int fd, const v3::Request *msg)
-{
-    auto request = static_cast<const v3::CryptoDecryptRequest *>(
-            msg->request());
-    if (!request->password()) {
-        return v3_send_response_invalid(fd);
-    }
-
-    fb::FlatBufferBuilder builder;
-    fb::Offset<v3::CryptoDecryptResponse> response;
-
-    std::string block_dev = decrypt_userdata(request->password()->c_str());
-    bool ret = !block_dev.empty() && mount_userdata(block_dev.c_str());
-
-    response = v3::CreateCryptoDecryptResponse(builder, ret);
-
-    // Wrap response
-    builder.Finish(v3::CreateResponse(
-            builder, v3::ResponseType_CryptoDecryptResponse, response.Union()));
-
-    return v3_send_response(fd, builder);
-}
-
-static bool v3_crypto_get_pw_type(int fd, const v3::Request *msg)
-{
-    (void) msg;
-
-    fb::FlatBufferBuilder builder;
-    fb::Offset<v3::CryptoGetPwTypeResponse> response;
-
-    v3::CryptoPwType v3_pw_type = v3::CryptoPwType_UNKNOWN;
-
-    std::string pw_type = decrypt_get_pw_type();
-    if (pw_type == CRYPTFS_PW_TYPE_DEFAULT) {
-        v3_pw_type = v3::CryptoPwType_DEFAULT;
-    } else if (pw_type == CRYPTFS_PW_TYPE_PASSWORD) {
-        v3_pw_type = v3::CryptoPwType_PASSWORD;
-    } else if (pw_type == CRYPTFS_PW_TYPE_PATTERN) {
-        v3_pw_type = v3::CryptoPwType_PATTERN;
-    } else if (pw_type == CRYPTFS_PW_TYPE_PIN) {
-        v3_pw_type = v3::CryptoPwType_PIN;
-    }
-
-    response = v3::CreateCryptoGetPwTypeResponse(builder, v3_pw_type);
-
-    // Wrap response
-    builder.Finish(v3::CreateResponse(
-            builder, v3::ResponseType_CryptoGetPwTypeResponse,
-            response.Union()));
-
     return v3_send_response(fd, builder);
 }
 
@@ -1503,8 +1449,6 @@ struct RequestMap
 };
 
 static RequestMap request_map[] = {
-    { v3::RequestType_CryptoDecryptRequest, v3_crypto_decrypt },
-    { v3::RequestType_CryptoGetPwTypeRequest, v3_crypto_get_pw_type },
     { v3::RequestType_FileChmodRequest, v3_file_chmod },
     { v3::RequestType_FileCloseRequest, v3_file_close },
     { v3::RequestType_FileOpenRequest, v3_file_open },

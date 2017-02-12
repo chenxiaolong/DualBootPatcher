@@ -61,7 +61,6 @@ set(MBTOOL_BASE_SOURCES
     auditd.cpp
     daemon.cpp
     daemon_v3.cpp
-    decrypt.cpp
     emergency.cpp
     init.cpp
     main.cpp

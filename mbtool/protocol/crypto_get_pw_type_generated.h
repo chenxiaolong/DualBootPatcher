@@ -55,12 +55,10 @@ inline flatbuffers::Offset<CryptoGetPwTypeRequest> CreateCryptoGetPwTypeRequest(
 
 struct CryptoGetPwTypeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum {
-    VT_TYPE = 4
+
   };
-  CryptoPwType type() const { return static_cast<CryptoPwType>(GetField<int16_t>(VT_TYPE, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int16_t>(verifier, VT_TYPE) &&
            verifier.EndTable();
   }
 };
@@ -68,7 +66,6 @@ struct CryptoGetPwTypeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Ta
 struct CryptoGetPwTypeResponseBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_type(CryptoPwType type) { fbb_.AddElement<int16_t>(CryptoGetPwTypeResponse::VT_TYPE, static_cast<int16_t>(type), 0); }
   CryptoGetPwTypeResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   CryptoGetPwTypeResponseBuilder &operator=(const CryptoGetPwTypeResponseBuilder &);
   flatbuffers::Offset<CryptoGetPwTypeResponse> Finish() {
@@ -77,10 +74,8 @@ struct CryptoGetPwTypeResponseBuilder {
   }
 };
 
-inline flatbuffers::Offset<CryptoGetPwTypeResponse> CreateCryptoGetPwTypeResponse(flatbuffers::FlatBufferBuilder &_fbb,
-    CryptoPwType type = CryptoPwType_DEFAULT) {
+inline flatbuffers::Offset<CryptoGetPwTypeResponse> CreateCryptoGetPwTypeResponse(flatbuffers::FlatBufferBuilder &_fbb) {
   CryptoGetPwTypeResponseBuilder builder_(_fbb);
-  builder_.add_type(type);
   return builder_.Finish();
 }
 
