@@ -11,23 +11,10 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(MBP_SOURCES
-    src/bootimage.cpp
-    src/cpiofile.cpp
     src/fileinfo.cpp
     src/patcherconfig.cpp
-    # Boot image parsers
-    src/bootimage/androidformat.cpp
-    src/bootimage/bumpformat.cpp
-    src/bootimage/bumppatcher.cpp
-    src/bootimage/fileformat.cpp
-    src/bootimage/lokiformat.cpp
-    src/bootimage/lokipatcher.cpp
-    src/bootimage/mtkformat.cpp
-    src/bootimage/sonyelfformat.cpp
     # C wrapper API
-    src/cwrapper/cbootimage.cpp
     src/cwrapper/ccommon.cpp
-    src/cwrapper/ccpiofile.cpp
     src/cwrapper/cfileinfo.cpp
     src/cwrapper/cpatcherconfig.cpp
     src/cwrapper/cpatcherinterface.cpp
@@ -42,12 +29,8 @@ set(MBP_SOURCES
     src/autopatchers/standardpatcher.cpp
     src/autopatchers/mountcmdpatcher.cpp
     # Patchers
-    src/patchers/mbtoolupdater.cpp
     src/patchers/multibootpatcher.cpp
     src/patchers/odinpatcher.cpp
-    # Ramdisk patchers
-    src/ramdiskpatchers/core.cpp
-    src/ramdiskpatchers/default.cpp
     # SHA1 library
     external/sha.cpp
 )

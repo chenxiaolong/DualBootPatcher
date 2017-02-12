@@ -87,9 +87,13 @@ set(MBTOOL_BASE_SOURCES
 )
 
 set(MBTOOL_RECOVERY_SOURCES
+    archive_util.cpp
     backup.cpp
+    bootimg_util.cpp
     image.cpp
     installer.cpp
+    installer_util.cpp
+    ramdisk_patcher.cpp
     rom_installer.cpp
     update_binary.cpp
     update_binary_tool.cpp
@@ -186,6 +190,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbsign-static
         mbdevice-static
         mblog-static
+        mbbootimg-static
         mbcommon-static
         minizip-static
         ${MBP_JANSSON_LIBRARIES}
@@ -198,9 +203,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbutil-static
         mbsign-static
         mblog-static
-        mbp-static
-        mbpio-static
         mbdevice-static
+        mbbootimg-static
         mbcommon-static
         minizip-static
         ${MBP_JANSSON_LIBRARIES}

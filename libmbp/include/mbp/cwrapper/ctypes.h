@@ -23,12 +23,6 @@
 extern "C" {
 #endif
 
-struct CBootImage;
-typedef struct CBootImage CBootImage;
-
-struct CCpioFile;
-typedef struct CCpioFile CCpioFile;
-
 struct CFileInfo;
 typedef struct CFileInfo CFileInfo;
 
@@ -39,8 +33,6 @@ struct CPatcher;
 typedef struct CPatcher CPatcher;
 struct CAutoPatcher;
 typedef struct CAutoPatcher CAutoPatcher;
-struct CRamdiskPatcher;
-typedef struct CRamdiskPatcher CRamdiskPatcher;
 
 #ifdef __cplusplus
 }

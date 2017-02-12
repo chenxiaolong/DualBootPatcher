@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,24 +19,31 @@
 
 #pragma once
 
-#include "mbp/bootimage/androidformat.h"
+#include <functional>
+#include <string>
+//#include <vector>
 
-namespace mbp
+namespace mb
 {
 
-class MtkFormat : public AndroidFormat
-{
-public:
-    MtkFormat(BootImageIntermediate *i10e);
-    virtual ~MtkFormat();
+typedef bool (RamdiskPatcherFn)(const std::string &dir);
 
-    static uint64_t typeSupportMask();
+std::function<RamdiskPatcherFn>
+rp_write_rom_id(const std::string &rom_id);
 
-    static bool isValid(const unsigned char *data, std::size_t size);
+std::function<RamdiskPatcherFn>
+rp_patch_default_prop(const std::string &device_id, bool use_fuse_exfat);
 
-    virtual bool loadImage(const unsigned char *data, std::size_t size) override;
+std::function<RamdiskPatcherFn>
+rp_add_binaries(const std::string &binaries_dir);
 
-    virtual bool createImage(std::vector<unsigned char> *dataOut) override;
-};
+std::function<RamdiskPatcherFn>
+rp_symlink_fuse_exfat();
+
+std::function<RamdiskPatcherFn>
+rp_symlink_init();
+
+std::function<RamdiskPatcherFn>
+rp_add_device_json(const std::string &device_json_file);
 
 }
