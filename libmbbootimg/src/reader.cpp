@@ -119,6 +119,23 @@
  */
 
 /*!
+ * \typedef FormatReaderGoToEntry
+ * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ *
+ * \brief Format reader callback to seek to a specific entry
+ *
+ * \param[in] bir MbBiReader
+ * \param[in] userdata User callback data
+ * \param[out] entry MbBiEntry instance to write entry values
+ * \param[in] entry_type Entry type to seek to
+ *
+ * \return
+ *   * Return #MB_BI_OK if the entry is successfully read
+ *   * Return #MB_BI_EOF if the entry cannot be found
+ *   * Return \<= #MB_BI_WARN if an error occurs
+ */
+
+/*!
  * \typedef FormatReaderReadData
  * \ingroup MB_BI_READER_FORMAT_CALLBACKS
  *
@@ -212,6 +229,7 @@ static struct
  * \param set_option_cb Set option callback (optional)
  * \param read_header_cb Read header callback (required)
  * \param read_entry_cb Read entry callback (required)
+ * \param go_to_entry_cb Go to entry callback (optional)
  * \param read_data_cb Read data callback (required)
  * \param free_cb Free callback (optional)
  *
@@ -228,6 +246,7 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
                                   FormatReaderSetOption set_option_cb,
                                   FormatReaderReadHeader read_header_cb,
                                   FormatReaderReadEntry read_entry_cb,
+                                  FormatReaderGoToEntry go_to_entry_cb,
                                   FormatReaderReadData read_data_cb,
                                   FormatReaderFree free_cb)
 {
@@ -244,6 +263,7 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
     format.set_option_cb = set_option_cb;
     format.read_header_cb = read_header_cb;
     format.read_entry_cb = read_entry_cb;
+    format.go_to_entry_cb = go_to_entry_cb;
     format.read_data_cb = read_data_cb;
     format.free_cb = free_cb;
     format.userdata = userdata;
@@ -604,7 +624,7 @@ int mb_bi_reader_close(MbBiReader *bir)
  * Read the header from the boot image and store a reference to the MbBiHeader
  * in \p header. The value of \p header after a successful call to this function
  * should *never* be deallocated with mb_bi_header_free(). It is tracked
- * internally and will be freed with the MbBiReader is freed.
+ * internally and will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
  * \param[out] header Pointer to store MbBiHeader reference
@@ -687,6 +707,7 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
  * \return
  *   * #MB_BI_OK if the boot image entry is successfully read
  *   * #MB_BI_EOF if the boot image has no more entries
+ *   * #MB_BI_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #MB_BI_WARN if an error occurs
  */
 int mb_bi_reader_read_entry(MbBiReader *bir, MbBiEntry **entry)
@@ -715,6 +736,7 @@ int mb_bi_reader_read_entry(MbBiReader *bir, MbBiEntry **entry)
  * \return
  *   * #MB_BI_OK if the boot image entry is successfully read
  *   * #MB_BI_EOF if the boot image has no more entries
+ *   * #MB_BI_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #MB_BI_WARN if an error occurs
  */
 int mb_bi_reader_read_entry2(MbBiReader *bir, MbBiEntry *entry)
@@ -733,6 +755,77 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, MbBiEntry *entry)
     }
 
     ret = bir->format->read_entry_cb(bir, bir->format->userdata, entry);
+    if (ret == MB_BI_OK) {
+        bir->state = ReaderState::DATA;
+    } else if (ret <= MB_BI_FATAL) {
+        bir->state = ReaderState::FATAL;
+    }
+
+    return ret;
+}
+
+/*!
+ * \brief Seek to specific boot image entry.
+ *
+ * Seek to the specified entry in the boot image and store a reference to the
+ * MbBiEntry in \p entry. The vlaue of \p entry after a successful call to this
+ * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
+ * internally and will be freed when the MbBiReader is freed.
+ *
+ * \param[in] bir MbBiReader
+ * \param[out] entry Pointer to store MbBiEntry reference
+ * \param[in] entry_type Entry type to seek to (0 for first entry)
+ *
+ * \return
+ *   * #MB_BI_OK if the boot image entry is successfully read
+ *   * #MB_BI_EOF if the boot image entry is not found
+ *   * \<= #MB_BI_WARN if an error occurs
+ */
+int mb_bi_reader_go_to_entry(MbBiReader *bir, MbBiEntry **entry, int entry_type)
+{
+    // State will be checked by mb_bi_reader_go_to_entry2()
+    int ret;
+
+    ret = mb_bi_reader_go_to_entry2(bir, bir->entry, entry_type);
+    if (ret == MB_BI_OK) {
+        *entry = bir->entry;
+    }
+
+    return ret;
+}
+
+/*!
+ * \brief Seek to specific boot image entry.
+ *
+ * Seek to the specified entry in the boot image and store the entry values to
+ * an MbBiEntry instance allocated by the caller. The caller is responsible for
+ * deallocating \p entry when it is no longer needed.
+ *
+ * \param[in] bir MbBiReader
+ * \param[out] entry Pointer to MbBiEntry for storing entry values
+ * \param[in] entry_type Entry type to seek to (0 for first entry)
+ *
+ * \return
+ *   * #MB_BI_OK if the boot image entry is successfully read
+ *   * #MB_BI_EOF if the boot image entry is not found
+ *   * \<= #MB_BI_WARN if an error occurs
+ */
+int mb_bi_reader_go_to_entry2(MbBiReader *bir, MbBiEntry *entry, int entry_type)
+{
+    // Allow skipping to an entry without reading the data
+    READER_ENSURE_STATE(bir, ReaderState::ENTRY | ReaderState::DATA);
+    int ret;
+
+    mb_bi_entry_clear(entry);
+
+    if (!bir->format->go_to_entry_cb) {
+        mb_bi_reader_set_error(bir, MB_BI_ERROR_UNSUPPORTED,
+                               "go_to_entry_cb not defined");
+        return MB_BI_UNSUPPORTED;
+    }
+
+    ret = bir->format->go_to_entry_cb(bir, bir->format->userdata, entry,
+                                      entry_type);
     if (ret == MB_BI_OK) {
         bir->state = ReaderState::DATA;
     } else if (ret <= MB_BI_FATAL) {

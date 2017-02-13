@@ -62,6 +62,12 @@ MB_EXPORT int mb_bi_reader_read_entry(struct MbBiReader *bir,
                                       struct MbBiEntry **entry);
 MB_EXPORT int mb_bi_reader_read_entry2(struct MbBiReader *bir,
                                        struct MbBiEntry *entry);
+MB_EXPORT int mb_bi_reader_go_to_entry(struct MbBiReader *bir,
+                                       struct MbBiEntry **entry,
+                                       int entry_type);
+MB_EXPORT int mb_bi_reader_go_to_entry2(struct MbBiReader *bir,
+                                        struct MbBiEntry *entry,
+                                        int entry_type);
 MB_EXPORT int mb_bi_reader_read_data(struct MbBiReader *bir, void *buf,
                                      size_t size, size_t *bytes_read);
 

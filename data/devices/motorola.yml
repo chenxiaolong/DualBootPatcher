@@ -302,7 +302,14 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p34
-
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Motorola Moto X Pure Edition
   id: clark

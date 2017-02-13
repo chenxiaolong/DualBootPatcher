@@ -32,6 +32,7 @@ set(files
     wileyfox.yml
     xiaomi.yml
     yu.yml
+    zte.yml
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")

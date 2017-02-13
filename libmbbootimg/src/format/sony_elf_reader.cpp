@@ -312,6 +312,15 @@ int sony_elf_reader_read_entry(MbBiReader *bir, void *userdata,
     return _segment_reader_read_entry(&ctx->segctx, bir->file, entry, bir);
 }
 
+int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                                MbBiEntry *entry, int entry_type)
+{
+    SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
+
+    return _segment_reader_go_to_entry(&ctx->segctx, bir->file, entry,
+                                       entry_type, bir);
+}
+
 int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
                               void *buf, size_t buf_size,
                               size_t *bytes_read)
@@ -362,6 +371,7 @@ int mb_bi_reader_enable_format_sony_elf(MbBiReader *bir)
                                          nullptr,
                                          &sony_elf_reader_read_header,
                                          &sony_elf_reader_read_entry,
+                                         &sony_elf_reader_go_to_entry,
                                          &sony_elf_reader_read_data,
                                          &sony_elf_reader_free);
 }
