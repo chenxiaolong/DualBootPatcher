@@ -348,6 +348,15 @@ int mtk_reader_read_entry(MbBiReader *bir, void *userdata,
     return _segment_reader_read_entry(&ctx->segctx, bir->file, entry, bir);
 }
 
+int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata, MbBiEntry *entry,
+                           int entry_type)
+{
+    MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
+
+    return _segment_reader_go_to_entry(&ctx->segctx, bir->file, entry,
+                                       entry_type, bir);
+}
+
 int mtk_reader_read_data(MbBiReader *bir, void *userdata,
                          void *buf, size_t buf_size,
                          size_t *bytes_read)
@@ -398,6 +407,7 @@ int mb_bi_reader_enable_format_mtk(MbBiReader *bir)
                                          nullptr,
                                          &mtk_reader_read_header,
                                          &mtk_reader_read_entry,
+                                         &mtk_reader_go_to_entry,
                                          &mtk_reader_read_data,
                                          &mtk_reader_free);
 }

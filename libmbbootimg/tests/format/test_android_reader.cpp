@@ -24,6 +24,7 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
 
+#include "mbbootimg/entry.h"
 #include "mbbootimg/format/android_reader_p.h"
 #include "mbbootimg/reader.h"
 
@@ -282,4 +283,147 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
 
     ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
     ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), ahdr.tags_addr);
+}
+
+struct AndroidReaderGoToEntryTest : testing::Test
+{
+    ScopedFile _file;
+    ScopedReader _bir;
+    std::vector<unsigned char> _data;
+    MbBiHeader *_header;
+
+    AndroidReaderGoToEntryTest()
+        : _file(mb_file_new(), &mb_file_free)
+        , _bir(mb_bi_reader_new(), &mb_bi_reader_free)
+    {
+    }
+
+    virtual ~AndroidReaderGoToEntryTest()
+    {
+    }
+
+    virtual void SetUp() override
+    {
+        ASSERT_TRUE(!!_file);
+        ASSERT_TRUE(!!_bir);
+
+        AndroidHeader ahdr = {};
+        memcpy(ahdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+        ahdr.kernel_size = 6;
+        ahdr.ramdisk_size = 7;
+        ahdr.second_size = 10;
+        ahdr.page_size = 2048;
+
+        _data.resize(4 * ahdr.page_size);
+
+        // Write headers
+        memcpy(_data.data(), &ahdr, sizeof(ahdr));
+        // Write kernel
+        memcpy(_data.data() + ahdr.page_size, "kernel", 6);
+        // Write ramdisk
+        memcpy(_data.data() + 2 * ahdr.page_size, "ramdisk", 7);
+        // Write secondboot
+        memcpy(_data.data() + 3 * ahdr.page_size, "secondboot", 10);
+
+        ASSERT_EQ(mb_file_open_memory_static(_file.get(), _data.data(),
+                                             _data.size()), MB_FILE_OK);
+
+        ASSERT_EQ(mb_bi_reader_enable_format_android(_bir.get()), MB_BI_OK);
+        ASSERT_EQ(mb_bi_reader_open(_bir.get(), _file.get(), false), MB_BI_OK);
+
+        ASSERT_EQ(mb_bi_reader_read_header(_bir.get(), &_header), MB_BI_OK);
+    }
+};
+
+TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
+{
+    MbBiEntry *entry;
+    char buf[50];
+    size_t n;
+
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry, MB_BI_ENTRY_RAMDISK),
+              MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_RAMDISK);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 7);
+    ASSERT_EQ(memcmp(buf, "ramdisk", n), 0);
+
+    // We should continue at the next entry
+    ASSERT_EQ(mb_bi_reader_read_entry(_bir.get(), &entry), MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_SECONDBOOT);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 10);
+    ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
+}
+
+TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
+{
+    MbBiEntry *entry;
+    char buf[50];
+    size_t n;
+
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry, 0), MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_KERNEL);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 6);
+    ASSERT_EQ(memcmp(buf, "kernel", n), 0);
+}
+
+TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
+{
+    MbBiEntry *entry;
+    char buf[50];
+    size_t n;
+
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry,
+                                       MB_BI_ENTRY_SECONDBOOT),
+              MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_SECONDBOOT);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 10);
+    ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
+
+    // Go back to kernel
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry, MB_BI_ENTRY_KERNEL),
+              MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_KERNEL);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 6);
+    ASSERT_EQ(memcmp(buf, "kernel", n), 0);
+}
+
+TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
+{
+    MbBiEntry *entry;
+    char buf[50];
+    size_t n;
+    int ret;
+
+    while ((ret = mb_bi_reader_read_entry(_bir.get(), &entry)) == MB_BI_OK);
+    ASSERT_EQ(ret, MB_BI_EOF);
+
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry, MB_BI_ENTRY_KERNEL),
+              MB_BI_OK);
+    ASSERT_EQ(mb_bi_entry_type(entry), MB_BI_ENTRY_KERNEL);
+    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n),
+              MB_BI_OK);
+    ASSERT_EQ(n, 6);
+    ASSERT_EQ(memcmp(buf, "kernel", n), 0);
+}
+
+TEST_F(AndroidReaderGoToEntryTest, GoToMissingEntryShouldFail)
+{
+    MbBiEntry *entry;
+
+    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), &entry,
+                                       MB_BI_ENTRY_DEVICE_TREE),
+              MB_BI_EOF);
+
+    // In EOF state now, so next read should return MB_BI_EOF
+    ASSERT_EQ(mb_bi_reader_read_entry(_bir.get(), &entry), MB_BI_EOF);
 }

@@ -115,19 +115,29 @@ SegmentReaderEntry * _segment_reader_next_entry(SegmentReaderCtx *ctx)
     }
 }
 
-int _segment_reader_read_entry(SegmentReaderCtx *ctx, MbFile *file,
-                               MbBiEntry *entry, MbBiReader *bir)
+SegmentReaderEntry * _segment_reader_find_entry(SegmentReaderCtx *ctx,
+                                                int entry_type)
 {
-    SegmentReaderEntry *srentry;
-    int ret;
-
-    // Get next entry
-    srentry = _segment_reader_next_entry(ctx);
-    if (!srentry) {
-        ctx->state = SegmentReaderState::END;
-        ctx->entry = nullptr;
-        return MB_BI_EOF;
+    if (entry_type == 0) {
+        if (ctx->entries_len > 0) {
+            return ctx->entries;
+        }
+    } else {
+        for (size_t i = 0; i < ctx->entries_len; ++i) {
+            if (ctx->entries[i].type == entry_type) {
+                return &ctx->entries[i];
+            }
+        }
     }
+
+    return nullptr;
+}
+
+int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, MbFile *file,
+                                  MbBiEntry *entry, SegmentReaderEntry *srentry,
+                                  MbBiReader *bir)
+{
+    int ret;
 
     if (srentry->offset > UINT64_MAX - srentry->size) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INVALID_ARGUMENT,
@@ -159,6 +169,37 @@ int _segment_reader_read_entry(SegmentReaderCtx *ctx, MbFile *file,
     ctx->read_cur_offset = read_cur_offset;
 
     return MB_BI_OK;
+}
+
+int _segment_reader_read_entry(SegmentReaderCtx *ctx, MbFile *file,
+                               MbBiEntry *entry, MbBiReader *bir)
+{
+    SegmentReaderEntry *srentry;
+
+    srentry = _segment_reader_next_entry(ctx);
+    if (!srentry) {
+        ctx->state = SegmentReaderState::END;
+        ctx->entry = nullptr;
+        return MB_BI_EOF;
+    }
+
+    return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
+}
+
+int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+                                struct MbBiEntry *entry, int entry_type,
+                                struct MbBiReader *bir)
+{
+    SegmentReaderEntry *srentry;
+
+    srentry = _segment_reader_find_entry(ctx, entry_type);
+    if (!srentry) {
+        ctx->state = SegmentReaderState::END;
+        ctx->entry = nullptr;
+        return MB_BI_EOF;
+    }
+
+    return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
 }
 
 int _segment_reader_read_data(SegmentReaderCtx *ctx, MbFile *file,

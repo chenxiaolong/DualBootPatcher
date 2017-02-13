@@ -73,6 +73,8 @@ typedef int (*FormatReaderReadHeader)(struct MbBiReader *bir, void *userdata,
                                       struct MbBiHeader *header);
 typedef int (*FormatReaderReadEntry)(struct MbBiReader *bir, void *userdata,
                                      struct MbBiEntry *entry);
+typedef int (*FormatReaderGoToEntry)(struct MbBiReader *bir, void *userdata,
+                                     struct MbBiEntry *entry, int entry_type);
 typedef int (*FormatReaderReadData)(struct MbBiReader *bir, void *userdata,
                                     void *buf, size_t buf_size,
                                     size_t *bytes_read);
@@ -88,6 +90,7 @@ struct FormatReader
     FormatReaderSetOption set_option_cb;
     FormatReaderReadHeader read_header_cb;
     FormatReaderReadEntry read_entry_cb;
+    FormatReaderGoToEntry go_to_entry_cb;
     FormatReaderReadData read_data_cb;
     FormatReaderFree free_cb;
     void *userdata;
@@ -135,6 +138,7 @@ int _mb_bi_reader_register_format(struct MbBiReader *bir,
                                   FormatReaderSetOption set_option_cb,
                                   FormatReaderReadHeader read_header_cb,
                                   FormatReaderReadEntry read_entry_cb,
+                                  FormatReaderGoToEntry go_to_entry_cb,
                                   FormatReaderReadData read_data_cb,
                                   FormatReaderFree free_cb);
 

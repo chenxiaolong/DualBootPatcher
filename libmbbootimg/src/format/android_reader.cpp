@@ -535,6 +535,15 @@ int android_reader_read_entry(MbBiReader *bir, void *userdata,
     return _segment_reader_read_entry(&ctx->segctx, bir->file, entry, bir);
 }
 
+int android_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                               MbBiEntry *entry, int entry_type)
+{
+    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
+
+    return _segment_reader_go_to_entry(&ctx->segctx, bir->file, entry,
+                                       entry_type, bir);
+}
+
 int android_reader_read_data(MbBiReader *bir, void *userdata,
                              void *buf, size_t buf_size,
                              size_t *bytes_read)
@@ -588,6 +597,7 @@ int mb_bi_reader_enable_format_android(MbBiReader *bir)
                                          &android_reader_set_option,
                                          &android_reader_read_header,
                                          &android_reader_read_entry,
+                                         &android_reader_go_to_entry,
                                          &android_reader_read_data,
                                          &android_reader_free);
 }
