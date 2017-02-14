@@ -37,10 +37,6 @@ struct LokiWriterCtx
     // Header values
     struct AndroidHeader hdr;
 
-    // Header
-    struct MbBiHeader *client_header;
-    struct MbBiEntry *client_entry;
-
     bool have_file_size;
     uint64_t file_size;
 
@@ -53,11 +49,11 @@ struct LokiWriterCtx
 };
 
 int loki_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                           struct MbBiHeader **header);
+                           struct MbBiHeader *header);
 int loki_writer_write_header(struct MbBiWriter *biw, void *userdata,
                              struct MbBiHeader *header);
 int loki_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                          struct MbBiEntry **entry);
+                          struct MbBiEntry *entry);
 int loki_writer_write_entry(struct MbBiWriter *biw, void *userdata,
                             struct MbBiEntry *entry);
 int loki_writer_write_data(struct MbBiWriter *biw, void *userdata,

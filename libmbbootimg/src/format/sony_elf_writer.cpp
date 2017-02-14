@@ -45,16 +45,13 @@
 MB_BEGIN_C_DECLS
 
 int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
-                               MbBiHeader **header)
+                               MbBiHeader *header)
 {
     (void) biw;
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
+    (void) userdata;
 
-    mb_bi_header_clear(ctx->client_header);
-    mb_bi_header_set_supported_fields(ctx->client_header,
-                                      SONY_ELF_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, SONY_ELF_SUPPORTED_FIELDS);
 
-    *header = ctx->client_header;
     return MB_BI_OK;
 }
 
@@ -208,14 +205,13 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
 }
 
 int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
-                              MbBiEntry **entry)
+                              MbBiEntry *entry)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
     SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_get_entry(&ctx->segctx, biw->file, ctx->client_entry,
-                                    biw);
+    ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
@@ -226,12 +222,12 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
     if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
         size_t n;
 
-        mb_bi_entry_clear(ctx->client_entry);
+        mb_bi_entry_clear(entry);
 
-        ret = mb_bi_entry_set_size(ctx->client_entry, ctx->cmdline_size);
+        ret = mb_bi_entry_set_size(entry, ctx->cmdline_size);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
-        ret = sony_elf_writer_write_entry(biw, userdata, ctx->client_entry);
+        ret = sony_elf_writer_write_entry(biw, userdata, entry);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
         ret = sony_elf_writer_write_data(biw, userdata, ctx->cmdline,
@@ -241,12 +237,10 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
         ret = sony_elf_writer_finish_entry(biw, userdata);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
-        ret = _segment_writer_get_entry(&ctx->segctx, biw->file,
-                                        ctx->client_entry, biw);
+        ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
     }
 
-    *entry = ctx->client_entry;
     return MB_BI_OK;
 }
 
@@ -404,8 +398,6 @@ int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    mb_bi_header_free(ctx->client_header);
-    mb_bi_entry_free(ctx->client_entry);
     _segment_writer_deinit(&ctx->segctx);
     free(ctx->cmdline);
     free(ctx);
@@ -430,18 +422,6 @@ int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
         mb_bi_writer_set_error(biw, -errno,
                                "Failed to allocate SonyElfWriterCtx: %s",
                                strerror(errno));
-        return MB_BI_FAILED;
-    }
-
-    ctx->client_header = mb_bi_header_new();
-    ctx->client_entry = mb_bi_entry_new();
-    if (!ctx->client_header) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate header or entry: %s",
-                               strerror(errno));
-        mb_bi_header_free(ctx->client_header);
-        mb_bi_entry_free(ctx->client_entry);
-        free(ctx);
         return MB_BI_FAILED;
     }
 
