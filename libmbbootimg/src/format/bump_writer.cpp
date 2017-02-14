@@ -55,18 +55,6 @@ int mb_bi_writer_set_format_bump(MbBiWriter *biw)
         return false;
     }
 
-    ctx->client_header = mb_bi_header_new();
-    ctx->client_entry = mb_bi_entry_new();
-    if (!ctx->client_header) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate header or entry: %s",
-                               strerror(errno));
-        mb_bi_header_free(ctx->client_header);
-        mb_bi_entry_free(ctx->client_entry);
-        free(ctx);
-        return MB_BI_FAILED;
-    }
-
     _segment_writer_init(&ctx->segctx);
 
     ctx->is_bump = true;

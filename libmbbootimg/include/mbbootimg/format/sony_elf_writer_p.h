@@ -43,10 +43,6 @@ struct SonyElfWriterCtx
     struct Sony_Elf32_Phdr hdr_rpm;
     struct Sony_Elf32_Phdr hdr_appsbl;
 
-    // Header
-    struct MbBiHeader *client_header;
-    struct MbBiEntry *client_entry;
-
     bool have_file_size;
     uint64_t file_size;
 
@@ -57,11 +53,11 @@ struct SonyElfWriterCtx
 };
 
 int sony_elf_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                               struct MbBiHeader **header);
+                               struct MbBiHeader *header);
 int sony_elf_writer_write_header(struct MbBiWriter *biw, void *userdata,
                                  struct MbBiHeader *header);
 int sony_elf_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                              struct MbBiEntry **entry);
+                              struct MbBiEntry *entry);
 int sony_elf_writer_write_entry(struct MbBiWriter *biw, void *userdata,
                                 struct MbBiEntry *entry);
 int sony_elf_writer_write_data(struct MbBiWriter *biw, void *userdata,

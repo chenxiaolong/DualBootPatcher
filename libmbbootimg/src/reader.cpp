@@ -699,7 +699,7 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
  * Read the next entry from the boot image and store a reference to the
  * MbBiEntry in \p entry. The value of \p entry after a successful call to this
  * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
- * internally and will be freed with the MbBiReader is freed.
+ * internally and will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
  * \param[out] entry Pointer to store MbBiEntry reference
