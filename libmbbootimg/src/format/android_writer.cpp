@@ -44,16 +44,13 @@
 MB_BEGIN_C_DECLS
 
 int android_writer_get_header(MbBiWriter *biw, void *userdata,
-                              MbBiHeader **header)
+                              MbBiHeader *header)
 {
     (void) biw;
-    AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
+    (void) userdata;
 
-    mb_bi_header_clear(ctx->client_header);
-    mb_bi_header_set_supported_fields(ctx->client_header,
-                                      ANDROID_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, ANDROID_SUPPORTED_FIELDS);
 
-    *header = ctx->client_header;
     return MB_BI_OK;
 }
 
@@ -165,19 +162,11 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
 }
 
 int android_writer_get_entry(MbBiWriter *biw, void *userdata,
-                             MbBiEntry **entry)
+                             MbBiEntry *entry)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    int ret;
 
-    ret = _segment_writer_get_entry(&ctx->segctx, biw->file, ctx->client_entry,
-                                    biw);
-    if (ret != MB_BI_OK) {
-        return ret;
-    }
-
-    *entry = ctx->client_entry;
-    return MB_BI_OK;
+    return _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
 }
 
 int android_writer_write_entry(MbBiWriter *biw, void *userdata,
@@ -348,8 +337,6 @@ int android_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    mb_bi_header_free(ctx->client_header);
-    mb_bi_entry_free(ctx->client_entry);
     _segment_writer_deinit(&ctx->segctx);
     free(ctx);
     return MB_BI_OK;
@@ -381,18 +368,6 @@ int mb_bi_writer_set_format_android(MbBiWriter *biw)
                                "Failed to initialize SHA_CTX");
         free(ctx);
         return false;
-    }
-
-    ctx->client_header = mb_bi_header_new();
-    ctx->client_entry = mb_bi_entry_new();
-    if (!ctx->client_header) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate header or entry: %s",
-                               strerror(errno));
-        mb_bi_header_free(ctx->client_header);
-        mb_bi_entry_free(ctx->client_entry);
-        free(ctx);
-        return MB_BI_FAILED;
     }
 
     _segment_writer_init(&ctx->segctx);
