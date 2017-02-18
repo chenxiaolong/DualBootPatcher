@@ -581,10 +581,11 @@ int mb_bi_writer_close(MbBiWriter *biw)
 /*!
  * \brief Get boot image header instance
  *
- * Get an MbBiHeader instance for use with mb_bi_writer_write_header(). It is
- * not strictly required to use this function, but the instance returned by this
- * function provides field checking. For example, it won't allow setting fields
- * not supported by the boot image format.
+ * Get a prepared MbBiHeader instance for use with mb_bi_writer_write_header()
+ * and store a reference to it in \p header. The value of \p header after a
+ * successful call to this function should *never* be deallocated with
+ * mb_bi_header_free(). It is tracked internally and will be freed when the
+ * MbBiWriter is freed.
  *
  * \param[in] biw MbBiWriter
  * \param[out] header Pointer to store MbBiHeader instance
@@ -595,8 +596,36 @@ int mb_bi_writer_close(MbBiWriter *biw)
  */
 int mb_bi_writer_get_header(MbBiWriter *biw, MbBiHeader **header)
 {
+    // State will be checked by mb_bi_writer_get_header2()
+    int ret;
+
+    ret = mb_bi_writer_get_header2(biw, biw->header);
+    if (ret == MB_BI_OK) {
+        *header = biw->header;
+    }
+
+    return ret;
+}
+
+/*!
+ * \brief Prepare boot image header instance.
+ *
+ * Prepare an MbBiHeader instance for use with mb_bi_writer_write_header(). The
+ * caller is responsible for deallocating \p header when it is no longer needed.
+ *
+ * \param[in] biw MbBiWriter
+ * \param[out] header MbBiHeader instance to initialize
+ *
+ * \return
+ *   * #MB_BI_OK if no error occurs
+ *   * \<= #MB_BI_WARN if an error occurs
+ */
+int mb_bi_writer_get_header2(MbBiWriter *biw, MbBiHeader *header)
+{
     WRITER_ENSURE_STATE(biw, WriterState::HEADER);
     int ret;
+
+    mb_bi_header_clear(header);
 
     if (!biw->format.get_header_cb) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
@@ -655,9 +684,10 @@ int mb_bi_writer_write_header(MbBiWriter *biw, MbBiHeader *header)
 /*!
  * \brief Get boot image entry instance for the next entry
  *
- * Get an MbBiEntry instance for the next entry. It should be used passed to
- * mb_bi_writer_write_entry(). The type field of \p *entry will indicate what
- * kind of image the the next entry is.
+ * Get an MbBiEntry instance for the next entry and store a reference to it in
+ * \p entry. The value of \p entry after a successful call to this function
+ * should *never* be deallocated with mb_bi_entry_free(). It is tracked
+ * internally and will be freed when the MbBiWriter is freed.
  *
  * This function will return #MB_BI_EOF when there are no more entries to write.
  * It is *strongly* recommended to check the return value of
@@ -673,6 +703,32 @@ int mb_bi_writer_write_header(MbBiWriter *biw, MbBiHeader *header)
  *   * \<= #MB_BI_WARN if an error occurs
  */
 int mb_bi_writer_get_entry(MbBiWriter *biw, MbBiEntry **entry)
+{
+    // State will be checked by mb_bi_writer_get_entry2()
+    int ret;
+
+    ret = mb_bi_writer_get_entry2(biw, biw->entry);
+    if (ret == MB_BI_OK) {
+        *entry = biw->entry;
+    }
+
+    return ret;
+}
+
+/*!
+ * \brief Prepare boot image entry instance for the next entry.
+ *
+ * Prepare an MbBiEntry instance for the next entry. The caller is responsible
+ * for deallocating \p entry when it is no longer needed.
+ *
+ * \param[in] biw MbBiWriter
+ * \param[out] entry MbBiEntry instance to initialize
+ *
+ * \return
+ *   * #MB_BI_OK if no error occurs
+ *   * \<= #MB_BI_WARN if an error occurs
+ */
+int mb_bi_writer_get_entry2(MbBiWriter *biw, MbBiEntry *entry)
 {
     WRITER_ENSURE_STATE(biw, WriterState::ENTRY | WriterState::DATA);
     int ret;
@@ -690,6 +746,8 @@ int mb_bi_writer_get_entry(MbBiWriter *biw, MbBiEntry **entry)
             return ret;
         }
     }
+
+    mb_bi_entry_clear(entry);
 
     if (!biw->format.get_entry_cb) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
@@ -709,7 +767,7 @@ int mb_bi_writer_get_entry(MbBiWriter *biw, MbBiEntry **entry)
 }
 
 /*!
- * \brief Write boot image entry
+ * \brief Write boot image entry.
  *
  * Write an entry to the boot image. It is *strongly* recommended to use the
  * MbBiEntry instance provided by mb_bi_writer_get_entry(), but it is not
@@ -748,7 +806,7 @@ int mb_bi_writer_write_entry(MbBiWriter *biw, MbBiEntry *entry)
 }
 
 /*!
- * \brief Write boot image entry data
+ * \brief Write boot image entry data.
  *
  * \param[in] biw MbBiWriter
  * \param[in] buf Input buffer
@@ -784,7 +842,7 @@ int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
 }
 
 /*!
- * \brief Get selected boot image format code
+ * \brief Get selected boot image format code.
  *
  * \param biw MbBiWriter
  *
@@ -802,7 +860,7 @@ int mb_bi_writer_format_code(MbBiWriter *biw)
 }
 
 /*!
- * \brief Get selected boot image format name
+ * \brief Get selected boot image format name.
  *
  * \param biw MbBiWriter
  *
@@ -820,7 +878,7 @@ const char * mb_bi_writer_format_name(MbBiWriter *biw)
 }
 
 /*!
- * \brief Set boot image output format by its code
+ * \brief Set boot image output format by its code.
  *
  * \param biw MbBiWriter
  * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
@@ -846,7 +904,7 @@ int mb_bi_writer_set_format_by_code(MbBiWriter *biw, int code)
 }
 
 /*!
- * \brief Set boot image output format by its name
+ * \brief Set boot image output format by its name.
  *
  * \param biw MbBiWriter
  * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)

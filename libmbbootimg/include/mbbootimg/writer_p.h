@@ -68,11 +68,11 @@ struct MbFile;
 typedef int (*FormatWriterSetOption)(struct MbBiWriter *biw, void *userdata,
                                      const char *key, const char *value);
 typedef int (*FormatWriterGetHeader)(struct MbBiWriter *biw, void *userdata,
-                                     struct MbBiHeader **header);
+                                     struct MbBiHeader *header);
 typedef int (*FormatWriterWriteHeader)(struct MbBiWriter *biw, void *userdata,
                                        struct MbBiHeader *header);
 typedef int (*FormatWriterGetEntry)(struct MbBiWriter *biw, void *userdata,
-                                    struct MbBiEntry **entry);
+                                    struct MbBiEntry *entry);
 typedef int (*FormatWriterWriteEntry)(struct MbBiWriter *biw, void *userdata,
                                       struct MbBiEntry *entry);
 typedef int (*FormatWriterWriteData)(struct MbBiWriter *biw, void *userdata,

@@ -56,10 +56,14 @@ MB_EXPORT int mb_bi_writer_close(struct MbBiWriter *biw);
 // Operations
 MB_EXPORT int mb_bi_writer_get_header(struct MbBiWriter *biw,
                                       struct MbBiHeader **header);
+MB_EXPORT int mb_bi_writer_get_header2(struct MbBiWriter *biw,
+                                       struct MbBiHeader *header);
 MB_EXPORT int mb_bi_writer_write_header(struct MbBiWriter *biw,
                                         struct MbBiHeader *header);
 MB_EXPORT int mb_bi_writer_get_entry(struct MbBiWriter *biw,
                                      struct MbBiEntry **entry);
+MB_EXPORT int mb_bi_writer_get_entry2(struct MbBiWriter *biw,
+                                      struct MbBiEntry *entry);
 MB_EXPORT int mb_bi_writer_write_entry(struct MbBiWriter *biw,
                                        struct MbBiEntry *entry);
 MB_EXPORT int mb_bi_writer_write_data(struct MbBiWriter *biw, const void *buf,

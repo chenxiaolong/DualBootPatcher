@@ -79,6 +79,8 @@ int loki_reader_read_header(struct MbBiReader *bir, void *userdata,
                             struct MbBiHeader *header);
 int loki_reader_read_entry(struct MbBiReader *bir, void *userdata,
                            struct MbBiEntry *entry);
+int loki_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
+                            struct MbBiEntry *entry, int entry_type);
 int loki_reader_read_data(struct MbBiReader *bir, void *userdata,
                           void *buf, size_t buf_size,
                           size_t *bytes_read);
