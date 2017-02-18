@@ -84,7 +84,8 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-      
+
+
 - name: Huawei Y6
   id: scale
   codenames:
@@ -92,28 +93,69 @@
     - Honor4A
     - scale
     - scl-tl00h
+    - SCL-TL10
     - scl-tl10
+    - SCL-TL10
     - scl-al00h
+    - SCL-AL00H
     - scl-l01
+    - SCL-L01
     - scl-l02
+    - SCL-L02
     - scl-l03
+    - scl-u31
+    - SCL-U31
   architecture: armeabi-v7a
 
   block_devs:
     base_dirs:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
     system:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p24
     cache:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p22
     data:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p25
     boot:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p19
     recovery:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p20
+
+
+- name: Huawei Mate 8
+  id: NXT
+  codenames:
+    - NXT
+    - next
+    - HWNXT
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p39
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p36
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p42
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p28
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p29
