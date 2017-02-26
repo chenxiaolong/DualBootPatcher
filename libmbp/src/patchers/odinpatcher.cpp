@@ -322,7 +322,7 @@ bool OdinPatcher::Impl::patchTar()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->romId());
+            MultiBootPatcher::createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));

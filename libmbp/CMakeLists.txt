@@ -42,9 +42,9 @@ set(MBP_SOURCES
     src/autopatchers/standardpatcher.cpp
     src/autopatchers/mountcmdpatcher.cpp
     # Patchers
-    src/patchers/mbtoolupdater.cpp
     src/patchers/multibootpatcher.cpp
     src/patchers/odinpatcher.cpp
+    src/patchers/ramdiskupdater.cpp
     # Ramdisk patchers
     src/ramdiskpatchers/core.cpp
     src/ramdiskpatchers/default.cpp

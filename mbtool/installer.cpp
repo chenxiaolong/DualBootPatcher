@@ -1875,9 +1875,14 @@ Installer::ProceedState Installer::install_stage_finish()
     LOGD("Old boot partition SHA512sum: %s", old_digest.c_str());
     LOGD("New boot partition SHA512sum: %s", new_digest.c_str());
 
+    bool changed = memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0;
+    bool force_update = _prop["mbtool.installer.always-patch-ramdisk"] == "true";
+
     // Set kernel if it was changed
-    if (memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0) {
-        display_msg("A new boot image was installed");
+    if (force_update || changed) {
+        display_msg("Patching boot image");
+        LOGV("Ramdisk changed: %d", changed);
+        LOGV("Patching forced: %d", force_update);
 
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";

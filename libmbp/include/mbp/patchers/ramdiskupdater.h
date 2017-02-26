@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -28,11 +28,11 @@
 namespace mbp
 {
 
-class MbtoolUpdater : public Patcher
+class RamdiskUpdater : public Patcher
 {
 public:
-    explicit MbtoolUpdater(PatcherConfig * const pc);
-    ~MbtoolUpdater();
+    explicit RamdiskUpdater(PatcherConfig * const pc);
+    ~RamdiskUpdater();
 
     static const std::string Id;
 
