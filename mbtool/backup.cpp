@@ -33,13 +33,13 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbp/bootimage.h"
-#include "mbp/cpiofile.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/archive.h"
 #include "mbutil/copy.h"
+#include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"
@@ -49,6 +49,7 @@
 #include "mbutil/string.h"
 #include "mbutil/time.h"
 
+#include "installer_util.h"
 #include "image.h"
 #include "multiboot.h"
 #include "roms.h"
@@ -355,46 +356,12 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
 
     LOGI("=== Restoring to %s ===", boot_image_path.c_str());
 
-    // Set the ROM ID in the ramdisk
-    mbp::BootImage bi;
-    if (!bi.loadFile(boot_image_backup)) {
-        LOGE("Failed to load boot image");
-        return Result::FAILED;
-    }
-    mbp::CpioFile cpio;
-    if (!cpio.load(bi.ramdiskImage())) {
-        LOGE("Failed to load ramdisk image");
-        return Result::FAILED;
-    }
+    std::vector<std::function<RamdiskPatcherFn>> rps;
+    rps.push_back(rp_write_rom_id(rom->id));
 
-    // Set ROM ID
-    std::vector<unsigned char> data(rom->id.begin(), rom->id.end());
-    cpio.remove("romid");
-    cpio.addFile(std::move(data), "romid", 0664);
-
-    // Recreate ramdisk
-    std::vector<unsigned char> new_ramdisk;
-    if (!cpio.createData(&new_ramdisk)) {
-        LOGE("Failed to create new ramdisk");
-        return Result::FAILED;
-    }
-    bi.setRamdiskImage(std::move(new_ramdisk));
-
-    // Re-loki if needed
-    if (bi.wasType() == mbp::BootImage::Type::Loki) {
-        std::vector<unsigned char> aboot_image;
-        if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
-            LOGE("Failed to read aboot partition: %s", strerror(errno));
-            return Result::FAILED;
-        }
-
-        bi.setAbootImage(std::move(aboot_image));
-        bi.setTargetType(mbp::BootImage::Type::Loki);
-    }
-
-    // Recreate boot image
-    if (!bi.createFile(boot_image_path)) {
-        LOGE("Failed to create new boot image");
+    if (!InstallerUtil::patch_boot_image(
+            boot_image_backup, boot_image_path, rps)) {
+        LOGE("Failed to patch boot image");
         return Result::FAILED;
     }
 

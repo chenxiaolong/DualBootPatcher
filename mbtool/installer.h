@@ -25,7 +25,6 @@
 
 #include "mbcommon/common.h"
 #include "mbdevice/device.h"
-#include "mbp/patcherconfig.h"
 #include "mbutil/hash.h"
 
 #include "roms.h"
@@ -76,7 +75,6 @@ protected:
     int _output_fd;
     bool _passthrough;
 
-    mbp::PatcherConfig _pc;
     Device *_device = nullptr;
     std::string _detected_device;
     std::string _boot_block_dev;
