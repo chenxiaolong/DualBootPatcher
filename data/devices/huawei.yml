@@ -180,7 +180,7 @@
       - /dev/block/mmcblk0p36
     data:
       - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/dm-0
+      - /dev/block/mmcblk0p49
     boot:
       - /dev/block/platform/hi_mci.0/by-name/boot
       - /dev/block/mmcblk0p28
