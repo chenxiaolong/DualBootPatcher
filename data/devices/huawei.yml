@@ -162,13 +162,12 @@
       
       
 - name: Huawei P9 Lite
-  id: VNS
+  id: HWVNS-H
   codenames:
     - HWVNS-H
-    - VNS
-    - hi6250
-    
-  architecture: arm64-v8a
+
+architecture: arm64-v8a
+
   block_devs:
     base_dirs:
       - /dev/block/platform/hi_mci.0/by-name
