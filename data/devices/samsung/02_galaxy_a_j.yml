@@ -77,6 +77,40 @@
       - /dev/block/platform/13540000.dwmmc0/by-name/CDMA-RADIO
       - /dev/block/platform/13540000.dwmmc0/by-name/RADIO
 
+- name: Samsung Galaxy J5 (2015)
+  id: j5lte
+  codenames:
+    # LTE variant]
+    - j5lte
+    - j5ltexx
+    - j5ltechn
+    - j5nltexx
+    # 3G variant
+    - j53g
+    - j53gxx
+    - j5yltedo
+    - j5lteub
+    - j5ltedx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p17
 
 - name: Samsung Galaxy E5
   id: e5
