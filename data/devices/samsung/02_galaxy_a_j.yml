@@ -111,6 +111,15 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p17
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_QCOM_RTC_FIX
+    max_brightness: 255
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy E5
   id: e5
