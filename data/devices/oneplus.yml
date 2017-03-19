@@ -155,6 +155,7 @@
   id: OnePlus3T
   codenames:
     - OnePlus3T
+    - oneplus3t
   architecture: arm64-v8a
 
   block_devs:
