@@ -177,6 +177,7 @@
       - /dev/block/platform/hi_mci.0/by-name/system
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p44
+      - /dev/block/mmcblk0p40
     cache:
       - /dev/block/platform/hi_mci.0/by-name/cache
       - /dev/block/bootdevice/by-name/cache
@@ -185,6 +186,7 @@
       - /dev/block/platform/hi_mci.0/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p49
+      - /dev/block/mmcblk0p42
       - /dev/block/dm-0
     boot:
       - /dev/block/platform/hi_mci.0/by-name/boot
