@@ -120,6 +120,9 @@
   codenames:
     - thea
     - thea_ds
+    - thea_umtsds
+    - XT1072
+    - XT1078
     - xt1079
   architecture: armeabi-v7a
 
