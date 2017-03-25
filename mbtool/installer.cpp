@@ -107,13 +107,15 @@ const std::string Installer::CANCELLED = "cancelled";
 
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
-                     std::string temp_dir, int interface, int output_fd) :
-    _zip_file(std::move(zip_file)),
-    _chroot(std::move(chroot_dir)),
-    _temp(std::move(temp_dir)),
-    _interface(interface),
-    _output_fd(output_fd),
-    _ran(false)
+                     std::string temp_dir, int interface, int output_fd,
+                     int flags)
+    : _zip_file(std::move(zip_file))
+    , _chroot(std::move(chroot_dir))
+    , _temp(std::move(temp_dir))
+    , _interface(interface)
+    , _output_fd(output_fd)
+    , _flags(flags)
+    , _ran(false)
 {
     _passthrough = _output_fd >= 0;
 
@@ -1632,6 +1634,11 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
+    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+        LOGV("Skipping filesystem mounting stage");
+        return ProceedState::Continue;
+    }
+
     if (!mount_dir_or_image(_cache_path,
                             in_chroot(CHROOT_CACHE_BIND_MOUNT),
                             in_chroot(CHROOT_CACHE_LOOP_DEV),
@@ -1837,7 +1844,8 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (_has_block_image || _rom->id == "primary") {
+        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+                && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 
             // Format system directory

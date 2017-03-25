@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -32,10 +32,16 @@
 namespace mb
 {
 
-class Installer {
+enum InstallerFlags : int
+{
+    INSTALLER_SKIP_MOUNTING_VOLUMES = 1 << 0,
+};
+
+class Installer
+{
 public:
     Installer(std::string zip_file, std::string chroot_dir,
-              std::string temp_dir, int interface, int output_fd);
+              std::string temp_dir, int interface, int output_fd, int flags);
     ~Installer();
 
     bool start_installation();
@@ -73,6 +79,7 @@ protected:
     std::string _temp;
     int _interface;
     int _output_fd;
+    int _flags;
     bool _passthrough;
 
     Device *_device = nullptr;

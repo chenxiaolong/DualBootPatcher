@@ -62,7 +62,8 @@ namespace mb
 class RomInstaller : public Installer
 {
 public:
-    RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp);
+    RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
+                 int flags);
 
     virtual void display_msg(const std::string& msg) override;
     virtual void updater_print(const std::string &msg) override;
@@ -91,14 +92,14 @@ private:
 
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
-                           std::FILE *log_fp) :
+                           std::FILE *log_fp, int flags) :
     Installer(zip_file, "/chroot", "/multiboot", 3,
 #if DEBUG_ENABLE_PASSTHROUGH
-              STDOUT_FILENO
+              STDOUT_FILENO,
 #else
-              -1
+              -1,
 #endif
-             ),
+             flags),
     _rom_id(std::move(rom_id)),
     _log_fp(log_fp)
 {
@@ -477,8 +478,10 @@ static void rom_installer_usage(bool error)
     fprintf(stream,
             "Usage: rom-installer [zip_file] [-r romid]\n\n"
             "Options:\n"
-            "  -r, --romid      ROM install type/ID (primary, dual, etc.)\n"
-            "  -h, --help       Display this help message\n");
+            "  -r, --romid        ROM install type/ID (primary, dual, etc.)\n"
+            "  -h, --help         Display this help message\n"
+            "  --skip-mount       Skip filesystem mounting stage\n"
+            "  --allow-overwrite  Allow overwriting current ROM\n");
 }
 
 int rom_installer_main(int argc, char *argv[])
@@ -499,18 +502,30 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string rom_id;
     std::string zip_file;
+    int flags = 0;
+    bool allow_overwrite = false;
 
     int opt;
 
+    enum options : int {
+        OPTION_SKIP_MOUNT       = CHAR_MAX + 1,
+        OPTION_ALLOW_OVERWRITE  = CHAR_MAX + 2,
+    };
+
     static struct option long_options[] = {
-        {"romid", required_argument, 0, 'r'},
-        {"help",  no_argument,       0, 'h'},
+        {"romid",           required_argument, 0, 'r'},
+        {"help",            no_argument,       0, 'h'},
+        {"skip-mount",      no_argument,       0, OPTION_SKIP_MOUNT},
+        {"allow-overwrite", no_argument,       0, OPTION_ALLOW_OVERWRITE},
         {0, 0, 0, 0}
     };
 
+    static const char short_options[] = "r:h";
+
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "r:h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_options,
+                              long_options, &long_index)) != -1) {
         switch (opt) {
         case 'r':
             rom_id = optarg;
@@ -519,6 +534,14 @@ int rom_installer_main(int argc, char *argv[])
         case 'h':
             rom_installer_usage(false);
             return EXIT_SUCCESS;
+
+        case OPTION_SKIP_MOUNT:
+            flags |= InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES;
+            break;
+
+        case OPTION_ALLOW_OVERWRITE:
+            allow_overwrite = true;
+            break;
 
         default:
             rom_installer_usage(true);
@@ -556,7 +579,7 @@ int rom_installer_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (rom->id == rom_id) {
+    if (!allow_overwrite && rom->id == rom_id) {
         fprintf(stderr, "Can't install over current ROM (%s)\n",
                 rom_id.c_str());
         return EXIT_FAILURE;
@@ -609,7 +632,7 @@ int rom_installer_main(int argc, char *argv[])
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
 
     // Start installing!
-    RomInstaller ri(zip_file, rom_id, fp.get());
+    RomInstaller ri(zip_file, rom_id, fp.get(), flags);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
