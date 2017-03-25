@@ -462,3 +462,37 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
+
+- name: Motorola Moto Z
+  id: griffin
+  codenames:
+    - griffin
+    - griffin_cn
+    - xt1650-03
+    - xt1650-05
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/624000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/624000.ufshc/by-name/system
+      - /dev/block/sda15
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/624000.ufshc/by-name/cache
+      - /dev/block/sda19
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/624000.ufshc/by-name/data
+      - /dev/block/sda20
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/624000.ufshc/by-name/boot
+      - /dev/block/sda17
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/624000.ufshc/by-name/recovery
+      - /dev/block/sda14
