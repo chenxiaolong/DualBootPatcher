@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -304,7 +304,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateFiles(++files, maxFiles);
     updateDetails("multiboot/info.prop");
 
-    const std::string infoProp = createInfoProp(pc, info->romId());
+    const std::string infoProp = createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -558,7 +558,8 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
 }
 
 std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
-                                             const std::string &romId)
+                                             const std::string &romId,
+                                             bool always_patch_ramdisk)
 {
     (void) pc;
 
@@ -595,7 +596,21 @@ std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
 
     out += "mbtool.installer.install-location=";
     out += romId;
-    out += "\n\n";
+    out += "\n";
+
+    out +=
+"\n"
+"\n"
+"# mbtool.installer.always-patch-ramdisk\n"
+"# -------------------------------------\n"
+"# By default, the ramdisk is only patched if the boot partition is modified\n"
+"# during the installation process. If this property is enabled, it will always\n"
+"# be patched, regardless if the boot partition is modified.\n"
+"#\n";
+
+    out += "mbtool.installer.always-patch-ramdisk=";
+    out += always_patch_ramdisk ? "true" : "false";
+    out += "\n";
 
     return out;
 }

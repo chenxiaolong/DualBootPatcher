@@ -61,7 +61,8 @@ public:
                                ErrorCode *errorOut);
 
     static std::string createInfoProp(const PatcherConfig * const pc,
-                                      const std::string &romId);
+                                      const std::string &romId,
+                                      bool always_patch_ramdisk);
 
 private:
     class Impl;

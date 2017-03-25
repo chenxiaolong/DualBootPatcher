@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -29,9 +29,9 @@
 // Patchers
 #include "mbp/autopatchers/standardpatcher.h"
 #include "mbp/autopatchers/mountcmdpatcher.h"
-#include "mbp/patchers/mbtoolupdater.h"
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/patchers/odinpatcher.h"
+#include "mbp/patchers/ramdiskupdater.h"
 #include "mbp/ramdiskpatchers/default.h"
 
 
@@ -155,9 +155,9 @@ void PatcherConfig::setTempDirectory(std::string path)
 std::vector<std::string> PatcherConfig::patchers() const
 {
     return {
-        MbtoolUpdater::Id,
         MultiBootPatcher::Id,
-        OdinPatcher::Id
+        OdinPatcher::Id,
+        RamdiskUpdater::Id,
     };
 }
 
@@ -197,12 +197,12 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
 {
     Patcher *p = nullptr;
 
-    if (id == MbtoolUpdater::Id) {
-        p = new MbtoolUpdater(this);
-    } else if (id == MultiBootPatcher::Id) {
+    if (id == MultiBootPatcher::Id) {
         p = new MultiBootPatcher(this);
     } else if (id == OdinPatcher::Id) {
         p = new OdinPatcher(this);
+    } else if (id == RamdiskUpdater::Id) {
+        p = new RamdiskUpdater(this);
     }
 
     if (p != nullptr) {
