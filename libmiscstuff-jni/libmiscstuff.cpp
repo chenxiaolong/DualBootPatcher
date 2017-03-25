@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -23,11 +23,6 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
-
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/vfs.h>
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -201,70 +196,6 @@ done:
         env->ReleaseStringUTFChars(jfilename, filename);
         env->ReleaseStringUTFChars(jtarget, target);
     }
-}
-
-JNIEXPORT jboolean JNICALL
-CLASS_METHOD(findStringInFile)(JNIEnv *env, jclass clazz, jstring jpath,
-                               jstring jstr)
-{
-    (void) clazz;
-
-    jboolean ret = JNI_FALSE;
-    const char *path = nullptr;
-    const char *str = nullptr;
-    struct stat sb;
-    void *map = MAP_FAILED;
-    int fd = -1;
-
-    path = env->GetStringUTFChars(jpath, nullptr);
-    if (!path) {
-        goto done;
-    }
-
-    str = env->GetStringUTFChars(jstr, nullptr);
-    if (!str) {
-        goto done;
-    }
-
-    if ((fd = open(path, O_RDONLY)) < 0) {
-        throw_exception(env, IOException,
-                        "%s: Failed to open file: %s",
-                        path, strerror(errno));
-        goto done;
-    }
-
-    if (fstat(fd, &sb) < 0) {
-        throw_exception(env, IOException,
-                        "%s: Failed to stat: %s",
-                        path, strerror(errno));
-        goto done;
-    }
-
-    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (map == MAP_FAILED) {
-        throw_exception(env, IOException,
-                        "%s: Failed to mmap: %s",
-                        path, strerror(errno));
-        goto done;
-    }
-
-    ret = memmem(map, sb.st_size, str, strlen(str)) ? JNI_TRUE : JNI_FALSE;
-
-done:
-    if (map != MAP_FAILED) {
-        munmap(map, sb.st_size);
-    }
-    if (fd >= 0) {
-        close(fd);
-    }
-    if (path) {
-        env->ReleaseStringUTFChars(jpath, path);
-    }
-    if (str) {
-        env->ReleaseStringUTFChars(jstr, str);
-    }
-
-    return ret;
 }
 
 JNIEXPORT void JNICALL
