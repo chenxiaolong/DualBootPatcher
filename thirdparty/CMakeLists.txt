@@ -266,13 +266,13 @@ endif()
 # safe-iop for Android
 ################################################################################
 
-set(SAFE_IOP_VER "6.0.1_r43-1")
+set(SAFE_IOP_VER "7.1.1_r28-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} armeabi-v7a SHA512=cf4705a7928f4ae70e92d94f47bbc7d01bb9a9eef707cfade62c6d7198be559325bcea528bcc67b6e93654e69e8e76c015981df55d30a712fa0ec8f4de4edd9b)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} arm64-v8a   SHA512=b6d2bc283a359f7b97ff34eb8c3d1b74081ec7e8f51abf0f56eb98af0507da9ac73ae83e078eca7ed1935b0ebafd27b02914c4dd68730f7b72f475dd4050c689)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86         SHA512=5a75f2ac7f816fee629c697f0bca6a1b14e6b306b1a45260afff6740dc3b96370d2894a4eb90811880536b015b49c1affa5d349b1afa3cc00a870b3d7e0b5711)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86_64      SHA512=f46430623bb0146ff85c30cb696a29348a0330e5434b5486626ca6504c1a99cb970087725dcd04f6c164129c0772c180e6aa81abef043b077725d93f2d46ed61)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} armeabi-v7a SHA512=3202b5e9b88c1bee4dd5291f43fcd130f3d2335432b9c2fbaa988afa9456c1490c293d04d7bcf4390eb3643000668167f3a79db8b5ed615020eff020fc2dc095)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} arm64-v8a   SHA512=d3c3d689d4f14ad239178ecb57e4d4d04568793b20ae34470889d617017237228a58576f3954a6b328153632cb4076b92f0d0cab6e095c329cfce417ada02400)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86         SHA512=d4172e8d253c60bde5586e9de3d591885b8c73de46ef3f6ddabab0519828b20701610daade253699943c0e0b7e4d3378f7e7815a5fd6ca59ee202c590254be55)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86_64      SHA512=c823420e85ed4919efb3afa38de855e1393a06d81e8fe293d3ae26c098b859b9f7df7fe6e0847027d5628293af4924b04e708d8e01e4d01705a2bdc223740ea3)
 else()
     set(THIRD_PARTY_SAFE_IOP_DIR "${MBP_PREBUILTS_BINARY_DIR}/safe-iop/${SAFE_IOP_VER}" PARENT_SCOPE)
 endif()
