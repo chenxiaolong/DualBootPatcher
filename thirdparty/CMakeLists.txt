@@ -221,13 +221,13 @@ endif()
 # libpng for Android
 ################################################################################
 
-set(LIBPNG_VER "6.0.1_r43-2")
+set(LIBPNG_VER "7.1.1_r28-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=c5baec277537952b9458525463a00f51d9e18684053e225632b8f07ea98030e38909d1c29a8a56df58a7f746d8fc2fb412bbc234d2eaa4c33392e6733477c4e0)
-    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=42beba8b70cfe30e3a9222b5acfd9d6519a51d1032245d8fd98605f8bff5814e12d4dd8cfceb8eaaa99b53540f1b907c86accf799b254a12359b7287d9ff3b94)
-    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=0ac4f9f87897d9678c84e5961957af3b66068eaaf0c986ef58a3ccdfa7a1eb706080039ab2d3d98cd4720da9ec148c03f83e88240e32a0b003bfed479f040ddb)
-    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=0c42204d4d3834108b4820ec4a57d48f237373c9ca8bf67a79ad477994af147e01ff851f0855bae2138f7d8a60493bda42daaa6ca35c607a854c1c01c1a80d38)
+    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=793d430c17a4bc7db9f57e7c12032c64c648d266d05f7f519f3aa63ca33178e81e012c1c4be4be7dde6baaad61fbe641e48547a9b88643098d22d056607a2dd3)
+    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=b61ec5cd83644bdc0ae1f5562fdb590bbd64cbd4175296bd3ddbe7d11d269031a91cb77c24cc240dd0f9318116c6d9c299796cbaee744585e521d24f5f54c09b)
+    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=12001cdf6684bfe5ec2f1c19fa85363a1a25480f44724de47ba5530b8ae34d18e81b5c8701a920317c16d53bc2250ae9794aa83d2bd3965df9113db5cc7f9653)
+    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=1cd2e27bfa43c3cce484a2e1ecd1e8fd53cb54d26535e0c5fcd113a2c3ad203087af06f56cc6b66d51a8a4236b9bea0e963cb9d1ab8b6ae8a0f9699b02957b5a)
 else()
     set(THIRD_PARTY_LIBPNG_DIR "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}" PARENT_SCOPE)
 endif()
