@@ -1,8 +1,9 @@
-From 45b4eac05ecfdbd290bc382713f3f523f7b66284 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
-Date: Mon, 19 Oct 2015 01:24:17 -0400
+From dc18137e5dac52d0787081078a74ceac8e65c7e2 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 26 Mar 2017 15:48:14 -0400
 Subject: [PATCH 3/3] Add Android.mk
 
+Signed-off-by: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 ---
  Android.mk | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
@@ -35,5 +36,5 @@ index 0000000..91ab22d
 +	srclib
 +include $(BUILD_STATIC_LIBRARY)
 -- 
-2.6.1
+2.9.3
 
