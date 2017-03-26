@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class CryptoDecryptRequest extends Table {
   public static CryptoDecryptRequest getRootAsCryptoDecryptRequest(ByteBuffer _bb) { return getRootAsCryptoDecryptRequest(_bb, new CryptoDecryptRequest()); }
-  public static CryptoDecryptRequest getRootAsCryptoDecryptRequest(ByteBuffer _bb, CryptoDecryptRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public CryptoDecryptRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static CryptoDecryptRequest getRootAsCryptoDecryptRequest(ByteBuffer _bb, CryptoDecryptRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public CryptoDecryptRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startCryptoDecryptRequest(FlatBufferBuilder builder) { builder.startObject(1); }

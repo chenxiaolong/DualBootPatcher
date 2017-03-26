@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class FileSELinuxGetLabelRequest extends Table {
   public static FileSELinuxGetLabelRequest getRootAsFileSELinuxGetLabelRequest(ByteBuffer _bb) { return getRootAsFileSELinuxGetLabelRequest(_bb, new FileSELinuxGetLabelRequest()); }
-  public static FileSELinuxGetLabelRequest getRootAsFileSELinuxGetLabelRequest(ByteBuffer _bb, FileSELinuxGetLabelRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public FileSELinuxGetLabelRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static FileSELinuxGetLabelRequest getRootAsFileSELinuxGetLabelRequest(ByteBuffer _bb, FileSELinuxGetLabelRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public FileSELinuxGetLabelRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int id() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
 

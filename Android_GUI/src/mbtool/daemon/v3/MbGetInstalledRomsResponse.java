@@ -10,11 +10,12 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbGetInstalledRomsResponse extends Table {
   public static MbGetInstalledRomsResponse getRootAsMbGetInstalledRomsResponse(ByteBuffer _bb) { return getRootAsMbGetInstalledRomsResponse(_bb, new MbGetInstalledRomsResponse()); }
-  public static MbGetInstalledRomsResponse getRootAsMbGetInstalledRomsResponse(ByteBuffer _bb, MbGetInstalledRomsResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbGetInstalledRomsResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbGetInstalledRomsResponse getRootAsMbGetInstalledRomsResponse(ByteBuffer _bb, MbGetInstalledRomsResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbGetInstalledRomsResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public MbRom roms(int j) { return roms(new MbRom(), j); }
-  public MbRom roms(MbRom obj, int j) { int o = __offset(4); return o != 0 ? obj.__init(__indirect(__vector(o) + j * 4), bb) : null; }
+  public MbRom roms(MbRom obj, int j) { int o = __offset(4); return o != 0 ? obj.__assign(__indirect(__vector(o) + j * 4), bb) : null; }
   public int romsLength() { int o = __offset(4); return o != 0 ? __vector_len(o) : 0; }
 
   public static int createMbGetInstalledRomsResponse(FlatBufferBuilder builder,
