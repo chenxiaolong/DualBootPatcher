@@ -412,13 +412,12 @@ bool MinizipUtils::copyFileRaw(unzFile uf,
 
     uint64_t bytes = 0;
 
-    // Exceeds Android's default stack size, unfortunately, so allocate
-    // on the heap
-    std::vector<unsigned char> buf(1024 * 1024); // 1MiB
+    // minizip no longer supports buffers larger than UINT16_MAX
+    char buf[UINT16_MAX];
     int bytes_read;
     double ratio;
 
-    while ((bytes_read = unzReadCurrentFile(uf, buf.data(), buf.size())) > 0) {
+    while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
         bytes += bytes_read;
         if (cb) {
             // Scale this to the uncompressed size for the purposes of a
@@ -427,7 +426,7 @@ bool MinizipUtils::copyFileRaw(unzFile uf,
             cb(ratio * ufi.uncompressed_size, userData);
         }
 
-        ret = zipWriteInFileInZip(zf, buf.data(), bytes_read);
+        ret = zipWriteInFileInZip(zf, buf, bytes_read);
         if (ret != ZIP_OK) {
             LOGE("minizip: Failed to write data to inner file: %s",
                  zipErrorString(ret).c_str());
