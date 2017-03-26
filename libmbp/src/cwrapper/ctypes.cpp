@@ -7,11 +7,6 @@
 
 
 /*!
- * \typedef CBootImage
- * \brief C wrapper for BootImage object
- */
-
-/*!
  * \typedef CDevice
  * \brief C wrapper for Device object
  */
