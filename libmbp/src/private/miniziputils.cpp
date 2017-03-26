@@ -39,6 +39,7 @@
 #include "mbpio/path.h"
 
 #include "minizip/ioapi_buf.h"
+#include "minizip/minishared.h"
 #if defined(_WIN32)
 #  define MINIZIP_WIN32
 #  include "minizip/iowin32.h"
@@ -367,13 +368,7 @@ bool MinizipUtils::copyFileRaw(unzFile uf,
     zip_fileinfo zfi;
     memset(&zfi, 0, sizeof(zfi));
 
-    zfi.dosDate = ufi.dosDate;
-    zfi.tmz_date.tm_sec = ufi.tmu_date.tm_sec;
-    zfi.tmz_date.tm_min = ufi.tmu_date.tm_min;
-    zfi.tmz_date.tm_hour = ufi.tmu_date.tm_hour;
-    zfi.tmz_date.tm_mday = ufi.tmu_date.tm_mday;
-    zfi.tmz_date.tm_mon = ufi.tmu_date.tm_mon;
-    zfi.tmz_date.tm_year = ufi.tmu_date.tm_year;
+    zfi.dos_date = ufi.dos_date;
     zfi.internal_fa = ufi.internal_fa;
     zfi.external_fa = ufi.external_fa;
 
@@ -589,12 +584,10 @@ bool MinizipUtils::extractFile(unzFile uf,
     return n == 0;
 }
 
-static bool getFileTime(const std::string &filename,
-                        tm_zip *tmzip, uLong *dostime)
+static bool getFileTime(const std::string &filename, uint32_t *dostime)
 {
     // Don't fail when building with -Werror
     (void) filename;
-    (void) tmzip;
     (void) dostime;
 
 #ifdef _WIN32
@@ -633,12 +626,7 @@ static bool getFileTime(const std::string &filename,
             return false;
         }
 
-        tmzip->tm_sec  = t.tm_sec;
-        tmzip->tm_min  = t.tm_min;
-        tmzip->tm_hour = t.tm_hour;
-        tmzip->tm_mday = t.tm_mday;
-        tmzip->tm_mon  = t.tm_mon ;
-        tmzip->tm_year = t.tm_year;
+        *dostime = tm_to_dosdate(&t);
 
         return true;
     } else {
@@ -730,7 +718,7 @@ ErrorCode MinizipUtils::addFile(zipFile zf,
     zip_fileinfo zi;
     memset(&zi, 0, sizeof(zi));
 
-    if (!getFileTime(path, &zi.tmz_date, &zi.dosDate)) {
+    if (!getFileTime(path, &zi.dos_date)) {
         LOGE("%s: Failed to get modification time", path.c_str());
         return ErrorCode::FileOpenError;
     }
