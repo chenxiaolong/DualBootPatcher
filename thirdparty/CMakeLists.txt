@@ -131,13 +131,13 @@ endif()
 # libiconv for Android
 ################################################################################
 
-set(LIBICONV_VER "1.14-2")
+set(LIBICONV_VER "1.15-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libiconv ${LIBICONV_VER} armeabi-v7a SHA512=0bc6f2eb2eacda0747ce74c908ee5be060925c5bebcd35414f0c384db474fac37e1aa2ee7beb39acf58da480cece5f200046be0e647209edc29158c8892d1d1b)
-    get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=20960a97155a487478351d30d8cc11a5879016667a5639fd82b87508999d7fe08fd099f9cc48b845164e9495f299eae3f58ed3ffaf37d50875bcaf86f689e1f9)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=b57e8223a7c23e4e79f2e221825d01be740fed58d028f03d0edbd2da5ee8b14b4247430f750ff974d324e5781ba729adb0d667ba0b3bd4f6a84d79e73bedadca)
-    get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=46ef3001899c6b376be27e4b1ffcca3bd164d992d57501fabfef7a321d328398e1e10fd9b7498a4613b54dd521f9408d6c8947600fd0377aa95df3db4467885e)
+    get_prebuilt(libiconv ${LIBICONV_VER} armeabi-v7a SHA512=408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286)
+    get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255)
+    get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556)
+    get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3)
 else()
     set(THIRD_PARTY_LIBICONV_DIR "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}" PARENT_SCOPE)
 endif()
