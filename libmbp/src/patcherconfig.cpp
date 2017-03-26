@@ -32,7 +32,6 @@
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/patchers/odinpatcher.h"
 #include "mbp/patchers/ramdiskupdater.h"
-#include "mbp/ramdiskpatchers/default.h"
 
 
 namespace mbp
@@ -52,7 +51,6 @@ public:
     // Created patchers
     std::vector<Patcher *> allocPatchers;
     std::vector<AutoPatcher *> allocAutoPatchers;
-    std::vector<RamdiskPatcher *> allocRamdiskPatchers;
 };
 /*! \endcond */
 
@@ -78,11 +76,6 @@ PatcherConfig::~PatcherConfig()
         destroyAutoPatcher(patcher);
     }
     m_impl->allocAutoPatchers.clear();
-
-    for (RamdiskPatcher *patcher : m_impl->allocRamdiskPatchers) {
-        destroyRamdiskPatcher(patcher);
-    }
-    m_impl->allocRamdiskPatchers.clear();
 }
 
 /*!
@@ -175,18 +168,6 @@ std::vector<std::string> PatcherConfig::autoPatchers() const
 }
 
 /*!
- * \brief Get list of RamdiskPatcher IDs
- *
- * \return List of RamdiskPatcher names
- */
-std::vector<std::string> PatcherConfig::ramdiskPatchers() const
-{
-    return {
-        DefaultRP::Id,
-    };
-}
-
-/*!
  * \brief Create new Patcher
  *
  * \param id Patcher ID
@@ -239,32 +220,6 @@ AutoPatcher * PatcherConfig::createAutoPatcher(const std::string &id,
 }
 
 /*!
- * \brief Create new RamdiskPatcher
- *
- * \param id RamdiskPatcher ID
- * \param info FileInfo describing file to be patched
- * \param cpio CpioFile for the ramdisk archive
- *
- * \return New RamdiskPatcher
- */
-RamdiskPatcher * PatcherConfig::createRamdiskPatcher(const std::string &id,
-                                                     const FileInfo * const info,
-                                                     CpioFile * const cpio)
-{
-    RamdiskPatcher *rp = nullptr;
-
-    if (id == DefaultRP::Id) {
-        rp = new DefaultRP(this, info, cpio);
-    }
-
-    if (rp != nullptr) {
-        m_impl->allocRamdiskPatchers.push_back(rp);
-    }
-
-    return rp;
-}
-
-/*!
  * \brief Destroys a Patcher and frees its memory
  *
  * \param patcher Patcher to destroy
@@ -295,23 +250,6 @@ void PatcherConfig::destroyAutoPatcher(AutoPatcher *patcher)
     assert(it != m_impl->allocAutoPatchers.end());
 
     m_impl->allocAutoPatchers.erase(it);
-    delete patcher;
-}
-
-/*!
- * \brief Destroys a RamdiskPatcher and frees its memory
- *
- * \param patcher RamdiskPatcher to destroy
- */
-void PatcherConfig::destroyRamdiskPatcher(RamdiskPatcher *patcher)
-{
-    auto it = std::find(m_impl->allocRamdiskPatchers.begin(),
-                        m_impl->allocRamdiskPatchers.end(),
-                        patcher);
-
-    assert(it != m_impl->allocRamdiskPatchers.end());
-
-    m_impl->allocRamdiskPatchers.erase(it);
     delete patcher;
 }
 

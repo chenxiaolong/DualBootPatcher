@@ -648,8 +648,6 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to create patcher");
     case mbp::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher");
-    case mbp::ErrorCode::RamdiskPatcherCreateError:
-        return QObject::tr("Failed to create ramdisk patcher");
     case mbp::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
     case mbp::ErrorCode::FileCloseError:
@@ -668,10 +666,6 @@ static QString errorToString(const mbp::ErrorCode &error) {
         return QObject::tr("Failed to apply Bump to the boot image");
     case mbp::ErrorCode::BootImageApplyLokiError:
         return QObject::tr("Failed to apply Loki to the boot image");
-    case mbp::ErrorCode::CpioFileAlreadyExistsError:
-        return QObject::tr("File already exists in cpio archive");
-    case mbp::ErrorCode::CpioFileNotExistError:
-        return QObject::tr("File does not exist in cpio archive");
     case mbp::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
     case mbp::ErrorCode::ArchiveReadDataError:
