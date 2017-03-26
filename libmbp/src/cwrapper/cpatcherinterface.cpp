@@ -38,23 +38,17 @@
 #define CCASTAP(x) \
     assert(x != nullptr); \
     const mbp::AutoPatcher *ap = reinterpret_cast<const mbp::AutoPatcher *>(x);
-#define CASTRP(x) \
-    assert(x != nullptr); \
-    mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(x);
-#define CCASTRP(x) \
-    assert(x != nullptr); \
-    const mbp::RamdiskPatcher *rp = reinterpret_cast<const mbp::RamdiskPatcher *>(x);
 
 
 /*!
  * \file cpatcherinterface.h
- * \brief C Wrapper for Patcher, AutoPatcher, and RamdiskPatcher
+ * \brief C Wrapper for Patcher and AutoPatcher
  *
  * Please see the documentation for the patchers from the C++ API for more
  * details. The C functions directly correspond to the member functions of the
  * patcher classes.
  *
- * \sa Patcher, AutoPatcher, RamdiskPatcher
+ * \sa Patcher, AutoPatcher
  */
 
 extern "C" {
@@ -271,58 +265,6 @@ bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory)
 {
     CASTAP(patcher);
     return ap->patchFiles(directory);
-}
-
-/*!
- * \brief Get the error information
- *
- * \note The returned ErrorCode is filled with valid data only if a
- *       CRamdiskPatcher operation has failed.
- *
- * \note The returned ErrorCode should be freed with mbp_error_destroy()
- *       when it is no longer needed.
- *
- * \param patcher CRamdiskPatcher object
- *
- * \return ErrorCode
- *
- * \sa RamdiskPatcher::error()
- */
-/* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher)
-{
-    CCASTRP(patcher);
-    return static_cast<int>(rp->error());
-}
-
-/*!
- * \brief The ramdisk patchers's identifier
- *
- * \note The returned string is dynamically allocated. It should be free()'d
- *       when it is no longer needed.
- *
- * \param patcher CRamdiskPatcher object
- * \return RamdiskPatcher ID
- *
- * \sa RamdiskPatcher::id()
- */
-char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher)
-{
-    CCASTRP(patcher);
-    return string_to_cstring(rp->id());
-}
-
-/*!
- * \brief Start patching the ramdisk
- *
- * \param patcher CRamdiskPatcher object
- * \return true on success, otherwise false (and error set appropriately)
- *
- * \sa RamdiskPatcher::patchRamdisk()
- */
-bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher)
-{
-    CASTRP(patcher);
-    return rp->patchRamdisk();
 }
 
 }

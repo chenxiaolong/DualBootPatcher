@@ -189,23 +189,6 @@ char ** mbp_config_autopatchers(const CPatcherConfig *pc)
 }
 
 /*!
- * \brief Get list of RamdiskPatcher IDs
- *
- * \note The returned array should be freed with `mbp_free_array()` when it
- *       is no longer needed.
- *
- * \param pc CPatcherConfig object
- * \return NULL-terminated array of RamdiskPatcher IDs
- *
- * \sa PatcherConfig::ramdiskPatchers()
- */
-char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc)
-{
-    CCAST(pc);
-    return vector_to_cstring_array(config->ramdiskPatchers());
-}
-
-/*!
  * \brief Create new Patcher
  *
  * \param pc CPatcherConfig object
@@ -243,29 +226,6 @@ CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
 }
 
 /*!
- * \brief Create new RamdiskPatcher
- *
- * \param pc CPatcherConfig object
- * \param id RamdiskPatcher ID
- * \param info FileInfo describing file to be patched
- * \param cpio CpioFile for the ramdisk archive
- * \return New RamdiskPatcher
- *
- * \sa PatcherConfig::createRamdiskPatcher()
- */
-CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
-                                                    const char *id,
-                                                    const CFileInfo *info,
-                                                    CCpioFile *cpio)
-{
-    CAST(pc);
-    const mbp::FileInfo *fi = reinterpret_cast<const mbp::FileInfo *>(info);
-    mbp::CpioFile *cf = reinterpret_cast<mbp::CpioFile *>(cpio);
-    mbp::RamdiskPatcher *rp = config->createRamdiskPatcher(id, fi, cf);
-    return reinterpret_cast<CRamdiskPatcher *>(rp);
-}
-
-/*!
  * \brief Destroys a Patcher and frees its memory
  *
  * \param pc CPatcherConfig object
@@ -294,22 +254,6 @@ void mbp_config_destroy_autopatcher(CPatcherConfig *pc,
     CAST(pc);
     mbp::AutoPatcher *ap = reinterpret_cast<mbp::AutoPatcher *>(patcher);
     config->destroyAutoPatcher(ap);
-}
-
-/*!
- * \brief Destroys a RamdiskPatcher and frees its memory
- *
- * \param pc CPatcherConfig object
- * \param patcher CRamdiskPatcher to destroy
- *
- * \sa PatcherConfig::destroyRamdiskPatcher()
- */
-void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc,
-                                        CRamdiskPatcher *patcher)
-{
-    CAST(pc);
-    mbp::RamdiskPatcher *rp = reinterpret_cast<mbp::RamdiskPatcher *>(patcher);
-    config->destroyRamdiskPatcher(rp);
 }
 
 }

@@ -38,7 +38,6 @@ enum ErrorCode
     // PatcherCreation
     PatcherCreateError = 50,
     AutoPatcherCreateError = 51,
-    RamdiskPatcherCreateError = 52,
 
     // I/O
     FileOpenError = 100,
@@ -52,10 +51,6 @@ enum ErrorCode
     BootImageParseError = 150,
     BootImageApplyBumpError = 151,
     BootImageApplyLokiError = 152,
-
-    // cpio
-    CpioFileAlreadyExistsError = 170,
-    CpioFileNotExistError = 171,
 
     // Archive
     ArchiveReadOpenError = 200,
