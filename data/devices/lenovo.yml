@@ -270,6 +270,8 @@
     - Z2
     - z2plus
     - z2_plus
+    - Z2plus
+    - Z2_plus
   architecture: arm64-v8a
 
   block_devs:
