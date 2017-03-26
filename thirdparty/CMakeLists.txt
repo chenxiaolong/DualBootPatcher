@@ -251,13 +251,13 @@ endif()
 # libdrm for Android
 ################################################################################
 
-set(LIBDRM_VER "6.0.1_r43-1")
+set(LIBDRM_VER "7.1.1_r28-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=c1aa21aca556d6185477df50ab0659cadad613d033f37153f4c5a361410befc1c3a5d8683465ed6b66a56f9d30b40f08ab2b899c837f2723d93f20145c5a29c7)
-    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=3d8b2048bb09dd2d40e23683d0c2a2585ec0d3e0f25ec220171fc8131507d9d3c63c441412d7e537b2a1f81cbd8db38486f9561cb59912506018af3bed1a86e0)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=dfb3ccb53acc9923cddb90b400cb7f2d85318469f84c54c375c6a9cada4c070da8caaaad3617c27b15de240652265ec269d2148c686fe11b281f5d9bd076c0ee)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=9a2e7181662283a2d32f7f048dd5b2b91c260bff38e505ef04236866a19ea89246cbca6ff010a94f6054c32fea64720e5da1d14ab6ae5f0c7e75f6d72cd90b7d)
+    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=7bc3683546d387bacf706c872566211afb22b01ed479e7eccf8906cbe767e497e20c437e8249835db1308d3b189dc7245b70620edc465014e35d7861d52d4407)
+    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=9c5d37c5973d9442d2eb1808fb0195936cf91c320a908b7305e64d3b8672d7f22ebe6b2ab20b5a201c648633db667bfef50ca15d416d63e353dca777fc0581bc)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=be1cfca18cef6bb8dc8c37036cf578ad9f137ca5c27a6b55f316ed291258145f97126a6ddd387110f2125c3b8cd3af9d7dde0a8f669bc3057b3661133cda8b6d)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=6a3c99878dfd4a3bd9896fa3f71431c48f2703cef5bce5f448cb44098330cd46795308605027db54668791aba0ef0448b76c1fd3211f891379017374fbf72417)
 else()
     set(THIRD_PARTY_LIBDRM_DIR "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}" PARENT_SCOPE)
 endif()
