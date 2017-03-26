@@ -31,7 +31,6 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipEntry;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
@@ -284,25 +283,12 @@ public class SwitcherUtils {
             return KernelStatus.UNSET;
         }
 
-        BootImage biSaved = new BootImage();
-        BootImage biOther = new BootImage();
-
         try {
-            if (!biSaved.load(savedImageFile.getAbsolutePath())) {
-                Log.e(TAG, "libmbp error code: " + biSaved.getError());
-                return KernelStatus.UNKNOWN;
-            }
-            if (!biOther.load(bootImageFile.getAbsolutePath())) {
-                Log.e(TAG, "libmbp error code: " + biOther.getError());
-                return KernelStatus.UNKNOWN;
-            }
-
-            return biSaved.equals(biOther)
-                    ? KernelStatus.SET
-                    : KernelStatus.DIFFERENT;
-        } finally {
-            biSaved.destroy();
-            biOther.destroy();
+            return LibMiscStuff.bootImagesEqual(savedImageFile.getAbsolutePath(),
+                    bootImageFile.getAbsolutePath()) ? KernelStatus.SET : KernelStatus.DIFFERENT;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to compare " + savedImageFile + " with " + bootImageFile, e);
+            return KernelStatus.UNKNOWN;
         }
     }
 

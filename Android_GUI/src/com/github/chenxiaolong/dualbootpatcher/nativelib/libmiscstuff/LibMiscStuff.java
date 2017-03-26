@@ -30,6 +30,8 @@ public final class LibMiscStuff {
 
     public static native String getBootImageRomId(String filename) throws IOException;
 
+    public static native boolean bootImagesEqual(String filename1, String filename2) throws IOException;
+
     static {
         System.loadLibrary("miscstuff-jni");
     }

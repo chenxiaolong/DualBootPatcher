@@ -32,6 +32,7 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
 
 #include "mblog/android_logger.h"
@@ -220,7 +221,8 @@ struct LaBootImgCtx
     char buf[10240];
 };
 
-la_ssize_t laBootImgReadCb(archive *a, void *userdata, const void **buffer)
+static la_ssize_t laBootImgReadCb(archive *a, void *userdata,
+                                  const void **buffer)
 {
     (void) a;
     LaBootImgCtx *ctx = static_cast<LaBootImgCtx *>(userdata);
@@ -374,6 +376,286 @@ done:
     }
 
     return romId;
+}
+
+static bool bootImgHeadersEqual(MbBiHeader *header1, MbBiHeader *header2)
+{
+#define CHECK_COMPARABLE_VALUES(ISSET1, ISSET2, VALUE1, VALUE2) \
+    do { \
+        bool isset1 = (ISSET1); \
+        bool isset2 = (ISSET2); \
+        if (isset1 != isset2 \
+                || (isset1 && isset2 && (VALUE1) != (VALUE2))) { \
+            return false; \
+        } \
+    } while (0)
+
+#define CHECK_STRING_VALUES(ISSET1, ISSET2, STR1, STR2) \
+    do { \
+        bool isset1 = (ISSET1); \
+        bool isset2 = (ISSET2); \
+        if (isset1 != isset2 \
+                || (isset1 && isset2 && strcmp(STR1, STR2) != 0)) { \
+            return false; \
+        } \
+    } while (0)
+
+    // Board name
+
+    const char *name1 = mb_bi_header_board_name(header1);
+    const char *name2 = mb_bi_header_board_name(header2);
+
+    CHECK_STRING_VALUES(!!name1, !!name2, name1, name2);
+
+    // Kernel cmdline
+
+    const char *cmdline1 = mb_bi_header_kernel_cmdline(header1);
+    const char *cmdline2 = mb_bi_header_kernel_cmdline(header2);
+
+    CHECK_STRING_VALUES(!!cmdline1, !!cmdline2, cmdline1, cmdline2);
+
+    // Page size
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_page_size_is_set(header1),
+                            mb_bi_header_page_size_is_set(header2),
+                            mb_bi_header_page_size(header1),
+                            mb_bi_header_page_size(header2));
+
+    // Kernel address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_kernel_address_is_set(header1),
+                            mb_bi_header_kernel_address_is_set(header2),
+                            mb_bi_header_kernel_address(header1),
+                            mb_bi_header_kernel_address(header2));
+
+    // Ramdisk address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_ramdisk_address_is_set(header1),
+                            mb_bi_header_ramdisk_address_is_set(header2),
+                            mb_bi_header_ramdisk_address(header1),
+                            mb_bi_header_ramdisk_address(header2));
+
+    // Second bootloader address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_secondboot_address_is_set(header1),
+                            mb_bi_header_secondboot_address_is_set(header2),
+                            mb_bi_header_secondboot_address(header1),
+                            mb_bi_header_secondboot_address(header2));
+
+    // Kernel tags address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_kernel_tags_address_is_set(header1),
+                            mb_bi_header_kernel_tags_address_is_set(header2),
+                            mb_bi_header_kernel_tags_address(header1),
+                            mb_bi_header_kernel_tags_address(header2));
+
+    // Sony IPL address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_ipl_address_is_set(header1),
+                            mb_bi_header_sony_ipl_address_is_set(header2),
+                            mb_bi_header_sony_ipl_address(header1),
+                            mb_bi_header_sony_ipl_address(header2));
+
+    // Sony RPM address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_rpm_address_is_set(header1),
+                            mb_bi_header_sony_rpm_address_is_set(header2),
+                            mb_bi_header_sony_rpm_address(header1),
+                            mb_bi_header_sony_rpm_address(header2));
+
+    // Sony APPSBL address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_appsbl_address_is_set(header1),
+                            mb_bi_header_sony_appsbl_address_is_set(header2),
+                            mb_bi_header_sony_appsbl_address(header1),
+                            mb_bi_header_sony_appsbl_address(header2));
+
+    // Entrypoint address
+
+    CHECK_COMPARABLE_VALUES(mb_bi_header_entrypoint_address_is_set(header1),
+                            mb_bi_header_entrypoint_address_is_set(header2),
+                            mb_bi_header_entrypoint_address(header1),
+                            mb_bi_header_entrypoint_address(header2));
+
+    return true;
+
+#undef CHECK_COMPARABLE_VALUES
+#undef CHECK_STRING_VALUES
+}
+
+JNIEXPORT jboolean JNICALL
+CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
+                              jstring jfilename2)
+{
+    (void) clazz;
+
+    ScopedReader bir1(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir2(mb_bi_reader_new(), &mb_bi_reader_free);
+    MbBiHeader *header1;
+    MbBiHeader *header2;
+    MbBiEntry *entry1;
+    MbBiEntry *entry2;
+    size_t entries = 0;
+    int ret;
+    const char *filename1 = nullptr;
+    const char *filename2 = nullptr;
+    jboolean result = false;
+
+    filename1 = env->GetStringUTFChars(jfilename1, nullptr);
+    if (!filename1) {
+        goto done;
+    }
+    filename2 = env->GetStringUTFChars(jfilename2, nullptr);
+    if (!filename2) {
+        goto done;
+    }
+
+    if (!bir1 || !bir2) {
+        throw_exception(env, IOException,
+                        "Failed to allocate MbBiReader instances");
+        goto done;
+    }
+
+    // Set up reader formats
+    ret = mb_bi_reader_enable_format_all(bir1.get());
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "Failed to enable all boot image formats: %s",
+                        mb_bi_reader_error_string(bir1.get()));
+        goto done;
+    }
+    ret = mb_bi_reader_enable_format_all(bir2.get());
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "Failed to enable all boot image formats: %s",
+                        mb_bi_reader_error_string(bir2.get()));
+        goto done;
+    }
+
+    // Open boot images
+    ret = mb_bi_reader_open_filename(bir1.get(), filename1);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to open boot image for reading: %s",
+                        filename1, mb_bi_reader_error_string(bir1.get()));
+        goto done;
+    }
+    ret = mb_bi_reader_open_filename(bir2.get(), filename2);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to open boot image for reading: %s",
+                        filename2, mb_bi_reader_error_string(bir2.get()));
+        goto done;
+    }
+
+    // Read headers
+    ret = mb_bi_reader_read_header(bir1.get(), &header1);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to read header: %s",
+                        filename1, mb_bi_reader_error_string(bir1.get()));
+        goto done;
+    }
+    ret = mb_bi_reader_read_header(bir2.get(), &header2);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to read header: %s",
+                        filename1, mb_bi_reader_error_string(bir2.get()));
+        goto done;
+    }
+
+    // Compare headers
+    if (!bootImgHeadersEqual(header1, header2)) {
+        goto done;
+    }
+
+    // Count entries in first boot image
+    {
+        while ((ret = mb_bi_reader_read_entry(bir1.get(), &entry1))
+                == MB_BI_OK) {
+            ++entries;
+        }
+
+        if (ret != MB_BI_EOF) {
+            throw_exception(env, IOException,
+                            "%s: Failed to read entry: %s",
+                            filename1, mb_bi_reader_error_string(bir1.get()));
+            goto done;
+        }
+    }
+
+    // Compare each entry in second image to first
+    {
+        while ((ret = mb_bi_reader_read_entry(bir2.get(), &entry2))
+                == MB_BI_OK) {
+            if (entries == 0) {
+                // Too few entries in second image
+                goto done;
+            }
+            --entries;
+
+            // Find the same entry in first image
+            ret = mb_bi_reader_go_to_entry(bir1.get(), &entry1,
+                                           mb_bi_entry_type(entry2));
+            if (ret == MB_BI_EOF) {
+                // Cannot be equal if entry is missing
+                goto done;
+            } else if (ret != MB_BI_OK) {
+                throw_exception(env, IOException,
+                                "%s: Failed to seek to entry: %s", filename1,
+                                mb_bi_reader_error_string(bir1.get()));
+                goto done;
+            }
+
+            // Compare data
+            char buf1[10240];
+            char buf2[10240];
+            size_t n1;
+            size_t n2;
+
+            while ((ret = mb_bi_reader_read_data(
+                    bir1.get(), buf1, sizeof(buf1), &n1)) == MB_BI_OK) {
+                ret = mb_bi_reader_read_data(bir2.get(), buf2, n1, &n2);
+                if (ret != MB_BI_OK) {
+                    throw_exception(env, IOException,
+                                    "%s: Failed to read data: %s", filename2,
+                                    mb_bi_reader_error_string(bir2.get()));
+                    goto done;
+                }
+
+                if (n1 != n2 || memcmp(buf1, buf2, n1) != 0) {
+                    // Data is not equivalent
+                    goto done;
+                }
+            }
+
+            if (ret != MB_BI_EOF) {
+                throw_exception(env, IOException,
+                                "%s: Failed to read data: %s", filename1,
+                                mb_bi_reader_error_string(bir1.get()));
+                goto done;
+            }
+        }
+
+        if (ret != MB_BI_EOF) {
+            throw_exception(env, IOException,
+                            "%s: Failed to read entry: %s",
+                            filename2, mb_bi_reader_error_string(bir2.get()));
+            goto done;
+        }
+    }
+
+    result = true;
+
+done:
+    if (filename1) {
+        env->ReleaseStringUTFChars(jfilename1, filename1);
+    }
+    if (filename2) {
+        env->ReleaseStringUTFChars(jfilename2, filename2);
+    }
+
+    return result;
 }
 
 }
