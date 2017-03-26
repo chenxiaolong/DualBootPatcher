@@ -58,6 +58,8 @@ LOCAL_SRC_FILES = \
 	exfat/libexfat/time.c \
 	exfat/libexfat/utf.c \
 	exfat/libexfat/utils.c 
+LOCAL_C_INCLUDES := \
+	$(LIBEXFAT_CONFIGURE_DIR)
 LOCAL_CFLAGS = \
 	-D_FILE_OFFSET_BITS=64
 include $(BUILD_STATIC_LIBRARY)
@@ -71,7 +73,8 @@ LOCAL_SRC_FILES = \
 LOCAL_C_INCLUDES += \
 	exfat/libexfat \
 	fuse/include \
-	fuse/android
+	fuse/android \
+	$(LIBEXFAT_CONFIGURE_DIR)
 LOCAL_CFLAGS = \
 	-D_FILE_OFFSET_BITS=64
 include $(BUILD_STATIC_LIBRARY)
@@ -91,7 +94,8 @@ LOCAL_SRC_FILES = \
 	exfat/mkfs/vbr.c
 LOCAL_C_INCLUDES += \
 	exfat/libexfat \
-	fuse/include
+	fuse/include \
+	$(LIBEXFAT_CONFIGURE_DIR)
 LOCAL_CFLAGS = \
 	-D_FILE_OFFSET_BITS=64
 include $(BUILD_STATIC_LIBRARY)
@@ -104,7 +108,8 @@ LOCAL_SRC_FILES = \
 	exfat/fsck/main.c
 LOCAL_C_INCLUDES += \
 	exfat/libexfat \
-	fuse/include
+	fuse/include \
+	$(LIBEXFAT_CONFIGURE_DIR)
 LOCAL_CFLAGS = \
 	-D_FILE_OFFSET_BITS=64
 include $(BUILD_STATIC_LIBRARY)

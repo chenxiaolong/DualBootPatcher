@@ -115,6 +115,38 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
+- name: Motorola Moto G (2014 LTE)
+  id: thea
+  codenames:
+    - thea
+    - thea_ds
+    - xt1079
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p40
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p41
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p42
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p32
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p33
 
 - name: Motorola Moto G (2015)
   id: osprey
