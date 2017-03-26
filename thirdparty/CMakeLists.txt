@@ -191,13 +191,13 @@ endif()
 # jansson for Android
 ################################################################################
 
-set(JANSSON_VER "2.7-1")
+set(JANSSON_VER "2.10-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(jansson ${JANSSON_VER} armeabi-v7a SHA512=c7812e9b7f61a24857c8fc03d1e1b59bc0a5a4c85ca93552378844aa874aefeebec25b6a108143a778970ec9097ca7832f6181ad0f07bc593cf4ecc8de4f38c7)
-    get_prebuilt(jansson ${JANSSON_VER} arm64-v8a   SHA512=8ae200c9028373b974da39afc0569ddd633bc273cb0b3c138de29d0152678c36d754c5ffdba94552e3165640f4c0bb80cb5255fc1744e194cac4fb864206db22)
-    get_prebuilt(jansson ${JANSSON_VER} x86         SHA512=00739bbd7d27045fda4a51118c1559fd279cc3a16a425d1f91cfa898a5c5d63bb246fde3fb9e0d1eb57bea547c512cdc75be94093166940176348aecbe249ef9)
-    get_prebuilt(jansson ${JANSSON_VER} x86_64      SHA512=9a6759dc9444026c9b4370f61ea7b46f0f4c35dcb2b9aa16666241b0743ee44f0829fc57be25528ca14a08ce596b13d9beaf28cf3108f9a84b5296106bf1d407)
+    get_prebuilt(jansson ${JANSSON_VER} armeabi-v7a SHA512=06408ef2a73268b1955d9613e7779399cbf5cf15dd29461ad9c81728c835ac017a86154e199be020dea65087f91839693a379c40a6259e98f0b520e05c17d8f2)
+    get_prebuilt(jansson ${JANSSON_VER} arm64-v8a   SHA512=994c03b6d4bf4fe5476e26a4c02ae41183f80c8fcd1c04b99457c4ff9a922f07c49edab70b4095128276edadc7aa6dddde3f4ca9b6ef49a05cfe1adad01a1876)
+    get_prebuilt(jansson ${JANSSON_VER} x86         SHA512=72c99186f325232c2351362c3331049e254a7a7151b7e2692d667dfb0c822b934d6a6c32cc9de397bf6d35092aa49fdaeb69de639afc8c29d8cda523d69672e0)
+    get_prebuilt(jansson ${JANSSON_VER} x86_64      SHA512=47c87efbc55fa0bfcd03e1593e7bc026b53d4b2d4020c1bef515c8776b0c84b93160b874978ca64267beb7828815a1467f8995e54984eda4ec44dc0cf7a2cf42)
 else()
     set(THIRD_PARTY_JANSSON_DIR "${MBP_PREBUILTS_BINARY_DIR}/jansson/${JANSSON_VER}" PARENT_SCOPE)
 endif()
