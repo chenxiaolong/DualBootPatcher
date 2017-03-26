@@ -31,6 +31,9 @@
 
 #include "mbcommon/common.h"
 
+#include "mbbootimg/entry.h"
+#include "mbbootimg/reader.h"
+
 #include "mblog/android_logger.h"
 #include "mblog/logging.h"
 
@@ -40,6 +43,9 @@
 
 #define IOException             "java/io/IOException"
 #define OutOfMemoryError        "java/lang/OutOfMemoryError"
+
+typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
+typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
 extern "C" {
 
@@ -206,6 +212,168 @@ CLASS_METHOD(mblogSetLogcat)(JNIEnv *env, jclass clazz)
 
     mb::log::set_log_tag("libmbp");
     mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
+}
+
+struct LaBootImgCtx
+{
+    MbBiReader *bir;
+    char buf[10240];
+};
+
+la_ssize_t laBootImgReadCb(archive *a, void *userdata, const void **buffer)
+{
+    (void) a;
+    LaBootImgCtx *ctx = static_cast<LaBootImgCtx *>(userdata);
+    size_t bytesRead;
+    int ret;
+
+    ret = mb_bi_reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf),
+                                 &bytesRead);
+    if (ret == MB_BI_EOF) {
+        return 0;
+    } else if (ret != MB_BI_OK) {
+        return -1;
+    }
+
+    *buffer = ctx->buf;
+    return static_cast<la_ssize_t>(bytesRead);
+}
+
+JNIEXPORT jstring JNICALL
+CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
+{
+    (void) clazz;
+
+    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    MbBiHeader *header;
+    MbBiEntry *entry;
+    ScopedArchive a(archive_read_new(), &archive_read_free);
+    archive_entry *aEntry;
+    LaBootImgCtx ctx;
+    int ret;
+    const char *filename;
+    jstring romId = nullptr;
+
+    filename = env->GetStringUTFChars(jfilename, nullptr);
+    if (!filename) {
+        goto done;
+    }
+
+    if (!bir) {
+        throw_exception(env, IOException, "Failed to allocate MbBiReader");
+        goto done;
+    } else if (!a) {
+        throw_exception(env, IOException, "Failed to allocate archive");
+        goto done;
+    }
+
+    // Open input boot image
+    ret = mb_bi_reader_enable_format_all(bir.get());
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "Failed to enable all boot image formats: %s",
+                        mb_bi_reader_error_string(bir.get()));
+        goto done;
+    }
+    ret = mb_bi_reader_open_filename(bir.get(), filename);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to open boot image for reading: %s",
+                        filename, mb_bi_reader_error_string(bir.get()));
+        goto done;
+    }
+
+    // Read header
+    ret = mb_bi_reader_read_header(bir.get(), &header);
+    if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to read header: %s",
+                        filename, mb_bi_reader_error_string(bir.get()));
+        goto done;
+    }
+
+    // Go to ramdisk
+    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
+    if (ret == MB_BI_EOF) {
+        throw_exception(env, IOException,
+                        "%s: Boot image is missing ramdisk", filename);
+        goto done;
+    } else if (ret != MB_BI_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to find ramdisk entry: %s",
+                        filename, mb_bi_reader_error_string(bir.get()));
+        goto done;
+    }
+
+    // Enable support for common ramdisk formats
+    archive_read_support_filter_gzip(a.get());
+    archive_read_support_filter_lzop(a.get());
+    archive_read_support_filter_lz4(a.get());
+    archive_read_support_filter_lzma(a.get());
+    archive_read_support_filter_xz(a.get());
+    archive_read_support_format_cpio(a.get());
+
+    // Open ramdisk archive
+    ctx.bir = bir.get();
+    ret = archive_read_open(a.get(), &ctx, nullptr, &laBootImgReadCb, nullptr);
+    if (ret != ARCHIVE_OK) {
+        throw_exception(env, IOException,
+                        "%s: Failed to open ramdisk: %s",
+                        filename, archive_error_string(a.get()));
+        goto done;
+    }
+
+    while ((ret = archive_read_next_header(a.get(), &aEntry)) == ARCHIVE_OK) {
+        const char *path = archive_entry_pathname(aEntry);
+        if (!path) {
+            throw_exception(env, IOException,
+                            "%s: Ramdisk entry has no path", filename);
+            goto done;
+        }
+
+        if (strcmp(path, "romid") == 0) {
+            char buf[32];
+            char dummy;
+            la_ssize_t n_read;
+
+            n_read = archive_read_data(a.get(), buf, sizeof(buf) - 1);
+            if (n_read < 0) {
+                throw_exception(env, IOException,
+                                "%s: Failed to read ramdisk entry: %s",
+                                filename, archive_error_string(a.get()));
+                goto done;
+            }
+
+            // NULL-terminate
+            buf[n_read] = '\0';
+
+            // Ensure that EOF is reached
+            n_read = archive_read_data(a.get(), &dummy, 1);
+            if (n_read != 0) {
+                throw_exception(env, IOException,
+                                "%s: /romid in ramdisk is too large",
+                                filename);
+                goto done;
+            }
+
+            romId = env->NewStringUTF(buf);
+            goto done;
+        }
+    }
+
+    if (ret != ARCHIVE_EOF) {
+        throw_exception(env, IOException,
+                        "%s: Failed to read ramdisk entry header: %s",
+                        filename, archive_error_string(a.get()));
+        goto done;
+    }
+
+done:
+    if (filename) {
+        env->ReleaseStringUTFChars(jfilename, filename);
+    }
+
+    return romId;
 }
 
 }

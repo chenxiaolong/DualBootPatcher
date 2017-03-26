@@ -28,6 +28,8 @@ public final class LibMiscStuff {
 
     public static native void mblogSetLogcat();
 
+    public static native String getBootImageRomId(String filename) throws IOException;
+
     static {
         System.loadLibrary("miscstuff-jni");
     }
