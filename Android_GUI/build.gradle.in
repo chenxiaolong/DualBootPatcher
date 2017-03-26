@@ -80,7 +80,6 @@ android {
             ]
             jniLibs.srcDirs = [
                 '@CMAKE_BINARY_DIR@/android/result/lib/',
-                '@MBP_PREBUILTS_BINARY_DIR@/jna/@JNA_VER@/all/lib/'
             ]
         }
 
@@ -133,8 +132,8 @@ dependencies {
     compile 'com.github.clans:fab:1.6.4'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'commons-io:commons-io:2.4'
+    compile 'net.java.dev.jna:jna:4.4.0@aar'
     compile project(":emulatorview")
-    compile files('@MBP_PREBUILTS_BINARY_DIR@/jna/@JNA_VER@/all/jna.jar')
     compile files('libs/RootTools-4.1.jar')
 
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.3.1'
