@@ -266,6 +266,7 @@
 - name: Lenovo ZUK Z2
   id: Z2
   codenames:
+    - z2
     - Z2
     - z2plus
     - z2_plus
