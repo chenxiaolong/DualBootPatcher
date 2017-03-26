@@ -146,13 +146,13 @@ endif()
 # liblzma for Android
 ################################################################################
 
-set(LIBLZMA_VER "5.2.2-1")
+set(LIBLZMA_VER "5.2.3-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(liblzma ${LIBLZMA_VER} armeabi-v7a SHA512=0bec5f8bc3e1484b830e2c57b041e916687ea4035769074e5576f6682a531d285538fbf7a5a85c88c654209d8e9e8b14ad80e78a3d9c29aa5d304eecf247edc8)
-    get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=6b66601dba6c419f7462a331df7dc71cc13356168a0c6a9c0cb9eb38d46af5aae6f7128838c3db80167b8b318200c6f6ec5b37b0f1ef23a668ba1512a1325417)
-    get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=2a4008a8f89a0bce25a7c5c293733cafdee54effda563c6a92f75cb607d65abc47e9c7e900ed2f026991af80a2120faeebf44ad8993521993f24cf9f44bd839b)
-    get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=c2f5607f913dd4b76abeef6536e108f15dc5daec779f85f3d22588d76950cf7c188e7cda465d0007e5720050667d37a1a4e08e5f0766ee81db26785b9035f52f)
+    get_prebuilt(liblzma ${LIBLZMA_VER} armeabi-v7a SHA512=222f1bbd87f5b6f0032049eeef86133c3d36e787d33a047e9f6323ee7686ba710eaa99324f45fc25ddc6186cd956a665d8251a1e5eafa102f84c1949d4931e82)
+    get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=8d360c9ead895fcbc04fd453aeecd8d5eedc8dc75fd73f954afcdcaa1ebbeed8f86dbc1c20b396919b3efc856904cbfd0e6d132ec8766bbda363e11bdb186c76)
+    get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=a250b70a1673db1d97f387e3438d1dc040b3112aed7b9e891f9a5e906ce6cb204dcefacbe5a163cf3d30907a5d54629d2e57e1fc58fbb652bd8093dce1103844)
+    get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=bdc1f69a24b65f406b45f82fb21a5691c6a096a888c27d8161a68c019ebbd1f31f0179aa7c8ab84a71fb70e9b9714918a9066fbacaa94797bff2541e26803bd0)
 else()
     set(THIRD_PARTY_LIBLZMA_DIR "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
 endif()
