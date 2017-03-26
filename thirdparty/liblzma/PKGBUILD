@@ -15,7 +15,7 @@
 
 pkgname=liblzma
 pkgver=5.2.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Library for XZ and LZMA compressed files"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://tukaani.org/xz/"
@@ -26,7 +26,7 @@ source=("http://tukaani.org/xz/xz-${pkgver}.tar.xz"
         0001-Android-build-system.patch)
 sha512sums=('a5b8f3c402ec3df5c1875a32081136606dd7701190d8b8091bae1bac36553ebe3480985c8069bf5d9e24f374ea64b1fe22614d3eebac1c10e5d609701bceca95'
             'SKIP'
-            'e9d0dfb64605e2bbcbf4bd9a96201ce7041d774ad563aeaa0eb23b9ff89891d6cacfd77b912e4389710db42ead67cd7363ab6bf5a9de7d9b107fc3ad347f03fe')
+            'cd93e6b8ced4fb57170169b40ae43316421c6fb371575345c82945e01c2ecf743af07bcc52edc4eaec4714e8aefce56050bb354079ca3ac763c7763a4dad141b')
 
 prepare() {
     cd "xz-${pkgver}"
