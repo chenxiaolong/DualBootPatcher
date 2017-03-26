@@ -23,9 +23,6 @@
 extern "C" {
 #endif
 
-struct CBootImage;
-typedef struct CBootImage CBootImage;
-
 struct CFileInfo;
 typedef struct CFileInfo CFileInfo;
 

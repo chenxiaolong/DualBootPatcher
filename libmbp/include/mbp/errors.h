@@ -47,11 +47,6 @@ enum ErrorCode
     FileSeekError = 104,
     FileTellError = 105,
 
-    // Boot image
-    BootImageParseError = 150,
-    BootImageApplyBumpError = 151,
-    BootImageApplyLokiError = 152,
-
     // Archive
     ArchiveReadOpenError = 200,
     ArchiveReadDataError = 201,
@@ -64,9 +59,6 @@ enum ErrorCode
 
     // Cancelled
     PatchingCancelled = 300,
-
-    // Misc
-    BootImageTooLargeError = 400,
 };
 
 #ifdef __cplusplus
