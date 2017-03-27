@@ -281,13 +281,13 @@ endif()
 # AOSP system/core libraries
 ################################################################################
 
-set(ANDROID_SYSTEM_CORE_VER "6.0.1_r43-2")
+set(ANDROID_SYSTEM_CORE_VER "7.1.1_r28-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} armeabi-v7a SHA512=3c811dadad95f5a9470820dbfe824e3836812bdc75b4f65d5cd992e142a109d6701b21ef3be2fd00a9a6b6dd8216014e0d311c0c8c35747b074d73d8738c55c7)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=eabef3ace7ec3841afecf7062790ae999d3d30e9720d271e3d194de93b457874d587de4d13d5f526134e0167decd362b98be727fd71b71d3e1438e1b6aa63f17)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=de6ce6fd560d82551841cd5102cb657cc758e767fa6f796b9141cbcab1bd13158c2afe147e81d18d2bfb1decc9977e79442a1e2f2f455ef8dc9fdbf45c476f1b)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=96d14d34c579517e2604e4defd1e8246a3c171635667465fd6780207b8f4f7da1744b105d8357636e4ecde4977b530d76a22402d005037e38d7fd37a13664332)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} armeabi-v7a SHA512=d8799859df657420516002eceb7e2e6f340f569db7028d5df2923650ba42f37fd9770fe15c329686cf06033235b80cf8365fe0f2c3e9ed1a48962f33ae550092)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=24be099388ebe69bc7fec2570d18f8a2dc5b9f4241d306a6d35ffb56cc1f698b55802847bc3cf73197c720056e424521ac42bc401b5040c90ac5ce594c4f7405)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=d13a4916eb0fe674f8ea267c5d3b2e01bab6675f12cddd9a37b46e409b98e4708474e9f5fbf1f25a8af4f6cf9fb8e6031b39311fa55b41573a080e5b368be32a)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=899656a0adc8de35e2cfc3762c4bebec07cc44afa77aa58f714301385ba2aedb4d37f04849cb03507e7b7b833c6e47f37e8c75866f89be84daf4df4c85d991f2)
 else()
     set(THIRD_PARTY_ANDROID_SYSTEM_CORE_DIR "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}" PARENT_SCOPE)
 endif()
