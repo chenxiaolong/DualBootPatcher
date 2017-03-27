@@ -10,13 +10,14 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbSwitchRomResponse extends Table {
   public static MbSwitchRomResponse getRootAsMbSwitchRomResponse(ByteBuffer _bb) { return getRootAsMbSwitchRomResponse(_bb, new MbSwitchRomResponse()); }
-  public static MbSwitchRomResponse getRootAsMbSwitchRomResponse(ByteBuffer _bb, MbSwitchRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbSwitchRomResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbSwitchRomResponse getRootAsMbSwitchRomResponse(ByteBuffer _bb, MbSwitchRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbSwitchRomResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public short result() { int o = __offset(6); return o != 0 ? bb.getShort(o + bb_pos) : 0; }
   public MbSwitchRomError error() { return error(new MbSwitchRomError()); }
-  public MbSwitchRomError error(MbSwitchRomError obj) { int o = __offset(8); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public MbSwitchRomError error(MbSwitchRomError obj) { int o = __offset(8); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 
   public static int createMbSwitchRomResponse(FlatBufferBuilder builder,
       boolean success,

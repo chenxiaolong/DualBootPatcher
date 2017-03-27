@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,20 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=a2d4c0c426caf2b212dea39d7bc05868d780eb34
+_commit=bbfe603519bc54fbc4c8dd87efe1ed385df550b4
 
 pkgname=boringssl
-pkgver=r2486.a2d4c0c
+pkgver=r3955.bbfe603
 pkgrel=1
 pkgdesc="BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs."
 arch=(armv7 aarch64 x86 x86_64)
 url="https://boringssl.googlesource.com/boringssl/"
 license=(custom:BSD)
 source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}"
-        'https://raw.githubusercontent.com/chenxiaolong/android-cmake/6d8525b9e9aa6b0c23124996a0654ae78e5b329c/android.toolchain.cmake')
+        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.1.0/cmake/android.toolchain.cmake')
 sha512sums=('SKIP'
-            '7a2e6bc9ab2b1716ed93e8ad482996e79422b1cd9e516c8ef51e94db67d37efc59fc17c6caa3fd3c5c9ec3d64989d5d805fc8a715c8dfc28779484bcb95b1ddb')
-validpgpkeys=('8657ABB260F056B1E5190839D9C4D26D0E604491')
+            '918d01b63c935b735874c16ea5396f084a43bc2e66669c244b7e816669a900fcb25e19021377941a5b662150df585a8b52226d6ab20ea3e328e219d02ff24e14')
 
 pkgver() {
     cd "${pkgname}"
@@ -36,27 +35,30 @@ pkgver() {
 build() {
     cd "${pkgname}"
 
-    local abi api toolchain toolchain_ver
+    local abi api
     abi=$(android_get_abi_name)
     api=android-17
-    toolchain=$(android_get_toolchain_name "${abi}")
-    toolchain_ver=clang3.6
 
     mkdir -p "build_${abi}"
     cd "build_${abi}"
 
+    local asflags='-fno-integrated-as'
     local cflags='-ffunction-sections -fdata-sections'
     local cxxflags='-ffunction-sections -fdata-sections'
+
+    if [[ "${abi}" == 'arm64-v8a' ]]; then
+        asflags+=' -Wa,-march=armv8-a+crypto'
+    fi
 
     # Arch-independent configuration options
     args=(
         -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_ASM_FLAGS="${asflags}"
         -DCMAKE_C_FLAGS="${cflags}"
         -DCMAKE_CXX_FLAGS="${cxxflags}"
         -DCMAKE_TOOLCHAIN_FILE=../android.toolchain.cmake
-        -DANDROID_NATIVE_API_LEVEL="${api}"
         -DANDROID_ABI="${abi}"
-        -DANDROID_TOOLCHAIN_NAME="${toolchain}-${toolchain_ver}"
+        -DANDROID_PLATFORM="${api}"
     )
 
     cmake .. "${args[@]}"

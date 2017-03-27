@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class CryptoGetPwTypeResponse extends Table {
   public static CryptoGetPwTypeResponse getRootAsCryptoGetPwTypeResponse(ByteBuffer _bb) { return getRootAsCryptoGetPwTypeResponse(_bb, new CryptoGetPwTypeResponse()); }
-  public static CryptoGetPwTypeResponse getRootAsCryptoGetPwTypeResponse(ByteBuffer _bb, CryptoGetPwTypeResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public CryptoGetPwTypeResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static CryptoGetPwTypeResponse getRootAsCryptoGetPwTypeResponse(ByteBuffer _bb, CryptoGetPwTypeResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public CryptoGetPwTypeResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startCryptoGetPwTypeResponse(FlatBufferBuilder builder) { builder.startObject(1); }

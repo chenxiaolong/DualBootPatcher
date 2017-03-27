@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,16 +14,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=liblzma
-pkgver=5.2.2
-pkgrel=1
+pkgver=5.2.3
+pkgrel=2
 pkgdesc="Library for XZ and LZMA compressed files"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://tukaani.org/xz/"
 license=(LGPL)
+validpgpkeys=('3690C240CE51B4670D30AD1C38EE757D69184620')
 source=("http://tukaani.org/xz/xz-${pkgver}.tar.xz"
+        "http://tukaani.org/xz/xz-${pkgver}.tar.xz.sig"
         0001-Android-build-system.patch)
-sha512sums=('949ef90669a31b9855c5328d7f9d7e2e537c8072b700b1d2f5d69c307eb7f7635a2a4b1b5bb1bb300fba9429355a6d8935b803c505be5c0104bda9e81d0cf477'
-            'e9d0dfb64605e2bbcbf4bd9a96201ce7041d774ad563aeaa0eb23b9ff89891d6cacfd77b912e4389710db42ead67cd7363ab6bf5a9de7d9b107fc3ad347f03fe')
+sha512sums=('a5b8f3c402ec3df5c1875a32081136606dd7701190d8b8091bae1bac36553ebe3480985c8069bf5d9e24f374ea64b1fe22614d3eebac1c10e5d609701bceca95'
+            'SKIP'
+            'cd93e6b8ced4fb57170169b40ae43316421c6fb371575345c82945e01c2ecf743af07bcc52edc4eaec4714e8aefce56050bb354079ca3ac763c7763a4dad141b')
 
 prepare() {
     cd "xz-${pkgver}"
@@ -38,7 +41,7 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=4.9 \
+        NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
         APP_PLATFORM=android-17 \

@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbGetVersionResponse extends Table {
   public static MbGetVersionResponse getRootAsMbGetVersionResponse(ByteBuffer _bb) { return getRootAsMbGetVersionResponse(_bb, new MbGetVersionResponse()); }
-  public static MbGetVersionResponse getRootAsMbGetVersionResponse(ByteBuffer _bb, MbGetVersionResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbGetVersionResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbGetVersionResponse getRootAsMbGetVersionResponse(ByteBuffer _bb, MbGetVersionResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbGetVersionResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String version() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer versionAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }

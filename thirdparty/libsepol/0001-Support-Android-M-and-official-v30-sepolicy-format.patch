@@ -1,4 +1,4 @@
-From 9741246f4812da6998e99adb21de5b059c7bf386 Mon Sep 17 00:00:00 2001
+From ca4c3b1c43cd37d42c34042652f75140d1832ff5 Mon Sep 17 00:00:00 2001
 From: Jorrit Jongma <git@jongma.org>
 Date: Fri, 11 Mar 2016 13:43:25 +0100
 Subject: [PATCH] Support Android/M and official v30 sepolicy format
@@ -15,7 +15,7 @@ Some Android M devices use a slightly different format for the sepolicy file. Co
  create mode 100644 libsepol/src/android_m_compat.h
 
 diff --git a/libsepol/Android.mk b/libsepol/Android.mk
-index d36aa34..5ee59ac 100644
+index 58443b3..eecf3ad 100644
 --- a/libsepol/Android.mk
 +++ b/libsepol/Android.mk
 @@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
@@ -176,5 +176,5 @@ index d87ea61..503fb20 100644
  		items = put_entry(&buf8, sizeof(uint8_t),1,fp);
  		if (items != 1)
 -- 
-2.7.3
+2.9.3
 

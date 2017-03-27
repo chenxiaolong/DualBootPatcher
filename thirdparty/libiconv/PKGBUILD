@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=libiconv
-pkgver=1.14
-pkgrel=2
+pkgver=1.15
+pkgrel=1
 pkgdesc="GNU iconv() implementation"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.gnu.org/software/libiconv/"
@@ -24,10 +24,10 @@ source=("http://ftp.gnu.org/gnu/libiconv/libiconv-${pkgver}.tar.gz"
         0001-Android-doesn-t-have-langinfo.h.patch
         0002-Add-generated-headers-for-Android.patch
         0003-Add-Android.mk.patch)
-sha512sums=('b96774fefc4fa1d07948fcc667027701373c34ebf9c4101000428e048addd85a5bb5e05e59f80eb783a3054a3a8a3c0da909450053275bbbf3ffde511eb3f387'
-            'd9f95d6fcad06002ffa8e052e38b9b3b50357334761a6d0b0179d1c6e8f70effaa8d4206be89beb0fd495c547a08d04800fa516b557ebd058b8fd070386af4bb'
-            '9c8b09d5ecd832da096ccaeda5e0f15aa0916ab1dcb8f373751752e753fe0dd29764e7620894c77972c3d34c26451789889f786d34e4b9a3e8a51c9feaab134c'
-            'fe758ede31403a89de4f469475697ff4801face3230a9dc8b5ba6b8ef93db6510ba81b5495b30234df2448d167e8a39497d29150015ab39878e62a0248286fd5')
+sha512sums=('1233fe3ca09341b53354fd4bfe342a7589181145a1232c9919583a8c9979636855839049f3406f253a9d9829908816bb71fd6d34dd544ba290d6f04251376b1a'
+            'cdd16eb45cd3cdab95f257c606d9d783ecd0185757f7e32f10a53a3783c84091d767413051370befae19498586e5fc54b246b4bae7a1faebf9c9afe09bf27d27'
+            'a96598edd6e58f59a84a88a27c75ae9a0f23432597614a7e8546c7c45313fe7422ef7fcb54172e57df10608aa580acf2c9ef37a0f607365b58282cba19219487'
+            'e967cbe2cb4836f516afc7f52ebed35c358295acec507c22ff6460cf381f1100c87bd22803154cd1c7bcbdc37411cfbf8d826ae8906d032b2843168975ee94ef')
 
 prepare() {
     cd "libiconv-${pkgver}"
@@ -44,7 +44,7 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=4.9 \
+        NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
         APP_PLATFORM=android-17 \

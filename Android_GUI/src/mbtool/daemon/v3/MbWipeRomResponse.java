@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbWipeRomResponse extends Table {
   public static MbWipeRomResponse getRootAsMbWipeRomResponse(ByteBuffer _bb) { return getRootAsMbWipeRomResponse(_bb, new MbWipeRomResponse()); }
-  public static MbWipeRomResponse getRootAsMbWipeRomResponse(ByteBuffer _bb, MbWipeRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbWipeRomResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbWipeRomResponse getRootAsMbWipeRomResponse(ByteBuffer _bb, MbWipeRomResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbWipeRomResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public short succeeded(int j) { int o = __offset(4); return o != 0 ? bb.getShort(__vector(o) + j * 2) : 0; }
   public int succeededLength() { int o = __offset(4); return o != 0 ? __vector_len(o) : 0; }

@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class PathSELinuxGetLabelError extends Table {
   public static PathSELinuxGetLabelError getRootAsPathSELinuxGetLabelError(ByteBuffer _bb) { return getRootAsPathSELinuxGetLabelError(_bb, new PathSELinuxGetLabelError()); }
-  public static PathSELinuxGetLabelError getRootAsPathSELinuxGetLabelError(ByteBuffer _bb, PathSELinuxGetLabelError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public PathSELinuxGetLabelError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static PathSELinuxGetLabelError getRootAsPathSELinuxGetLabelError(ByteBuffer _bb, PathSELinuxGetLabelError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public PathSELinuxGetLabelError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int errnoValue() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public String msg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
