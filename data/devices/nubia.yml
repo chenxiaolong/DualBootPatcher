@@ -36,3 +36,4 @@
       - /dev/block/bootdevice/by-name/mdtp
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
+      
