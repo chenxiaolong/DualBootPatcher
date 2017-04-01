@@ -29,3 +29,29 @@
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde14
+
+- name: Z11
+  id: NX531J
+  codenames:
+    - NX531J
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p17
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p40
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p47
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p15
+      
