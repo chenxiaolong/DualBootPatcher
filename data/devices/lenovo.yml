@@ -168,6 +168,8 @@
   id: Z1
   codenames:
     - Z1
+    - ham
+    - k9
   architecture: armeabi-v7a
 
   block_devs:
