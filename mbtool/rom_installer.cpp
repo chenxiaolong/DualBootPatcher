@@ -27,10 +27,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbbootimg/entry.h"
+#include "mbbootimg/reader.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbp/bootimage.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
@@ -43,6 +44,8 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
+#include "archive_util.h"
+#include "bootimg_util.h"
 #include "installer.h"
 #include "multiboot.h"
 
@@ -51,13 +54,16 @@
 #define DEBUG_ENABLE_PASSTHROUGH 0
 
 
+typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+
 namespace mb
 {
 
 class RomInstaller : public Installer
 {
 public:
-    RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp);
+    RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
+                 int flags);
 
     virtual void display_msg(const std::string& msg) override;
     virtual void updater_print(const std::string &msg) override;
@@ -77,18 +83,23 @@ private:
     std::string _ld_preload;
 
     std::unordered_map<std::string, std::string> _recovery_props;
+
+    static bool extract_ramdisk(const std::string &boot_image_file,
+                                const std::string &output_dir, bool nested);
+    static bool extract_ramdisk_fd(int fd, const std::string &output_dir,
+                                   bool nested);
 };
 
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
-                           std::FILE *log_fp) :
+                           std::FILE *log_fp, int flags) :
     Installer(zip_file, "/chroot", "/multiboot", 3,
 #if DEBUG_ENABLE_PASSTHROUGH
-              STDOUT_FILENO
+              STDOUT_FILENO,
 #else
-              -1
+              -1,
 #endif
-             ),
+             flags),
     _rom_id(std::move(rom_id)),
     _log_fp(log_fp)
 {
@@ -158,10 +169,6 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // extract its /sbin with libarchive into the chroot's /sbin.
 
     std::string block_dev(_recovery_block_dev);
-    mbp::BootImage bi;
-    mbp::CpioFile innerCpio;
-    const unsigned char *ramdisk_data;
-    std::size_t ramdisk_size;
     bool using_boot = false;
 
     // Check if the device has a combined boot/recovery partition. If the
@@ -179,88 +186,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
         return ProceedState::Fail;
     }
 
-    if (!bi.loadFile(block_dev)) {
-        display_msg("Failed to load recovery partition image");
-        return ProceedState::Fail;
-    }
-
-    // Load ramdisk
-    bi.ramdiskImageC(&ramdisk_data, &ramdisk_size);
-
-    if (using_boot) {
-        if (!innerCpio.load(ramdisk_data, ramdisk_size)) {
-            display_msg("Failed to load ramdisk from combined boot image");
-            return ProceedState::Fail;
-        }
-
-        if (!innerCpio.contentsC("sbin/ramdisk-recovery.cpio",
-                                 &ramdisk_data, &ramdisk_size)) {
-            display_msg("Could not find recovery ramdisk in combined boot image");
-            return ProceedState::Fail;
-        }
-    }
-
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
-
-    if (!in || !out) {
-        LOGE("Out of memory");
-        return ProceedState::Fail;
-    }
-
-    archive_entry *entry;
-
-    // Set up input
-    archive_read_support_filter_gzip(in.get());
-    archive_read_support_filter_lzop(in.get());
-    archive_read_support_filter_lz4(in.get());
-    archive_read_support_filter_lzma(in.get());
-    archive_read_support_filter_xz(in.get());
-    archive_read_support_format_cpio(in.get());
-
-    int ret = archive_read_open_memory(in.get(),
-            const_cast<unsigned char *>(ramdisk_data), ramdisk_size);
-    if (ret != ARCHIVE_OK) {
-        LOGW("Failed to open recovery ramdisk: %s",
-             archive_error_string(in.get()));
-        return ProceedState::Fail;
-    }
-
-    // Set up output
-    archive_write_disk_set_options(out.get(),
-                                   ARCHIVE_EXTRACT_ACL |
-                                   ARCHIVE_EXTRACT_FFLAGS |
-                                   ARCHIVE_EXTRACT_PERM |
-                                   ARCHIVE_EXTRACT_SECURE_NODOTDOT |
-                                   ARCHIVE_EXTRACT_SECURE_SYMLINKS |
-                                   ARCHIVE_EXTRACT_TIME |
-                                   ARCHIVE_EXTRACT_UNLINK |
-                                   ARCHIVE_EXTRACT_XATTR);
-
-    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        std::string path = archive_entry_pathname(entry);
-
-        if (path == "default.prop") {
-            path = "default.recovery.prop";
-        } else if (!mb_starts_with(path.c_str(), "sbin/")) {
-            continue;
-        }
-
-        LOGE("Copying from recovery: %s", path.c_str());
-
-        archive_entry_set_pathname(entry, in_chroot(path).c_str());
-
-        if (util::libarchive_copy_header_and_data(
-                in.get(), out.get(), entry) != ARCHIVE_OK) {
-            return ProceedState::Fail;
-        }
-
-        archive_entry_set_pathname(entry, path.c_str());
-    }
-
-    if (ret != ARCHIVE_EOF) {
-        LOGE("Archive extraction ended without reaching EOF: %s",
-             archive_error_string(in.get()));
+    if (!extract_ramdisk(block_dev, _chroot, using_boot)) {
+        display_msg("Failed to extract recovery ramdisk");
         return ProceedState::Fail;
     }
 
@@ -353,6 +280,197 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
                 "internal storage.");
 }
 
+bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
+                                   const std::string &output_dir, bool nested)
+{
+    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    MbBiHeader *header;
+    MbBiEntry *entry;
+    int ret;
+
+    if (!bir) {
+        LOGE("Failed to allocate reader instance");
+        return false;
+    }
+
+    // Open input boot image
+    ret = mb_bi_reader_enable_format_all(bir.get());
+    if (ret != MB_BI_OK) {
+        LOGE("Failed to enable input boot image formats: %s",
+             mb_bi_reader_error_string(bir.get()));
+        return false;
+    }
+    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file.c_str());
+    if (ret != MB_BI_OK) {
+        LOGE("%s: Failed to open boot image for reading: %s",
+             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+        return false;
+    }
+
+    // Copy header
+    ret = mb_bi_reader_read_header(bir.get(), &header);
+    if (ret != MB_BI_OK) {
+        LOGE("%s: Failed to read header: %s",
+             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+        return false;
+    }
+
+    // Go to ramdisk
+    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
+    if (ret == MB_BI_EOF) {
+        LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
+        return false;
+    } else if (ret != MB_BI_OK) {
+        LOGE("%s: Failed to find ramdisk entry: %s",
+             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+        return false;
+    }
+
+    {
+        char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
+        if (!tmpfile) {
+            LOGE("Out of memory");
+            return false;
+        }
+
+        auto free_temp_file = util::finally([&]{
+            free(tmpfile);
+        });
+
+        int tmpfd = mkstemp(tmpfile);
+        if (tmpfd < 0) {
+            LOGE("Failed to create temporary file: %s", strerror(errno));
+            return false;
+        }
+
+        // We don't need the path
+        unlink(tmpfile);
+
+        auto close_fd = util::finally([&]{
+            close(tmpfd);
+        });
+
+        return bi_copy_data_to_fd(bir.get(), tmpfd)
+                && extract_ramdisk_fd(tmpfd, output_dir, nested);
+    }
+}
+
+bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
+                                      bool nested)
+{
+    autoclose::archive in(archive_read_new(), archive_read_free);
+    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    archive_entry *entry;
+    int ret;
+
+    if (!in || !out) {
+        LOGE("Failed to allocate input or output archive");
+        return false;
+    }
+
+    // Seek to beginning
+    if (lseek(fd, 0, SEEK_SET) < 0) {
+        LOGE("Failed to seek to beginning: %s", strerror(errno));
+        return false;
+    }
+
+    archive_read_support_filter_gzip(in.get());
+    archive_read_support_filter_lzop(in.get());
+    archive_read_support_filter_lz4(in.get());
+    archive_read_support_filter_lzma(in.get());
+    archive_read_support_filter_xz(in.get());
+    archive_read_support_format_cpio(in.get());
+
+    if (archive_read_open_fd(in.get(), fd, 10240) != ARCHIVE_OK) {
+        LOGE("Failed to open archive: %s", archive_error_string(in.get()));
+        return false;
+    }
+
+    // Set up output
+    archive_write_disk_set_options(out.get(),
+                                   ARCHIVE_EXTRACT_ACL |
+                                   ARCHIVE_EXTRACT_FFLAGS |
+                                   ARCHIVE_EXTRACT_PERM |
+                                   ARCHIVE_EXTRACT_SECURE_NODOTDOT |
+                                   ARCHIVE_EXTRACT_SECURE_SYMLINKS |
+                                   ARCHIVE_EXTRACT_TIME |
+                                   ARCHIVE_EXTRACT_UNLINK |
+                                   ARCHIVE_EXTRACT_XATTR);
+
+
+    while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
+        const char *path = archive_entry_pathname(entry);
+        if (!path) {
+            LOGE("Archive entry has no path");
+            return false;
+        }
+
+        if (nested) {
+            if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
+                char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
+                if (!tmpfile) {
+                    LOGE("Out of memory");
+                    return false;
+                }
+
+                auto free_temp_file = util::finally([&]{
+                    free(tmpfile);
+                });
+
+                int tmpfd = mkstemp(tmpfile);
+                if (tmpfd < 0) {
+                    LOGE("Failed to create temporary file: %s",
+                         strerror(errno));
+                    return false;
+                }
+
+                // We don't need the path
+                unlink(tmpfile);
+
+                auto close_fd = util::finally([&]{
+                    close(tmpfd);
+                });
+
+                return la_copy_data_to_fd(in.get(), tmpfd)
+                        && extract_ramdisk_fd(tmpfd, output_dir, false);
+            }
+        } else {
+            if (strcmp(path, "default.prop") == 0) {
+                path = "default.recovery.prop";
+            } else if (!mb_starts_with(path, "sbin/")) {
+                continue;
+            }
+
+            LOGD("Extracting from recovery ramdisk: %s", path);
+
+            std::string output_path(output_dir);
+            output_path += '/';
+            output_path += path;
+
+            archive_entry_set_pathname(entry, output_path.c_str());
+
+            if (util::libarchive_copy_header_and_data(
+                    in.get(), out.get(), entry) != ARCHIVE_OK) {
+                return false;
+            }
+
+            archive_entry_set_pathname(entry, path);
+        }
+    }
+
+    if (ret != ARCHIVE_EOF) {
+        LOGE("Failed to read entry: %s", archive_error_string(in.get()));
+        return false;
+    }
+
+    if (nested) {
+        LOGE("Nested ramdisk not found");
+        return false;
+    } else {
+        return true;
+    }
+}
+
 static void rom_installer_usage(bool error)
 {
     FILE *stream = error ? stderr : stdout;
@@ -360,8 +478,10 @@ static void rom_installer_usage(bool error)
     fprintf(stream,
             "Usage: rom-installer [zip_file] [-r romid]\n\n"
             "Options:\n"
-            "  -r, --romid      ROM install type/ID (primary, dual, etc.)\n"
-            "  -h, --help       Display this help message\n");
+            "  -r, --romid        ROM install type/ID (primary, dual, etc.)\n"
+            "  -h, --help         Display this help message\n"
+            "  --skip-mount       Skip filesystem mounting stage\n"
+            "  --allow-overwrite  Allow overwriting current ROM\n");
 }
 
 int rom_installer_main(int argc, char *argv[])
@@ -382,18 +502,30 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string rom_id;
     std::string zip_file;
+    int flags = 0;
+    bool allow_overwrite = false;
 
     int opt;
 
+    enum options : int {
+        OPTION_SKIP_MOUNT       = CHAR_MAX + 1,
+        OPTION_ALLOW_OVERWRITE  = CHAR_MAX + 2,
+    };
+
     static struct option long_options[] = {
-        {"romid", required_argument, 0, 'r'},
-        {"help",  no_argument,       0, 'h'},
+        {"romid",           required_argument, 0, 'r'},
+        {"help",            no_argument,       0, 'h'},
+        {"skip-mount",      no_argument,       0, OPTION_SKIP_MOUNT},
+        {"allow-overwrite", no_argument,       0, OPTION_ALLOW_OVERWRITE},
         {0, 0, 0, 0}
     };
 
+    static const char short_options[] = "r:h";
+
     int long_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "r:h", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_options,
+                              long_options, &long_index)) != -1) {
         switch (opt) {
         case 'r':
             rom_id = optarg;
@@ -402,6 +534,14 @@ int rom_installer_main(int argc, char *argv[])
         case 'h':
             rom_installer_usage(false);
             return EXIT_SUCCESS;
+
+        case OPTION_SKIP_MOUNT:
+            flags |= InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES;
+            break;
+
+        case OPTION_ALLOW_OVERWRITE:
+            allow_overwrite = true;
+            break;
 
         default:
             rom_installer_usage(true);
@@ -439,7 +579,7 @@ int rom_installer_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (rom->id == rom_id) {
+    if (!allow_overwrite && rom->id == rom_id) {
         fprintf(stderr, "Can't install over current ROM (%s)\n",
                 rom_id.c_str());
         return EXIT_FAILURE;
@@ -492,7 +632,7 @@ int rom_installer_main(int argc, char *argv[])
     log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
 
     // Start installing!
-    RomInstaller ri(zip_file, rom_id, fp.get());
+    RomInstaller ri(zip_file, rom_id, fp.get(), flags);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 

@@ -3,9 +3,7 @@
   id: OUKITEL
   codenames:
     - OUKITEL
-  # The device is 64-bit, but some ROMs are 32-bit. This will break encryption
-  # support since the 32-bit cryptfstool cannot load the 64-bit libraries from
-  # the recovery image.
+  # The device is 64-bit, but some ROMs are 32-bit.
   architecture: armeabi-v7a
   flags:
     - FSTAB_SKIP_SDCARD0

@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class FileCloseRequest extends Table {
   public static FileCloseRequest getRootAsFileCloseRequest(ByteBuffer _bb) { return getRootAsFileCloseRequest(_bb, new FileCloseRequest()); }
-  public static FileCloseRequest getRootAsFileCloseRequest(ByteBuffer _bb, FileCloseRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public FileCloseRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static FileCloseRequest getRootAsFileCloseRequest(ByteBuffer _bb, FileCloseRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public FileCloseRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int id() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
 

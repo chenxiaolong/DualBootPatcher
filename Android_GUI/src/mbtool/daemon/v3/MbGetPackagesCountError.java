@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbGetPackagesCountError extends Table {
   public static MbGetPackagesCountError getRootAsMbGetPackagesCountError(ByteBuffer _bb) { return getRootAsMbGetPackagesCountError(_bb, new MbGetPackagesCountError()); }
-  public static MbGetPackagesCountError getRootAsMbGetPackagesCountError(ByteBuffer _bb, MbGetPackagesCountError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbGetPackagesCountError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbGetPackagesCountError getRootAsMbGetPackagesCountError(ByteBuffer _bb, MbGetPackagesCountError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbGetPackagesCountError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startMbGetPackagesCountError(FlatBufferBuilder builder) { builder.startObject(0); }

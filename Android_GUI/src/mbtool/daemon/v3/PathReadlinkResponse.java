@@ -10,13 +10,14 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class PathReadlinkResponse extends Table {
   public static PathReadlinkResponse getRootAsPathReadlinkResponse(ByteBuffer _bb) { return getRootAsPathReadlinkResponse(_bb, new PathReadlinkResponse()); }
-  public static PathReadlinkResponse getRootAsPathReadlinkResponse(ByteBuffer _bb, PathReadlinkResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public PathReadlinkResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static PathReadlinkResponse getRootAsPathReadlinkResponse(ByteBuffer _bb, PathReadlinkResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public PathReadlinkResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String target() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer targetAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }
   public PathReadlinkError error() { return error(new PathReadlinkError()); }
-  public PathReadlinkError error(PathReadlinkError obj) { int o = __offset(6); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public PathReadlinkError error(PathReadlinkError obj) { int o = __offset(6); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 
   public static int createPathReadlinkResponse(FlatBufferBuilder builder,
       int targetOffset,

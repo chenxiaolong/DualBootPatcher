@@ -44,8 +44,6 @@
 
 #include "mblog/logging.h"
 
-#include "mbp/bootimage.h"
-#include "mbp/cpiofile.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/patchers/multibootpatcher.h"
 #include "mbp/private/fileutils.h"
@@ -96,8 +94,7 @@ public:
 
     bool patchTar();
 
-    bool processBootImage(archive *a, archive_entry *entry);
-    bool processSparseFile(archive *a, archive_entry *entry);
+    bool processFile(archive *a, archive_entry *entry, bool sparse);
     bool processContents(archive *a, int depth);
     bool openInputArchive();
     bool closeInputArchive();
@@ -256,36 +253,28 @@ bool OdinPatcher::Impl::patchTar()
         return false;
     }
 
+    std::string archDir(pc->dataDirectory());
+    archDir += "/binaries/android/";
+    archDir += mb_device_architecture(info->device());
+
     std::vector<CopySpec> toCopy{
         {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/odinupdater",
+            archDir + "/odinupdater",
             "META-INF/com/google/android/update-binary.orig"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/odinupdater.sig",
+            archDir + "/odinupdater.sig",
             "META-INF/com/google/android/update-binary.orig.sig"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/fuse-sparse",
+            archDir + "/fuse-sparse",
             "fuse-sparse"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/fuse-sparse.sig",
+            archDir + "/fuse-sparse.sig",
             "fuse-sparse.sig"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/mbtool_recovery",
+            archDir + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/mbtool_recovery.sig",
+            archDir + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
             pc->dataDirectory() + "/scripts/bb-wrapper.sh",
@@ -295,6 +284,22 @@ bool OdinPatcher::Impl::patchTar()
             "multiboot/bb-wrapper.sh.sig"
         }
     };
+
+    std::vector<std::string> binaries{
+        "file-contexts-tool",
+        "file-contexts-tool.sig",
+        "fsck-wrapper",
+        "fsck-wrapper.sig",
+        "mbtool",
+        "mbtool.sig",
+        "mount.exfat",
+        "mount.exfat.sig",
+    };
+
+    for (auto const &binary : binaries) {
+        toCopy.push_back({archDir + "/" + binary,
+                          "multiboot/binaries/" + binary});
+    }
 
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
@@ -317,7 +322,7 @@ bool OdinPatcher::Impl::patchTar()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->romId());
+            MultiBootPatcher::createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -351,52 +356,18 @@ bool OdinPatcher::Impl::patchTar()
     return true;
 }
 
-bool OdinPatcher::Impl::processBootImage(archive *a, archive_entry *entry)
-{
-    // Boot images should never be over about 50 MiB. This check is here
-    // so the patcher won't try to read a multi-gigabyte system image
-    // into RAM
-    la_int64_t size = archive_entry_size(entry);
-    if (size > 50 * 1024 * 1024) {
-        LOGE("Boot image exceeds 50 MiB: %" PRId64, size);
-        error = ErrorCode::BootImageTooLargeError;
-        return false;
-    }
-
-    std::vector<unsigned char> data(size);
-
-    la_ssize_t ret = archive_read_data(a, data.data(), data.size());
-    if (ret < 0 || static_cast<size_t>(ret) != data.size()) {
-        LOGE("libarchive: Failed to read data: %s",
-             archive_error_string(a));
-        error = ErrorCode::ArchiveReadDataError;
-        return false;
-    }
-
-    if (!MultiBootPatcher::patchBootImage(pc, info, &data, &error)) {
-        return false;
-    }
-
-    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
-    const char *name = archive_entry_pathname(entry);
-
-    auto errorRet = MinizipUtils::addFile(zf, name, data);
-    if (errorRet != ErrorCode::NoError) {
-        error = errorRet;
-        return false;
-    }
-
-    return true;
-}
-
-bool OdinPatcher::Impl::processSparseFile(archive *a, archive_entry *entry)
+bool OdinPatcher::Impl::processFile(archive *a, archive_entry *entry,
+                                    bool sparse)
 {
     const char *name = archive_entry_pathname(entry);
     std::string zipName(name);
-    if (mb_ends_with(name, ".ext4")) {
-        zipName.erase(zipName.size() - 5);
+
+    if (sparse) {
+        if (mb_ends_with(name, ".ext4")) {
+            zipName.erase(zipName.size() - 5);
+        }
+        zipName += ".sparse";
     }
-    zipName += ".sparse";
 
     // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
     int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
@@ -527,7 +498,7 @@ bool OdinPatcher::Impl::processContents(archive *a, int depth)
             LOGV("%sHandling boot image: %s", indent(depth), name);
             added_files.insert(name);
 
-            if (!processBootImage(a, entry)) {
+            if (!processFile(a, entry, false)) {
                 return false;
             }
         } else if (mb_starts_with(name, "cache.img")
@@ -535,7 +506,7 @@ bool OdinPatcher::Impl::processContents(archive *a, int depth)
             LOGV("%sHandling sparse image: %s", indent(depth), name);
             added_files.insert(name);
 
-            if (!processSparseFile(a, entry)) {
+            if (!processFile(a, entry, true)) {
                 return false;
             }
         } else if (mb_ends_with(name, ".tar.md5")) {

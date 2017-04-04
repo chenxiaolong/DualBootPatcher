@@ -31,10 +31,9 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.Version.VersionParseException;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.BootImage;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.CpioFile;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipEntry;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils;
@@ -43,7 +42,6 @@ import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandEx
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -224,44 +222,15 @@ public class SwitcherUtils {
      */
     @Nullable
     public static String getBootImageRomId(File file) {
-        BootImage bi = new BootImage();
-        CpioFile cf = new CpioFile();
-
         try {
-            if (!bi.load(file.getAbsolutePath())) {
-                Log.e(TAG, "libmbp error code: " + bi.getError());
-                return null;
+            String romId = LibMiscStuff.getBootImageRomId(file.getAbsolutePath());
+            if (romId == null) {
+                romId = "primary";
             }
-
-            if (!cf.load(bi.getRamdiskImage())) {
-                Log.e(TAG, "libmbp error code: " + bi.getError());
-                return null;
-            }
-
-            // Try reading /romid from the ramdisk
-            String romId;
-            byte[] data = cf.getContents("romid");
-            if (data != null) {
-                romId = new String(data, Charsets.UTF_8);
-                int newline = romId.indexOf('\n');
-                if (newline >= 0) {
-                    romId = romId.substring(0, newline);
-                }
-                return romId;
-            }
-
-            // Try reading "romid=SOMETHING" from the kernel cmdline
-            String[] kernelArgs = bi.getKernelCmdline().split("\\s+");
-            for (String arg : kernelArgs) {
-                if (arg.startsWith("romid=")) {
-                    return arg.substring(6);
-                }
-            }
-
-            return "primary";
-        } finally {
-            bi.destroy();
-            cf.destroy();
+            return romId;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to get ROM ID from " + file, e);
+            return null;
         }
     }
 
@@ -314,25 +283,12 @@ public class SwitcherUtils {
             return KernelStatus.UNSET;
         }
 
-        BootImage biSaved = new BootImage();
-        BootImage biOther = new BootImage();
-
         try {
-            if (!biSaved.load(savedImageFile.getAbsolutePath())) {
-                Log.e(TAG, "libmbp error code: " + biSaved.getError());
-                return KernelStatus.UNKNOWN;
-            }
-            if (!biOther.load(bootImageFile.getAbsolutePath())) {
-                Log.e(TAG, "libmbp error code: " + biOther.getError());
-                return KernelStatus.UNKNOWN;
-            }
-
-            return biSaved.equals(biOther)
-                    ? KernelStatus.SET
-                    : KernelStatus.DIFFERENT;
-        } finally {
-            biSaved.destroy();
-            biOther.destroy();
+            return LibMiscStuff.bootImagesEqual(savedImageFile.getAbsolutePath(),
+                    bootImageFile.getAbsolutePath()) ? KernelStatus.SET : KernelStatus.DIFFERENT;
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to compare " + savedImageFile + " with " + bootImageFile, e);
+            return KernelStatus.UNKNOWN;
         }
     }
 

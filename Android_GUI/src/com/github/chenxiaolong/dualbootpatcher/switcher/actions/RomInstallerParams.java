@@ -25,6 +25,8 @@ public class RomInstallerParams implements Parcelable {
     private Uri mUri;
     private String mDisplayName;
     private String mRomId;
+    private boolean mSkipMounts = false;
+    private boolean mAllowOverwrite = false;
 
     public RomInstallerParams() {
     }
@@ -87,5 +89,21 @@ public class RomInstallerParams implements Parcelable {
 
     public void setRomId(String romId) {
         mRomId = romId;
+    }
+
+    public boolean getSkipMounts() {
+        return mSkipMounts;
+    }
+
+    public void setSkipMounts(boolean skipMounts) {
+        mSkipMounts = skipMounts;
+    }
+
+    public boolean getAllowOverwrite() {
+        return mAllowOverwrite;
+    }
+
+    public void setAllowOverwrite(boolean allowOverwrite) {
+        mAllowOverwrite = allowOverwrite;
     }
 }

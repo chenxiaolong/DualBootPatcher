@@ -43,7 +43,7 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWithRootTask;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateRamdiskUpdaterTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask;
 
@@ -198,11 +198,11 @@ public class SwitcherService extends ThreadPoolService {
         return taskId;
     }
 
-    // Update ramdisk
+    // Create ramdisk updater
 
-    public int updateRamdisk(RomInformation romInfo) {
+    public int createRamdiskUpdater(RomInformation romInfo) {
         int taskId = sNewTaskId.getAndIncrement();
-        UpdateRamdiskTask task = new UpdateRamdiskTask(taskId, this, romInfo);
+        CreateRamdiskUpdaterTask task = new CreateRamdiskUpdaterTask(taskId, this, romInfo);
         addTask(taskId, task);
         return taskId;
     }

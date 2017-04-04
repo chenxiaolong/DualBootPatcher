@@ -38,7 +38,6 @@ enum ErrorCode
     // PatcherCreation
     PatcherCreateError = 50,
     AutoPatcherCreateError = 51,
-    RamdiskPatcherCreateError = 52,
 
     // I/O
     FileOpenError = 100,
@@ -47,15 +46,6 @@ enum ErrorCode
     FileWriteError = 103,
     FileSeekError = 104,
     FileTellError = 105,
-
-    // Boot image
-    BootImageParseError = 150,
-    BootImageApplyBumpError = 151,
-    BootImageApplyLokiError = 152,
-
-    // cpio
-    CpioFileAlreadyExistsError = 170,
-    CpioFileNotExistError = 171,
 
     // Archive
     ArchiveReadOpenError = 200,
@@ -69,9 +59,6 @@ enum ErrorCode
 
     // Cancelled
     PatchingCancelled = 300,
-
-    // Misc
-    BootImageTooLargeError = 400,
 };
 
 #ifdef __cplusplus

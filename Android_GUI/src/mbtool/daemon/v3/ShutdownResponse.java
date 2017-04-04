@@ -10,12 +10,13 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class ShutdownResponse extends Table {
   public static ShutdownResponse getRootAsShutdownResponse(ByteBuffer _bb) { return getRootAsShutdownResponse(_bb, new ShutdownResponse()); }
-  public static ShutdownResponse getRootAsShutdownResponse(ByteBuffer _bb, ShutdownResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public ShutdownResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static ShutdownResponse getRootAsShutdownResponse(ByteBuffer _bb, ShutdownResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public ShutdownResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public ShutdownError error() { return error(new ShutdownError()); }
-  public ShutdownError error(ShutdownError obj) { int o = __offset(6); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public ShutdownError error(ShutdownError obj) { int o = __offset(6); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 
   public static int createShutdownResponse(FlatBufferBuilder builder,
       boolean success,

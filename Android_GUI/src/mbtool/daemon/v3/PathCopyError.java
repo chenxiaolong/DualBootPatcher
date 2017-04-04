@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class PathCopyError extends Table {
   public static PathCopyError getRootAsPathCopyError(ByteBuffer _bb) { return getRootAsPathCopyError(_bb, new PathCopyError()); }
-  public static PathCopyError getRootAsPathCopyError(ByteBuffer _bb, PathCopyError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public PathCopyError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static PathCopyError getRootAsPathCopyError(ByteBuffer _bb, PathCopyError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public PathCopyError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int errnoValue() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public String msg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }

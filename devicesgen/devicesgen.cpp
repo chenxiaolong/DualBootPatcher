@@ -135,7 +135,6 @@ static void print_validation_error(const char *path, const char *id,
         { MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS,       "Missing recovery block device paths" },
         { MB_DEVICE_MISSING_BOOT_UI_THEME,             "Missing Boot UI theme" },
         { MB_DEVICE_MISSING_BOOT_UI_GRAPHICS_BACKENDS, "Missing Boot UI graphics backends" },
-        { MB_DEVICE_MISSING_CRYPTO_HEADER_PATH,        "Missing crypto header path" },
         { 0, nullptr }
     };
 

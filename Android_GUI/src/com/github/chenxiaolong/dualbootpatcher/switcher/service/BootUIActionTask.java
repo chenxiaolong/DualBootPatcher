@@ -53,11 +53,7 @@ public final class BootUIActionTask extends BaseServiceTask {
 
     private static final FileMapping[] MAPPINGS = new FileMapping[] {
             new FileMapping("/bootui/%s/bootui.zip", "/multiboot/bootui.zip", 0644),
-            new FileMapping("/bootui/%s/bootui.zip.sig", "/multiboot/bootui.zip.sig", 0644),
-            new FileMapping("/binaries/android/%s/cryptfstool", "/multiboot/crypto/cryptfstool", 0755),
-            new FileMapping("/binaries/android/%s/cryptfstool.sig", "/multiboot/crypto/cryptfstool.sig", 0644),
-            new FileMapping("/binaries/android/%s/cryptfstool_rec", "/multiboot/crypto/cryptfstool_rec", 0755),
-            new FileMapping("/binaries/android/%s/cryptfstool_rec.sig", "/multiboot/crypto/cryptfstool_rec.sig", 0644)
+            new FileMapping("/bootui/%s/bootui.zip.sig", "/multiboot/bootui.zip.sig", 0644)
     };
 
     private static final String PROPERTIES_FILE = "info.prop";

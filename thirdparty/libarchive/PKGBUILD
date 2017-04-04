@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,24 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=567b37436642c344ecae1208f9d20885864986d1
-_prebuilts='https://snapshots.noobdev.io/repo/prebuilts'
-_ver_libiconv=1.14-1
-_ver_liblzma=5.2.2-1
+_prebuilts='https://dbp.noobdev.io/repo/prebuilts'
+_ver_libiconv=1.15-1
+_ver_liblzma=5.2.3-2
 _ver_lz4=131-1
-_ver_lzo=2.09-1
+_ver_lzo=2.10-1
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
-pkgver=3.1.2.r599.g567b374
-pkgrel=2
+pkgver=3.3.1
+pkgrel=1
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
 license=(BSD)
-source=("git+https://github.com/libarchive/libarchive.git#commit=${_commit}"
+source=("git+https://github.com/libarchive/libarchive.git#tag=v${pkgver}"
         'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake'
-        0001-Avoid-statvfs-fstatvfs-calls-on-systems-where-it-is-.patch
         0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch)
 _source_template=("${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz.sig"
@@ -50,15 +48,12 @@ noextract=("libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz"
            "lzo-${_ver_lzo}-${CARCH}.pkg.tar.xz")
 validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
-pkgver() {
-    cd "${pkgbase}"
-    git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
-}
-
 prepare() {
     cd "${pkgbase}"
-    git am ../0001-Avoid-statvfs-fstatvfs-calls-on-systems-where-it-is-.patch
     git am ../0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
+
+    # Symlink Android header
+    ln -sf ../contrib/android/include/android_lf.h libarchive/android_lf.h
 
     local abi
     abi=$(android_get_abi_name)
@@ -84,7 +79,7 @@ build() {
 
     local abi api lowapi toolchain toolchain_ver
     abi=$(android_get_abi_name)
-    api=android-21
+    api=android-24
     toolchain=$(android_get_toolchain_name "${abi}")
     toolchain_ver=4.9
 
@@ -122,6 +117,8 @@ build() {
         -DANDROID_ABI="${abi}"
         -DANDROID_TOOLCHAIN_NAME="${toolchain}-${toolchain_ver}"
         -DLIBRARY_OUTPUT_PATH_ROOT=.
+        # getgrnam_r's existence is a lie in the NDK
+        -DHAVE_GETGRNAM_R=0
     )
 
     mkdir -p "${build_dir}"
@@ -146,6 +143,7 @@ package_libarchive() {
 
     install -dm755 "${pkgdir}"/{lib,include}/
     install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
+    install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
     install -m644 "build_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
 }
 
@@ -157,42 +155,42 @@ package_libarchive-lowapi() {
 
     install -dm755 "${pkgdir}"/{lib,include}/
     install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
+    install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
     install -m644 "build_lowapi_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
 }
 
 sha512sums=('SKIP'
             '4a70ef1c914ba31d1944652d1de592d01a1e1a68da85e9262bc15e2e73c572da8644c9ed8b4547c456ca4100f7737d34c5cfaaf9ee816a652a74a97f020b57a7'
-            '9511fa8e8d0604f761b2ab9f330c75bcc44026dc7a0f35954773f1641e5c64b179c5fcdbe28299b51361d39879666f99251b923f2786ff4c2241423e05153b05'
             'e07ccce80fd23f28a13ad7cd20d61d9e5886b91f4dfad6502067cb16bb62dce2ab94861807eeb608ad29202b618f5d0c3af0e0956a93e51d51653f10966748de')
-sha512sums_armv7=('d4bc7e39a7205ff166a1aa07b93ceb4fd7b6f7f2be26dc8917dd5753034470a78e9a18139613461a4e3b565b43eeb479c735566f058966f71dae19cf16d5a208'
+sha512sums_armv7=('408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286'
                   'SKIP'
-                  '0bec5f8bc3e1484b830e2c57b041e916687ea4035769074e5576f6682a531d285538fbf7a5a85c88c654209d8e9e8b14ad80e78a3d9c29aa5d304eecf247edc8'
+                  '2fd3c5578a6313abc7737d9862c9e2dde35296004439ab7fe41b42a54ee094295a04a83b0a565ac4801c01cbfb050189405163d0ab7a6b6bf48e128e6adb2bb1'
                   'SKIP'
                   'e3806e50e89527de9b4061a35ac6ef4be372ec4321a53a19a343ad5c5a29059582d0cdc48baffbd2dfd39332f116b1ea8d32d4662174ad0fdacebaac133edb58'
                   'SKIP'
-                  'baa6537ca4ba80c508f39bb64e3404c5ccb71c31c67b28501bbc4a24272b558a0f59fbb79573c6a261bffebfb1aeff174f383b75626752393c5093959b0c8415'
+                  '90c6725a711d066a7b90e7631a2b34ac502cf1b1f9680826e094aa867d17c6b373c99872425ca3adbd3c87c35c872781353edbd085642c4a1de87da1c3cde72f'
                   'SKIP')
-sha512sums_aarch64=('b2a03adda6bfcb18bd14422b1e950f383bf030b77680e06114220666034bfb074d26a0d9c2067df3bc8b1b64cdbb9fa5b6c4cc83d0cfa11e66121352809d6756'
+sha512sums_aarch64=('ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255'
                     'SKIP'
-                    '6b66601dba6c419f7462a331df7dc71cc13356168a0c6a9c0cb9eb38d46af5aae6f7128838c3db80167b8b318200c6f6ec5b37b0f1ef23a668ba1512a1325417'
+                    'aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b'
                     'SKIP'
                     '262925a98d27ca0afd5dc579b7eca522ae6d15bed80294f34a6ed9b58ce51e321f755260a5f4723af26addf4856e52a8fb490db82b7a1e309dca50e6656bc5fb'
                     'SKIP'
-                    '83a44742fbe960d94f46b03ed3eb3786985db34608e151a9a00310c4a884e9ede553322175ad22806bf364f3ec8665565a38a6bfe83cb01a67eb0e777eb7c09f'
+                    'ab8616290db4abd5e7c68d82d3f9067143cd0a508cd5b991727ce9699387a4b708bff2dc10c1bf46e99dc9a39d18597855a0b9919f60216cb1ae0f7e0acf0a7d'
                     'SKIP')
-sha512sums_x86=('827d284e74787091f1403f8bb9a61ee2e0ab4930eb1da24a0ad564caadf413ac7e2d3501489b2c35cca2a0978fa347e0cbf7bf76b42a31098d31fffba80a9ca9'
+sha512sums_x86=('6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556'
                 'SKIP'
-                '2a4008a8f89a0bce25a7c5c293733cafdee54effda563c6a92f75cb607d65abc47e9c7e900ed2f026991af80a2120faeebf44ad8993521993f24cf9f44bd839b'
+                'c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67'
                 'SKIP'
                 '4047ddb609ff1b228c8075c70347fab91119e3d5324cfe03eb616ebb6238f3ac9b77b6fdfad79eedb3f0faf81fb1ddd0a7dfd1e0d9012059fa2bed025ac8e5a1'
                 'SKIP'
-                '2bef29b8413410c6426a9d4ad103f0040e6e1d6b018b8ea7aedf730e79624e12d2da8ab68486c1eb1de23db0b96d8388213128c240a53e4fda4a1fec20650c70'
+                '1f4c7859c90e4eab321a85e016a85dc1e290cb2bc4e4740895c5eca750670b8c62dc1119943f4306394a7580255a62bed855b9c3c882affc826e74df88f196c5'
                 'SKIP')
-sha512sums_x86_64=('004b629ce9ffa43cd88c23d87b927c6d80dcf4de8b750cd40532e00100e1e13387c0982f2af3c3a3593ed32b83aba66b7a7849bc08d1f210e556a192c2948615'
+sha512sums_x86_64=('5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3'
                    'SKIP'
-                   'c2f5607f913dd4b76abeef6536e108f15dc5daec779f85f3d22588d76950cf7c188e7cda465d0007e5720050667d37a1a4e08e5f0766ee81db26785b9035f52f'
+                   'e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092'
                    'SKIP'
                    '51129cf86be6c5f0b50262be15f3113fc08123df00e12d3474d5fb38c95ea5d0b6ddf5c83ca752d076ddc56920901174bbf2e9a29a3b8072eac3d60259f51334'
                    'SKIP'
-                   'd04a86dd68f190115f220019c0e2f315f78b7c098246052137a2b3fe94759c0015010ba4242f19002fc919ee3687946ae15e77d83e9d516feb110b0dbc6cfb60'
+                   '4502188785e66e34e8560c2d273eb22e243d8d6e8defeffcc77bf67f7ee88eb73365067a2ec83b3d571edfe1c3c2336c051fbc4f0761bb9143375d34c3ebb9c6'
                    'SKIP')

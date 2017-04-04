@@ -135,14 +135,6 @@ SETTER(char const * const *, tw_graphics_backends);
 GETTER(const char *, tw_theme);
 SETTER(const char *, tw_theme);
 
-/* Crypto */
-
-GETTER(bool, crypto_supported);
-SETTER(bool, crypto_supported);
-
-GETTER(const char *, crypto_header_path);
-SETTER(const char *, crypto_header_path);
-
 
 MB_EXPORT bool mb_device_equals(struct Device *a, struct Device *b);
 

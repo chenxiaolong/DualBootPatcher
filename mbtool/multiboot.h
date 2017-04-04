@@ -49,15 +49,9 @@
 #define PROP_BLOCK_DEV_RECOVERY_PATHS   "ro.patcher.blockdevs.recovery"
 #define PROP_BLOCK_DEV_EXTRA_PATHS      "ro.patcher.blockdevs.extra"
 #define PROP_USE_FUSE_EXFAT             "ro.patcher.use_fuse_exfat"
-#define PROP_CRYPTFS_HEADER_PATH        "ro.patcher.cryptfs_header_path"
 
 #define PROP_MULTIBOOT_VERSION          "ro.multiboot.version"
 #define PROP_MULTIBOOT_ROM_ID           "ro.multiboot.romid"
-
-#define PROP_CRYPTO_STATE               "state.multiboot.crypto"
-#define CRYPTO_STATE_ENCRYPTED          "encrypted"
-#define CRYPTO_STATE_DECRYPTED          "decrypted"
-#define CRYPTO_STATE_ERROR              "error"
 
 // Boot UI
 #define BOOT_UI_SKIP_PATH               "/raw/cache/multiboot/bootui/skip"

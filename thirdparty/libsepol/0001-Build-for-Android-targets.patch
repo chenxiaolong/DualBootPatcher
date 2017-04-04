@@ -1,15 +1,15 @@
-From cbfb5fb2a36f0c11fa597e67ca7fb852c5159a1e Mon Sep 17 00:00:00 2001
+From 6cf52318da506ee668a778e4cde775cd95d6bc3f Mon Sep 17 00:00:00 2001
 From: Jorrit Jongma <git@jongma.org>
 Date: Wed, 29 Oct 2014 17:18:15 +0100
 Subject: [PATCH] Build for Android targets
 
 ---
  libsepol/.gitignore     |  2 ++
- libsepol/Android.mk     | 51 ++++---------------------------------------------
+ libsepol/Android.mk     | 50 ++++---------------------------------------------
  libsepol/README.md      |  3 +++
  libsepol/src/genbools.c |  4 ++--
  libsepol/src/genusers.c |  8 ++++++--
- 5 files changed, 17 insertions(+), 51 deletions(-)
+ 5 files changed, 17 insertions(+), 50 deletions(-)
  create mode 100644 libsepol/README.md
 
 diff --git a/libsepol/.gitignore b/libsepol/.gitignore
@@ -22,10 +22,10 @@ index 77bb591..b0185e7 100644
 +libs/
  libsepol.map
 diff --git a/libsepol/Android.mk b/libsepol/Android.mk
-index 730fac3..aae7b2e 100644
+index 7e06d22..58443b3 100644
 --- a/libsepol/Android.mk
 +++ b/libsepol/Android.mk
-@@ -63,13 +63,12 @@ cil_src_files := \
+@@ -64,13 +64,12 @@ cil_src_files := \
  	cil/src/cil_verify.c
  
  common_cflags := \
@@ -43,7 +43,7 @@ index 730fac3..aae7b2e 100644
  
  common_includes := \
  	$(LOCAL_PATH)/include/ \
-@@ -84,53 +83,11 @@ common_includes := \
+@@ -85,52 +84,11 @@ common_includes := \
  yacc_flags := -x c -std=gnu89
  
  ##
@@ -53,12 +53,11 @@ index 730fac3..aae7b2e 100644
 -
 -LOCAL_MODULE := libsepol
 -LOCAL_MODULE_TAGS := optional
--LOCAL_COPY_HEADERS_TO := sepol
--LOCAL_COPY_HEADERS := include/sepol/handle.h include/sepol/policydb.h cil/include/cil/cil.h
 -LOCAL_C_INCLUDES := $(common_includes) 
--LOCAL_CFLAGS := $(yacc_flags) $(common_cflags)
+-LOCAL_CFLAGS := $(common_cflags)
+-LOCAL_CPPFLAGS := $(yacc_flags)
 -LOCAL_SRC_FILES := $(common_src_files) $(cil_src_files)
--LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 -
 -include $(BUILD_HOST_SHARED_LIBRARY)
 -
@@ -70,9 +69,10 @@ index 730fac3..aae7b2e 100644
  LOCAL_MODULE := libsepol
 -LOCAL_MODULE_TAGS := optional
 -LOCAL_C_INCLUDES := $(common_includes) 
--LOCAL_CFLAGS := $(yacc_flags) $(common_cflags)
+-LOCAL_CFLAGS := $(common_cflags)
+-LOCAL_CPPFLAGS := $(yacc_flags)
 -LOCAL_SRC_FILES := $(common_src_files) $(cil_src_files)
--LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 -
 -include $(BUILD_HOST_STATIC_LIBRARY)
 -
@@ -87,7 +87,6 @@ index 730fac3..aae7b2e 100644
 -LOCAL_CFLAGS := $(common_cflags)
 -LOCAL_SRC_FILES := utils/chkcon.c
 -LOCAL_SHARED_LIBRARIES := libsepol
--LOCAL_MODULE_CLASS := EXECUTABLES
 -
 -include $(BUILD_HOST_EXECUTABLE)
 -
@@ -99,14 +98,13 @@ index 730fac3..aae7b2e 100644
  LOCAL_CFLAGS := $(common_cflags)
 diff --git a/libsepol/README.md b/libsepol/README.md
 new file mode 100644
-index 0000000..03e1c3e
+index 0000000..96ef6ff
 --- /dev/null
 +++ b/libsepol/README.md
 @@ -0,0 +1,3 @@
 +Android builds with ndk r10c:
 +
 +ndk-build -B NDK_PROJECT_PATH=. NDK_TOOLCHAIN_VERSION=4.9 APP_BUILD_SCRIPT=Android.mk APP_ABI=all APP_PLATFORM=android-14 APP_PIE=true
-\ No newline at end of file
 diff --git a/libsepol/src/genbools.c b/libsepol/src/genbools.c
 index 6a06ec9..8828c33 100644
 --- a/libsepol/src/genbools.c
@@ -156,5 +154,5 @@ index 7826b71..9522834 100644
  	  ERR(NULL, "out of memory");
  	  return -1;
 -- 
-2.4.1
+2.9.3
 

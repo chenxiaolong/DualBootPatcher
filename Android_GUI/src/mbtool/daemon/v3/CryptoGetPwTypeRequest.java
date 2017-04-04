@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class CryptoGetPwTypeRequest extends Table {
   public static CryptoGetPwTypeRequest getRootAsCryptoGetPwTypeRequest(ByteBuffer _bb) { return getRootAsCryptoGetPwTypeRequest(_bb, new CryptoGetPwTypeRequest()); }
-  public static CryptoGetPwTypeRequest getRootAsCryptoGetPwTypeRequest(ByteBuffer _bb, CryptoGetPwTypeRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public CryptoGetPwTypeRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static CryptoGetPwTypeRequest getRootAsCryptoGetPwTypeRequest(ByteBuffer _bb, CryptoGetPwTypeRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public CryptoGetPwTypeRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startCryptoGetPwTypeRequest(FlatBufferBuilder builder) { builder.startObject(0); }

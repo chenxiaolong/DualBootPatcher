@@ -10,16 +10,17 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class FileStatResponse extends Table {
   public static FileStatResponse getRootAsFileStatResponse(ByteBuffer _bb) { return getRootAsFileStatResponse(_bb, new FileStatResponse()); }
-  public static FileStatResponse getRootAsFileStatResponse(ByteBuffer _bb, FileStatResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public FileStatResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static FileStatResponse getRootAsFileStatResponse(ByteBuffer _bb, FileStatResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public FileStatResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public boolean success() { int o = __offset(4); return o != 0 ? 0!=bb.get(o + bb_pos) : false; }
   public String errorMsg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer errorMsgAsByteBuffer() { return __vector_as_bytebuffer(6, 1); }
   public StructStat stat() { return stat(new StructStat()); }
-  public StructStat stat(StructStat obj) { int o = __offset(8); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public StructStat stat(StructStat obj) { int o = __offset(8); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
   public FileStatError error() { return error(new FileStatError()); }
-  public FileStatError error(FileStatError obj) { int o = __offset(10); return o != 0 ? obj.__init(__indirect(o + bb_pos), bb) : null; }
+  public FileStatError error(FileStatError obj) { int o = __offset(10); return o != 0 ? obj.__assign(__indirect(o + bb_pos), bb) : null; }
 
   public static int createFileStatResponse(FlatBufferBuilder builder,
       boolean success,

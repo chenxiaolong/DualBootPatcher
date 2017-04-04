@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbSetKernelError extends Table {
   public static MbSetKernelError getRootAsMbSetKernelError(ByteBuffer _bb) { return getRootAsMbSetKernelError(_bb, new MbSetKernelError()); }
-  public static MbSetKernelError getRootAsMbSetKernelError(ByteBuffer _bb, MbSetKernelError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbSetKernelError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbSetKernelError getRootAsMbSetKernelError(ByteBuffer _bb, MbSetKernelError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbSetKernelError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startMbSetKernelError(FlatBufferBuilder builder) { builder.startObject(0); }
