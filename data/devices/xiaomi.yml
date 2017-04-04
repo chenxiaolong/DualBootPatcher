@@ -214,6 +214,8 @@
     extra:
       - /dev/block/platform/7824900.sdhci/by-name/cust
       - /dev/block/bootdevice/by-name/cust
+
+
 - name: Redmi Note4
   id: nikel
   codenames:
