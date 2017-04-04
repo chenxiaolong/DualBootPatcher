@@ -259,7 +259,8 @@
     boot:
       - /dev/block/bootdevice/by-name/boot
     recovery:
-      - /dev/block/bootdevice/by-name/recovery ​
+      - /dev/block/bootdevice/by-name/recovery
+      
 - name: Lenovo Vibe K5 & K5 Plus
   id: A6020
   codenames:
