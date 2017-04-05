@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbWipeRomRequest extends Table {
   public static MbWipeRomRequest getRootAsMbWipeRomRequest(ByteBuffer _bb) { return getRootAsMbWipeRomRequest(_bb, new MbWipeRomRequest()); }
-  public static MbWipeRomRequest getRootAsMbWipeRomRequest(ByteBuffer _bb, MbWipeRomRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbWipeRomRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbWipeRomRequest getRootAsMbWipeRomRequest(ByteBuffer _bb, MbWipeRomRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbWipeRomRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String romId() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer romIdAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }

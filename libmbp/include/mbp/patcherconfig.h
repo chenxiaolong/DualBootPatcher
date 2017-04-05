@@ -20,10 +20,10 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "mbcommon/common.h"
 
-#include "cpiofile.h"
 #include "errors.h"
 #include "fileinfo.h"
 
@@ -33,7 +33,6 @@ namespace mbp
 
 class Patcher;
 class AutoPatcher;
-class RamdiskPatcher;
 
 class MB_EXPORT PatcherConfig
 {
@@ -51,18 +50,13 @@ public:
 
     std::vector<std::string> patchers() const;
     std::vector<std::string> autoPatchers() const;
-    std::vector<std::string> ramdiskPatchers() const;
 
     Patcher * createPatcher(const std::string &id);
     AutoPatcher * createAutoPatcher(const std::string &id,
                                     const FileInfo * const info);
-    RamdiskPatcher * createRamdiskPatcher(const std::string &id,
-                                          const FileInfo * const info,
-                                          CpioFile * const cpio);
 
     void destroyPatcher(Patcher *patcher);
     void destroyAutoPatcher(AutoPatcher *patcher);
-    void destroyRamdiskPatcher(RamdiskPatcher *patcher);
 
     PatcherConfig(const PatcherConfig &) = delete;
     PatcherConfig(PatcherConfig &&) = default;

@@ -144,14 +144,6 @@ public class LibMbDevice {
         static native String mb_device_tw_theme(CDevice device);
         static native int mb_device_set_tw_theme(CDevice device, String theme);
 
-        /* Crypto */
-
-        static native boolean mb_device_crypto_supported(CDevice device);
-        static native int mb_device_set_crypto_supported(CDevice device, boolean supported);
-
-        static native String mb_device_crypto_header_path(CDevice device);
-        static native int mb_device_set_crypto_header_path(CDevice device, String path);
-
         /* Other */
 
         static native boolean mb_device_equals(CDevice a, CDevice b);
@@ -579,22 +571,6 @@ public class LibMbDevice {
 
         public void setTwTheme(String theme) {
             handleReturn(CWrapper.mb_device_set_tw_theme(mCDevice, theme));
-        }
-
-        public boolean isCryptoSupported() {
-            return CWrapper.mb_device_crypto_supported(mCDevice);
-        }
-
-        public void setCryptoSupported(boolean supported) {
-            handleReturn(CWrapper.mb_device_set_crypto_supported(mCDevice, supported));
-        }
-
-        public String getCryptoHeaderPath() {
-            return CWrapper.mb_device_crypto_header_path(mCDevice);
-        }
-
-        public void setCryptoHeaderPath(String path) {
-            handleReturn(CWrapper.mb_device_set_crypto_header_path(mCDevice, path));
         }
 
         public long validate() {

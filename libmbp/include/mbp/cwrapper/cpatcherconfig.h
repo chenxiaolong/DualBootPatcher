@@ -41,20 +41,14 @@ MB_EXPORT void mbp_config_set_temp_directory(CPatcherConfig *pc, char *path);
 
 MB_EXPORT char ** mbp_config_patchers(const CPatcherConfig *pc);
 MB_EXPORT char ** mbp_config_autopatchers(const CPatcherConfig *pc);
-MB_EXPORT char ** mbp_config_ramdiskpatchers(const CPatcherConfig *pc);
 
 MB_EXPORT CPatcher * mbp_config_create_patcher(CPatcherConfig *pc, const char *id);
 MB_EXPORT CAutoPatcher * mbp_config_create_autopatcher(CPatcherConfig *pc,
                                                        const char *id,
                                                        const CFileInfo *info);
-MB_EXPORT CRamdiskPatcher * mbp_config_create_ramdisk_patcher(CPatcherConfig *pc,
-                                                              const char *id,
-                                                              const CFileInfo *info,
-                                                              CCpioFile *cpio);
 
 MB_EXPORT void mbp_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher);
 MB_EXPORT void mbp_config_destroy_autopatcher(CPatcherConfig *pc, CAutoPatcher *patcher);
-MB_EXPORT void mbp_config_destroy_ramdisk_patcher(CPatcherConfig *pc, CRamdiskPatcher *patcher);
 
 #ifdef __cplusplus
 }

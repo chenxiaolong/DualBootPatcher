@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class SignedExecOutputResponse extends Table {
   public static SignedExecOutputResponse getRootAsSignedExecOutputResponse(ByteBuffer _bb) { return getRootAsSignedExecOutputResponse(_bb, new SignedExecOutputResponse()); }
-  public static SignedExecOutputResponse getRootAsSignedExecOutputResponse(ByteBuffer _bb, SignedExecOutputResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public SignedExecOutputResponse __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static SignedExecOutputResponse getRootAsSignedExecOutputResponse(ByteBuffer _bb, SignedExecOutputResponse obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public SignedExecOutputResponse __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public String line() { int o = __offset(4); return o != 0 ? __string(o + bb_pos) : null; }
   public ByteBuffer lineAsByteBuffer() { return __vector_as_bytebuffer(4, 1); }

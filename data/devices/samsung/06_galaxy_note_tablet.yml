@@ -1,13 +1,17 @@
 ---
-- name: Samsung Galaxy Note 8.0 (Wifi/3G)
+- name: Samsung Galaxy Note 8.0 (Wifi/3G/4G)
   id: kona
   codenames:
     # Wifi variant
     - konawifi
     - konawifixx
+    - GT-N5110
     # 3G variant
     - kona3g
     - kona3gxx
+    - GT-N5100
+    # 4G variant
+    - GT-N5120
   architecture: armeabi-v7a
 
   block_devs:

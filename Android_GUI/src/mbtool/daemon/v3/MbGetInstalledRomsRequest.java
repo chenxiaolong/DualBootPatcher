@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbGetInstalledRomsRequest extends Table {
   public static MbGetInstalledRomsRequest getRootAsMbGetInstalledRomsRequest(ByteBuffer _bb) { return getRootAsMbGetInstalledRomsRequest(_bb, new MbGetInstalledRomsRequest()); }
-  public static MbGetInstalledRomsRequest getRootAsMbGetInstalledRomsRequest(ByteBuffer _bb, MbGetInstalledRomsRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbGetInstalledRomsRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbGetInstalledRomsRequest getRootAsMbGetInstalledRomsRequest(ByteBuffer _bb, MbGetInstalledRomsRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbGetInstalledRomsRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startMbGetInstalledRomsRequest(FlatBufferBuilder builder) { builder.startObject(0); }

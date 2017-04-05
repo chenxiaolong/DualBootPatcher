@@ -95,16 +95,17 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.WipeTargetsSelectionDial
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action;
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction;
+import com.github.chenxiaolong.dualbootpatcher.switcher.actions.RomInstallerParams;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
         .CacheWallpaperTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
         .CreateLauncherTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask
         .GetRomDetailsTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask.MbtoolTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask.SetKernelTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask.SwitchRomTaskListener;
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateRamdiskTask
-        .UpdateRamdiskTaskListener;
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateRamdiskUpdaterTask.CreateRamdiskUpdaterTaskListener;
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask.WipeRomTaskListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.RequestCreator;
@@ -645,7 +646,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                         Toast.LENGTH_LONG);
                 mUpdateRamdiskToast.show();
 
-                updateRamdisk();
+                createRamdiskUpdater();
 
                 mUpdateRamdiskCountdown = FORCE_RAMDISK_UPDATE_TAPS;
             } else if (mUpdateRamdiskCountdown > 0
@@ -665,7 +666,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                 mUpdateRamdiskToast.cancel();
             }
 
-            updateRamdisk();
+            createRamdiskUpdater();
         }
     }
 
@@ -928,22 +929,26 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
     }
 
-    private void onUpdatedRamdisk(boolean success) {
+    private void onCreatedRamdiskUpdater(String path) {
         // Remove cached task from service
         removeCachedTaskId(mTaskIdUpdateRamdisk);
         mTaskIdUpdateRamdisk = -1;
 
-        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
-                .findFragmentByTag(PROGRESS_DIALOG_UPDATE_RAMDISK);
-        if (d != null) {
-            d.dismiss();
+        if (path == null) {
+            hideRamdiskUpdateProgressDialog();
+            showRamdiskUpdateCompletionDialog(false);
+        } else {
+            flashRamdiskUpdater(path);
         }
+    }
 
-        boolean isCurrentRom = mBootedRomInfo != null &&
-                mBootedRomInfo.getId().equals(mRomInfo.getId());
-        UpdateRamdiskResultDialog dialog =
-                UpdateRamdiskResultDialog.newInstanceFromActivity(success, isCurrentRom);
-        dialog.show(getFragmentManager(), CONFIRM_DIALOG_UPDATED_RAMDISK);
+    private void onFlashedRamdiskUpdater(boolean success) {
+        // Remove cached task from service
+        removeCachedTaskId(mTaskIdUpdateRamdisk);
+        mTaskIdUpdateRamdisk = -1;
+
+        hideRamdiskUpdateProgressDialog();
+        showRamdiskUpdateCompletionDialog(success);
     }
 
     private void onWipedRom(short[] succeeded, short[] failed) {
@@ -1050,12 +1055,23 @@ public class RomDetailActivity extends AppCompatActivity implements
         mService.enqueueTaskId(mTaskIdSetKernel);
     }
 
-    private void updateRamdisk() {
-        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
-        builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
+    private void createRamdiskUpdater() {
+        showRamdiskUpdateProgressDialog();
 
-        mTaskIdUpdateRamdisk = mService.updateRamdisk(mRomInfo);
+        mTaskIdUpdateRamdisk = mService.createRamdiskUpdater(mRomInfo);
+        mService.addCallback(mTaskIdUpdateRamdisk, mCallback);
+        mService.enqueueTaskId(mTaskIdUpdateRamdisk);
+    }
+
+    private void flashRamdiskUpdater(String path) {
+        File file = new File(path);
+        RomInstallerParams params =
+                new RomInstallerParams(Uri.fromFile(file), file.getName(), mRomInfo.getId());
+        params.setSkipMounts(true);
+        params.setAllowOverwrite(true);
+
+        mTaskIdUpdateRamdisk = mService.mbtoolActions(
+                new MbtoolAction[] { new MbtoolAction(params) });
         mService.addCallback(mTaskIdUpdateRamdisk, mCallback);
         mService.enqueueTaskId(mTaskIdUpdateRamdisk);
     }
@@ -1085,6 +1101,28 @@ public class RomDetailActivity extends AppCompatActivity implements
         builder.message(message);
         builder.buttonText(R.string.ok);
         builder.build().show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
+    }
+
+    private void showRamdiskUpdateProgressDialog() {
+        GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
+        builder.message(R.string.please_wait);
+        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
+    }
+
+    private void hideRamdiskUpdateProgressDialog() {
+        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+                .findFragmentByTag(PROGRESS_DIALOG_UPDATE_RAMDISK);
+        if (d != null) {
+            d.dismiss();
+        }
+    }
+
+    private void showRamdiskUpdateCompletionDialog(boolean success) {
+        boolean isCurrentRom = mBootedRomInfo != null &&
+                mBootedRomInfo.getId().equals(mRomInfo.getId());
+        UpdateRamdiskResultDialog dialog =
+                UpdateRamdiskResultDialog.newInstanceFromActivity(success, isCurrentRom);
+        dialog.show(getFragmentManager(), CONFIRM_DIALOG_UPDATED_RAMDISK);
     }
 
     private Snackbar createSnackbar(String text, int duration) {
@@ -1120,8 +1158,9 @@ public class RomDetailActivity extends AppCompatActivity implements
     }
 
     private class SwitcherEventCallback implements CacheWallpaperTaskListener,
-            SwitchRomTaskListener, SetKernelTaskListener, UpdateRamdiskTaskListener,
-            WipeRomTaskListener, CreateLauncherTaskListener, GetRomDetailsTaskListener {
+            SwitchRomTaskListener, SetKernelTaskListener, CreateRamdiskUpdaterTaskListener,
+            WipeRomTaskListener, CreateLauncherTaskListener, GetRomDetailsTaskListener,
+            MbtoolTaskListener {
         @Override
         public void onCachedWallpaper(int taskId, RomInformation romInfo,
                                       final CacheWallpaperResult result) {
@@ -1160,12 +1199,12 @@ public class RomDetailActivity extends AppCompatActivity implements
         }
 
         @Override
-        public void onUpdatedRamdisk(int taskId, RomInformation romInfo, final boolean success) {
+        public void onCreatedRamdiskUpdater(int taskId, RomInformation romInfo, final String path) {
             if (taskId == mTaskIdUpdateRamdisk) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        RomDetailActivity.this.onUpdatedRamdisk(success);
+                        RomDetailActivity.this.onCreatedRamdiskUpdater(path);
                     }
                 });
             }
@@ -1265,6 +1304,24 @@ public class RomDetailActivity extends AppCompatActivity implements
                     startActivityForResult(intent, REQUEST_MBTOOL_ERROR);
                 }
             });
+        }
+
+        @Override
+        public void onMbtoolTasksCompleted(int taskId, MbtoolAction[] actions, final int attempted,
+                                           final int succeeded) {
+            if (taskId == mTaskIdUpdateRamdisk) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onFlashedRamdiskUpdater(attempted == succeeded);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onCommandOutput(int taskId, String line) {
+            Log.d(TAG, "[Ramdisk update flasher] " + line);
         }
     }
 }

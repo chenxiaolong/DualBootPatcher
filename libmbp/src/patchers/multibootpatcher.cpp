@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -31,8 +31,6 @@
 #include "mblog/logging.h"
 #include "mbpio/delete.h"
 
-#include "mbp/bootimage.h"
-#include "mbp/cpiofile.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/private/fileutils.h"
 #include "mbp/private/miniziputils.h"
@@ -224,16 +222,16 @@ bool MultiBootPatcher::Impl::patchZip()
 
     if (cancelled) return false;
 
+    std::string archDir(pc->dataDirectory());
+    archDir += "/binaries/android/";
+    archDir += mb_device_architecture(info->device());
+
     std::vector<CopySpec> toCopy{
         {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/mbtool_recovery",
+            archDir + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
-            pc->dataDirectory() + "/binaries/android/"
-                    + mb_device_architecture(info->device())
-                    + "/mbtool_recovery.sig",
+            archDir + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
             pc->dataDirectory() + "/scripts/bb-wrapper.sh",
@@ -243,6 +241,22 @@ bool MultiBootPatcher::Impl::patchZip()
             "multiboot/bb-wrapper.sh.sig"
         }
     };
+
+    std::vector<std::string> binaries{
+        "file-contexts-tool",
+        "file-contexts-tool.sig",
+        "fsck-wrapper",
+        "fsck-wrapper.sig",
+        "mbtool",
+        "mbtool.sig",
+        "mount.exfat",
+        "mount.exfat.sig",
+    };
+
+    for (auto const &binary : binaries) {
+        toCopy.push_back({archDir + "/" + binary,
+                          "multiboot/binaries/" + binary});
+    }
 
     // +1 for info.prop
     // +1 for device.json
@@ -290,7 +304,7 @@ bool MultiBootPatcher::Impl::patchZip()
     updateFiles(++files, maxFiles);
     updateDetails("multiboot/info.prop");
 
-    const std::string infoProp = createInfoProp(pc, info->romId());
+    const std::string infoProp = createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -330,7 +344,6 @@ bool MultiBootPatcher::Impl::patchZip()
  *
  * This performs the following operations:
  *
- * - Patch boot images and copy them to the output zip.
  * - Files needed by an AutoPatcher are extracted to the temporary directory.
  * - Otherwise, the file is copied directly to the output zip.
  */
@@ -369,68 +382,18 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
             continue;
         }
 
-        // Try to patch files that end in a common boot image extension
-
-        bool isExtImg = mb_ends_with(curFile.c_str(), ".img");
-        bool isExtLok = mb_ends_with(curFile.c_str(), ".lok");
-        bool isExtGz = mb_ends_with(curFile.c_str(), ".gz");
-        // Boot images should never be over about 30 MiB. This check is here so
-        // the patcher won't try to read a multi-gigabyte system image into RAM
-        bool isSizeOK = fi.uncompressed_size <= 50 * 1024 * 1024;
-
-        if ((isExtImg || isExtLok || isExtGz) && isSizeOK) {
-            // Load the file into memory
-            std::vector<unsigned char> data;
-
-            if (!MinizipUtils::readToMemory(uf, &data,
-                                            &laProgressCb, this)) {
-                error = ErrorCode::ArchiveReadDataError;
-                return false;
-            }
-
-            if (isExtGz) {
-                // Some zips build the boot image at install time and the zip
-                // just includes the split out parts of the boot image
-                if (!patchRamdisk(pc, info, &data, &error)) {
-                    // Just ignore for now
-                }
-            } else {
-                // If the file contains the boot image magic string, then
-                // assume it really is a boot image and patch it
-                if (BootImage::isValid(data.data(), data.size())) {
-                    if (!patchBootImage(pc, info, &data, &error)) {
-                        return false;
-                    }
-                }
-            }
-
-            // Update total size
-            maxBytes += (data.size() - fi.uncompressed_size);
-
-            auto ret2 = MinizipUtils::addFile(zf, curFile, data);
-            if (ret2 != ErrorCode::NoError) {
-                error = ret2;
-                return false;
-            }
-
-            bytes += data.size();
-        } else {
-            // Directly copy other files to the output zip
-
-            // Rename the installer for mbtool
-            if (curFile == "META-INF/com/google/android/update-binary") {
-                curFile = "META-INF/com/google/android/update-binary.orig";
-            }
-
-            if (!MinizipUtils::copyFileRaw(uf, zf, curFile,
-                                           &laProgressCb, this)) {
-                LOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
-                error = ErrorCode::ArchiveWriteDataError;
-                return false;
-            }
-
-            bytes += fi.uncompressed_size;
+        // Rename the installer for mbtool
+        if (curFile == "META-INF/com/google/android/update-binary") {
+            curFile = "META-INF/com/google/android/update-binary.orig";
         }
+
+        if (!MinizipUtils::copyFileRaw(uf, zf, curFile, &laProgressCb, this)) {
+            LOGW("minizip: Failed to copy raw data: %s", curFile.c_str());
+            error = ErrorCode::ArchiveWriteDataError;
+            return false;
+        }
+
+        bytes += fi.uncompressed_size;
     } while ((ret = unzGoToNextFile(uf)) == UNZ_OK);
 
     if (ret != UNZ_END_OF_LIST_OF_FILE) {
@@ -579,91 +542,6 @@ void MultiBootPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
     impl->updateProgress(impl->bytes + bytes, impl->maxBytes);
 }
 
-bool MultiBootPatcher::patchRamdisk(PatcherConfig * const pc,
-                                    const FileInfo * const info,
-                                    std::vector<unsigned char> *data,
-                                    ErrorCode *errorOut)
-{
-    // Load the ramdisk cpio
-    CpioFile cpio;
-    if (!cpio.load(*data)) {
-        if (errorOut) {
-            *errorOut = cpio.error();
-        }
-        return false;
-    }
-
-    std::string rpId(mb_device_id(info->device()));
-    rpId += "/default";
-    auto *rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    if (!rp) {
-        rpId = "default";
-        rp = pc->createRamdiskPatcher(rpId, info, &cpio);
-    }
-    if (!rp) {
-        if (errorOut) {
-            *errorOut = ErrorCode::RamdiskPatcherCreateError;
-        }
-        return false;
-    }
-
-    if (!rp->patchRamdisk()) {
-        if (errorOut) {
-            *errorOut = rp->error();
-        }
-        pc->destroyRamdiskPatcher(rp);
-        return false;
-    }
-
-    pc->destroyRamdiskPatcher(rp);
-
-    std::vector<unsigned char> newRamdisk;
-    if (!cpio.createData(&newRamdisk)) {
-        if (errorOut) {
-            *errorOut = cpio.error();
-        }
-        return false;
-    }
-
-    data->swap(newRamdisk);
-
-    return true;
-}
-
-bool MultiBootPatcher::patchBootImage(PatcherConfig * const pc,
-                                      const FileInfo * const info,
-                                      std::vector<unsigned char> *data,
-                                      ErrorCode *errorOut)
-{
-    BootImage bi;
-    if (!bi.load(*data)) {
-        if (errorOut) {
-            *errorOut = bi.error();
-        }
-        return false;
-    }
-
-    // Release memory since BootImage keeps a copy of the separate components
-    data->clear();
-    data->shrink_to_fit();
-
-    std::vector<unsigned char> ramdiskImage = bi.ramdiskImage();
-    if (!patchRamdisk(pc, info, &ramdiskImage, errorOut)) {
-        return false;
-    }
-
-    bi.setRamdiskImage(std::move(ramdiskImage));
-
-    if (!bi.create(data)) {
-        if (errorOut) {
-            *errorOut = bi.error();
-        }
-        return false;
-    }
-
-    return true;
-}
-
 template<typename SomeType, typename Predicate>
 inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
                                     std::vector<std::string> &list2,
@@ -680,7 +558,8 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
 }
 
 std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
-                                             const std::string &romId)
+                                             const std::string &romId,
+                                             bool always_patch_ramdisk)
 {
     (void) pc;
 
@@ -717,7 +596,21 @@ std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
 
     out += "mbtool.installer.install-location=";
     out += romId;
-    out += "\n\n";
+    out += "\n";
+
+    out +=
+"\n"
+"\n"
+"# mbtool.installer.always-patch-ramdisk\n"
+"# -------------------------------------\n"
+"# By default, the ramdisk is only patched if the boot partition is modified\n"
+"# during the installation process. If this property is enabled, it will always\n"
+"# be patched, regardless if the boot partition is modified.\n"
+"#\n";
+
+    out += "mbtool.installer.always-patch-ramdisk=";
+    out += always_patch_ramdisk ? "true" : "false";
+    out += "\n";
 
     return out;
 }

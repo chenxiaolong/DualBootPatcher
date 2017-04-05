@@ -51,11 +51,6 @@
 #include "mbdevice/json.h"
 #include "mbdevice/validate.h"
 
-// libmbp
-#include "mbp/bootimage.h"
-#include "mbp/cpiofile.h"
-#include "mbp/patcherconfig.h"
-
 // libmbutil
 #include "mbutil/autoclose/dir.h"
 #include "mbutil/autoclose/file.h"
@@ -78,6 +73,7 @@
 
 // Local
 #include "image.h"
+#include "installer_util.h"
 #include "multiboot.h"
 #include "signature.h"
 #include "switcher.h"
@@ -103,11 +99,7 @@
 
 
 #define HELPER_TOOL             "/update-binary-tool"
-#define UPDATE_BINARY           "META-INF/com/google/android/update-binary"
-#define UPDATE_BINARY_ORIG      UPDATE_BINARY ".orig"
-#define MULTIBOOT_BBWRAPPER     "multiboot/bb-wrapper.sh"
-#define MULTIBOOT_DEVICE_JSON   "multiboot/device.json"
-#define MULTIBOOT_INFO_PROP     "multiboot/info.prop"
+
 
 namespace mb {
 
@@ -115,13 +107,15 @@ const std::string Installer::CANCELLED = "cancelled";
 
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
-                     std::string temp_dir, int interface, int output_fd) :
-    _zip_file(std::move(zip_file)),
-    _chroot(std::move(chroot_dir)),
-    _temp(std::move(temp_dir)),
-    _interface(interface),
-    _output_fd(output_fd),
-    _ran(false)
+                     std::string temp_dir, int interface, int output_fd,
+                     int flags)
+    : _zip_file(std::move(zip_file))
+    , _chroot(std::move(chroot_dir))
+    , _temp(std::move(temp_dir))
+    , _interface(interface)
+    , _output_fd(output_fd)
+    , _flags(flags)
+    , _ran(false)
 {
     _passthrough = _output_fd >= 0;
 
@@ -541,32 +535,75 @@ bool Installer::mount_efs() const
 bool Installer::extract_multiboot_files()
 {
     std::vector<util::extract_info> files{
-        { UPDATE_BINARY_ORIG,          _temp + "/updater"           },
-        { UPDATE_BINARY,               _temp + "/mbtool"            },
-        { UPDATE_BINARY ".sig",        _temp + "/mbtool.sig"        },
-        { MULTIBOOT_BBWRAPPER,         _temp + "/bb-wrapper.sh"     },
-        { MULTIBOOT_BBWRAPPER ".sig",  _temp + "/bb-wrapper.sh.sig" },
-        { MULTIBOOT_DEVICE_JSON,       _temp + "/device.json"       },
-        { MULTIBOOT_INFO_PROP,         _temp + "/info.prop"         },
+        {
+            "META-INF/com/google/android/update-binary.orig",
+            _temp + "/updater"
+        },
+        {
+            "META-INF/com/google/android/update-binary",
+            _temp + "/mbtool"
+        },
+        {
+            "META-INF/com/google/android/update-binary.sig",
+            _temp + "/mbtool.sig"
+        },
+        {
+            "multiboot/bb-wrapper.sh",
+            _temp + "/bb-wrapper.sh"
+        },
+        {
+            "multiboot/bb-wrapper.sh.sig",
+            _temp + "/bb-wrapper.sh.sig"
+        },
+        {
+            "multiboot/device.json",
+            _temp + "/device.json"
+        },
+        {
+            "multiboot/info.prop",
+            _temp + "/info.prop"
+        },
     };
+
+    std::vector<std::string> binaries{
+        "file-contexts-tool",
+        "file-contexts-tool.sig",
+        "fsck-wrapper",
+        "fsck-wrapper.sig",
+        "mbtool",
+        "mbtool.sig",
+        "mount.exfat",
+        "mount.exfat.sig",
+    };
+
+    for (auto const &binary : binaries) {
+        files.push_back({
+            "multiboot/binaries/" + binary,
+            _temp + "/binaries/" + binary
+        });
+    }
 
     if (!util::extract_files2(_zip_file, files)) {
         LOGE("Failed to extract all multiboot files");
         return false;
     }
 
-    SigVerifyResult result;
-    result = verify_signature((_temp + "/mbtool").c_str(),
-                              (_temp + "/mbtool.sig").c_str());
-    if (result != SigVerifyResult::VALID) {
-        LOGE("Invalid mbtool signature");
-        return false;
-    }
-    result = verify_signature((_temp + "/bb-wrapper.sh").c_str(),
-                              (_temp + "/bb-wrapper.sh.sig").c_str());
-    if (result != SigVerifyResult::VALID) {
-        LOGE("Invalid busybox wrapper signature");
-        return false;
+    std::vector<std::string> sigcheck{
+        _temp + "/mbtool",
+        _temp + "/bb-wrapper.sh",
+        _temp + "/binaries/file-contexts-tool",
+        _temp + "/binaries/fsck-wrapper",
+        _temp + "/binaries/mbtool",
+        _temp + "/binaries/mount.exfat",
+    };
+
+    for (auto const &item : sigcheck) {
+        SigVerifyResult result =
+                verify_signature(item.c_str(), (item + ".sig").c_str());
+        if (result != SigVerifyResult::VALID) {
+            LOGE("%s: Signature verification failed", item.c_str());
+            return false;
+        }
     }
 
     return true;
@@ -599,7 +636,7 @@ bool Installer::set_up_busybox_wrapper()
 }
 
 /*!
- * \brief Create 4G temporary ext4 image
+ * \brief Create temporary ext4 image
  *
  * \param path Image file path
  */
@@ -1597,6 +1634,11 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
+    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+        LOGV("Skipping filesystem mounting stage");
+        return ProceedState::Continue;
+    }
+
     if (!mount_dir_or_image(_cache_path,
                             in_chroot(CHROOT_CACHE_BIND_MOUNT),
                             in_chroot(CHROOT_CACHE_LOOP_DEV),
@@ -1802,7 +1844,8 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (_has_block_image || _rom->id == "primary") {
+        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+                && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 
             // Format system directory
@@ -1840,120 +1883,29 @@ Installer::ProceedState Installer::install_stage_finish()
     LOGD("Old boot partition SHA512sum: %s", old_digest.c_str());
     LOGD("New boot partition SHA512sum: %s", new_digest.c_str());
 
+    bool changed = memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0;
+    bool force_update = _prop["mbtool.installer.always-patch-ramdisk"] == "true";
+
     // Set kernel if it was changed
-    if (memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0) {
-        display_msg("A new boot image was installed");
-
-        mbp::BootImage bi;
-        if (!bi.loadFile(_boot_block_dev)) {
-            display_msg("Failed to load boot partition image");
-            return ProceedState::Fail;
-        }
-
-        mbp::CpioFile cpio;
-        if (!cpio.load(bi.ramdiskImage())) {
-            LOGE("Failed to read ramdisk image for adding /romid");
-            display_msg("Failed to read ramdisk image");
-            return ProceedState::Fail;
-        }
-
-        // Set ROM ID in /romid
-        cpio.remove("romid");
-        std::vector<unsigned char> id_data(_rom->id.begin(), _rom->id.end());
-        if (!cpio.addFile(std::move(id_data), "romid", 0664)) {
-            LOGE("Failed to write ROM ID to /romid in the ramdisk");
-            display_msg("Failed to add ROM ID to ramdisk");
-            return ProceedState::Fail;
-        }
-
-        // Set ro.patcher.device=<device ID> in /default.prop
-        std::vector<unsigned char> default_prop;
-        if (cpio.contents("default.prop", &default_prop)) {
-            // Device codename
-            std::string prop("\nro.patcher.device=");
-            prop += _detected_device;
-            prop += '\n';
-            // Whether to use fuse-exfat
-            prop += "ro.patcher.use_fuse_exfat=";
-            prop += _use_fuse_exfat ? "true" : "false";
-            prop += '\n';
-
-            default_prop.insert(default_prop.end(), prop.begin(), prop.end());
-            if (!cpio.setContents("default.prop", std::move(default_prop))) {
-                LOGE("Failed to modify /default.prop in the ramdisk");
-                display_msg("Failed to modify /default.prop in the ramdisk");
-                return ProceedState::Fail;
-            }
-        }
-
-        std::vector<unsigned char> new_ramdisk;
-        if (!cpio.createData(&new_ramdisk)) {
-            LOGE("Failed to create new ramdisk image");
-            display_msg("Failed to create new ramdisk image");
-            return ProceedState::Fail;
-        }
-        bi.setRamdiskImage(std::move(new_ramdisk));
-
-        // Reapply hacks if needed
-        if (bi.wasType() == mbp::BootImage::Type::Loki) {
-            std::vector<unsigned char> aboot_image;
-            if (!util::file_read_all(ABOOT_PARTITION, &aboot_image)) {
-                LOGE("Failed to read aboot partition: %s", strerror(errno));
-                display_msg("Failed to read aboot partition");
-                return ProceedState::Fail;
-            }
-
-            bi.setAbootImage(std::move(aboot_image));
-            bi.setTargetType(mbp::BootImage::Type::Loki);
-        }
-
-        std::vector<unsigned char> bootimg;
-        bi.create(&bootimg);
-
-        {
-            // We'll use SuperSU's patch for negating the effects of
-            // CONFIG_RKP_NS_PROT=y in newer Samsung kernels. This kernel
-            // feature prevents exec()'ing anything as a privileged user unless
-            // the binary resides in rootfs or whichever filesystem was first
-            // mounted at /system.
-            //
-            // It is trivial to update mbtool to only use rootfs, but we need
-            // to override fsck tools by bind-mounting dummy binaries from an
-            // ext4 image when booting from an external SD. Unless we patch the
-            // SELinux policy to allow vold to execute u:r:rootfs:s0-labeled
-            // fsck binaries, this patch must remain.
-
-            const unsigned char source[] = {
-                0x49, 0x01, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
-                0x0F, 0x71, 0xE9, 0x00, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
-                0x3F, 0xA0, 0x0F, 0x71, 0x89, 0x00, 0x00, 0x54, 0x00, 0x18,
-                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x88, 0x01, 0x00, 0x54,
-            };
-            const unsigned char target[] = {
-                0xA1, 0x02, 0x00, 0x54, 0x01, 0x14, 0x40, 0xB9, 0x3F, 0xA0,
-                0x0F, 0x71, 0x40, 0x02, 0x00, 0x54, 0x01, 0x08, 0x40, 0xB9,
-                0x3F, 0xA0, 0x0F, 0x71, 0xE0, 0x01, 0x00, 0x54, 0x00, 0x18,
-                0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
-            };
-
-            void *ptr = memmem(bootimg.data(), bootimg.size(),
-                               source, sizeof(source));
-            if (ptr) {
-                memcpy(ptr, target, sizeof(target));
-            }
-        }
+    if (force_update || changed) {
+        display_msg("Patching boot image");
+        LOGV("Ramdisk changed: %d", changed);
+        LOGV("Patching forced: %d", force_update);
 
         std::string temp_boot_img(_temp);
         temp_boot_img += "/boot.img";
 
-        // Backup kernel
+        std::vector<std::function<RamdiskPatcherFn>> rps;
+        rps.push_back(rp_write_rom_id(_rom->id));
+        rps.push_back(rp_patch_default_prop(_detected_device, _use_fuse_exfat));
+        rps.push_back(rp_add_binaries(_temp + "/binaries"));
+        rps.push_back(rp_symlink_fuse_exfat());
+        rps.push_back(rp_symlink_init());
+        rps.push_back(rp_add_device_json(_temp + "/device.json"));
 
-        if (!util::file_write_data(temp_boot_img,
-                                   reinterpret_cast<char *>(bootimg.data()),
-                                   bootimg.size())) {
-            LOGE("Failed to write %s: %s",
-                 temp_boot_img.c_str(), strerror(errno));
-            display_msg("Failed to write %s", temp_boot_img.c_str());
+        if (!InstallerUtil::patch_boot_image(_boot_block_dev, temp_boot_img,
+                                             rps)) {
+            display_msg("Failed to patch boot image");
             return ProceedState::Fail;
         }
 
@@ -1968,49 +1920,20 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        int fd_source = open(temp_boot_img.c_str(), O_RDONLY | O_CLOEXEC);
-        if (fd_source < 0) {
-            LOGE("Failed to open %s: %s",
-                 temp_boot_img.c_str(), strerror(errno));
-            return ProceedState::Fail;
-        }
-
-        auto close_fd_source = util::finally([&] { close(fd_source); });
-
-        int fd_boot = open(_boot_block_dev.c_str(), O_WRONLY | O_CLOEXEC);
-        if (fd_boot < 0) {
-            LOGE("Failed to open %s: %s",
-                 _boot_block_dev.c_str(), strerror(errno));
-            return ProceedState::Fail;
-        }
-
-        auto close_fd_boot = util::finally([&] { close(fd_boot); });
-
-        int fd_backup = open(path.c_str(),
-                             O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0775);
-        if (fd_backup < 0) {
-            LOGE("Failed to open %s: %s", path.c_str(), strerror(errno));
-            return ProceedState::Fail;
-        }
-
-        auto close_fd_backup = util::finally([&] { close(fd_backup); });
-
-        if (!util::copy_data_fd(fd_source, fd_boot)) {
-            LOGE("Failed to write %s: %s",
-                 _boot_block_dev.c_str(), strerror(errno));
-            return ProceedState::Fail;
-        }
-
-        lseek(fd_source, 0, SEEK_SET);
-
-        if (!util::copy_data_fd(fd_source, fd_backup)) {
-            LOGE("Failed to write %s: %s", path.c_str(), strerror(errno));
+        if (!util::copy_contents(temp_boot_img, _boot_block_dev)
+                || !util::copy_contents(temp_boot_img, path)) {
+            display_msg("Failed to copy boot image");
             return ProceedState::Fail;
         }
 
         // Update checksums
         unsigned char digest[SHA512_DIGEST_LENGTH];
-        SHA512(bootimg.data(), bootimg.size(), digest);
+
+        if (!util::sha512_hash(temp_boot_img, digest)) {
+            display_msg("Failed to compute sha512sum of new boot image");
+            return ProceedState::Fail;
+        }
+
         std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
 
         std::unordered_map<std::string, std::string> props;

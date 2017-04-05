@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,15 +14,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=lzo
-pkgver=2.09
+pkgver=2.10
 pkgrel=1
 pkgdesc="Portable lossless data compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.oberhumer.com/opensource/lzo"
 license=(GPL)
 source=("http://www.oberhumer.com/opensource/lzo/download/lzo-${pkgver}.tar.gz"
-'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake')
-sha512sums=('7c64e5e7d2050d75ac8c59d613f6f7230b74746b1d207666755b07450053c8b73980f12f8a1ec59d2af0bada02beec126aaacb675b8088b5fe65e97ff7e6bfc7'
+        'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake')
+sha1sums=('4924676a9bae5db58ef129dc1cebce3baa3c4b5d'
+          '2156f6c5bb2f29af2a94b354aeea85a97f64fad2')
+sha512sums=('a3dae5e4a6b93b1f5bf7435e8ab114a9be57252e9efc5dd444947d7a2d031b0819f34bcaeb35f60b5629a01b1238d738735a64db8f672be9690d3c80094511a4'
             '4a70ef1c914ba31d1944652d1de592d01a1e1a68da85e9262bc15e2e73c572da8644c9ed8b4547c456ca4100f7737d34c5cfaaf9ee816a652a74a97f020b57a7')
 
 build() {

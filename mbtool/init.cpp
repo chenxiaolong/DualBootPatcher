@@ -67,7 +67,6 @@
 #include "initwrapper/devices.h"
 #include "initwrapper/util.h"
 #include "daemon.h"
-#include "decrypt.h"
 #include "emergency.h"
 #include "mount_fstab.h"
 #include "multiboot.h"
@@ -752,11 +751,6 @@ static bool add_props_to_default_prop(struct Device *device)
     fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
             encode_list(mb_device_extra_block_devs(device)).c_str());
 
-    if (mb_device_crypto_supported(device)) {
-        fprintf(fp.get(), "ro.patcher.cryptfs_header_path=%s\n",
-                mb_device_crypto_header_path(device));
-    }
-
     return true;
 }
 
@@ -786,75 +780,6 @@ static bool symlink_base_dir(Device *device)
     }
 
     return false;
-}
-
-static bool fstab_replace_forceencrypt(const char *path)
-{
-    std::string new_path(path);
-    new_path += ".new";
-
-    std::vector<util::fstab_rec> recs = util::read_fstab(path);
-    if (recs.empty()) {
-        LOGE("%s: Failed to read fstab file", path);
-        return false;
-    }
-
-    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s",
-             new_path.c_str(), strerror(errno));
-        return false;
-    }
-
-    for (auto &rec : recs) {
-        if (rec.vold_args.find("forceencrypt") != std::string::npos) {
-            util::replace_all(&rec.vold_args, "forceencrypt", "encryptable");
-
-            fprintf(fp.get(), "%s %s %s %s %s\n", rec.blk_device.c_str(),
-                    rec.mount_point.c_str(), rec.fs_type.c_str(),
-                    rec.mount_args.c_str(), rec.vold_args.c_str());
-        } else {
-            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
-        }
-    }
-
-    fp.reset();
-
-    return replace_file(path, new_path.c_str());
-}
-
-static bool fstab_replace_block_dev(const char *path, const char *mount_point,
-                                    const char *new_block_dev)
-{
-    std::string new_path(path);
-    new_path += ".new";
-
-    std::vector<util::fstab_rec> recs = util::read_fstab(path);
-    if (recs.empty()) {
-        LOGE("%s: Failed to read fstab file", path);
-        return false;
-    }
-
-    autoclose::file fp(autoclose::fopen(new_path.c_str(), "w"));
-    if (!fp) {
-        LOGE("%s: Failed to open for writing: %s",
-             new_path.c_str(), strerror(errno));
-        return false;
-    }
-
-    for (auto const &rec : recs) {
-        if (mount_point == rec.mount_point) {
-            fprintf(fp.get(), "%s %s %s %s %s\n", new_block_dev,
-                    rec.mount_point.c_str(), rec.fs_type.c_str(),
-                    rec.mount_args.c_str(), rec.vold_args.c_str());
-        } else {
-            fprintf(fp.get(), "%s\n", rec.orig_line.c_str());
-        }
-    }
-
-    fp.reset();
-
-    return replace_file(path, new_path.c_str());
 }
 
 static std::string find_fstab()
@@ -1044,35 +969,6 @@ static bool disable_spota()
     return true;
 }
 
-bool mount_userdata(const char *block_dev)
-{
-    std::string rom_id = get_rom_id();
-    std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
-    if (!rom) {
-        return false;
-    }
-
-    std::string fstab(find_fstab());
-
-    if (fstab.empty()) {
-        LOGE("Failed to find fstab");
-        return false;
-    }
-
-    // Rewrite fstab with the devmapper device for /data
-    fstab_replace_block_dev(fstab.c_str(), "/data", block_dev);
-
-    // Try mounting data again
-    int flags = MOUNT_FLAG_REWRITE_FSTAB | MOUNT_FLAG_MOUNT_DATA;
-    // nullptr for the device because we do not need the generic fstab entries
-    if (!mount_fstab(fstab.c_str(), rom, nullptr, flags)) {
-        LOGE("Failed to mount data. Decryption probably failed");
-        return false;
-    }
-
-    return true;
-}
-
 static bool extract_zip(const char *source, const char *target)
 {
     unzFile uf;
@@ -1147,13 +1043,12 @@ static bool extract_zip(const char *source, const char *target)
     return true;
 }
 
-static bool launch_boot_menu(bool has_encryption)
+static bool launch_boot_menu()
 {
     struct stat sb;
     bool skip = false;
 
-    // Boot UI must always run if the device is encrypted
-    if (!has_encryption && stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
+    if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
         std::string skip_rom;
         util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
 
@@ -1366,11 +1261,6 @@ int init_main(int argc, char *argv[])
         util::create_empty_file(fstab);
     }
 
-    // Replace forceencrypt in fstab file since vold will need to process it if
-    // /data is encrypted. mbtool's mount code doesn't care about the presence
-    // of this option.
-    fstab_replace_forceencrypt(fstab.c_str());
-
     // Get ROM ID from /romid
     std::string rom_id = get_rom_id();
     std::shared_ptr<Rom> rom = Roms::create_rom(rom_id);
@@ -1386,6 +1276,7 @@ int init_main(int argc, char *argv[])
     int flags = MOUNT_FLAG_REWRITE_FSTAB
             | MOUNT_FLAG_MOUNT_SYSTEM
             | MOUNT_FLAG_MOUNT_CACHE
+            | MOUNT_FLAG_MOUNT_DATA
             | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
@@ -1393,43 +1284,11 @@ int init_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    LOGV("Successfully mounted fstab (excluding /data)");
+    LOGV("Successfully mounted fstab");
 
-    bool has_encryption = false;
-
-    // Try mounting data
-    flags = MOUNT_FLAG_REWRITE_FSTAB
-            | MOUNT_FLAG_MOUNT_DATA;
-    if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
-        LOGW("Failed to mount data, it might be encrypted");
-        has_encryption = true;
-    }
-
-    property_set(PROP_CRYPTO_STATE,
-                 has_encryption
-                 ? CRYPTO_STATE_ENCRYPTED
-                 : CRYPTO_STATE_DECRYPTED);
-
-    if (!launch_boot_menu(has_encryption)) {
+    if (!launch_boot_menu()) {
         LOGE("Failed to run boot menu");
         // Continue anyway since boot menu might not run on every device
-    }
-
-    // Check if the data partition was successfully decrypted
-    if (has_encryption) {
-        char value[PROP_VALUE_MAX];
-        if (::property_get(PROP_CRYPTO_STATE, value) <= 0
-                || strcmp(value, CRYPTO_STATE_DECRYPTED) != 0) {
-            LOGE("Failed to decrypt device");
-            critical_failure();
-            return EXIT_FAILURE;
-        }
-
-        if (!util::is_mounted("/raw/data")) {
-            LOGE("/raw/data did not get mounted");
-            critical_failure();
-            return EXIT_FAILURE;
-        }
     }
 
     // Mount selinuxfs

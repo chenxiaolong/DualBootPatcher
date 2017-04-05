@@ -110,7 +110,3 @@
       - fbdev
       - drm
     theme: portrait_hdpi
-
-  crypto:
-    supported: true
-    header_path: footer

@@ -16,6 +16,7 @@ set(files
     lg.yml
     motorola.yml
     nexus.yml
+    nubia.yml
     oneplus.yml
     oukitel.yml
     pantech.yml

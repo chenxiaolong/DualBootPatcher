@@ -584,29 +584,6 @@ SETTER(const char *, tw_theme)
     STRING_SETTER(device->tw_options.theme, value)
 }
 
-/* Crypto */
-
-GETTER(bool, crypto_supported)
-{
-    return device->crypto_options.supported;
-}
-
-SETTER(bool, crypto_supported)
-{
-    device->crypto_options.supported = value;
-    return MB_DEVICE_OK;
-}
-
-GETTER(const char *, crypto_header_path)
-{
-    STRING_GETTER(device->crypto_options.header_path)
-}
-
-SETTER(const char *, crypto_header_path)
-{
-    STRING_SETTER(device->crypto_options.header_path, value)
-}
-
 static inline bool array_equals(char * const *a, char * const *b)
 {
     for (; *a && *b; ++a, ++b) {
@@ -666,9 +643,5 @@ bool mb_device_equals(struct Device *a, struct Device *b)
                                          b->tw_options.graphics_backends)
             && BOTH_NULL_OR_STRINGS_EQUAL(a->tw_options.theme,
                                           b->tw_options.theme)
-            /* Crypto */
-            && a->crypto_options.supported == b->crypto_options.supported
-            && BOTH_NULL_OR_STRINGS_EQUAL(a->crypto_options.header_path,
-                                          b->crypto_options.header_path)
             ;
 }

@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class Unsupported extends Table {
   public static Unsupported getRootAsUnsupported(ByteBuffer _bb) { return getRootAsUnsupported(_bb, new Unsupported()); }
-  public static Unsupported getRootAsUnsupported(ByteBuffer _bb, Unsupported obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public Unsupported __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static Unsupported getRootAsUnsupported(ByteBuffer _bb, Unsupported obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public Unsupported __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startUnsupported(FlatBufferBuilder builder) { builder.startObject(0); }

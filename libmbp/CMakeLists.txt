@@ -2,8 +2,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include_directories(${MBP_LIBARCHIVE_INCLUDES})
 include_directories(${MBP_LIBLZMA_INCLUDES})
-include_directories(${MBP_LZ4_INCLUDES})
-include_directories(${MBP_LZO_INCLUDES})
 include_directories(${MBP_ZLIB_INCLUDES})
 
 include_directories(${CMAKE_SOURCE_DIR}/external)
@@ -11,23 +9,10 @@ include_directories(${CMAKE_SOURCE_DIR}/external)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 set(MBP_SOURCES
-    src/bootimage.cpp
-    src/cpiofile.cpp
     src/fileinfo.cpp
     src/patcherconfig.cpp
-    # Boot image parsers
-    src/bootimage/androidformat.cpp
-    src/bootimage/bumpformat.cpp
-    src/bootimage/bumppatcher.cpp
-    src/bootimage/fileformat.cpp
-    src/bootimage/lokiformat.cpp
-    src/bootimage/lokipatcher.cpp
-    src/bootimage/mtkformat.cpp
-    src/bootimage/sonyelfformat.cpp
     # C wrapper API
-    src/cwrapper/cbootimage.cpp
     src/cwrapper/ccommon.cpp
-    src/cwrapper/ccpiofile.cpp
     src/cwrapper/cfileinfo.cpp
     src/cwrapper/cpatcherconfig.cpp
     src/cwrapper/cpatcherinterface.cpp
@@ -42,12 +27,9 @@ set(MBP_SOURCES
     src/autopatchers/standardpatcher.cpp
     src/autopatchers/mountcmdpatcher.cpp
     # Patchers
-    src/patchers/mbtoolupdater.cpp
     src/patchers/multibootpatcher.cpp
     src/patchers/odinpatcher.cpp
-    # Ramdisk patchers
-    src/ramdiskpatchers/core.cpp
-    src/ramdiskpatchers/default.cpp
+    src/patchers/ramdiskupdater.cpp
     # SHA1 library
     external/sha.cpp
 )
@@ -128,10 +110,8 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
         minizip-shared
         ${ADDITIONAL_LIBRARIES}
         ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
-        ${MBP_LZ4_LIBRARIES}
-        ${MBP_LZO_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
+        ${MBP_ZLIB_LIBRARIES}
     )
 
     if(UNIX AND NOT ANDROID)

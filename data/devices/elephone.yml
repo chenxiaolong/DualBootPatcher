@@ -1,4 +1,47 @@
 ---
+- name: Elephone P8000
+  id: p8000
+  codenames:
+    - p8000
+    - P8000
+    - k05ts_a
+    - k05te_a
+    - k06te_a
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+
+
 - name: Elephone P9000
   id: p9000
   codenames:

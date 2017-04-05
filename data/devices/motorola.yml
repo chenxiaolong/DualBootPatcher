@@ -115,6 +115,38 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
+- name: Motorola Moto G (2014 LTE)
+  id: thea
+  codenames:
+    - thea
+    - thea_ds
+    - xt1079
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p40
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p41
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p42
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p32
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p33
 
 - name: Motorola Moto G (2015)
   id: osprey
@@ -462,3 +494,37 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
+
+- name: Motorola Moto Z
+  id: griffin
+  codenames:
+    - griffin
+    - griffin_cn
+    - xt1650-03
+    - xt1650-05
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/624000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/624000.ufshc/by-name/system
+      - /dev/block/sda15
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/624000.ufshc/by-name/cache
+      - /dev/block/sda19
+    data:
+      - /dev/block/bootdevice/by-name/data
+      - /dev/block/platform/624000.ufshc/by-name/data
+      - /dev/block/sda20
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/624000.ufshc/by-name/boot
+      - /dev/block/sda17
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/624000.ufshc/by-name/recovery
+      - /dev/block/sda14

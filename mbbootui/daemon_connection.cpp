@@ -28,7 +28,6 @@
 #include "mbutil/socket.h"
 
 // Hackish, but gets the job done
-#include "../mbtool/protocol/crypto_get_pw_type_generated.h"
 #include "../mbtool/protocol/mb_get_booted_rom_id_generated.h"
 #include "../mbtool/protocol/mb_get_installed_roms_generated.h"
 #include "../mbtool/protocol/mb_get_version_generated.h"
@@ -62,68 +61,6 @@ public:
 
     virtual ~MbtoolInterfaceV3()
     {
-    }
-
-    virtual bool crypto_decrypt(const std::string &password, bool *result)
-    {
-        fb::FlatBufferBuilder builder;
-
-        // Create request
-        auto fb_password = builder.CreateString(password);
-        auto request = v3::CreateCryptoDecryptRequest(builder, fb_password);
-
-        // Send request
-        std::vector<uint8_t> buf;
-        const v3::CryptoDecryptResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
-                          v3::RequestType_CryptoDecryptRequest,
-                          v3::ResponseType_CryptoDecryptResponse,
-                          (const void **) &response)) {
-            return false;
-        }
-
-        *result = response->success();
-
-        return true;
-    }
-
-    virtual bool crypto_get_pw_type(std::string *result)
-    {
-        fb::FlatBufferBuilder builder;
-
-        // Create request
-        auto request = v3::CreateCryptoGetPwTypeRequest(builder);
-
-        // Send request
-        std::vector<uint8_t> buf;
-        const v3::CryptoGetPwTypeResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
-                          v3::RequestType_CryptoGetPwTypeRequest,
-                          v3::ResponseType_CryptoGetPwTypeResponse,
-                          (const void **) &response)) {
-            return false;
-        }
-
-        switch (response->type()) {
-        case v3::CryptoPwType_DEFAULT:
-            *result = "default";
-            break;
-        case v3::CryptoPwType_PASSWORD:
-            *result = "password";
-            break;
-        case v3::CryptoPwType_PATTERN:
-            *result = "pattern";
-            break;
-        case v3::CryptoPwType_PIN:
-            *result = "pin";
-            break;
-        case v3::CryptoPwType_UNKNOWN:
-        default:
-            result->clear();
-            break;
-        }
-
-        return true;
     }
 
     virtual bool get_installed_roms(std::vector<Rom> *result)
