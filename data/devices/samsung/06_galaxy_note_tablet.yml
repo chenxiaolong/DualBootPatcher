@@ -185,6 +185,7 @@
   codenames:
     - v1awifi
     - v1awifixx
+    - v1awifikx
   architecture: armeabi-v7a
 
   block_devs:
