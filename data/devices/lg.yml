@@ -322,7 +322,7 @@
       - /dev/block/sde2
 
 - name: LG V20 (Unlocked)
-  id: elsa
+  id: elsa_omni
   codenames:
     - elsa
     - us996
