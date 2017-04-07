@@ -159,7 +159,7 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-      
+
 - name: Huawei Honor 6X
   id: BLN
   codenames:
@@ -186,3 +186,39 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
+
+
+- name: Huawei P8 Lite
+  id: hi6210sft
+  codenames:
+    - ALE-L21
+    - ALE-L23
+    - ALICE
+    - Alice
+    - hi6210sft
+    - hwALE-H
+    - hwALE-H:5.0
+    - hwALE-H:6.1
+    - hwALE-H:6.0
+    - ALICE_TL23
+    - ALICE_TL21
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
