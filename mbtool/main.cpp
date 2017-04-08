@@ -35,7 +35,6 @@
 #include "appsync.h"
 #include "auditd.h"
 #include "daemon.h"
-#include "decrypt.h"
 #include "init.h"
 #include "miniadbd.h"
 #include "sepolpatch.h"
@@ -78,7 +77,6 @@ struct tool tools[] = {
     { "appsync", mb::appsync_main },
     { "auditd", mb::auditd_main },
     { "daemon", mb::daemon_main },
-    { "decrypt", mb::decrypt_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
     { "sepolpatch", mb::sepolpatch_main },

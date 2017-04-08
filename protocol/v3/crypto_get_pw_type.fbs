@@ -12,5 +12,5 @@ table CryptoGetPwTypeRequest {
 }
 
 table CryptoGetPwTypeResponse {
-    type : CryptoPwType;
+    type : CryptoPwType (deprecated);
 }

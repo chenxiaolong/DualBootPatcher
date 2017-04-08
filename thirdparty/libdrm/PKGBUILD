@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=libdrm
-pkgver=6.0.1_r43
+pkgver=7.1.1_r28
 pkgrel=1
 pkgdesc="Userspace interface to kernel DRM services"
 arch=(armv7 aarch64 x86 x86_64)
@@ -23,7 +23,7 @@ license=(custom)
 source=("git+https://android.googlesource.com/platform/external/libdrm#tag=android-${pkgver}"
         "0001-Make-this-NDK-buildable.patch")
 sha512sums=('SKIP'
-            'f7baac8d54b6c1cdacfa23cd18948d4f4747f3016bc1179edf1d4a74da2a9bc54467819c9af2bfadd356a24c0faff9c4be6fdc5868b5d53687573b2b721058cc')
+            'cc91f6ac1c3f70eed6fc5b097f47450c7cef44e11ca59b64bce6b557bfa9692c7d2ff01515f0332f7da9263463fc31dff1be71617ab5ea72aa8b889e4d78ec17')
 
 prepare() {
     cd libdrm
@@ -38,10 +38,10 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=4.9 \
+        NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-24 \
         "${MAKEFLAGS}"
 }
 

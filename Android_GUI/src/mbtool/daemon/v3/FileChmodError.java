@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class FileChmodError extends Table {
   public static FileChmodError getRootAsFileChmodError(ByteBuffer _bb) { return getRootAsFileChmodError(_bb, new FileChmodError()); }
-  public static FileChmodError getRootAsFileChmodError(ByteBuffer _bb, FileChmodError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public FileChmodError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static FileChmodError getRootAsFileChmodError(ByteBuffer _bb, FileChmodError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public FileChmodError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int errnoValue() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
   public String msg() { int o = __offset(6); return o != 0 ? __string(o + bb_pos) : null; }

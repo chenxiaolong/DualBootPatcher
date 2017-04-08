@@ -1,8 +1,9 @@
-From 9f476b2ca49fc2be66431081b2826dc8a23d7683 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
-Date: Mon, 19 Oct 2015 01:24:06 -0400
+From c6192ac312ff5cef92bdf72df7d9afa2e5700e34 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 26 Mar 2017 15:48:05 -0400
 Subject: [PATCH 2/3] Add generated headers for Android
 
+Signed-off-by: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 ---
  config.h                               | 927 +++++++++++++++++++++++++++++++++
  include/iconv.h                        | 248 +++++++++
@@ -1753,5 +1754,5 @@ index 0000000..129e4a4
 +
 +#endif /* _LOCALCHARSET_H */
 -- 
-2.6.1
+2.9.3
 

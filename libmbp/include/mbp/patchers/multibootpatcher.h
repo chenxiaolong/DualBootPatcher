@@ -51,17 +51,9 @@ public:
 
     virtual void cancelPatching() override;
 
-    static bool patchRamdisk(PatcherConfig * const pc,
-                             const FileInfo * const info,
-                             std::vector<unsigned char> *data,
-                             ErrorCode *errorOut);
-    static bool patchBootImage(PatcherConfig * const pc,
-                               const FileInfo * const info,
-                               std::vector<unsigned char> *data,
-                               ErrorCode *errorOut);
-
     static std::string createInfoProp(const PatcherConfig * const pc,
-                                      const std::string &romId);
+                                      const std::string &romId,
+                                      bool always_patch_ramdisk);
 
 private:
     class Impl;

@@ -36,7 +36,6 @@ extern "C" {
 #define MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS       (1ull << 8)
 #define MB_DEVICE_MISSING_BOOT_UI_THEME             (1ull << 9)
 #define MB_DEVICE_MISSING_BOOT_UI_GRAPHICS_BACKENDS (1ull << 10)
-#define MB_DEVICE_MISSING_CRYPTO_HEADER_PATH        (1ull << 11)
 
 MB_EXPORT uint64_t mb_device_validate(const struct Device *device);
 

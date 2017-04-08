@@ -146,10 +146,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
 
-  crypto:
-    supported: true
-    header_path: footer
-
 
 - name: OnePlus 3T
   id: OnePlus3T
@@ -192,10 +188,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
-
-  crypto:
-    supported: true
-    header_path: footer
 
 
 - name: OnePlus X

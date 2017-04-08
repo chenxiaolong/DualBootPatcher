@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class MbSwitchRomError extends Table {
   public static MbSwitchRomError getRootAsMbSwitchRomError(ByteBuffer _bb) { return getRootAsMbSwitchRomError(_bb, new MbSwitchRomError()); }
-  public static MbSwitchRomError getRootAsMbSwitchRomError(ByteBuffer _bb, MbSwitchRomError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public MbSwitchRomError __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static MbSwitchRomError getRootAsMbSwitchRomError(ByteBuffer _bb, MbSwitchRomError obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public MbSwitchRomError __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startMbSwitchRomError(FlatBufferBuilder builder) { builder.startObject(0); }

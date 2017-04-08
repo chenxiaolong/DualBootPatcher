@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "mbp/cpiofile.h"
 #include "mbp/patcherconfig.h"
 #include "mbp/patcherinterface.h"
 
@@ -29,27 +28,28 @@
 namespace mbp
 {
 
-class CoreRP : public RamdiskPatcher
+class RamdiskUpdater : public Patcher
 {
 public:
-    explicit CoreRP(const PatcherConfig * const pc,
-                    const FileInfo * const info,
-                    CpioFile * const cpio);
-    ~CoreRP();
+    explicit RamdiskUpdater(PatcherConfig * const pc);
+    ~RamdiskUpdater();
+
+    static const std::string Id;
 
     virtual ErrorCode error() const override;
 
+    // Patcher info
     virtual std::string id() const override;
 
-    virtual bool patchRamdisk() override;
+    // Patching
+    virtual void setFileInfo(const FileInfo * const info) override;
 
-    bool addMbtool();
-    bool addExfat();
-    bool addFsckWrapper();
-    bool addFileContextsTool();
-    bool setUpInitWrapper();
-    bool removeBlockDevProps();
-    bool addDeviceJson();
+    virtual bool patchFile(ProgressUpdatedCallback progressCb,
+                           FilesUpdatedCallback filesCb,
+                           DetailsUpdatedCallback detailsCb,
+                           void *userData) override;
+
+    virtual void cancelPatching() override;
 
 private:
     class Impl;

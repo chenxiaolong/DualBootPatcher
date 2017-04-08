@@ -52,11 +52,6 @@ MB_EXPORT char ** mbp_autopatcher_existing_files(const CAutoPatcher *patcher);
 MB_EXPORT bool mbp_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
 
-MB_EXPORT /* enum ErrorCode */ int mbp_ramdiskpatcher_error(const CRamdiskPatcher *patcher);
-MB_EXPORT char * mbp_ramdiskpatcher_id(const CRamdiskPatcher *patcher);
-MB_EXPORT bool mbp_ramdiskpatcher_patch_ramdisk(CRamdiskPatcher *patcher);
-
-
 #ifdef __cplusplus
 }
 #endif

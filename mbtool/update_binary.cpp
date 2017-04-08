@@ -62,7 +62,7 @@ public:
 
 
 RecoveryInstaller::RecoveryInstaller(std::string zip_file, int interface, int output_fd) :
-    Installer(zip_file, "/chroot", "/multiboot", interface, output_fd)
+    Installer(zip_file, "/chroot", "/multiboot", interface, output_fd, 0)
 {
 }
 

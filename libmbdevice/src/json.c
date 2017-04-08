@@ -543,43 +543,6 @@ static int process_boot_ui(struct Device *device, json_t *node,
     return ret;
 }
 
-static int process_crypto(struct Device *device, json_t *node,
-                          const char *context,
-                          struct MbDeviceJsonError *error)
-{
-    int ret = 0;
-    char subcontext[100];
-    const char *key;
-    json_t *value;
-
-    if (!json_is_object(node)) {
-        json_error_set_mismatched_type(
-                error, context, node->type, JSON_OBJECT);
-        return -1;
-    }
-
-    json_object_foreach(node, key, value) {
-        snprintf(subcontext, sizeof(subcontext), "%s.%s", context, key);
-
-        if (strcmp(key, "supported") == 0) {
-            ret = device_set_boolean(&mb_device_set_crypto_supported,
-                                     device, value, subcontext, error);
-        } else if (strcmp(key, "header_path") == 0) {
-            ret = device_set_string(&mb_device_set_crypto_header_path,
-                                    device, value, subcontext, error);
-        } else {
-            json_error_set_unknown_key(error, subcontext);
-            ret = -1;
-        }
-
-        if (ret != 0) {
-            break;
-        }
-    }
-
-    return ret;
-}
-
 static int process_block_devs(struct Device *device, json_t *node,
                               const char *context,
                               struct MbDeviceJsonError *error)
@@ -668,8 +631,6 @@ static int process_device(struct Device *device, json_t *node,
             ret = process_block_devs(device, value, subcontext, error);
         } else if (strcmp(key, "boot_ui") == 0) {
             ret = process_boot_ui(device, value, subcontext, error);
-        } else if (strcmp(key, "crypto") == 0) {
-            ret = process_crypto(device, value, subcontext, error);
         } else {
             json_error_set_unknown_key(error, subcontext);
             ret = -1;
@@ -812,7 +773,6 @@ char * mb_device_to_json(struct Device *device)
     json_t *root = NULL;
     json_t *block_devs = NULL;
     json_t *boot_ui = NULL;
-    json_t *crypto = NULL;
     char *result = NULL;
 
     root = json_object();
@@ -1036,29 +996,6 @@ char * mb_device_to_json(struct Device *device)
 
     if (json_object_size(boot_ui) == 0) {
         json_object_del(root, "boot_ui");
-    }
-
-    /* Crypto */
-
-    crypto = json_object();
-
-    if (json_object_set_new(root, "crypto", crypto) < 0) {
-        goto done;
-    }
-
-    if (device->crypto_options.supported && json_object_set_new(
-            crypto, "supported", json_true()) < 0) {
-        goto done;
-    }
-
-    if (device->crypto_options.header_path && json_object_set_new(
-            crypto, "header_path",
-            json_string(device->crypto_options.header_path)) < 0) {
-        goto done;
-    }
-
-    if (json_object_size(crypto) == 0) {
-        json_object_del(root, "crypto");
     }
 
     result = json_dumps(root, 0);

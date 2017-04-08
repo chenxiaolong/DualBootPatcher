@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=libpng
-pkgver=6.0.1_r43
-pkgrel=2
+pkgver=7.1.1_r28
+pkgrel=1
 pkgdesc="A collection of routines used to create PNG format graphics"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/libpng"
@@ -23,7 +23,7 @@ license=(custom)
 source=("git+https://android.googlesource.com/platform/external/libpng#tag=android-${pkgver}"
         "0001-Make-Android.mk-NDK-buildable.patch")
 sha512sums=('SKIP'
-            'fdea4761a601bc356763cecb8316b02cf803e638d19f89fdf82db53ba6b5243ca74132f95cded16331a625db0a0fa0183adf4c15ba404b63fbc21fb1701fb735')
+            '3f8f728ff6e14b6a110fc7293ebf453dfb83c05fec2de88b7e1a3f55439dcb0a3e4d339917e586a5a0c055481a2e0d466799fe1f9870229a12870a21d2e1a5f3')
 
 prepare() {
     cd "${pkgname}"
@@ -38,10 +38,10 @@ build() {
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION=clang3.6 \
+        NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-21 \
+        APP_PLATFORM=android-24 \
         "${MAKEFLAGS}"
 }
 

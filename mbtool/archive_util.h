@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -19,24 +19,11 @@
 
 #pragma once
 
-#include "mbp/bootimage/fileformat.h"
+#include <archive.h>
 
-namespace mbp
+namespace mb
 {
 
-class SonyElfFormat : public BootImageFormat
-{
-public:
-    SonyElfFormat(BootImageIntermediate *i10e);
-    virtual ~SonyElfFormat();
-
-    static uint64_t typeSupportMask();
-
-    static bool isValid(const unsigned char *data, std::size_t size);
-
-    virtual bool loadImage(const unsigned char *data, std::size_t size) override;
-
-    virtual bool createImage(std::vector<unsigned char> *dataOut) override;
-};
+bool la_copy_data_to_fd(archive *a, int fd);
 
 }

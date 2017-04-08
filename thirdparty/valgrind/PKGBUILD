@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+# Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pkgname=valgrind
-pkgver=3.11.0
+pkgver=3.12.0
 pkgrel=1
 pkgdesc="A tool to help find memory-management problems in programs"
 arch=(armv7 aarch64 x86) # x86_64 not supported on Android
 url="http://valgrind.org/"
 license=(GPL)
 source=("http://valgrind.org/downloads/valgrind-${pkgver}.tar.bz2")
-sha512sums=('a25f97fa80aef4ad1e86b303886cd7a97aac248820a4c24e3d3dc26567dd7d2d86db237866468fd43885a9fb8534cb0a8e301a3c752fffbc231a2842272999da')
+sha512sums=('2c083f7c2e74dc58600397726d9d3af7a2cea40fe3d8733149886d1d77867e6c09996e5be1c58dd932f3662acf7363e04eeadbc0f9c8f0dac089e605024229be')
 
 build() {
     cd "${pkgname}-${pkgver}"

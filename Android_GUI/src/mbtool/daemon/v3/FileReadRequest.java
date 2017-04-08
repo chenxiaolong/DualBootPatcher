@@ -10,11 +10,12 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class FileReadRequest extends Table {
   public static FileReadRequest getRootAsFileReadRequest(ByteBuffer _bb) { return getRootAsFileReadRequest(_bb, new FileReadRequest()); }
-  public static FileReadRequest getRootAsFileReadRequest(ByteBuffer _bb, FileReadRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public FileReadRequest __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static FileReadRequest getRootAsFileReadRequest(ByteBuffer _bb, FileReadRequest obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public FileReadRequest __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
   public int id() { int o = __offset(4); return o != 0 ? bb.getInt(o + bb_pos) : 0; }
-  public long count() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0; }
+  public long count() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
 
   public static int createFileReadRequest(FlatBufferBuilder builder,
       int id,
@@ -27,7 +28,7 @@ public final class FileReadRequest extends Table {
 
   public static void startFileReadRequest(FlatBufferBuilder builder) { builder.startObject(2); }
   public static void addId(FlatBufferBuilder builder, int id) { builder.addInt(0, id, 0); }
-  public static void addCount(FlatBufferBuilder builder, long count) { builder.addLong(1, count, 0); }
+  public static void addCount(FlatBufferBuilder builder, long count) { builder.addLong(1, count, 0L); }
   public static int endFileReadRequest(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;

@@ -10,8 +10,9 @@ import com.google.flatbuffers.*;
 @SuppressWarnings("unused")
 public final class Invalid extends Table {
   public static Invalid getRootAsInvalid(ByteBuffer _bb) { return getRootAsInvalid(_bb, new Invalid()); }
-  public static Invalid getRootAsInvalid(ByteBuffer _bb, Invalid obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__init(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
-  public Invalid __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; return this; }
+  public static Invalid getRootAsInvalid(ByteBuffer _bb, Invalid obj) { _bb.order(ByteOrder.LITTLE_ENDIAN); return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
+  public Invalid __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
 
   public static void startInvalid(FlatBufferBuilder builder) { builder.startObject(0); }

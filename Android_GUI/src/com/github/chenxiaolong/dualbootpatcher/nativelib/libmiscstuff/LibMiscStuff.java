@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +26,11 @@ public final class LibMiscStuff {
 
     public static native void extractArchive(String filename, String target) throws IOException;
 
-    public static native boolean findStringInFile(String path, String jstr) throws IOException;
-
     public static native void mblogSetLogcat();
+
+    public static native String getBootImageRomId(String filename) throws IOException;
+
+    public static native boolean bootImagesEqual(String filename1, String filename2) throws IOException;
 
     static {
         System.loadLibrary("miscstuff-jni");

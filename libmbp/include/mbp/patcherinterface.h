@@ -21,7 +21,7 @@
 
 #include "mbcommon/common.h"
 
-#include "cpiofile.h"
+#include "errors.h"
 #include "fileinfo.h"
 
 
@@ -138,42 +138,6 @@ public:
      * \param directory Directory containing the files to be patched
      */
     virtual bool patchFiles(const std::string &directory) = 0;
-};
-
-
-/*!
- * \class RamdiskPatcher
- * \brief Handles common patching operations of boot images
- *
- * This is a helper class for the patching of boot images. This class is
- * usually called by a Patcher to perform common or repetitive patching tasks
- * for boot images (either standalone or from a zip file).
- *
- * \sa Patcher
- */
-class RamdiskPatcher
-{
-public:
-    virtual ~RamdiskPatcher() {}
-
-    /*!
-     * \brief The error
-     *
-     * Returns a ErrorCode. The value is invalid if nothing has failed.
-     *
-     * \return ErrorCode error
-     */
-    virtual ErrorCode error() const = 0;
-
-    /*!
-     * \brief The ramdisk patcher's identifier
-     */
-    virtual std::string id() const = 0;
-
-    /*!
-     * \brief Start patching the ramdisk
-     */
-    virtual bool patchRamdisk() = 0;
 };
 
 }

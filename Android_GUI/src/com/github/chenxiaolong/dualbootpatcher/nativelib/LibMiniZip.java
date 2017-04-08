@@ -58,6 +58,7 @@ public class LibMiniZip {
     private static final int UNZ_BADZIPFILE = -103;
     private static final int UNZ_INTERNALERROR = -104;
     private static final int UNZ_CRCERROR = -105;
+    private static final int UNZ_BADPASSWORD = -106;
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class zlib_filefunc_def extends Structure {
@@ -98,25 +99,10 @@ public class LibMiniZip {
     }
 
     @SuppressWarnings({"WeakerAccess", "unused"})
-    public static class tm_unz extends Structure {
-        public int tm_sec;
-        public int tm_min;
-        public int tm_hour;
-        public int tm_mday;
-        public int tm_mon;
-        public int tm_year;
-
-        @Override
-        protected List getFieldOrder() {
-            return Arrays.asList("tm_sec", "tm_min", "tm_hour", "tm_mday", "tm_mon", "tm_year");
-        }
-    }
-
-    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz_global_info64 extends Structure {
-        public /* ZPOS64_T */ long number_entry;
-        public NativeLong number_disk_with_CD;
-        public NativeLong size_comment;
+        public /* uint64_t */ long number_entry;
+        public /* uint32_t */ int number_disk_with_CD;
+        public /* uint16_t */ short size_comment;
 
         @Override
         protected List getFieldOrder() {
@@ -126,9 +112,9 @@ public class LibMiniZip {
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz_global_info extends Structure {
-        public NativeLong number_entry;
-        public NativeLong number_disk_with_CD;
-        public NativeLong size_comment;
+        public /* uint32_t */ int number_entry;
+        public /* uint32_t */ int number_disk_with_CD;
+        public /* uint16_t */ short size_comment;
 
         @Override
         protected List getFieldOrder() {
@@ -138,69 +124,68 @@ public class LibMiniZip {
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz_file_info64 extends Structure {
-        public NativeLong version;
-        public NativeLong version_needed;
-        public NativeLong flag;
-        public NativeLong compression_method;
-        public NativeLong dosDate;
-        public NativeLong crc;
-        public /* ZPOS64_T */ long compressed_size;
-        public /* ZPOS64_T */ long uncompressed_size;
-        public NativeLong size_filename;
-        public NativeLong size_file_extra;
-        public NativeLong size_file_comment;
+        public /* uint16_t */ short version;
+        public /* uint16_t */ short version_needed;
+        public /* uint16_t */ short flag;
+        public /* uint16_t */ short compression_method;
+        public /* uint32_t */ int dos_date;
+        public /* uint32_t */ int crc;
+        public /* uint64_t */ long compressed_size;
+        public /* uint64_t */ long uncompressed_size;
+        public /* uint16_t */ short size_filename;
+        public /* uint16_t */ short size_file_extra;
+        public /* uint16_t */ short size_file_comment;
 
-        public NativeLong disk_num_start;
-        public NativeLong internal_fa;
-        public NativeLong external_fa;
+        public /* uint32_t */ int disk_num_start;
+        public /* uint16_t */ short internal_fa;
+        public /* uint32_t */ int external_fa;
 
-        public tm_unz tmu_date;
-        public /* ZPOS64_T */ long disk_offset;
-        public NativeLong size_file_extra_internal;
+        public /* uint64_t */ long disk_offset;
+
+        public /* uint16_t */ short size_file_extra_internal;
 
         @Override
         protected List getFieldOrder() {
             return Arrays.asList("version", "version_needed", "flag", "compression_method",
-                    "dosDate", "crc", "compressed_size", "uncompressed_size", "size_filename",
+                    "dos_date", "crc", "compressed_size", "uncompressed_size", "size_filename",
                     "size_file_extra", "size_file_comment", "disk_num_start", "internal_fa",
-                    "external_fa", "tmu_date", "disk_offset", "size_file_extra_internal");
+                    "external_fa", "disk_offset", "size_file_extra_internal");
         }
     }
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz_file_info extends Structure {
-        public NativeLong version;
-        public NativeLong version_needed;
-        public NativeLong flag;
-        public NativeLong compression_method;
-        public NativeLong dosDate;
-        public NativeLong crc;
-        public NativeLong compressed_size;
-        public NativeLong uncompressed_size;
-        public NativeLong size_filename;
-        public NativeLong size_file_extra;
-        public NativeLong size_file_comment;
+        public /* uint16_t */ short version;
+        public /* uint16_t */ short version_needed;
+        public /* uint16_t */ short flag;
+        public /* uint16_t */ short compression_method;
+        public /* uint32_t */ int dos_date;
+        public /* uint32_t */ int crc;
+        public /* uint32_t */ int compressed_size;
+        public /* uint32_t */ int uncompressed_size;
+        public /* uint16_t */ short size_filename;
+        public /* uint16_t */ short size_file_extra;
+        public /* uint16_t */ short size_file_comment;
 
-        public NativeLong disk_num_start;
-        public NativeLong internal_fa;
-        public NativeLong external_fa;
+        public /* uint16_t */ short disk_num_start;
+        public /* uint16_t */ short internal_fa;
+        public /* uint32_t */ int external_fa;
 
-        public tm_unz tmu_date;
-        public NativeLong disk_offset;
+        public /* uint64_t */ long disk_offset;
 
         @Override
         protected List getFieldOrder() {
             return Arrays.asList("version", "version_needed", "flag", "compression_method",
-                    "dosDate", "crc", "compressed_size", "uncompressed_size", "size_filename",
+                    "dos_date", "crc", "compressed_size", "uncompressed_size", "size_filename",
                     "size_file_extra", "size_file_comment", "disk_num_start", "internal_fa",
-                    "external_fa", "tmu_date", "disk_offset");
+                    "external_fa", "disk_offset");
         }
     }
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz_file_pos extends Structure {
-        public NativeLong pos_in_zip_directory;
-        public NativeLong num_of_file;
+        public /* uint32_t */ int pos_in_zip_directory;
+        public /* uint32_t */ int num_of_file;
 
         @Override
         protected List getFieldOrder() {
@@ -210,12 +195,33 @@ public class LibMiniZip {
 
     @SuppressWarnings({"WeakerAccess", "unused"})
     public static class unz64_file_pos extends Structure {
-        public /* ZPOS64_T */ long pos_in_zip_directory;
-        public /* ZPOS64_T */ long num_of_file;
+        public /* uint64_t */ long pos_in_zip_directory;
+        public /* uint64_t */ long num_of_file;
 
         @Override
         protected List getFieldOrder() {
             return Arrays.asList("pos_in_zip_directory", "num_of_file");
+        }
+    }
+
+    @SuppressWarnings({"WeakerAccess", "unused"})
+    public static class tm extends Structure {
+        public int tm_sec;
+        public int tm_min;
+        public int tm_hour;
+        public int tm_mday;
+        public int tm_mon;
+        public int tm_year;
+        public int tm_wday;
+        public int tm_yday;
+        public int tm_isdst;
+        public NativeLong tm_gmtoff;
+        public String tm_zone;
+
+        @Override
+        protected List getFieldOrder() {
+            return Arrays.asList("tm_sec", "tm_min", "tm_hour", "tm_mday", "tm_mon", "tm_year",
+                    "tm_wday", "tm_yday", "tm_isdst", "tm_gmtoff", "tm_zone");
         }
     }
 
@@ -232,7 +238,29 @@ public class LibMiniZip {
         static native void fill_android_filefunc64(zlib_filefunc64_def pzlib_filefunc_def);
         // END: ioandroid.h
 
-        // BEGIN: unz.h
+        // BEGIN: minishared.h
+        static native /* uint32_t */ int get_file_date(String path,
+                                                       /* uint32_t * */ IntByReference dos_date);
+
+        static native void change_file_date(String path, /* uint32_t */ int dos_date);
+
+        static native int dosdate_to_tm(/* uint64_t */ long dos_date, tm ptm);
+
+        static native /* uint32_t */ int tm_to_dosdate(tm ptm);
+
+        static native int makedir(String newdir);
+
+        static native int check_file_exists(String path);
+
+        static native int is_large_file(String path);
+
+        static native int get_file_crc(String path, Pointer buf, /* uint32_t */ int size_buf,
+                                       /* uint32_t * */ IntByReference result_crc);
+
+        static native void display_zpos64(/* uint64_t */ long n, int size_char);
+        // END: minishared.h
+
+        // BEGIN: unzip.h
         static native UnzFile unzOpen(String path);
         static native UnzFile unzOpen64(String path);
 
@@ -245,7 +273,7 @@ public class LibMiniZip {
         static native int unzGetGlobalInfo64(UnzFile file, unz_global_info64 pglobal_info);
 
         static native int unzGetGlobalComment(UnzFile file, Pointer comment,
-                                              NativeLong comment_size);
+                                              /* uint16_t */ short comment_size);
 
         static native int unzOpenCurrentFile(UnzFile file);
 
@@ -257,20 +285,26 @@ public class LibMiniZip {
         static native int unzOpenCurrentFile3(UnzFile file, IntByReference method,
                                               IntByReference level, int raw, String password);
 
-        static native int unzReadCurrentFile(UnzFile file, Pointer buf, /* unsigned */ int len);
+        static native int unzReadCurrentFile(UnzFile file, Pointer buf, /* uint32_t */ int len);
 
         static native int unzGetCurrentFileInfo(UnzFile file, unz_file_info pfile_info,
-                                                Pointer filename, NativeLong filename_size,
-                                                Pointer extraField, NativeLong extrafield_size,
-                                                Pointer comment, NativeLong comment_size);
+                                                Pointer filename,
+                                                /* uint16_t */ short filename_size,
+                                                Pointer extraField,
+                                                /* uint16_t */ short extrafield_size,
+                                                Pointer comment,
+                                                /* uint16_t */ short comment_size);
         static native int unzGetCurrentFileInfo64(UnzFile file, unz_file_info64 pfile_info,
-                                                  Pointer filename, NativeLong filename_size,
-                                                  Pointer extrafield, NativeLong extrafield_size,
-                                                  Pointer comment, NativeLong comment_size);
+                                                  Pointer filename,
+                                                  /* uint16_t */ short filename_size,
+                                                  Pointer extrafield,
+                                                  /* uint16_t */ short extrafield_size,
+                                                  Pointer comment,
+                                                  /* uint16_t */ short comment_size);
 
-        static native /* ZPOS64_T */ long unzGetCurrentFileZStreamPos64(UnzFile file);
+        static native /* uint64_t */ long unzGetCurrentFileZStreamPos64(UnzFile file);
 
-        static native int unzGetLocalExtrafield(UnzFile file, Pointer buf, /* unsigned */ int len);
+        static native int unzGetLocalExtrafield(UnzFile file, Pointer buf, /* uint32_t */ int len);
 
         static native int unzCloseCurrentFile(UnzFile file);
 
@@ -284,23 +318,24 @@ public class LibMiniZip {
 
         interface unzIteratorFunction2 extends Callback {
             int invoke(UnzFile file, unz_file_info64 pfile_info, String filename,
-                       NativeLong filename_size, Pointer extrafield, NativeLong extrafield_size,
-                       String comment, NativeLong comment_size);
+                       /* uint16_t */ short filename_size, Pointer extrafield,
+                       /* uint16_t */ short extrafield_size, String comment,
+                       /* uint16_t */ short comment_size);
         }
 
         static native int unzGoToFirstFile(UnzFile file);
 
         static native int unzGoToFirstFile2(UnzFile file, unz_file_info64 pfile_info,
-                                            Pointer filename, NativeLong filename_size,
-                                            Pointer extrafield, NativeLong extrafield_size,
-                                            Pointer comment, NativeLong comment_size);
+                                            Pointer filename, /* uint16_t */ short filename_size,
+                                            Pointer extrafield, /* uint16_t */ short extrafield_size,
+                                            Pointer comment, /* uint16_t */ short comment_size);
 
         static native int unzGoToNextFile(UnzFile file);
 
         static native int unzGoToNextFile2(UnzFile file, unz_file_info64 pfile_info,
-                                           Pointer filename, NativeLong filename_size,
-                                           Pointer extrafield, NativeLong extrafield_size,
-                                           Pointer comment, NativeLong comment_size);
+                                           Pointer filename, /* uint16_t */ short filename_size,
+                                           Pointer extrafield, /* uint16_t */ short extrafield_size,
+                                           Pointer comment, /* uint16_t */ short comment_size);
 
         static native int unzLocateFile(UnzFile file, String filename,
                                         unzFileNameComparer filename_compare_func);
@@ -311,19 +346,19 @@ public class LibMiniZip {
         static native int unzGetFilePos64(UnzFile file, unz64_file_pos file_pos);
         static native int unzGoToFilePos64(UnzFile file, unz64_file_pos file_pos);
 
-        static native NativeLong unzGetOffset(UnzFile file);
-        static native /* ZPOS64_T */ long unzGetOffset64(UnzFile file);
+        static native /* int32_t */ int unzGetOffset(UnzFile file);
+        static native /* int64_t */ long unzGetOffset64(UnzFile file);
 
-        static native int unzSetOffset(UnzFile file, NativeLong pos);
-        static native int unzSetOffset64(UnzFile file, /* ZPOS64_T */ long pos);
+        static native int unzSetOffset(UnzFile file, /* int32_t */ int pos);
+        static native int unzSetOffset64(UnzFile file, /* int64_t */ long pos);
 
-        static native /* z_off_t */ NativeLong unztell(UnzFile file);
-        static native /* ZPOS64_T */ long unztell64(UnzFile file);
+        static native /* int32_t */ int unzTell(UnzFile file);
+        static native /* int64_t */ long unzTell64(UnzFile file);
 
-        static native int unzseek(UnzFile file, /* z_off_t */ NativeLong offset, int origin);
-        static native int unzseek64(UnzFile file, /* ZPOS64_T */ long offset, int origin);
+        static native int unzSeek(UnzFile file, /* uint32_t */ int offset, int origin);
+        static native int unzSeek64(UnzFile file, /* uint64_t */ long offset, int origin);
 
-        static native int unzeof(UnzFile file);
+        static native int unzEndOfFile(UnzFile file);
         // END: unz.h
     }
 
@@ -480,8 +515,8 @@ public class LibMiniZip {
             unz_file_info64 info = new unz_file_info64();
 
             // First query to get filename size
-            int ret = CWrapper.unzGetCurrentFileInfo64(mUnzFile, info, null, new NativeLong(0),
-                    null, new NativeLong(0), null, new NativeLong(0));
+            int ret = CWrapper.unzGetCurrentFileInfo64(mUnzFile, info, null, (short) 0, null,
+                    (short) 0, null, (short) 0);
             if (ret != UNZ_OK) {
                 throw new IOException("Failed to get entry metadata: error code " + ret);
             }
@@ -489,28 +524,26 @@ public class LibMiniZip {
             Memory bufName = null;
             Memory bufExtra = null;
             Memory bufComment = null;
-            long bufNameSize = 0;
-            long bufExtraSize = 0;
-            long bufCommentSize = 0;
+            short bufNameSize = 0;
+            short bufExtraSize = 0;
+            short bufCommentSize = 0;
 
-            if (info.size_filename.longValue() > 0) {
-                bufNameSize = info.size_filename.longValue() + 1;
+            if (info.size_filename > 0) {
+                bufNameSize = (short) (info.size_filename + 1);
                 bufName = new Memory(bufNameSize);
             }
-            if (info.size_file_extra.longValue() > 0) {
+            if (info.size_file_extra > 0) {
                 // Extra field is not NULL-terminated
-                bufExtraSize = info.size_file_extra.longValue();
+                bufExtraSize = info.size_file_extra;
                 bufExtra = new Memory(bufExtraSize);
             }
-            if (info.size_file_comment.longValue() > 0) {
-                bufCommentSize = info.size_file_comment.longValue() + 1;
+            if (info.size_file_comment > 0) {
+                bufCommentSize = (short) (info.size_file_comment + 1);
                 bufComment = new Memory(bufCommentSize);
             }
 
-            ret = CWrapper.unzGetCurrentFileInfo64(mUnzFile, info,
-                    bufName, new NativeLong(bufNameSize),
-                    bufExtra, new NativeLong(bufExtraSize),
-                    bufComment, new NativeLong(bufCommentSize));
+            ret = CWrapper.unzGetCurrentFileInfo64(mUnzFile, info, bufName, bufNameSize, bufExtra,
+                    bufExtraSize, bufComment, bufCommentSize);
             if (ret != UNZ_OK) {
                 throw new IOException("Failed to get entry metadata: error code " + ret);
             }
@@ -520,7 +553,7 @@ public class LibMiniZip {
                 entry.setName(bufName.getString(0));
             }
             if (bufExtra != null) {
-                entry.setExtra(bufExtra.getByteArray(0, info.size_file_extra.intValue()));
+                entry.setExtra(bufExtra.getByteArray(0, info.size_file_extra));
             }
             if (bufComment != null) {
                 entry.setComment(bufComment.getString(0));
@@ -528,12 +561,14 @@ public class LibMiniZip {
 
             entry.setCompressedSize(info.compressed_size);
             entry.setSize(info.uncompressed_size);
-            entry.setMethod(info.compression_method.intValue());
-            entry.setCrc(info.crc.longValue());
+            entry.setMethod(info.compression_method);
+            entry.setCrc(info.crc);
 
-            Calendar calendar = new GregorianCalendar(info.tmu_date.tm_year, info.tmu_date.tm_mon,
-                    info.tmu_date.tm_mday, info.tmu_date.tm_hour, info.tmu_date.tm_min,
-                    info.tmu_date.tm_sec);
+            tm tmDate = new tm();
+            CWrapper.dosdate_to_tm(info.dos_date, tmDate);
+
+            Calendar calendar = new GregorianCalendar(tmDate.tm_year, tmDate.tm_mon, tmDate.tm_mday,
+                    tmDate.tm_hour, tmDate.tm_min, tmDate.tm_sec);
 
             entry.setTime(calendar.getTime().getTime());
 

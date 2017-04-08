@@ -74,11 +74,5 @@ uint64_t mb_device_validate(const struct Device *device)
         }
     }
 
-    if (device->crypto_options.supported) {
-        if (NULL_OR_EMPTY(device->crypto_options.header_path)) {
-            flags |= MB_DEVICE_MISSING_CRYPTO_HEADER_PATH;
-        }
-    }
-
     return flags;
 }

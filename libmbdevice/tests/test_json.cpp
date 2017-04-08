@@ -104,10 +104,6 @@ static const char sample_complete[] =
                 "\"fbdev\""
             "],"
             "\"theme\": \"portrait_hdpi\""
-        "},"
-        "\"crypto\": {"
-            "\"supported\": true,"
-            "\"header_path\": \"footer\""
         "}"
     "}";
 
@@ -328,11 +324,6 @@ TEST(JsonTest, LoadCompleteDefinition)
     ASSERT_TRUE(string_array_eq(mb_device_tw_graphics_backends(sd.device), graphics_backends));
 
     ASSERT_STREQ(mb_device_tw_theme(sd.device), "portrait_hdpi");
-
-    /* Crypto */
-
-    ASSERT_EQ(mb_device_crypto_supported(sd.device), true);
-    ASSERT_STREQ(mb_device_crypto_header_path(sd.device), "footer");
 }
 
 TEST(JsonTest, LoadInvalidKey)
