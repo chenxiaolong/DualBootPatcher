@@ -245,6 +245,8 @@
     - P2a42
     - p2a42
     - kuntao
+    - P2c72
+    - p2c72
   architecture: arm64-v8a
 
   block_devs:
