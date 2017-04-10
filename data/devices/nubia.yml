@@ -3,6 +3,7 @@
   id: nx529j
   codenames:
     - nx529j
+    - NX529J
   architecture: arm64-v8a
 
   block_devs:
