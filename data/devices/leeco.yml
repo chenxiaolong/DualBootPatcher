@@ -185,7 +185,4 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-
-  crypto:
-    supported: true
-    header_path: footer
+    
