@@ -59,10 +59,10 @@ int MouseCursor::Render()
     }
 
     if (m_image) {
-        gr_blit(m_image->GetResource(), 0, 0, mRenderW, mRenderH, mRenderX, mRenderY);
+        //gr_blit(m_image->GetResource(), 0, 0, mRenderW, mRenderH, mRenderX, mRenderY);
     } else {
-        gr_color(m_color.red, m_color.green, m_color.blue, m_color.alpha);
-        gr_fill(mRenderX, mRenderY, mRenderW, mRenderH);
+        //gr_color(m_color.red, m_color.green, m_color.blue, m_color.alpha);
+        //gr_fill(mRenderX, mRenderY, mRenderW, mRenderH);
     }
     return 0;
 }
