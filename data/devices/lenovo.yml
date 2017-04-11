@@ -244,6 +244,8 @@
   codenames:
     - P2a42
     - p2a42
+    - P2c72
+    - p2c72
     - kuntao
   architecture: arm64-v8a
 
