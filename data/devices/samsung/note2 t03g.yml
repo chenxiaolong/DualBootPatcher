@@ -1,0 +1,30 @@
+---
+- name: Samsung Galaxy Note 2 n7100
+  id: t03g
+  codenames:
+    - t03g
+
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p16
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p9
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+
+
