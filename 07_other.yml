@@ -1,0 +1,164 @@
+---
+- name: Samsung Galaxy Grand 2 (Qcom)
+  id: ms013g
+  codenames:
+    - ms013g
+    - ms01lte
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p22
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p23
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p14
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p15
+
+
+- name: Samsung Galaxy Star
+  id: mint
+  codenames:
+    - mint
+    - mint2g
+  architecture: armeabi-v7a
+
+  block_devs:
+    system:
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/mmcblk0p5
+    recovery:
+      - /dev/block/mmcblk0p6
+
+
+- name: Samsung Galaxy Alpha (Exynos)
+  id: slte
+  codenames:
+    # G850F
+    - slte
+    - sltexx
+    # G850S/K/L
+    - slteskt
+    - sltektt
+    - sltelgu
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/15540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/15540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/15540000.dwmmc0/by-name/USERDATA
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/15540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p9
+    recovery:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p10
+    extra:
+      - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
+      - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
+
+- name: Samsung Galaxy Grand Prime VE 3G
+  id: grandprimeve3g
+  codenames:
+    - grandprimeve3g
+    - grandprimeve3gdtv
+    - grandprimeve3gub
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+    system:
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p21
+  -
+  - name: Samsung Galaxy Express GT-i8730
+    id: expressltexx
+    codenames:
+       - express
+       - expresslte
+       - expressltexx
+    architecture: armeabi_v7a
+
+    block_devs:
+      base_dirs: 
+       - /dev/block/platform/msm_sdcc.1/by-name
+    boot:
+       - /dev/block/platform/msm_sdcc.1/by-name/boot
+       - /dev/block/mmcblk0p7
+    recovery:
+       - /dev/block/platform/msm_sdcc.1/by-name/recovery
+       - /dev/block/mmcblk0p18
+    system:
+       - /dev/block/platform/msm_sdcc.1/by-name/system
+       - /dev/block/mmcblk0p14
+    cache:
+       - /dev/block/platform/msm_sdcc.1/by-name/cache
+       - /dev/block/mmcblk0p17
+    data:
+       - /dev/block/platform/msm_sdcc.1/by-name/userdata
+       - /dev/block/mmcblk0p15
+  extras:
+    aboot:
+       - /dev/block/platform/msm_sdcc.1/by-name/aboot
+       - /dev/block/mmcblk0p5
+  base_dirs: /dev/block/platform/msm_sdcc.3/by-name
+    Android_expand:
+       - /dev/block/platform/msm_sdcc.3/by-name/Android_expand
+       - /dev/block/mmcblk1p2
+    Android_meta:
+       - /dev/block/platform/msm_sdcc.3/by-name/Android_meta
+       - /dev/block/mmcblk1p1
+    bootui:
+      theme:
+       - portrait_hdpi
+     graphics_backends:
+       - fbdev
+       - suported: true
+     max_brigtness:
+       - 255
+     TW_BRIGTNESS_PATH:
+       - /sis/class/leds/lcd-ackligts/brightness
+   flags:
+       - TW_HAS_DOWNLOAD_MODE: true
+       - TW_NO_REBOOT_BOOTLOADER: true
+       - BOARD_HAS_NO_REAL_SDCARD: true
+       - RECOVERY_SDCARD_ON_DATA: true -Lun file: sys/devices/platform/msm_hsusb/gadget/lun0/
+       - TW_INCLUDE_CRYPTO: true 
+       
+    
