@@ -18,6 +18,7 @@ set(files
     nexus.yml
     nubia.yml
     oneplus.yml
+    oppo.yml
     oukitel.yml
     pantech.yml
     quantum.yml
