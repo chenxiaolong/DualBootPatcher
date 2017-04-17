@@ -1,0 +1,52 @@
+---
+# This is a complete sample device definition file DualBootPatcher.
+
+# Human readable device name (required)
+- name: HTC 10
+  # Device ID (required). Must be unique, but can be any string. It is good
+  # practice to set this value similar to the device's codename if possible.
+  id: htc-pme
+
+  # List of device codenames (required). The codename is the value of
+  # 'ro.product.device' or 'ro.build.product' in the /system/build.prop file.
+  # WARNING: All of the devices listed MUST have the same partition table.
+  #          Otherwise, there's a chance of hard-bricking the device.
+  codenames:
+    - pme
+    
+  # Device architecture (required). For example, armeabi-v7a, arm64-v8a, or x86.
+  architecture: arm64-v8a
+
+  # Block device paths section (required).
+  block_devs:
+    # Base directories (optional). This is a list of the 'by-name' directories
+    # in /dev/ that contain the partition block devices.
+    base_dirs:
+      - /dev/block/platform/soc/7464900.sdhci/by-name
+
+    # System partition block device paths (required).
+    system:
+      - /dev/block/platform/soc/7464900.sdhci/by-name/system
+      - /dev/block/mmcblk0p62
+
+    # Cache partition block device paths (required).
+    cache:
+      - /dev/block/platform/soc/7464900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p61
+
+    # Data partition block device paths (required).
+    data:
+      - /dev/block/platform/soc/7464900.sdhci/by-name/data
+      - /dev/block/mmcblk0p63
+
+    # Boot partition block device paths (required).
+    boot:
+      - /dev/block/platform/soc/7464900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p59
+
+    # Recovery partition block device paths (required).
+    recovery:
+      - /dev/block/platform/soc/7464900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p60
+
+ 
