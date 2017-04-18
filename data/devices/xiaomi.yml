@@ -745,6 +745,37 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
       
+- name: Xiaomi Redmi Note 3 SE
+  id: kate
+  codenames:
+    - kate
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+
 
 - name: Xiaomi Redmi Note 4
   id: mido
