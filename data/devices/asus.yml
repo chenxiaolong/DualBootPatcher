@@ -36,6 +36,8 @@
   codenames:
     - ASUS_Z00T
     - Z00T
+    - ASUS_Z011
+    - z00t
   architecture: arm64-v8a
 
   block_devs:
