@@ -65,7 +65,7 @@
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     theme: portrait_hdpi
     
-     name: Lenovo K4 Note
+- name: Lenovo K4 Note
   id: A7010a48
   codenames:
     - A7010a48
