@@ -73,11 +73,13 @@
     - K4 Note
     - Lenovo K4 Note
     - Vibe X3 Lite
-   - Lenovo A7010a48 
-   - Vibe X3 Lite
-   - Lenovo A7010
-   - A7010
-   - mt6753
+    - Lenovo A7010a48 
+    - Vibe X3 Lite
+    - Lenovo A7010
+    - A7010
+    - mt6753
+    - Vibe A7010
+    - Vibe A7010a48
   architecture: arm64-v8a
   flags:
     - FSTAB_SKIP_SDCARD0
