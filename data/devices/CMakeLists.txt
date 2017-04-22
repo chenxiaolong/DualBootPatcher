@@ -10,6 +10,7 @@ set(files
     elephone.yml
     google.yml
     huawei.yml
+    infinix.yml
     jiayu.yml
     leeco.yml
     lenovo.yml
