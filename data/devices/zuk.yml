@@ -1,0 +1,32 @@
+---
+- name: ZUK Z2 Pro
+  id: z2pro
+  codenames:
+    - z2_row
+    - Z2_row
+    - z2121
+    - Z2121
+    - Z2pro
+    - z2pro
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/sde18
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/sda3
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/sda10
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/sde17
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/sde19
+
+
