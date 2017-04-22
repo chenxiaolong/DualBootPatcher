@@ -14,6 +14,7 @@ set(files
     leeco.yml
     lenovo.yml
     lg.yml
+    meizu.yml
     motorola.yml
     nexus.yml
     nubia.yml
