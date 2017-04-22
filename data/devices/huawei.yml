@@ -224,6 +224,7 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
       
+ 
  - name: Huawei Y635
   id: hwY635
   codenames:
