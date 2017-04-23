@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -20,16 +20,11 @@
 #include "mbutil/properties.h"
 
 #include <memory>
+#include <mutex>
 #include <vector>
+
 #include <cstdio>
 #include <cstring>
-
-#include <pthread.h>
-#include <sys/stat.h>
-
-#if __ANDROID_API__ >= 21
-#include <dlfcn.h>
-#endif
 
 #include "mbcommon/common.h"
 #include "mbcommon/string.h"
@@ -41,229 +36,66 @@
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 
-#if !DYNAMICALLY_LINKED
-#define __system_property_get       mb__system_property_get
-#define __system_property_set       mb__system_property_set
-#define __system_property_find      mb__system_property_find
-#define __system_property_read      mb__system_property_read
-#define __system_property_find_nth  mb__system_property_find_nth
-#define __system_property_foreach   mb__system_property_foreach
-#endif
-
 namespace mb
 {
 namespace util
 {
 
 static bool initialized = false;
-static pthread_mutex_t initialized_lock = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex initialized_lock;
 
-#if DYNAMICALLY_LINKED
-static const char *libc_path = nullptr;
-static void *libc_handle = nullptr;
-static void *SYMBOL__system_property_get = nullptr;
-static void *SYMBOL__system_property_set = nullptr;
-static void *SYMBOL__system_property_find = nullptr;
-static void *SYMBOL__system_property_read = nullptr;
-static void *SYMBOL__system_property_find_nth = nullptr;
-static void *SYMBOL__system_property_foreach = nullptr;
-
-static void detect_libc(void)
-{
-    if (libc_path) {
-        return;
-    }
-
-    struct stat sb;
-    if (stat("/sbin/recovery", &sb) == 0) {
-        if (stat("/sbin/libc.so", &sb) == 0) {
-            // TWRP
-            libc_path = "/sbin/libc.so";
-        } else {
-            // Custom libc.so if recovery is statically linked
-            libc_path = "/tmp/libc.so";
-        }
-    } else {
-        libc_path = "/system/lib/libc.so";
-    }
-}
-
-static void *get_libc_handle(void)
-{
-    detect_libc();
-
-    void *handle = dlopen(libc_path, RTLD_LOCAL);
-    if (!handle) {
-        LOGE("%s: Failed to dlopen: %s", libc_path, dlerror());
-    }
-
-    return handle;
-}
-
-static void *get_libc_symbol(const char *name)
-{
-    if (!libc_handle) {
-        return nullptr;
-    }
-
-    void *symbol = dlsym(libc_handle, name);
-    if (!symbol) {
-        LOGE("Failed to dlsym %s: %s", name, dlerror());
-    }
-
-    return symbol;
-}
-
-static void dlopen_libc(void)
-{
-    if (libc_handle) {
-        return;
-    }
-
-    libc_handle = get_libc_handle();
-    if (!libc_handle) {
-        return;
-    }
-
-    SYMBOL__system_property_get = get_libc_symbol("__system_property_get");
-    SYMBOL__system_property_set = get_libc_symbol("__system_property_set");
-    SYMBOL__system_property_find = get_libc_symbol("__system_property_find");
-    SYMBOL__system_property_read = get_libc_symbol("__system_property_read");
-    SYMBOL__system_property_find_nth = get_libc_symbol("__system_property_find_nth");
-    SYMBOL__system_property_foreach = get_libc_symbol("__system_property_foreach");
-}
-
-MB_UNUSED
-static void dlclose_libc(void)
-{
-    if (libc_handle) {
-        dlclose(libc_handle);
-        libc_handle = nullptr;
-    }
-}
-#else
 void initialize_properties()
 {
-    pthread_mutex_lock(&initialized_lock);
+    std::lock_guard<std::mutex> lock(initialized_lock);
+
     if (!initialized) {
         mb__system_properties_init();
         initialized = true;
     }
-    pthread_mutex_unlock(&initialized_lock);
 }
-#endif
 
 int libc_system_property_get(const char *name, char *value)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_get) {
-        value[0] = '\0';
-        return 0;
-    }
-
-    auto __system_property_get =
-            reinterpret_cast<int (*)(const char *, char *)>(
-                    SYMBOL__system_property_get);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_get(name, value);
+    return mb__system_property_get(name, value);
 }
 
 int libc_system_property_set(const char *key, const char *value)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_set) {
-        return -1;
-    }
-
-    auto __system_property_set =
-            reinterpret_cast<int (*)(const char *, const char *)>(
-                    SYMBOL__system_property_set);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_set(key, value);
+    return mb__system_property_set(key, value);
 }
 
 const prop_info *libc_system_property_find(const char *name)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_find) {
-        return nullptr;
-    }
-
-    auto __system_property_find =
-            reinterpret_cast<const prop_info * (*)(const char *)>(
-                    SYMBOL__system_property_find);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_find(name);
+    return mb__system_property_find(name);
 }
 
 int libc_system_property_read(const prop_info *pi, char *name, char *value)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_read) {
-        name[0] = '\0';
-        value[0] = '\0';
-        return 0;
-    }
-
-    auto __system_property_read =
-            reinterpret_cast<int (*)(const prop_info *, char *, char *)>(
-                    SYMBOL__system_property_read);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_read(pi, name, value);
+    return mb__system_property_read(pi, name, value);
 }
 
 const prop_info *libc_system_property_find_nth(unsigned n)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_find_nth) {
-        return nullptr;
-    }
-
-    auto __system_property_find_nth =
-            reinterpret_cast<const prop_info * (*)(unsigned)>(
-                    SYMBOL__system_property_find_nth);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_find_nth(n);
+    return mb__system_property_find_nth(n);
 }
 
 int libc_system_property_foreach(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_foreach) {
-        return -1;
-    }
-
-    auto __system_property_foreach =
-            reinterpret_cast<int (*)(void (*)(const prop_info *, void *), void*)>(
-                    SYMBOL__system_property_foreach);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_foreach(propfn, cookie);
+    return mb__system_property_foreach(propfn, cookie);
 }
 
 // BEGIN: Code partially based on libcutils properties.c

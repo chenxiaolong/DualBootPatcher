@@ -8,10 +8,6 @@ include_directories(${MBP_LIBARCHIVE_INCLUDES})
 include_directories(${MBP_LIBSEPOL_INCLUDES})
 include_directories(${MBP_OPENSSL_INCLUDES})
 
-# If enabled, util/properties.cpp will try to dlopen libc.so to read/write
-# properties
-#add_definitions(-DDYNAMICALLY_LINKED)
-
 set(MBUTIL_SOURCES
     src/autoclose/dir.cpp
     src/autoclose/file.cpp
