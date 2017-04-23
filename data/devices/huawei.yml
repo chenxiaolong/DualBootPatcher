@@ -225,7 +225,7 @@
       - /dev/block/mmcblk0p28
       
  
- - name: Huawei Y635
+ -name: Huawei Y635
   id: hwY635
   codenames:
     - Y635-L21
