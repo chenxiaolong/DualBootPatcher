@@ -231,9 +231,8 @@ static bool set_kernel_properties()
     };
 
     for (auto it = prop_map; it ->src_prop; ++it) {
-        char value[PROP_VALUE_MAX];
-        int ret = ::property_get(it->src_prop, value);
-        property_set(it->dst_prop, (ret > 0) ? value : it->default_value);
+        std::string value = ::property_get(it->src_prop);
+        property_set(it->dst_prop, !value.empty() ? value : it->default_value);
     }
 
     return true;
@@ -241,9 +240,6 @@ static bool set_kernel_properties()
 
 static bool properties_setup()
 {
-    char tmp[32];
-    int fd, sz;
-
     if (!property_init()) {
         LOGW("Failed to initialize properties area");
     }
@@ -261,15 +257,6 @@ static bool properties_setup()
         LOGW("Failed to start properties service");
     }
 
-    get_property_workspace(&fd, &sz);
-    sprintf(tmp, "%d,%d", fd, sz);
-
-    // Clear FD_CLOEXEC since we want child processes to be able to set
-    // properties
-    fcntl(fd, F_SETFD, 0);
-
-    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
     return true;
 }
 
@@ -277,10 +264,6 @@ static bool properties_cleanup()
 {
     if (!stop_property_service()) {
         LOGW("Failed to stop properties service");
-    }
-
-    if (!property_cleanup()) {
-        LOGW("Failed to clean up properties area");
     }
 
     return true;

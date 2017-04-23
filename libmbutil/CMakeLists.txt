@@ -45,6 +45,12 @@ set(MBUTIL_SOURCES
     external/mntent.c
 )
 
+set_source_files_properties(
+    src/external/system_properties.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-zero-length-array -Wno-gnu-statement-expression -Wno-vla-extension"
+)
+
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
     # Build static library
 
