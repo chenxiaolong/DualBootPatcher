@@ -29,7 +29,6 @@ struct property_audit_data {
 
 bool property_init();
 void property_load_boot_defaults();
-void load_persist_props();
 void load_system_props();
 bool start_property_service();
 bool stop_property_service();

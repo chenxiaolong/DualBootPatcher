@@ -53,10 +53,6 @@
 
 #define ALLOW_LOCAL_PROP_OVERRIDE 1
 
-#define PERSISTENT_PROPERTY_DIR  "/data/property"
-
-static int persistent_properties_loaded = 0;
-
 static int property_set_fd = -1;
 static int stop_pipe_fd[2];
 
@@ -75,30 +71,6 @@ std::string property_get(const char* name) {
     char value[PROP_VALUE_MAX] = {0};
     mb__system_property_get(name, value);
     return value;
-}
-
-static void write_persistent_property(const char *name, const char *value)
-{
-    char tempPath[PATH_MAX];
-    char path[PATH_MAX];
-    int fd;
-
-    snprintf(tempPath, sizeof(tempPath), "%s/.temp.XXXXXX", PERSISTENT_PROPERTY_DIR);
-    fd = mkstemp(tempPath);
-    if (fd < 0) {
-        LOGE("Unable to write persistent property to temp file %s", tempPath);
-        return;
-    }
-    write(fd, value, strlen(value));
-    fsync(fd);
-    close(fd);
-
-    snprintf(path, sizeof(path), "%s/%s", PERSISTENT_PROPERTY_DIR, name);
-    if (rename(tempPath, path)) {
-        LOGE("Unable to rename persistent property file %s to %s",
-             tempPath, path);
-        unlink(tempPath);
-    }
 }
 
 bool is_legal_property_name(const std::string& name) {
@@ -159,12 +131,6 @@ uint32_t property_set(const std::string& name, const std::string& value) {
                  name.c_str(), value.c_str());
             return PROP_ERROR_SET_FAILED;
         }
-    }
-
-    // Don't write properties to disk until after we have read all default
-    // properties to prevent them from being overwritten by default values.
-    if (persistent_properties_loaded && mb_starts_with(name.c_str(), "persist.")) {
-        write_persistent_property(name.c_str(), value.c_str());
     }
 
     return PROP_SUCCESS;
@@ -462,87 +428,10 @@ static void load_properties_from_file(const char* filename, const char* filter) 
     LOGV("(Loading properties from %s took %.2fs.)", filename, elapsed.count());
 }
 
-static void load_persistent_properties() {
-    persistent_properties_loaded = 1;
-
-    std::unique_ptr<DIR, int(*)(DIR*)> dir(opendir(PERSISTENT_PROPERTY_DIR), closedir);
-    if (!dir) {
-        LOGE("Unable to open persistent property directory \""
-             PERSISTENT_PROPERTY_DIR "\"");
-        return;
-    }
-
-    struct dirent* entry;
-    while ((entry = readdir(dir.get())) != NULL) {
-        if (strncmp("persist.", entry->d_name, strlen("persist."))) {
-            continue;
-        }
-        if (entry->d_type != DT_REG) {
-            continue;
-        }
-
-        // Open the file and read the property value.
-        int fd = openat(dirfd(dir.get()), entry->d_name, O_RDONLY | O_NOFOLLOW);
-        if (fd == -1) {
-            LOGE("Unable to open persistent property file \"%s\"", entry->d_name);
-            continue;
-        }
-
-        struct stat sb;
-        if (fstat(fd, &sb) == -1) {
-            LOGE("fstat on property file \"%s\" failed", entry->d_name);
-            close(fd);
-            continue;
-        }
-
-        // File must not be accessible to others, be owned by root/root, and
-        // not be a hard link to any other file.
-        if (((sb.st_mode & (S_IRWXG | S_IRWXO)) != 0) || sb.st_uid != 0 || sb.st_gid != 0 || sb.st_nlink != 1) {
-            LOGE("skipping insecure property file %s"
-                 " (uid=%u gid=%u nlink=%" PRIu64 " mode=%o)",
-                 entry->d_name, sb.st_uid, sb.st_gid,
-                 static_cast<uint64_t>(sb.st_nlink), sb.st_mode);
-            close(fd);
-            continue;
-        }
-
-        char value[PROP_VALUE_MAX];
-        int length = read(fd, value, sizeof(value) - 1);
-        if (length >= 0) {
-            value[length] = 0;
-            property_set(entry->d_name, value);
-        } else {
-            LOGE("Unable to read persistent property file %s", entry->d_name);
-        }
-        close(fd);
-    }
-}
-
 void property_load_boot_defaults() {
     load_properties_from_file("/default.prop", NULL);
     load_properties_from_file("/odm/default.prop", NULL);
     load_properties_from_file("/vendor/default.prop", NULL);
-}
-
-static void load_override_properties() {
-    if (ALLOW_LOCAL_PROP_OVERRIDE) {
-        std::string debuggable = property_get("ro.debuggable");
-        if (debuggable == "1") {
-            load_properties_from_file("/data/local.prop", NULL);
-        }
-    }
-}
-
-/* When booting an encrypted system, /data is not mounted when the
- * property service is started, so any properties stored there are
- * not loaded.  Vold triggers init to load these properties once it
- * has mounted /data.
- */
-void load_persist_props() {
-    load_override_properties();
-    /* Read persistent properties after all default values have been loaded. */
-    load_persistent_properties();
-    property_set("ro.persistent_properties.ready", "true");
 }
 
 void load_system_props() {
