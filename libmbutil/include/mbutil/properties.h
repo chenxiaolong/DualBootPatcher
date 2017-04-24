@@ -89,6 +89,7 @@ inline UNumType property_get_unum(const std::string &key,
 }
 
 bool property_set(const std::string &key, const std::string &value);
+bool property_set_direct(const std::string &key, const std::string &value);
 
 bool property_list(PropertyListCb prop_fn, void *cookie);
 

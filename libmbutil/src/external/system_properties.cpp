@@ -64,6 +64,10 @@
 // initializes before SELinux
 #define MB_ENABLE_SELINUX_OPERATIONS 0
 
+// Allow client to directly write to the property area
+// (for mb::util::property_set_direct())
+#define MB_ALLOW_DIRECT_CLIENT_WRITES 1
+
 // The check is useless since we statically compile libc
 #define MB_OMIT_API_VERSION_CHECK 1
 
@@ -335,7 +339,11 @@ static prop_area* map_fd_ro(const int fd) {
   pa_size = fd_stat.st_size;
   pa_data_size = pa_size - sizeof(prop_area);
 
-  void* const map_result = mmap(nullptr, pa_size, PROT_READ, MAP_SHARED, fd, 0);
+  void* const map_result = mmap(nullptr, pa_size, PROT_READ
+#if MB_ALLOW_DIRECT_CLIENT_WRITES
+        | PROT_WRITE
+#endif
+        , MAP_SHARED, fd, 0);
   if (map_result == MAP_FAILED) {
     return nullptr;
   }
@@ -364,7 +372,13 @@ static prop_area* map_prop_area(const char* filename
     , bool is_legacy
 #endif
 ) {
-  int fd = open(filename, O_CLOEXEC | O_NOFOLLOW | O_RDONLY);
+  int fd = open(filename, O_CLOEXEC | O_NOFOLLOW |
+#if MB_ALLOW_DIRECT_CLIENT_WRITES
+    O_RDWR
+#else
+    O_RDONLY
+#endif
+  );
 #if MB_ENABLE_COMPAT_PROPERTIES
   bool close_fd = true;
   if (fd == -1 && errno == ENOENT && is_legacy) {

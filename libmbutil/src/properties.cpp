@@ -183,6 +183,24 @@ bool property_set(const std::string &key, const std::string &value)
     return libc_system_property_set(key.c_str(), value.c_str()) == 0;
 }
 
+bool property_set_direct(const std::string &key, const std::string &value)
+{
+    initialize_properties();
+
+    prop_info *pi = const_cast<prop_info *>(
+            mb__system_property_find(key.c_str()));
+    int ret;
+
+    if (pi) {
+        ret = mb__system_property_update(pi, value.c_str(), value.size());
+    } else {
+        ret = mb__system_property_add(key.c_str(), key.size(), value.c_str(),
+                                      value.size());
+    }
+
+    return ret == 0;
+}
+
 bool property_list(PropertyListCb prop_fn, void *cookie)
 {
     struct PropListCtx
