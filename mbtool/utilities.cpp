@@ -59,14 +59,13 @@ const char *devices_file = nullptr;
 
 static Device * get_device(const char *path)
 {
-    char prop_product_device[PROP_VALUE_MAX];
-    char prop_build_product[PROP_VALUE_MAX];
+    std::string prop_product_device =
+            util::property_get_string("ro.product.device", {});
+    std::string prop_build_product =
+            util::property_get_string("ro.build.product", {});
 
-    util::property_get("ro.product.device", prop_product_device, "");
-    util::property_get("ro.build.product", prop_build_product, "");
-
-    LOGD("ro.product.device = %s", prop_product_device);
-    LOGD("ro.build.product = %s", prop_build_product);
+    LOGD("ro.product.device = %s", prop_product_device.c_str());
+    LOGD("ro.build.product = %s", prop_build_product.c_str());
 
     std::vector<unsigned char> contents;
     if (!util::file_read_all(path, &contents)) {
@@ -94,8 +93,7 @@ static Device * get_device(const char *path)
         auto codenames = mb_device_codenames(*it);
 
         for (auto it2 = codenames; *it2; ++it2) {
-            if (strcmp(*it2, prop_product_device) == 0
-                    || strcmp(*it2, prop_build_product) == 0) {
+            if (prop_product_device == *it2 || prop_build_product == *it2) {
                 device = *it;
                 break;
             }
@@ -110,7 +108,7 @@ static Device * get_device(const char *path)
     free(devices);
 
     if (!device) {
-        LOGE("Unknown device: %s", prop_product_device);
+        LOGE("Unknown device: %s", prop_product_device.c_str());
         return nullptr;
     }
 

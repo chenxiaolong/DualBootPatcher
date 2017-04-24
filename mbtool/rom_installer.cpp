@@ -146,15 +146,14 @@ std::unordered_map<std::string, std::string> RomInstaller::get_properties()
             continue;
         }
 
-        char value[PROP_VALUE_MAX];
-        int n = util::property_get(prop.c_str(), value, "");
-        if (n > 0) {
+        std::string value = util::property_get_string(prop, {});
+        if (!value.empty()) {
             props[prop] = value;
 
             LOGD("Property '%s' does not exist in recovery's default.prop",
                  prop.c_str());
             LOGD("- '%s'='%s' will be set in chroot environment",
-                 prop.c_str(), value);
+                 prop.c_str(), value.c_str());
         }
     }
 
@@ -218,8 +217,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
     }
 
     // Load recovery properties
-    util::file_get_all_properties(
-            in_chroot("/default.recovery.prop"), &_recovery_props);
+    util::property_file_get_all(
+            in_chroot("/default.recovery.prop"), _recovery_props);
 
     return ProceedState::Continue;
 }

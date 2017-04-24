@@ -29,12 +29,13 @@
 #include "mbcommon/common.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
 #include "mbutil/string.h"
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
+
+typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
 namespace mb
 {
@@ -54,13 +55,6 @@ void initialize_properties()
     }
 }
 
-int libc_system_property_get(const char *name, char *value)
-{
-    initialize_properties();
-
-    return mb__system_property_get(name, value);
-}
-
 int libc_system_property_set(const char *key, const char *value)
 {
     initialize_properties();
@@ -75,18 +69,15 @@ const prop_info *libc_system_property_find(const char *name)
     return mb__system_property_find(name);
 }
 
-int libc_system_property_read(const prop_info *pi, char *name, char *value)
+void libc_system_property_read_callback(
+        const prop_info *pi,
+        void (*callback)(void *cookie, const char *name, const char *value,
+                         uint32_t serial),
+        void *cookie)
 {
     initialize_properties();
 
-    return mb__system_property_read(pi, name, value);
-}
-
-const prop_info *libc_system_property_find_nth(unsigned n)
-{
-    initialize_properties();
-
-    return mb__system_property_find_nth(n);
+    return mb__system_property_read_callback(pi, callback, cookie);
 }
 
 int libc_system_property_foreach(
@@ -98,108 +89,150 @@ int libc_system_property_foreach(
     return mb__system_property_foreach(propfn, cookie);
 }
 
-// BEGIN: Code partially based on libcutils properties.c
-
-int property_get(const char *key, char *value_out, const char *default_value)
+bool libc_system_property_wait(const prop_info *pi,
+                               uint32_t old_serial,
+                               uint32_t *new_serial_ptr,
+                               const struct timespec *relative_timeout)
 {
-    int n = libc_system_property_get(key, value_out);
+    initialize_properties();
 
-    if (n > 0) {
-        return n;
-    } else {
-        n = strlen(default_value);
-        if (n >= PROP_VALUE_MAX) {
-            n = PROP_VALUE_MAX - 1;
-        }
-        memcpy(value_out, default_value, n);
-        value_out[n] = '\0';
+    return mb__system_property_wait(pi, old_serial, new_serial_ptr,
+                                    relative_timeout);
+}
+
+// Helper functions
+
+static bool string_to_bool(const std::string &str, bool &value_out)
+{
+    if (str == "1"
+            || str == "y"
+            || str == "yes"
+            || str == "true"
+            || str == "on") {
+        value_out = true;
+        return true;
+    } else if (str == "0"
+            || str == "n"
+            || str == "no"
+            || str == "false"
+            || str == "off") {
+        value_out = false;
+        return true;
     }
 
-    return n;
+    return false;
 }
 
-int property_set(const char *key, const char *value)
+static void read_property(const prop_info *pi, std::string &name_out,
+                          std::string &value_out)
 {
-    return libc_system_property_set(key, value);
+    using KeyValuePair = std::pair<std::string, std::string>;
+    KeyValuePair ctx;
+
+    libc_system_property_read_callback(
+            pi, [](void *cookie, const char *name, const char *value,
+                   uint32_t serial) {
+        (void) serial;
+        auto *kvp = static_cast<KeyValuePair *>(cookie);
+        kvp->first = name;
+        kvp->second = value;
+    }, &ctx);
+
+    name_out = std::move(ctx.first);
+    value_out = std::move(ctx.second);
 }
 
-bool property_get_bool(const char *key, bool default_value)
+bool property_get(const std::string &key, std::string &value_out)
 {
-    char buf[PROP_VALUE_MAX];
-    bool result = default_value;
-
-    int n = property_get(key, buf, "");
-    if (n == 1) {
-        if (buf[0] == '0' || buf[0] == 'n') {
-            result = false;
-        } else if (buf[0] == '1' || buf[0] == 'y') {
-            result = true;
-        }
-    } else if (n > 1) {
-         if (strcmp(buf, "no") == 0
-                || strcmp(buf, "false") == 0
-                || strcmp(buf, "off") == 0) {
-            result = false;
-        } else if (strcmp(buf, "yes") == 0
-                || strcmp(buf, "true") == 0
-                || strcmp(buf, "on") == 0) {
-            result = true;
-        }
+    const prop_info *pi = libc_system_property_find(key.c_str());
+    if (!pi) {
+        return false;
     }
 
-    return result;
-}
-
-struct property_list_cb_data
-{
-    property_list_cb propfn;
-    void *cookie;
-};
-
-static void property_list_callback(const prop_info *pi, void *cookie)
-{
-    char name[PROP_NAME_MAX];
-    char value[PROP_VALUE_MAX];
-    property_list_cb_data *data = static_cast<property_list_cb_data *>(cookie);
-
-    libc_system_property_read(pi, name, value);
-    data->propfn(name, value, data->cookie);
-}
-
-int property_list(property_list_cb propfn, void *cookie)
-{
-    property_list_cb_data data = { propfn, cookie };
-    return libc_system_property_foreach(property_list_callback, &data);
-}
-
-// END: Code partially based on libcutils properties.c
-
-static void _add_property(const prop_info *pi, void *cookie)
-{
-    char name[PROP_NAME_MAX];
-    char value[PROP_VALUE_MAX];
-    std::unordered_map<std::string, std::string> *props =
-            static_cast<std::unordered_map<std::string, std::string> *>(cookie);
-
-    if (libc_system_property_read(pi, name, value) >= 0) {
-        (*props)[name] = value;
-    }
-}
-
-bool get_all_properties(std::unordered_map<std::string, std::string> *map)
-{
-    std::unordered_map<std::string, std::string> props;
-    libc_system_property_foreach(&_add_property, &props);
-    map->swap(props);
+    std::string name;
+    read_property(pi, name, value_out);
     return true;
 }
 
-bool file_get_property(const std::string &path,
-                       const std::string &key,
-                       std::string *out,
-                       const std::string &default_value)
+std::string property_get_string(const std::string &key,
+                                const std::string &default_value)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+    std::string value;
+
+    if (property_get(key, value) && !value.empty()) {
+        return value;
+    }
+
+    return default_value;
+}
+
+bool property_get_bool(const std::string &key, bool default_value)
+{
+    std::string value;
+    bool result;
+
+    if (property_get(key, value) && string_to_bool(value, result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+bool property_set(const std::string &key, const std::string &value)
+{
+    return libc_system_property_set(key.c_str(), value.c_str()) == 0;
+}
+
+bool property_list(PropertyListCb prop_fn, void *cookie)
+{
+    struct PropListCtx
+    {
+        PropertyListCb prop_fn;
+        void *cookie;
+    };
+
+    PropListCtx ctx{ prop_fn, cookie };
+
+    return libc_system_property_foreach(
+            [](const prop_info *pi, void *cookie) {
+        auto *ctx = static_cast<PropListCtx *>(cookie);
+        std::string name;
+        std::string value;
+
+        read_property(pi, name, value);
+        ctx->prop_fn(name, value, ctx->cookie);
+    }, &ctx);
+}
+
+bool property_get_all(std::unordered_map<std::string, std::string> &map)
+{
+    return libc_system_property_foreach(
+            [](const prop_info *pi, void *cookie) {
+        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        std::string name;
+        std::string value;
+
+        read_property(pi, name, value);
+        (*map)[name] = value;
+    }, &map);
+}
+
+// Properties file functions
+
+enum class PropIterAction
+{
+    CONTINUE,
+    STOP,
+};
+
+typedef PropIterAction (*PropIterCb)(const std::string &key,
+                                     const std::string &value,
+                                     void *cookie);
+
+static bool iterate_property_file(const std::string &path, PropIterCb cb,
+                                  void *cookie)
+{
+    ScopedFILE fp(fopen(path.c_str(), "r"), &fclose);
     if (!fp) {
         return false;
     }
@@ -213,7 +246,7 @@ bool file_get_property(const std::string &path,
     });
 
     while ((read = getline(&line, &len, fp.get())) >= 0) {
-        if (line[0] == '\0' || line[0] == '#') {
+        if (read == 0 || line[0] == '#') {
             // Skip empty and comment lines
             continue;
         }
@@ -224,75 +257,111 @@ bool file_get_property(const std::string &path,
             continue;
         }
 
-        if ((size_t)(equals - line) != key.size()) {
-            // Key is not the same length
-            continue;
+        *equals = '\0';
+
+        if (line[read - 1] == '\n') {
+            line[read - 1] = '\0';
         }
 
-        if (mb_starts_with(line, key.c_str())) {
-            // Strip newline
-            if (line[read - 1] == '\n') {
-                line[read - 1] = '\0';
-                --read;
-            }
-
-            out->assign(equals + 1);
+        if (cb(line, equals + 1, cookie) == PropIterAction::STOP) {
             return true;
         }
     }
 
-    *out = default_value;
-    return true;
+    return !ferror(fp.get());
 }
 
-bool file_get_all_properties(const std::string &path,
-                             std::unordered_map<std::string, std::string> *map)
+bool property_file_get(const std::string &path, const std::string &key,
+                       std::string &value_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
-    if (!fp) {
-        return false;
+    struct Ctx
+    {
+        const std::string *key;
+        std::string *value_out;
+        bool found;
+    };
+
+    Ctx ctx{&key, &value_out, false};
+
+    bool ret = iterate_property_file(
+            path, [](const std::string &key, const std::string &value,
+                     void *cookie){
+        auto *ctx = static_cast<Ctx *>(cookie);
+        if (key == *ctx->key) {
+            *ctx->value_out = value;
+            ctx->found = true;
+            return PropIterAction::STOP;
+        }
+        return PropIterAction::CONTINUE;
+    }, &ctx);
+
+    if (!ctx.found) {
+        value_out.clear();
     }
 
-    char *line = nullptr;
-    size_t len = 0;
-    ssize_t read;
-
-    auto free_line = finally([&] {
-        free(line);
-    });
-
-    std::unordered_map<std::string, std::string> tempMap;
-
-    while ((read = getline(&line, &len, fp.get())) >= 0) {
-        if (line[0] == '\0' || line[0] == '#') {
-            // Skip empty and comment lines
-            continue;
-        }
-
-        char *equals = strchr(line, '=');
-        if (!equals) {
-            // No equals in line
-            continue;
-        }
-
-        // Strip newline
-        if (line[read - 1] == '\n') {
-            line[read - 1] = '\0';
-            --read;
-        }
-
-        *equals = '\0';
-        tempMap[line] = equals + 1;
-    }
-
-    map->swap(tempMap);
-    return true;
+    return ret;
 }
 
-bool file_write_properties(const std::string &path,
-                           const std::unordered_map<std::string, std::string> &map)
+std::string property_file_get_string(const std::string &path,
+                                     const std::string &key,
+                                     const std::string &default_value)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
+    std::string value;
+
+    if (property_file_get(path, key, value) && !value.empty()) {
+        return value;
+    }
+
+    return default_value;
+}
+
+bool property_file_get_bool(const std::string &path, const std::string &key,
+                            bool default_value)
+{
+    std::string value;
+    bool result;
+
+    if (property_file_get(path, key, value) && string_to_bool(value, result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+bool property_file_list(const std::string &path, PropertyListCb prop_fn,
+                        void *cookie)
+{
+    struct Ctx
+    {
+        PropertyListCb prop_fn;
+        void *cookie;
+    };
+
+    Ctx ctx{prop_fn, cookie};
+
+    return iterate_property_file(
+            path, [](const std::string &key, const std::string &value,
+                     void *cookie){
+        auto *ctx = static_cast<Ctx *>(cookie);
+        ctx->prop_fn(key, value, ctx->cookie);
+        return PropIterAction::CONTINUE;
+    }, &ctx);
+}
+
+bool property_file_get_all(const std::string &path,
+                           std::unordered_map<std::string, std::string> &map)
+{
+    return property_file_list(path,
+            [](const std::string &key, const std::string &value, void *cookie) {
+        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        (*map)[key] = value;
+    }, &map);
+}
+
+bool property_file_write_all(const std::string &path,
+                             const std::unordered_map<std::string, std::string> &map)
+{
+    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
         return false;
     }
