@@ -174,6 +174,41 @@
       - /dev/block/platform/soc.0/by-name/recovery
       - /dev/block/mmcblk0p32
 
+- name: Motorola Moto G4 Play
+  id: harpia
+  codenames:
+    - harpia
+    - xt1601
+    - xt1602
+    - xt1604
+    - xt1607
+    - xt1609
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p39
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p38
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p41
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p31
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p32
 
 - name: Motorola Moto E (1st gen)
   id: condor
