@@ -47,6 +47,7 @@ set(MBTOOL_BASE_SOURCES
     mount_fstab.cpp
     multiboot.cpp
     packages.cpp
+    properties.cpp
     reboot.cpp
     romconfig.cpp
     roms.cpp
