@@ -339,11 +339,16 @@ static prop_area* map_fd_ro(const int fd) {
   pa_size = fd_stat.st_size;
   pa_data_size = pa_size - sizeof(prop_area);
 
-  void* const map_result = mmap(nullptr, pa_size, PROT_READ
 #if MB_ALLOW_DIRECT_CLIENT_WRITES
-        | PROT_WRITE
+  // If we're using a file descriptor we get from the environment, we might not
+  // have write access to the file
+  void* map_result = mmap(nullptr, pa_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if (map_result == MAP_FAILED && errno == EACCES) {
+      map_result = mmap(nullptr, pa_size, PROT_READ, MAP_SHARED, fd, 0);
+  }
+#else
+  void* const map_result = mmap(nullptr, pa_size, PROT_READ, MAP_SHARED, fd, 0);
 #endif
-        , MAP_SHARED, fd, 0);
   if (map_result == MAP_FAILED) {
     return nullptr;
   }
