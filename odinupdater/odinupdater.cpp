@@ -245,8 +245,8 @@ static bool load_sales_code()
 
 static bool load_block_devs()
 {
-    system_block_dev[0] = '\0';
-    boot_block_dev[0] = '\0';
+    system_block_dev.clear();
+    boot_block_dev.clear();
 
     Device *device;
 
