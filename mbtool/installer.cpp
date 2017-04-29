@@ -1918,9 +1918,18 @@ Installer::ProceedState Installer::install_stage_finish()
             return ProceedState::Fail;
         }
 
-        if (!util::copy_contents(temp_boot_img, _boot_block_dev)
-                || !util::copy_contents(temp_boot_img, path)) {
-            display_msg("Failed to copy boot image");
+        if (!util::copy_contents(temp_boot_img, _boot_block_dev)) {
+            LOGE("Failed to copy %s to %s: %s",
+                 temp_boot_img.c_str(), _boot_block_dev.c_str(),
+                 strerror(errno));
+            display_msg("Failed to flash patched boot image");
+            return ProceedState::Fail;
+        }
+        if (!util::copy_contents(temp_boot_img, path)) {
+            LOGE("Failed to copy %s to %s: %s",
+                 temp_boot_img.c_str(), path.c_str(),
+                 strerror(errno));
+            display_msg("Failed to back up boot image");
             return ProceedState::Fail;
         }
 
