@@ -448,13 +448,12 @@ bool Installer::destroy_chroot() const
 
 bool Installer::mount_efs() const
 {
-    char manufacturer[PROP_VALUE_MAX];
-    char brand[PROP_VALUE_MAX];
-    util::property_get("ro.product.manufacturer", manufacturer, "");
-    util::property_get("ro.product.brand", brand, "");
+    std::string manufacturer =
+            util::property_get_string("ro.product.manufacturer", {});
+    std::string brand = util::property_get_string("ro.product.brand", {});
 
-    if (strcasecmp(manufacturer, "samsung") != 0
-            && strcasecmp(brand, "samsung") != 0) {
+    if (strcasecmp(manufacturer.c_str(), "samsung") != 0
+            && strcasecmp(brand.c_str(), "samsung") != 0) {
         LOGD("Not mounting EFS partition because this is not a Samsung device");
         return true;
     }
@@ -1324,7 +1323,7 @@ Installer::ProceedState Installer::install_stage_set_up_environment()
     }
 
     // Load info.prop
-    if (!util::file_get_all_properties(_temp + "/info.prop", &_prop)) {
+    if (!util::property_file_get_all(_temp + "/info.prop", _prop)) {
         display_msg("Failed to read multiboot/info.prop");
         return ProceedState::Fail;
     }
@@ -1355,24 +1354,23 @@ Installer::ProceedState Installer::install_stage_check_device()
         return ProceedState::Fail;
     }
 
-    char prop_product_device[PROP_VALUE_MAX];
-    char prop_build_product[PROP_VALUE_MAX];
-    char prop_patcher_device[PROP_VALUE_MAX];
+    std::string prop_product_device =
+            util::property_get_string("ro.product.device", {});
+    std::string prop_build_product =
+            util::property_get_string("ro.build.product", {});
+    std::string prop_patcher_device =
+            util::property_get_string("ro.patcher.device", {});
 
-    util::property_get("ro.product.device", prop_product_device, "");
-    util::property_get("ro.build.product", prop_build_product, "");
-    util::property_get("ro.patcher.device", prop_patcher_device, "");
-
-    LOGD("ro.product.device = %s", prop_product_device);
-    LOGD("ro.build.product = %s", prop_build_product);
-    LOGD("ro.patcher.device = %s", prop_patcher_device);
+    LOGD("ro.product.device = %s", prop_product_device.c_str());
+    LOGD("ro.build.product = %s", prop_build_product.c_str());
+    LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
     LOGD("Target device = %s", mb_device_id(_device));
 
-    if (prop_patcher_device[0]) {
+    if (!prop_patcher_device.empty()) {
         _detected_device = prop_patcher_device;
-    } else if (prop_product_device[0]) {
+    } else if (!prop_product_device.empty()) {
         _detected_device = prop_product_device;
-    } else if (prop_build_product[0]) {
+    } else if (!prop_build_product.empty()) {
         _detected_device = prop_build_product;
     } else {
         display_msg("Failed to determine device's codename");

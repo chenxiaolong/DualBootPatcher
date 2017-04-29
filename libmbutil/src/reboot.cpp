@@ -72,25 +72,14 @@ bool reboot_via_framework(bool show_confirm_dialog)
 
 bool reboot_via_init(const char *reboot_arg)
 {
-    // The length of the prefix + reboot_arg + NULL terminator cannot exceed
-    // PROP_VALUE_MAX
-    char buf[PROP_VALUE_MAX - 7 - 1];
-
-    if (!reboot_arg) {
-        reboot_arg = "";
+    std::string prop_value{"reboot,"};
+    if (reboot_arg) {
+        prop_value += reboot_arg;
     }
 
-    int ret = snprintf(buf, sizeof(buf), "reboot,%s", reboot_arg);
-    if (ret < 0) {
-        return false;
-    } else if (ret >= (int) sizeof(buf)) {
-        LOGE("Reboot argument %d bytes too long",
-             ret + 1 - PROP_VALUE_MAX);
-        return false;
-    }
-
-    if (property_set(ANDROID_RB_PROPERTY, buf) < 0) {
-        LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
+    if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
+        LOGE("Failed to set property '%s'='%s'",
+             ANDROID_RB_PROPERTY, prop_value.c_str());
         return false;
     }
 
@@ -112,8 +101,11 @@ bool reboot_via_syscall(const char *reboot_arg)
 
 bool shutdown_via_init()
 {
-    if (property_set(ANDROID_RB_PROPERTY, "shutdown,") < 0) {
-        LOGE("Failed to set '%s' property", ANDROID_RB_PROPERTY);
+    constexpr char prop_value[] = "shutdown,";
+
+    if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
+        LOGE("Failed to set property '%s'='%s'",
+             ANDROID_RB_PROPERTY, prop_value);
         return false;
     }
 

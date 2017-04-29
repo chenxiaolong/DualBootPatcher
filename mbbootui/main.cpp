@@ -319,10 +319,8 @@ static void load_device_config()
 static void load_other_config()
 {
     // Get Android version (needed for pattern input)
-    std::string value;
-    mb::util::file_get_property("/raw/system/build.prop",
-                                "ro.build.version.sdk", &value, "0");
-    mb::util::str_to_snum(value.c_str(), 10, &tw_android_sdk_version);
+    tw_android_sdk_version = mb::util::property_file_get_snum<int>(
+            "/raw/system/build.prop", "ro.build.version.sdk", 0);
 }
 
 static void log_startup()

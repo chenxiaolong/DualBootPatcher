@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -20,35 +20,22 @@
 #include "mbutil/properties.h"
 
 #include <memory>
+#include <mutex>
 #include <vector>
+
 #include <cstdio>
 #include <cstring>
-
-#include <pthread.h>
-#include <sys/stat.h>
-
-#if __ANDROID_API__ >= 21
-#include <dlfcn.h>
-#endif
 
 #include "mbcommon/common.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/finally.h"
 #include "mbutil/string.h"
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 
-#if !DYNAMICALLY_LINKED
-#define __system_property_get       mb__system_property_get
-#define __system_property_set       mb__system_property_set
-#define __system_property_find      mb__system_property_find
-#define __system_property_read      mb__system_property_read
-#define __system_property_find_nth  mb__system_property_find_nth
-#define __system_property_foreach   mb__system_property_foreach
-#endif
+typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
 namespace mb
 {
@@ -56,318 +43,214 @@ namespace util
 {
 
 static bool initialized = false;
-static pthread_mutex_t initialized_lock = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex initialized_lock;
 
-#if DYNAMICALLY_LINKED
-static const char *libc_path = nullptr;
-static void *libc_handle = nullptr;
-static void *SYMBOL__system_property_get = nullptr;
-static void *SYMBOL__system_property_set = nullptr;
-static void *SYMBOL__system_property_find = nullptr;
-static void *SYMBOL__system_property_read = nullptr;
-static void *SYMBOL__system_property_find_nth = nullptr;
-static void *SYMBOL__system_property_foreach = nullptr;
-
-static void detect_libc(void)
-{
-    if (libc_path) {
-        return;
-    }
-
-    struct stat sb;
-    if (stat("/sbin/recovery", &sb) == 0) {
-        if (stat("/sbin/libc.so", &sb) == 0) {
-            // TWRP
-            libc_path = "/sbin/libc.so";
-        } else {
-            // Custom libc.so if recovery is statically linked
-            libc_path = "/tmp/libc.so";
-        }
-    } else {
-        libc_path = "/system/lib/libc.so";
-    }
-}
-
-static void *get_libc_handle(void)
-{
-    detect_libc();
-
-    void *handle = dlopen(libc_path, RTLD_LOCAL);
-    if (!handle) {
-        LOGE("%s: Failed to dlopen: %s", libc_path, dlerror());
-    }
-
-    return handle;
-}
-
-static void *get_libc_symbol(const char *name)
-{
-    if (!libc_handle) {
-        return nullptr;
-    }
-
-    void *symbol = dlsym(libc_handle, name);
-    if (!symbol) {
-        LOGE("Failed to dlsym %s: %s", name, dlerror());
-    }
-
-    return symbol;
-}
-
-static void dlopen_libc(void)
-{
-    if (libc_handle) {
-        return;
-    }
-
-    libc_handle = get_libc_handle();
-    if (!libc_handle) {
-        return;
-    }
-
-    SYMBOL__system_property_get = get_libc_symbol("__system_property_get");
-    SYMBOL__system_property_set = get_libc_symbol("__system_property_set");
-    SYMBOL__system_property_find = get_libc_symbol("__system_property_find");
-    SYMBOL__system_property_read = get_libc_symbol("__system_property_read");
-    SYMBOL__system_property_find_nth = get_libc_symbol("__system_property_find_nth");
-    SYMBOL__system_property_foreach = get_libc_symbol("__system_property_foreach");
-}
-
-MB_UNUSED
-static void dlclose_libc(void)
-{
-    if (libc_handle) {
-        dlclose(libc_handle);
-        libc_handle = nullptr;
-    }
-}
-#else
 void initialize_properties()
 {
-    pthread_mutex_lock(&initialized_lock);
+    std::lock_guard<std::mutex> lock(initialized_lock);
+
     if (!initialized) {
         mb__system_properties_init();
         initialized = true;
     }
-    pthread_mutex_unlock(&initialized_lock);
-}
-#endif
-
-int libc_system_property_get(const char *name, char *value)
-{
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_get) {
-        value[0] = '\0';
-        return 0;
-    }
-
-    auto __system_property_get =
-            reinterpret_cast<int (*)(const char *, char *)>(
-                    SYMBOL__system_property_get);
-#else
-    initialize_properties();
-#endif
-
-    return __system_property_get(name, value);
 }
 
 int libc_system_property_set(const char *key, const char *value)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_set) {
-        return -1;
-    }
-
-    auto __system_property_set =
-            reinterpret_cast<int (*)(const char *, const char *)>(
-                    SYMBOL__system_property_set);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_set(key, value);
+    return mb__system_property_set(key, value);
 }
 
 const prop_info *libc_system_property_find(const char *name)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_find) {
-        return nullptr;
-    }
-
-    auto __system_property_find =
-            reinterpret_cast<const prop_info * (*)(const char *)>(
-                    SYMBOL__system_property_find);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_find(name);
+    return mb__system_property_find(name);
 }
 
-int libc_system_property_read(const prop_info *pi, char *name, char *value)
+void libc_system_property_read_callback(
+        const prop_info *pi,
+        void (*callback)(void *cookie, const char *name, const char *value,
+                         uint32_t serial),
+        void *cookie)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_read) {
-        name[0] = '\0';
-        value[0] = '\0';
-        return 0;
-    }
-
-    auto __system_property_read =
-            reinterpret_cast<int (*)(const prop_info *, char *, char *)>(
-                    SYMBOL__system_property_read);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_read(pi, name, value);
-}
-
-const prop_info *libc_system_property_find_nth(unsigned n)
-{
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_find_nth) {
-        return nullptr;
-    }
-
-    auto __system_property_find_nth =
-            reinterpret_cast<const prop_info * (*)(unsigned)>(
-                    SYMBOL__system_property_find_nth);
-#else
-    initialize_properties();
-#endif
-
-    return __system_property_find_nth(n);
+    return mb__system_property_read_callback(pi, callback, cookie);
 }
 
 int libc_system_property_foreach(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie)
 {
-#if DYNAMICALLY_LINKED
-    dlopen_libc();
-    if (!SYMBOL__system_property_foreach) {
-        return -1;
-    }
-
-    auto __system_property_foreach =
-            reinterpret_cast<int (*)(void (*)(const prop_info *, void *), void*)>(
-                    SYMBOL__system_property_foreach);
-#else
     initialize_properties();
-#endif
 
-    return __system_property_foreach(propfn, cookie);
+    return mb__system_property_foreach(propfn, cookie);
 }
 
-// BEGIN: Code partially based on libcutils properties.c
-
-int property_get(const char *key, char *value_out, const char *default_value)
+bool libc_system_property_wait(const prop_info *pi,
+                               uint32_t old_serial,
+                               uint32_t *new_serial_ptr,
+                               const struct timespec *relative_timeout)
 {
-    int n = libc_system_property_get(key, value_out);
+    initialize_properties();
 
-    if (n > 0) {
-        return n;
-    } else {
-        n = strlen(default_value);
-        if (n >= PROP_VALUE_MAX) {
-            n = PROP_VALUE_MAX - 1;
-        }
-        memcpy(value_out, default_value, n);
-        value_out[n] = '\0';
+    return mb__system_property_wait(pi, old_serial, new_serial_ptr,
+                                    relative_timeout);
+}
+
+// Helper functions
+
+static bool string_to_bool(const std::string &str, bool &value_out)
+{
+    if (str == "1"
+            || str == "y"
+            || str == "yes"
+            || str == "true"
+            || str == "on") {
+        value_out = true;
+        return true;
+    } else if (str == "0"
+            || str == "n"
+            || str == "no"
+            || str == "false"
+            || str == "off") {
+        value_out = false;
+        return true;
     }
 
-    return n;
+    return false;
 }
 
-int property_set(const char *key, const char *value)
+static void read_property(const prop_info *pi, std::string &name_out,
+                          std::string &value_out)
 {
-    return libc_system_property_set(key, value);
+    using KeyValuePair = std::pair<std::string, std::string>;
+    KeyValuePair ctx;
+
+    libc_system_property_read_callback(
+            pi, [](void *cookie, const char *name, const char *value,
+                   uint32_t serial) {
+        (void) serial;
+        auto *kvp = static_cast<KeyValuePair *>(cookie);
+        kvp->first = name;
+        kvp->second = value;
+    }, &ctx);
+
+    name_out = std::move(ctx.first);
+    value_out = std::move(ctx.second);
 }
 
-bool property_get_bool(const char *key, bool default_value)
+bool property_get(const std::string &key, std::string &value_out)
 {
-    char buf[PROP_VALUE_MAX];
-    bool result = default_value;
-
-    int n = property_get(key, buf, "");
-    if (n == 1) {
-        if (buf[0] == '0' || buf[0] == 'n') {
-            result = false;
-        } else if (buf[0] == '1' || buf[0] == 'y') {
-            result = true;
-        }
-    } else if (n > 1) {
-         if (strcmp(buf, "no") == 0
-                || strcmp(buf, "false") == 0
-                || strcmp(buf, "off") == 0) {
-            result = false;
-        } else if (strcmp(buf, "yes") == 0
-                || strcmp(buf, "true") == 0
-                || strcmp(buf, "on") == 0) {
-            result = true;
-        }
+    const prop_info *pi = libc_system_property_find(key.c_str());
+    if (!pi) {
+        return false;
     }
 
-    return result;
-}
-
-struct property_list_cb_data
-{
-    property_list_cb propfn;
-    void *cookie;
-};
-
-static void property_list_callback(const prop_info *pi, void *cookie)
-{
-    char name[PROP_NAME_MAX];
-    char value[PROP_VALUE_MAX];
-    property_list_cb_data *data = static_cast<property_list_cb_data *>(cookie);
-
-    libc_system_property_read(pi, name, value);
-    data->propfn(name, value, data->cookie);
-}
-
-int property_list(property_list_cb propfn, void *cookie)
-{
-    property_list_cb_data data = { propfn, cookie };
-    return libc_system_property_foreach(property_list_callback, &data);
-}
-
-// END: Code partially based on libcutils properties.c
-
-static void _add_property(const prop_info *pi, void *cookie)
-{
-    char name[PROP_NAME_MAX];
-    char value[PROP_VALUE_MAX];
-    std::unordered_map<std::string, std::string> *props =
-            static_cast<std::unordered_map<std::string, std::string> *>(cookie);
-
-    if (libc_system_property_read(pi, name, value) >= 0) {
-        (*props)[name] = value;
-    }
-}
-
-bool get_all_properties(std::unordered_map<std::string, std::string> *map)
-{
-    std::unordered_map<std::string, std::string> props;
-    libc_system_property_foreach(&_add_property, &props);
-    map->swap(props);
+    std::string name;
+    read_property(pi, name, value_out);
     return true;
 }
 
-bool file_get_property(const std::string &path,
-                       const std::string &key,
-                       std::string *out,
-                       const std::string &default_value)
+std::string property_get_string(const std::string &key,
+                                const std::string &default_value)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+    std::string value;
+
+    if (property_get(key, value) && !value.empty()) {
+        return value;
+    }
+
+    return default_value;
+}
+
+bool property_get_bool(const std::string &key, bool default_value)
+{
+    std::string value;
+    bool result;
+
+    if (property_get(key, value) && string_to_bool(value, result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+bool property_set(const std::string &key, const std::string &value)
+{
+    return libc_system_property_set(key.c_str(), value.c_str()) == 0;
+}
+
+bool property_set_direct(const std::string &key, const std::string &value)
+{
+    initialize_properties();
+
+    prop_info *pi = const_cast<prop_info *>(
+            mb__system_property_find(key.c_str()));
+    int ret;
+
+    if (pi) {
+        ret = mb__system_property_update(pi, value.c_str(), value.size());
+    } else {
+        ret = mb__system_property_add(key.c_str(), key.size(), value.c_str(),
+                                      value.size());
+    }
+
+    return ret == 0;
+}
+
+bool property_list(PropertyListCb prop_fn, void *cookie)
+{
+    struct PropListCtx
+    {
+        PropertyListCb prop_fn;
+        void *cookie;
+    };
+
+    PropListCtx ctx{ prop_fn, cookie };
+
+    return libc_system_property_foreach(
+            [](const prop_info *pi, void *cookie) {
+        auto *ctx = static_cast<PropListCtx *>(cookie);
+        std::string name;
+        std::string value;
+
+        read_property(pi, name, value);
+        ctx->prop_fn(name, value, ctx->cookie);
+    }, &ctx);
+}
+
+bool property_get_all(std::unordered_map<std::string, std::string> &map)
+{
+    return libc_system_property_foreach(
+            [](const prop_info *pi, void *cookie) {
+        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        std::string name;
+        std::string value;
+
+        read_property(pi, name, value);
+        (*map)[name] = value;
+    }, &map);
+}
+
+// Properties file functions
+
+enum class PropIterAction
+{
+    CONTINUE,
+    STOP,
+};
+
+typedef PropIterAction (*PropIterCb)(const std::string &key,
+                                     const std::string &value,
+                                     void *cookie);
+
+static bool iterate_property_file(const std::string &path, PropIterCb cb,
+                                  void *cookie)
+{
+    ScopedFILE fp(fopen(path.c_str(), "r"), &fclose);
     if (!fp) {
         return false;
     }
@@ -381,7 +264,7 @@ bool file_get_property(const std::string &path,
     });
 
     while ((read = getline(&line, &len, fp.get())) >= 0) {
-        if (line[0] == '\0' || line[0] == '#') {
+        if (read == 0 || line[0] == '#') {
             // Skip empty and comment lines
             continue;
         }
@@ -392,75 +275,111 @@ bool file_get_property(const std::string &path,
             continue;
         }
 
-        if ((size_t)(equals - line) != key.size()) {
-            // Key is not the same length
-            continue;
+        *equals = '\0';
+
+        if (line[read - 1] == '\n') {
+            line[read - 1] = '\0';
         }
 
-        if (mb_starts_with(line, key.c_str())) {
-            // Strip newline
-            if (line[read - 1] == '\n') {
-                line[read - 1] = '\0';
-                --read;
-            }
-
-            out->assign(equals + 1);
+        if (cb(line, equals + 1, cookie) == PropIterAction::STOP) {
             return true;
         }
     }
 
-    *out = default_value;
-    return true;
+    return !ferror(fp.get());
 }
 
-bool file_get_all_properties(const std::string &path,
-                             std::unordered_map<std::string, std::string> *map)
+bool property_file_get(const std::string &path, const std::string &key,
+                       std::string &value_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
-    if (!fp) {
-        return false;
+    struct Ctx
+    {
+        const std::string *key;
+        std::string *value_out;
+        bool found;
+    };
+
+    Ctx ctx{&key, &value_out, false};
+
+    bool ret = iterate_property_file(
+            path, [](const std::string &key, const std::string &value,
+                     void *cookie){
+        auto *ctx = static_cast<Ctx *>(cookie);
+        if (key == *ctx->key) {
+            *ctx->value_out = value;
+            ctx->found = true;
+            return PropIterAction::STOP;
+        }
+        return PropIterAction::CONTINUE;
+    }, &ctx);
+
+    if (!ctx.found) {
+        value_out.clear();
     }
 
-    char *line = nullptr;
-    size_t len = 0;
-    ssize_t read;
-
-    auto free_line = finally([&] {
-        free(line);
-    });
-
-    std::unordered_map<std::string, std::string> tempMap;
-
-    while ((read = getline(&line, &len, fp.get())) >= 0) {
-        if (line[0] == '\0' || line[0] == '#') {
-            // Skip empty and comment lines
-            continue;
-        }
-
-        char *equals = strchr(line, '=');
-        if (!equals) {
-            // No equals in line
-            continue;
-        }
-
-        // Strip newline
-        if (line[read - 1] == '\n') {
-            line[read - 1] = '\0';
-            --read;
-        }
-
-        *equals = '\0';
-        tempMap[line] = equals + 1;
-    }
-
-    map->swap(tempMap);
-    return true;
+    return ret;
 }
 
-bool file_write_properties(const std::string &path,
-                           const std::unordered_map<std::string, std::string> &map)
+std::string property_file_get_string(const std::string &path,
+                                     const std::string &key,
+                                     const std::string &default_value)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "wb"));
+    std::string value;
+
+    if (property_file_get(path, key, value) && !value.empty()) {
+        return value;
+    }
+
+    return default_value;
+}
+
+bool property_file_get_bool(const std::string &path, const std::string &key,
+                            bool default_value)
+{
+    std::string value;
+    bool result;
+
+    if (property_file_get(path, key, value) && string_to_bool(value, result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+bool property_file_list(const std::string &path, PropertyListCb prop_fn,
+                        void *cookie)
+{
+    struct Ctx
+    {
+        PropertyListCb prop_fn;
+        void *cookie;
+    };
+
+    Ctx ctx{prop_fn, cookie};
+
+    return iterate_property_file(
+            path, [](const std::string &key, const std::string &value,
+                     void *cookie){
+        auto *ctx = static_cast<Ctx *>(cookie);
+        ctx->prop_fn(key, value, ctx->cookie);
+        return PropIterAction::CONTINUE;
+    }, &ctx);
+}
+
+bool property_file_get_all(const std::string &path,
+                           std::unordered_map<std::string, std::string> &map)
+{
+    return property_file_list(path,
+            [](const std::string &key, const std::string &value, void *cookie) {
+        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        (*map)[key] = value;
+    }, &map);
+}
+
+bool property_file_write_all(const std::string &path,
+                             const std::unordered_map<std::string, std::string> &map)
+{
+    ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
         return false;
     }

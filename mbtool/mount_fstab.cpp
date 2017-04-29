@@ -414,11 +414,10 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
 
     bool use_fuse_exfat =
             util::file_find_one_of("/init.orig", { "EXFAT   ", "exfat" });
-    std::string value;
-    if (util::file_get_property(
-            DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, &value, "false")) {
-        LOGD("%s contains fuse-exfat override: %s",
-             DEFAULT_PROP_PATH, value.c_str());
+    std::string value = util::property_file_get_string(
+            DEFAULT_PROP_PATH, PROP_USE_FUSE_EXFAT, "");
+    if (!value.empty()) {
+        LOGD("fuse-exfat override: %s", value.c_str());
         if (value == "true") {
             use_fuse_exfat = true;
         } else if (value == "false") {
@@ -427,9 +426,6 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
             LOGW("Invalid '" PROP_USE_FUSE_EXFAT "' value: '%s'",
                  value.c_str());
         }
-    } else {
-        LOGW("%s: Failed to read properties: %s",
-             DEFAULT_PROP_PATH, strerror(errno));
     }
 
     const char *fstype;

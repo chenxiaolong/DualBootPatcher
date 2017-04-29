@@ -1091,7 +1091,7 @@ static bool v3_mb_get_installed_roms(int fd, const v3::Request *msg)
         build_prop += "/build.prop";
 
         std::unordered_map<std::string, std::string> properties;
-        util::file_get_all_properties(build_prop, &properties);
+        util::property_file_get_all(build_prop, properties);
 
         if (properties.find("ro.build.version.release") != properties.end()) {
             const std::string &version = properties["ro.build.version.release"];

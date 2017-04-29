@@ -231,9 +231,8 @@ static bool set_kernel_properties()
     };
 
     for (auto it = prop_map; it ->src_prop; ++it) {
-        char value[PROP_VALUE_MAX];
-        int ret = ::property_get(it->src_prop, value);
-        property_set(it->dst_prop, (ret > 0) ? value : it->default_value);
+        std::string value = ::property_get(it->src_prop);
+        property_set(it->dst_prop, !value.empty() ? value : it->default_value);
     }
 
     return true;
@@ -241,9 +240,6 @@ static bool set_kernel_properties()
 
 static bool properties_setup()
 {
-    char tmp[32];
-    int fd, sz;
-
     if (!property_init()) {
         LOGW("Failed to initialize properties area");
     }
@@ -261,15 +257,6 @@ static bool properties_setup()
         LOGW("Failed to start properties service");
     }
 
-    get_property_workspace(&fd, &sz);
-    sprintf(tmp, "%d,%d", fd, sz);
-
-    // Clear FD_CLOEXEC since we want child processes to be able to set
-    // properties
-    fcntl(fd, F_SETFD, 0);
-
-    setenv("ANDROID_PROPERTY_WORKSPACE", tmp, 1);
-
     return true;
 }
 
@@ -277,10 +264,6 @@ static bool properties_cleanup()
 {
     if (!stop_property_service()) {
         LOGW("Failed to stop properties service");
-    }
-
-    if (!property_cleanup()) {
-        LOGW("Failed to clean up properties area");
     }
 
     return true;
@@ -789,11 +772,11 @@ static std::string find_fstab()
     // Try using androidboot.hardware as the fstab suffix since most devices
     // follow this scheme.
     std::string fstab("/fstab.");
-    char hardware[PROP_VALUE_MAX];
-    util::property_get("ro.hardware", hardware, "");
+    std::string hardware;
+    hardware = util::property_get_string("ro.hardware", "");
     fstab += hardware;
 
-    if (*hardware && stat(fstab.c_str(), &sb) == 0) {
+    if (!hardware.empty() && stat(fstab.c_str(), &sb) == 0) {
         return fstab;
     }
 
@@ -892,20 +875,10 @@ static std::string find_fstab()
     return std::string();
 }
 
-static unsigned long get_api_version(void)
+static unsigned long get_api_version()
 {
-    std::string api_str;
-    util::file_get_property("/system/build.prop",
-                            "ro.build.version.sdk",
-                            &api_str, "");
-
-    char *temp;
-    unsigned long api = strtoul(api_str.c_str(), &temp, 0);
-    if (*temp == '\0') {
-        return api;
-    } else {
-        return 0;
-    }
+    return util::property_file_get_unum<unsigned long>(
+            "/system/build.prop", "ro.build.version.sdk", 0);
 }
 
 static bool create_layout_version()
@@ -945,7 +918,7 @@ static bool disable_spota()
     static const char *spota_dir = "/data/security/spota";
 
     std::unordered_map<std::string, std::string> props;
-    util::file_get_all_properties("/system/build.prop", &props);
+    util::property_file_get_all("/system/build.prop", props);
 
     if (strcasecmp(props["ro.product.manufacturer"].c_str(), "samsung") != 0
             && strcasecmp(props["ro.product.brand"].c_str(), "samsung") != 0) {
