@@ -1338,9 +1338,10 @@ void mb__system_property_read_callback(const prop_info* pi,
   // TODO (dimitry): do we need compat mode for this function?
   if (__predict_false(compat_mode)) {
     uint32_t serial = mb__system_property_serial_compat(pi);
+    char name_buf[PROP_NAME_MAX];
     char value_buf[PROP_VALUE_MAX];
-    mb__system_property_read_compat(pi, nullptr, value_buf);
-    callback(cookie, pi->name, value_buf, serial);
+    mb__system_property_read_compat(pi, name_buf, value_buf);
+    callback(cookie, name_buf, value_buf, serial);
     return;
   }
 #endif
