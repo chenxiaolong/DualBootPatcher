@@ -38,6 +38,15 @@
     - Z00T
     - ASUS_Z011
     - z00t
+    - Z00TD
+    - Z00U
+    - Z00UD
+    - Z00UDH
+    - Z00UDB
+    - Z011
+    - Z011D
+    - Z011DD
+    
   architecture: arm64-v8a
 
   block_devs:
