@@ -81,6 +81,19 @@ set(MBTOOL_RECOVERY_SOURCES
 )
 
 set_source_files_properties(
+    daemon_v3.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-missing-declarations"
+)
+
+set_source_files_properties(
+    sepolpatch.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-keyword-macro"
+)
+
+set_source_files_properties(
+    auditd.cpp
     miniadbd.cpp
     external/audit/libaudit.h
     external/audit/libaudit.cpp
