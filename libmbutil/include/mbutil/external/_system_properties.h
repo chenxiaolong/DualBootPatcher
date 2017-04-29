@@ -138,6 +138,7 @@ uint32_t mb__system_property_wait_any(uint32_t old_serial);
 /*  Compatibility functions to support using an old init with a new libc,
  ** mostly for the OTA updater binary.  These can be deleted once OTAs from
  ** a pre-K release no longer needed to be supported. */
+uint32_t mb__system_property_serial_compat(const prop_info *pi);
 const prop_info *mb__system_property_find_compat(const char *name);
 int mb__system_property_read_compat(const prop_info *pi, char *name, char *value);
 int mb__system_property_foreach_compat(

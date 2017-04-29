@@ -70,6 +70,12 @@ typedef struct prop_info_compat prop_info_compat;
 
 extern prop_area *mb__system_property_area__;
 
+__LIBC_HIDDEN__ uint32_t mb__system_property_serial_compat(const prop_info *_pi)
+{
+    const prop_info_compat *pi = (const prop_info_compat *) _pi;
+    return pi->serial;
+}
+
 __LIBC_HIDDEN__ const prop_info *mb__system_property_find_compat(const char *name)
 {
     prop_area_compat *pa = (prop_area_compat *)mb__system_property_area__;
