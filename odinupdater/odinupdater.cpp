@@ -328,14 +328,19 @@ static bool load_block_devs()
         }
     }
 
+#if !DEBUG_SKIP_FLASH_SYSTEM
     if (system_block_dev.empty()) {
         error("%s: No system block device specified", DEVICE_JSON_FILE);
         return false;
     }
+#endif
+
+#if !DEBUG_SKIP_FLASH_BOOT
     if (boot_block_dev.empty()) {
         error("%s: No boot block device specified", DEVICE_JSON_FILE);
         return false;
     }
+#endif
 
     info("System block device: %s", system_block_dev.c_str());
     info("Boot block device: %s", boot_block_dev.c_str());
