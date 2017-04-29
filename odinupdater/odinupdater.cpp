@@ -245,8 +245,8 @@ static bool load_sales_code()
 
 static bool load_block_devs()
 {
-    system_block_dev[0] = '\0';
-    boot_block_dev[0] = '\0';
+    system_block_dev.clear();
+    boot_block_dev.clear();
 
     Device *device;
 
@@ -328,14 +328,19 @@ static bool load_block_devs()
         }
     }
 
+#if !DEBUG_SKIP_FLASH_SYSTEM
     if (system_block_dev.empty()) {
         error("%s: No system block device specified", DEVICE_JSON_FILE);
         return false;
     }
+#endif
+
+#if !DEBUG_SKIP_FLASH_BOOT
     if (boot_block_dev.empty()) {
         error("%s: No boot block device specified", DEVICE_JSON_FILE);
         return false;
     }
+#endif
 
     info("System block device: %s", system_block_dev.c_str());
     info("Boot block device: %s", boot_block_dev.c_str());
@@ -822,9 +827,7 @@ static bool flash_zip()
         return false;
     }
 
-    ui_print("------ EXPERIMENTAL ------");
     ui_print("Patched Odin image flasher");
-    ui_print("------ EXPERIMENTAL ------");
 
     // Load sales code from EFS partition
     if (!load_sales_code()) {
@@ -852,11 +855,17 @@ static bool flash_zip()
 #else
     ui_print("Flashing system image");
     result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
-    if (result != ExtractResult::OK) {
+    switch (result) {
+    case ExtractResult::ERROR:
         ui_print("Failed to flash system image");
         return false;
+    case ExtractResult::MISSING:
+        ui_print("[WARNING] System image not found");
+        break;
+    case ExtractResult::OK:
+        ui_print("Successfully flashed system image");
+        break;
     }
-    ui_print("Successfully flashed system image");
 #endif
 
     // Flash CSC from cache.img.ext4
