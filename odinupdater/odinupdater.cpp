@@ -857,11 +857,17 @@ static bool flash_zip()
 #else
     ui_print("Flashing system image");
     result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
-    if (result != ExtractResult::OK) {
+    switch (result) {
+    case ExtractResult::ERROR:
         ui_print("Failed to flash system image");
         return false;
+    case ExtractResult::MISSING:
+        ui_print("[WARNING] System image not found");
+        break;
+    case ExtractResult::OK:
+        ui_print("Successfully flashed system image");
+        break;
     }
-    ui_print("Successfully flashed system image");
 #endif
 
     // Flash CSC from cache.img.ext4
