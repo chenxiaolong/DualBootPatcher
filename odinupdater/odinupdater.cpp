@@ -827,9 +827,7 @@ static bool flash_zip()
         return false;
     }
 
-    ui_print("------ EXPERIMENTAL ------");
     ui_print("Patched Odin image flasher");
-    ui_print("------ EXPERIMENTAL ------");
 
     // Load sales code from EFS partition
     if (!load_sales_code()) {
