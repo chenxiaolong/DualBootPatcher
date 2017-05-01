@@ -17,6 +17,7 @@ set(files
     lg.yml
     meizu.yml
     motorola.yml
+    nokia.yml
     nexus.yml
     nubia.yml
     oneplus.yml
