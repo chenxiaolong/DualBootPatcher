@@ -43,6 +43,8 @@
 
 #define TOC_NAME_LEN(toc)       ((toc) >> 24)
 #define TOC_TO_INFO(area, toc)  ((prop_info_compat*) (((char*) area) + ((toc) & 0xFFFFFF)))
+#define SERIAL_DIRTY(serial)    ((serial)&1)
+#define SERIAL_VALUE_LEN(serial) ((serial) >> 24)
 
 struct prop_area_compat {
     unsigned volatile count;
@@ -67,6 +69,12 @@ struct prop_info_compat {
 typedef struct prop_info_compat prop_info_compat;
 
 extern prop_area *mb__system_property_area__;
+
+__LIBC_HIDDEN__ uint32_t mb__system_property_serial_compat(const prop_info *_pi)
+{
+    const prop_info_compat *pi = (const prop_info_compat *) _pi;
+    return pi->serial;
+}
 
 __LIBC_HIDDEN__ const prop_info *mb__system_property_find_compat(const char *name)
 {

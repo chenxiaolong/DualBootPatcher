@@ -88,7 +88,7 @@ std::unordered_map<std::string, std::string> RecoveryInstaller::get_properties()
 {
     // Copy the recovery's properties
     std::unordered_map<std::string, std::string> props;
-    util::get_all_properties(&props);
+    util::property_get_all(props);
     return props;
 }
 

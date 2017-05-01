@@ -102,21 +102,21 @@ static bool initialize_adb()
     // Use TWRP's legacy property workspace hack. TouchWiz's sh binary segfaults
     // if there's no property service (i.e. no /dev/__properties__ and no valid
     // ANDROID_PROPERTY_WORKSPACE environment variable). This doesn't actually
-    // start a "real" properties service (getprop and setprop will never work),
-    // but it's enough to prevent the segfaults.
+    // start a "real" properties service (setprop will never work), but it's
+    // enough to prevent the segfaults.
     char tmp[32];
     int propfd, propsz;
     legacy_properties_init();
 
     // Load /default.prop
     std::unordered_map<std::string, std::string> props;
-    util::file_get_all_properties("/default.prop", &props);
+    util::property_file_get_all("/default.prop", props);
     for (auto const &pair : props) {
         legacy_property_set(pair.first.c_str(), pair.second.c_str());
     }
     // Load /system/build.prop
     props.clear();
-    util::file_get_all_properties("/system/build.prop", &props);
+    util::property_file_get_all("/system/build.prop", props);
     for (auto const &pair : props) {
         legacy_property_set(pair.first.c_str(), pair.second.c_str());
     }
