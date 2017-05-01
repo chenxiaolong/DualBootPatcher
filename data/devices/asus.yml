@@ -36,6 +36,17 @@
   codenames:
     - ASUS_Z00T
     - Z00T
+    - ASUS_Z011
+    - z00t
+    - Z00TD
+    - Z00U
+    - Z00UD
+    - Z00UDH
+    - Z00UDB
+    - Z011
+    - Z011D
+    - Z011DD
+    
   architecture: arm64-v8a
 
   block_devs:
@@ -62,3 +73,67 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p38
+      
+- name: ASUS Zenfone 2 Laser - ZE550KL
+  id: Z00L
+  codenames:
+    - ASUS_Z00L
+    - Z00L
+    - ASUS_Z00L_63
+    - ASUS_Z00LD
+    - ASUS_Z00L_93
+    - asus_zool_93
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p45
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p44
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p37
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p38
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p41
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi

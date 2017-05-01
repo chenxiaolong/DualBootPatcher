@@ -8,10 +8,6 @@ include_directories(${MBP_LIBARCHIVE_INCLUDES})
 include_directories(${MBP_LIBSEPOL_INCLUDES})
 include_directories(${MBP_OPENSSL_INCLUDES})
 
-# If enabled, util/properties.cpp will try to dlopen libc.so to read/write
-# properties
-#add_definitions(-DDYNAMICALLY_LINKED)
-
 set(MBUTIL_SOURCES
     src/autoclose/dir.cpp
     src/autoclose/file.cpp
@@ -43,6 +39,12 @@ set(MBUTIL_SOURCES
     src/external/system_properties_compat.c
     external/android_reboot.c
     external/mntent.c
+)
+
+set_source_files_properties(
+    src/external/system_properties.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-zero-length-array -Wno-gnu-statement-expression -Wno-vla-extension"
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)

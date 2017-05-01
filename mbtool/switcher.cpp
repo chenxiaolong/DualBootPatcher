@@ -21,6 +21,8 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -126,7 +128,7 @@ bool checksums_read(std::unordered_map<std::string, std::string> *props)
 {
     std::string checksums_path = get_raw_path(CHECKSUMS_PATH);
 
-    if (!util::file_get_all_properties(checksums_path, props)) {
+    if (!util::property_file_get_all(checksums_path, *props)) {
         LOGE("%s: Failed to load properties", checksums_path.c_str());
         return false;
     }
@@ -161,7 +163,7 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props)
              checksums_path.c_str(), strerror(errno));
     }
 
-    if (!util::file_write_properties(checksums_path, props)) {
+    if (!util::property_file_write_all(checksums_path, props)) {
         LOGW("%s: Failed to write new properties: %s",
              checksums_path.c_str(), strerror(errno));
         return false;

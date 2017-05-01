@@ -10,6 +10,7 @@ set(files
     elephone.yml
     google.yml
     huawei.yml
+    infinix.yml
     jiayu.yml
     leeco.yml
     lenovo.yml
@@ -19,6 +20,7 @@ set(files
     nexus.yml
     nubia.yml
     oneplus.yml
+    oppo.yml
     oukitel.yml
     pantech.yml
     quantum.yml
@@ -36,6 +38,7 @@ set(files
     xiaomi.yml
     yu.yml
     zte.yml
+    zuk.yml
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")

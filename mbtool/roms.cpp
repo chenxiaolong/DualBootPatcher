@@ -359,18 +359,15 @@ std::shared_ptr<Rom> Roms::get_current_rom()
     roms.add_installed();
 
     // This is set if mbtool is handling the boot process
-    char prop_id[PROP_VALUE_MAX];
-    util::property_get(PROP_MULTIBOOT_ROM_ID, prop_id, "");
+    std::string prop_id = util::property_get_string(PROP_MULTIBOOT_ROM_ID, {});
     // This is necessary for the daemon to get a correct result before Android
     // boots (eg. for the boot UI)
-    if (!prop_id[0]) {
-        std::string temp;
-        util::file_get_property(DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID,
-                                &temp, std::string());
-        strlcpy(prop_id, temp.c_str(), sizeof(prop_id));
+    if (prop_id.empty()) {
+        prop_id = util::property_file_get_string(
+                DEFAULT_PROP_PATH, PROP_MULTIBOOT_ROM_ID, {});
     }
 
-    if (prop_id[0]) {
+    if (!prop_id.empty()) {
         auto rom = roms.find_by_id(prop_id);
         if (rom) {
             return rom;

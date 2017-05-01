@@ -37,6 +37,7 @@
 #include "daemon.h"
 #include "init.h"
 #include "miniadbd.h"
+#include "properties.h"
 #include "sepolpatch.h"
 #include "signature.h"
 #include "uevent_dump.h"
@@ -79,6 +80,7 @@ struct tool tools[] = {
     { "daemon", mb::daemon_main },
     { "init", mb::init_main },
     { "miniadbd", mb::miniadbd_main },
+    { "properties", mb::properties_main },
     { "sepolpatch", mb::sepolpatch_main },
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
