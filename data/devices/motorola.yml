@@ -518,8 +518,8 @@
       - /dev/block/platform/soc/7824900.sdhci/by-name/cache
       - /dev/block/mmcblk0p52
     data:
-      - /dev/block/bootdevice/by-name/data
-      - /dev/block/platform/soc/7824900.sdhci/by-name/data
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
       - /dev/block/mmcblk0p54
     boot:
       - /dev/block/bootdevice/by-name/boot
