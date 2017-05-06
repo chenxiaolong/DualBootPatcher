@@ -314,3 +314,33 @@
       - /dev/block/sda8
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+
+- name: Samsung Galaxy Note 5 (China)
+  id: nobleltechn
+  # TODO: May be merged with china mobile once I get the list of partitions from
+  #       someone with the device
+  codenames:
+    - nobleltechn
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda16
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda17
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda18
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
