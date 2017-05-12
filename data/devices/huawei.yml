@@ -253,6 +253,35 @@
       - /dev/block/mmcblk0p28
 
 
+- name: Huawei Y635
+  id: hwY635
+  codenames:
+    - Y635-L21
+    - msm8916
+    - HuaweiY635-L21
+    - Y635
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p24
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p18
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p19     
+
+
 - name: Huawei Honor 8
   id: FRD
   codenames:
@@ -260,7 +289,7 @@
     - hi3650
     - HWFRD
   architecture: arm64-v8a
-       
+
   block_devs:
     base_dirs:
       - /dev/block/platform/hi_mci.0/by-name
@@ -279,4 +308,3 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
-      

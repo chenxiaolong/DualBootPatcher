@@ -17,6 +17,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # Visibility
         add_compile_options(-fvisibility=hidden)
 
+        # Use DT_RPATH instead of DT_RUNPATH because the latter is not transitive
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--disable-new-dtags")
+
         # Does not work on Windows:
         # https://sourceware.org/bugzilla/show_bug.cgi?id=11539
         add_compile_options(-ffunction-sections -fdata-sections)

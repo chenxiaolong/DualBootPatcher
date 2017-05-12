@@ -271,6 +271,7 @@
   codenames:
     - P1a42
     - passion_row
+    - p1a42
   architecture: arm64-v8a
 
   block_devs:
@@ -305,6 +306,7 @@
   codenames:
     - P1a41
     - passion_row
+    - p1a41
   architecture: arm64-v8a
 
   block_devs:
