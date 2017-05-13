@@ -231,7 +231,7 @@
     - msm8916
     - HuaweiY635-L21
     - Y635
-    -hwY635
+    - hwY635
   architecture: armeabi-v7a
 
   block_devs:
