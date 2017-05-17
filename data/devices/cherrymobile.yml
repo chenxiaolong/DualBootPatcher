@@ -8,6 +8,8 @@
     - S5
     - flare_s5
     - fs5
+    - CMFS5
+    - cmfs5
   architecture: arm64-v8a
  
   block_devs:
