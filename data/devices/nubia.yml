@@ -120,7 +120,6 @@
     - nx510j
   architecture: arm64-v8a
   block_devs:
-  
     base_dirs:
       - /dev/block/platform/f9824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
