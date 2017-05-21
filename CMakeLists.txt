@@ -56,7 +56,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
     set(ndk_min_version 130.0)
-    set(ndk_max_version 132.0)
+    set(ndk_max_version 142.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
@@ -65,6 +65,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
     set(ndk_version_whitelist
         130.3315539
         131.3345770
+        141.3816874
     )
 
     if(DEFINED ndk_version_whitelist
