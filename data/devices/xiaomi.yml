@@ -24,6 +24,30 @@
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p1
 
+- name: Xiaomi MI2S
+  id: aries
+  codenames:
+    - aries
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p18
 
 - name: Xiaomi Mi3W
   id: cancro
