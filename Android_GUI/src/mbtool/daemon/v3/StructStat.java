@@ -14,65 +14,65 @@ public final class StructStat extends Table {
   public void __init(int _i, ByteBuffer _bb) { bb_pos = _i; bb = _bb; }
   public StructStat __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
 
-  public long stDev() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stIno() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stMode() { int o = __offset(8); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
-  public long stNlink() { int o = __offset(10); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stUid() { int o = __offset(12); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
-  public long stGid() { int o = __offset(14); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
-  public long stRdev() { int o = __offset(16); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stSize() { int o = __offset(18); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stBlksize() { int o = __offset(20); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stBlocks() { int o = __offset(22); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stAtime() { int o = __offset(24); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stMtime() { int o = __offset(26); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
-  public long stCtime() { int o = __offset(28); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long dev() { int o = __offset(4); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long ino() { int o = __offset(6); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long mode() { int o = __offset(8); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
+  public long nlink() { int o = __offset(10); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long uid() { int o = __offset(12); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
+  public long gid() { int o = __offset(14); return o != 0 ? (long)bb.getInt(o + bb_pos) & 0xFFFFFFFFL : 0L; }
+  public long rdev() { int o = __offset(16); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long size() { int o = __offset(18); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long blksize() { int o = __offset(20); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long blocks() { int o = __offset(22); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long atime() { int o = __offset(24); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long mtime() { int o = __offset(26); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
+  public long ctime() { int o = __offset(28); return o != 0 ? bb.getLong(o + bb_pos) : 0L; }
 
   public static int createStructStat(FlatBufferBuilder builder,
-      long st_dev,
-      long st_ino,
-      long st_mode,
-      long st_nlink,
-      long st_uid,
-      long st_gid,
-      long st_rdev,
-      long st_size,
-      long st_blksize,
-      long st_blocks,
-      long st_atime,
-      long st_mtime,
-      long st_ctime) {
+      long dev,
+      long ino,
+      long mode,
+      long nlink,
+      long uid,
+      long gid,
+      long rdev,
+      long size,
+      long blksize,
+      long blocks,
+      long atime,
+      long mtime,
+      long ctime) {
     builder.startObject(13);
-    StructStat.addStCtime(builder, st_ctime);
-    StructStat.addStMtime(builder, st_mtime);
-    StructStat.addStAtime(builder, st_atime);
-    StructStat.addStBlocks(builder, st_blocks);
-    StructStat.addStBlksize(builder, st_blksize);
-    StructStat.addStSize(builder, st_size);
-    StructStat.addStRdev(builder, st_rdev);
-    StructStat.addStNlink(builder, st_nlink);
-    StructStat.addStIno(builder, st_ino);
-    StructStat.addStDev(builder, st_dev);
-    StructStat.addStGid(builder, st_gid);
-    StructStat.addStUid(builder, st_uid);
-    StructStat.addStMode(builder, st_mode);
+    StructStat.addCtime(builder, ctime);
+    StructStat.addMtime(builder, mtime);
+    StructStat.addAtime(builder, atime);
+    StructStat.addBlocks(builder, blocks);
+    StructStat.addBlksize(builder, blksize);
+    StructStat.addSize(builder, size);
+    StructStat.addRdev(builder, rdev);
+    StructStat.addNlink(builder, nlink);
+    StructStat.addIno(builder, ino);
+    StructStat.addDev(builder, dev);
+    StructStat.addGid(builder, gid);
+    StructStat.addUid(builder, uid);
+    StructStat.addMode(builder, mode);
     return StructStat.endStructStat(builder);
   }
 
   public static void startStructStat(FlatBufferBuilder builder) { builder.startObject(13); }
-  public static void addStDev(FlatBufferBuilder builder, long stDev) { builder.addLong(0, stDev, 0L); }
-  public static void addStIno(FlatBufferBuilder builder, long stIno) { builder.addLong(1, stIno, 0L); }
-  public static void addStMode(FlatBufferBuilder builder, long stMode) { builder.addInt(2, (int)stMode, (int)0L); }
-  public static void addStNlink(FlatBufferBuilder builder, long stNlink) { builder.addLong(3, stNlink, 0L); }
-  public static void addStUid(FlatBufferBuilder builder, long stUid) { builder.addInt(4, (int)stUid, (int)0L); }
-  public static void addStGid(FlatBufferBuilder builder, long stGid) { builder.addInt(5, (int)stGid, (int)0L); }
-  public static void addStRdev(FlatBufferBuilder builder, long stRdev) { builder.addLong(6, stRdev, 0L); }
-  public static void addStSize(FlatBufferBuilder builder, long stSize) { builder.addLong(7, stSize, 0L); }
-  public static void addStBlksize(FlatBufferBuilder builder, long stBlksize) { builder.addLong(8, stBlksize, 0L); }
-  public static void addStBlocks(FlatBufferBuilder builder, long stBlocks) { builder.addLong(9, stBlocks, 0L); }
-  public static void addStAtime(FlatBufferBuilder builder, long stAtime) { builder.addLong(10, stAtime, 0L); }
-  public static void addStMtime(FlatBufferBuilder builder, long stMtime) { builder.addLong(11, stMtime, 0L); }
-  public static void addStCtime(FlatBufferBuilder builder, long stCtime) { builder.addLong(12, stCtime, 0L); }
+  public static void addDev(FlatBufferBuilder builder, long dev) { builder.addLong(0, dev, 0L); }
+  public static void addIno(FlatBufferBuilder builder, long ino) { builder.addLong(1, ino, 0L); }
+  public static void addMode(FlatBufferBuilder builder, long mode) { builder.addInt(2, (int)mode, (int)0L); }
+  public static void addNlink(FlatBufferBuilder builder, long nlink) { builder.addLong(3, nlink, 0L); }
+  public static void addUid(FlatBufferBuilder builder, long uid) { builder.addInt(4, (int)uid, (int)0L); }
+  public static void addGid(FlatBufferBuilder builder, long gid) { builder.addInt(5, (int)gid, (int)0L); }
+  public static void addRdev(FlatBufferBuilder builder, long rdev) { builder.addLong(6, rdev, 0L); }
+  public static void addSize(FlatBufferBuilder builder, long size) { builder.addLong(7, size, 0L); }
+  public static void addBlksize(FlatBufferBuilder builder, long blksize) { builder.addLong(8, blksize, 0L); }
+  public static void addBlocks(FlatBufferBuilder builder, long blocks) { builder.addLong(9, blocks, 0L); }
+  public static void addAtime(FlatBufferBuilder builder, long atime) { builder.addLong(10, atime, 0L); }
+  public static void addMtime(FlatBufferBuilder builder, long mtime) { builder.addLong(11, mtime, 0L); }
+  public static void addCtime(FlatBufferBuilder builder, long ctime) { builder.addLong(12, ctime, 0L); }
   public static int endStructStat(FlatBufferBuilder builder) {
     int o = builder.endObject();
     return o;
