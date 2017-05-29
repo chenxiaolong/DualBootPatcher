@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
 
 #ifdef __ANDROID__
