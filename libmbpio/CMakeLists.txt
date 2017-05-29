@@ -1,5 +1,3 @@
-include_directories(external/android-libc)
-
 set(MBP_IO_SOURCES
     src/delete.cpp
     src/directory.cpp
@@ -31,16 +29,19 @@ endif()
 
 # Compatibility library for nftw()/ftw() on API 17
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
+    include_directories(external/android-libc)
+
     add_library(
         c_compat
         STATIC
-        external/android-libc/ftw.c
-        external/android-libc/nftw.c
+        external/android-libc/ftw.cpp
     )
 
     set_target_properties(
         c_compat
         PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED 1
         POSITION_INDEPENDENT_CODE 1
     )
 endif()
