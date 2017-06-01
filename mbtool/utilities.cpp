@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "minizip/zip.h"
 #include "minizip/ioandroid.h"
