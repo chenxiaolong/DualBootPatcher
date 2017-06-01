@@ -16,7 +16,7 @@ add_library(
 set_target_properties(
     mbbootui-minzip
     PROPERTIES
-    C_STANDARD 99
+    C_STANDARD 11
     C_STANDARD_REQUIRED 1
     POSITION_INDEPENDENT_CODE 1
 )
