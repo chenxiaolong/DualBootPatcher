@@ -58,40 +58,42 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-app
     list(APPEND variants shared)
 endif()
 
+# If this library is being built and we're building tests, then enable the
+# static library
+if(variants AND MBP_ENABLE_TESTS AND NOT static IN_LIST variants)
+    list(APPEND variants static)
+endif()
+
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbbootimg-${variant})
-    set(obj_target ${lib_target}-obj)
 
-    # Build objects
-    add_library(${obj_target} OBJECT ${MBBOOTIMG_SOURCES})
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED ${MBBOOTIMG_SOURCES})
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC ${MBBOOTIMG_SOURCES})
+    endif()
 
     # Export symbols
-    target_compile_definitions(${obj_target} PRIVATE -DMB_LIBRARY)
+    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
     # Win32 DLL export
     if(${variant} STREQUAL shared)
-        target_compile_definitions(${obj_target} PRIVATE -DMB_DYNAMIC_LINK)
+        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
     # Build with -fPIC
-    set_target_properties(${obj_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
     # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            ${obj_target}
+            ${lib_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
-    endif()
-
-    # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED $<TARGET_OBJECTS:${obj_target}>)
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC $<TARGET_OBJECTS:${obj_target}>)
     endif()
 
     # Set library name
@@ -118,43 +120,35 @@ foreach(variant ${variants})
 endforeach()
 
 # Build tests
-if(MBP_ENABLE_TESTS)
-    foreach(variant ${variants})
-        # Link against objects so we don't have to worry about hidden symbols
-        set(obj_target mbbootimg-${variant}-obj)
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbbootimg_tests
+        ${MBBOOTIMG_TESTS_SOURCES}
+    )
 
-        # Build tests
-        add_executable(
+    # Link dependencies
+    target_link_libraries(
+        mbbootimg_tests
+        mbbootimg-static
+        mbcommon-static
+        ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        ${GTEST_BOTH_LIBRARIES}
+    )
+
+    # Target C++11
+    if(NOT MSVC)
+        set_target_properties(
             mbbootimg_tests
-            ${MBBOOTIMG_TESTS_SOURCES}
-            $<TARGET_OBJECTS:${obj_target}>
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
         )
+    endif()
 
-        # Link dependencies
-        target_link_libraries(
-            mbbootimg_tests
-            mbcommon-${variant}
-            ${MBP_OPENSSL_CRYPTO_LIBRARY}
-            ${GTEST_BOTH_LIBRARIES}
-        )
-
-        # Target C++11
-        if(NOT MSVC)
-            set_target_properties(
-                mbbootimg_tests
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        # Add to ctest
-        add_test(
-            NAME mbbootimg_tests
-            COMMAND mbbootimg_tests
-        )
-
-        # Only need to build the tests once
-        break()
-    endforeach()
+    # Add to ctest
+    add_test(
+        NAME mbbootimg_tests
+        COMMAND mbbootimg_tests
+    )
 endif()
