@@ -11,16 +11,11 @@ set(MBSIGN_TESTS_SOURCES
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(MBP_TARGET_HAS_BUILDS)
     list(APPEND variants static)
-elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
-    list(APPEND variants shared)
 endif()
-
-# If this library is being built and we're building tests, then enable the
-# static library
-if(variants AND MBP_ENABLE_TESTS AND NOT static IN_LIST variants)
-    list(APPEND variants static)
+if(${MBP_BUILD_TARGET} STREQUAL hosttools)
+    list(APPEND variants shared)
 endif()
 
 # Build libraries
@@ -40,6 +35,11 @@ foreach(variant ${variants})
         PUBLIC include
         PRIVATE ${MBP_OPENSSL_INCLUDES}
     )
+
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
 
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)

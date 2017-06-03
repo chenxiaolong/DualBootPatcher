@@ -130,27 +130,33 @@ endif()
 # - MBP_TOP_LEVEL_BUILD: Whether this is a parent CMake build
 # - MBP_INTERNAL_BUILD: Whether this is a recursive CMake build
 # - MBP_TARGET_CONFIG_FILE: Config file for the current build target
+# - MBP_TARGET_HAS_BUILDS: Whether this target builds anything
 
 if(${MBP_BUILD_TARGET} STREQUAL android)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroid.cmake)
     set(MBP_TOP_LEVEL_BUILD TRUE)
     set(MBP_INTERNAL_BUILD FALSE)
+    set(MBP_TARGET_HAS_BUILDS FALSE)
 elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigDesktop.cmake)
     set(MBP_TOP_LEVEL_BUILD TRUE)
     set(MBP_INTERNAL_BUILD FALSE)
+    set(MBP_TARGET_HAS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidApp.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
+    set(MBP_TARGET_HAS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigAndroidSystem.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
+    set(MBP_TARGET_HAS_BUILDS TRUE)
 elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
     set(MBP_TARGET_CONFIG_FILE cmake/ConfigHostTools.cmake)
     set(MBP_TOP_LEVEL_BUILD FALSE)
     set(MBP_INTERNAL_BUILD TRUE)
+    set(MBP_TARGET_HAS_BUILDS TRUE)
 endif()
 
 # Screw Ubuntu's multiarch. FIND_LIBRARY_USE_LIB64_PATHS is disabled when

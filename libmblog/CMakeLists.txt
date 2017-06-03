@@ -14,8 +14,7 @@ endif()
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system
-        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+if(MBP_TARGET_HAS_BUILDS)
     list(APPEND variants static)
 endif()
 if(${MBP_BUILD_TARGET} STREQUAL android-app

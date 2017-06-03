@@ -39,7 +39,7 @@ set_source_files_properties(
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(MBP_TARGET_HAS_BUILDS)
     list(APPEND variants static)
 endif()
 # No shared version
@@ -66,6 +66,11 @@ foreach(variant ${variants})
         ${MBP_LIBSEPOL_INCLUDES}
         ${MBP_OPENSSL_INCLUDES}
     )
+
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
 
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)

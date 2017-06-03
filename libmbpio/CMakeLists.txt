@@ -49,10 +49,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
     )
 endif()
 
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system
-        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+if(MBP_TARGET_HAS_BUILDS)
     add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+
+    # Only build library if needed
+    set_target_properties(mbpio-static PROPERTIES EXCLUDE_FROM_ALL 1)
 
     target_include_directories(
         mbpio-static

@@ -65,20 +65,13 @@ add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
+if(MBP_TARGET_HAS_BUILDS)
     list(APPEND variants static)
 endif()
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop
         OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants shared)
-endif()
-
-# If this library is being built and we're building tests, then enable the
-# static library
-if(variants AND MBP_ENABLE_TESTS AND NOT static IN_LIST variants)
-    list(APPEND variants static)
 endif()
 
 # Build libraries
