@@ -1,7 +1,3 @@
-include_directories(${MBP_OPENSSL_INCLUDES})
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
 set(MBBOOTIMG_SOURCES
     # Core
     src/entry.cpp
@@ -46,8 +42,6 @@ set(MBBOOTIMG_TESTS_SOURCES
     tests/format/test_sony_elf_writer.cpp
 )
 
-add_definitions(-DMBBOOTIMG_BUILD)
-
 set(variants)
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -75,6 +69,19 @@ foreach(variant ${variants})
         add_library(${lib_target} STATIC ${MBBOOTIMG_SOURCES})
     endif()
 
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC
+        include
+        PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/include
+        ${MBP_OPENSSL_INCLUDES}
+    )
+
+    # Allow using private headers
+    target_compile_definitions(${lib_target} PRIVATE -DMBBOOTIMG_BUILD)
+
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
@@ -100,13 +107,11 @@ foreach(variant ${variants})
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbbootimg)
 
     # Link dependencies
-    if(${variant} STREQUAL shared)
-        target_link_libraries(
-            ${lib_target}
-            mbcommon-${variant}
-            ${MBP_OPENSSL_CRYPTO_LIBRARY}
-        )
-    endif()
+    target_link_libraries(
+        ${lib_target}
+        PUBLIC mbcommon-${variant}
+        PRIVATE ${MBP_OPENSSL_CRYPTO_LIBRARY}
+    )
 
     # Install shared library
     if(${variant} STREQUAL shared)
@@ -125,6 +130,20 @@ if(variants AND MBP_ENABLE_TESTS)
     add_executable(
         mbbootimg_tests
         ${MBBOOTIMG_TESTS_SOURCES}
+    )
+
+    # Includes
+    target_include_directories(
+        mbbootimg_tests
+        PRIVATE
+        ${GTEST_INCLUDE_DIRS}
+    )
+
+    # Allow using private headers
+    target_compile_definitions(
+        mbbootimg_tests
+        PRIVATE
+        -DMBBOOTIMG_BUILD
     )
 
     # Link dependencies

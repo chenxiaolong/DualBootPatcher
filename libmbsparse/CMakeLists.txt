@@ -1,96 +1,122 @@
-if(MBP_ENABLE_TESTS)
-    include_directories(${GTEST_INCLUDE_DIRS})
-endif()
-
 set(MBSPARSE_SOURCES
     src/sparse.cpp
 )
 
+set(MBSPARSE_TESTS_SOURCES
+    # Helpers
+    tests/main.cpp
+    # Tests
+    tests/test_sparse.cpp
+)
+
+set(variants)
+
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # Build static library
-
-    add_library(mbsparse-static STATIC ${MBSPARSE_SOURCES})
-
-    target_compile_definitions(
-        mbsparse-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
-    set_target_properties(
-        mbsparse-static
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbsparse-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
+    list(APPEND variants static)
 elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
-    # Build shared library
+    list(APPEND variants shared)
+endif()
 
-    add_library(mbsparse-shared SHARED ${MBSPARSE_SOURCES})
+# If this library is being built and we're building tests, then enable the
+# static library
+if(variants AND MBP_ENABLE_TESTS AND NOT static IN_LIST variants)
+    list(APPEND variants static)
+endif()
 
-    target_compile_definitions(
-        mbsparse-shared
-        PRIVATE
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbsparse-${variant})
+
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED ${MBSPARSE_SOURCES})
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC ${MBSPARSE_SOURCES})
+    endif()
+
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC include
     )
 
-    set_target_properties(
-        mbsparse-shared
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbsparse
-    )
+    # Export symbols
+    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
+    # Win32 DLL export
+    if(${variant} STREQUAL shared)
+        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
+    endif()
+
+    # Build with -fPIC
+    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
+    # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            mbsparse-shared
+            ${lib_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
 
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbsparse)
+
+    # Link dependencies
     target_link_libraries(
-        mbsparse-shared
-        mblog-shared
+        ${lib_target}
+        PUBLIC mbcommon-${variant}
+        PRIVATE mblog-${variant}
     )
 
     # Install shared library
-    install(
-        TARGETS mbsparse-shared
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        )
+    endif()
+endforeach()
+
+# Build tests
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbsparse_tests
+        ${MBSPARSE_TESTS_SOURCES}
     )
 
-    if(MBP_ENABLE_TESTS)
-        add_executable(test_sparse tests/test_sparse.cpp)
-        target_link_libraries(
-            test_sparse
-            mbsparse-shared
-            ${GTEST_BOTH_LIBRARIES}
+    # Includes
+    target_include_directories(
+        mbsparse_tests
+        PRIVATE
+        ${GTEST_INCLUDE_DIRS}
+    )
+
+    # Link dependencies
+    target_link_libraries(
+        mbsparse_tests
+        mbsparse-static
+        ${GTEST_BOTH_LIBRARIES}
+    )
+
+    # Target C++11
+    if(NOT MSVC)
+        set_target_properties(
+            mbsparse_tests
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
         )
-
-        if(NOT MSVC)
-            set_target_properties(
-                test_sparse
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-                C_STANDARD 99
-                C_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        add_test(NAME test_sparse COMMAND test_sparse)
     endif()
+
+    # Add to ctest
+    add_test(
+        NAME mbsparse_tests
+        COMMAND mbsparse_tests
+    )
 endif()

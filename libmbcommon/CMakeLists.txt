@@ -1,8 +1,6 @@
 include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
 git_describe(GIT_VERSION --dirty --always --tags)
 
-include_directories(${MBP_LIBICONV_INCLUDES})
-
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
@@ -67,9 +65,11 @@ add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     list(APPEND variants static)
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop
         OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants shared)
@@ -90,6 +90,18 @@ foreach(variant ${variants})
         add_library(${lib_target} SHARED ${MBCOMMON_SOURCES})
     elseif(${variant} STREQUAL static)
         add_library(${lib_target} STATIC ${MBCOMMON_SOURCES})
+    endif()
+
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC include
+        PRIVATE ${MBP_LIBICONV_INCLUDES}
+    )
+
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
     # Export symbols
@@ -117,12 +129,10 @@ foreach(variant ${variants})
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbcommon)
 
     # Link dependencies
-    if(${variant} STREQUAL shared)
-        target_link_libraries(
-            ${lib_target}
-            ${MBP_LIBICONV_LIBRARIES}
-        )
-    endif()
+    target_link_libraries(
+        ${lib_target}
+        PRIVATE ${MBP_LIBICONV_LIBRARIES}
+    )
 
     # Install shared library
     if(${variant} STREQUAL shared)
@@ -141,6 +151,13 @@ if(variants AND MBP_ENABLE_TESTS)
     add_executable(
         mbcommon_tests
         ${MBCOMMON_TESTS_SOURCES}
+    )
+
+    # Includes
+    target_include_directories(
+        mbcommon_tests
+        PRIVATE
+        ${GTEST_INCLUDE_DIRS}
     )
 
     # Link dependencies
