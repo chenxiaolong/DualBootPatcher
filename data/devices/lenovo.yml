@@ -423,4 +423,4 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p15
       
-      
+      The device I'm asking is Lenovo K3 K30-T so I edited the lenovo.yml
