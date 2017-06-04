@@ -1,14 +1,14 @@
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# For generated headers
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
-include_directories(${MBP_FREETYPE2_INCLUDES})
-include_directories(${MBP_LIBPNG_INCLUDES})
-include_directories(${MBP_ZLIB_INCLUDES})
-include_directories(${MBP_LIBCUTILS_INCLUDES})
-include_directories(${MBP_LIBLOG_INCLUDES})
-include_directories(${MBP_LIBPIXELFLINGER_INCLUDES})
+set(include_dirs
+    .
+    ..
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${MBP_FREETYPE2_INCLUDES}
+    ${MBP_LIBPNG_INCLUDES}
+    ${MBP_ZLIB_INCLUDES}
+    ${MBP_LIBCUTILS_INCLUDES}
+    ${MBP_LIBLOG_INCLUDES}
+    ${MBP_LIBPIXELFLINGER_INCLUDES}
+)
 
 # Uncomment to enable event logging
 #add_definitions(-D_EVENT_LOGGING)
@@ -46,6 +46,12 @@ if(ENABLE_OVERLAY_MSM_OLD_BACKEND)
         backend/backend_overlay.cpp
     )
 
+    target_include_directories(
+        minui-backend-overlay-msm-old
+        PRIVATE
+        ${include_dirs}
+    )
+
     set_target_properties(
         minui-backend-overlay-msm-old
         PROPERTIES
@@ -80,6 +86,12 @@ if(ENABLE_ADF_BACKEND)
         backend/backend_adf.cpp
     )
 
+    target_include_directories(
+        minui-backend-adf
+        PRIVATE
+        ${include_dirs}
+    )
+
     set_target_properties(
         minui-backend-adf
         PROPERTIES
@@ -98,6 +110,12 @@ if(ENABLE_DRM_BACKEND)
         minui-backend-drm
         OBJECT
         backend/backend_drm.cpp
+    )
+
+    target_include_directories(
+        minui-backend-drm
+        PRIVATE
+        ${include_dirs}
     )
 
     set_target_properties(
@@ -128,6 +146,12 @@ if(ENABLE_FBDEV_BACKEND)
         backend/backend_fbdev.cpp
     )
 
+    target_include_directories(
+        minui-backend-fbdev
+        PRIVATE
+        ${include_dirs}
+    )
+
     set_target_properties(
         minui-backend-fbdev
         PROPERTIES
@@ -152,6 +176,12 @@ add_library(
     ${MINUI_BACKEND_OBJECTS}
 )
 
+target_include_directories(
+    mbbootui-minui
+    PRIVATE
+    ${include_dirs}
+)
+
 set_target_properties(
     mbbootui-minui
     PROPERTIES
@@ -162,6 +192,7 @@ set_target_properties(
 
 target_link_libraries(
     mbbootui-minui
+    PRIVATE
     ${MINUI_BACKEND_LIBRARIES}
     ${MBP_FREETYPE2_LIBRARIES}
     ${MBP_LIBPNG_LIBRARIES}

@@ -1,7 +1,11 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
-    include_directories(${MBP_OPENSSL_INCLUDES})
-
     add_executable(signtool signtool.cpp)
+
+    target_include_directories(
+        signtool
+        PRIVATE
+        ${MBP_OPENSSL_INCLUDES}
+    )
 
     set_target_properties(
         signtool
@@ -20,8 +24,9 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
 
     target_link_libraries(
         signtool
+        PRIVATE
         mbsign-shared
-        ${MBP_OPENSSL_LIBCRYPTO_LIBRARY}
+        ${MBP_OPENSSL_CRYPTO_LIBRARY}
     )
 
     set_target_properties(

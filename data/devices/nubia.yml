@@ -113,6 +113,50 @@
       - /dev/block/bootdevice/by-name/tz
 
 
+- name: Nubia Z9Max(NX510J)
+  id: NX510J
+  codenames:
+    - NX510J
+    - nx510j
+  architecture: arm64-v8a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/f9824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+      
+    system:
+      - /dev/block/platform/f9824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p30
+      
+    cache:
+      - /dev/block/platform/f9824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p31
+    
+    data:
+      - /dev/block/platform/f9824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p38
+      
+    boot:
+      - /dev/block/platform/f9824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p27
+      
+    recovery:
+      - /dev/block/platform/f9824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p28
+      
+    extra:
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/bootdevice/by-name/tz
+      
+    
 - name: Nubia Z9 mini
   id: NX511J
   codenames:

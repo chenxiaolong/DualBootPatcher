@@ -11,10 +11,15 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
         file-contexts-tool/regex.c
     )
 
+    target_compile_options(
+        file-contexts-tool
+        PRIVATE
+        -Wno-pedantic
+    )
+
     set_target_properties(
         file-contexts-tool
         PROPERTIES
-        COMPILE_FLAGS "-Wno-pedantic"
         LINK_FLAGS "-pie"
         C_STANDARD 11
         C_STANDARD_REQUIRED 1
@@ -24,6 +29,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
     if (${MBP_BUILD_TARGET} STREQUAL hosttools)
         target_link_libraries(
             file-contexts-tool
+            PRIVATE
             dl
         )
     endif()

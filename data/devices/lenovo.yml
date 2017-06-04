@@ -205,6 +205,7 @@
   codenames:
     - kingdom_row
     - kingdomt
+    - kingdom
   architecture: armeabi-v7a
 
   block_devs:
@@ -231,6 +232,14 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p10
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 
 - name: Lenovo ZUK Z1
@@ -423,4 +432,89 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p15
       
-      
+- name: Lenovo A7000-a
+  id: A7000a
+  codenames:
+    - aio_row
+    - A7000-a
+  architecture: arm64-v8a
+  flags:
+    - FSTAB_SKIP_SDCARD0
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - /dev/block/mmcblk0p9
+    extra:
+      - /dev/block/mmcblk0boot0
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/uboot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Lenovo X3
+  id: X3c50
+  codenames:
+    - X3c50
+    - X3c70
+    - X3a40
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p36
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p37
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p38
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p33
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p34  

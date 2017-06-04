@@ -34,6 +34,34 @@
       - /dev/block/platform/dw_mmc/by-name/RADIO
 
 
+- name: Samsung Galaxy Note 2 (Exynos)
+  id: t03g
+  codenames:
+    - t03g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p16
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p9
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+
+
 - name: Samsung Galaxy Note 3 (Snapdragon)
   id: hlte
   codenames:
@@ -306,6 +334,36 @@
     data:
       - /dev/block/platform/15570000.ufs/by-name/USERDATA
       - /dev/block/sda19
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+
+- name: Samsung Galaxy Note 5 (China)
+  id: nobleltechn
+  # TODO: May be merged with china mobile once I get the list of partitions from
+  #       someone with the device
+  codenames:
+    - nobleltechn
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda16
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda17
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda18
     boot:
       - /dev/block/platform/15570000.ufs/by-name/BOOT
       - /dev/block/sda7
