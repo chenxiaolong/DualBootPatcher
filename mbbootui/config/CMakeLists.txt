@@ -1,5 +1,11 @@
 add_library(mbbootui-config STATIC config.cpp)
 
+target_include_directories(
+    mbbootui-config
+    PRIVATE
+    ..
+)
+
 set_target_properties(
     mbbootui-config
     PROPERTIES

@@ -19,6 +19,8 @@
 
 #include "ramdisk_patcher.h"
 
+#include <algorithm>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -30,6 +32,7 @@
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/copy.h"
+#include "mbutil/path.h"
 
 #include "installer_util.h"
 
@@ -263,28 +266,65 @@ rp_symlink_fuse_exfat()
 
 static bool _rp_symlink_init(const std::string &dir)
 {
-    // Symlink init
-    std::string init(dir);
-    init += "/init";
-    std::string init_orig(init);
-    init_orig += ".orig";
+    std::string target{dir};
+    target += "/init";
+    std::string real_init{dir};
+    real_init += "/init.orig";
 
-    if (access(init_orig.c_str(), R_OK) < 0) {
+    struct stat sb;
+
+    // If this is a Sony device that doesn't use sbin/ramdisk.cpio for the
+    // combined ramdisk, we'll have to explicitly allow their init executable to
+    // run first. We'll use a relatively strong heuristic to prevent false
+    // positives with other devices.
+    //
+    // See:
+    // * https://github.com/chenxiaolong/DualBootPatcher/issues/533
+    // * https://github.com/sonyxperiadev/device-sony-common-init
+    {
+        std::string sony_init_wrapper(dir);
+        sony_init_wrapper += "/sbin/init_sony";
+        std::string sony_real_init(dir);
+        sony_real_init += "/init.real";
+        std::string sony_symlink_target;
+
+        // Check that /init is a symlink and that /init.real exists
+        if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
+                && util::read_link(target, &sony_symlink_target)
+                && lstat(sony_real_init.c_str(), &sb) == 0) {
+            std::vector<std::string> haystack{util::path_split(sony_symlink_target)};
+            std::vector<std::string> needle{util::path_split("sbin/init_sony")};
+
+            util::normalize_path(&haystack);
+
+            // Check that init points to some path with "sbin/init_sony" in it
+            auto const it = std::search(haystack.cbegin(), haystack.cend(),
+                                        needle.cbegin(), needle.cend());
+            if (it != haystack.cend()) {
+                target.swap(sony_real_init);
+            }
+        }
+    }
+
+    LOGD("[init] Target init path: %s", target.c_str());
+    LOGD("[init] Real init path: %s", real_init.c_str());
+
+    if (lstat(real_init.c_str(), &sb) < 0) {
         if (errno != ENOENT) {
             LOGE("%s: Failed to access file: %s",
-                 init_orig.c_str(), strerror(errno));
+                 real_init.c_str(), strerror(errno));
             return false;
         }
 
-        if (rename(init.c_str(), init_orig.c_str()) < 0) {
+        if (rename(target.c_str(), real_init.c_str()) < 0) {
             LOGE("%s: Failed to rename file: %s",
-                 init.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
             return false;
         }
 
-        if (symlink("mbtool", init.c_str()) < 0) {
+        if (symlink("/mbtool", target.c_str()) < 0) {
             LOGE("%s: Failed to symlink mbtool: %s",
-                 init.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
             return false;
         }
     }

@@ -1,5 +1,3 @@
-include_directories(external/android-libc)
-
 set(MBP_IO_SOURCES
     src/delete.cpp
     src/directory.cpp
@@ -34,26 +32,37 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
     add_library(
         c_compat
         STATIC
-        external/android-libc/ftw.c
-        external/android-libc/nftw.c
+        external/android-libc/ftw.cpp
+    )
+
+    target_include_directories(
+        c_compat
+        PRIVATE external/android-libc
     )
 
     set_target_properties(
         c_compat
         PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED 1
         POSITION_INDEPENDENT_CODE 1
     )
 endif()
 
-if(${MBP_BUILD_TARGET} STREQUAL android-app
-        OR ${MBP_BUILD_TARGET} STREQUAL android-system
-        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+if(MBP_TARGET_HAS_BUILDS)
     add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+
+    # Only build library if needed
+    set_target_properties(mbpio-static PROPERTIES EXCLUDE_FROM_ALL 1)
+
+    target_include_directories(
+        mbpio-static
+        PUBLIC include
+    )
 
     target_compile_definitions(
         mbpio-static
         PRIVATE
-        #-DDMB_DYNAMIC_LINK
         -DMB_LIBRARY
     )
 
@@ -71,4 +80,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
             CXX_STANDARD_REQUIRED 1
         )
     endif()
+
+    target_link_libraries(
+        mbpio-static
+        # Private dependency to pull in the libmbcommon headers. We can't make
+        # this public because libmbpio is a bad legacy library that gets
+        # included in both shared and static versions of libmbpio.
+        PRIVATE mbcommon-static
+    )
 endif()

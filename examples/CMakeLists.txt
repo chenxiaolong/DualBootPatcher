@@ -7,9 +7,11 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         libmbp_test
+        PRIVATE
         mbp-shared
         mbpio-static
         mbdevice-shared
+        mblog-shared
     )
 
     if(NOT MSVC)
@@ -29,6 +31,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         desparse
+        PRIVATE
         mbsparse-shared
         mblog-shared
         mbcommon-shared
@@ -51,6 +54,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
     target_link_libraries(
         bingrep
+        PRIVATE
         mbcommon-shared
     )
 

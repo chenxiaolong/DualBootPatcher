@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -25,62 +25,126 @@
 #include "mbutil/integer.h"
 #include "mbutil/external/system_properties.h"
 
+struct timespec;
+
 namespace mb
 {
 namespace util
 {
 
-// Wrappers around the libc functions that automatically dlopen libc.so
-int libc_system_property_get(const char *name, char *value);
+typedef void (*PropertyListCb)(const std::string &key,
+                               const std::string &value,
+                               void *cookie);
+
+// Non-deprecated libc system properties wrapper functions
+
 int libc_system_property_set(const char *key, const char *value);
 const prop_info *libc_system_property_find(const char *name);
-int libc_system_property_read(const prop_info *pi, char *name, char *value);
-const prop_info *libc_system_property_find_nth(unsigned n);
+void libc_system_property_read_callback(
+        const prop_info *pi,
+        void (*callback)(void *cookie, const char *name, const char *value,
+                         uint32_t serial),
+        void *cookie);
 int libc_system_property_foreach(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie);
+bool libc_system_property_wait(const prop_info *pi,
+                               uint32_t old_serial,
+                               uint32_t *new_serial_ptr,
+                               const struct timespec *relative_timeout);
 
-int property_get(const char *key, char *value_out, const char *default_value);
-int property_set(const char *key, const char *value);
+// Helper functions
 
-bool property_get_bool(const char *key, bool default_value);
+bool property_get(const std::string &key, std::string &value_out);
+std::string property_get_string(const std::string &key,
+                                const std::string &default_value);
+bool property_get_bool(const std::string &key, bool default_value);
 
-template<typename SIntType>
-inline SIntType property_get_snum(const char *key, SIntType default_value)
+template<typename SNumType>
+inline SNumType property_get_snum(const std::string &key,
+                                  SNumType default_value)
 {
-    char buf[PROP_VALUE_MAX];
-    SIntType value;
+    std::string value;
+    SNumType result;
 
-    int n = property_get(key, buf, "");
-    return (n >= 0 && str_to_snum(buf, 10, value))
-            ? value : default_value;
+    if (property_get(key, value) && str_to_snum(value.c_str(), 10, &result)) {
+        return result;
+    }
+
+    return default_value;
 }
 
-template<typename UIntType>
-inline UIntType property_get_unum(const char *key, UIntType default_value)
+template<typename UNumType>
+inline UNumType property_get_unum(const std::string &key,
+                                  UNumType default_value)
 {
-    char buf[PROP_VALUE_MAX];
-    UIntType value;
+    std::string value;
+    UNumType result;
 
-    int n = property_get(key, buf, "");
-    return (n >= 0 && str_to_unum(buf, 10, value))
-            ? value : default_value;
+    if (property_get(key, value) && str_to_unum(value.c_str(), 10, &result)) {
+        return result;
+    }
+
+    return default_value;
 }
 
-typedef void (*property_list_cb)(const char *key, const char *value,
-                                 void *cookie);
+bool property_set(const std::string &key, const std::string &value);
+bool property_set_direct(const std::string &key, const std::string &value);
 
-int property_list(property_list_cb propfn, void *cookie);
+bool property_list(PropertyListCb prop_fn, void *cookie);
 
-bool get_all_properties(std::unordered_map<std::string, std::string> *map);
-bool file_get_property(const std::string &path,
-                       const std::string &key,
-                       std::string *out,
-                       const std::string &default_value);
-bool file_get_all_properties(const std::string &path,
-                             std::unordered_map<std::string, std::string> *map);
-bool file_write_properties(const std::string &path,
-                           const std::unordered_map<std::string, std::string> &map);
+bool property_get_all(std::unordered_map<std::string, std::string> &map);
+
+// Properties file functions
+
+bool property_file_get(const std::string &path, const std::string &key,
+                       std::string &value_out);
+std::string property_file_get_string(const std::string &path,
+                                     const std::string &key,
+                                     const std::string &default_value);
+bool property_file_get_bool(const std::string &path, const std::string &key,
+                            bool default_value);
+
+template<typename SNumType>
+inline SNumType property_file_get_snum(const std::string &path,
+                                       const std::string &key,
+                                       SNumType default_value)
+{
+    std::string value;
+    SNumType result;
+
+    if (property_file_get(path, key, value)
+            && str_to_snum(value.c_str(), 10, &result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+template<typename UNumType>
+inline UNumType property_file_get_unum(const std::string &path,
+                                       const std::string &key,
+                                       UNumType default_value)
+{
+    std::string value;
+    UNumType result;
+
+    if (property_file_get(path, key, value)
+            && str_to_unum(value.c_str(), 10, &result)) {
+        return result;
+    }
+
+    return default_value;
+}
+
+bool property_file_list(const std::string &path, PropertyListCb prop_fn,
+                        void *cookie);
+
+bool property_file_get_all(const std::string &path,
+                           std::unordered_map<std::string, std::string> &map);
+
+bool property_file_write_all(const std::string &path,
+                             const std::unordered_map<std::string, std::string> &map);
 
 }
 }

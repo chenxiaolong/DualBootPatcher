@@ -1,46 +1,3 @@
-if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
-    return()
-endif()
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-include_directories(${MBP_JANSSON_INCLUDES})
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBSEPOL_INCLUDES})
-include_directories(${MBP_OPENSSL_INCLUDES})
-include_directories(${MBP_PROCPS_NG_INCLUDES})
-include_directories(${CMAKE_SOURCE_DIR}/external)
-include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/pugixml/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers)
-
-# To debug using valgrind, set DEBUGGING to TRUE and push
-# <build dir>/mbtool/mbtool-prefix/tmp/local/armeabi-v7a/mbtool_recovery
-# to /tmp/updater. If the recovery used is TWRP, click the console window
-# button so tapping the screen won't perform unwanted operations (debugging
-# through ADB does not send SIGSTOP to the recovery process).
-#
-# Then, unpack valgrind (presumably to /data) and run:
-#   /data/local/Inst/bin/valgrind \
-#       -v --track-origins=yes --leak-check=full \
-#       /tmp/updater 3 1 /tmp/test_patched.zip
-#
-# Note that when DEBUGGING is set to true, the binary is not statically
-# linked, so the API 21 libc.so, libdl.so, and libcutils.so are needed.
-# If the ROM installed on the device is a Lollipop ROM, just run the
-# following before running valgrind:
-#   cp /system/lib/libc.so /tmp/
-#   cp /system/lib/libdl.so /tmp/
-#   cp /system/lib/libcutils.so /tmp/
-#   cd /tmp/
-set(DEBUGGING FALSE)
-
-# Generate validcerts.cpp
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-)
-
 set(MINIADBD_SOURCES
     miniadbd/adb.cpp
     miniadbd/adb_io.cpp
@@ -68,6 +25,7 @@ set(MBTOOL_BASE_SOURCES
     mount_fstab.cpp
     multiboot.cpp
     packages.cpp
+    properties.cpp
     reboot.cpp
     romconfig.cpp
     roms.cpp
@@ -101,6 +59,19 @@ set(MBTOOL_RECOVERY_SOURCES
 )
 
 set_source_files_properties(
+    daemon_v3.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-missing-declarations"
+)
+
+set_source_files_properties(
+    sepolpatch.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-Wno-keyword-macro"
+)
+
+set_source_files_properties(
+    auditd.cpp
     miniadbd.cpp
     external/audit/libaudit.h
     external/audit/libaudit.cpp
@@ -110,19 +81,11 @@ set_source_files_properties(
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # minizip type safety
-    add_definitions(-DSTRICTZIPUNZIP)
-
-    # Disable some pugixml features
-    add_definitions(
-        -DPUGIXML_NO_EXCEPTIONS
-        -DPUGIXML_NO_STL
-        -DPUGIXML_NO_XPATH
+    # Generate validcerts.cpp
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
-
-    if(DEBUGGING)
-        add_definitions(-DDYNAMICALLY_LINKED)
-    endif()
 
     add_library(
         miniadbd-static
@@ -139,10 +102,51 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         ${MBTOOL_RECOVERY_SOURCES}
     )
 
+    foreach(target mbtool mbtool_recovery)
+        # Includes
+        target_include_directories(
+            ${target}
+            PRIVATE
+            .
+            ${MBP_JANSSON_INCLUDES}
+            ${MBP_LIBARCHIVE_INCLUDES}
+            ${MBP_LIBSEPOL_INCLUDES}
+            ${MBP_OPENSSL_INCLUDES}
+            ${MBP_PROCPS_NG_INCLUDES}
+            ${CMAKE_SOURCE_DIR}/external
+            ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
+            ${CMAKE_SOURCE_DIR}/external/pugixml/src
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
+        )
+
+        # minizip type safety
+        target_compile_definitions(
+            ${target}
+            PRIVATE
+            -DSTRICTZIPUNZIP
+        )
+
+        # Disable some pugixml features
+        target_compile_definitions(
+            ${target}
+            PRIVATE
+            -DPUGIXML_NO_EXCEPTIONS
+            -DPUGIXML_NO_STL
+            -DPUGIXML_NO_XPATH
+        )
+    endforeach()
+
     target_compile_definitions(
         mbtool_recovery
         PRIVATE
         -DRECOVERY
+    )
+
+    # miniadbd includes
+    target_include_directories(
+        miniadbd-static
+        PRIVATE
+        .
     )
 
     # Ugly, but I don't want to deviate too much from upstream to fix it
@@ -174,17 +178,22 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         )
     endif()
 
-    if(NOT DEBUGGING)
-        set_target_properties(
-            mbtool mbtool_recovery
-            PROPERTIES
-            LINK_FLAGS "-static"
-            LINK_SEARCH_START_STATIC ON
-        )
-    endif()
+    set_target_properties(
+        mbtool mbtool_recovery
+        PROPERTIES
+        LINK_FLAGS "-static"
+        LINK_SEARCH_START_STATIC ON
+    )
 
     target_link_libraries(
+        miniadbd-static
+        PRIVATE
+        mblog-static
+        mbutil-static
+    )
+    target_link_libraries(
         mbtool
+        PRIVATE
         miniadbd-static
         mbutil-static
         mbsign-static
@@ -199,6 +208,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
     target_link_libraries(
         mbtool_recovery
+        PRIVATE
         miniadbd-static
         mbutil-static
         mbsign-static

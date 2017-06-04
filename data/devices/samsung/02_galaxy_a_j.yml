@@ -43,6 +43,36 @@
       - fbdev
     theme: portrait_hdpi
 
+- name: Samsung Galaxy J1 (Verizon)
+  id: j1qltevzw
+  codenames:
+    - j1qltevzw
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p28
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p17
 
 - name: Samsung Galaxy J7 (Exynos)
   id: j7e

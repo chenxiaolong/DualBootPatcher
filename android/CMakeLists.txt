@@ -38,6 +38,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DANDROID_ABI=${abi}
             -DANDROID_STL=gnustl_static
             #-DANDROID_STL=c++_static
+            -DANDROID_UNIFIED_HEADERS=ON
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
