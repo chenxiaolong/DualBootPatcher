@@ -1,13 +1,3 @@
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBLZMA_INCLUDES})
-include_directories(${MBP_ZLIB_INCLUDES})
-
-include_directories(${CMAKE_SOURCE_DIR}/external)
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
 set(MBP_SOURCES
     src/fileinfo.cpp
     src/patcherconfig.cpp
@@ -40,89 +30,103 @@ if(WIN32)
     )
 endif()
 
-# minizip type safety
-add_definitions(-DSTRICTZIPUNZIP)
+set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # Build static library
-
-    add_library(mbp-static STATIC ${MBP_SOURCES})
-
-    target_compile_definitions(
-        mbp-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbp-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
-    endif()
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+if(MBP_TARGET_HAS_BUILDS)
+    list(APPEND variants static)
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop)
-    # Build shared library
+    list(APPEND variants shared)
+endif()
 
-    add_library(mbp-shared SHARED ${MBP_SOURCES})
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbp-${variant})
 
-    target_compile_definitions(
-        mbp-shared
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED ${MBP_SOURCES})
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC ${MBP_SOURCES})
+    endif()
+
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC
+        include
         PRIVATE
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
+        .
+        ${MBP_LIBARCHIVE_INCLUDES}
+        ${MBP_LIBLZMA_INCLUDES}
+        ${MBP_ZLIB_INCLUDES}
+        ${CMAKE_SOURCE_DIR}/external
+        ${CMAKE_CURRENT_BINARY_DIR}/include
     )
 
-    set_target_properties(
-        mbp-shared
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbp
-    )
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
 
+    # minizip type safety
+    target_compile_definitions(${lib_target} PRIVATE -DSTRICTZIPUNZIP)
+
+    # Export symbols
+    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
+
+    # Win32 DLL export
+    if(${variant} STREQUAL shared)
+        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
+    endif()
+
+    # Build with -fPIC
+    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
+    # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            mbp-shared
+            ${lib_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
         )
     endif()
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-app)
-        set(ADDITIONAL_LIBRARIES c_compat)
-    else()
-        set(ADDITIONAL_LIBRARIES)
-    endif()
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbp)
 
+    # Link dependencies
     target_link_libraries(
-        mbp-shared
+        ${lib_target}
+        PUBLIC
+        mbcommon-${variant}
+        mbdevice-${variant}
+        PRIVATE
         mbpio-static
-        mbdevice-shared
-        mblog-shared
-        mbcommon-shared
-        minizip-shared
-        ${ADDITIONAL_LIBRARIES}
+        mblog-${variant}
+        minizip-${variant}
         ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
     )
 
-    if(UNIX AND NOT ANDROID)
-        target_link_libraries(mbp-shared pthread)
+    if(${MBP_BUILD_TARGET} STREQUAL android-app)
+        target_link_libraries(${lib_target} PRIVATE c_compat)
     endif()
 
-    # Install library
-    install(
-        TARGETS mbp-shared
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-    )
-endif()
+    if(UNIX AND NOT ANDROID)
+        target_link_libraries(${lib_target} PRIVATE pthread)
+    endif()
+
+    # Install shared library
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        )
+    endif()
+endforeach()

@@ -35,11 +35,13 @@
   id: Z00T
   codenames:
     - ASUS_Z00T
+    - ASUS_Z00U_1
     - Z00T
     - ASUS_Z011
     - z00t
     - Z00TD
     - Z00U
+    - Z00U_1
     - Z00UD
     - Z00UDH
     - Z00UDB
@@ -73,7 +75,34 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p38
-      
+    extra:
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/modem
+
+  boot_ui:
+    supported: yes
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/devices/virtual/thermal/thermal_zone11/temp
+    theme: portrait_hdpi
+
 - name: ASUS Zenfone 2 Laser - ZE550KL
   id: Z00L
   codenames:

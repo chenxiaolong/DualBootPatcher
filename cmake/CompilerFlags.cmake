@@ -11,11 +11,25 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
     if(ANDROID)
         add_compile_options(-fno-exceptions -fno-rtti)
+
+        if(ANDROID_UNIFIED_HEADERS)
+            # -Wunknown-attributes - malloc.h
+            # -Wzero-length-array - asm-generic/siginfo.h
+            add_compile_options(-Wno-unknown-attributes -Wno-zero-length-array)
+
+            # Hack needed until libc.a is updated to match the platform
+            # See: https://github.com/android-ndk/ndk/issues/410
+            include_directories(SYSTEM "${CMAKE_CURRENT_LIST_DIR}/unified/include")
+            add_compile_options(-Wno-gnu-include-next)
+        endif()
     endif()
 
     if(NOT WIN32)
         # Visibility
         add_compile_options(-fvisibility=hidden)
+
+        # Use DT_RPATH instead of DT_RUNPATH because the latter is not transitive
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--disable-new-dtags")
 
         # Does not work on Windows:
         # https://sourceware.org/bugzilla/show_bug.cgi?id=11539
