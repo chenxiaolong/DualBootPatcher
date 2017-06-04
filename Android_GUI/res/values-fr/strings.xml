@@ -32,6 +32,7 @@
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Espace libre</string>
   <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Parametre</string>
   <!--Navigation drawer item for changing the app sharing settings-->
   <string name="title_app_sharing">Partage d\'application</string>
   <!--Nagivation drawer item for rebooting the device-->
@@ -155,10 +156,12 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <!--In-app flashing output activity title - shown when backing up a single ROM-->
   <!--In-app flashing output activity title - shown when restoring a single ROM-->
   <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Installer le fichier zip</string>
   <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
   <!--In-app flashing activity title-->
   <string name="in_app_flashing_title">Flasher des fichiers ZIP</string>
   <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Choisir un fichier à patcher</string>
   <!--FAB button text for adding a backup to flash-->
   <!--Title of pending action card for flashing a file-->
   <string name="in_app_flashing_action_flash_file">Installer le fichier zip</string>
@@ -214,6 +217,7 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <!--Backup/restore target for ROM's /cache files-->
   <!--Backup/restore target for ROM's /data files-->
   <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Image boot</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
   <!--Toast message shown if no backup/restore targets are selected-->
   <!--Backup name input dialog description-->
@@ -235,6 +239,7 @@ de régler le kenrel pour %2$s. SVP confirmer que c\'est ce que vous voulez.</st
   <!--Subtitle shown in patch file card when file is waiting to be patched-->
   <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
   <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Annuler</string>
   <!--Patcher options dialog title-->
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">MAJ de la ROM primaire</string>
@@ -315,7 +320,9 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <string name="force_updating_ramdisk">Oblige la MAJ du disque virtuel</string>
   <!--Title for the section in the settings to manage the Boot UI-->
   <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Installer BOOT UI</string>
   <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Mise a jour BOOT UI</string>
   <!--Title for the preference to uninstall the Boot UI-->
   <!--Summary for the Update Boot UI preference to indicate that an update is available-->
   <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
@@ -328,6 +335,7 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
   <!--Title for the section in ROM Settings to change backup/restore settings-->
   <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Changer dossier de sauvegarde</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -370,6 +378,12 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
   <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
   <!--Confirm dialog message shown when updating mbtool failed-->
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Utiliser theme noir</string>
+  <!--Path chooser dialog button to select a directory-->
+  <!--Path chooser dialog button to save a file-->
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Nouveau dossier</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Chercher</string>
   <!--Word/phrase for None (used in eg. a list)-->
@@ -381,7 +395,9 @@ dans /MultiBoot/ramdisk-update.log dans la mémoire interne.</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->
   <string name="proceed">Continuer</string>
   <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">oui</string>
   <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">non</string>
   <!--Word/phrase for try again (used in dialog boxes)-->
   <!--Reboot now (used in dialog boxes)-->
   <string name="reboot_now">Redémarrer maintenant</string>

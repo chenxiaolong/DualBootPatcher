@@ -398,6 +398,10 @@
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
   <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
   <!--Confirm dialog message shown when updating mbtool failed-->
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <!--Path chooser dialog button to select a directory-->
+  <!--Path chooser dialog button to save a file-->
+  <!--Path chooser dialog button to create a new folder-->
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">חיפוש</string>
   <!--Word/phrase for None (used in eg. a list)-->
