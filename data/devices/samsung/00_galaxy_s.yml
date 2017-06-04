@@ -597,6 +597,18 @@
       - /dev/block/platform/15570000.ufs/by-name/RADIO
       - /dev/block/sda11
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
 
 - name: Samsung Galaxy S 6 Flat/Edge (Sprint)
   id: zeroltespr
