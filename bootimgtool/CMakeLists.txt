@@ -12,28 +12,24 @@ endif()
 
 foreach(variant ${variants})
     set(bin_target bootimgtool-${variant})
-    set(obj_target ${bin_target}-obj)
 
-    # Build objects
-    add_library(${obj_target} OBJECT ${BOOTIMGTOOL_SOURCES})
+    # Build binary
+    add_executable(${bin_target} ${BOOTIMGTOOL_SOURCES})
 
     # Win32 DLL import
     if(${variant} STREQUAL shared)
-        target_compile_definitions(${obj_target} PRIVATE -DMB_DYNAMIC_LINK)
+        target_compile_definitions(${bin_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
     # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            ${obj_target}
+            ${bin_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
-
-    # Build binary
-    add_executable(${bin_target} $<TARGET_OBJECTS:${obj_target}>)
 
     # Set binary name
     set_target_properties(${bin_target} PROPERTIES OUTPUT_NAME bootimgtool)

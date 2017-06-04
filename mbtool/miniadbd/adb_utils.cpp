@@ -16,6 +16,8 @@
 
 #include "adb_utils.h"
 
+#include <cstdlib>
+
 #include "adb_log.h"
 
 #include "mbcommon/string.h"

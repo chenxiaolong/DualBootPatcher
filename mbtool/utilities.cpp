@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "minizip/zip.h"
 #include "minizip/ioandroid.h"
@@ -37,7 +38,6 @@
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbp/patcherconfig.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"

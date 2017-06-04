@@ -1,26 +1,5 @@
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    set(CMAKE_INCLUDE_CURRENT_DIR ON)
     set(CMAKE_AUTOMOC ON)
-
-    if(${MBP_PORTABLE})
-        set(LOCAL_DATA_DIR "data")
-
-        add_definitions(
-            -DPORTABLE
-            -DLOCAL_DATA_DIR="${LOCAL_DATA_DIR}"
-        )
-    else()
-        add_definitions(
-            -DDATA_DIR="${DATA_FULL_INSTALL_DIR}"
-        )
-    endif()
-
-    add_definitions(
-        -DQT_NO_CAST_FROM_ASCII
-        -DQT_NO_CAST_TO_ASCII
-        -DQT_NO_CAST_FROM_BYTEARRAY
-        -DMB_DYNAMIC_LINK
-    )
 
     set(GUI_SOURCES
         main.cpp
@@ -50,11 +29,44 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
 
     add_executable(gui WIN32 ${GUI_SOURCES} ${GUI_RESOURCES_RCC})
 
+    target_include_directories(
+        gui
+        PRIVATE
+        .
+    )
+
     target_link_libraries(
         gui
+        PRIVATE
         Qt5::Core
         Qt5::Widgets
         mbp-shared
+    )
+
+    if(${MBP_PORTABLE})
+        set(LOCAL_DATA_DIR "data")
+
+        target_compile_definitions(
+            gui
+            PRIVATE
+            -DPORTABLE
+            -DLOCAL_DATA_DIR="${LOCAL_DATA_DIR}"
+        )
+    else()
+        target_compile_definitions(
+            gui
+            PRIVATE
+            -DDATA_DIR="${DATA_FULL_INSTALL_DIR}"
+        )
+    endif()
+
+    target_compile_definitions(
+        gui
+        PRIVATE
+        -DQT_NO_CAST_FROM_ASCII
+        -DQT_NO_CAST_TO_ASCII
+        -DQT_NO_CAST_FROM_BYTEARRAY
+        -DMB_DYNAMIC_LINK
     )
 
     if(NOT MSVC)
