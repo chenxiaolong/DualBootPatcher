@@ -227,9 +227,3 @@ TEST_F(DeviceTest, CheckGettersSetters)
     ASSERT_EQ(mb_device_set_tw_theme(_device, nullptr), MB_DEVICE_OK);
     ASSERT_EQ(mb_device_tw_theme(_device), nullptr);
 }
-
-int main(int argc, char *argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
