@@ -1,7 +1,3 @@
-include_directories(${MBP_JANSSON_INCLUDES})
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
 set(MBDEVICE_SOURCES
     src/device.c
     src/json.c
@@ -10,134 +6,128 @@ set(MBDEVICE_SOURCES
     src/internal/structs.c
 )
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # Build static library
+set(MBDEVICE_TESTS_SOURCES
+    # Helpers
+    tests/main.cpp
+    # Tests
+    tests/test_device.cpp
+    tests/test_json.cpp
+)
 
-    add_library(mbdevice-static STATIC ${MBDEVICE_SOURCES})
+set(variants)
 
-    target_compile_definitions(
-        mbdevice-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbdevice-static
-            PROPERTIES
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
-    endif()
-
-    if(MBP_ENABLE_TESTS)
-        add_executable(mbdevice-static_test_device tests/test_device.cpp)
-        add_executable(mbdevice-static_test_json tests/test_json.cpp)
-        target_link_libraries(
-            mbdevice-static_test_device
-            mbdevice-static
-            ${GTEST_BOTH_LIBRARIES}
-        )
-        target_link_libraries(
-            mbdevice-static_test_json
-            mbdevice-static
-            ${GTEST_BOTH_LIBRARIES}
-        )
-
-        if(NOT MSVC)
-            set_target_properties(
-                mbdevice-static_test_device
-                mbdevice-static_test_json
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        add_test(
-            NAME mbdevice-static_test_device
-            COMMAND mbdevice-static_test_device
-        )
-        add_test(
-            NAME mbdevice-static_test_json
-            COMMAND mbdevice-static_test_json
-        )
-    endif()
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+if(MBP_TARGET_HAS_BUILDS)
+    list(APPEND variants static)
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop
         OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
-    # Build shared library
+    list(APPEND variants shared)
+endif()
 
-    add_library(mbdevice-shared SHARED ${MBDEVICE_SOURCES})
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbdevice-${variant})
 
-    target_compile_definitions(
-        mbdevice-shared
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED ${MBDEVICE_SOURCES})
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC ${MBDEVICE_SOURCES})
+    endif()
+
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC
+        include
         PRIVATE
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
+        ${CMAKE_CURRENT_BINARY_DIR}/include
+        ${MBP_JANSSON_INCLUDES}
     )
 
-    set_target_properties(
-        mbdevice-shared
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbdevice
-    )
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
 
+    # Export symbols
+    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
+
+    # Win32 DLL export
+    if(${variant} STREQUAL shared)
+        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
+    endif()
+
+    # Build with -fPIC
+    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+
+    # Target C99
     if(NOT MSVC)
         set_target_properties(
-            mbdevice-shared
+            ${lib_target}
             PROPERTIES
             C_STANDARD 99
             C_STANDARD_REQUIRED 1
         )
     endif()
 
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbdevice)
+
+    # Link dependencies
     target_link_libraries(
-        mbdevice-shared
-        mbcommon-shared
-        ${MBP_JANSSON_LIBRARIES}
+        ${lib_target}
+        PUBLIC mbcommon-${variant}
+        PRIVATE ${MBP_JANSSON_LIBRARIES}
     )
 
-    # Install library
-    install(
-        TARGETS mbdevice-shared
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-    )
-
-    if(MBP_ENABLE_TESTS)
-        add_executable(mbdevice-shared_test_device tests/test_device.cpp)
-        add_executable(mbdevice-shared_test_json tests/test_json.cpp)
-        target_link_libraries(
-            mbdevice-shared_test_device
-            mbdevice-shared
-            ${GTEST_BOTH_LIBRARIES}
-        )
-        target_link_libraries(
-            mbdevice-shared_test_json
-            mbdevice-shared
-            ${GTEST_BOTH_LIBRARIES}
-        )
-
-        if(NOT MSVC)
-            set_target_properties(
-                mbdevice-shared_test_device
-                mbdevice-shared_test_json
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        add_test(
-            NAME mbdevice-shared_test_device
-            COMMAND mbdevice-shared_test_device
-        )
-        add_test(
-            NAME mbdevice-shared_test_json
-            COMMAND mbdevice-shared_test_json
+    # Install shared library
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
         )
     endif()
+endforeach()
+
+# Build tests
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbdevice_tests
+        ${MBDEVICE_TESTS_SOURCES}
+    )
+
+    # Includes
+    target_include_directories(
+        mbdevice_tests
+        PRIVATE
+        ${GTEST_INCLUDE_DIRS}
+    )
+
+    # Link dependencies
+    target_link_libraries(
+        mbdevice_tests
+        mbdevice-static
+        ${GTEST_BOTH_LIBRARIES}
+    )
+
+    # Target C++11
+    if(NOT MSVC)
+        set_target_properties(
+            mbdevice_tests
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
+        )
+    endif()
+
+    # Add to ctest
+    add_test(
+        NAME mbdevice_tests
+        COMMAND mbdevice_tests
+    )
 endif()
