@@ -1,5 +1,3 @@
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
     set(MISCSTUFF_JNI_SOURCES
         constants.cpp
@@ -8,6 +6,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
     )
 
     add_library(miscstuff-jni SHARED ${MISCSTUFF_JNI_SOURCES})
+
+    target_include_directories(
+        miscstuff-jni
+        PRIVATE
+        ${MBP_LIBARCHIVE_INCLUDES}
+    )
 
     set_target_properties(
         miscstuff-jni

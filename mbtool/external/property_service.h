@@ -16,42 +16,22 @@
 
 #pragma once
 
-#include <cstddef>
+#include <stddef.h>
+#include <sys/socket.h>
+#include <string>
 
 #include "mbutil/external/system_properties.h"
 
+struct property_audit_data {
+    ucred *cr;
+    const char* name;
+};
+
 bool property_init();
-bool property_cleanup();
 void property_load_boot_defaults();
 void load_system_props();
 bool start_property_service();
 bool stop_property_service();
-void get_property_workspace(int *fd, int *sz);
-int __property_get(const char *name, char *value);
-int property_set(const char *name, const char *value);
-bool property_get_bool(const char *name, bool def_value);
-bool properties_initialized();
-
-#ifndef __clang__
-void __property_get_size_error()
-    __attribute__((__error__("property_get called with too small buffer")));
-#else
-void __property_get_size_error();
-#endif
-
-static inline
-__attribute__ ((always_inline))
-__attribute__ ((gnu_inline))
-#ifndef __clang__
-__attribute__ ((artificial))
-#endif
-int property_get(const char *name, char *value)
-{
-#ifndef __clang__
-    size_t value_len = __builtin_object_size(value, 0);
-    if (value_len != PROP_VALUE_MAX)
-        __property_get_size_error();
-#endif
-
-    return __property_get(name, value);
-}
+std::string property_get(const char* name);
+uint32_t property_set(const std::string& name, const std::string& value);
+bool is_legal_property_name(const std::string& name);

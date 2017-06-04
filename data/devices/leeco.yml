@@ -38,6 +38,30 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde20
 
+- name: LeEco Le 2 (MTK)
+  id: x620
+  codenames:
+    - x620
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p36
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p37
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p38
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p31
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p1
 
 - name: LeEco Le 2
   id: s2
@@ -109,4 +133,74 @@
     graphics_backends:
       - fbdev
       - drm
+    theme: portrait_hdpi
+
+
+- name: LeEco Le 1S
+  id: x3
+  codenames:
+    - X3_HK
+    - X3
+    - x3
+    - x500
+    - X500
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/system
+      - /dev/block/mmcblk0p6
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/cache
+      - /dev/block/mmcblk0p2
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/userdata
+      - /dev/block/mmcblk0p3
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
+      - boot
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
+      - recovery
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/by-name/secro
+      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/secro
+      - /dev/block/sda
+      - /dev/block/sda1
+      - /dev/block/mmcblk0p4
+      - misc
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_PREFER_LCD_BACKLIGHT
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
     theme: portrait_hdpi

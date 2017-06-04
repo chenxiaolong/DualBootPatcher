@@ -20,6 +20,8 @@
 #include "mbutil/chmod.h"
 
 #include <cerrno>
+#include <cstdlib>
+
 #include <sys/stat.h>
 #include <unistd.h>
 

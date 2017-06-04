@@ -46,3 +46,30 @@
       - /dev/block/mmcblk0p11
     recovery:
       - /dev/block/mmcblk0p12
+      
+      
+name: Samsung Galaxy Ace 4 Neo
+  id: vivalto3mve
+  codenames:
+    - vivalto3mve
+    - vivalto3mveml3g
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+    system:
+      - /dev/block/platform/sprd-sdhci.3/by-name/SYSTEM
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/sprd-sdhci.3/by-name/CACHE
+      - /dev/block/mmcblk0p23
+    data:
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/sprd-sdhci.3/by-name/KERNEL
+      - /dev/block/mmcblk0p20
+    recovery:
+      - /dev/block/platform/sprd-sdhci.3/by-name/RECOVERY
+      - /dev/block/mmcblk0p21

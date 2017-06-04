@@ -13,19 +13,10 @@ if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     return()
 endif()
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# For subdirectories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 add_subdirectory(config)
 add_subdirectory(minuitwrp)
 add_subdirectory(minzip)
 add_subdirectory(gui)
-
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBCUTILS_INCLUDES})
-include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
 
 add_executable(
     mbbootui
@@ -35,6 +26,15 @@ add_executable(
     infomanager.cpp
     main.cpp
     twrp-functions.cpp
+)
+
+target_include_directories(
+    mbbootui
+    PRIVATE
+    .
+    ${MBP_LIBARCHIVE_INCLUDES}
+    ${MBP_LIBCUTILS_INCLUDES}
+    ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
 set_target_properties(

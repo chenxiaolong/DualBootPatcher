@@ -5,19 +5,24 @@ endif()
 set(files
     ark.yml
     asus.yml
+    cherrymobile.yml
     coolpad.yml
     dexp.yml
     elephone.yml
     google.yml
     huawei.yml
+    infinix.yml
     jiayu.yml
     leeco.yml
     lenovo.yml
     lg.yml
+    meizu.yml
     motorola.yml
+    nokia.yml
     nexus.yml
     nubia.yml
     oneplus.yml
+    oppo.yml
     oukitel.yml
     pantech.yml
     quantum.yml
@@ -35,6 +40,7 @@ set(files
     xiaomi.yml
     yu.yml
     zte.yml
+    zuk.yml
 )
 
 set(target_file "${CMAKE_CURRENT_BINARY_DIR}/devices.json")

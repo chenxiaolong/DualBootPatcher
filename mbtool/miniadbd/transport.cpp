@@ -17,6 +17,7 @@
 #include "sysdeps.h"
 #include "transport.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #include "adb_log.h"

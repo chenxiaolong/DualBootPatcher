@@ -409,9 +409,3 @@ TEST(JsonTest, CreateJson)
     ScopedDevice sd2(json.get());
     ASSERT_TRUE(mb_device_equals(sd1.device, sd2.device));
 }
-
-int main(int argc, char *argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

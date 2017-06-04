@@ -20,6 +20,8 @@
 #include "mbutil/chown.h"
 
 #include <cerrno>
+#include <cstdlib>
+
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>

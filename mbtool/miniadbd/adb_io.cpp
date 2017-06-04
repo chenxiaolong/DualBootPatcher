@@ -16,6 +16,7 @@
 
 #include "sysdeps.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #include "adb_io.h"

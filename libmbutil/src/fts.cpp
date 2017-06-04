@@ -20,6 +20,7 @@
 #include "mbutil/fts.h"
 
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 
 #include <sys/stat.h>

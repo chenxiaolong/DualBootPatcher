@@ -1,8 +1,6 @@
 include("${CMAKE_SOURCE_DIR}/cmake/external/GetGitRevisionDescription.cmake")
 git_describe(GIT_VERSION --dirty --always --tags)
 
-include_directories(${MBP_LIBICONV_INCLUDES})
-
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in
     ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
@@ -67,9 +65,10 @@ add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
 
 set(variants)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
+if(MBP_TARGET_HAS_BUILDS)
     list(APPEND variants static)
-elseif(${MBP_BUILD_TARGET} STREQUAL android-app
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL desktop
         OR ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants shared)
@@ -78,49 +77,55 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbcommon-${variant})
-    set(obj_target ${lib_target}-obj)
 
-    # Build objects
-    add_library(${obj_target} OBJECT ${MBCOMMON_SOURCES})
+    # Build library
+    if(${variant} STREQUAL shared)
+        add_library(${lib_target} SHARED ${MBCOMMON_SOURCES})
+    elseif(${variant} STREQUAL static)
+        add_library(${lib_target} STATIC ${MBCOMMON_SOURCES})
+    endif()
+
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC include
+        PRIVATE ${MBP_LIBICONV_INCLUDES}
+    )
+
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
 
     # Export symbols
-    target_compile_definitions(${obj_target} PRIVATE -DMB_LIBRARY)
+    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
     # Win32 DLL export
     if(${variant} STREQUAL shared)
-        target_compile_definitions(${obj_target} PRIVATE -DMB_DYNAMIC_LINK)
+        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
     # Build with -fPIC
-    set_target_properties(${obj_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
+    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
     # Target C++11
     if(NOT MSVC)
         set_target_properties(
-            ${obj_target}
+            ${lib_target}
             PROPERTIES
             CXX_STANDARD 11
             CXX_STANDARD_REQUIRED 1
         )
     endif()
 
-    # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED $<TARGET_OBJECTS:${obj_target}>)
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC $<TARGET_OBJECTS:${obj_target}>)
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbcommon)
 
     # Link dependencies
-    if(${variant} STREQUAL shared)
-        target_link_libraries(
-            ${lib_target}
-            ${MBP_LIBICONV_LIBRARIES}
-        )
-    endif()
+    target_link_libraries(
+        ${lib_target}
+        PRIVATE ${MBP_LIBICONV_LIBRARIES}
+    )
 
     # Install shared library
     if(${variant} STREQUAL shared)
@@ -134,41 +139,40 @@ foreach(variant ${variants})
 endforeach()
 
 # Build tests
-if(MBP_ENABLE_TESTS)
-    foreach(variant ${variants})
-        # Link against objects so we don't have to worry about hidden symbols
-        set(obj_target mbcommon-${variant}-obj)
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbcommon_tests
+        ${MBCOMMON_TESTS_SOURCES}
+    )
 
-        # Build tests
-        add_executable(
+    # Includes
+    target_include_directories(
+        mbcommon_tests
+        PRIVATE
+        ${GTEST_INCLUDE_DIRS}
+    )
+
+    # Link dependencies
+    target_link_libraries(
+        mbcommon_tests
+        mbcommon-static
+        ${GTEST_BOTH_LIBRARIES}
+    )
+
+    # Target C++11
+    if(NOT MSVC)
+        set_target_properties(
             mbcommon_tests
-            ${MBCOMMON_TESTS_SOURCES}
-            $<TARGET_OBJECTS:${obj_target}>
+            PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
         )
+    endif()
 
-        # Link dependencies
-        target_link_libraries(
-            mbcommon_tests
-            ${GTEST_BOTH_LIBRARIES}
-        )
-
-        # Target C++11
-        if(NOT MSVC)
-            set_target_properties(
-                mbcommon_tests
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        # Add to ctest
-        add_test(
-            NAME mbcommon_tests
-            COMMAND mbcommon_tests
-        )
-
-        # Only need to build the tests once
-        break()
-    endforeach()
+    # Add to ctest
+    add_test(
+        NAME mbcommon_tests
+        COMMAND mbcommon_tests
+    )
 endif()
