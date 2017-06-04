@@ -20,6 +20,7 @@
 #include "mbutil/delete.h"
 
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
 

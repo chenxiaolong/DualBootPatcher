@@ -1,8 +1,3 @@
-include_directories(${MBP_SAFE_IOP_INCLUDES})
-include_directories(${MBP_ZLIB_INCLUDES})
-
-add_definitions(-DPLATFORM_SDK_VERSION=${ANDROID_NATIVE_API_LEVEL})
-
 add_library(
     mbbootui-minzip
     STATIC
@@ -13,10 +8,23 @@ add_library(
     Zip.c
 )
 
+target_include_directories(
+    mbbootui-minzip
+    PRIVATE
+    ${MBP_SAFE_IOP_INCLUDES}
+    ${MBP_ZLIB_INCLUDES}
+)
+
+target_compile_definitions(
+    mbbootui-minzip
+    PRIVATE
+    -DPLATFORM_SDK_VERSION=${ANDROID_NATIVE_API_LEVEL}
+)
+
 set_target_properties(
     mbbootui-minzip
     PROPERTIES
-    C_STANDARD 99
+    C_STANDARD 11
     C_STANDARD_REQUIRED 1
     POSITION_INDEPENDENT_CODE 1
 )

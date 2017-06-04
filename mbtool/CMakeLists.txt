@@ -1,25 +1,3 @@
-if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
-    return()
-endif()
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-include_directories(${MBP_JANSSON_INCLUDES})
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBSEPOL_INCLUDES})
-include_directories(${MBP_OPENSSL_INCLUDES})
-include_directories(${MBP_PROCPS_NG_INCLUDES})
-include_directories(${CMAKE_SOURCE_DIR}/external)
-include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/pugixml/src)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers)
-
-# Generate validcerts.cpp
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-)
-
 set(MINIADBD_SOURCES
     miniadbd/adb.cpp
     miniadbd/adb_io.cpp
@@ -103,14 +81,10 @@ set_source_files_properties(
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # minizip type safety
-    add_definitions(-DSTRICTZIPUNZIP)
-
-    # Disable some pugixml features
-    add_definitions(
-        -DPUGIXML_NO_EXCEPTIONS
-        -DPUGIXML_NO_STL
-        -DPUGIXML_NO_XPATH
+    # Generate validcerts.cpp
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/validcerts.cpp.in
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
     add_library(
@@ -128,10 +102,51 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         ${MBTOOL_RECOVERY_SOURCES}
     )
 
+    foreach(target mbtool mbtool_recovery)
+        # Includes
+        target_include_directories(
+            ${target}
+            PRIVATE
+            .
+            ${MBP_JANSSON_INCLUDES}
+            ${MBP_LIBARCHIVE_INCLUDES}
+            ${MBP_LIBSEPOL_INCLUDES}
+            ${MBP_OPENSSL_INCLUDES}
+            ${MBP_PROCPS_NG_INCLUDES}
+            ${CMAKE_SOURCE_DIR}/external
+            ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
+            ${CMAKE_SOURCE_DIR}/external/pugixml/src
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
+        )
+
+        # minizip type safety
+        target_compile_definitions(
+            ${target}
+            PRIVATE
+            -DSTRICTZIPUNZIP
+        )
+
+        # Disable some pugixml features
+        target_compile_definitions(
+            ${target}
+            PRIVATE
+            -DPUGIXML_NO_EXCEPTIONS
+            -DPUGIXML_NO_STL
+            -DPUGIXML_NO_XPATH
+        )
+    endforeach()
+
     target_compile_definitions(
         mbtool_recovery
         PRIVATE
         -DRECOVERY
+    )
+
+    # miniadbd includes
+    target_include_directories(
+        miniadbd-static
+        PRIVATE
+        .
     )
 
     # Ugly, but I don't want to deviate too much from upstream to fix it
@@ -171,7 +186,14 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
 
     target_link_libraries(
+        miniadbd-static
+        PRIVATE
+        mblog-static
+        mbutil-static
+    )
+    target_link_libraries(
         mbtool
+        PRIVATE
         miniadbd-static
         mbutil-static
         mbsign-static
@@ -186,6 +208,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     )
     target_link_libraries(
         mbtool_recovery
+        PRIVATE
         miniadbd-static
         mbutil-static
         mbsign-static

@@ -1,12 +1,26 @@
-include_directories(${MBP_FUSE_INCLUDES})
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    add_definitions(-DSTRICTZIPUNZIP)
-    add_definitions(-D_FILE_OFFSET_BITS=64)
-
     add_executable(odinupdater odinupdater.cpp)
     add_executable(fuse-sparse fuse-sparse.cpp)
+
+    foreach(target odinupdater fuse-sparse)
+        target_include_directories(
+            ${target}
+            PRIVATE
+            ${MBP_FUSE_INCLUDES}
+            ${MBP_LIBARCHIVE_INCLUDES}
+        )
+    endforeach()
+
+    target_compile_definitions(
+        odinupdater
+        PRIVATE
+        -DSTRICTZIPUNZIP
+    )
+    target_compile_definitions(
+        fuse-sparse
+        PRIVATE
+        -D_FILE_OFFSET_BITS=64
+    )
 
     set_target_properties(
         odinupdater
