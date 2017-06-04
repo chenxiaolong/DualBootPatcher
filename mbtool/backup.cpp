@@ -767,7 +767,7 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     return true;
 }
 
-static bool ensure_partitions_mounted(void)
+static bool ensure_partitions_mounted()
 {
     std::string system_partition(Roms::get_system_partition());
     std::string cache_partition(Roms::get_cache_partition());
@@ -787,6 +787,17 @@ static bool ensure_partitions_mounted(void)
     }
 
     return true;
+}
+
+static bool remount_partitions_writable()
+{
+    std::string system_partition(Roms::get_system_partition());
+    std::string cache_partition(Roms::get_cache_partition());
+    std::string data_partition(Roms::get_data_partition());
+
+    return mount("", system_partition.c_str(), "", MS_REMOUNT, "") == 0
+            && mount("", cache_partition.c_str(), "", MS_REMOUNT, "") == 0
+            && mount("", data_partition.c_str(), "", MS_REMOUNT, "") == 0;
 }
 
 static bool is_valid_backup_name(const std::string &name)
@@ -1068,6 +1079,12 @@ int restore_main(int argc, char *argv[])
     warn_selinux_context();
 
     if (!ensure_partitions_mounted()) {
+        return EXIT_FAILURE;
+    }
+
+    if (!remount_partitions_writable()) {
+        fprintf(stderr, "Failed to remount partitions as writable: %s\n",
+                strerror(errno));
         return EXIT_FAILURE;
     }
 
