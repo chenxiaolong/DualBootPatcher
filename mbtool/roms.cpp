@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -24,7 +24,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
-#include <mntent.h>
 #include <sys/stat.h>
 
 #include "mbcommon/string.h"
@@ -502,30 +501,30 @@ std::string Roms::get_extsd_partition()
         }
     }
 
-    static const char *prefix_mnt = "/mnt/media_rw/";
-    static const char *prefix_storage = "/storage/";
+    static constexpr char prefix_mnt[] = "/mnt/media_rw/";
+    static constexpr char prefix_storage[] = "/storage/";
 
     // Look for mounted MMC partitions
-    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        struct mntent ent;
-        char buf[1024];
         struct stat sb;
 
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
+        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // Skip useless mounts
-            if (!mb_starts_with(ent.mnt_dir, prefix_mnt)) {
+            if (!mb_starts_with(entry.dir.c_str(), prefix_mnt)) {
                 continue;
             }
 
-            if (stat(ent.mnt_fsname, &sb) < 0) {
-                LOGW("%s: Failed to stat: %s", ent.mnt_fsname, strerror(errno));
+            if (stat(entry.fsname.c_str(), &sb) < 0) {
+                LOGW("%s: Failed to stat: %s",
+                     entry.fsname.c_str(), strerror(errno));
                 continue;
             }
 
             if (major(sb.st_rdev) == 179) {
                 std::string path(prefix_storage);
-                path += ent.mnt_dir + strlen(prefix_mnt);
+                path.append(entry.dir.begin() + strlen(prefix_mnt),
+                            entry.dir.end());
 
                 if (util::is_mounted(path)) {
                     return path;

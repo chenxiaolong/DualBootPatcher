@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -27,7 +27,6 @@
 
 // Linux/posix
 #include <fcntl.h>
-#include <mntent.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -793,20 +792,19 @@ bool Installer::change_root(const std::string &path)
     // Unmount everything besides our chroot dir
     {
         std::vector<std::string> to_unmount;
-        struct mntent ent;
-        char buf[1024];
 
-        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s",
-                 "/proc/mounts", strerror(errno));
+            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
             return false;
         }
 
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            if (strcmp(ent.mnt_dir, "/") != 0
-                    && !mb_starts_with(ent.mnt_dir, path.c_str())) {
-                to_unmount.push_back(ent.mnt_dir);
+        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+            // TODO: Use util::path_compare() instead of dumb string prefix
+            //       matching
+            if (entry.dir != "/"
+                    && !mb_starts_with(entry.dir.c_str(), path.c_str())) {
+                to_unmount.push_back(std::move(entry.dir));
             }
         }
 
