@@ -520,7 +520,7 @@
       - /dev/block/mmcblk0p34
 
 - name: Lenovo A706
-  id: armani
+  id: a706
   codenames:
     # Main Codename
     - a706
@@ -533,19 +533,15 @@
     system:
       - /dev/block/mmcblk0p17
       - /dev/block/platform/msm_sdcc.3/by-num/p17
-
     cache:
       - /dev/block/mmcblk0p18
       - /dev/block/platform/msm_sdcc.3/by-num/p18
-
     data:
       - /dev/block/mmcblk0p21
       - /dev/block/platform/msm_sdcc.3/by-num/p21
-
     boot:
       - /dev/block/mmcblk0p16
       - /dev/block/platform/msm_sdcc.3/by-num/p16
-
     recovery:
       - /dev/block/mmcblk0p13
       - /dev/block/platform/msm_sdcc.3/by-num/p13
@@ -576,19 +572,15 @@
     system:
       - /dev/block/mmcblk0p17
       - /dev/block/platform/msm_sdcc.3/by-num/p17
-
     cache:
       - /dev/block/mmcblk0p18
       - /dev/block/platform/msm_sdcc.3/by-num/p18
-
     data:
       - /dev/block/mmcblk0p21
       - /dev/block/platform/msm_sdcc.3/by-num/p21
-
     boot:
       - /dev/block/mmcblk0p16
       - /dev/block/platform/msm_sdcc.3/by-num/p16
-
     recovery:
       - /dev/block/mmcblk0p13
       - /dev/block/platform/msm_sdcc.3/by-num/p13
