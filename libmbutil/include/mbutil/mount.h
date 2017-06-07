@@ -21,10 +21,26 @@
 
 #include <string>
 
+#include <cstdio>
+
+#define PROC_MOUNTS "/proc/mounts"
+
 namespace mb
 {
 namespace util
 {
+
+struct MountEntry
+{
+    std::string fsname;
+    std::string dir;
+    std::string type;
+    std::string opts;
+    int freq;
+    int passno;
+};
+
+bool get_mount_entry(std::FILE *fp, MountEntry &entry_out);
 
 bool is_mounted(const std::string &mountpoint);
 bool unmount_all(const std::string &dir);

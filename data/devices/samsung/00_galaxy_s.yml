@@ -558,6 +558,58 @@
       - /dev/block/platform/15570000.ufs/by-name/RADIO
 
 
+- name: Samsung Galaxy S 6 Flat/Edge (Japan,China)
+  id: zerolte
+  codenames:
+    # Regular variant
+    - zerofltedcm
+    - zerofltechn
+    - zerofltezt
+    - zerofltezc
+    - zerofltezh
+    - zeroflteke
+    - zerofltezm
+    # Edge variant
+    - zeroltedcm
+    - zeroltezc
+    - zeroltezt
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda15
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda19
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda21
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda8
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda9
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+      - /dev/block/sda11
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+
 - name: Samsung Galaxy S 6 Flat/Edge (Sprint)
   id: zeroltespr
   codenames:

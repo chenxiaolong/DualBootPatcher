@@ -2,7 +2,14 @@
 - name: Nokia XL
   id: normandy
   codenames:
+    # Main Codename
     - normandy
+    - Nokia_X
+    - Nokia_XL
+    # Variant Names
+    - RM-980
+    - RM-1030
+    - RM-1042
 
   architecture: armeabi-v7a
 

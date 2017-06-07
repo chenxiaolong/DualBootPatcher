@@ -38,7 +38,6 @@
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbp/patcherconfig.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
 #include "mbutil/finally.h"

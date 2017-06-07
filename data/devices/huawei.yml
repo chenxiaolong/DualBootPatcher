@@ -253,6 +253,80 @@
       - /dev/block/mmcblk0p28
 
 
+- name: Huawei P8 Lite (hi6210sft variant)
+  id: hi6210sft
+  codenames:
+    - ALE-L21
+    - ALE-L23
+    - ALE-UL00
+    - ALICE
+    - Alice
+    - hi6210sft
+    - hwALE-H
+    - hwALE-H:5.0
+    - hwALE-H:6.1
+    - hwALE-H:6.0
+    - ALICE_TL23
+    - ALICE_TL21
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
+
+
+- name: Huawei P8 Lite (Alice variant)
+  id: alice
+  codenames:
+    - ALE-L21
+    - ALE-L23
+    - ALE-UL00
+    - ALICE
+    - Alice
+    - hi6210sft
+    - hwALE-H
+    - hwALE-H:5.0
+    - hwALE-H:6.1
+    - hwALE-H:6.0
+    - ALICE_TL23
+    - ALICE_TL21
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/hi_mci.0/by-name
+    system:
+      - /dev/block/platform/hi_mci.0/by-name/system
+      - /dev/block/mmcblk0p38
+    cache:
+      - /dev/block/platform/hi_mci.0/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/platform/hi_mci.0/by-name/userdata
+      - /dev/block/mmcblk0p40
+    boot:
+      - /dev/block/platform/hi_mci.0/by-name/boot
+      - /dev/block/mmcblk0p27
+    recovery:
+      - /dev/block/platform/hi_mci.0/by-name/recovery
+      - /dev/block/mmcblk0p28
+
+
 - name: Huawei Y635
   id: hwY635
   codenames:
@@ -260,6 +334,7 @@
     - msm8916
     - HuaweiY635-L21
     - Y635
+    - hwY635
   architecture: armeabi-v7a
 
   block_devs:

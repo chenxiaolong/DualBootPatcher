@@ -1,0 +1,558 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Dual Boot Patcher</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Molim pričekaj da sve operacije završe.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Verzija %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Izvorni Kod</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">XDA Članak</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Licence</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Posebno hvala svima koji su napravili ovaj patcher mogućim!</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">Spajanje na mbtool nemoguće</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">Aplikacija se nije mogla spojiti na
+mbtool. Ovo se moglo desiti ako je root pristup odbijen ili ako ramdisk
+nije najnovije verzije.\n\nKlikni za ponovni pokušaj.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">ROMovi</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Patchaj Zip Datoteku</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Slobodan Prostor</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Postavke</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">Djeljenje Aplikacija</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Ponovno Pokreni</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">O</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Izađi</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Otvori navigacijski meni</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Zatvori navigacijski meni</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Primarni</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">Sekundarni</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Multi Slot %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (Podatkovni slot)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (Slot Externe SD Kartice)</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Nemoguće otkriti verziju ROMa</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">Prebacivanje ROMa</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Postavljanje kernela</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">ROM Uspješno prebačen</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Prebacivanje ROMa nije uspjelo</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">Kontrolni zbrojevi slike se ne podudaraju</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">Kontrolni brojevi slike nedostaju</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Uspješno postavljen kernel</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Postavljanje kernela nije uspjelo</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Druga aplikacija pokušava prebaciti na %s
+Nastavi?</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">Nemoguće otkriti boot particiju zato što
+kodno ime ovog uređaja \'%s\' nije prepoznato.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">SHA512 kontrolni zbrojevi za boot.img ili druge *.img
+datoteke ovog ROMa u /sdcard/MultiBoot/%s/ se ne podudaraju
+sa očekivanjim kontrolnim zbrojevima. Aplikacija treće strane je
+možda malicijozno promjenila ove slike. Nastavi sa prebacivanjem
+ROMa?</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">SHA512 kontrolni zbrojevi za boot.img ili druge *.img
+datoteke ovog ROMa u /sdcard/MultiBoot/%s/ nedostaju. Ovo je vjerojatno uzrokovano zbog nadogradnje sa starije
+verzije ove aplikacije. Nastavi sa prebacivanjem ROMa?</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Nepoznata verzija</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Nepoznati build</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Nadogradi ramdisk</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Postavi kernel</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">Napravi sigurnosnu kopiju ROMa</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Dodaj na home screen</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">Uredi ime</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">Promjeni sliku</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">Resetiraj sliku</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">Obriši ROM</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">Uspješno dodan %s na home screen</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">Da li želite da se uređaj automatski ponovno pokreće nakon
+prebacivanja ROMa?</string>
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">Sustav</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">Predmemorija</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">Podaci</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">Dalvik predmemorija</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">MultiBoot datoteke</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">Obriši targete</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">Brisanje targeta</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">Uspješno obrisan: %s</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">Nemoguće obrisati: %s</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">Pokretanje procesa brisanja ROMa neuspješno</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">Ništa nije obrisano zato što targeti nisu
+specificirani.</string>
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">Trenutno pokrenuti ROM se nemože obrisati.</string>
+  <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Proces u pozadini</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">Ikone i imena ROMova nisu učitane zbog
+odbijenih dozvola za pohranu.</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">Logo ROMa</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Postavi kernel?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Trentuno pokrenuti kernel će biti spremljen
+kao kernel za %s.</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Preimenuj %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Unesi novo ime za %s. Ostavi prazno ako želiš
+koristiti zadano ime.</string>
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">Kernel još nije postavljen za trenutni ROM.
+Da li bi htio postaviti kernel sada?</string>
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">Spremljeni kernel je drukčiji od
+trenutno pokrenutog kernela. Da li bi htio postaviti kernel sada?</string>
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">Postavi sada</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">Postavi kasnije</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">Trenutno odabrani ROM je %1$s, a ti pokušavaš
+postaviti kernel za %2$s. Molim potvrdi da je to ono što želiš.</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">Napravi sigurnosnu kopiju ROMa</string>
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">Vrati sigurnosnu kopiju ROMa</string>
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Flashaj datoteku</string>
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Flashaj datoteke</string>
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">Flashanje unutar aplikacije</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Dodaj patchanu datoteku</string>
+  <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Dodaj sigurnosnu kopiju</string>
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">Flashaj datoteku</string>
+  <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Vrati sigurnosnu kopiju</string>
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">Ime datoteke: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Ime sigurnosne kopije: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Targeti: %s</string>
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">ID ROMa: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">Lokacija instalacije:</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">Provjeravanje zipa</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">Odabrani zip nije pronađen.</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">Nemoguće pročitati odabranu zip datoteku.</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">Čini se da zip datoteka nije patchana
+za multiboot. Molim patchaj prije flashanja.</string>
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">Potrebno je patchati zip datoteku sa %s ili
+novijom da bi se koristilo flashanje unutar aplikacije.</string>
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">Da bi se spriječilo
+rušenje ili ponovno pokretanje trenutnog sustava, flashanje na trenutni ROM nije dozvoljenjo.</string>
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">Zip je originalno patchan za
+instalaciju na %s. Da li bi htio promjeniti lokaciju instalacije?</string>
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">Zadrži lokaciju</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">Promjeni lokaciju</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">Flaser unutar aplikacije može flashati patchane datoteke
+i DualBootPatcher sigurnosne kopije. Samo klikni na plus gumb da bi započeo flashanje.\n\nAkcije u tjeku
+mogu biti povučene ili maknute swipom da bi se promjenio red flashanja ili da bi ih se maknulo iz
+reda.\n\nNAPOMENA: Ova značajka je i dalje eksperimentalna. Molim napravi sigurnosnu kopiju prije nastavljanja!</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Odaberi sigurnosnu kopiju sa liste za
+vraćanje.</string>
+  <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Nema dostupnih sigurnosnih kopija za
+vraćanje.</string>
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Slot</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Verzija</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Build</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">Status mbtoola</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">Aplikacije</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s sustavske aplikacije, %2$s nadograđene aplikacije,
+%3$s korisničke aplikacije</string>
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">Staza sustava</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Staza predmemorije</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Staza podataka</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">Veličina sustava</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Veličina predmemorije</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Veličina podataka</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Računanje...</string>
+  <!--Backup ROM activity title-->
+  <string name="br_backup_title">Napravi sigurnosnu kopiju ROMa</string>
+  <!--Restore ROM activity title-->
+  <string name="br_restore_title">Vrati sigurnosnu kopiju ROMa</string>
+  <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Odaberi targete za sigurnosno kopiranje.</string>
+  <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Odaberi targete za vraćanje sigurnosne kopije.</string>
+  <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">Sustav</string>
+  <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Predmemorija</string>
+  <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Podaci</string>
+  <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Boot slika</string>
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">MultiBoot konfiguracije</string>
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Nema odabranih targeta za sigurnosno kopiranje/vraćanje sigurnosne kopije.</string>
+  <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Unesi ime za sigurnosnu kopiju. Nemože sadržavati (\"/\")
+ili biti \".\" ili \"..\".</string>
+  <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Unesi ime za sigurnosnu kopiju...</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Klikni FAB da bi dodao datoteke za patchanje</string>
+  <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Dodaj zip za flashanje</string>
+  <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Dodaj Odin sliku</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">Patcher nemože patchati datoteke bez read
+and write pristupa na internu memoriju. Molim dopusti
+pristup memoriji da bi mogao
+patchati datoteke.</string>
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Odabrana izlazna datoteka je već u
+redu.</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Uređaj:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Konfiguracija particija:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Opis:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Uspješno</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Neuspješno (kod greške %s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">U tijeku</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">U redu</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Otkazano</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Opcije patchera</string>
+  <!--Name for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade">Nadogradnja primarnog ROMa</string>
+  <!--Description for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade_desc">Nadogradi primarni ROM bez utjecaja na druge
+ROMove</string>
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">Instalira ROM na %s</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">Unesi ID</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">Unesi ID gore</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">ID slot nemože biti prazan.</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">ID slot mora sadržavati samo
+mala slova i/ili brojeve na Engleskom.</string>
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">Podatkvoni slot</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Slot Externe SD kartice</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Nema file managera</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Pogodni file manager nije instaliran. Molim
+da instaliraš file manager da bi mogao odabrati datoteke za patchanje.</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Gotovo</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s datoteka</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Ukupna veličina:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Okupirano:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Slobodno:</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Individualno djeljenje aplikacija</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Djeli individualne aplikacije</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Djeli individualne aplikacije preko ROMova
+(zahtjeva ponovno pokretanje).</string>
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">Upravljanje djeljenih aplikacija</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">Odaberi koje bi aplikacije trebale biti djeljene
+za individualno djeljenje aplikacija.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">Postavke djeljenja aplikacija nemogu biti spremljene
+zato što su dozvole za memoriju odbijene. Molim dozvoli pristup memoriji da bi promjenio
+postavke djeljenja aplikacija.</string>
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">mbtool mora biti nadograđen da bi mogao iskoristiti
+ značajke djeljenja aplikacija. Molim nadogradi ramdisk.</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Nadogradi ramdisk</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">Trenutačno ramdisk nema niti jednu verziju
+mbtoola.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">Ramdisk trenutačno ima zastarjelu verziju 
+mbtoola.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">Ramdisk je već najnoviji.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Uspješno nadograđen ramdisk</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Ramdisk je uspješno nadograđen. Da li bi htio
+ponovno pokrenuti sada?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">Ramdisk je uspješno nadograđen.</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Nadogradnja ramdiska nije uspjela</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Nadogradnja ramdiska nije uspjela. Log je spremljen na
+MultiBoot/ramdisk-update.log u internoj memoriji.</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Sada si %1$d korak od
+forsirane nadogradnje ramdiska.</item>
+    <item quantity="few">Sada si %1$d koraka od
+forsirane nadogradnje ramdiska.</item>
+    <item quantity="other">Sada si %1$d koraka od
+forsirane nadogradnje ramdiska.</item>
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">Forsirano nadograđivanje ramdiska</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">Boot UI (EXPERIMENTALNO)</string>
+  <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Instaliraj Boot UI</string>
+  <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Nadogradi Boot UI</string>
+  <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">Deinstaliraj Boot UI</string>
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">Nadogradnja dostupna: %s</string>
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">Najnovija verzija</string>
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">Nije instaliran</string>
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">Nije podržan na ovom uređaju</string>
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">Uspješno instaliran Boot UI</string>
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">Instalacija Boot UIa nije uspjela</string>
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">Uspješno deinstaliran Boot UI</string>
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">Deinstalacija Boot UIa nije uspjela</string>
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">Boot UI je uspješno
+instaliran.\n\nMolim osiguraj da je ramdisk nadograđen u svakom
+ROMu. Inače,
+Boot UI neće biti pokrenut prilikom pokretanja.</string>
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Napravi sigurnosnu kopiju/vrati sigurnosnu kopiju (EXPERIMENTALNO)</string>
+  <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Promjeni lokaciju sigurnosne kopije</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Patcher</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Pokaži Exit gumb</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Pokaži Reboot gumb</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">Početni zaslon</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">Prvi zaslon koji se pokazuje prilikom otvaranja
+aplikacije.</string>
+  <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">Koristi tamnu temu</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Dopusti primanje namjera</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Dopusti aplikacije treće strane da šalju namjere
+ovoj aplikaciji za obavljanje akcija, kao što su prebacivanje ROMova i patchanje datoteka.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">Pokaži reboot dialoški okvir</string>
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Pokaži Androidov reboot dialoški ovir umjesto
+direktnog ponovnog pokretanja. Ovo dopušta ponovno pokretanje u recovery u ROMovima koji imaju advanced reboot
+menije.</string>
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Paralelne operacije patchanja</string>
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Kada ima više datoteka koje su u redu za
+patchanje, procesiraj ih %d u isto vrijeme.</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">Individualno djeljenje aplikacija</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Individualno djeljenje aplikacija dozvoljava podatke
+aplikacije da budu pohranjene u djeljenoj lokaciji koju mogu pristupiti svi ROMovi. Koristeći djeljene podatke
+sinkronizira podatke aplikacije preko ROMova (npr. Chrome tabove).\n\nNAPOMENA: Ponovno pokretanje je
+potrebno da bi promjene počele djelovati.\n\nDa bi koristio individualno djeljenje aplikacija, djeljenje podataka
+mora biti uključeno u svakom ROMu. Na primjer: U primarnom ROMu, uključi djeljenje podataka za
+Chrome. Chrome će početi koristiti lokaciju djeljenih podataka. Nakon toga pokreni u drugi ROM i
+isto uključi djeljenje podataka za Chrome. Sada će i on početi koristiti istu lokaciju za djeljenje.</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">Djeljeni podaci</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">Nije djeljeno</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">Koristi djeljene podatke</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Odaberi da li želiš da aplikacija koristi
+direktorij za djeljene podatke</string>
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">Drugi ROMovi koji koriste djeljenje podataka:
+%s</string>
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">Promjene će početi djelovati na
+sljedećem ponovnom pokretanju.</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">\'%s\' aplikacija više nije djeljena.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Odbijena namjera od aplikacije treće strane. Da bi
+dozvolio drugim aplikacijama da šalju namjere, uključi opciju u DualBootPatcher postavkama.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">Pokretanje mbtoola...\n(Ovo zahtjeva root)</string>
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">Nadograđivanje mbtoola...\n(Ovo zahtjeva root)</string>
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool je odbio vezu od ove aplikacije.
+Ovo se može desiti ako se koristi neslušbeni build aplikacije ili ako je aplikacija malicijozno
+modificirana. Ako nastaviš svejedno, mbtool će biti ugašen i upakiran mbtool će biti pokrenut
+koristeći root.</string>
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">Trenutna verzija mbtoola je prestara. Mora biti
+nadograđena da bi određene funkcije radile, kao što su prebacivanje ROMova. Ovo zahtjeva root
+pristup.</string>
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">Nadogradnja mbtoola nije uspjela. Puno operacija, kao što su
+prebacivanje ROMova neće raditi.</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Unesi ime datoteke</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">Odaberi</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">Spremi</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Nova mapa</string>
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">Traži</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Nijedan</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">OK</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Otkaži</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Nastavi</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">Da</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">Ne</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">Pokušaj ponovno</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Ponovno pokreni sada</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Ponovno pokreni kasnije</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">Nepoznato</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Ne pokazuj opet</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Molim pričekaj</string>
+</resources>

@@ -24,11 +24,78 @@
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p1
 
+- name: Xiaomi MI2S
+  id: aries
+  codenames:
+    - aries
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p22
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p23
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p18
 
 - name: Xiaomi Mi3W
   id: cancro
   codenames:
     - cancro
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p24
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p25
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p19
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p20
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
+
+- name: Xiaomi MI Note LTE
+  id: virgo
+  codenames:
+    - virgo
   architecture: armeabi-v7a
 
   block_devs:
@@ -249,8 +316,46 @@
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sda13
-      
-      
+     
+ 
+- name: Xiaomi Note Pro
+  id: leo
+  codenames:
+    - leo
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p41
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p42
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p43
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p37
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p38
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
+
+
 - name: Xiaomi MI MAX
   id: hydrogen
   codenames:
@@ -260,29 +365,36 @@
   block_devs:
     base_dirs:
       - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
     system:
       - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p64
     cache:
       - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p62
     data:
       - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p65
     boot:
       - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
       - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p60
     recovery:
       - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p61
     extra:
       - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cust
       - /dev/block/bootdevice/by-name/cust
 
 
@@ -722,25 +834,31 @@
 
   block_devs:
     base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
       - /dev/block/platform/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
     system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
       - /dev/block/platform/7824900.sdhci/by-name/system
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p24
     cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
       - /dev/block/platform/7824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p25
     data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
       - /dev/block/platform/7824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p46
     boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
       - /dev/block/platform/7824900.sdhci/by-name/boot
       - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p21
     recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
@@ -785,29 +903,79 @@
 
   block_devs:
     base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
       - /dev/block/platform/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
     system:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
       - /dev/block/platform/7824900.sdhci/by-name/system
       - /dev/block/bootdevice/by-name/system
       - /dev/block/mmcblk0p24
     cache:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
       - /dev/block/platform/7824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p25
     data:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
       - /dev/block/platform/7824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
       - /dev/block/mmcblk0p49
     boot:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
       - /dev/block/platform/7824900.sdhci/by-name/boot
       - /dev/block/bootdevice/by-name/boot
       - /dev/block/mmcblk0p21
     recovery:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
+    extra:
+      # cust
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cust
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
+      - /dev/block/mmcblk0p48
+      # modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/platform/7824900.sdhci/by-name/modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p1
+      # Other
+      - /dev/block/bootdevice/by-name/cmnlib64
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/cmnlib
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/lksecapp
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/devcfg
+      - /dev/block/bootdevice/by-name/keymaster
+      - /dev/block/bootdevice/by-name/cmnlib64bak
+      - /dev/block/bootdevice/by-name/cmnlibbak
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/lksecappbak
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/devcfgbak
+      - /dev/block/bootdevice/by-name/keymasterbak
+      - /dev/block/bootdevice/by-name/dsp
+      - /dev/block/bootdevice/by-name/sec
 
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
 
 - name: Xiaomi Redmi Note 4G DS
   id: gucci

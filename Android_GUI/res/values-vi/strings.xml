@@ -12,31 +12,31 @@
   <string name="version">Phiên bản %s</string>
   <!--GitHub source code web page URL-->
   <!--GitHub source code link text-->
-  <string name="link_source_code">Source Code</string>
+  <string name="link_source_code">Mã nguồn</string>
   <!--XDA forum thread web page URL-->
   <!--XDA forum thread link text-->
-  <string name="link_xda_thread">Diễn đàn Tekcafe</string>
+  <string name="link_xda_thread">Diễn đàn XDA</string>
   <!--Licenses URL-->
   <!--Licenses link text-->
   <string name="link_licenses">Bản quyền</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Cám tất cả mọi người đã giúp đỡ làm bản Patcher này!</string>
+  <string name="credits">Cám tất cả mọi người đã giúp đỡ làm bản Patcher này! Ahihi.</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_title">Không thể kết nối tới mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_message">Ứng dụng không thể kết nối đến
-        mbtool. Điều này có thể xảy ra nếu quyền root đã bị từ chối hoặc ramdisk chưa được cập
-        nhật.\n\nBấm để thử lại.</string>
+mbtool. Điều này có thể xảy ra nếu quyền root đã bị từ chối hoặc ramdisk chưa được 
+cập nhật.\n\nChạm để thử lại.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">ROMs</string>
+  <string name="title_roms">Các bản ROM</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">Chỉnh sửa file zip</string>
+  <string name="title_patch_zip">Chỉnh sửa tập tin zip </string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Bộ nhớ trống</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">Cài đặt</string>
   <!--Navigation drawer item for changing the app sharing settings-->
-  <string name="title_app_sharing">Chia sẻ ứng dụng</string>
+  <string name="title_app_sharing">Ứng dụng đang chia sẻ</string>
   <!--Nagivation drawer item for rebooting the device-->
   <string name="title_reboot">Khởi động lại</string>
   <!--Navigation drawer item for showing the about screen-->
@@ -93,7 +93,7 @@
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Không biết phiên bản</string>
   <!--Build text shown on ROM card if the build could not be detected-->
-  <string name="rom_card_unknown_build">không biết bản build</string>
+  <string name="rom_card_unknown_build">Không biết bản build</string>
   <!--ROM menu item for updating the ramdisk-->
   <string name="rom_menu_update_ramdisk">Cập nhật ramdisk</string>
   <!--ROM menu item for setting kernel-->
@@ -142,6 +142,7 @@
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">Bản rom đang chạy nên không xoá được.</string>
   <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Dịch vụ nền</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">Hình thu nhỏ và tên của ROM không thể đọc
         bởi vì bị cấm truy cập bộ nhớ thiết bị.</string>
@@ -168,23 +169,32 @@
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Thiết lập sau</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
-  <string name="set_kernel_mismatched_rom">Bạn ROM được chọn hiện tại là %1$s, nhưng bạn đang cố gắng
+  <string name="set_kernel_mismatched_rom">Bản ROM được chọn hiện tại là %1$s, nhưng bạn đang cố gắng
         thiết lập kernel cho %2$s. Bạn hãy xác nhận đó là điều bạn đang muốn làm.</string>
   <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">Sao lưu ROM</string>
   <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">Phục hồi ROM</string>
   <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Flash file</string>
   <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Flash files</string>
   <!--In-app flashing activity title-->
   <string name="in_app_flashing_title">Flash ZIP files</string>
   <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Thêm tập tin vá</string>
   <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Thêm sao lưu</string>
   <!--Title of pending action card for flashing a file-->
   <string name="in_app_flashing_action_flash_file">Cài đặt file zip</string>
   <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Phục hồi sao lưu</string>
   <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
-  <string name="in_app_flashing_filename">Zip file: %s</string>
+  <string name="in_app_flashing_filename">Tên file: %s</string>
   <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Tên sao lưu: %s</string>
   <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Mục tiêu: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
   <string name="in_app_flashing_location">Vị trí: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
@@ -212,8 +222,16 @@
   <!--Dialog button for changing the installation location-->
   <string name="in_app_flashing_change_install_location">Thay đổi vị trí</string>
   <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">Những flasher trong ứng dụng có thể flash file cả vá
+và sao lưu DualBootPatcher. Chỉ cần nhấn vào nút dấu cộng để bắt đầu nhấp nháy.\n\nĐang chờ xử lý
+hành động có thể được kéo hoặc vuốt để thay đổi thứ tự flash hoặc loại bỏ chúng khỏi
+hàng đợi.\n\nChú ý: Tính năng này vẫn đang thử nghiệm. Xin vui lòng sao lưu trước khi tiếp tục!</string>
   <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Chọn một bản sao lưu từ danh sách để
+khôi phục lại.</string>
   <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Không có bản sao lưu sẵn để
+khôi phục lại.</string>
   <!--ROM details item showing which slot the ROM is installed to-->
   <string name="rom_details_info_slot">Slot</string>
   <!--ROM details item showing the version of the ROM-->
@@ -228,64 +246,102 @@
   <string name="rom_details_info_apps_counts_value">%1$s system apps, %2$s updated apps,
         %3$s user apps</string>
   <!--ROM details item showing the path to the system directory or image-->
-  <string name="rom_details_info_system_path">System path</string>
+  <string name="rom_details_info_system_path">Đường dẫn hệ thống</string>
   <!--ROM details item showing the path to the cache directory or image-->
-  <string name="rom_details_info_cache_path">Cache path</string>
+  <string name="rom_details_info_cache_path">Đường dẫn bộ nhớ Cache</string>
   <!--ROM details item showing the path to the data directory or image-->
-  <string name="rom_details_info_data_path">Data path</string>
+  <string name="rom_details_info_data_path">Đường dẫn dữ liệu</string>
   <!--ROM details item showing the size of the system directory or image-->
-  <string name="rom_details_info_system_size">System size</string>
+  <string name="rom_details_info_system_size">Kích thước hệ thống</string>
   <!--ROM details item showing the size of the cache directory or image-->
-  <string name="rom_details_info_cache_size">Cache size</string>
+  <string name="rom_details_info_cache_size">Kích thước bộ nhớ Cache</string>
   <!--ROM details item showing the size of the data directory or image-->
-  <string name="rom_details_info_data_size">Data size</string>
+  <string name="rom_details_info_data_size">Kích thước dữ nhiệu</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
   <string name="rom_details_info_calculating">Đang tính toán…</string>
   <!--Backup ROM activity title-->
+  <string name="br_backup_title">Sao lưu ROM</string>
   <!--Restore ROM activity title-->
+  <string name="br_restore_title">Khôi phục ROM</string>
   <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Chọn mục tiêu cần được sao lưu.</string>
   <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Chọn mục tiêu cần được khôi phục.</string>
   <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">Hệ thống</string>
   <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Bộ nhớ cache</string>
   <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Dữ liệu</string>
   <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Boot image</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">Các cấu hình MultiBoot </string>
   <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Không có mục tiêu sao lưu/khôi phục được chọn.</string>
   <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Nhập tên cho bản sao lưu. Phía trước không thể chứa
+dấu gạch chéo (\"/\") hoặc là \".\" hay \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Nhập tên sao lưu...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Chạm vào + để thêm tệp vào bản vá.</string>
   <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Thêm tệp flash zip</string>
   <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Thêm ảnh Odin</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">The patcher không thể patch các tập tin mà không thể đọc
         và ghi vào bộ nhớ trong. Hãy cấp quyền cho bộ nhớ để có thể Patch các tập tin.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Tệp đã chọn xuất ra là đã có trong
+hàng đợi.</string>
   <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Thiết bị:</string>
   <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Cấu hình phân vùng:</string>
   <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Mô tả:</string>
   <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
   <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Thành công</string>
   <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Thất bại (mã lỗi %s)</string>
   <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">Đang chờ xử lý</string>
   <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">Hàng đợi</string>
   <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Bị hủy bỏ</string>
   <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Tùy chọn vá</string>
   <!--Name for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade">Primary ROM nâng cấp</string>
   <!--Description for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade_desc">Cập nhật ROM chính mà không ảnh hưởng đến
+ROM khác</string>
   <!--Description for all other installation locations-->
+  <string name="install_location_desc">Cài đặt ROM %s</string>
   <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">Nhập ID</string>
   <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">Nhập ID trước</string>
   <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">Slot ID không thể để trống.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">Slot ID chỉ chứa
+        chữ thường trong tiếng Anh và số.</string>
   <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">Data slot</string>
   <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Extsd slot</string>
   <!--Title for the dialog box indicating that no file manager is installed-->
   <string name="filemanager_missing_title">Không có trình quản lí tập tin</string>
   <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
   <string name="filemanager_missing_desc">Không có trình quản lí tập tin nào được cài đặt.
         Hãy cài đặt một ứng dụng quản lí tập tin để patch.</string>
   <!--Text for the details card indicating that the patching is done-->
-  <string name="details_done">Xong</string>
+  <string name="details_done">Xong. Ngon lành nha.</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s tập tin</string>
   <!--Title for total size of partition-->
@@ -302,12 +358,24 @@
   <!--Format string for kibibytes-->
   <!--Format string for bytes-->
   <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">ứng dụng chia sẻ cá nhân</string>
   <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Chia sẻ các ứng dụng cá nhân</string>
   <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Chia sẻ các ứng dụng cá nhân trên ROM
+         (Yêu cầu khởi động lại).</string>
   <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">Quản lý các ứng dụng chia sẻ</string>
   <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">Chọn ứng dụng cần được chia sẻ
+         cho chia sẻ ứng dụng cá nhân.</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">Cài đặt chia sẻ ứng dụng không thể được cứu
+         vì quyền lưu trữ đã bị từ chối.  Xin hãy cấp quyền truy cập lưu trữ để thay đổi
+         cài đặt chia sẻ ứng dụng.</string>
   <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">mbtool phải được cập nhật để tận dụng lợi thế của các
+         ứng dụng tính năng chia sẻ.  Vui lòng cập nhật các ramdisk.</string>
   <!--Preference for updating the ramdisk-->
   <string name="update_ramdisk_title">Cập nhật ramdisk</string>
   <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
@@ -329,7 +397,12 @@
   <string name="update_ramdisk_failure_desc">Cập nhật ramdisk lỗi. Tập tin log được lưu vào
         MultiBoot/ramdisk-update.log của bộ nhớ trong.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="other">Bây giờ bạn có %1$d để
+có hiệu lực trên ramdisk.</item>
+  </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">Cập nhật đang có hiệu lực trên ramdisk</string>
   <!--Title for the section in the settings to manage the Boot UI-->
   <string name="rom_settings_boot_ui_title">Boot UI (EXPERIMENTAL)</string>
   <!--Title for the preference to install the Boot UI-->
@@ -359,7 +432,9 @@
         .\n\n Hãy chắc chắn rằng ramdisk đã được cập nhật trong mỗi rom. Nếu không, Boot UI
         sẽ không chạy trong quá trình khởi động.</string>
   <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Sao lưu/Khôi phục (thử nghiệm)</string>
   <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Thay đổi thư mục sao lưu</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -374,31 +449,74 @@
   <!--Title for the preference to use the dark theme-->
   <string name="rom_settings_use_dark_theme">Sử dụng chủ đề tối</string>
   <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Cho phép nhận được ý định</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Cho phép các ứng dụng bên thứ ba để gửi các ý định
+         để ứng dụng này cho các hành động thực hiện, chẳng hạn như chuyển đổi ROM và vá tệp tin.</string>
   <!--Title for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_title">Hiển thị tuỳ chọn khởi động lại</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_desc">Hiển thị tuỳ chọn khởi động thay vì
         khởi động lại trực tiếp. Điều này cho phép khởi động vào recovery có trong tuỳ chọn khởi động lại</string>
   <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Hoạt động vá song song </string>
   <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Khi nhiều tập tin nằm trong vá
+         hàng đợi quá trình chúng %d tại một thời điểm.</string>
   <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">Chia sẻ ứng dụng cá nhân</string>
   <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Chia sẻ ứng dụng riêng lẻ cho phép ứng dụng
+         dữ liệu được lưu trữ trong một vị trí chia sẻ truy cập bởi tất cả các ROM.  Sử dụng dữ liệu chia sẻ
+         đồng bộ hóa dữ liệu của ứng dụng trên các ROM(vd:các tab trong Chrome).\n\nChú ý: Một khởi động lại là
+         cần thiết cho việc thay đổi có hiệu lực.\n\nĐể sử dụng chia sẻ ứng dụng cá nhân chia sẻ dữ liệu
+         đã được bật trong mỗi ROM.VDụ Từ ROM chính cho phép chia sẻ dữ liệu cho
+         Chrome.  Chrome sẽ bắt đầu sử dụng các thư mục chia sẻ dữ liệu.  Sau đó khởi động vào ROM khác và
+         cũng cho phép chia sẻ dữ liệu cho Chrome. Nó sẽ sử dụng thư mục chia sẻ cùng.</string>
   <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">Chia sẻ dữ liệu</string>
   <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">Không chia sẻ</string>
   <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">Sử dụng dữ liệu chia sẻ</string>
   <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Chọn xem ứng dụng nên sử dụng một
+thư mục chia sẻ dữ liệu.</string>
   <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">ROM khác bằng cách sử dụng dữ liệu chia sẻ:
+%s</string>
   <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">Những thay đổi này sẽ có hiệu lực khi
+khởi động lại.</string>
   <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">Ứng dụng \'%s\' không còn được chia sẻ.</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Ý định từ chối từ các ứng dụng của bên thứ ba.  Đến
+cho phép các ứng dụng khác để gửi các ý định cho phép tùy chọn trong các thiết lập DualBootPatcher.</string>
   <!--Progress dialog message shown when starting mbtool (with root)-->
   <string name="mbtool_dialog_starting_mbtool">Khởi động mbtool…\n(This will require root)</string>
   <!--Progress dialog message shown when updating mbtool (with root)-->
   <string name="mbtool_dialog_updating_mbtool">Cập nhật mbtool…\n(This will require root)</string>
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool từ chối kết nối từ ứng dụng này.
+Điều này có thể xảy ra nếu một xây dựng không chính thức của các ứng dụng được sử dụng hoặc nếu ứng dụng độc hại
+sửa đổi.  Nếu bạn tiếp tục không mbtool sẽ bị giết và mbtool kèm sẽ được chạy
+sử dụng gốc.</string>
   <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">Phiên bản mbtool hiện tại là quá cũ.  Nó phải là
+cập nhật cho các chức năng nhất định để làm việc chẳng hạn như chuyển đổi ROM.  Điều này sẽ yêu cầu quyền
+truy cập root.</string>
   <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">Không thể cập nhật mbtool. Nhiều hoạt động, chẳng hạn như
+ROM chuyển đổi sẽ không làm việc.</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Nhập tên tập tin</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">Chọn</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">Lưu</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Thư mục mới</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Tìm kiếm</string>
   <!--Word/phrase for None (used in eg. a list)-->
