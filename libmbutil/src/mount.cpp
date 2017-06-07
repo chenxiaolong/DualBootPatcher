@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of MultiBootPatcher
  *
@@ -37,75 +37,124 @@
 #include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
+#include "mbutil/finally.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
-#include "external/mntent.h"
 
 #define MAX_UNMOUNT_TRIES 5
 
-#define DELETED_SUFFIX "\\040(deleted)"
+#define DELETED_SUFFIX " (deleted)"
 
 namespace mb
 {
 namespace util
 {
 
-static std::string get_deleted_mount_path(const std::string &dir)
+static std::string unescape_octals(const std::string &in)
 {
-    struct stat sb;
-    if (lstat(dir.c_str(), &sb) < 0 && errno == ENOENT
-            && mb_ends_with(dir.c_str(), DELETED_SUFFIX)) {
-        return std::string(dir.begin(), dir.end() - strlen(DELETED_SUFFIX));
-    } else {
-        return dir;
+    std::string result;
+
+    for (auto it = in.begin(); it != in.end();) {
+        if (*it == '\\' && std::distance(it, in.end()) >= 4
+                && *(it + 1) >= '0' && *(it + 1) <= '7'
+                && *(it + 2) >= '0' && *(it + 2) <= '7'
+                && *(it + 3) >= '0' && *(it + 3) <= '7') {
+            result += ((*(it + 1) - '0') << 6)
+                    | ((*(it + 2) - '0') << 3)
+                    | (*(it + 3) - '0');
+            it += 4;
+        } else {
+            result += *it;
+            ++it;
+        }
     }
+
+    return result;
+}
+
+bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
+{
+    char *line = nullptr;
+    size_t size = 0;
+
+    auto free_line = finally([&] {
+        free(line);
+    });
+
+    if (getline(&line, &size, fp) < 0) {
+        return false;
+    }
+
+    int pos[8];
+    int count = std::sscanf(line, " %n%*s%n %n%*s%n %n%*s%n %n%*s%n %d %d",
+            pos, pos + 1,       // fsname
+            pos + 2, pos + 3,   // dir
+            pos + 4, pos + 5,   // type
+            pos + 6, pos + 7,   // opts
+            &entry_out.freq,    // freq
+            &entry_out.passno); // passno
+
+    if (count != 2) {
+        return false;
+    }
+
+    // NULL terminate entries
+    line[pos[1]] = '\0';
+    line[pos[3]] = '\0';
+    line[pos[5]] = '\0';
+    line[pos[7]] = '\0';
+
+    entry_out.fsname = unescape_octals(line + pos[0]);
+    entry_out.dir = unescape_octals(line + pos[2]);
+    entry_out.type = unescape_octals(line + pos[4]);
+    entry_out.opts = unescape_octals(line + pos[6]);
+
+    struct stat sb;
+    if (lstat(entry_out.dir.c_str(), &sb) < 0 && errno == ENOENT
+            && mb_ends_with(entry_out.dir.c_str(), DELETED_SUFFIX)) {
+        entry_out.dir.erase(entry_out.dir.size() - strlen(DELETED_SUFFIX));
+    }
+
+    return true;
 }
 
 bool is_mounted(const std::string &mountpoint)
 {
-    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (!fp) {
-        LOGE("Failed to read /proc/mounts: %s", strerror(errno));
+        LOGE(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
         return false;
     }
 
-    bool found = false;
-    struct mntent ent;
-    char buf[1024];
-    std::string mnt_dir;
-
-    while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-        mnt_dir = get_deleted_mount_path(ent.mnt_dir);
-        if (mountpoint == mnt_dir) {
-            found = true;
-            break;
+    for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
+        if (mountpoint == entry.dir) {
+            return true;
         }
     }
 
-    return found;
+    return false;
 }
 
 bool unmount_all(const std::string &dir)
 {
     std::vector<std::string> to_unmount;
     int failed;
-    struct mntent ent;
-    char buf[1024];
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;
         to_unmount.clear();
 
-        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("Failed to read /proc/mounts: %s", strerror(errno));
+            LOGE(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
             return false;
         }
 
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            std::string mnt_dir = get_deleted_mount_path(ent.mnt_dir);
-            if (mb_starts_with(mnt_dir.c_str(), dir.c_str())) {
-                to_unmount.push_back(std::move(mnt_dir));
+        for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
+            // TODO: Use util::path_compare() instead of dumb string prefix
+            // matching
+            if (mb_starts_with(entry.dir.c_str(), dir.c_str())) {
+                to_unmount.push_back(std::move(entry.dir));
             }
         }
 
@@ -220,21 +269,18 @@ bool mount(const char *source, const char *target, const char *fstype,
  */
 bool umount(const char *target)
 {
-    struct mntent ent;
     std::string source;
     std::string mnt_dir;
 
-    autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        char buf[1024];
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            mnt_dir = get_deleted_mount_path(ent.mnt_dir);
-            if (mnt_dir == target) {
-                source = ent.mnt_fsname;
+        for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
+            if (entry.dir == target) {
+                source = entry.fsname;
             }
         }
     } else {
-        LOGW("Failed to read /proc/mounts: %s", strerror(errno));
+        LOGW(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
     }
 
     int ret = ::umount(target);
