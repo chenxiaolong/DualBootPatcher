@@ -235,12 +235,3 @@ TEST(SignTest, TestLoadValidPemKeysWithInvalidPassphrase)
     EVP_PKEY_free(private_key_read);
     BIO_free(bio);
 }
-
-int main(int argc, char *argv[])
-{
-    ERR_load_crypto_strings();
-    OpenSSL_add_all_algorithms();
-
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
