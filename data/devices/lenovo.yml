@@ -484,7 +484,7 @@
       - /dev/block/mmcblk0p34
 
 - name: Lenovo A706
-  id: a706
+  id: armani
   codenames:
     # Main Codename
     - a706
