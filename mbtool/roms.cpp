@@ -25,6 +25,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
