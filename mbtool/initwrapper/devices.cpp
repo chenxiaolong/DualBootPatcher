@@ -28,6 +28,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include "mbcommon/common.h"
@@ -329,7 +330,7 @@ static void parse_event(const char *msg, struct uevent *uevent)
 static std::vector<std::string> get_character_device_symlinks(struct uevent *uevent)
 {
     const char *parent;
-    char *slash;
+    const char *slash;
     int width;
     std::vector<struct platform_node *> pdevs;
 
@@ -385,7 +386,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 {
     std::vector<std::string> devices;
     std::vector<struct platform_node *> pdevs;
-    char *slash;
+    const char *slash;
     const char *type;
     char buf[256];
     char link_path[256];
