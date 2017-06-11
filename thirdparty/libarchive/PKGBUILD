@@ -17,40 +17,38 @@ _prebuilts='https://dbp.noobdev.io/repo/prebuilts'
 _ver_libiconv=1.15-1
 _ver_liblzma=5.2.3-2
 _ver_lz4=131-1
-_ver_lzo=2.10-1
 
 pkgbase=libarchive
 pkgname=(libarchive libarchive-lowapi)
 pkgver=3.3.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Multi-format archive and compression library"
 arch=(armv7 aarch64 x86 x86_64)
 url="http://www.libarchive.org/"
 license=(BSD)
 source=("git+https://github.com/libarchive/libarchive.git#tag=v${pkgver}"
-        'https://raw.githubusercontent.com/taka-no-me/android-cmake/556cc14296c226f753a3778d99d8b60778b7df4f/android.toolchain.cmake'
-        0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch)
+        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/383a34144eabd6e44839410e1d4387fb694912df/cmake/android.toolchain.cmake'
+        0001-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
+        0002-NDK-unified-headers-uses-f_flags-for-struct-statfs.patch)
 _source_template=("${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/libiconv-${_ver_libiconv}-@ARCH@.pkg.tar.xz.sig"
                   "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz"
                   "${_prebuilts}/liblzma-${_ver_liblzma}-@ARCH@.pkg.tar.xz.sig"
                   "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz"
-                  "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz.sig"
-                  "${_prebuilts}/lzo-${_ver_lzo}-@ARCH@.pkg.tar.xz"
-                  "${_prebuilts}/lzo-${_ver_lzo}-@ARCH@.pkg.tar.xz.sig")
+                  "${_prebuilts}/lz4-${_ver_lz4}-@ARCH@.pkg.tar.xz.sig")
 source_armv7=("${_source_template[@]/@ARCH@/armv7}")
 source_aarch64=("${_source_template[@]/@ARCH@/aarch64}")
 source_x86=("${_source_template[@]/@ARCH@/x86}")
 source_x86_64=("${_source_template[@]/@ARCH@/x86_64}")
 noextract=("libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz"
            "liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz"
-           "lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz"
-           "lzo-${_ver_lzo}-${CARCH}.pkg.tar.xz")
+           "lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz")
 validpgpkeys=('2233C479609BDCEC43BE9232F6A3B19090EFF32C')
 
 prepare() {
     cd "${pkgbase}"
-    git am ../0003-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
+    git am ../0001-Force-UTF-8-as-the-default-charset-on-Android-since-.patch
+    git am ../0002-NDK-unified-headers-uses-f_flags-for-struct-statfs.patch
 
     # Symlink Android header
     ln -sf ../contrib/android/include/android_lf.h libarchive/android_lf.h
@@ -61,21 +59,23 @@ prepare() {
     mkdir -p "common_${abi}"
     cd "common_${abi}"
 
-    mkdir -p libiconv liblzma lz4 lzo
+    mkdir -p libiconv liblzma lz4
 
     bsdtar -xf "${srcdir}/libiconv-${_ver_libiconv}-${CARCH}.pkg.tar.xz" -C libiconv
     bsdtar -xf "${srcdir}/liblzma-${_ver_liblzma}-${CARCH}.pkg.tar.xz" -C liblzma
     bsdtar -xf "${srcdir}/lz4-${_ver_lz4}-${CARCH}.pkg.tar.xz" -C lz4
-    bsdtar -xf "${srcdir}/lzo-${_ver_lzo}-${CARCH}.pkg.tar.xz" -C lzo
 
     # Hack toolchain file to allow us to provide paths to headers and libraries
-    sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/"${LIBLZMA_PREFIX_PATH}" "${LIBLZO2_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}" "${LIBICONV_PREFIX_PATH}")/g' \
+    sed '/[^A-Z_]CMAKE_FIND_ROOT_PATH[^A-Z_]/ s/)/ "${LIBLZMA_PREFIX_PATH}" "${LIBLZ4_PREFIX_PATH}" "${LIBICONV_PREFIX_PATH}")/g' \
         < "${srcdir}"/android.toolchain.cmake \
         > android.toolchain.cmake
 }
 
 build() {
     cd "${pkgbase}"
+
+    # For android.toolchain.cmake
+    export ANDROID_NDK=${ANDROID_NDK_HOME}
 
     local abi api lowapi toolchain toolchain_ver
     abi=$(android_get_abi_name)
@@ -108,17 +108,17 @@ build() {
         -DENABLE_CPIO=OFF
         -DENABLE_CAT=OFF
         -DENABLE_TEST=OFF
-        -DENABLE_ICONV=OFF `# At least until we need it`
+        -DENABLE_ICONV=OFF # At least until we need it
         -DLIBICONV_PREFIX_PATH="${common_dir}/libiconv"
         -DLIBLZMA_PREFIX_PATH="${common_dir}/liblzma"
         -DLIBLZ4_PREFIX_PATH="${common_dir}/lz4"
-        -DLIBLZO2_PREFIX_PATH="${common_dir}/lzo"
         -DCMAKE_TOOLCHAIN_FILE="${common_dir}/android.toolchain.cmake"
         -DANDROID_ABI="${abi}"
         -DANDROID_TOOLCHAIN_NAME="${toolchain}-${toolchain_ver}"
         -DLIBRARY_OUTPUT_PATH_ROOT=.
         # getgrnam_r's existence is a lie in the NDK
         -DHAVE_GETGRNAM_R=0
+        -DCMAKE_C_FLAGS='-Wno-error=sign-compare'
     )
 
     mkdir -p "${build_dir}"
@@ -144,7 +144,7 @@ package_libarchive() {
     install -dm755 "${pkgdir}"/{lib,include}/
     install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
     install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
-    install -m644 "build_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
+    install -m644 "build_${abi}/libarchive/libarchive.a" "${pkgdir}"/lib/
 }
 
 package_libarchive-lowapi() {
@@ -156,41 +156,34 @@ package_libarchive-lowapi() {
     install -dm755 "${pkgdir}"/{lib,include}/
     install -m644 libarchive/archive{,_entry}.h "${pkgdir}"/include/
     install -m644 contrib/android/include/android_lf.h "${pkgdir}"/include/
-    install -m644 "build_lowapi_${abi}/libs/${abi}/libarchive.a" "${pkgdir}"/lib/
+    install -m644 "build_lowapi_${abi}/libarchive/libarchive.a" "${pkgdir}"/lib/
 }
 
 sha512sums=('SKIP'
-            '4a70ef1c914ba31d1944652d1de592d01a1e1a68da85e9262bc15e2e73c572da8644c9ed8b4547c456ca4100f7737d34c5cfaaf9ee816a652a74a97f020b57a7'
-            'e07ccce80fd23f28a13ad7cd20d61d9e5886b91f4dfad6502067cb16bb62dce2ab94861807eeb608ad29202b618f5d0c3af0e0956a93e51d51653f10966748de')
+            '7ea556046441cc3907632447a9c6bfa25b94f1956e93fda5b9c39425a286f3a6376561fda45e086c169d05e1debcd760c7b21045d61db503b92d50fd06d758c5'
+            '4365d30da7f280e1cd966f80e5ec7ef06d0253ec19722f4aa091f772956a9695a06f1bb49565c69380d2b79c705b7c684b5f8dd707448f22df04c67b90b8a6ae'
+            '4d85c1070be075dc9b3a8162eed188051fa339c54c806efa9d061810bafed9889594bc421bbc131102c8f79a372d372e9a42841524433cd8e905406c50bebb3f')
 sha512sums_armv7=('408d375cdedce1c3545a2b1e29c3d86780f9fe726eee5b23348540ee032230680affcd9c6685fc8227d578819e046e2544b35896a4d4248d1d59b5f46399c286'
                   'SKIP'
                   '2fd3c5578a6313abc7737d9862c9e2dde35296004439ab7fe41b42a54ee094295a04a83b0a565ac4801c01cbfb050189405163d0ab7a6b6bf48e128e6adb2bb1'
                   'SKIP'
                   'e3806e50e89527de9b4061a35ac6ef4be372ec4321a53a19a343ad5c5a29059582d0cdc48baffbd2dfd39332f116b1ea8d32d4662174ad0fdacebaac133edb58'
-                  'SKIP'
-                  '90c6725a711d066a7b90e7631a2b34ac502cf1b1f9680826e094aa867d17c6b373c99872425ca3adbd3c87c35c872781353edbd085642c4a1de87da1c3cde72f'
                   'SKIP')
 sha512sums_aarch64=('ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255'
                     'SKIP'
                     'aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b'
                     'SKIP'
                     '262925a98d27ca0afd5dc579b7eca522ae6d15bed80294f34a6ed9b58ce51e321f755260a5f4723af26addf4856e52a8fb490db82b7a1e309dca50e6656bc5fb'
-                    'SKIP'
-                    'ab8616290db4abd5e7c68d82d3f9067143cd0a508cd5b991727ce9699387a4b708bff2dc10c1bf46e99dc9a39d18597855a0b9919f60216cb1ae0f7e0acf0a7d'
                     'SKIP')
 sha512sums_x86=('6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556'
                 'SKIP'
                 'c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67'
                 'SKIP'
                 '4047ddb609ff1b228c8075c70347fab91119e3d5324cfe03eb616ebb6238f3ac9b77b6fdfad79eedb3f0faf81fb1ddd0a7dfd1e0d9012059fa2bed025ac8e5a1'
-                'SKIP'
-                '1f4c7859c90e4eab321a85e016a85dc1e290cb2bc4e4740895c5eca750670b8c62dc1119943f4306394a7580255a62bed855b9c3c882affc826e74df88f196c5'
                 'SKIP')
 sha512sums_x86_64=('5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3'
                    'SKIP'
                    'e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092'
                    'SKIP'
                    '51129cf86be6c5f0b50262be15f3113fc08123df00e12d3474d5fb38c95ea5d0b6ddf5c83ca752d076ddc56920901174bbf2e9a29a3b8072eac3d60259f51334'
-                   'SKIP'
-                   '4502188785e66e34e8560c2d273eb22e243d8d6e8defeffcc77bf67f7ee88eb73365067a2ec83b3d571edfe1c3c2336c051fbc4f0761bb9143375d34c3ebb9c6'
                    'SKIP')
