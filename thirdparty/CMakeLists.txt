@@ -158,21 +158,6 @@ else()
 endif()
 
 ################################################################################
-# lzo for Android
-################################################################################
-
-set(LZO_VER "2.10-1")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(lzo ${LZO_VER} armeabi-v7a SHA512=90c6725a711d066a7b90e7631a2b34ac502cf1b1f9680826e094aa867d17c6b373c99872425ca3adbd3c87c35c872781353edbd085642c4a1de87da1c3cde72f)
-    get_prebuilt(lzo ${LZO_VER} arm64-v8a   SHA512=ab8616290db4abd5e7c68d82d3f9067143cd0a508cd5b991727ce9699387a4b708bff2dc10c1bf46e99dc9a39d18597855a0b9919f60216cb1ae0f7e0acf0a7d)
-    get_prebuilt(lzo ${LZO_VER} x86         SHA512=1f4c7859c90e4eab321a85e016a85dc1e290cb2bc4e4740895c5eca750670b8c62dc1119943f4306394a7580255a62bed855b9c3c882affc826e74df88f196c5)
-    get_prebuilt(lzo ${LZO_VER} x86_64      SHA512=4502188785e66e34e8560c2d273eb22e243d8d6e8defeffcc77bf67f7ee88eb73365067a2ec83b3d571edfe1c3c2336c051fbc4f0761bb9143375d34c3ebb9c6)
-else()
-    set(THIRD_PARTY_LZO_DIR "${MBP_PREBUILTS_BINARY_DIR}/lzo/${LZO_VER}" PARENT_SCOPE)
-endif()
-
-################################################################################
 # lz4 for Android
 ################################################################################
 

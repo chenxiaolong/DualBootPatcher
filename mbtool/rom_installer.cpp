@@ -374,7 +374,6 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
     }
 
     archive_read_support_filter_gzip(in.get());
-    archive_read_support_filter_lzop(in.get());
     archive_read_support_filter_lz4(in.get());
     archive_read_support_filter_lzma(in.get());
     archive_read_support_filter_xz(in.get());

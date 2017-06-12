@@ -77,7 +77,6 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
     }
 
     archive_read_support_filter_gzip(ain.get());
-    archive_read_support_filter_lzop(ain.get());
     archive_read_support_filter_lz4(ain.get());
     archive_read_support_filter_lzma(ain.get());
     archive_read_support_filter_xz(ain.get());
