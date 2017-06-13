@@ -309,7 +309,6 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
 
     // Enable support for common ramdisk formats
     archive_read_support_filter_gzip(a.get());
-    archive_read_support_filter_lzop(a.get());
     archive_read_support_filter_lz4(a.get());
     archive_read_support_filter_lzma(a.get());
     archive_read_support_filter_xz(a.get());

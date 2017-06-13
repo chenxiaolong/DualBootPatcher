@@ -34,7 +34,6 @@ The remaining packages will have to be installed from the AUR. I'd highly recomm
 - mingw-w64-gtest (if tests are enabled)
 - mingw-w64-libarchive
 - mingw-w64-lz4
-- mingw-w64-lzo
 - mingw-w64-jansson
 - mingw-w64-qt5-base
 - mingw-w64-xz
@@ -107,7 +106,6 @@ Once all the dependencies are installed, follow the steps below to build DualBoo
         libintl-8.dll
         libjansson-4.dll
         liblz4.dll
-        liblzo2-2.dll
         liblzma-5.dll
         libnettle-6-1.dll
         libpcre-1.dll

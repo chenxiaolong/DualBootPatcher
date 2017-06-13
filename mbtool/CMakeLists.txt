@@ -221,7 +221,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LZ4_LIBRARIES}
-        ${MBP_LZO_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
     )
 

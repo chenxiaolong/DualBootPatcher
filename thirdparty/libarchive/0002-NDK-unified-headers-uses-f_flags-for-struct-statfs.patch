@@ -1,0 +1,25 @@
+From 1a3fa8a99dd57e0977b0e2bda36ad76b3da6042f Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 11 Jun 2017 19:10:57 -0400
+Subject: [PATCH 2/2] NDK unified headers uses f_flags for struct statfs
+
+---
+ libarchive/archive_read_disk_posix.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libarchive/archive_read_disk_posix.c b/libarchive/archive_read_disk_posix.c
+index 6961ae6..bc9461c 100644
+--- a/libarchive/archive_read_disk_posix.c
++++ b/libarchive/archive_read_disk_posix.c
+@@ -1799,6 +1799,8 @@ setup_current_filesystem(struct archive_read_disk *a)
+ #if defined(ST_NOATIME)
+ #if defined(HAVE_STATVFS)
+ 	if (svfs.f_flag & ST_NOATIME)
++#elif defined(__ANDROID__)
++	if (sfs.f_flags & ST_NOATIME)
+ #else
+ 	if (sfs.f_flag & ST_NOATIME)
+ #endif
+-- 
+2.9.4
+

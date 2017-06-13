@@ -10,7 +10,6 @@ The following packages are needed for compiling:
 - qt5
 - libarchive (optional)
 - lz4 (optional)
-- lzo2 (optional)
 - xz (optional)
 - zlib (optional)
 
@@ -26,11 +25,7 @@ cd /path/to/DualBootPatcher
 mkdir build
 cd build
 cmake .. \
-    -DMBP_BUILD_TARGET=desktop \
-    -DMBP_USE_SYSTEM_ZLIB=ON \
-    -DMBP_USE_SYSTEM_LIBLZMA=ON \
-    -DMBP_USE_SYSTEM_LZ4=ON \
-    -DMBP_USE_SYSTEM_LZO2=ON
+    -DMBP_BUILD_TARGET=desktop
 make
 make install
 ```
