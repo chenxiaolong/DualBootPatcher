@@ -1,0 +1,6 @@
+build.sh
+common.sh
+generate.sh
+generated/
+template/
+*.swp
