@@ -38,6 +38,7 @@
   id: t03g
   codenames:
     - t03g
+    - t03gxx
   architecture: armeabi-v7a
 
   block_devs:
@@ -60,6 +61,19 @@
       - /dev/block/mmcblk0p9
     extra:
       - /dev/block/platform/dw_mmc/by-name/RADIO
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    brightness_path: /sys/devices/platform/s5p-dsim.0/ea8061/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
 
 
 - name: Samsung Galaxy Note 3 (Snapdragon)
