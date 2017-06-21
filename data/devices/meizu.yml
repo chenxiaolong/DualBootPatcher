@@ -45,8 +45,8 @@
   id: pro5
   codenames:
     - M86
-    - pro5
-    - meizu pro5
+    - PRO5
+    - PRO 5
   architecture: arm64-v8a
 
   block_devs:
