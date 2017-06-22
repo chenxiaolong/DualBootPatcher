@@ -265,21 +265,21 @@
 
   block_devs:
     base_dirs:
-      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
     system:
-      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
       - /dev/block/mmcblk0p23
     cache:
-      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
       - /dev/block/mmcblk0p21
     data:
-      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
       - /dev/block/mmcblk0p24
     boot:
-      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
       - /dev/block/mmcblk0p18
     recovery:
-      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p19     
 
 
