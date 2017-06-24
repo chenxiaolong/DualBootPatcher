@@ -1,4 +1,4 @@
-[![Build Status](https://jenkins.noobdev.io/job/DualBootPatcher/badge/icon)](https://jenkins.noobdev.io/job/DualBootPatcher/)
+[![Build Status](https://jenkins.noobdev.io/job/DualBootPatcher_Master/badge/icon)](https://jenkins.noobdev.io/job/DualBootPatcher_Master/)
 
 Multi Boot Patcher
 ==================
@@ -7,9 +7,7 @@ Please see forum thread at XDA for more information: [link](http://forum.xda-dev
 
 Downloads
 ---------
-Continuous integration build statuses can be found at the build status link above.
-
-[git snapshot releases (from Jenkins CI)](https://snapshots.noobdev.io/)
+Downloads can be found at [https://dbp.noobdev.io/](https://dbp.noobdev.io/).
 
 Compiling from Source
 ---------------------
