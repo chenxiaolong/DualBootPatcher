@@ -38,10 +38,10 @@ public class MbtoolTaskOutputActivity extends AppCompatActivity {
             mFragment = new MbtoolTaskOutputFragment();
             mFragment.setArguments(getIntent().getExtras());
             getFragmentManager().beginTransaction().add(
-                    R.id.content_frame, mFragment, MbtoolTaskOutputFragment.TAG).commit();
+                    R.id.content_frame, mFragment, MbtoolTaskOutputFragment.FRAGMENT_TAG).commit();
         } else {
             mFragment = (MbtoolTaskOutputFragment)
-                    getFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.TAG);
+                    getFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.FRAGMENT_TAG);
         }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

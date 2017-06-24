@@ -52,7 +52,7 @@ import java.util.Properties;
 import mbtool.daemon.v3.FileOpenFlag;
 
 public class SwitcherUtils {
-    public static final String TAG = SwitcherUtils.class.getSimpleName();
+    private static final String TAG = SwitcherUtils.class.getSimpleName();
 
     private static final String ZIP_MULTIBOOT_DIR = "multiboot/";
     private static final String ZIP_INFO_PROP = ZIP_MULTIBOOT_DIR + "info.prop";

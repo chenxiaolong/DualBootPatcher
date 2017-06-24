@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class PatcherUtils {
-    public static final String TAG = PatcherUtils.class.getSimpleName();
+    private static final String TAG = PatcherUtils.class.getSimpleName();
     private static final String FILENAME = "data-%s.tar.xz";
     private static final String DIRNAME = "data-%s";
 
