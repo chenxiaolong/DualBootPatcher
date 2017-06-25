@@ -147,7 +147,7 @@ dependencies {
     compile 'commons-io:commons-io:2.4'
     compile 'net.java.dev.jna:jna:4.4.0@aar'
     compile project(":emulatorview")
-    compile files('libs/RootTools-4.1.jar')
+    compile project(":rootshell")
 
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.1'
     releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'

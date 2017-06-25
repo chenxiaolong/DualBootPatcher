@@ -27,6 +27,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.github.chenxiaolong.dualbootpatcher.CommandUtils;
+import com.github.chenxiaolong.dualbootpatcher.CommandUtils.RootExecutionException;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.Version;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
@@ -37,6 +38,7 @@ import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterfaceV3;
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.SignedExecCompletion;
+import com.stericson.RootShell.exceptions.RootDeniedException;
 
 import org.apache.commons.io.IOUtils;
 
@@ -257,15 +259,17 @@ public class MbtoolConnection implements Closeable {
         }
     }
 
-    private static int runMbtoolDaemon(String path) {
+    private static int runMbtoolDaemon(String path)
+            throws RootDeniedException, RootExecutionException {
         return CommandUtils.runRootCommand(path, "daemon", "--replace", "--daemonize");
     }
 
-    private static boolean launchMbtoolFromTmpfs(String path) {
+    private static boolean launchMbtoolFromTmpfs(String path)
+            throws RootDeniedException, RootExecutionException {
         // Mount tmpfs if it doesn't already exist
         if (CommandUtils.runRootCommand("mountpoint", TMPFS_MOUNTPOINT) != 0
-                && CommandUtils.runRootCommand("mkdir", "-p", TMPFS_MOUNTPOINT) != 0
-                && CommandUtils.runRootCommand("mount", "-t", "tmpfs", "tmpfs", TMPFS_MOUNTPOINT) != 0) {
+                && (CommandUtils.runRootCommand("mkdir", "-p", TMPFS_MOUNTPOINT) != 0
+                || CommandUtils.runRootCommand("mount", "-t", "tmpfs", "tmpfs", TMPFS_MOUNTPOINT) != 0)) {
             return false;
         }
 
@@ -278,7 +282,8 @@ public class MbtoolConnection implements Closeable {
                 && runMbtoolDaemon(MBTOOL_TMPFS_PATH) == 0;
     }
 
-    private static boolean launchMbtoolFromRootfs(String path) {
+    private static boolean launchMbtoolFromRootfs(String path)
+            throws RootDeniedException, RootExecutionException {
         // Make rootfs writable
         if (CommandUtils.runRootCommand("mount", "-o", "remount,rw", "/") != 0) {
             return false;
@@ -310,7 +315,15 @@ public class MbtoolConnection implements Closeable {
         // We can't run mbtool directly from /data because TouchWiz kernels severely restrict the
         // exec*() family of syscalls for executables that reside in /data.
 
-        return launchMbtoolFromTmpfs(mbtool) || launchMbtoolFromRootfs(mbtool);
+        try {
+            return launchMbtoolFromTmpfs(mbtool) || launchMbtoolFromRootfs(mbtool);
+        } catch (RootDeniedException e) {
+            Log.e(TAG, "Root was denied", e);
+            return false;
+        } catch (RootExecutionException e) {
+            Log.e(TAG, "Root execution failed", e);
+            return false;
+        }
     }
 
     public static boolean replaceViaSignedExec(Context context) {

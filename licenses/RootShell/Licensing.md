@@ -1,9 +1,9 @@
 # The blob of text
 
 ```java
-    This file is part of the RootTools Project: http://code.google.com/p/roottools/
+    This file is part of the RootShell Project: https://github.com/Stericson/RootShell
  
-    Copyright (c) 2012 Stephen Erickson, Chris Ravenscroft, Dominik Schuermann, Adam Shanks
+    Copyright (c) 2014 Stephen Erickson, Chris Ravenscroft
  
     This code is dual-licensed under the terms of the Apache License Version 2.0 and
     the terms of the General Public License (GPL) Version 2.
@@ -24,8 +24,7 @@
 
 # Apache + GPL?
 
-With Version 1.6, RootTools moved from a pure GPL license to a dual licensing model.
-This is so that projects that wish to use RootTools without sharing their source code can do so.
+This is so that projects that wish to use RootShell without sharing their source code can do so.
 
 After all, our main goal is to provide a library that can be used by any project, in a consistent manner.
 
@@ -34,15 +33,11 @@ After all, our main goal is to provide a library that can be used by any project
 This would almost have been possible: GPLv3 can be seen as a superset of the Apache v2 license. However, most GPL projects are licensed under the terms of GPLv2.
 GPLv2 is NOT compatible with the Apache v2 license: some of its provisions are not consistent with the GPL's primary goal to not add any restrictions to the original license.
 
-Therefore, to allow both GPLv2 and other types of projects to use RootTools, we had to release RootTools under both licenses.
+Therefore, to allow both GPLv2 and other types of projects to use RootShell, we had to release RootShell under both licenses.
 
 # Which GPL license version may I use?
 
 GPLv2 or v3.
-
-# Is this change retroactive?
-
-No. RootTools releases prior to 1.6 are still licensed under the old, GPL-only, license.
 
 # Is Apache the appropriate license for a commercial product?
 
@@ -56,7 +51,7 @@ If you do not plan on distributing your product (for instance, a company's inter
 
 It is always a risk for open-source projects: what if the code contributed by one of the authors happens to be already licensed under an incompatible license? What if it was copied from a copyrighted product?
 
-The authors of RootTools can assure you that its whole code base is original code and, basically, we are honest people. We do not, at this point, see a need for certificates of origin.
+The authors of RootShell can assure you that its whole code base is original code and, basically, we are honest people. We do not, at this point, see a need for certificates of origin.
 
 # Can a license be revoked?
 
