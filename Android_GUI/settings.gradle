@@ -1,3 +1,5 @@
 include ":emulatorview"
+include ":rootshell"
 
 project(":emulatorview").projectDir = file("../external/Android-Terminal-Emulator/emulatorview")
+project(":rootshell").projectDir = file("../external/RootShell")

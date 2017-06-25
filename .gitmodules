@@ -10,3 +10,6 @@
 [submodule "external/minizip"]
 	path = external/minizip
 	url = https://github.com/chenxiaolong/minizip.git
+[submodule "external/RootShell"]
+	path = external/RootShell
+	url = https://github.com/chenxiaolong/RootShell.git
