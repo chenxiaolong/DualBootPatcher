@@ -79,6 +79,10 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}
 )
 
+################################################################################
+message(STATUS "Locking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY)
+################################################################################
 
 ################################################################################
 # fuse-exfat for Android
@@ -361,3 +365,8 @@ if(MBP_TOP_LEVEL_BUILD)
 
     set(THIRD_PARTY_AROMA_FILE "${MBP_PREBUILTS_DIR}/aroma-${AROMA_VER}.zip" PARENT_SCOPE)
 endif()
+
+################################################################################
+message(STATUS "Unlocking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
+################################################################################
