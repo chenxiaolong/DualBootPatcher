@@ -21,7 +21,7 @@
 /*
  * This file is based on elf.h from glibc 2.21 and is licensed under the same
  * terms as the original source code. It can be used standalone (outside of
- * MultiBootPatcher) under the terms above.
+ * DualBootPatcher) under the terms above.
  */
 
 #pragma once
