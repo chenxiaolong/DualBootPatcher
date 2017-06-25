@@ -45,8 +45,7 @@
   id: pro5
   codenames:
     - M86
-    - PRO5
-    - PRO 5
+    - M576
   architecture: arm64-v8a
 
   block_devs:
