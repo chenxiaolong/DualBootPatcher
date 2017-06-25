@@ -1,69 +1,59 @@
-Building Application for Android
-================================
+# Building the Android App
 
-The following packages are needed for compiling apk for Android:
+## Environment Setup
+
+If you have docker installed, follow the directions at [`DOCKER.md`](DOCKER.md) to set up a docker build environment. It includes all the dependencies needed for building DualBootPatcher. With docker, DualBootPatcher can also be built from Windows and Mac hosts. For building the Android app, you'll need to use the `<version>-android` image.
+
+If you don't have docker installed, the following packages are needed:
 
 - Android SDK
 - Android NDK
 - cmake
+- gtest
 - jansson
-- yaml-cpp
+- JDK 1.8
 - OpenSSL
+- yaml-cpp
 
-At this time, the host system must be running Linux (though I have not tried compiling on Windows or OS X).
+## Build process
 
-0. initialize and update dependencies
+1. If you haven't cloned the repo and its submodules yet, follow the directions at [`BUILD-Git-Clone.md`](BUILD-Git-Clone.md).
 
-While cloning the repository initially with ```git clone```, prefer using the ```--recursive``` flag to automatically fetch all dependencies.
+2. Set the environment variables for the Android SDK and NDK path. If you're using the docker image, this step is not needed as the environment variables are already set in the image.
 
-   ```sh
-   # if using https
-   git clone --recursive https://github.com/chenxiaolong/DualBootPatcher.git
-   # or if using ssh
-   git clone --recursive git@github.com:chenxiaolong/DualBootPatcher.git
-   ```
+    ```sh
+    export ANDROID_HOME=/path/to/android-sdk
+    export ANDROID_NDK_HOME=/path/to/android-ndk
+    export ANDROID_NDK=/path/to/android-ndk
+    ```
 
-In case you have not cloned this repository using the ```git clone --recursive``` command, you will have to initialize and update the dependencies required for building the apk.
+3. If making a release build, make a copy of `cmake/SigningConfig.prop.in` and edit it to specify the keystore path, keystore passphrase, key alias, and key passphrase.
 
-   ```sh
-   git submodule update --init --recursive
-   ```
+4. Configure the build with CMake.
 
-1. Set the environment variables for the Android SDK and NDK path
+    ```sh
+    mkdir build && cd build
+    cmake .. -DMBP_BUILD_TARGET=android
+    ```
 
-   ```sh
-   export ANDROID_HOME=/path/to/android-sdk
-   export ANDROID_NDK_HOME=/path/to/android-ndk
-   export ANDROID_NDK=/path/to/android-ndk
-   ```
+    If you're making a release build, you'll need to pass the `-DMBP_BUILD_TYPE=release` and `-DMBP_SIGN_CONFIG_PATH=<signing config path>` arguments. See [`CMAKE.md`](CMAKE.md) for a complete listing of CMake options.
 
-2. If making a release build, make a copy of `cmake/SigningConfig.prop.in` and edit it to specify the keystore path, keystore passphrase, key alias, and key passphrase.
+5. Build the system components. This includes things like mbtool, odinupdater, and various native libraries used by the app. The build can be sped up by running things in parallel. Just pass `-j<number of cores>` (eg. `-j4`) to `make`.
 
-3. Build!
+    ```sh
+    make
+    ```
 
-   See [`CMAKE.md`](CMAKE.md) for a complete listing of CMake options. The following commands provide common commands for building release and debug versions of the app.
+6. Package the system components into a tarball.
 
-   For a release build:
+    ```sh
+    rm -rf assets && cpack -G TXZ
+    ```
 
-   ```sh
-   mkdir build && cd build
-   cmake .. \
-       -DMBP_BUILD_TARGET=android \
-       -DMBP_BUILD_TYPE=release \
-       -DMBP_SIGN_CONFIG_PATH=<signing config path>
-   make
-   rm -rf assets && cpack -G TXZ
-   make apk
-   ```
+7. Build the APK.
 
-   For a debug build:
+    ```sh
+    make apk
+    ```
 
-   ```sh
-   mkdir build && cd build
-   cmake .. \
-       -DMBP_BUILD_TARGET=android \
-       -DMBP_BUILD_TYPE=debug
-   make
-   rm -rf assets && cpack -G TXZ
-   make apk
-   ```
+    The resulting APK file will be in the `Android_GUI/build/outputs/apk` directory.
