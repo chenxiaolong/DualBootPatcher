@@ -80,8 +80,10 @@ execute_process(
 )
 
 ################################################################################
-message(STATUS "Locking prebuilts directory: ${MBP_PREBUILTS_DIR}")
-file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY)
+if(MBP_TOP_LEVEL_BUILD)
+    message(STATUS "Locking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+    file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY)
+endif()
 ################################################################################
 
 ################################################################################
@@ -367,6 +369,8 @@ if(MBP_TOP_LEVEL_BUILD)
 endif()
 
 ################################################################################
-message(STATUS "Unlocking prebuilts directory: ${MBP_PREBUILTS_DIR}")
-file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
+if(MBP_TOP_LEVEL_BUILD)
+    message(STATUS "Unlocking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+    file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
+endif()
 ################################################################################
