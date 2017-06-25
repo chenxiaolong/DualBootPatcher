@@ -79,8 +79,18 @@ bool createDirectories(const std::string &path)
 
 #if IO_PLATFORM_WINDOWS
         wTemp = mb::utf8_to_wcs(temp.data());
-        if (!wTemp || (!CreateDirectoryW(wTemp, nullptr)
-                && GetLastError() != ERROR_ALREADY_EXISTS)) {
+        if (!wTemp) {
+            setLastError(Error::PlatformError, priv::format(
+                    "%s: Failed to convert UTF-16 to UTF-8: %s",
+                    temp.data(), win32::errorToString(GetLastError()).c_str()));
+            return false;
+        }
+
+        DWORD dwAttrib = GetFileAttributesW(wTemp);
+        bool exists = (dwAttrib != INVALID_FILE_ATTRIBUTES)
+                && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+        if (!exists && !CreateDirectoryW(wTemp, nullptr)
+                && GetLastError() != ERROR_ALREADY_EXISTS) {
             free(wTemp);
             setLastError(Error::PlatformError, priv::format(
                     "%s: Failed to create directory: %s",
