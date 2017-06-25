@@ -25,14 +25,8 @@
 
 #include <iostream>
 
-#ifdef PORTABLE
-#  if defined(DATA_DIR)
-#    error DATA_DIR should not be defined for portable builds
-#  endif
-#else
-#  if !defined(DATA_DIR)
-#    error DATA_DIR must be defined for non-portable builds
-#  endif
+#if !defined(DATA_DIR)
+#  error DATA_DIR must be defined
 #endif
 
 
@@ -43,12 +37,7 @@ int main(int argc, char *argv[])
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
 
     mbp::PatcherConfig pc;
-
-#ifdef PORTABLE
-    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + LOCAL_DATA_DIR);
-#else
-    pc.setDataDirectory(DATA_DIR);
-#endif
+    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
 
     MainWindow w(&pc);
     w.show();
