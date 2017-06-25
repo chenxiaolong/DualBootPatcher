@@ -40,6 +40,10 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        if (LeakCanary.isInAnalyzerProcess(this)) {
+            return;
+        }
+
         final Thread.UncaughtExceptionHandler defaultUEH =
                 Thread.getDefaultUncaughtExceptionHandler();
 

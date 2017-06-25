@@ -87,7 +87,8 @@ public class PatchFileFragment extends Fragment implements
         ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener,
         PatchFileItemClickListener, FragmentCompat.OnRequestPermissionsResultCallback,
         GenericYesNoDialogListener {
-    public static final String TAG = PatchFileFragment.class.getSimpleName();
+    public static final String FRAGMENT_TAG = PatchFileFragment.class.getCanonicalName();
+    private static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String DIALOG_PATCHER_OPTIONS =
             PatchFileFragment.class.getCanonicalName() + ".patcher_options";

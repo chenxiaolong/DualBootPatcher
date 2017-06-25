@@ -58,8 +58,6 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
         LoaderManager.LoaderCallbacks<NeededInfo>,
         FragmentCompat.OnRequestPermissionsResultCallback,
         GenericYesNoDialogListener, GenericConfirmDialogListener {
-    public static final String TAG = AppSharingSettingsFragment.class.getSimpleName();
-
     private static final String KEY_SHARE_INDIV_APPS = "share_indiv_apps";
     private static final String KEY_MANAGE_INDIV_APPS = "manage_indiv_apps";
 

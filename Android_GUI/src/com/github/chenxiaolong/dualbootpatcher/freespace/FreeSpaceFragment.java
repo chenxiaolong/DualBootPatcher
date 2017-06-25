@@ -46,7 +46,8 @@ import java.util.List;
 import java.util.Random;
 
 public class FreeSpaceFragment extends Fragment {
-    public static final String TAG = FreeSpaceFragment.class.getSimpleName();
+    public static final String FRAGMENT_TAG = FreeSpaceFragment.class.getSimpleName();
+    private static final String TAG = FreeSpaceFragment.class.getSimpleName();
 
     private ArrayList<MountInfo> mMounts = new ArrayList<>();
     private MountInfoAdapter mAdapter;

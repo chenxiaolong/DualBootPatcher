@@ -54,10 +54,10 @@ import jackpal.androidterm.emulatorview.EmulatorView;
 import jackpal.androidterm.emulatorview.TermSession;
 
 public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnection {
-    public static final String TAG = MbtoolTaskOutputFragment.class.getSimpleName();
+    public static final String FRAGMENT_TAG = MbtoolTaskOutputFragment.class.getCanonicalName();
 
-    private static final String EXTRA_IS_RUNNING = TAG + ".is_running";
-    private static final String EXTRA_TASK_ID = TAG + ".task_id";
+    private static final String EXTRA_IS_RUNNING = FRAGMENT_TAG + ".is_running";
+    private static final String EXTRA_TASK_ID = FRAGMENT_TAG + ".task_id";
 
     public static final String PARAM_ACTIONS = "actions";
 

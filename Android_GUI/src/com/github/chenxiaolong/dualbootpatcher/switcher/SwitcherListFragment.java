@@ -79,7 +79,8 @@ import java.util.Collections;
 public class SwitcherListFragment extends Fragment implements
         RomCardActionListener, SetKernelNeededDialogListener, ConfirmChecksumIssueDialogListener,
         GenericYesNoDialogListener, GenericConfirmDialogListener, ServiceConnection {
-    public static final String TAG = SwitcherListFragment.class.getSimpleName();
+    public static final String FRAGMENT_TAG = SwitcherListFragment.class.getCanonicalName();
+    private static final String TAG = SwitcherListFragment.class.getSimpleName();
 
     private static final String EXTRA_TASK_ID_GET_ROMS_STATE = "task_id_get_roms_state";
     private static final String EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom";

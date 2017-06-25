@@ -58,8 +58,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import java.util.ArrayList;
 
 public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
-    public static final String TAG = RomSettingsFragment.class.getSimpleName();
-
     private static final String PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog";
     private static final String CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog";
 
