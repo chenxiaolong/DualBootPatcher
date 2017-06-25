@@ -1,12 +1,12 @@
 # All of the files here are built from the PKGBUILD files in thirdparty/*/PKGBUILD.
 # All of the files are signed with my GPG key and correct hashes are provided
-# at https://snapshots.noobdev.io/repo/prebuilts, but if you don't trust me or
+# at https://dbp.noobdev.io/repo/prebuilts, but if you don't trust me or
 # my binaries, you can use your own builds builds by copying your own prebuilts
 # to thirdparty/prebuilts and updating the checksums here. It is not necessary
 # to upload the files to a server as CMake will not download the files if the
 # checksums match.
 
-set(URL_BASE "https://snapshots.noobdev.io/repo/prebuilts")
+set(URL_BASE "https://dbp.noobdev.io/repo/prebuilts")
 
 set(MBP_PREBUILTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/prebuilts"
     CACHE PATH "Prebuilts download directory")
@@ -324,7 +324,7 @@ set(PROCPS_NG_VER "3.3.10")
 if(MBP_TOP_LEVEL_BUILD)
     file(
         DOWNLOAD
-        https://snapshots.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
+        https://dbp.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
         ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
         EXPECTED_HASH MD5=38489848300b3ac68297142ae943cfb5
         EXPECTED_HASH SHA512=3eb49e02b0372669f4683aa4003f97a285ba2106ed2e847c022f9db2c5a92b8be3611f1409d5fcb75c0789b03df8faeeb453e3625d26c28f2c4c842daedc1e77
