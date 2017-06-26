@@ -397,6 +397,18 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/cust
       - /dev/block/bootdevice/by-name/cust
 
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
 
 - name: Xiaomi Mi Max Pro
   id: helium
@@ -432,6 +444,18 @@
       - /dev/block/platform/7824900.sdhci/by-name/cust
       - /dev/block/bootdevice/by-name/cust
       - /dev/block/mmcblk0p63
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
 
 
 - name: Xiaomi HM 1S
