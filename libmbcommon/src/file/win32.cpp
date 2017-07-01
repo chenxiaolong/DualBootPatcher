@@ -90,8 +90,8 @@ static int win32_close_cb(struct MbFile *file, void *userdata)
     Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
     int ret = MB_FILE_OK;
 
-    if (ctx->owned && !ctx->vtable.fn_CloseHandle(
-            ctx->vtable.userdata, ctx->handle)) {
+    if (ctx->owned && ctx->handle != INVALID_HANDLE_VALUE
+            && !ctx->vtable.fn_CloseHandle(ctx->vtable.userdata, ctx->handle)) {
         mb_file_set_error(file, -GetLastError(),
                           "Failed to close file: %ls",
                           win32_error_string(ctx, GetLastError()));
