@@ -159,15 +159,7 @@ std::string loopdev_find_unused(void)
         return {};
     }
 
-    std::string result;
-
-    char *path = mb_format(LOOP_FMT, n);
-    if (path) {
-        result = path;
-        free(path);
-    }
-
-    return result;
+    return mb::format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,

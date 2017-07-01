@@ -21,6 +21,7 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -79,12 +80,8 @@ private:
     bool chmod_path()
     {
         if (::chmod(_curr->fts_accpath, _perms) < 0) {
-            char *msg = mb_format("%s: Failed to chmod: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "%s: Failed to chmod: %s",
+                       _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

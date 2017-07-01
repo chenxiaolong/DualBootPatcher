@@ -350,7 +350,7 @@ int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
  */
 MbBiReader * mb_bi_reader_new()
 {
-    MbBiReader *bir = static_cast<MbBiReader *>(calloc(1, sizeof(MbBiReader)));
+    MbBiReader *bir = new(std::nothrow) MbBiReader();
     if (bir) {
         bir->state = ReaderState::NEW;
         bir->header = mb_bi_header_new();
@@ -399,8 +399,7 @@ int mb_bi_reader_free(MbBiReader *bir)
         mb_bi_header_free(bir->header);
         mb_bi_entry_free(bir->entry);
 
-        free(bir->error_string);
-        free(bir);
+        delete bir;
     }
 
     return ret;
@@ -1115,7 +1114,7 @@ int mb_bi_reader_error(MbBiReader *bir)
  */
 const char * mb_bi_reader_error_string(MbBiReader *bir)
 {
-    return bir->error_string ? bir->error_string : "";
+    return bir->error_string.c_str();
 }
 
 /*!
@@ -1160,16 +1159,9 @@ int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
 int mb_bi_reader_set_error_v(MbBiReader *bir, int error_code,
                              const char *fmt, va_list ap)
 {
-    free(bir->error_string);
-
-    char *dup = mb_format_v(fmt, ap);
-    if (!dup) {
-        return MB_BI_FAILED;
-    }
-
     bir->error_code = error_code;
-    bir->error_string = dup;
-    return MB_BI_OK;
+    return mb::format_v(bir->error_string, fmt, ap)
+            ? MB_BI_OK : MB_BI_FAILED;
 }
 
 MB_END_C_DECLS

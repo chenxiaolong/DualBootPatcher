@@ -212,7 +212,7 @@ bool OdinPatcher::Impl::patchTar()
 #ifdef __ANDROID__
     static const char *prefix = "/proc/self/fd/";
     fd = -1;
-    if (mb_starts_with(info->inputPath().c_str(), prefix)) {
+    if (mb::starts_with(info->inputPath(), prefix)) {
         std::string fdStr = info->inputPath().substr(strlen(prefix));
         if (!convertToInt(fdStr.c_str(), &fd)) {
             LOGE("Invalid fd: %s", fdStr.c_str());
@@ -363,7 +363,7 @@ bool OdinPatcher::Impl::processFile(archive *a, archive_entry *entry,
     std::string zipName(name);
 
     if (sparse) {
-        if (mb_ends_with(name, ".ext4")) {
+        if (mb::ends_with(name, ".ext4")) {
             zipName.erase(zipName.size() - 5);
         }
         zipName += ".sparse";
@@ -501,15 +501,15 @@ bool OdinPatcher::Impl::processContents(archive *a, int depth)
             if (!processFile(a, entry, false)) {
                 return false;
             }
-        } else if (mb_starts_with(name, "cache.img")
-                || mb_starts_with(name, "system.img")) {
+        } else if (mb::starts_with(name, "cache.img")
+                || mb::starts_with(name, "system.img")) {
             LOGV("%sHandling sparse image: %s", indent(depth), name);
             added_files.insert(name);
 
             if (!processFile(a, entry, true)) {
                 return false;
             }
-        } else if (mb_ends_with(name, ".tar.md5")) {
+        } else if (mb::ends_with(name, ".tar.md5")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);

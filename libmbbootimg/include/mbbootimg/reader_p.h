@@ -22,6 +22,8 @@
 #include "mbbootimg/guard_p.h"
 
 #ifdef __cplusplus
+#  include <string>
+
 #  include <cstddef>
 #else
 #  include <stddef.h>
@@ -120,7 +122,7 @@ struct MbBiReader
 
     // Error
     int error_code;
-    char *error_string;
+    std::string error_string;
 
     struct FormatReader formats[MAX_FORMATS];
     size_t formats_len;

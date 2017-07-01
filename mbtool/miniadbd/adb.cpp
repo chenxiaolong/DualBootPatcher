@@ -36,29 +36,25 @@ const char *adb_device_banner = "device";
 
 void fatal(const char *fmt, ...)
 {
-    char *new_fmt = mb_format("error: %s", fmt);
-    if (new_fmt) {
-        va_list ap;
-        va_start(ap, fmt);
-        ADB_VLOGE(ADB_CONN, new_fmt, ap);
-        va_end(ap);
+    std::string new_fmt = mb::format("error: %s", fmt);
 
-        free(new_fmt);
-    }
+    va_list ap;
+    va_start(ap, fmt);
+    ADB_VLOGE(ADB_CONN, new_fmt.c_str(), ap);
+    va_end(ap);
+
     exit(-1);
 }
 
 void fatal_errno(const char *fmt, ...)
 {
-    char *new_fmt = mb_format("error: %s: %s", strerror(errno), fmt);
-    if (new_fmt) {
-        va_list ap;
-        va_start(ap, fmt);
-        ADB_VLOGE(ADB_CONN, new_fmt, ap);
-        va_end(ap);
+    std::string new_fmt = mb::format("error: %s: %s", strerror(errno), fmt);
 
-        free(new_fmt);
-    }
+    va_list ap;
+    va_start(ap, fmt);
+    ADB_VLOGE(ADB_CONN, new_fmt.c_str(), ap);
+    va_end(ap);
+
     exit(-1);
 }
 

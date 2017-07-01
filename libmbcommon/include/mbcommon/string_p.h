@@ -32,8 +32,5 @@ MB_BEGIN_C_DECLS
 
 void * _mb_mempcpy(void *dest, const void *src, size_t n);
 
-void * _mb_memmem(const void *haystack, size_t haystacklen,
-                  const void *needle, size_t needlelen);
-
 MB_END_C_DECLS
 /*! \endcond */

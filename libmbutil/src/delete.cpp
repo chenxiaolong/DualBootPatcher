@@ -72,12 +72,8 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            char *msg = mb_format("%s: Failed to remove: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "%s: Failed to remove: %s",
+                       _curr->fts_path, strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }

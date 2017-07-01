@@ -21,6 +21,9 @@
 
 #include <algorithm>
 
+#include <cerrno>
+#include <cstring>
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -90,12 +93,8 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            char *msg = mb_format("%s: Failed to remove: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "%s: Failed to remove: %s",
+                       _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

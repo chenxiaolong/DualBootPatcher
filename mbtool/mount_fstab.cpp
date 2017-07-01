@@ -239,7 +239,7 @@ static bool path_matches(const char *path, const char *pattern)
     if (strchr(pattern, '*')) {
         return fnmatch(pattern, path, 0) == 0;
     } else {
-        return mb_starts_with(path, pattern);
+        return mb::starts_with(path, pattern);
     }
 }
 
@@ -334,7 +334,7 @@ static bool mount_exfat_fuse(const char *source, const char *target)
 static bool mount_exfat_kernel(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    char *args = mb_format(
+    std::string args = mb::format(
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
@@ -344,12 +344,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
             | MS_NOEXEC;
     // For Motorola: MS_RELATIME
 
-    if (!args) {
-        return false;
-    }
-
-    int ret = mount(source, target, "exfat", flags, args);
-    free(args);
+    int ret = mount(source, target, "exfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "exfat", target, strerror(errno));
@@ -364,7 +359,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
 static bool mount_vfat(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    char *args = mb_format(
+    std::string args = mb::format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
     int flags = MS_NODEV
@@ -375,12 +370,7 @@ static bool mount_vfat(const char *source, const char *target)
             | MS_NOATIME
             | MS_NODIRATIME;
 
-    if (!args) {
-        return false;
-    }
-
-    int ret = mount(source, target, "vfat", flags, args);
-    free(args);
+    int ret = mount(source, target, "vfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "vfat", target, strerror(errno));

@@ -271,8 +271,7 @@ MB_BEGIN_C_DECLS
  */
 struct MbFile * mb_file_new()
 {
-    struct MbFile *file = static_cast<struct MbFile *>(
-            calloc(1, sizeof(struct MbFile)));
+    struct MbFile *file = new(std::nothrow) MbFile();
     if (file) {
         file->state = MbFileState::NEW;
     }
@@ -300,8 +299,7 @@ int mb_file_free(struct MbFile *file)
             ret = mb_file_close(file);
         }
 
-        free(file->error_string);
-        free(file);
+        delete file;
     }
 
     return ret;
@@ -707,7 +705,7 @@ int mb_file_error(struct MbFile *file)
  */
 const char * mb_file_error_string(struct MbFile *file)
 {
-    return file->error_string ? file->error_string : "";
+    return file->error_string.c_str();
 }
 
 /*!
@@ -752,16 +750,10 @@ int mb_file_set_error(struct MbFile *file, int error_code,
 int mb_file_set_error_v(struct MbFile *file, int error_code,
                         const char *fmt, va_list ap)
 {
-    free(file->error_string);
-
-    char *dup = mb_format_v(fmt, ap);
-    if (!dup) {
-        return MB_FILE_FAILED;
-    }
 
     file->error_code = error_code;
-    file->error_string = dup;
-    return MB_FILE_OK;
+    return mb::format_v(file->error_string, fmt, ap)
+            ? MB_FILE_OK : MB_FILE_FAILED;
 }
 
 MB_END_C_DECLS

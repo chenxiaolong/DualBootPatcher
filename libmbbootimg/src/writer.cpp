@@ -353,7 +353,7 @@ int _mb_bi_writer_free_format(MbBiWriter *biw, FormatWriter *format)
  */
 MbBiWriter * mb_bi_writer_new()
 {
-    MbBiWriter *biw = static_cast<MbBiWriter *>(calloc(1, sizeof(MbBiWriter)));
+    MbBiWriter *biw = new(std::nothrow) MbBiWriter();
     if (biw) {
         biw->state = WriterState::NEW;
         biw->header = mb_bi_header_new();
@@ -402,8 +402,7 @@ int mb_bi_writer_free(MbBiWriter *biw)
         mb_bi_header_free(biw->header);
         mb_bi_entry_free(biw->entry);
 
-        free(biw->error_string);
-        free(biw);
+        delete biw;
     }
 
     return ret;
@@ -956,7 +955,7 @@ int mb_bi_writer_error(MbBiWriter *biw)
  */
 const char * mb_bi_writer_error_string(MbBiWriter *biw)
 {
-    return biw->error_string ? biw->error_string : "";
+    return biw->error_string.c_str();
 }
 
 /*!
@@ -1001,16 +1000,9 @@ int mb_bi_writer_set_error(MbBiWriter *biw, int error_code,
 int mb_bi_writer_set_error_v(MbBiWriter *biw, int error_code,
                              const char *fmt, va_list ap)
 {
-    free(biw->error_string);
-
-    char *dup = mb_format_v(fmt, ap);
-    if (!dup) {
-        return MB_BI_FAILED;
-    }
-
     biw->error_code = error_code;
-    biw->error_string = dup;
-    return MB_BI_OK;
+    return mb::format_v(biw->error_string, fmt, ap)
+            ? MB_BI_OK : MB_BI_FAILED;
 }
 
 MB_END_C_DECLS

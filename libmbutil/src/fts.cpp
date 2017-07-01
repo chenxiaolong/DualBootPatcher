@@ -86,11 +86,7 @@ bool FTSWrapper::run()
 
     _ftsp = fts_open(files, fts_flags, nullptr);
     if (!_ftsp) {
-        char *msg = mb_format("fts_open failed: %s", strerror(errno));
-        if (msg) {
-            _error_msg = msg;
-            free(msg);
-        }
+        mb::format(_error_msg, "fts_open failed: %s", strerror(errno));
         ret = false;
     }
 
@@ -99,12 +95,8 @@ bool FTSWrapper::run()
         case FTS_NS:  // no stat()
         case FTS_DNR: // directory not read
         case FTS_ERR: { // other error
-            char *msg = mb_format("fts_read error: %s",
-                                  strerror(_curr->fts_errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "fts_read error: %s",
+                       strerror(_curr->fts_errno));
             ret = false;
             break;
         }

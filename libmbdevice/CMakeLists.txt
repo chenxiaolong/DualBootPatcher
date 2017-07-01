@@ -1,6 +1,6 @@
 set(MBDEVICE_SOURCES
     src/device.c
-    src/json.c
+    src/json.cpp
     src/validate.c
     src/internal/array.c
     src/internal/structs.c
@@ -67,6 +67,8 @@ foreach(variant ${variants})
         set_target_properties(
             ${lib_target}
             PROPERTIES
+            CXX_STANDARD 11
+            CXX_STANDARD_REQUIRED 1
             C_STANDARD 99
             C_STANDARD_REQUIRED 1
         )

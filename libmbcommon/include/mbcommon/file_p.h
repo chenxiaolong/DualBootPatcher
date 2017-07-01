@@ -23,6 +23,8 @@
 
 #include "mbcommon/file.h"
 
+#include <string>
+
 /*! \cond INTERNAL */
 enum MbFileState : uint16_t
 {
@@ -50,6 +52,6 @@ struct MbFile
 
     // Error
     int error_code;
-    char *error_string;
+    std::string error_string;
 };
 /*! \endcond */

@@ -290,17 +290,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = mb::format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    // std::string is guaranteed to be contiguous in C++11
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -471,17 +464,9 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = mb::format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }

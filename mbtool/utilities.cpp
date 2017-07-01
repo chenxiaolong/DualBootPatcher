@@ -238,40 +238,26 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
             name = config.name;
         }
 
-        char *menu_item = mb_format("\"%s\", \"\", \"@default\",\n",
-                                    name.c_str());
-        if (menu_item) {
-            rom_menu_items += menu_item;
-            free(menu_item);
-        }
+        rom_menu_items += mb::format("\"%s\", \"\", \"@default\",\n",
+                                     name.c_str());
 
-        char *selection_item = mb_format(
+        rom_selection_items += mb::format(
                 "if prop(\"operations.prop\", \"selected\") == \"%zu\" then\n"
                 "    setvar(\"romid\", \"%s\");\n"
                 "    setvar(\"romname\", \"%s\");\n"
                 "endif;\n",
                 i + 2 + 1, rom->id.c_str(), name.c_str());
-        if (selection_item) {
-            rom_selection_items += selection_item;
-            free(selection_item);
-        }
     }
 
-    char *first_index = mb_format("%d", 2 + 1);
-    char *last_index = mb_format("%zu", 2 + roms.roms.size());
+    std::string first_index = mb::format("%d", 2 + 1);
+    std::string last_index = mb::format("%zu", 2 + roms.roms.size());
 
     util::replace_all(&str_data, "\t", "\\t");
     util::replace_all(&str_data, "@MBTOOL_VERSION@", version());
     util::replace_all(&str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
     util::replace_all(&str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
-    if (first_index) {
-        util::replace_all(&str_data, "@FIRST_INDEX@", first_index);
-        free(first_index);
-    }
-    if (last_index) {
-        util::replace_all(&str_data, "@LAST_INDEX@", last_index);
-        free(last_index);
-    }
+    util::replace_all(&str_data, "@FIRST_INDEX@", first_index);
+    util::replace_all(&str_data, "@LAST_INDEX@", last_index);
 
     util::replace_all(&str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
     util::replace_all(&str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());

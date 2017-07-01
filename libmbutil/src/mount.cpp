@@ -112,7 +112,7 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
 
     struct stat sb;
     if (lstat(entry_out.dir.c_str(), &sb) < 0 && errno == ENOENT
-            && mb_ends_with(entry_out.dir.c_str(), DELETED_SUFFIX)) {
+            && mb::ends_with(entry_out.dir, DELETED_SUFFIX)) {
         entry_out.dir.erase(entry_out.dir.size() - strlen(DELETED_SUFFIX));
     }
 
@@ -154,7 +154,7 @@ bool unmount_all(const std::string &dir)
         for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             // matching
-            if (mb_starts_with(entry.dir.c_str(), dir.c_str())) {
+            if (mb::starts_with(entry.dir, dir)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }

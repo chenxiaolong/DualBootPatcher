@@ -204,7 +204,7 @@ TEST_F(FileTest, CheckInitialValues)
     ASSERT_EQ(_file->truncate_cb, nullptr);
     ASSERT_EQ(_file->cb_userdata, nullptr);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_NONE);
-    ASSERT_EQ(_file->error_string, nullptr);
+    ASSERT_TRUE(_file->error_string.empty());
 }
 
 TEST_F(FileTest, CheckStatesNormal)
@@ -352,57 +352,50 @@ TEST_F(FileTest, SetCallbacksInNonNewState)
     ASSERT_NE(_file->open_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_open_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_open_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_close_callback(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->close_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_close_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_close_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_read_callback(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->read_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_read_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_read_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_write_callback(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->write_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_write_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_write_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_seek_callback(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->seek_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_seek_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_seek_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_truncate_callback(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->truncate_cb, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_truncate_callback"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_truncate_callback"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 
     ASSERT_EQ(mb_file_set_callback_data(_file, nullptr), MB_FILE_FATAL);
     ASSERT_NE(_file->cb_userdata, nullptr);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_set_callback_data"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_set_callback_data"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
 }
 
 TEST_F(FileTest, OpenReturnNonFatalFailure)
@@ -476,9 +469,8 @@ TEST_F(FileTest, OpenFileTwice)
     // Open again
     ASSERT_EQ(mb_file_open(_file), MB_FILE_FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_open"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_open"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
     ASSERT_EQ(_n_open, 1);
 }
 
@@ -639,9 +631,8 @@ TEST_F(FileTest, ReadInWrongState)
     ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_read"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_read"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
     ASSERT_EQ(_n_read, 0);
 }
 
@@ -662,9 +653,8 @@ TEST_F(FileTest, ReadWithNullBytesReadParam)
     ASSERT_EQ(mb_file_read(_file, &c, 1, nullptr), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_read"));
-    ASSERT_TRUE(strstr(_file->error_string, "is NULL"));
+    ASSERT_NE(_file->error_string.find("mb_file_read"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("is NULL"), std::string::npos);
     ASSERT_EQ(_n_read, 0);
 }
 
@@ -689,9 +679,8 @@ TEST_F(FileTest, ReadNoCallback)
     ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_UNSUPPORTED);
     ASSERT_EQ(_file->state, MbFileState::OPENED);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_UNSUPPORTED);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_read"));
-    ASSERT_TRUE(strstr(_file->error_string, "read callback"));
+    ASSERT_NE(_file->error_string.find("mb_file_read"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("read callback"), std::string::npos);
     ASSERT_EQ(_n_read, 0);
 }
 
@@ -795,9 +784,8 @@ TEST_F(FileTest, WriteInWrongState)
     ASSERT_EQ(mb_file_write(_file, &c, 1, &n), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_write"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_write"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
     ASSERT_EQ(_n_write, 0);
 }
 
@@ -817,9 +805,8 @@ TEST_F(FileTest, WriteWithNullBytesReadParam)
     ASSERT_EQ(mb_file_write(_file, "x", 1, nullptr), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_write"));
-    ASSERT_TRUE(strstr(_file->error_string, "is NULL"));
+    ASSERT_NE(_file->error_string.find("mb_file_write"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("is NULL"), std::string::npos);
     ASSERT_EQ(_n_write, 0);
 }
 
@@ -843,9 +830,8 @@ TEST_F(FileTest, WriteNoCallback)
     ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_UNSUPPORTED);
     ASSERT_EQ(_file->state, MbFileState::OPENED);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_UNSUPPORTED);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_write"));
-    ASSERT_TRUE(strstr(_file->error_string, "write callback"));
+    ASSERT_NE(_file->error_string.find("mb_file_write"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("write callback"), std::string::npos);
     ASSERT_EQ(_n_write, 0);
 }
 
@@ -949,9 +935,8 @@ TEST_F(FileTest, SeekInWrongState)
     ASSERT_EQ(mb_file_seek(_file, 0, SEEK_END, nullptr), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_seek"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_seek"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
     ASSERT_EQ(_n_seek, 0);
 }
 
@@ -974,9 +959,8 @@ TEST_F(FileTest, SeekNoCallback)
     ASSERT_EQ(mb_file_seek(_file, 0, SEEK_END, nullptr), MB_FILE_UNSUPPORTED);
     ASSERT_EQ(_file->state, MbFileState::OPENED);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_UNSUPPORTED);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_seek"));
-    ASSERT_TRUE(strstr(_file->error_string, "seek callback"));
+    ASSERT_NE(_file->error_string.find("mb_file_seek"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("seek callback"), std::string::npos);
     ASSERT_EQ(_n_seek, 0);
 }
 
@@ -1069,9 +1053,8 @@ TEST_F(FileTest, TruncateInWrongState)
     ASSERT_EQ(mb_file_truncate(_file, INITIAL_BUF_SIZE + 1), MB_FILE_FATAL);
     ASSERT_EQ(_file->state, MbFileState::FATAL);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_PROGRAMMER_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_truncate"));
-    ASSERT_TRUE(strstr(_file->error_string, "Invalid state"));
+    ASSERT_NE(_file->error_string.find("mb_file_truncate"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("Invalid state"), std::string::npos);
     ASSERT_EQ(_n_truncate, 0);
 }
 
@@ -1095,9 +1078,8 @@ TEST_F(FileTest, TruncateNoCallback)
               MB_FILE_UNSUPPORTED);
     ASSERT_EQ(_file->state, MbFileState::OPENED);
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_UNSUPPORTED);
-    ASSERT_NE(_file->error_string, nullptr);
-    ASSERT_TRUE(strstr(_file->error_string, "mb_file_truncate"));
-    ASSERT_TRUE(strstr(_file->error_string, "truncate callback"));
+    ASSERT_NE(_file->error_string.find("mb_file_truncate"), std::string::npos);
+    ASSERT_NE(_file->error_string.find("truncate callback"), std::string::npos);
     ASSERT_EQ(_n_truncate, 0);
 }
 
@@ -1162,13 +1144,13 @@ TEST_F(FileTest, TruncateReturnFatalFailure)
 TEST_F(FileTest, SetError)
 {
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_NONE);
-    ASSERT_EQ(_file->error_string, nullptr);
+    ASSERT_TRUE(_file->error_string.empty());
 
     ASSERT_EQ(mb_file_set_error(_file, MB_FILE_ERROR_INTERNAL_ERROR,
                                 "%s, %s!", "Hello", "world"), MB_FILE_OK);
 
     ASSERT_EQ(_file->error_code, MB_FILE_ERROR_INTERNAL_ERROR);
-    ASSERT_NE(_file->error_string, nullptr);
+    ASSERT_EQ(_file->error_string, "Hello, world!");
     ASSERT_EQ(mb_file_error(_file), _file->error_code);
-    ASSERT_STREQ(mb_file_error_string(_file), _file->error_string);
+    ASSERT_EQ(mb_file_error_string(_file), _file->error_string);
 }

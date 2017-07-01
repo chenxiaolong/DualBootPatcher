@@ -114,16 +114,15 @@ bool WriteFdExactly(int fd, const std::string& str) {
 }
 
 bool WriteFdFmt(int fd, const char* fmt, ...) {
+    std::string str;
+
     va_list ap;
     va_start(ap, fmt);
-    char *str = mb_format_v(fmt, ap);
+    bool ret = mb::format_v(str, fmt, ap);
     va_end(ap);
 
-    bool ret = false;
-
-    if (str) {
+    if (ret) {
         ret = WriteFdExactly(fd, str);
-        free(str);
     }
 
     return ret;

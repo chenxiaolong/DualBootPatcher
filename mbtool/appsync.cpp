@@ -107,12 +107,8 @@ static bool load_config_files()
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
         std::string config_path = rom->config_path();
-        char *packages_path = mb_format(PACKAGES_XML_PATH_FMT,
-                                        rom->full_data_path().c_str());
-        if (!packages_path) {
-            LOGW("Out of memory");
-            continue;
-        }
+        std::string packages_path = mb::format(PACKAGES_XML_PATH_FMT,
+                                               rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;
@@ -126,15 +122,13 @@ static bool load_config_files()
         }
         if (!rom_packages.load_xml(packages_path)) {
             LOGW("%s: Failed to load packages for ROM %s",
-                 packages_path, rom->id.c_str());
+                 packages_path.c_str(), rom->id.c_str());
         }
 
         if (rom->id == current_rom->id) {
             config = rom_config;
             packages = rom_packages;
         }
-
-        free(packages_path);
     }
 
     LOGD("[Config] ROM ID:                    %s", config.id.c_str());
