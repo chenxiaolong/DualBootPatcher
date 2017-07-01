@@ -45,8 +45,7 @@ MB_BEGIN_C_DECLS
 
 static void free_ctx(FdFileCtx *ctx)
 {
-    free(ctx->filename);
-    free(ctx);
+    delete ctx;
 }
 
 static int fd_open_cb(struct MbFile *file, void *userdata)
@@ -54,13 +53,14 @@ static int fd_open_cb(struct MbFile *file, void *userdata)
     FdFileCtx *ctx = static_cast<FdFileCtx *>(userdata);
     struct stat sb;
 
-    if (ctx->filename) {
+    if (!ctx->filename.empty()) {
 #ifdef _WIN32
         ctx->fd = ctx->vtable.fn_wopen(
 #else
         ctx->fd = ctx->vtable.fn_open(
 #endif
-                ctx->vtable.userdata, ctx->filename, ctx->flags, DEFAULT_MODE);
+                ctx->vtable.userdata, ctx->filename.c_str(), ctx->flags,
+                DEFAULT_MODE);
         if (ctx->fd < 0) {
             mb_file_set_error(file, -errno, "Failed to open file: %s",
                               strerror(errno));
@@ -198,7 +198,7 @@ static FdFileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
         return nullptr;
     }
 
-    FdFileCtx *ctx = static_cast<FdFileCtx *>(calloc(1, sizeof(FdFileCtx)));
+    FdFileCtx *ctx = new(std::nothrow) FdFileCtx();
     if (!ctx) {
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Failed to allocate FdFileCtx: %s",
@@ -284,21 +284,14 @@ int _mb_file_open_fd_filename(SysVtable *vtable, struct MbFile *file,
     ctx->owned = true;
 
 #ifdef _WIN32
-    ctx->filename = mb::mbs_to_wcs(filename);
-    if (!ctx->filename) {
+    if (!mb::mbs_to_wcs(ctx->filename, filename)) {
         mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
                           "Failed to convert MBS filename or mode to WCS");
         free_ctx(ctx);
         return MB_FILE_FATAL;
     }
 #else
-    ctx->filename = strdup(filename);
-    if (!ctx->filename) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate string: %s", strerror(errno));
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
+    ctx->filename = filename;
 #endif
 
     ctx->flags = convert_mode(mode);
@@ -323,16 +316,9 @@ int _mb_file_open_fd_filename_w(SysVtable *vtable, struct MbFile *file,
     ctx->owned = true;
 
 #ifdef _WIN32
-    ctx->filename = wcsdup(filename);
-    if (!ctx->filename) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate string: %s", strerror(errno));
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
+    ctx->filename = filename;
 #else
-    ctx->filename = mb::wcs_to_mbs(filename);
-    if (!ctx->filename) {
+    if (!mb::wcs_to_mbs(ctx->filename, filename)) {
         mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
                           "Failed to convert WCS filename or mode to MBS");
         free_ctx(ctx);

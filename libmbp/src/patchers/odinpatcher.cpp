@@ -720,16 +720,15 @@ int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
     int ret;
 
 #ifdef _WIN32
-    std::unique_ptr<wchar_t, decltype(free) *> wFilename{
-            mb::utf8_to_wcs(impl->info->inputPath().c_str()), free};
-    if (!wFilename) {
+    std::wstring wFilename;
+    if (!mb::utf8_to_wcs(wFilename, impl->info->inputPath())) {
         LOGE("%s: Failed to convert from UTF8 to WCS",
              impl->info->inputPath().c_str());
         impl->error = ErrorCode::FileOpenError;
         return -1;
     }
 
-    ret = mb_file_open_filename_w(impl->laFile.get(), wFilename.get(),
+    ret = mb_file_open_filename_w(impl->laFile.get(), wFilename.c_str(),
                                   MB_FILE_OPEN_READ_ONLY);
 #else
 #  ifdef __ANDROID__

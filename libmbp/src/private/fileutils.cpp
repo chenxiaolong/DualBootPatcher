@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -47,14 +47,14 @@ ErrorCode FileUtils::openFile(MbFile *file, const std::string &path, int mode)
     int ret;
 
 #ifdef _WIN32
-    std::unique_ptr<wchar_t, decltype(free) *> wFilename{
-            mb::utf8_to_wcs(path.c_str()), free};
-    if (!wFilename) {
+    std::wstring wFilename;
+
+    if (!mb::utf8_to_wcs(wFilename, path)) {
         LOGE("%s: Failed to convert from UTF8 to WCS", path.c_str());
         return ErrorCode::FileOpenError;
     }
 
-    ret = mb_file_open_filename_w(file, wFilename.get(), mode);
+    ret = mb_file_open_filename_w(file, wFilename.c_str(), mode);
 #else
     ret = mb_file_open_filename(file, path.c_str(), mode);
 #endif
@@ -244,13 +244,7 @@ std::string FileUtils::systemTemporaryDir()
     }
 
 done:
-    char *temp = mb::wcs_to_utf8(wPath.c_str());
-    if (temp) {
-        path = temp;
-        free(temp);
-    }
-
-    return path;
+    return mb::wcs_to_utf8(wPath);
 #else
     const char *value;
 
@@ -277,14 +271,13 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
     // This Win32 code is adapted from the awesome libuv library (MIT-licensed)
     // https://github.com/libuv/libuv/blob/v1.x/src/win/fs.c
 
-    static const char *possible =
+    constexpr char possible[] =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    static const size_t numChars = 62;
-    static const size_t numX = 6;
-    static const char *suffix = "\\mbp-";
+    constexpr size_t numChars = 62;
+    constexpr size_t numX = 6;
+    constexpr char suffix[] = "\\mbp-";
 
     HCRYPTPROV hProv;
-    std::string newPath;
 
     bool ret = CryptAcquireContext(
         &hProv,                 // phProv
@@ -299,11 +292,11 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         return std::string();
     }
 
-    std::vector<char> buf(directory.begin(), directory.end()); // Path
-    buf.insert(buf.end(), suffix, suffix + strlen(suffix));    // "\mbp-"
-    buf.resize(buf.size() + numX);                             // Unique part
-    buf.push_back('\0');                                       // 0-terminator
-    char *unique = buf.data() + buf.size() - numX - 1;
+    std::string newPath = directory;        // Path
+    newPath += suffix;                      // "\mbp-"
+    newPath.resize(newPath.size() + numX);  // Unique part
+
+    char *unique = &newPath[newPath.size() - numX];
 
     unsigned int tries = TMP_MAX;
     do {
@@ -326,26 +319,24 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
         }
 
         // This is not particularly fast, but it'll do for now
-        wchar_t *wBuf = mb::utf8_to_wcs(buf.data());
-        if (!wBuf) {
+        std::wstring wNewPath;
+        if (!mb::utf8_to_wcs(wNewPath, newPath)) {
             LOGE("Failed to convert UTF-8 to WCS: %s",
                  win32ErrorToString(GetLastError()).c_str());
             break;
         }
 
         ret = CreateDirectoryW(
-            wBuf,               // lpPathName
+            wNewPath.c_str(),   // lpPathName
             nullptr             // lpSecurityAttributes
         );
 
-        free(wBuf);
-
         if (ret) {
-            newPath = buf.data();
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
             LOGE("CreateDirectoryW() failed: %s",
                  win32ErrorToString(GetLastError()).c_str());
+            newPath.clear();
             break;
         }
     } while (--tries);
@@ -361,15 +352,11 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
     std::string dirTemplate(directory);
     dirTemplate += "/mbp-XXXXXX";
 
-    // mkdtemp modifies buffer
-    std::vector<char> buf(dirTemplate.begin(), dirTemplate.end());
-    buf.push_back('\0');
-
-    if (mkdtemp(buf.data())) {
-        return buf.data();
+    if (mkdtemp(&dirTemplate[0])) {
+        return dirTemplate;
     }
 
-    return std::string();
+    return {};
 #endif
 }
 

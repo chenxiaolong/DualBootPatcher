@@ -22,6 +22,9 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file/win32.h"
+
+#include <string>
+
 #include "mbcommon/file/vtable_p.h"
 
 /*! \cond INTERNAL */
@@ -31,7 +34,7 @@ struct Win32FileCtx
 {
     HANDLE handle;
     bool owned;
-    LPWSTR filename;
+    std::wstring filename;
     LPWSTR error;
 
     // For CreateFileW

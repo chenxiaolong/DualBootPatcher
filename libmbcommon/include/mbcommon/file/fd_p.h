@@ -22,6 +22,9 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file/fd.h"
+
+#include <string>
+
 #include "mbcommon/file/vtable_p.h"
 
 /*! \cond INTERNAL */
@@ -32,9 +35,9 @@ struct FdFileCtx
     int fd;
     bool owned;
 #ifdef _WIN32
-    wchar_t *filename;
+    std::wstring filename;
 #else
-    char *filename;
+    std::string filename;
 #endif
     int flags;
 

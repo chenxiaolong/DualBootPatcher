@@ -22,6 +22,9 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file/posix.h"
+
+#include <string>
+
 #include "mbcommon/file/vtable_p.h"
 
 /*! \cond INTERNAL */
@@ -32,10 +35,10 @@ struct PosixFileCtx
     FILE *fp;
     bool owned;
 #ifdef _WIN32
-    wchar_t *filename;
+    std::wstring filename;
     const wchar_t *mode;
 #else
-    char *filename;
+    std::string filename;
     const char *mode;
 #endif
 

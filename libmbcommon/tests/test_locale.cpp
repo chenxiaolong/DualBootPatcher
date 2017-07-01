@@ -23,110 +23,90 @@
 
 TEST(LocaleTest, ConvertMbsToWcs)
 {
-    const char *mbs_str = "Hello, world!";
-    const wchar_t *wcs_str = L"Hello, world!";
-    wchar_t *result;
+    constexpr char mbs_str[] = "Hello, world!";
+    constexpr wchar_t wcs_str[] = L"Hello, world!";
+    std::wstring result;
 
-    result = mb::mbs_to_wcs(mbs_str);
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(wcscmp(result, wcs_str), 0);
-    free(result);
+    ASSERT_TRUE(mb::mbs_to_wcs(result, mbs_str));
+    ASSERT_EQ(result, wcs_str);
 }
 
 TEST(LocaleTest, ConvertWcsToMbs)
 {
-    const char *mbs_str = "Hello, world!";
-    const wchar_t *wcs_str = L"Hello, world!";
-    char *result;
+    constexpr char mbs_str[] = "Hello, world!";
+    constexpr wchar_t wcs_str[] = L"Hello, world!";
+    std::string result;
 
-    result = mb::wcs_to_mbs(wcs_str);
-    ASSERT_NE(result, nullptr);
-    ASSERT_STREQ(result, mbs_str);
-    free(result);
+    ASSERT_TRUE(mb::wcs_to_mbs(result, wcs_str));
+    ASSERT_EQ(result, mbs_str);
 }
 
 TEST(LocaleTest, ConvertUtf8ToWcs)
 {
-    const char *utf8_str = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96"
-                           "\xe7\x95\x8c\xef\xbc\x81";
-    const wchar_t *wcs_str = L"你好，世界！";
-    wchar_t *result;
+    constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8"
+                                "\x96\xe7\x95\x8c\xef\xbc\x81";
+    constexpr wchar_t wcs_str[] = L"你好，世界！";
+    std::wstring result;
 
-    result = mb::utf8_to_wcs(utf8_str);
-    ASSERT_NE(result, nullptr);
-    ASSERT_EQ(wcscmp(result, wcs_str), 0);
-    free(result);
+    ASSERT_TRUE(mb::utf8_to_wcs(result, utf8_str));
+    ASSERT_EQ(result, wcs_str);
 }
 
 TEST(LocaleTest, ConvertWcsToUtf8)
 {
-    const char *utf8_str = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96"
-                           "\xe7\x95\x8c\xef\xbc\x81";
-    const wchar_t *wcs_str = L"你好，世界！";
-    char *result;
+    constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8"
+                                "\x96\xe7\x95\x8c\xef\xbc\x81";
+    constexpr wchar_t wcs_str[] = L"你好，世界！";
+    std::string result;
 
-    result = mb::wcs_to_utf8(wcs_str);
-    ASSERT_NE(result, nullptr);
-    ASSERT_STREQ(result, utf8_str);
-    free(result);
+    ASSERT_TRUE(mb::wcs_to_utf8(result, wcs_str));
+    ASSERT_EQ(result, utf8_str);
 }
 
 TEST(LocaleTest, ConvertEmptyString)
 {
-    char *mbs_result;
-    wchar_t *wcs_result;
+    std::string mbs_result;
+    std::wstring wcs_result;
 
-    wcs_result = mb::mbs_to_wcs("");
-    ASSERT_NE(wcs_result, nullptr);
-    ASSERT_EQ(wcscmp(wcs_result, L""), 0);
-    free(wcs_result);
+    wcs_result = L"dummy";
+    ASSERT_TRUE(mb::mbs_to_wcs(wcs_result, ""));
+    ASSERT_EQ(wcs_result, L"");
 
-    mbs_result = mb::wcs_to_mbs(L"");
-    ASSERT_NE(mbs_result, nullptr);
-    ASSERT_STREQ(mbs_result, "");
-    free(mbs_result);
+    mbs_result = "dummy";
+    ASSERT_TRUE(mb::wcs_to_mbs(mbs_result, L""));
+    ASSERT_EQ(mbs_result, "");
 
-    wcs_result = mb::utf8_to_wcs("");
-    ASSERT_NE(wcs_result, nullptr);
-    ASSERT_EQ(wcscmp(wcs_result, L""), 0);
-    free(wcs_result);
+    wcs_result = L"dummy";
+    ASSERT_TRUE(mb::utf8_to_wcs(wcs_result, ""));
+    ASSERT_EQ(wcs_result, L"");
 
-    mbs_result = mb::wcs_to_utf8(L"");
-    ASSERT_NE(mbs_result, nullptr);
-    ASSERT_STREQ(mbs_result, "");
-    free(mbs_result);
+    mbs_result = "dummy";
+    ASSERT_TRUE(mb::wcs_to_utf8(mbs_result, L""));
+    ASSERT_EQ(mbs_result, "");
 }
 
 TEST(LocaleTest, ConvertPartialString)
 {
-    const char *utf8_str = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96"
-                           "\xe7\x95\x8c\xef\xbc\x81";
-    const char *utf8_str_short = "\xe4\xbd\xa0\xe5\xa5\xbd";
-    const wchar_t *wcs_str = L"你好，世界！";
-    const wchar_t *wcs_str_short = L"你好";
+    constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8"
+                                "\x96\xe7\x95\x8c\xef\xbc\x81";
+    constexpr char utf8_str_short[] = "\xe4\xbd\xa0\xe5\xa5\xbd";
+    constexpr wchar_t wcs_str[] = L"你好，世界！";
+    constexpr wchar_t wcs_str_short[] = L"你好";
 
-    char *mbs_result;
-    wchar_t *wcs_result;
+    std::string mbs_result;
+    std::wstring wcs_result;
 
-    wcs_result = mb::mbs_to_wcs_len("Hello, world!", 5);
-    ASSERT_NE(wcs_result, nullptr);
-    ASSERT_EQ(wcscmp(wcs_result, L"Hello"), 0);
-    free(wcs_result);
+    ASSERT_TRUE(mb::mbs_to_wcs_n(wcs_result, "Hello, world!", 5));
+    ASSERT_EQ(wcs_result, L"Hello");
 
-    mbs_result = mb::wcs_to_mbs_len(L"Hello, world!", 5);
-    ASSERT_NE(mbs_result, nullptr);
-    ASSERT_STREQ(mbs_result, "Hello");
-    free(mbs_result);
+    ASSERT_TRUE(mb::wcs_to_mbs_n(mbs_result, L"Hello, world!", 5));
+    ASSERT_EQ(mbs_result, "Hello");
 
-    wcs_result = mb::utf8_to_wcs_len(utf8_str, strlen(utf8_str_short));
-    ASSERT_NE(wcs_result, nullptr);
-    ASSERT_EQ(wcscmp(wcs_result, wcs_str_short), 0);
-    free(wcs_result);
+    ASSERT_TRUE(mb::utf8_to_wcs_n(wcs_result, utf8_str, strlen(utf8_str_short)));
+    ASSERT_EQ(wcs_result, wcs_str_short);
 
-    mbs_result = mb::wcs_to_utf8_len(wcs_str, wcslen(wcs_str_short));
-    ASSERT_NE(mbs_result, nullptr);
-    ASSERT_STREQ(mbs_result, utf8_str_short);
-    free(mbs_result);
+    ASSERT_TRUE(mb::wcs_to_utf8_n(mbs_result, wcs_str, wcslen(wcs_str_short)));
+    ASSERT_EQ(mbs_result, utf8_str_short);
 }
 
 TEST(LocaleTest, ConvertLargeString)
@@ -153,33 +133,26 @@ TEST(LocaleTest, ConvertLargeString)
         str2_wcs += str2_wcs_pattern;
     }
 
-    char *mbs_result;
-    wchar_t *wcs_result;
+    std::string mbs_result;
+    std::wstring wcs_result;
 
-    wcs_result = mb::mbs_to_wcs(str1_mbs.c_str());
-    ASSERT_NE(wcs_result, nullptr);
+    ASSERT_TRUE(mb::mbs_to_wcs(wcs_result, str1_mbs));
     ASSERT_EQ(wcs_result, str1_wcs);
-    free(wcs_result);
 
-    mbs_result = mb::wcs_to_mbs(str1_wcs.c_str());
-    ASSERT_NE(mbs_result, nullptr);
+    ASSERT_TRUE(mb::wcs_to_mbs(mbs_result, str1_wcs));
     ASSERT_EQ(mbs_result, str1_mbs);
-    free(mbs_result);
 
-    wcs_result = mb::utf8_to_wcs(str2_utf8.c_str());
-    ASSERT_NE(wcs_result, nullptr);
+    ASSERT_TRUE(mb::utf8_to_wcs(wcs_result, str2_utf8));
     ASSERT_EQ(wcs_result, str2_wcs);
-    free(wcs_result);
 
-    mbs_result = mb::wcs_to_utf8(str2_wcs.c_str());
-    ASSERT_NE(mbs_result, nullptr);
+    ASSERT_TRUE(mb::wcs_to_utf8(mbs_result, str2_wcs));
     ASSERT_EQ(mbs_result, str2_utf8);
-    free(mbs_result);
 }
 
 TEST(LocaleTest, ConvertInvalidUtf8String)
 {
-    const char *utf8_str = "\xe4\xbd\xa0\xe5\xa5";
+    constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5";
+    std::wstring result;
 
-    ASSERT_EQ(mb::utf8_to_wcs(utf8_str), nullptr);
+    ASSERT_FALSE(mb::utf8_to_wcs(result, utf8_str));
 }

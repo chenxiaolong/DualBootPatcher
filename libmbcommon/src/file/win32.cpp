@@ -40,8 +40,7 @@ MB_BEGIN_C_DECLS
 
 static void free_ctx(Win32FileCtx *ctx)
 {
-    free(ctx->filename);
-    free(ctx);
+    delete ctx;
 }
 
 LPCWSTR win32_error_string(Win32FileCtx *ctx, DWORD error_code)
@@ -72,10 +71,10 @@ static int win32_open_cb(struct MbFile *file, void *userdata)
 {
     Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
 
-    if (ctx->filename) {
+    if (!ctx->filename.empty()) {
         ctx->handle = ctx->vtable.fn_CreateFileW(
-                ctx->vtable.userdata, ctx->filename, ctx->access, ctx->sharing,
-                &ctx->sa, ctx->creation, ctx->attrib, nullptr);
+                ctx->vtable.userdata, ctx->filename.c_str(), ctx->access,
+                ctx->sharing, &ctx->sa, ctx->creation, ctx->attrib, nullptr);
         if (ctx->handle == INVALID_HANDLE_VALUE) {
             mb_file_set_error(file, -errno, "Failed to open file: %ls",
                               win32_error_string(ctx, GetLastError()));
@@ -281,8 +280,7 @@ static Win32FileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
         return nullptr;
     }
 
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(
-            calloc(1, sizeof(Win32FileCtx)));
+    Win32FileCtx *ctx = new(std::nothrow) Win32FileCtx();
     if (!ctx) {
         mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
                           "Failed to allocate Win32FileCtx: %s",
@@ -388,8 +386,7 @@ int _mb_file_open_HANDLE_filename(SysVtable *vtable, struct MbFile *file,
 
     ctx->owned = true;
 
-    ctx->filename = mb::mbs_to_wcs(filename);
-    if (!ctx->filename) {
+    if (!mb::mbs_to_wcs(ctx->filename, filename)) {
         mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
                           "Failed to convert MBS filename or mode to WCS");
         free_ctx(ctx);
@@ -416,13 +413,7 @@ int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
 
     ctx->owned = true;
 
-    ctx->filename = wcsdup(filename);
-    if (!ctx->filename) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate string: %s", strerror(errno));
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
+    ctx->filename = filename;
 
     if (!convert_mode(ctx, mode)) {
         mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
