@@ -1,0 +1,4 @@
+test:
+  override:
+    - chmod 775 builder
+    - ./builder
