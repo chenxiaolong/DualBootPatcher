@@ -38,6 +38,7 @@ git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && cd Du
 mkdir build
 cd build
 # Build it now
+wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake
 chmod +x runcmake
 ./runcmake
 make clean && make && rm -rf assets && cpack -G TXZ && make apk && make android-system_armeabi-v7a && make -C data/devices && ./utilities/create.sh
