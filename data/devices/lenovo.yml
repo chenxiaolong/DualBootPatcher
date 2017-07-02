@@ -482,3 +482,105 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p34  
+
+- name: Lenovo A706
+  id: armani
+  codenames:
+    # Main Codename
+    - a706
+    - armani
+
+  architecture: armeabi-v7a
+
+  block_devs:
+
+    system:
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/msm_sdcc.3/by-num/p17
+    cache:
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/msm_sdcc.3/by-num/p18
+    data:
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/msm_sdcc.3/by-num/p21
+    boot:
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/msm_sdcc.3/by-num/p16
+    recovery:
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/msm_sdcc.3/by-num/p13
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_CPU_TEMP
+      - TW_QCOM_RTC_FIX
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Lenovo A760
+  id: audi
+  codenames:
+    # Main Codename
+    - a760
+    - audi
+
+  architecture: armeabi-v7a
+
+  block_devs:
+
+    system:
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/msm_sdcc.3/by-num/p17
+    cache:
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/msm_sdcc.3/by-num/p18
+    data:
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/msm_sdcc.3/by-num/p21
+    boot:
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/msm_sdcc.3/by-num/p16
+    recovery:
+      - /dev/block/mmcblk0p13
+      - /dev/block/platform/msm_sdcc.3/by-num/p13
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_CPU_TEMP
+      - TW_QCOM_RTC_FIX
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Lenovo A3000
+  id: A3
+  codenames:
+    - A3
+    - A3000
+    - /LenovoA3000-H
+    - A3000-h
+    - a3000_prc_3gfull
+
+  architecture: armeabi-v7a
+
+  block_devs:
+
+    system:
+      - /dev/block/mmcblk0p6
+    cache:
+      - /dev/block/mmcblk0p7
+    data:
+      - /dev/block/mmcblk0p8
+    boot:
+      - /dev/bootimg
+    recovery:
+      - /dev/recovery

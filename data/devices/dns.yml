@@ -1,0 +1,44 @@
+---
+- name: DNS S4503
+  id: jsr_d9
+  codenames:
+    - DNS S4503
+    - INNOS i6
+    - JSR D9
+    - TeXet TM-4677
+
+  architecture: armeabi-v7a
+
+  block_devs:
+
+    system:
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/msm_sdcc.3/by-num/p17
+
+    cache:
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/msm_sdcc.3/by-num/p18
+
+    data:
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/msm_sdcc.3/by-num/p21
+
+    boot:
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/msm_sdcc.3/by-num/p16
+
+    recovery:
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/msm_sdcc.3/by-num/p6
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_CPU_TEMP
+      - TW_QCOM_RTC_FIX
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi

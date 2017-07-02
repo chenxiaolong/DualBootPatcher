@@ -75,3 +75,35 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
+- name: Infinix Hot Note
+  id: Infinix_X551
+  codenames:
+    - Infinix-X551
+    - X551
+    - x551
+  architecture: armeabi-v7a
+
+  block_devs:
+
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-num/p5
+      - /emmc@android
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-num/p6
+      - /emmc@cache
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-num/p7
+      - /emmc@usrdata
+    boot:
+      - /dev/bootimg
+    recovery:
+      - /dev/recovery
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi

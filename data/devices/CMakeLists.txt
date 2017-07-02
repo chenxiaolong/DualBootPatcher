@@ -8,6 +8,7 @@ set(files
     cherrymobile.yml
     coolpad.yml
     dexp.yml
+    dns.yml
     elephone.yml
     google.yml
     huawei.yml
