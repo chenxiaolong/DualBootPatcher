@@ -34,8 +34,7 @@ ccache -M 40G
 
 # clone DualBootPatcher source here
 cd ~/dev
-git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && ls
-cd ~/dev/D* && mkdir build && cd ~/dev/DualBootPatcher/build
+git clone --recursive https://github.com/yshalsager/DualbootPatcher.git DualBootPatcher && cd DualBootPatcher && mkdir build && cd build
 # Build it now
 wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake
 chmod 775 ~/dev/DualBootPatcher/build/runcmake
