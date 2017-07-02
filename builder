@@ -14,7 +14,7 @@ wget https://dl.google.com/android/repository/tools_r25.0.3-linux.zip &> come he
 unzip -qq tools_r25.0.3-linux.zip -d ~/dev/android-sdk/build-tools/25.0.3
 cd ~/dev/android-sdk && mkdir platforms && cd ~/dev/android-sdk/platforms
 wget https://dl.google.com/android/repository/platform-25_r03.zip 
-unzip platform-25_r03.zip -d ~/dev/android-sdk/platforms/android-25
+unzip -qq platform-25_r03.zip -d ~/dev/android-sdk/platforms/android-25
 
 env | grep CCACHE
 env | grep NDK
@@ -36,9 +36,9 @@ ccache -M 40G
 cd ~/dev/
 git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && cd DualBootPatcher
 mkdir build
-cd build
+cd ~/dev/DualBootPatcher/build
 # Build it now
 wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake
-chmod 775 runcmake
-./runcmake
+chmod 775 ~/dev/DualBootPatcher/build/runcmake
+sh ~/dev/DualBootPatcher/build/runcmake
 make clean && make && rm -rf assets && cpack -G TXZ && make apk && make android-system_armeabi-v7a && make -C data/devices && ./utilities/create.sh
