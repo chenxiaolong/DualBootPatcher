@@ -77,16 +77,16 @@ struct SegmentReaderEntry * _segment_reader_next_entry(struct SegmentReaderCtx *
 struct SegmentReaderEntry * _segment_reader_find_entry(struct SegmentReaderCtx *ctx,
                                                        int entry_type);
 
-int _segment_reader_move_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_move_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                   struct MbBiEntry *entry,
                                   struct SegmentReaderEntry *srentry,
                                   struct MbBiReader *bir);
 
-int _segment_reader_read_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_read_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                struct MbBiEntry *entry, struct MbBiReader *bir);
-int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, int entry_type,
                                 struct MbBiReader *bir);
-int _segment_reader_read_data(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_read_data(struct SegmentReaderCtx *ctx, mb::File *file,
                               void *buf, size_t buf_size, size_t *bytes_read,
                               struct MbBiReader *bir);

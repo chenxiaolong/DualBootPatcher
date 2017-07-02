@@ -30,6 +30,7 @@
 #endif
 
 #include "mbcommon/common.h"
+#include "mbcommon/file.h"
 
 #define READER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
@@ -65,7 +66,6 @@ MB_BEGIN_C_DECLS
 struct MbBiReader;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
 
 typedef int (*FormatReaderBidder)(struct MbBiReader *bir, void *userdata,
                                   int best_bid);
@@ -117,7 +117,7 @@ struct MbBiReader
     ReaderState state;
 
     // File
-    struct MbFile *file;
+    mb::File *file;
     bool file_owned;
 
     // Error

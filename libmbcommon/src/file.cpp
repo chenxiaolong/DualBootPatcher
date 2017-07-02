@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,7 @@
 
 #include "mbcommon/file.h"
 
+#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -26,15 +27,23 @@
 #include "mbcommon/file_p.h"
 #include "mbcommon/string.h"
 
-#define ENSURE_STATE(HANDLE, STATES) \
+#define GET_PIMPL_OR_RETURN(RETVAL) \
+    MB_PRIVATE(File); \
     do { \
-        if (!((HANDLE)->state & (STATES))) { \
-            mb_file_set_error((HANDLE), MB_FILE_ERROR_PROGRAMMER_ERROR, \
-                              "%s: Invalid state: "\
-                              "expected 0x%hx, actual: 0x%hx", \
-                              __func__, (STATES), (HANDLE)->state); \
-            (HANDLE)->state = MbFileState::FATAL; \
-            return MB_FILE_FATAL; \
+        if (!priv) { \
+            return RETVAL; \
+        } \
+    } while (0)
+
+#define ENSURE_STATE(STATES) \
+    do { \
+        if (!(priv->state & (STATES))) { \
+            set_error(FileError::PROGRAMMER_ERROR, \
+                      "%s: Invalid state: "\
+                      "expected 0x%hx, actual: 0x%hx", \
+                      __func__, (STATES), priv->state); \
+            priv->state = FileState::FATAL; \
+            return FileStatus::FATAL; \
         } \
     } while (0)
 
@@ -45,24 +54,19 @@
  * \brief File abstraction API
  */
 
-// Types documentation
-
-/*!
- * \struct MbFile
- *
- * \brief Opaque handle for mb_file_* functions.
- */
+namespace mb
+{
 
 // Return values documentation
 
 /*!
- * \enum MbFileRet
+ * \enum FileStatus
  *
  * \brief Possible return values for functions.
  */
 
 /*!
- * \var MbFileRet::MB_FILE_OK
+ * \var FileStatus::OK
  *
  * \brief Success error code
  *
@@ -70,7 +74,7 @@
  */
 
 /*!
- * \var MbFileRet::MB_FILE_RETRY
+ * \var FileStatus::RETRY
  *
  * \brief Reattempt operation
  *
@@ -78,34 +82,34 @@
  */
 
 /*!
- * \var MbFileRet::MB_FILE_WARN
+ * \var FileStatus::WARN
  *
  * \brief Warning
  *
- * The operation raised a warning. The MbFile handle can still be used although
+ * The operation raised a warning. The File handle can still be used although
  * the functionality may be degraded.
  */
 
 /*!
- * \var MbFileRet:: MB_FILE_FAILED
+ * \var FileStatus::FAILED
  *
  * \brief Non-fatal error
  *
- * The operation failed non-fatally. The MbFile handle can still be used for
+ * The operation failed non-fatally. The File handle can still be used for
  * further operations.
  */
 
 /*!
- * \var MbFileRet::MB_FILE_FATAL
+ * \var FileStatus::FATAL
  *
  * \brief Fatal error
  *
- * The operation failed fatally. The MbFile handle can no longer be used and
- * should be freed with mb_file_free().
+ * The operation failed fatally. The File handle can no longer be used for
+ * further operations.
  */
 
 /*!
- * \var MbFileRet::MB_FILE_UNSUPPORTED
+ * \var FileStatus::UNSUPPORTED
  *
  * \brief Operation not supported
  *
@@ -115,566 +119,382 @@
 // Error codes documentation
 
 /*!
- * \enum MbFileError
+ * \namespace FileError
  *
  * \brief Possible error codes.
  */
 
 /*!
- * \var MbFileError::MB_FILE_ERROR_NONE
+ * \var FileError::NONE
  *
  * \brief No error
  */
 
 /*!
- * \var MbFileError::MB_FILE_ERROR_INVALID_ARGUMENT
+ * \var FileError::INVALID_ARGUMENT
  *
  * \brief An invalid argument was provided
  */
 
 /*!
- * \var MbFileError::MB_FILE_ERROR_UNSUPPORTED
+ * \var FileError::UNSUPPORTED
  *
  * \brief The operation is not supported
  */
 
 /*!
- * \var MbFileError::MB_FILE_ERROR_PROGRAMMER_ERROR
+ * \var FileError::PROGRAMMER_ERROR
  *
  * \brief The function were called in an invalid state
  */
 
 /*!
- * \var MbFileError::MB_FILE_ERROR_INTERNAL_ERROR
+ * \var FileError::INTERNAL_ERROR
  *
  * \brief Internal error in the library
  */
 
-// Typedefs documentation
-
-/*!
- * \typedef MbFileOpenCb
- *
- * \brief File open callback
- *
- * \note If a failure error code is returned. The #MbFileCloseCb callback,
- *       if registered, will be called to clean up the resources.
- *
- * \param file MbFile handle
- *
- * \return
- *   * Return #MB_FILE_OK if the file was successfully opened
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-/*!
- * \typedef MbFileCloseCb
- *
- * \brief File close callback
- *
- * This callback, if registered, will be called once and only once once to clean
- * up the resources, regardless of the current state. In other words, this
- * callback will be called even if a function returns #MB_FILE_FATAL. If any
- * memory, file handles, or other resources need to be freed, this callback is
- * the place to do so.
- *
- * It is guaranteed that no further callbacks will be invoked after this
- * callback executes.
- *
- * \param file MbFile handle
- *
- * \return
- *   * Return #MB_FILE_OK if the file was successfully closed
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-/*!
- * \typedef MbFileReadCb
- *
- * \brief File read callback
- *
- * \param[in] file MbFile handle
- * \param[out] buf Buffer to read into
- * \param[in] size Buffer size
- * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file. This parameter is guaranteed to be non-NULL.
- *
- * \return
- *   * Return #MB_FILE_OK if some bytes were read or EOF is reached
- *   * Return #MB_FILE_RETRY if the same operation should be reattempted
- *   * Return #MB_FILE_UNSUPPORTED if the file does not support reading
- *     (Not registering a read callback has the same effect.)
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-/*!
- * \typedef MbFileWriteCb
- *
- * \brief File write callback
- *
- * \param[in] file MbFile handle
- * \param[in] buf Buffer to write from
- * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written. This
- *                           parameter is guaranteed to be non-NULL.
- *
- * \return
- *   * Return #MB_FILE_OK if some bytes were written
- *   * Return #MB_FILE_RETRY if the same operation should be reattempted
- *   * Return #MB_FILE_UNSUPPORTED if the file does not support writing
- *     (Not registering a read callback has the same effect.)
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-/*!
- * \typedef MbFileSeekCb
- *
- * \brief File seek callback
- *
- * \param[in] file MbFile handle
- * \param[in] offset File position offset
- * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset. This parameter is guaranteed
- *                        to be non-NULL.
- *
- * \return
- *   * Return #MB_FILE_OK if the file position was successfully set
- *   * Return #MB_FILE_UNSUPPORTED if the file does not support seeking
- *     (Not registering a seek callback has the same effect.)
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-/*!
- * \typedef MbFileTruncateCb
- *
- * \brief File truncate callback
- *
- * \note This callback must *not* change the file position.
- *
- * \param file MbFile handle
- * \param size New size of file
- *
- * \return
- *   * Return #MB_FILE_OK if the file size was successfully changed
- *   * Return #MB_FILE_UNSUPPORTED if the handle source does not support
- *     truncation (Not registering a truncate callback has the same effect.)
- *   * Return \<= #MB_FILE_WARN if an error occurs
- */
-
-MB_BEGIN_C_DECLS
-
-/*!
- * \brief Allocate new MbFile handle.
- *
- * \return New MbFile handle or NULL if memory could not be allocated. If the
- *         function fails, `errno` will be set accordingly.
- */
-struct MbFile * mb_file_new()
+/*! \cond INTERNAL */
+FilePrivate::~FilePrivate()
 {
-    struct MbFile *file = new(std::nothrow) MbFile();
-    if (file) {
-        file->state = MbFileState::NEW;
+}
+/*! \endcond */
+
+/*!
+ * \class File
+ *
+ * \brief Utility class for reading and writing files.
+ */
+
+/*!
+ * \var File::_priv_ptr
+ *
+ * \brief Pointer to pimpl object
+ */
+
+/*!
+ * \brief Construct new File handle.
+ */
+File::File() : _priv_ptr(new FilePrivate())
+{
+    MB_PRIVATE(File);
+
+    priv->state = FileState::NEW;
+}
+
+/*! \cond INTERNAL */
+File::File(FilePrivate *priv_) : _priv_ptr(priv_)
+{
+    MB_PRIVATE(File);
+
+    priv->state = FileState::NEW;
+}
+/*! \endcond */
+
+/*!
+ * \brief Destroy a File handle.
+ *
+ * If the handle has not been closed, it will be closed. Since this is the
+ * destructor, it is not possible to get the result of the file close operation.
+ * To get the result of the file close operation, call File::close() manually.
+ */
+File::~File()
+{
+    MB_PRIVATE(File);
+
+    // We can't call a virtual function (on_close()) from the destructor, so we
+    // must ensure that subclasses will call close().
+    if (priv) {
+        assert(priv->state == FileState::NEW);
     }
-    return file;
 }
 
 /*!
- * \brief Free an MbFile handle.
+ * \brief Move construct new File handle.
  *
- * If the handle has not been closed, it will be closed and the result of
- * mb_file_close() will be returned. Otherwise, #MB_FILE_OK will be returned.
- * Regardless of the return value, the handle will always be freed and should
- * no longer be used.
+ * \p other will be left in a valid, but unspecified state. It can be brought
+ * back to a useful state by assigning from a valid object. For example:
  *
- * \param file MbFile handle
- * \return The result of mb_file_close() if the file has not been closed;
- *         otherwise, #MB_FILE_OK.
+ * \code{.cpp}
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * file1 = std::move(file2);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * \endcode
  */
-int mb_file_free(struct MbFile *file)
+File::File(File &&other) : _priv_ptr(std::move(other._priv_ptr))
 {
-    int ret = MB_FILE_OK;
-
-    if (file) {
-        if (file->state != MbFileState::CLOSED) {
-            ret = mb_file_close(file);
-        }
-
-        delete file;
-    }
-
-    return ret;
 }
 
 /*!
- * \brief Set the file open callback for an MbFile handle.
+ * \brief Move assign a File handle
  *
- * \param file MbFile handle
- * \param open_cb File open callback
+ * The original file handle (`this`) will be closed and then \p rhs will be
+ * moved into this object.
  *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
+ * \p other will be left in a valid, but unspecified state. It can be brought
+ * back to a useful state by assigning from a valid object. For example:
+ *
+ * \code{.cpp}
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * file1 = std::move(file2);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * \endcode
  */
-int mb_file_set_open_callback(struct MbFile *file, MbFileOpenCb open_cb)
+File & File::operator=(File &&rhs)
 {
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->open_cb = open_cb;
-    return MB_FILE_OK;
+    close();
+
+    _priv_ptr = std::move(rhs._priv_ptr);
+
+    return *this;
 }
 
 /*!
- * \brief Set the file close callback for an MbFile handle.
- *
- * \param file MbFile handle
- * \param close_cb File close callback
- *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_close_callback(struct MbFile *file, MbFileCloseCb close_cb)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->close_cb = close_cb;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Set the file read callback for an MbFile handle.
- *
- * \param file MbFile handle
- * \param read_cb File read callback
- *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_read_callback(struct MbFile *file, MbFileReadCb read_cb)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->read_cb = read_cb;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Set the file write callback for an MbFile handle.
- *
- * \param file MbFile handle
- * \param write_cb File write callback
- *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_write_callback(struct MbFile *file, MbFileWriteCb write_cb)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->write_cb = write_cb;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Set the file seek callback for an MbFile handle.
- *
- * \param file MbFile handle
- * \param seek_cb File seek callback
- *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_seek_callback(struct MbFile *file, MbFileSeekCb seek_cb)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->seek_cb = seek_cb;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Set the file truncate callback for an MbFile handle.
- *
- * \param file MbFile handle
- * \param truncate_cb File truncate callback
- *
- * \return
- *   * #MB_FILE_OK if the callback was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_truncate_callback(struct MbFile *file,
-                                  MbFileTruncateCb truncate_cb)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->truncate_cb = truncate_cb;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Set the data to provide to callbacks for an MbFile handle.
- *
- * \param file MbFile handle
- * \param userdata User-provided data pointer for callbacks
- *
- * \return
- *   * #MB_FILE_OK if the userdata was successfully set
- *   * #MB_FILE_FATAL if the file has already been opened
- */
-int mb_file_set_callback_data(struct MbFile *file, void *userdata)
-{
-    ENSURE_STATE(file, MbFileState::NEW);
-    file->cb_userdata = userdata;
-    return MB_FILE_OK;
-}
-
-/*!
- * \brief Open an MbFile handle.
+ * \brief Open a File handle.
  *
  * Once the handle has been opened, the file operation functions, such as
- * mb_file_read(), are available to use. It will no longer be possible to set
- * the callback functions for this handle.
+ * File::read(), are available to use.
  *
- * \param file MbFile handle
+ * \note This function should generally only be called by subclasses. Most
+ *       subclasses will provide a variant of this function that can take
+ *       parameters, such as a filename.
  *
  * \return
- *   * #MB_FILE_OK if there is no file open handle or if the file open handle
- *     succeeds
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if there is no file open handler or if the file open
+ *     handle succeeds
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_open(struct MbFile *file)
+FileStatus File::open()
 {
-    int ret = MB_FILE_OK;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    ENSURE_STATE(FileState::NEW);
 
-    ENSURE_STATE(file, MbFileState::NEW);
+    auto ret = on_open();
 
-    if (file->open_cb) {
-        ret = file->open_cb(file, file->cb_userdata);
-    }
-    if (ret == MB_FILE_OK) {
-        file->state = MbFileState::OPENED;
-    } else if (ret <= MB_FILE_FATAL) {
-        file->state = MbFileState::FATAL;
-    }
-
-    // If the file was not successfully opened, then close it
-    if (ret != MB_FILE_OK && file->close_cb) {
-        file->close_cb(file, file->cb_userdata);
+    if (ret == FileStatus::OK) {
+        priv->state = FileState::OPENED;
+    } else {
+        // If the file was not successfully opened, then close it
+        on_close();
     }
 
     return ret;
 }
 
 /*!
- * \brief Close an MbFile handle.
+ * \brief Close a File handle.
  *
- * This function will close an MbFile handle if it is open. Regardless of the
- * return value, the handle is closed and can no longer be used for further
- * operations. It should be freed with mb_file_free().
- *
- * \param file MbFile handle
+ * This function will close a File handle if it is open. Regardless of the
+ * return value, the handle will be closed. The file handle can then be reused
+ * for opening another file.
  *
  * \return
- *   * #MB_FILE_OK if no error was encountered when closing the handle.
- *   * \<= #MB_FILE_WARN if the handle is opened and an error occurs while
+ *   * #FileStatus::OK if no error was encountered when closing the handle.
+ *   * \<= #FileStatus::WARN if the handle is opened and an error occurs while
  *     closing the file
  */
-int mb_file_close(struct MbFile *file)
+FileStatus File::close()
 {
-    int ret = MB_FILE_OK;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+
+    auto ret = FileStatus::OK;
 
     // Avoid double-closing or closing nothing
-    if (!(file->state & (MbFileState::CLOSED | MbFileState::NEW))) {
-        if (file->close_cb) {
-            ret = file->close_cb(file, file->cb_userdata);
-        }
+    if (!(priv->state & FileState::NEW)) {
+        ret = on_close();
 
-        // Don't change state to MbFileState::FATAL if MB_FILE_FATAL is
-        // returned. Otherwise, we risk double-closing the file. CLOSED and
-        // FATAL are the same anyway, aside from the fact that files can be
-        // closed in the latter state.
+        // Don't change state to FileState::FATAL if FileStatus::FATAL is
+        // returned. Otherwise, we risk double-closing the file.
     }
 
-    file->state = MbFileState::CLOSED;
+    priv->state = FileState::NEW;
 
     return ret;
 }
 
 /*!
- * \brief Read from an MbFile handle.
+ * \brief Read from a File handle.
  *
  * Example usage:
  *
- *     char buf[10240];
- *     int ret;
- *     size_t n;
+ * \code{.cpp}
+ * char buf[10240];
+ * int ret;
+ * size_t n;
  *
- *     while ((ret = mb_file_read(file, buf, sizeof(buf), &n)) == MB_FILE_OK
- *             && n >= 0) {
- *         fwrite(buf, 1, n, stdout);
- *     }
+ * while ((ret = file.read(buf, sizeof(buf), &n)) == FileStatus::OK
+ *         && n >= 0) {
+ *     fwrite(buf, 1, n, stdout);
+ * }
  *
- *     if (ret != MB_FILE_OK) {
- *         printf("Failed to read file: %s\n", mb_file_error_string(file));
- *     }
+ * if (ret != FileStatus::OK) {
+ *     printf("Failed to read file: %s\n", file.error_string(file).c_str());
+ * }
+ * \endcode
  *
- * \param[in] file MbFile handle
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
  * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
  *                        of file. This parameter cannot be NULL.
  *
  * \return
- *   * #MB_FILE_OK if some bytes were read or EOF is reached
- *   * #MB_FILE_RETRY if the same operation should be reattempted
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support reading
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if some bytes were read or EOF is reached
+ *   * #FileStatus::RETRY if the same operation should be reattempted
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support reading
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_read(struct MbFile *file, void *buf, size_t size,
-                 size_t *bytes_read)
+FileStatus File::read(void *buf, size_t size, size_t *bytes_read)
 {
-    int ret = MB_FILE_UNSUPPORTED;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    ENSURE_STATE(FileState::OPENED);
 
-    ENSURE_STATE(file, MbFileState::OPENED);
+    auto ret = FileStatus::UNSUPPORTED;
 
     if (!bytes_read) {
-        mb_file_set_error(file, MB_FILE_ERROR_PROGRAMMER_ERROR,
-                          "%s: bytes_read is NULL",
-                          __func__);
-        ret = MB_FILE_FATAL;
-    } else if (file->read_cb) {
-        ret = file->read_cb(file, file->cb_userdata, buf, size, bytes_read);
+        set_error(FileError::PROGRAMMER_ERROR,
+                  "%s: bytes_read is NULL", __func__);
+        ret = FileStatus::FATAL;
     } else {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "%s: No read callback registered",
-                          __func__);
+        ret = on_read(buf, size, bytes_read);
     }
-    if (ret <= MB_FILE_FATAL) {
-        file->state = MbFileState::FATAL;
+    if (ret <= FileStatus::FATAL) {
+        priv->state = FileState::FATAL;
     }
 
     return ret;
 }
 
 /*!
- * \brief Write to an MbFile handle.
+ * \brief Write to a File handle.
  *
  * Example usage:
  *
- *     size_t n;
+ * \code{.cpp}
+ * size_t n;
  *
- *     if (mb_file_write(file, buf, sizeof(buf), &bytesWritten)) {
- *         printf("Failed to write file: %s\n", mb_file_error_string(file));
- *     }
+ * if (file.write(file, buf, sizeof(buf), &bytesWritten)
+ *         != FileStatus::OK) {
+ *     printf("Failed to write file: %s\n", file.error_string().c_str());
+ * }
+ * \endcode
  *
- * \param[in] file MbFile handle
  * \param[in] buf Buffer to write from
  * \param[in] size Buffer size
  * \param[out] bytes_written Output number of bytes that were written. This
  *                           parameter cannot be NULL.
  *
  * \return
- *   * #MB_FILE_OK if some bytes were written
- *   * #MB_FILE_RETRY if the same operation should be reattempted
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support writing
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if some bytes were written
+ *   * #FileStatus::RETRY if the same operation should be reattempted
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support writing
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_write(struct MbFile *file, const void *buf, size_t size,
-                  size_t *bytes_written)
+FileStatus File::write(const void *buf, size_t size, size_t *bytes_written)
 {
-    int ret = MB_FILE_UNSUPPORTED;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    ENSURE_STATE(FileState::OPENED);
 
-    ENSURE_STATE(file, MbFileState::OPENED);
+    auto ret = FileStatus::UNSUPPORTED;
 
     if (!bytes_written) {
-        mb_file_set_error(file, MB_FILE_ERROR_PROGRAMMER_ERROR,
-                          "%s: bytes_written is NULL",
-                          __func__);
-        ret = MB_FILE_FATAL;
-    } else if (file->write_cb) {
-        ret = file->write_cb(file, file->cb_userdata, buf, size, bytes_written);
+        set_error(FileError::PROGRAMMER_ERROR,
+                  "%s: bytes_written is NULL", __func__);
+        ret = FileStatus::FATAL;
     } else {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "%s: No write callback registered",
-                          __func__);
+        ret = on_write(buf, size, bytes_written);
     }
-    if (ret <= MB_FILE_FATAL) {
-        file->state = MbFileState::FATAL;
+    if (ret <= FileStatus::FATAL) {
+        priv->state = FileState::FATAL;
     }
 
     return ret;
 }
 
 /*!
- * \brief Set file position of an MbFile handle.
+ * \brief Set file position of a File handle.
  *
- * \param[in] file MbFile handle
  * \param[in] offset File position offset
  * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
  * \param[out] new_offset Output new file offset. This parameter can be NULL.
  *
  * \return
- *   * #MB_FILE_OK if the file position was successfully set
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support seeking
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if the file position was successfully set
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support seeking
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_seek(struct MbFile *file, int64_t offset, int whence,
-                 uint64_t *new_offset)
+FileStatus File::seek(int64_t offset, int whence, uint64_t *new_offset)
 {
-    int ret = MB_FILE_UNSUPPORTED;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    ENSURE_STATE(FileState::OPENED);
+
     uint64_t new_offset_temp;
 
-    ENSURE_STATE(file, MbFileState::OPENED);
+    auto ret = on_seek(offset, whence, &new_offset_temp);
 
-    if (file->seek_cb) {
-        ret = file->seek_cb(file, file->cb_userdata, offset, whence,
-                            &new_offset_temp);
-    } else {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "%s: No seek callback registered",
-                          __func__);
-    }
-    if (ret == MB_FILE_OK) {
+    if (ret == FileStatus::OK) {
         if (new_offset) {
             *new_offset = new_offset_temp;
         }
-    } else if (ret <= MB_FILE_FATAL) {
-        file->state = MbFileState::FATAL;
+    } else if (ret <= FileStatus::FATAL) {
+        priv->state = FileState::FATAL;
     }
 
     return ret;
 }
 
 /*!
- * \brief Truncate or extend file backed by an MbFile handle.
+ * \brief Truncate or extend file backed by a File handle.
  *
  * \note The file position is *not* changed after a successful call of this
  *       function. The size of the file may increase if the file position is
- *       larger than the truncated file size and mb_file_write() is called.
+ *       larger than the truncated file size and File::write() is called.
  *
- * \param file MbFile handle
  * \param size New size of file
  *
  * \return
- *   * #MB_FILE_OK if the file size was successfully changed
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support truncation
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if the file size was successfully changed
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support truncation
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_truncate(struct MbFile *file, uint64_t size)
+FileStatus File::truncate(uint64_t size)
 {
-    int ret = MB_FILE_UNSUPPORTED;
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    ENSURE_STATE(FileState::OPENED);
 
-    ENSURE_STATE(file, MbFileState::OPENED);
+    auto ret = on_truncate(size);
 
-    if (file->truncate_cb) {
-        ret = file->truncate_cb(file, file->cb_userdata, size);
-    } else {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "%s: No truncate callback registered",
-                          __func__);
-    }
-    if (ret <= MB_FILE_FATAL) {
-        file->state = MbFileState::FATAL;
+    if (ret <= FileStatus::FATAL) {
+        priv->state = FileState::FATAL;
     }
 
     return ret;
+}
+
+/*!
+ * \brief Check whether file is opened
+ *
+ * \return Whether file is opened
+ */
+bool File::is_open()
+{
+    GET_PIMPL_OR_RETURN(false);
+    return priv->state == FileState::OPENED;
+}
+
+/*!
+ * \brief Check whether file is fatal state
+ *
+ * If the file is in the fatal state, the only valid operation is to call
+ * close().
+ *
+ * \return Whether file is in fatal state
+ */
+bool File::is_fatal()
+{
+    GET_PIMPL_OR_RETURN(false);
+    return priv->state == FileState::FATAL;
 }
 
 /*!
@@ -682,15 +502,15 @@ int mb_file_truncate(struct MbFile *file, uint64_t size)
  *
  * \note The return value is undefined if an operation did not fail.
  *
- * \param file MbFile handle
- *
  * \return Error code for failed operation. If \>= 0, then the file is one of
- *         the MbFileError entries. If \< 0, then the error code is
+ *         the FileError entries. If \< 0, then the error code is
  *         implementation-defined (usually `-errno` or `-GetLastError()`).
  */
-int mb_file_error(struct MbFile *file)
+int File::error()
 {
-    return file->error_code;
+    GET_PIMPL_OR_RETURN(0);
+
+    return priv->error_code;
 }
 
 /*!
@@ -698,37 +518,35 @@ int mb_file_error(struct MbFile *file)
  *
  * \note The return value is undefined if an operation did not fail.
  *
- * \param file MbFile handle
- *
  * \return Error string for failed operation. The string contents may be
- *         undefined, but will never be NULL or an invalid string.
+ *         undefined.
  */
-const char * mb_file_error_string(struct MbFile *file)
+std::string File::error_string()
 {
-    return file->error_string.c_str();
+    GET_PIMPL_OR_RETURN({});
+
+    return priv->error_string;
 }
 
 /*!
  * \brief Set error string for a failed operation.
  *
- * \sa mb_file_set_error_v()
+ * \sa File::set_error_v()
  *
- * \param file MbFile handle
  * \param error_code Error code
  * \param fmt `printf()`-style format string
  * \param ... `printf()`-style format arguments
  *
- * \return MB_FILE_OK if the error was successfully set or MB_FILE_FAILED if
- *         an error occured
+ * \return FileStatus::OK if the error was successfully set or
+ *         FileStatus::FAILED if an error occured
  */
-int mb_file_set_error(struct MbFile *file, int error_code,
-                      const char *fmt, ...)
+FileStatus File::set_error(int error_code, const char *fmt, ...)
 {
-    int ret;
+    FileStatus ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = mb_file_set_error_v(file, error_code, fmt, ap);
+    ret = set_error_v(error_code, fmt, ap);
     va_end(ap);
 
     return ret;
@@ -737,23 +555,208 @@ int mb_file_set_error(struct MbFile *file, int error_code,
 /*!
  * \brief Set error string for a failed operation.
  *
- * \sa mb_file_set_error()
+ * \sa File::set_error()
  *
- * \param file MbFile handle
  * \param error_code Error code
  * \param fmt `printf()`-style format string
  * \param ap `printf()`-style format arguments as a va_list
  *
- * \return MB_FILE_OK if the error was successfully set or MB_FILE_FAILED if
- *         an error occured
+ * \return FileStatus::OK if the error was successfully set or
+ *         FileStatus::FAILED if an error occured
  */
-int mb_file_set_error_v(struct MbFile *file, int error_code,
-                        const char *fmt, va_list ap)
+FileStatus File::set_error_v(int error_code, const char *fmt, va_list ap)
 {
+    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
 
-    file->error_code = error_code;
-    return mb::format_v(file->error_string, fmt, ap)
-            ? MB_FILE_OK : MB_FILE_FAILED;
+    priv->error_code = error_code;
+    return format_v(priv->error_string, fmt, ap)
+            ? FileStatus::OK : FileStatus::FAILED;
 }
 
-MB_END_C_DECLS
+/*!
+ * \brief File open callback
+ *
+ * Subclasses should override this method to implement the code needed to open
+ * the file.
+ *
+ * The method should return:
+ *
+ *   * #FileStatus::OK if the file was successfully opened
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * If this method is not overridden, it will simply return FileStatus::OK.
+ *
+ * \return #FileStatus::OK
+ */
+FileStatus File::on_open()
+{
+    return FileStatus::OK;
+}
+
+/*!
+ * \brief File close callback
+ *
+ * Subclasses should override this method to implement the code needed to close
+ * the file and clean up any resources such that the file handle can be used to
+ * open another file.
+ *
+ * This method will be called if:
+ *
+ *   * open() fails
+ *   * close() is explicitly called, regardless if the file handle is in the
+ *     opened or fatal state
+ *   * the file handle is destroyed
+ *
+ * This method should return:
+ *
+ *   * #FileStatus::OK if the file was successfully closed
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * \note Regardless of the return value, the file handle will be considered as
+ *       closed and the file handle will allow opening another file.
+ *
+ * It is guaranteed that no other callbacks will be called, except for
+ * on_open(), after this method returns.
+ *
+ * If this method is not overridden, it will simply return FileStatus::OK.
+ *
+ * \return #FileStatus::OK
+ */
+FileStatus File::on_close()
+{
+    return FileStatus::OK;
+}
+
+/*!
+ * \brief File read callback
+ *
+ * Subclasses should override this method to implement the code needed to read
+ * from the file.
+ *
+ * This method should return:
+ *
+ *   * #FileStatus::OK if some bytes were read or EOF is reached
+ *   * #FileStatus::RETRY if the same operation should be reattempted
+ *   * #FileStatus::UNSUPPORTED if the file does not support reading
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * If this method is not overridden, it will simply return
+ * FileStatus::UNSUPPORTED.
+ *
+ * \param[out] buf Buffer to read into
+ * \param[in] size Buffer size
+ * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
+ *                        of file. This parameter is guaranteed to be non-NULL.
+ *
+ * \return #FileStatus::UNSUPPORTED
+ */
+FileStatus File::on_read(void *buf, size_t size, size_t *bytes_read)
+{
+    (void) buf;
+    (void) size;
+    (void) bytes_read;
+
+    set_error(FileError::UNSUPPORTED,
+              "%s: Read callback not supported", __func__);
+    return FileStatus::UNSUPPORTED;
+}
+
+/*!
+ * \brief File write callback
+ *
+ * Subclasses should override this method to implement the code needed to write
+ * to the file.
+ *
+ * This method should return:
+ *
+ *   * #FileStatus::OK if some bytes were written
+ *   * #FileStatus::RETRY if the same operation should be reattempted
+ *   * #FileStatus::UNSUPPORTED if the file does not support writing
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * If this method is not overridden, it will simply return
+ * FileStatus::UNSUPPORTED.
+ *
+ * \param[in] buf Buffer to write from
+ * \param[in] size Buffer size
+ * \param[out] bytes_written Output number of bytes that were written. This
+ *                           parameter is guaranteed to be non-NULL.
+ *
+ * \return #FileStatus::UNSUPPORTED
+ */
+FileStatus File::on_write(const void *buf, size_t size, size_t *bytes_written)
+{
+    (void) buf;
+    (void) size;
+    (void) bytes_written;
+
+    set_error(FileError::UNSUPPORTED,
+              "%s: Write callback not supported", __func__);
+    return FileStatus::UNSUPPORTED;
+}
+
+/*!
+ * \brief File seek callback
+ *
+ * Subclasses should override this method to implement the code needed to
+ * perform seeking on the file.
+ *
+ * This method should return:
+ *
+ *   * #FileStatus::OK if the file position was successfully set
+ *   * #FileStatus::UNSUPPORTED if the file does not support seeking
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * If this method is not overridden, it will simply return
+ * FileStatus::UNSUPPORTED.
+ *
+ * \param[in] offset File position offset
+ * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
+ * \param[out] new_offset Output new file offset. This parameter is guaranteed
+ *                        to be non-NULL.
+ *
+ * \return #FileStatus::UNSUPPORTED
+ */
+FileStatus File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
+{
+    (void) offset;
+    (void) whence;
+    (void) new_offset;
+
+    set_error(FileError::UNSUPPORTED,
+              "%s: Seek callback not supported", __func__);
+    return FileStatus::UNSUPPORTED;
+}
+
+/*!
+ * \brief File truncate callback
+ *
+ * Subclasses should override this method to implement the code needed to
+ * truncate to extend the file size.
+ *
+ * \note This callback must *not* change the file position.
+ *
+ * This method should return:
+ *
+ *   * #FileStatus::OK if the file size was successfully changed
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support
+ *     truncation
+ *   * \<= #FileStatus::WARN if an error occurs
+ *
+ * If this method is not overridden, it will simply return
+ * FileStatus::UNSUPPORTED.
+ *
+ * \param size New size of file
+ *
+ * \return #FileStatus::UNSUPPORTED
+ */
+FileStatus File::on_truncate(uint64_t size)
+{
+    (void) size;
+
+    set_error(FileError::UNSUPPORTED,
+              "%s: Truncate callback not supported", __func__);
+    return FileStatus::UNSUPPORTED;
+}
+
+}

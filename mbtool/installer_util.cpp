@@ -38,7 +38,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -53,7 +53,6 @@
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
@@ -290,7 +289,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
-    std::string tmpdir = mb::format("%s.XXXXXX", output_file.c_str());
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     // std::string is guaranteed to be contiguous in C++11
     if (!mkdtemp(&tmpdir[0])) {
@@ -464,7 +463,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    std::string tmpdir = mb::format("%s.XXXXXX", output_file.c_str());
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
@@ -542,92 +541,85 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
     };
 
-    ScopedMbFile fin(mb_file_new(), &mb_file_free);
-    ScopedMbFile fout(mb_file_new(), &mb_file_free);
+    StandardFile fin;
+    StandardFile fout;
     // TODO: Replace with std::optional after switching to C++17
     std::pair<bool, uint64_t> offset;
-    int ret;
-
-    if (!fin || !fout) {
-        LOGE("Failed to allocate input or output MbFile handle");
-        return false;
-    }
+    FileStatus ret;
 
     // Open input file
-    if (mb_file_open_filename(fin.get(), input_file.c_str(),
-                              MB_FILE_OPEN_READ_ONLY) != MB_FILE_OK) {
+    if (fin.open(input_file, FileOpenMode::READ_ONLY) != FileStatus::OK) {
         LOGE("%s: Failed to open for reading: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Open output file
-    if (mb_file_open_filename(fout.get(), output_file.c_str(),
-                              MB_FILE_OPEN_WRITE_ONLY) != MB_FILE_OK) {
+    if (fout.open(output_file, FileOpenMode::WRITE_ONLY) != FileStatus::OK) {
         LOGE("%s: Failed to open for writing: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), fout.error_string().c_str());
         return false;
     }
 
     // Replace pattern
-    auto result_cb = [](MbFile *file, void *userdata, uint64_t offset) -> int {
+    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+            -> FileStatus {
         (void) file;
         std::pair<bool, uint64_t> *ptr =
                 static_cast<std::pair<bool, uint64_t> *>(userdata);
         ptr->first = true;
         ptr->second = offset;
-        return MB_FILE_OK;
+        return FileStatus::OK;
     };
 
-    ret = mb_file_search(fin.get(), -1, -1, 0, source_pattern,
-                         sizeof(source_pattern), 1, result_cb, &offset);
-    if (ret < 0) {
+    ret = file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern),
+                      1, result_cb, &offset);
+    if (ret < FileStatus::OK) {
         LOGE("%s: Error when searching for pattern: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Copy data
-    ret = mb_file_seek(fin.get(), 0, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
+    ret = fin.seek(0, SEEK_SET, nullptr);
+    if (ret != FileStatus::OK) {
         LOGE("%s: Failed to seek to beginning: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     if (offset.first) {
         LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
 
-        if (!copy_file_to_file(fin.get(), fout.get(), offset.second)) {
+        if (!copy_file_to_file(fin, fout, offset.second)) {
             return false;
         }
 
-        ret = mb_file_seek(fin.get(), sizeof(source_pattern), SEEK_CUR,
-                           nullptr);
-        if (ret != MB_FILE_OK) {
+        ret = fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr);
+        if (ret != FileStatus::OK) {
             LOGE("%s: Failed to skip pattern: %s",
-                 input_file.c_str(), mb_file_error_string(fin.get()));
+                 input_file.c_str(), fin.error_string().c_str());
             return false;
         }
 
         size_t n;
-        ret = mb_file_write_fully(fout.get(), target_pattern,
-                                  sizeof(target_pattern), &n);
-        if (ret != MB_FILE_OK || n != sizeof(target_pattern)) {
+        ret = file_write_fully(fout, target_pattern,
+                               sizeof(target_pattern), &n);
+        if (ret != FileStatus::OK || n != sizeof(target_pattern)) {
             LOGE("%s: Failed to write target pattern: %s",
-                 output_file.c_str(), mb_file_error_string(fout.get()));
+                 output_file.c_str(), fout.error_string().c_str());
             return false;
         }
     }
 
-    if (!copy_file_to_file_eof(fin.get(), fout.get())) {
+    if (!copy_file_to_file_eof(fin, fout)) {
         return false;
     }
 
-    ret = mb_file_close(fout.get());
-    if (ret != MB_FILE_OK) {
+    ret = fout.close();
+    if (ret != FileStatus::OK) {
         LOGE("%s: Failed to close file: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), fout.error_string().c_str());
         return false;
     }
 
@@ -670,25 +662,24 @@ bool InstallerUtil::replace_file(const std::string &replace,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
-                                      uint64_t to_copy)
+bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
     size_t n;
-    int ret;
+    FileStatus ret;
 
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        ret = mb_file_read_fully(fin, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        ret = mb::file_read_fully(fin, buf, to_read, &n);
+        if (ret != FileStatus::OK || n != to_read) {
+            LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        ret = mb_file_write_fully(fout, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        ret = mb::file_write_fully(fout, buf, to_read, &n);
+        if (ret != FileStatus::OK || n != to_read) {
+            LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
 
@@ -698,25 +689,25 @@ bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file_eof(MbFile *fin, MbFile *fout)
+bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
 {
     char buf[10240];
     size_t n_read;
     size_t n_written;
-    int ret;
+    FileStatus ret;
 
     while (true) {
-        ret = mb_file_read_fully(fin, buf, sizeof(buf), &n_read);
-        if (ret != MB_FILE_OK) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        ret = mb::file_read_fully(fin, buf, sizeof(buf), &n_read);
+        if (ret != FileStatus::OK) {
+            LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        ret = mb_file_write_fully(fout, buf, n_read, &n_written);
-        if (ret != MB_FILE_OK || n_written != n_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        ret = mb::file_write_fully(fout, buf, n_read, &n_written);
+        if (ret != FileStatus::OK || n_written != n_read) {
+            LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
     }

@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "mbcommon/file.h"
+#include "mbcommon/file/standard.h"
 
 #include "mbp/errors.h"
 
@@ -33,7 +33,8 @@ namespace mbp
 class FileUtils
 {
 public:
-    static ErrorCode openFile(MbFile *file, const std::string &path, int mode);
+    static ErrorCode openFile(mb::StandardFile &file, const std::string &path,
+                              mb::FileOpenMode mode);
 
     static ErrorCode readToMemory(const std::string &path,
                                   std::vector<unsigned char> *contents);

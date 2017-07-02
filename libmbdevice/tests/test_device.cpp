@@ -54,7 +54,7 @@ TEST_F(DeviceTest, CheckDefaultValues)
     ASSERT_EQ(mb_device_codenames(_device), nullptr);
     ASSERT_EQ(mb_device_name(_device), nullptr);
     ASSERT_EQ(mb_device_architecture(_device), nullptr);
-    ASSERT_EQ(mb_device_flags(_device), 0);
+    ASSERT_EQ(mb_device_flags(_device), 0u);
     ASSERT_EQ(mb_device_block_dev_base_dirs(_device), nullptr);
     ASSERT_EQ(mb_device_system_block_devs(_device), nullptr);
     ASSERT_EQ(mb_device_cache_block_devs(_device), nullptr);
@@ -66,7 +66,7 @@ TEST_F(DeviceTest, CheckDefaultValues)
     /* Boot UI */
 
     ASSERT_EQ(mb_device_tw_supported(_device), false);
-    ASSERT_EQ(mb_device_tw_flags(_device), 0);
+    ASSERT_EQ(mb_device_tw_flags(_device), 0u);
     ASSERT_EQ(mb_device_tw_pixel_format(_device), TW_PIXEL_FORMAT_DEFAULT);
     ASSERT_EQ(mb_device_tw_force_pixel_format(_device), TW_FORCE_PIXEL_FORMAT_NONE);
     ASSERT_EQ(mb_device_tw_overscan_percent(_device), 0);

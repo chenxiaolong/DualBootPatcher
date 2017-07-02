@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,100 +27,161 @@
 
 struct FileCallbacksTest : testing::Test
 {
-    MbFile *_file;
+    unsigned int _n_open_cb = 0;
+    unsigned int _n_close_cb = 0;
+    unsigned int _n_read_cb = 0;
+    unsigned int _n_write_cb = 0;
+    unsigned int _n_seek_cb = 0;
+    unsigned int _n_truncate_cb = 0;
 
-    FileCallbacksTest() : _file(mb_file_new())
-    {
-    }
-
-    virtual ~FileCallbacksTest()
-    {
-        mb_file_free(_file);
-    }
-
-    static int _open_cb(MbFile *file, void *userdata)
+    static mb::FileStatus _open_cb(mb::File &file, void *userdata)
     {
         (void) file;
-        (void) userdata;
 
-        return MB_FILE_OK;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_open_cb;
+
+        return mb::FileStatus::OK;
     }
 
-    static int _close_cb(MbFile *file, void *userdata)
+    static mb::FileStatus _close_cb(mb::File &file, void *userdata)
     {
         (void) file;
-        (void) userdata;
 
-        return MB_FILE_OK;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_close_cb;
+
+        return mb::FileStatus::OK;
     }
 
-    static int _read_cb(MbFile *file, void *userdata,
-                        void *buf, size_t size,
-                        size_t *bytes_read)
+    static mb::FileStatus _read_cb(mb::File &file, void *userdata,
+                                   void *buf, size_t size,
+                                   size_t *bytes_read)
     {
         (void) file;
-        (void) userdata;
         (void) buf;
         (void) size;
         (void) bytes_read;
 
-        return MB_FILE_UNSUPPORTED;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_read_cb;
+
+        return mb::FileStatus::UNSUPPORTED;
     }
 
-    static int _write_cb(MbFile *file, void *userdata,
-                         const void *buf, size_t size,
-                         size_t *bytes_written)
+    static mb::FileStatus _write_cb(mb::File &file, void *userdata,
+                                    const void *buf, size_t size,
+                                    size_t *bytes_written)
     {
         (void) file;
-        (void) userdata;
         (void) buf;
         (void) size;
         (void) bytes_written;
 
-        return MB_FILE_UNSUPPORTED;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_write_cb;
+
+        return mb::FileStatus::UNSUPPORTED;
     }
 
-    static int _seek_cb(MbFile *file, void *userdata,
-                        int64_t offset, int whence,
-                        uint64_t *new_offset)
+    static mb::FileStatus _seek_cb(mb::File &file, void *userdata,
+                                   int64_t offset, int whence,
+                                   uint64_t *new_offset)
     {
         (void) file;
-        (void) userdata;
         (void) offset;
         (void) whence;
         (void) new_offset;
 
-        return MB_FILE_UNSUPPORTED;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_seek_cb;
+
+        return mb::FileStatus::UNSUPPORTED;
     }
 
-    static int _truncate_cb(MbFile *file, void *userdata,
-                            uint64_t size)
+    static mb::FileStatus _truncate_cb(mb::File &file, void *userdata,
+                                       uint64_t size)
     {
         (void) file;
-        (void) userdata;
         (void) size;
 
-        return MB_FILE_UNSUPPORTED;
+        auto *ctx = static_cast<FileCallbacksTest *>(userdata);
+        ++ctx->_n_truncate_cb;
+
+        return mb::FileStatus::UNSUPPORTED;
     }
 };
 
-TEST_F(FileCallbacksTest, CheckCallbacksSet)
+TEST_F(FileCallbacksTest, CheckCallbackConstructorWorks)
 {
-    ASSERT_EQ(mb_file_open_callbacks(_file,
-                                     &_open_cb,
-                                     &_close_cb,
-                                     &_read_cb,
-                                     &_write_cb,
-                                     &_seek_cb,
-                                     &_truncate_cb,
-                                     this), MB_FILE_OK);
+    mb::CallbackFile file(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                          _truncate_cb, this);
 
-    ASSERT_EQ(_file->state, MbFileState::OPENED);
-    ASSERT_EQ(_file->open_cb, &_open_cb);
-    ASSERT_EQ(_file->close_cb, &_close_cb);
-    ASSERT_EQ(_file->read_cb, &_read_cb);
-    ASSERT_EQ(_file->write_cb, &_write_cb);
-    ASSERT_EQ(_file->seek_cb, &_seek_cb);
-    ASSERT_EQ(_file->truncate_cb, &_truncate_cb);
-    ASSERT_EQ(_file->cb_userdata, this);
+    size_t n;
+    uint64_t offset;
+
+    ASSERT_TRUE(file.is_open());
+    ASSERT_EQ(file.read(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.write(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.seek(0, SEEK_SET, &offset), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.truncate(0), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.close(), mb::FileStatus::OK);
+
+    ASSERT_EQ(_n_open_cb, 1u);
+    ASSERT_EQ(_n_close_cb, 1u);
+    ASSERT_EQ(_n_read_cb, 1u);
+    ASSERT_EQ(_n_write_cb, 1u);
+    ASSERT_EQ(_n_seek_cb, 1u);
+    ASSERT_EQ(_n_truncate_cb, 1u);
+}
+
+TEST_F(FileCallbacksTest, CheckOpenFunctionWorks)
+{
+    mb::CallbackFile file;
+
+    size_t n;
+    uint64_t offset;
+
+    ASSERT_EQ(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                        _truncate_cb, this), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.write(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.seek(0, SEEK_SET, &offset), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.truncate(0), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.close(), mb::FileStatus::OK);
+
+    ASSERT_EQ(_n_open_cb, 1u);
+    ASSERT_EQ(_n_close_cb, 1u);
+    ASSERT_EQ(_n_read_cb, 1u);
+    ASSERT_EQ(_n_write_cb, 1u);
+    ASSERT_EQ(_n_seek_cb, 1u);
+    ASSERT_EQ(_n_truncate_cb, 1u);
+}
+
+TEST_F(FileCallbacksTest, CheckReopenWorks)
+{
+    mb::CallbackFile file;
+
+    ASSERT_EQ(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                        _truncate_cb, this), mb::FileStatus::OK);
+    ASSERT_EQ(file.close(), mb::FileStatus::OK);
+    ASSERT_EQ(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                        _truncate_cb, this), mb::FileStatus::OK);
+}
+
+TEST_F(FileCallbacksTest, CheckMoveOpensAndClosesProperly)
+{
+    mb::CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                           _truncate_cb, this);
+    mb::CallbackFile file2(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                           _truncate_cb, this);
+
+    ASSERT_TRUE(file1.is_open());
+    ASSERT_TRUE(file2.is_open());
+
+    file2 = std::move(file1);
+    ASSERT_TRUE(file2.is_open());
+
+    ASSERT_EQ(_n_open_cb, 2u);
+    ASSERT_EQ(_n_close_cb, 1u);
 }

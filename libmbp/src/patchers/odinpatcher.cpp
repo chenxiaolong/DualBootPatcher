@@ -35,8 +35,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include "mbcommon/file/fd.h"
-#include "mbcommon/file/filename.h"
 #include "mbcommon/locale.h"
 #include "mbcommon/string.h"
 
@@ -50,6 +48,12 @@
 #include "mbp/private/miniziputils.h"
 #include "mbp/private/stringutils.h"
 
+#if defined(__ANDROID__)
+#  include "mbcommon/file/fd.h"
+#else
+#  include "mbcommon/file/standard.h"
+#endif
+
 // minizip
 #include "minizip/zip.h"
 
@@ -57,8 +61,6 @@ class ar;
 
 namespace mbp
 {
-
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
 
 /*! \cond INTERNAL */
 class OdinPatcher::Impl
@@ -76,9 +78,11 @@ public:
     ErrorCode error;
 
     unsigned char laBuf[10240];
-    ScopedMbFile laFile{mb_file_new(), &mb_file_free};
 #ifdef __ANDROID__
+    mb::FdFile laFile;
     int fd = -1;
+#else
+    mb::StandardFile laFile;
 #endif
 
     std::unordered_set<std::string> added_files;
@@ -237,12 +241,12 @@ bool OdinPatcher::Impl::patchTar()
 
     // Get file size and seek back to original location
     uint64_t currentPos;
-    if (mb_file_seek(laFile.get(), 0, SEEK_CUR, &currentPos) != MB_FILE_OK
-            || mb_file_seek(laFile.get(), 0, SEEK_END, &maxBytes) != MB_FILE_OK
-            || mb_file_seek(laFile.get(), currentPos, SEEK_SET, nullptr)
-                    != MB_FILE_OK) {
+    if (laFile.seek(0, SEEK_CUR, &currentPos) != mb::FileStatus::OK
+            || laFile.seek(0, SEEK_END, &maxBytes) != mb::FileStatus::OK
+            || laFile.seek(currentPos, SEEK_SET, nullptr)
+                    != mb::FileStatus::OK) {
         LOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
-             mb_file_error_string(laFile.get()));
+             laFile.error_string().c_str());
         error = ErrorCode::FileSeekError;
         return false;
     }
@@ -567,7 +571,7 @@ bool OdinPatcher::Impl::openInputArchive()
     archive_read_support_filter_gzip(aInput);
     archive_read_support_filter_xz(aInput);
 
-    // Our callbacks use the MbFile API, which supports LFS on every platform.
+    // Our callbacks use the mb::File API, which supports LFS on every platform.
     // Also allows progress info by counting number of bytes read.
     int ret = archive_read_open2(aInput, this, &Impl::laOpenCb, &Impl::laReadCb,
                                  &Impl::laSkipCb, &Impl::laCloseCb);
@@ -681,10 +685,10 @@ la_ssize_t OdinPatcher::Impl::laReadCb(archive *a, void *userdata,
     *buffer = impl->laBuf;
     size_t bytesRead;
 
-    if (mb_file_read(impl->laFile.get(), impl->laBuf, sizeof(impl->laBuf),
-                     &bytesRead) != MB_FILE_OK) {
+    if (impl->laFile.read(impl->laBuf, sizeof(impl->laBuf), &bytesRead)
+            != mb::FileStatus::OK) {
         LOGE("%s: Failed to read: %s", impl->info->inputPath().c_str(),
-             mb_file_error_string(impl->laFile.get()));
+             impl->laFile.error_string().c_str());
         impl->error = ErrorCode::FileReadError;
         return -1;
     }
@@ -700,10 +704,9 @@ la_int64_t OdinPatcher::Impl::laSkipCb(archive *a, void *userdata,
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
 
-    if (mb_file_seek(impl->laFile.get(), request, SEEK_CUR, nullptr)
-            != MB_FILE_OK) {
+    if (impl->laFile.seek(request, SEEK_CUR, nullptr) != mb::FileStatus::OK) {
         LOGE("%s: Failed to seek: %s", impl->info->inputPath().c_str(),
-             mb_file_error_string(impl->laFile.get()));
+             impl->laFile.error_string().c_str());
         impl->error = ErrorCode::FileSeekError;
         return -1;
     }
@@ -717,7 +720,7 @@ int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
 {
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
-    int ret;
+    mb::FileStatus ret;
 
 #ifdef _WIN32
     std::wstring wFilename;
@@ -728,22 +731,20 @@ int OdinPatcher::Impl::laOpenCb(archive *a, void *userdata)
         return -1;
     }
 
-    ret = mb_file_open_filename_w(impl->laFile.get(), wFilename.c_str(),
-                                  MB_FILE_OPEN_READ_ONLY);
+    ret = impl->laFile.open(wFilename, mb::FileOpenMode::READ_ONLY);
 #else
 #  ifdef __ANDROID__
     if (impl->fd >= 0) {
-        ret = mb_file_open_fd(impl->laFile.get(), impl->fd, false);
+        ret = impl->laFile.open(impl->fd, false);
     } else
 #  endif
-    ret = mb_file_open_filename(impl->laFile.get(),
-                                impl->info->inputPath().c_str(),
-                                MB_FILE_OPEN_READ_ONLY);
+    ret = impl->laFile.open(impl->info->inputPath(),
+                            mb::FileOpenMode::READ_ONLY);
 #endif
 
-    if (ret != MB_FILE_OK) {
+    if (ret != mb::FileStatus::OK) {
         LOGE("%s: Failed to open: %s", impl->info->inputPath().c_str(),
-             mb_file_error_string(impl->laFile.get()));
+             impl->laFile.error_string().c_str());
         impl->error = ErrorCode::FileOpenError;
         return -1;
     }
@@ -756,10 +757,10 @@ int OdinPatcher::Impl::laCloseCb(archive *a, void *userdata)
     (void) a;
     Impl *impl = static_cast<Impl *>(userdata);
 
-    int ret = mb_file_close(impl->laFile.get());
-    if (ret != MB_FILE_OK) {
+    auto ret = impl->laFile.close();
+    if (ret != mb::FileStatus::OK) {
         LOGE("%s: Failed to close: %s", impl->info->inputPath().c_str(),
-             mb_file_error_string(impl->laFile.get()));
+             impl->laFile.error_string().c_str());
         impl->error = ErrorCode::FileCloseError;
         return -1;
     }

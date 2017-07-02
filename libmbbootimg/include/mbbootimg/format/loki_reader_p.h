@@ -44,28 +44,28 @@ struct LokiReaderCtx
     struct SegmentReaderCtx segctx;
 };
 
-int find_loki_header(struct MbBiReader *bir, struct MbFile *file,
+int find_loki_header(struct MbBiReader *bir, mb::File *file,
                      struct LokiHeader *header_out, uint64_t *offset_out);
-int loki_find_ramdisk_address(struct MbBiReader *bir, struct MbFile *file,
+int loki_find_ramdisk_address(struct MbBiReader *bir, mb::File *file,
                               const struct AndroidHeader *hdr,
                               const struct LokiHeader *loki_hdr,
                               uint32_t *ramdisk_addr_out);
-int loki_old_find_gzip_offset(struct MbBiReader *bir, struct MbFile *file,
+int loki_old_find_gzip_offset(struct MbBiReader *bir, mb::File *file,
                               uint32_t start_offset, uint64_t *gzip_offset_out);
-int loki_old_find_ramdisk_size(struct MbBiReader *bir, struct MbFile *file,
+int loki_old_find_ramdisk_size(struct MbBiReader *bir, mb::File *file,
                                const struct AndroidHeader *hdr,
                                uint32_t ramdisk_offset,
                                uint32_t *ramdisk_size_out);
-int find_linux_kernel_size(MbBiReader *bir, MbFile *file,
+int find_linux_kernel_size(MbBiReader *bir, mb::File *file,
                            uint32_t kernel_offset, uint32_t *kernel_size_out);
-int loki_read_old_header(struct MbBiReader *bir, struct MbFile *file,
+int loki_read_old_header(struct MbBiReader *bir, mb::File *file,
                          struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
                          struct MbBiHeader *header,
                          uint64_t *kernel_offset_out,
                          uint32_t *kernel_size_out,
                          uint64_t *ramdisk_offset_out,
                          uint32_t *ramdisk_size_out);
-int loki_read_new_header(struct MbBiReader *bir, struct MbFile *file,
+int loki_read_new_header(struct MbBiReader *bir, mb::File *file,
                          struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
                          struct MbBiHeader *header,
                          uint64_t *kernel_offset_out,

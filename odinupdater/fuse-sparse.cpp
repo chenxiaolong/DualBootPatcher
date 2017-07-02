@@ -17,7 +17,7 @@
 
 // libmbcommon
 #include "mbcommon/file.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -34,7 +34,7 @@ static uint64_t sparse_size;
 struct context
 {
     SparseCtx *sctx;
-    MbFile *file;
+    mb::StandardFile file;
     pthread_mutex_t mutex;
 };
 
@@ -44,10 +44,10 @@ struct context
 static bool cb_open(void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    if (mb_file_open_filename(ctx->file, source_fd_path, MB_FILE_OPEN_READ_ONLY)
-            != MB_FILE_OK) {
+    if (ctx->file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
+            != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to open: %s\n",
-                source_fd_path, mb_file_error_string(ctx->file));
+                source_fd_path, ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -59,9 +59,9 @@ static bool cb_open(void *userData)
 static bool cb_close(void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    if (mb_file_close(ctx->file) != MB_FILE_OK) {
+    if (ctx->file.close() != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to close: %s\n",
-                source_fd_path, mb_file_error_string(ctx->file));
+                source_fd_path, ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -77,9 +77,9 @@ static bool cb_read(void *buf, uint64_t size, uint64_t *bytesRead,
     size_t total = 0;
     while (size > 0) {
         size_t partial;
-        if (mb_file_read(ctx->file, buf, size, &partial) != MB_FILE_OK) {
+        if (ctx->file.read(buf, size, &partial) != mb::FileStatus::OK) {
             fprintf(stderr, "%s: Failed to read: %s\n",
-                    source_fd_path, mb_file_error_string(ctx->file));
+                    source_fd_path, ctx->file.error_string().c_str());
             return false;
         }
         size -= partial;
@@ -96,9 +96,9 @@ static bool cb_read(void *buf, uint64_t size, uint64_t *bytesRead,
 static bool cb_seek(int64_t offset, int whence, void *userData)
 {
     context *ctx = static_cast<context *>(userData);
-    if (mb_file_seek(ctx->file, offset, whence, nullptr) != MB_FILE_OK) {
+    if (ctx->file.seek(offset, whence, nullptr) != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to seek: %s\n",
-                source_fd_path, mb_file_error_string(ctx->file));
+                source_fd_path, ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -126,17 +126,9 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    ctx->file = mb_file_new();
-    if (!ctx->file) {
-        sparseCtxFree(ctx->sctx);
-        delete ctx;
-        return -ENOMEM;
-    }
-
     if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
                     ctx)) {
         sparseCtxFree(ctx->sctx);
-        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
@@ -155,7 +147,6 @@ static int fuse_release(const char *path, fuse_file_info *fi)
 
     context *ctx = reinterpret_cast<context *>(fi->fh);
     sparseCtxFree(ctx->sctx);
-    mb_file_free(ctx->file);
     delete ctx;
 
     return 0;
@@ -229,30 +220,20 @@ static int get_sparse_file_size()
         return -ENOMEM;
     }
 
-    ctx->file = mb_file_new();
-    if (!ctx->file) {
-        sparseCtxFree(ctx->sctx);
-        delete ctx;
-        return -ENOMEM;
-    }
-
     if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
                     ctx)) {
         sparseCtxFree(ctx->sctx);
-        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
 
     if (!sparseSize(ctx->sctx, &sparse_size)) {
         sparseCtxFree(ctx->sctx);
-        mb_file_free(ctx->file);
         delete ctx;
         return -EIO;
     }
 
     sparseCtxFree(ctx->sctx);
-    mb_file_free(ctx->file);
     delete ctx;
     return 0;
 }

@@ -24,7 +24,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mbcommon/file/filename.h"
 #include "mbcommon/locale.h"
 
 #include "mblog/logging.h"
@@ -37,14 +36,13 @@
 #endif
 
 
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
-
 namespace mbp
 {
 
-ErrorCode FileUtils::openFile(MbFile *file, const std::string &path, int mode)
+ErrorCode FileUtils::openFile(mb::StandardFile &file, const std::string &path,
+                              mb::FileOpenMode mode)
 {
-    int ret;
+    mb::FileStatus ret;
 
 #ifdef _WIN32
     std::wstring wFilename;
@@ -54,12 +52,13 @@ ErrorCode FileUtils::openFile(MbFile *file, const std::string &path, int mode)
         return ErrorCode::FileOpenError;
     }
 
-    ret = mb_file_open_filename_w(file, wFilename.c_str(), mode);
+    ret = file.open(wFilename, mode);
 #else
-    ret = mb_file_open_filename(file, path.c_str(), mode);
+    ret = file.open(path, mode);
 #endif
 
-    return ret == MB_FILE_OK ? ErrorCode::NoError : ErrorCode::FileOpenError;
+    return ret == mb::FileStatus::OK
+            ? ErrorCode::NoError : ErrorCode::FileOpenError;
 }
 
 /*!
@@ -73,30 +72,30 @@ ErrorCode FileUtils::openFile(MbFile *file, const std::string &path, int mode)
 ErrorCode FileUtils::readToMemory(const std::string &path,
                                   std::vector<unsigned char> *contents)
 {
-    ScopedMbFile file{mb_file_new(), &mb_file_free};
+    mb::StandardFile file;
 
-    auto error = openFile(file.get(), path, MB_FILE_OPEN_READ_ONLY);
+    auto error = openFile(file, path, mb::FileOpenMode::READ_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
-    if (mb_file_seek(file.get(), 0, SEEK_END, &size) != MB_FILE_OK
-            || mb_file_seek(file.get(), 0, SEEK_SET, nullptr) != MB_FILE_OK) {
+    if (file.seek(0, SEEK_END, &size) != mb::FileStatus::OK
+            || file.seek(0, SEEK_SET, nullptr) != mb::FileStatus::OK) {
         LOGE("%s: Failed to seek file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileSeekError;
     }
 
     std::vector<unsigned char> data(size);
 
     size_t bytesRead;
-    if (mb_file_read(file.get(), data.data(), data.size(), &bytesRead)
-            != MB_FILE_OK || bytesRead != size) {
+    if (file.read(data.data(), data.size(), &bytesRead) != mb::FileStatus::OK
+            || bytesRead != size) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -116,20 +115,20 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
 ErrorCode FileUtils::readToString(const std::string &path,
                                   std::string *contents)
 {
-    ScopedMbFile file{mb_file_new(), &mb_file_free};
+    mb::StandardFile file;
 
-    auto error = openFile(file.get(), path, MB_FILE_OPEN_READ_ONLY);
+    auto error = openFile(file, path, mb::FileOpenMode::READ_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
     uint64_t size;
-    if (mb_file_seek(file.get(), 0, SEEK_END, &size) != MB_FILE_OK
-            || mb_file_seek(file.get(), 0, SEEK_SET, nullptr) != MB_FILE_OK) {
+    if (file.seek(0, SEEK_END, &size) != mb::FileStatus::OK
+            || file.seek(0, SEEK_SET, nullptr) != mb::FileStatus::OK) {
         LOGE("%s: Failed to seek file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileSeekError;
     }
 
@@ -137,10 +136,10 @@ ErrorCode FileUtils::readToString(const std::string &path,
     data.resize(size);
 
     size_t bytesRead;
-    if (mb_file_read(file.get(), &data[0], data.size(), &bytesRead)
-            != MB_FILE_OK || bytesRead != size) {
+    if (file.read(&data[0], data.size(), &bytesRead) != mb::FileStatus::OK
+            || bytesRead != size) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -152,21 +151,20 @@ ErrorCode FileUtils::readToString(const std::string &path,
 ErrorCode FileUtils::writeFromMemory(const std::string &path,
                                      const std::vector<unsigned char> &contents)
 {
-    ScopedMbFile file{mb_file_new(), &mb_file_free};
+    mb::StandardFile file;
 
-    auto error = openFile(file.get(), path, MB_FILE_OPEN_WRITE_ONLY);
+    auto error = openFile(file, path, mb::FileOpenMode::WRITE_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
     size_t bytesWritten;
-    if (mb_file_write(file.get(), contents.data(), contents.size(),
-                      &bytesWritten) != MB_FILE_OK
-            || bytesWritten != contents.size()) {
+    if (file.write(contents.data(), contents.size(), &bytesWritten)
+            != mb::FileStatus::OK || bytesWritten != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileWriteError;
     }
 
@@ -176,21 +174,20 @@ ErrorCode FileUtils::writeFromMemory(const std::string &path,
 ErrorCode FileUtils::writeFromString(const std::string &path,
                                      const std::string &contents)
 {
-    ScopedMbFile file{mb_file_new(), &mb_file_free};
+    mb::StandardFile file;
 
-    auto error = openFile(file.get(), path, MB_FILE_OPEN_WRITE_ONLY);
+    auto error = openFile(file, path, mb::FileOpenMode::WRITE_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
     size_t bytesWritten;
-    if (mb_file_write(file.get(), contents.data(), contents.size(),
-                      &bytesWritten) != MB_FILE_OK
-            || bytesWritten != contents.size()) {
+    if (file.write(contents.data(), contents.size(), &bytesWritten)
+            != mb::FileStatus::OK || bytesWritten != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), mb_file_error_string(file.get()));
+             path.c_str(), file.error_string().c_str());
         return ErrorCode::FileWriteError;
     }
 

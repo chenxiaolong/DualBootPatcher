@@ -65,7 +65,6 @@ MB_BEGIN_C_DECLS
 struct MbBiWriter;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
 
 typedef int (*FormatWriterSetOption)(struct MbBiWriter *biw, void *userdata,
                                      const char *key, const char *value);
@@ -121,7 +120,7 @@ struct MbBiWriter
     WriterState state;
 
     // File
-    struct MbFile *file;
+    mb::File *file;
     bool file_owned;
 
     // Error

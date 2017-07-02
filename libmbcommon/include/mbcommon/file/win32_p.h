@@ -21,23 +21,67 @@
 
 #include "mbcommon/guard_p.h"
 
+#include <windows.h>
+
 #include "mbcommon/file/win32.h"
-
-#include <string>
-
-#include "mbcommon/file/vtable_p.h"
+#include "mbcommon/file_p.h"
 
 /*! \cond INTERNAL */
-MB_BEGIN_C_DECLS
-
-struct Win32FileCtx
+namespace mb
 {
+
+struct Win32FileFuncs
+{
+    // windows.h
+    virtual BOOL fn_CloseHandle(HANDLE hObject) = 0;
+    virtual HANDLE fn_CreateFileW(LPCWSTR lpFileName,
+                                  DWORD dwDesiredAccess,
+                                  DWORD dwShareMode,
+                                  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                  DWORD dwCreationDisposition,
+                                  DWORD dwFlagsAndAttributes,
+                                  HANDLE hTemplateFile) = 0;
+    virtual BOOL fn_ReadFile(HANDLE hFile,
+                             LPVOID lpBuffer,
+                             DWORD nNumberOfBytesToRead,
+                             LPDWORD lpNumberOfBytesRead,
+                             LPOVERLAPPED lpOverlapped) = 0;
+    virtual BOOL fn_SetEndOfFile(HANDLE hFile) = 0;
+    virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
+                                     LARGE_INTEGER liDistanceToMove,
+                                     PLARGE_INTEGER lpNewFilePointer,
+                                     DWORD dwMoveMethod) = 0;
+    virtual BOOL fn_WriteFile(HANDLE hFile,
+                              LPCVOID lpBuffer,
+                              DWORD nNumberOfBytesToWrite,
+                              LPDWORD lpNumberOfBytesWritten,
+                              LPOVERLAPPED lpOverlapped) = 0;
+};
+
+class Win32FilePrivate : public FilePrivate
+{
+public:
+    Win32FilePrivate();
+    virtual ~Win32FilePrivate();
+
+    void clear();
+
+    LPCWSTR win32_error_string(DWORD error_code);
+
+    static bool convert_mode(FileOpenMode mode,
+                             DWORD &access_out,
+                             DWORD &sharing_out,
+                             SECURITY_ATTRIBUTES &sa_out,
+                             DWORD &creation_out,
+                             DWORD &attrib_out,
+                             bool &append_out);
+
+    Win32FileFuncs *funcs;
+
     HANDLE handle;
     bool owned;
     std::wstring filename;
-    LPWSTR error;
 
-    // For CreateFileW
     DWORD access;
     DWORD sharing;
     SECURITY_ATTRIBUTES sa;
@@ -46,16 +90,11 @@ struct Win32FileCtx
 
     bool append;
 
-    SysVtable vtable;
+    LPWSTR error;
+
+protected:
+    Win32FilePrivate(Win32FileFuncs *funcs);
 };
 
-int _mb_file_open_HANDLE(SysVtable *vtable, struct MbFile *file, HANDLE handle,
-                         bool owned, bool append);
-
-int _mb_file_open_HANDLE_filename(SysVtable *vtable, struct MbFile *file,
-                                  const char *filename, int mode);
-int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                    const wchar_t *filename, int mode);
-
-MB_END_C_DECLS
+}
 /*! \endcond */

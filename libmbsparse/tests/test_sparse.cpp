@@ -240,13 +240,13 @@ TEST_F(SparseTest, ReadPerfectlySizedHeader)
     buildDataHeaderProperSized();
     ASSERT_TRUE(sparseOpen());
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
     ASSERT_TRUE(sparseSeek(1000, SEEK_SET));
     ASSERT_TRUE(sparseSeek(1000, SEEK_CUR));
     ASSERT_TRUE(sparseTell(&pos));
-    ASSERT_EQ(pos, 2000);
+    ASSERT_EQ(pos, 2000u);
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
     ASSERT_TRUE(sparseClose());
 }
 
@@ -258,13 +258,13 @@ TEST_F(SparseTest, OpenExtraSizedHeader)
     buildDataHeaderExtraSized();
     ASSERT_TRUE(sparseOpen());
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
     ASSERT_TRUE(sparseSeek(1000, SEEK_SET));
     ASSERT_TRUE(sparseSeek(1000, SEEK_CUR));
     ASSERT_TRUE(sparseTell(&pos));
-    ASSERT_EQ(pos, 2000);
+    ASSERT_EQ(pos, 2000u);
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
     ASSERT_TRUE(sparseClose());
 }
 
@@ -302,33 +302,33 @@ TEST_F(SparseTest, ReadValidSparseFile)
     // Check that the entire file could be read and that the contents are
     // correct
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 48);
+    ASSERT_EQ(bytesRead, 48u);
     ASSERT_EQ(memcmp(buf, expected, 48), 0);
 
     // Check that partial read on chunk boundary works
     ASSERT_TRUE(sparseSeek(-16, SEEK_END));
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 16);
+    ASSERT_EQ(bytesRead, 16u);
     ASSERT_EQ(memcmp(buf, expected + 32, 16), 0);
 
     // Check that partial read not on chunk boundary works
     ASSERT_TRUE(sparseSeek(33, SEEK_SET));
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 15);
+    ASSERT_EQ(bytesRead, 15u);
     ASSERT_EQ(memcmp(buf, expected + 33, 15), 0);
 
     // Check that seeking past EOF is allowed and doing so returns no data
     ASSERT_TRUE(sparseSeek(1000, SEEK_SET));
     ASSERT_TRUE(sparseSeek(1000, SEEK_CUR));
     ASSERT_TRUE(sparseTell(&pos));
-    ASSERT_EQ(pos, 2000);
+    ASSERT_EQ(pos, 2000u);
     ASSERT_TRUE(sparseRead(buf, sizeof(buf), &bytesRead));
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
 
     // Check that seeking to the end of the sparse file works
     ASSERT_TRUE(sparseSeek(0, SEEK_END));
     ASSERT_TRUE(sparseTell(&pos));
-    ASSERT_EQ(pos, 48);
+    ASSERT_EQ(pos, 48u);
 
     ASSERT_TRUE(sparseClose());
 }
@@ -366,9 +366,9 @@ TEST_F(SparseTest, ReadValidSparseFileNoSeek)
         remaining -= bytesRead;
     }
     ASSERT_TRUE(ret);
-    ASSERT_EQ(total, 48);
+    ASSERT_EQ(total, 48u);
     ASSERT_EQ(remaining, sizeof(buf) - 48);
-    ASSERT_EQ(bytesRead, 0);
+    ASSERT_EQ(bytesRead, 0u);
     ASSERT_EQ(memcmp(buf, expected, 48), 0);
 
     // Check that seeking fails

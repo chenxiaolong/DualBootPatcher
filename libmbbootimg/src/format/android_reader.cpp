@@ -52,10 +52,10 @@ MB_BEGIN_C_DECLS
  * \pre The file position can be at any offset prior to calling this function.
  *
  * \post The file pointer position is undefined after this function returns.
- *       Use mb_file_seek() to return to a known position.
+ *       Use File::seek() to return to a known position.
  *
  * \param[in] bir MbBiReader for setting error messages
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] max_header_offset Maximum offset that a header can start (must be
  *                              less than #ANDROID_MAX_HEADER_OFFSET)
  * \param[out] header_out Pointer to store header
@@ -67,13 +67,13 @@ MB_BEGIN_C_DECLS
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_android_header(MbBiReader *bir, MbFile *file,
+int find_android_header(MbBiReader *bir, mb::File *file,
                         uint64_t max_header_offset,
                         AndroidHeader *header_out, uint64_t *offset_out)
 {
     unsigned char buf[ANDROID_MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
     size_t n;
-    int ret;
+    mb::FileStatus file_ret;
     void *ptr;
     size_t offset;
 
@@ -85,21 +85,21 @@ int find_android_header(MbBiReader *bir, MbFile *file,
         return MB_BI_WARN;
     }
 
-    ret = mb_file_seek(file, 0, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = file->seek(0, SEEK_SET, nullptr);
+    if (file_ret != mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to seek to beginning: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    ret = mb_file_read_fully(
-            file, buf, max_header_offset + sizeof(AndroidHeader), &n);
-    if (ret != MB_FILE_OK) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = mb::file_read_fully(
+            *file, buf, max_header_offset + sizeof(AndroidHeader), &n);
+    if (file_ret != mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to read header: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     ptr = mb_memmem(buf, n, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
@@ -133,10 +133,10 @@ int find_android_header(MbBiReader *bir, MbFile *file,
  * \pre The file position can be at any offset prior to calling this function.
  *
  * \post The file pointer position is undefined after this function returns.
- *       Use mb_file_seek() to return to a known position.
+ *       Use File::seek() to return to a known position.
  *
  * \param[in] bir MbBiReader for setting error messages
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] hdr Android boot image header (in host byte order)
  * \param[out] offset_out Pointer to store magic offset
  *
@@ -146,12 +146,12 @@ int find_android_header(MbBiReader *bir, MbFile *file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_samsung_seandroid_magic(MbBiReader *bir, MbFile *file,
+int find_samsung_seandroid_magic(MbBiReader *bir, mb::File *file,
                                  AndroidHeader *hdr, uint64_t *offset_out)
 {
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
     size_t n;
-    int ret;
+    mb::FileStatus file_ret;
     uint64_t pos = 0;
 
     // Skip header, whose size cannot exceed the page size
@@ -173,20 +173,20 @@ int find_samsung_seandroid_magic(MbBiReader *bir, MbFile *file,
     pos += hdr->dt_size;
     pos += align_page_size<uint64_t>(pos, hdr->page_size);
 
-    ret = mb_file_seek(file, pos, SEEK_SET, nullptr);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = file->seek(pos, SEEK_SET, nullptr);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "SEAndroid magic not found: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    ret = mb_file_read_fully(file, buf, sizeof(buf), &n);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = mb::file_read_fully(*file, buf, sizeof(buf), &n);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to read SEAndroid magic: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != SAMSUNG_SEANDROID_MAGIC_SIZE
@@ -207,10 +207,10 @@ int find_samsung_seandroid_magic(MbBiReader *bir, MbFile *file,
  * \pre The file position can be at any offset prior to calling this function.
  *
  * \post The file pointer position is undefined after this function returns.
- *       Use mb_file_seek() to return to a known position.
+ *       Use File::seek() to return to a known position.
  *
  * \param[in] bir MbBiReader for setting error messages
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] hdr Android boot image header (in host byte order)
  * \param[out] offset_out Pointer to store magic offset
  *
@@ -220,12 +220,12 @@ int find_samsung_seandroid_magic(MbBiReader *bir, MbFile *file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_bump_magic(MbBiReader *bir, MbFile *file,
+int find_bump_magic(MbBiReader *bir, mb::File *file,
                     AndroidHeader *hdr, uint64_t *offset_out)
 {
     unsigned char buf[BUMP_MAGIC_SIZE];
     size_t n;
-    int ret;
+    mb::FileStatus file_ret;
     uint64_t pos = 0;
 
     // Skip header, whose size cannot exceed the page size
@@ -247,20 +247,20 @@ int find_bump_magic(MbBiReader *bir, MbFile *file,
     pos += hdr->dt_size;
     pos += align_page_size<uint64_t>(pos, hdr->page_size);
 
-    ret = mb_file_seek(file, pos, SEEK_SET, nullptr);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = file->seek(pos, SEEK_SET, nullptr);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "SEAndroid magic not found: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    ret = mb_file_read_fully(file, buf, sizeof(buf), &n);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = mb::file_read_fully(*file, buf, sizeof(buf), &n);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to read SEAndroid magic: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != BUMP_MAGIC_SIZE || memcmp(buf, BUMP_MAGIC, n) != 0) {

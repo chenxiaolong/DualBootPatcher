@@ -133,10 +133,11 @@ SegmentReaderEntry * _segment_reader_find_entry(SegmentReaderCtx *ctx,
     return nullptr;
 }
 
-int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, MbFile *file,
+int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
                                   MbBiEntry *entry, SegmentReaderEntry *srentry,
                                   MbBiReader *bir)
 {
+    mb::FileStatus file_ret;
     int ret;
 
     if (srentry->offset > UINT64_MAX - srentry->size) {
@@ -150,9 +151,10 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, MbFile *file,
     uint64_t read_cur_offset = read_start_offset;
 
     if (ctx->read_cur_offset != srentry->offset) {
-        ret = mb_file_seek(file, read_start_offset, SEEK_SET, nullptr);
-        if (ret < 0) {
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        file_ret = file->seek(read_start_offset, SEEK_SET, nullptr);
+        if (file_ret < mb::FileStatus::OK) {
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
     }
 
@@ -171,7 +173,7 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, MbFile *file,
     return MB_BI_OK;
 }
 
-int _segment_reader_read_entry(SegmentReaderCtx *ctx, MbFile *file,
+int _segment_reader_read_entry(SegmentReaderCtx *ctx, mb::File *file,
                                MbBiEntry *entry, MbBiReader *bir)
 {
     SegmentReaderEntry *srentry;
@@ -186,7 +188,7 @@ int _segment_reader_read_entry(SegmentReaderCtx *ctx, MbFile *file,
     return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
 }
 
-int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, int entry_type,
                                 struct MbBiReader *bir)
 {
@@ -202,7 +204,7 @@ int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *fil
     return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
 }
 
-int _segment_reader_read_data(SegmentReaderCtx *ctx, MbFile *file,
+int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
                               void *buf, size_t buf_size, size_t *bytes_read,
                               MbBiReader *bir)
 {
@@ -217,12 +219,13 @@ int _segment_reader_read_data(SegmentReaderCtx *ctx, MbFile *file,
         return MB_BI_FAILED;
     }
 
-    int ret = mb_file_read_fully(file, buf, to_copy, bytes_read);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    mb::FileStatus file_ret =
+            mb::file_read_fully(*file, buf, to_copy, bytes_read);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to read data: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     ctx->read_cur_offset += *bytes_read;

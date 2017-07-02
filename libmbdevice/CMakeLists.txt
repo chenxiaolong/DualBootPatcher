@@ -103,18 +103,12 @@ if(variants AND MBP_ENABLE_TESTS)
         ${MBDEVICE_TESTS_SOURCES}
     )
 
-    # Includes
-    target_include_directories(
-        mbdevice_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
-    )
-
     # Link dependencies
     target_link_libraries(
         mbdevice_tests
         mbdevice-static
-        ${GTEST_BOTH_LIBRARIES}
+        gtest
+        gtest_main
     )
 
     # Target C++11

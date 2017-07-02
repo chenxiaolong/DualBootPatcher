@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include "mbcommon/file.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -421,9 +421,9 @@ int mb_bi_writer_free(MbBiWriter *biw)
 int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
-    int ret;
 
-    MbFile *file = mb_file_new();
+    mb::File *file = new(std::nothrow) mb::StandardFile(
+            filename, mb::FileOpenMode::READ_WRITE_TRUNC);
     if (!file) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "%s", strerror(errno));
@@ -431,14 +431,13 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
     }
 
     // Open in read/write mode since some formats need to reread the file
-    ret = mb_file_open_filename(file, filename, MB_FILE_OPEN_READ_WRITE_TRUNC);
-    if (ret != MB_FILE_OK) {
-        // Always return MB_BI_FAILED as MB_FILE_FATAL would not affect us
+    if (!file->is_open()) {
+        // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_writer_set_error(biw, mb_file_error(file),
+        mb_bi_writer_set_error(biw, file->error(),
                                "Failed to open for writing: %s",
-                               mb_file_error_string(file));
-        mb_file_free(file);
+                               file->error_string().c_str());
+        delete file;
         return MB_BI_FAILED;
     }
 
@@ -458,9 +457,9 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
 int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
-    int ret;
 
-    MbFile *file = mb_file_new();
+    mb::File *file = new(std::nothrow) mb::StandardFile(
+            filename, mb::FileOpenMode::READ_WRITE_TRUNC);
     if (!file) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "%s", strerror(errno));
@@ -468,15 +467,13 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
     }
 
     // Open in read/write mode since some formats need to reread the file
-    ret = mb_file_open_filename_w(file, filename,
-                                  MB_FILE_OPEN_READ_WRITE_TRUNC);
-    if (ret != MB_FILE_OK) {
-        // Always return MB_BI_FAILED as MB_FILE_FATAL would not affect us
+    if (!file->is_open()) {
+        // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_writer_set_error(biw, mb_file_error(file),
+        mb_bi_writer_set_error(biw, file->error(),
                                "Failed to open for writing: %s",
-                               mb_file_error_string(file));
-        mb_file_free(file);
+                               file->error_string().c_str());
+        delete file;
         return MB_BI_FAILED;
     }
 
@@ -484,23 +481,22 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
 }
 
 /*!
- * Open boot image from MbFile handle.
+ * Open boot image from File handle.
  *
- * If \p owned is true, then the MbFile handle will be closed and freed when the
+ * If \p owned is true, then the File handle will be closed and freed when the
  * MbBiWriter is closed and freed. This is true even if this function fails. In
- * other words, if \p owned is true and this function fails, mb_file_free() will
+ * other words, if \p owned is true and this function fails, File::close() will
  * be called.
  *
  * \param biw MbBiWriter
- * \param file MbFile handle
- * \param owned Whether the MbBiWriter should take ownership of the MbFile
- *              handle
+ * \param file File handle
+ * \param owned Whether the MbBiWriter should take ownership of the File handle
  *
  * \return
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_open(MbBiWriter *biw, MbFile *file, bool owned)
+int mb_bi_writer_open(MbBiWriter *biw, mb::File *file, bool owned)
 {
     int ret;
 
@@ -523,7 +519,7 @@ int mb_bi_writer_open(MbBiWriter *biw, MbFile *file, bool owned)
 done:
     if (ret != MB_BI_OK) {
         if (owned) {
-            mb_file_free(file);
+            delete file;
         }
     }
     return ret;
@@ -545,7 +541,8 @@ done:
  */
 int mb_bi_writer_close(MbBiWriter *biw)
 {
-    int ret = MB_BI_OK, ret2;
+    mb::FileStatus file_ret;
+    int ret = MB_BI_OK;
 
     // Avoid double-closing or closing nothing
     if (!(biw->state & (WriterState::CLOSED | WriterState::NEW))) {
@@ -554,13 +551,16 @@ int mb_bi_writer_close(MbBiWriter *biw)
         }
 
         if (biw->file && biw->file_owned) {
-            ret2 = mb_file_free(biw->file);
-            if (ret2 < 0) {
-                ret2 = ret2 == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+            file_ret = biw->file->close();
+            if (file_ret < mb::FileStatus::OK) {
+                int ret2 = file_ret == mb::FileStatus::FATAL
+                        ? MB_BI_FATAL : MB_BI_FAILED;
+                if (ret2 < ret) {
+                    ret = ret2;
+                }
             }
-            if (ret2 < ret) {
-                ret = ret2;
-            }
+
+            delete biw->file;
         }
 
         biw->file = nullptr;

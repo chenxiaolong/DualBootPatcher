@@ -59,6 +59,7 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
                                  MbBiHeader *header)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
+    mb::FileStatus file_ret;
     int ret;
 
     free(ctx->cmdline);
@@ -193,12 +194,12 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
     if (ret != MB_BI_OK) return ret;
 
     // Start writing at offset 4096
-    ret = mb_file_seek(biw->file, 4096, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
-        mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+    file_ret = biw->file->seek(4096, SEEK_SET, nullptr);
+    if (file_ret != mb::FileStatus::OK) {
+        mb_bi_writer_set_error(biw, biw->file->error(),
                                "Failed to seek to first page: %s",
-                               mb_file_error_string(biw->file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               biw->file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     return MB_BI_OK;
@@ -319,16 +320,17 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
     SegmentWriterEntry *swentry;
-    int ret;
+    mb::FileStatus file_ret;
     size_t n;
 
     if (!ctx->have_file_size) {
-        ret = mb_file_seek(biw->file, 0, SEEK_CUR, &ctx->file_size);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->seek(0, SEEK_CUR, &ctx->file_size);
+        if (file_ret != mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to get file offset: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -371,22 +373,24 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
         sony_elf_fix_phdr_byte_order(&hdr_appsbl);
 
         // Seek back to beginning to write headers
-        ret = mb_file_seek(biw->file, 0, SEEK_SET, nullptr);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->seek(0, SEEK_SET, nullptr);
+        if (file_ret != mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to seek to beginning: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Write headers
         for (auto it = headers; it->ptr && it->can_write; ++it) {
-            ret = mb_file_write_fully(biw->file, it->ptr, it->size, &n);
-            if (ret != MB_FILE_OK || n != it->size) {
-                mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+            file_ret = mb::file_write_fully(*biw->file, it->ptr, it->size, &n);
+            if (file_ret != mb::FileStatus::OK || n != it->size) {
+                mb_bi_writer_set_error(biw, biw->file->error(),
                                        "Failed to write header: %s",
-                                       mb_file_error_string(biw->file));
-                return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                       biw->file->error_string().c_str());
+                return file_ret == mb::FileStatus::FATAL
+                        ? MB_BI_FATAL : MB_BI_FAILED;
             }
         }
     }

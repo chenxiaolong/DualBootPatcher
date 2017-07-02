@@ -23,25 +23,24 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbsparse/sparse.h"
 
-typedef std::unique_ptr<MbFile, int (*)(MbFile *)> ScopedMbFile;
 typedef std::unique_ptr<SparseCtx, bool (*)(SparseCtx *)> ScopedSparseCtx;
 
 struct Context
 {
     std::string path;
-    ScopedMbFile file{nullptr, &mb_file_free};
+    mb::StandardFile file;
 };
 
 bool cbOpen(void *userData)
 {
     Context *ctx = static_cast<Context *>(userData);
-    if (mb_file_open_filename(ctx->file.get(), ctx->path.c_str(),
-            MB_FILE_OPEN_READ_ONLY) != MB_FILE_OK) {
+    if (ctx->file.open(ctx->path, mb::FileOpenMode::READ_ONLY)
+            != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to open: %s\n",
-                ctx->path.c_str(), mb_file_error_string(ctx->file.get()));
+                ctx->path.c_str(), ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -50,9 +49,9 @@ bool cbOpen(void *userData)
 bool cbClose(void *userData)
 {
     Context *ctx = static_cast<Context *>(userData);
-    if (mb_file_close(ctx->file.get()) != MB_FILE_OK) {
+    if (ctx->file.close() != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to close: %s\n",
-                ctx->path.c_str(), mb_file_error_string(ctx->file.get()));
+                ctx->path.c_str(), ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -64,9 +63,9 @@ bool cbRead(void *buf, uint64_t size, uint64_t *bytesRead, void *userData)
     size_t total = 0;
     while (size > 0) {
         size_t partial;
-        if (mb_file_read(ctx->file.get(), buf, size, &partial) != MB_FILE_OK) {
+        if (ctx->file.read(buf, size, &partial) != mb::FileStatus::OK) {
             fprintf(stderr, "%s: Failed to read: %s\n",
-                    ctx->path.c_str(), mb_file_error_string(ctx->file.get()));
+                    ctx->path.c_str(), ctx->file.error_string().c_str());
             return false;
         }
         size -= partial;
@@ -80,9 +79,9 @@ bool cbRead(void *buf, uint64_t size, uint64_t *bytesRead, void *userData)
 bool cbSeek(int64_t offset, int whence, void *userData)
 {
     Context *ctx = static_cast<Context *>(userData);
-    if (mb_file_seek(ctx->file.get(), offset, whence, nullptr) != MB_FILE_OK) {
+    if (ctx->file.seek(offset, whence, nullptr) != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to seek: %s\n",
-                ctx->path.c_str(), mb_file_error_string(ctx->file.get()));
+                ctx->path.c_str(), ctx->file.error_string().c_str());
         return false;
     }
     return true;
@@ -100,12 +99,6 @@ int main(int argc, char *argv[])
 
     Context ctx;
     ctx.path = inputFile;
-    ctx.file.reset(mb_file_new());
-
-    if (!ctx.file) {
-        fprintf(stderr, "Out of memory\n");
-        return EXIT_FAILURE;
-    }
 
     ScopedSparseCtx sparseCtx(sparseCtxNew(), &sparseCtxFree);
     if (!sparseCtx) {
@@ -118,16 +111,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    ScopedMbFile file(mb_file_new(), &mb_file_free);
-    if (!ctx.file) {
-        fprintf(stderr, "Out of memory\n");
-        return EXIT_FAILURE;
-    }
+    mb::StandardFile file;
 
-    if (mb_file_open_filename(file.get(), outputFile, MB_FILE_OPEN_WRITE_ONLY)
-            != MB_FILE_OK) {
+    if (file.open(outputFile, mb::FileOpenMode::WRITE_ONLY)
+            != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                outputFile, mb_file_error_string(file.get()));
+                outputFile, file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
@@ -139,10 +128,10 @@ int main(int argc, char *argv[])
         char *ptr = buf;
         size_t bytesWritten;
         while (bytesRead > 0) {
-            if (mb_file_write(file.get(), buf, bytesRead, &bytesWritten)
-                    != MB_FILE_OK) {
+            if (file.write(buf, bytesRead, &bytesWritten)
+                    != mb::FileStatus::OK) {
                 fprintf(stderr, "%s: Failed to write: %s\n",
-                        outputFile, mb_file_error_string(file.get()));
+                        outputFile, file.error_string().c_str());
                 return EXIT_FAILURE;
             }
             bytesRead -= bytesWritten;
@@ -153,6 +142,5 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    return mb_file_close(file.get()) == MB_FILE_OK
-            ? EXIT_SUCCESS : EXIT_FAILURE;
+    return file.close() == mb::FileStatus::OK ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -15,6 +15,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # -Wunknown-attributes - malloc.h
         # -Wzero-length-array - asm-generic/siginfo.h
         add_compile_options(-Wno-unknown-attributes -Wno-zero-length-array)
+
+        # Prevent libarchive's android_lf.h from being included. It #defines
+        # a bunch of things like `#define open open64`, which breaks the build
+        # process. The header is only needed for building libarchive anyway.
+        add_definitions(-DARCHIVE_ANDROID_LF_H_INCLUDED)
     endif()
 
     if(NOT WIN32)

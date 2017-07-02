@@ -29,7 +29,6 @@
 
 #include "mbcommon/locale.h"
 
-#include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/posix_p.h"
 
 #ifndef __ANDROID__
@@ -41,44 +40,400 @@ static_assert(sizeof(off_t) > 4, "Not compiling with LFS support!");
  * \brief Open file with POSIX stdio `FILE *` API
  */
 
-MB_BEGIN_C_DECLS
-
-static void free_ctx(PosixFileCtx *ctx)
+namespace mb
 {
-    delete ctx;
+
+/*! \cond INTERNAL */
+struct RealPosixFileFuncs : public PosixFileFuncs
+{
+    virtual int fn_fstat(int fildes, struct stat *buf) override
+    {
+        return fstat(fildes, buf);
+    }
+
+    virtual int fn_fclose(FILE *stream) override
+    {
+        return fclose(stream);
+    }
+
+    virtual int fn_ferror(FILE *stream) override
+    {
+        return ferror(stream);
+    }
+
+    virtual int fn_fileno(FILE *stream) override
+    {
+        return fileno(stream);
+    }
+
+#ifdef _WIN32
+    virtual FILE * fn_wfopen(const wchar_t *filename,
+                             const wchar_t *mode) override
+    {
+        return _wfopen(filename, mode);
+    }
+#else
+    virtual FILE * fn_fopen(const char *path, const char *mode) override
+    {
+        return fopen(path, mode);
+    }
+#endif
+
+    virtual size_t fn_fread(void *ptr, size_t size, size_t nmemb,
+                            FILE *stream) override
+    {
+        return fread(ptr, size, nmemb, stream);
+    }
+
+    virtual int fn_fseeko(FILE *stream, off_t offset, int whence) override
+    {
+        return fseeko(stream, offset, whence);
+    }
+
+    virtual off_t fn_ftello(FILE *stream) override
+    {
+        return ftello(stream);
+    }
+
+    virtual size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
+                             FILE *stream) override
+    {
+        return fwrite(ptr, size, nmemb, stream);
+    }
+
+    virtual int fn_ftruncate64(int fd, off_t length) override
+    {
+        return ftruncate64(fd, length);
+    }
+};
+/*! \endcond */
+
+static RealPosixFileFuncs g_default_funcs;
+
+/*! \cond INTERNAL */
+
+PosixFilePrivate::PosixFilePrivate()
+    : PosixFilePrivate(&g_default_funcs)
+{
 }
 
-static int posix_open_cb(struct MbFile *file, void *userdata)
+PosixFilePrivate::PosixFilePrivate(PosixFileFuncs *funcs)
+    : funcs(funcs)
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
-    struct stat sb;
-    int fd;
+    clear();
+}
 
-    if (!ctx->filename.empty()) {
+PosixFilePrivate::~PosixFilePrivate()
+{
+}
+
+void PosixFilePrivate::clear()
+{
+    fp = nullptr;
+    owned = false;
+    filename.clear();
+    mode = nullptr;
+    can_seek = false;
+}
+
 #ifdef _WIN32
-        ctx->fp = ctx->vtable.fn_wfopen(
+const wchar_t * PosixFilePrivate::convert_mode(FileOpenMode mode)
+{
+    switch (mode) {
+    case FileOpenMode::READ_ONLY:
+        return L"rbN";
+    case FileOpenMode::READ_WRITE:
+        return L"r+bN";
+    case FileOpenMode::WRITE_ONLY:
+        return L"wbN";
+    case FileOpenMode::READ_WRITE_TRUNC:
+        return L"w+bN";
+    case FileOpenMode::APPEND:
+        return L"abN";
+    case FileOpenMode::READ_APPEND:
+        return L"a+bN";
+    default:
+        return nullptr;
+    }
+}
 #else
-        ctx->fp = ctx->vtable.fn_fopen(
+const char * PosixFilePrivate::convert_mode(FileOpenMode mode)
+{
+    switch (mode) {
+    case FileOpenMode::READ_ONLY:
+        return "rbe";
+    case FileOpenMode::READ_WRITE:
+        return "r+be";
+    case FileOpenMode::WRITE_ONLY:
+        return "wbe";
+    case FileOpenMode::READ_WRITE_TRUNC:
+        return "w+be";
+    case FileOpenMode::APPEND:
+        return "abe";
+    case FileOpenMode::READ_APPEND:
+        return "a+be";
+    default:
+        return nullptr;
+    }
+}
 #endif
-                ctx->vtable.userdata, ctx->filename.c_str(), ctx->mode);
-        if (!ctx->fp) {
-            mb_file_set_error(file, -errno, "Failed to open file: %s",
-                              strerror(errno));
-            return MB_FILE_FAILED;
+
+/*! \endcond */
+
+/*!
+ * \class PosixFile
+ *
+ * \brief Open file using posix `FILE *` API.
+ *
+ * This class supports opening large files (64-bit offsets) on non-Android
+ * Unix-like platforms.
+ */
+
+/*!
+ * \brief Construct unbound PosixFile.
+ *
+ * The File handle will not be bound to any file. One of the open functions will
+ * need to be called to open a file.
+ */
+PosixFile::PosixFile()
+    : PosixFile(new PosixFilePrivate())
+{
+}
+
+/*!
+ * \brief Open File handle from `FILE *`.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(FILE *, bool)
+ *
+ * \param fp `FILE *` instance
+ * \param owned Whether the `FILE *` instance should be owned by the File
+ *              handle
+ */
+PosixFile::PosixFile(FILE *fp, bool owned)
+    : PosixFile(new PosixFilePrivate(), fp, owned)
+{
+}
+
+/*!
+ * \brief Open File handle from a multi-byte filename.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(const std::string &, FileOpenMode)
+ *
+ * \param filename MBS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ */
+PosixFile::PosixFile(const std::string &filename, FileOpenMode mode)
+    : PosixFile(new PosixFilePrivate(), filename, mode)
+{
+}
+
+/*!
+ * \brief Open File handle from a wide-character filename.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(const std::wstring &, FileOpenMode)
+ *
+ * \param filename WCS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ */
+PosixFile::PosixFile(const std::wstring &filename, FileOpenMode mode)
+    : PosixFile(new PosixFilePrivate(), filename, mode)
+{
+}
+
+/*! \cond INTERNAL */
+
+PosixFile::PosixFile(PosixFilePrivate *priv)
+    : File(priv)
+{
+}
+
+PosixFile::PosixFile(PosixFilePrivate *priv,
+                     FILE *fp, bool owned)
+    : File(priv)
+{
+    open(fp, owned);
+}
+
+PosixFile::PosixFile(PosixFilePrivate *priv,
+                     const std::string &filename, FileOpenMode mode)
+    : File(priv)
+{
+    open(filename, mode);
+}
+
+PosixFile::PosixFile(PosixFilePrivate *priv,
+                     const std::wstring &filename, FileOpenMode mode)
+    : File(priv)
+{
+    open(filename, mode);
+}
+
+/*! \endcond */
+
+PosixFile::~PosixFile()
+{
+    close();
+}
+
+/*!
+ * \brief Open from `FILE *`.
+ *
+ * If \p owned is true, then the File handle will take ownership of the
+ * `FILE *` instance. In other words, the `FILE *` instance will be closed when
+ * the File handle is closed.
+ *
+ * \param fp `FILE *` instance
+ * \param owned Whether the `FILE *` instance should be owned by the File
+ *              handle
+ *
+ * \return
+ *   * #FileStatus::OK if the file is successfully opened
+ *   * \<= #FileStatus::WARN if an error occurs
+ */
+FileStatus PosixFile::open(FILE *fp, bool owned)
+{
+    MB_PRIVATE(PosixFile);
+    if (priv) {
+        priv->fp = fp;
+        priv->owned = owned;
+    }
+    return File::open();
+}
+
+/*!
+ * \brief Open from a multi-byte filename.
+ *
+ * On Unix-like systems, \p filename is directly passed to `fopen()`. On Windows
+ * systems, \p filename is converted to WCS using mbs_to_wcs() before being
+ * passed to `_wfopen()`.
+ *
+ * \param filename MBS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return
+ *   * #FileStatus::OK if the file is successfully opened
+ *   * \<= #FileStatus::WARN if an error occurs
+ */
+FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
+{
+    MB_PRIVATE(PosixFile);
+    if (priv) {
+        // Convert filename to platform-native encoding
+#ifdef _WIN32
+        std::wstring native_filename;
+        if (!mbs_to_wcs(native_filename, filename)) {
+            set_error(FileError::INVALID_ARGUMENT,
+                      "Failed to convert MBS filename to WCS");
+            return FileStatus::FATAL;
+        }
+#else
+        auto native_filename = filename;
+#endif
+
+        // Convert mode to fopen-compatible mode string
+        auto mode_str = priv->convert_mode(mode);
+        if (!mode_str) {
+            set_error(FileError::INVALID_ARGUMENT,
+                      "Invalid mode: %d", mode);
+            return FileStatus::FATAL;
+        }
+
+        priv->fp = nullptr;
+        priv->owned = true;
+        priv->filename = std::move(native_filename);
+        priv->mode = mode_str;
+    }
+    return File::open();
+}
+
+/*!
+ * \brief Open from a wide-character filename.
+ *
+ * On Unix-like systems, \p filename is converted to MBS using wcs_to_mbs()
+ * before being passed to `fopen()`. On Windows systems, \p filename is directly
+ * passed to `_wfopen()`.
+ *
+ * \param filename WCS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return
+ *   * #FileStatus::OK if the file is successfully opened
+ *   * \<= #FileStatus::WARN if an error occurs
+ */
+FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
+{
+    MB_PRIVATE(PosixFile);
+    if (priv) {
+        // Convert filename to platform-native encoding
+#ifdef _WIN32
+        auto native_filename = filename;
+#else
+        std::string native_filename;
+        if (!wcs_to_mbs(native_filename, filename)) {
+            set_error(FileError::INVALID_ARGUMENT,
+                      "Failed to convert WCS filename to MBS");
+            return FileStatus::FATAL;
+        }
+#endif
+
+        // Convert mode to fopen-compatible mode string
+        auto mode_str = priv->convert_mode(mode);
+        if (!mode_str) {
+            set_error(FileError::INVALID_ARGUMENT,
+                      "Invalid mode: %d", mode);
+            return FileStatus::FATAL;
+        }
+
+        priv->fp = nullptr;
+        priv->owned = true;
+        priv->filename = std::move(native_filename);
+        priv->mode = mode_str;
+    }
+    return File::open();
+}
+
+FileStatus PosixFile::on_open()
+{
+    MB_PRIVATE(PosixFile);
+
+    if (!priv->filename.empty()) {
+#ifdef _WIN32
+        priv->fp = priv->funcs->fn_wfopen(
+#else
+        priv->fp = priv->funcs->fn_fopen(
+#endif
+                priv->filename.c_str(), priv->mode);
+        if (!priv->fp) {
+            set_error(-errno, "Failed to open file: %s", strerror(errno));
+            return FileStatus::FAILED;
         }
     }
 
-    fd = ctx->vtable.fn_fileno(ctx->vtable.userdata, ctx->fp);
+    struct stat sb;
+    int fd;
+
+    // Assume file is unseekable by default
+    priv->can_seek = false;
+
+    fd = priv->funcs->fn_fileno(priv->fp);
     if (fd >= 0) {
-        if (ctx->vtable.fn_fstat(ctx->vtable.userdata, fd, &sb) < 0) {
-            mb_file_set_error(file, -errno,
-                              "Failed to stat file: %s", strerror(errno));
-            return MB_FILE_FAILED;
+        if (priv->funcs->fn_fstat(fd, &sb) < 0) {
+            set_error(-errno, "Failed to stat file: %s", strerror(errno));
+            return FileStatus::FAILED;
         }
 
         if (S_ISDIR(sb.st_mode)) {
-            mb_file_set_error(file, -EISDIR, "Cannot open directory");
-            return MB_FILE_FAILED;
+            set_error(-EISDIR, "Cannot open directory");
+            return FileStatus::FAILED;
         }
 
         // Enable seekability based on file type because lseek(fd, 0, SEEK_CUR)
@@ -88,374 +443,115 @@ static int posix_open_cb(struct MbFile *file, void *userdata)
                 || S_ISBLK(sb.st_mode)
 #endif
         ) {
-            ctx->can_seek = true;
+            priv->can_seek = true;
         }
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-static int posix_close_cb(struct MbFile *file, void *userdata)
+FileStatus PosixFile::on_close()
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
-    int ret = MB_FILE_OK;
+    MB_PRIVATE(PosixFile);
 
-    if (ctx->owned && ctx->fp && ctx->vtable.fn_fclose(
-            ctx->vtable.userdata, ctx->fp) == EOF) {
-        mb_file_set_error(file, -errno,
-                          "Failed to close file: %s", strerror(errno));
-        ret = MB_FILE_FAILED;
+    FileStatus ret = FileStatus::OK;
+
+    if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
+        set_error(-errno, "Failed to close file: %s", strerror(errno));
+        ret = FileStatus::FAILED;
     }
 
-    // Clean up resources
-    free_ctx(ctx);
+    // Reset to allow opening another file
+    priv->clear();
 
     return ret;
 }
 
-static int posix_read_cb(struct MbFile *file, void *userdata,
-                         void *buf, size_t size,
-                         size_t *bytes_read)
+FileStatus PosixFile::on_read(void *buf, size_t size, size_t *bytes_read)
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
+    MB_PRIVATE(PosixFile);
 
-    size_t n = ctx->vtable.fn_fread(
-            ctx->vtable.userdata, buf, 1, size, ctx->fp);
+    size_t n = priv->funcs->fn_fread(buf, 1, size, priv->fp);
 
-    if (n < size && ctx->vtable.fn_ferror(ctx->vtable.userdata, ctx->fp)) {
-        mb_file_set_error(file, -errno,
-                          "Failed to read file: %s", strerror(errno));
-        return errno == EINTR ? MB_FILE_RETRY : MB_FILE_FAILED;
+    if (n < size && priv->funcs->fn_ferror(priv->fp)) {
+        set_error(-errno, "Failed to read file: %s", strerror(errno));
+        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
     }
 
     *bytes_read = n;
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-static int posix_write_cb(struct MbFile *file, void *userdata,
-                          const void *buf, size_t size,
-                          size_t *bytes_written)
+FileStatus PosixFile::on_write(const void *buf, size_t size,
+                               size_t *bytes_written)
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
+    MB_PRIVATE(PosixFile);
 
-    size_t n = ctx->vtable.fn_fwrite(
-            ctx->vtable.userdata, buf, 1, size, ctx->fp);
+    size_t n = priv->funcs->fn_fwrite(buf, 1, size, priv->fp);
 
-    if (n < size && ctx->vtable.fn_ferror(ctx->vtable.userdata, ctx->fp)) {
-        mb_file_set_error(file, -errno,
-                          "Failed to write file: %s", strerror(errno));
-        return errno == EINTR ? MB_FILE_RETRY : MB_FILE_FAILED;
+    if (n < size && priv->funcs->fn_ferror(priv->fp)) {
+        set_error(-errno, "Failed to write file: %s", strerror(errno));
+        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
     }
 
     *bytes_written = n;
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-static int posix_seek_cb(struct MbFile *file, void *userdata,
-                         int64_t offset, int whence,
-                         uint64_t *new_offset)
+FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t *new_offset)
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
+    MB_PRIVATE(PosixFile);
+
     off64_t old_pos, new_pos;
 
-    if (!ctx->can_seek) {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "Seek not supported: %s", strerror(errno));
-        return MB_FILE_UNSUPPORTED;
+    if (!priv->can_seek) {
+        set_error(FileError::UNSUPPORTED,
+                  "Seek not supported: %s", strerror(errno));
+        return FileStatus::UNSUPPORTED;
     }
 
     // Get current file position
-    old_pos = ctx->vtable.fn_ftello(ctx->vtable.userdata, ctx->fp);
+    old_pos = priv->funcs->fn_ftello(priv->fp);
     if (old_pos < 0) {
-        mb_file_set_error(file, -errno,
-                          "Failed to get file position: %s", strerror(errno));
-        return MB_FILE_FAILED;
+        set_error(-errno, "Failed to get file position: %s", strerror(errno));
+        return FileStatus::FAILED;
     }
 
     // Try to seek
-    if (ctx->vtable.fn_fseeko(
-            ctx->vtable.userdata, ctx->fp, offset, whence) < 0) {
-        mb_file_set_error(file, -errno,
-                          "Failed to seek file: %s", strerror(errno));
-        return MB_FILE_FAILED;
+    if (priv->funcs->fn_fseeko(priv->fp, offset, whence) < 0) {
+        set_error(-errno, "Failed to seek file: %s", strerror(errno));
+        return FileStatus::FAILED;
     }
 
     // Get new position
-    new_pos = ctx->vtable.fn_ftello(ctx->vtable.userdata, ctx->fp);
+    new_pos = priv->funcs->fn_ftello(priv->fp);
     if (new_pos < 0) {
         // Try to restore old position
-        mb_file_set_error(file, -errno,
-                          "Failed to get file position: %s", strerror(errno));
-        return ctx->vtable.fn_fseeko(
-                ctx->vtable.userdata, ctx->fp, old_pos, SEEK_SET) == 0
-                ? MB_FILE_FAILED : MB_FILE_FATAL;
+        set_error(-errno, "Failed to get file position: %s", strerror(errno));
+        return priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) == 0
+                ? FileStatus::FAILED : FileStatus::FATAL;
     }
 
     *new_offset = new_pos;
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-static int posix_truncate_cb(struct MbFile *file, void *userdata,
-                             uint64_t size)
+FileStatus PosixFile::on_truncate(uint64_t size)
 {
-    PosixFileCtx *ctx = static_cast<PosixFileCtx *>(userdata);
+    MB_PRIVATE(PosixFile);
 
-    int fd = ctx->vtable.fn_fileno(ctx->vtable.userdata, ctx->fp);
+    int fd = priv->funcs->fn_fileno(priv->fp);
     if (fd < 0) {
-        mb_file_set_error(file, MB_FILE_ERROR_UNSUPPORTED,
-                          "fileno() not supported for fp");
-        return MB_FILE_UNSUPPORTED;
+        set_error(FileError::UNSUPPORTED, "fileno() not supported for fp");
+        return FileStatus::UNSUPPORTED;
     }
 
-    if (ctx->vtable.fn_ftruncate64(ctx->vtable.userdata, fd, size) < 0) {
-        mb_file_set_error(file, -errno,
-                          "Failed to truncate file: %s", strerror(errno));
-        return MB_FILE_FAILED;
+    if (priv->funcs->fn_ftruncate64(fd, size) < 0) {
+        set_error(-errno, "Failed to truncate file: %s", strerror(errno));
+        return FileStatus::FAILED;
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-static bool check_vtable(SysVtable *vtable, bool needs_fopen)
-{
-    return vtable
-            && vtable->fn_fstat
-            && vtable->fn_fclose
-            && vtable->fn_ferror
-            && vtable->fn_fileno
-#ifdef _WIN32
-            && (needs_fopen ? !!vtable->fn_wfopen : true)
-#else
-            && (needs_fopen ? !!vtable->fn_fopen : true)
-#endif
-            && vtable->fn_fread
-            && vtable->fn_fseeko
-            && vtable->fn_ftello
-            && vtable->fn_fwrite
-            && vtable->fn_ftruncate64;
 }
-
-static PosixFileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
-                                 bool needs_fopen)
-{
-    if (!check_vtable(vtable, needs_fopen)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Invalid or incomplete vtable");
-        return nullptr;
-    }
-
-    PosixFileCtx *ctx = new(std::nothrow) PosixFileCtx();
-    if (!ctx) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate PosixFileCtx: %s",
-                          strerror(errno));
-        return nullptr;
-    }
-
-    ctx->vtable = *vtable;
-
-    return ctx;
-}
-
-static int open_ctx(struct MbFile *file, PosixFileCtx *ctx)
-{
-    return mb_file_open_callbacks(file,
-                                  &posix_open_cb,
-                                  &posix_close_cb,
-                                  &posix_read_cb,
-                                  &posix_write_cb,
-                                  &posix_seek_cb,
-                                  &posix_truncate_cb,
-                                  ctx);
-}
-
-#ifdef _WIN32
-static const wchar_t * convert_mode(int mode)
-{
-    switch (mode) {
-    case MB_FILE_OPEN_READ_ONLY:
-        return L"rbN";
-    case MB_FILE_OPEN_READ_WRITE:
-        return L"r+bN";
-    case MB_FILE_OPEN_WRITE_ONLY:
-        return L"wbN";
-    case MB_FILE_OPEN_READ_WRITE_TRUNC:
-        return L"w+bN";
-    case MB_FILE_OPEN_APPEND:
-        return L"abN";
-    case MB_FILE_OPEN_READ_APPEND:
-        return L"a+bN";
-    default:
-        return nullptr;
-    }
-}
-#else
-static const char * convert_mode(int mode)
-{
-    switch (mode) {
-    case MB_FILE_OPEN_READ_ONLY:
-        return "rbe";
-    case MB_FILE_OPEN_READ_WRITE:
-        return "r+be";
-    case MB_FILE_OPEN_WRITE_ONLY:
-        return "wbe";
-    case MB_FILE_OPEN_READ_WRITE_TRUNC:
-        return "w+be";
-    case MB_FILE_OPEN_APPEND:
-        return "abe";
-    case MB_FILE_OPEN_READ_APPEND:
-        return "a+be";
-    default:
-        return nullptr;
-    }
-}
-#endif
-
-int _mb_file_open_FILE(SysVtable *vtable, struct MbFile *file, FILE *fp,
-                       bool owned)
-{
-    PosixFileCtx *ctx = create_ctx(file, vtable, false);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->fp = fp;
-    ctx->owned = owned;
-
-    return open_ctx(file, ctx);
-}
-
-int _mb_file_open_FILE_filename(SysVtable *vtable, struct MbFile *file,
-                                const char *filename, int mode)
-{
-    PosixFileCtx *ctx = create_ctx(file, vtable, true);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->owned = true;
-
-#ifdef _WIN32
-    if (!mb::mbs_to_wcs(ctx->filename, filename)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Failed to convert MBS filename to WCS");
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-#else
-    ctx->filename = filename;
-#endif
-
-    ctx->mode = convert_mode(mode);
-    if (!ctx->mode) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Invalid mode: %d", mode);
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    return open_ctx(file, ctx);
-}
-
-int _mb_file_open_FILE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                  const wchar_t *filename, int mode)
-{
-    PosixFileCtx *ctx = create_ctx(file, vtable, true);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->owned = true;
-
-#ifdef _WIN32
-    ctx->filename = filename;
-#else
-    if (!mb::wcs_to_mbs(ctx->filename, filename)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Failed to convert WCS filename to MBS");
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-#endif
-
-    ctx->mode = convert_mode(mode);
-    if (!ctx->mode) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Invalid mode: %d", mode);
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    return open_ctx(file, ctx);
-}
-
-/*!
- * Open MbFile handle from `FILE *`.
- *
- * If \p owned is true, then the MbFile handle will take ownership of the
- * `FILE *` instance. In other words, the `FILE *` instance will be closed when
- * the MbFile handle is closed.
- *
- * \param file MbFile handle
- * \param fp `FILE *` instance
- * \param owned Whether the `FILE *` instance should be owned by the MbFile
- *              handle
- *
- * \return
- *   * #MB_FILE_OK if the `FILE *` instance was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_FILE(struct MbFile *file, FILE *fp, bool owned)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_FILE(&vtable, file, fp, owned);
-}
-
-/*!
- * Open MbFile handle from a multi-byte filename.
- *
- * On Unix-like systems, \p filename is directly passed to `fopen()`. On Windows
- * systems, \p filename is converted to WCS using mb::mbs_to_wcs() before being
- * passed to `_wfopen()`.
- *
- * \param file MbFile handle
- * \param filename MBS filename
- * \param mode Open mode (\ref MbFileOpenMode)
- *
- * \return
- *   * #MB_FILE_OK if the file was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_FILE_filename(struct MbFile *file, const char *filename,
-                               int mode)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_FILE_filename(&vtable, file, filename, mode);
-}
-
-/*!
- * Open MbFile handle from a wide-character filename.
- *
- * On Unix-like systems, \p filename is converted to MBS using mb::wcs_to_mbs()
- * before being passed to `fopen()`. On Windows systems, \p filename is directly
- * passed to `_wfopen()`.
- *
- * \param file MbFile handle
- * \param filename WCS filename
- * \param mode Open mode (\ref MbFileOpenMode)
- *
- * \return
- *   * #MB_FILE_OK if the file was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_FILE_filename_w(struct MbFile *file, const wchar_t *filename,
-                                 int mode)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_FILE_filename_w(&vtable, file, filename, mode);
-}
-
-MB_END_C_DECLS

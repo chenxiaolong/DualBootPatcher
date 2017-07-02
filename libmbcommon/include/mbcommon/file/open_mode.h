@@ -19,28 +19,17 @@
 
 #pragma once
 
-#include "mbcommon/file.h"
+namespace mb
+{
 
-#ifdef __cplusplus
-#  include <cwchar>
-#else
-#  include <wchar.h>
-#endif
-
-MB_BEGIN_C_DECLS
-
-enum MbFileOpenMode {
-    MB_FILE_OPEN_READ_ONLY          = 0,
-    MB_FILE_OPEN_READ_WRITE         = 1,
-    MB_FILE_OPEN_WRITE_ONLY         = 2,
-    MB_FILE_OPEN_READ_WRITE_TRUNC   = 3,
-    MB_FILE_OPEN_APPEND             = 4,
-    MB_FILE_OPEN_READ_APPEND        = 5,
+enum class FileOpenMode
+{
+    READ_ONLY,
+    READ_WRITE,
+    WRITE_ONLY,
+    READ_WRITE_TRUNC,
+    APPEND,
+    READ_APPEND,
 };
 
-MB_EXPORT int mb_file_open_filename(struct MbFile *file,
-                                    const char *filename, int mode);
-MB_EXPORT int mb_file_open_filename_w(struct MbFile *file,
-                                      const wchar_t *filename, int mode);
-
-MB_END_C_DECLS
+}

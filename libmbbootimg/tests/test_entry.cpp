@@ -33,16 +33,16 @@ TEST(BootImgEntryTest, CheckDefaultValues)
     ASSERT_TRUE(!!entry);
 
     // Check private fields
-    ASSERT_EQ(entry->fields_set, 0);
+    ASSERT_EQ(entry->fields_set, 0u);
     ASSERT_EQ(entry->field.type, 0);
     ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0);
+    ASSERT_EQ(entry->field.size, 0u);
 
     // Check public API
     ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
     ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
     ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
     ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
 }
 
@@ -82,14 +82,14 @@ TEST(BootImgEntryTest, CheckGettersSetters)
     mb_bi_entry_set_size(entry.get(), 1234);
     ASSERT_TRUE(mb_bi_entry_size_is_set(entry.get()));
     ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 1234);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234);
+    ASSERT_EQ(entry->field.size, 1234u);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234u);
 
     mb_bi_entry_unset_size(entry.get());
     ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
     ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 0);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0);
+    ASSERT_EQ(entry->field.size, 0u);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
 }
 
 TEST(BootImgEntryTest, CheckClone)
@@ -135,8 +135,8 @@ TEST(BootImgEntryTest, CheckClear)
 
     mb_bi_entry_clear(entry.get());
 
-    ASSERT_EQ(entry->fields_set, 0);
+    ASSERT_EQ(entry->fields_set, 0u);
     ASSERT_EQ(entry->field.type, 0);
     ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0);
+    ASSERT_EQ(entry->field.size, 0u);
 }

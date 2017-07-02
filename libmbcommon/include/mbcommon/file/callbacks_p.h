@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,12 +17,33 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gmock/gmock.h>
+#pragma once
 
-int main(int argc, char *argv[])
+#include "mbcommon/guard_p.h"
+
+#include "mbcommon/file/callbacks.h"
+#include "mbcommon/file_p.h"
+
+/*! \cond INTERNAL */
+namespace mb
 {
-    setlocale(LC_ALL, "");
 
-    testing::InitGoogleMock(&argc, argv);
-    return RUN_ALL_TESTS();
+class CallbackFilePrivate : public FilePrivate
+{
+public:
+    CallbackFilePrivate();
+    virtual ~CallbackFilePrivate();
+
+    void clear();
+
+    CallbackFile::OpenCb open_cb;
+    CallbackFile::CloseCb close_cb;
+    CallbackFile::ReadCb read_cb;
+    CallbackFile::WriteCb write_cb;
+    CallbackFile::SeekCb seek_cb;
+    CallbackFile::TruncateCb truncate_cb;
+    void *userdata;
+};
+
 }
+/*! \endcond */

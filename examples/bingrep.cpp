@@ -31,7 +31,7 @@
 
 #include <getopt.h>
 
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/file/posix.h"
 
 static void usage(FILE *stream, const char *prog_name)
@@ -146,26 +146,26 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
     return true;
 }
 
-static int search_result_cb(struct MbFile *file, void *userdata,
-                            uint64_t offset)
+static mb::FileStatus search_result_cb(mb::File &file, void *userdata,
+                                       uint64_t offset)
 {
     (void) file;
     const char *name = static_cast<char *>(userdata);
     printf("%s: 0x%016" PRIx64 "\n", name, offset);
-    return MB_FILE_OK;
+    return mb::FileStatus::OK;
 }
 
-static bool search(const char *name, struct MbFile *file,
+static bool search(const char *name, mb::File &file,
                    int64_t start, int64_t end,
                    size_t bsize, const void *pattern,
                    size_t pattern_size, int64_t max_matches)
 {
-    int ret = mb_file_search(file, start, end, bsize, pattern, pattern_size,
-                             max_matches, &search_result_cb,
-                             const_cast<char *>(name));
-    if (ret != MB_FILE_OK) {
+    auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
+                               max_matches, &search_result_cb,
+                               const_cast<char *>(name));
+    if (ret != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Search failed: %s\n",
-                name, mb_file_error_string(file));
+                name, file.error_string().c_str());
         return false;
     }
     return true;
@@ -175,48 +175,32 @@ static bool search_stdin(int64_t start, int64_t end,
                          size_t bsize, const void *pattern,
                          size_t pattern_size, int64_t max_matches)
 {
-    MbFile *file = mb_file_new();
-    if (!file) {
-        fprintf(stderr, "Failed to allocate file: %s\n", strerror(errno));
-        return false;
-    }
+    mb::PosixFile file(stdin, false);
 
-    if (mb_file_open_FILE(file, stdin, false) < 0) {
+    if (!file.is_open()) {
         fprintf(stderr, "Failed to open stdin: %s\n",
-                mb_file_error_string(file));
-        mb_file_free(file);
+                file.error_string().c_str());
         return false;
     }
 
-    bool ret = search("stdin", file, start, end, bsize, pattern, pattern_size,
-                      max_matches);
-
-    mb_file_free(file);
-    return ret;
+    return search("stdin", file, start, end, bsize, pattern, pattern_size,
+                  max_matches);
 }
 
 static bool search_file(const char *path, int64_t start, int64_t end,
                         size_t bsize, const void *pattern,
                         size_t pattern_size, int64_t max_matches)
 {
-    MbFile *file = mb_file_new();
-    if (!file) {
-        fprintf(stderr, "Failed to allocate file: %s\n", strerror(errno));
-        return false;
-    }
+    mb::StandardFile file(path, mb::FileOpenMode::READ_ONLY);
 
-    if (mb_file_open_filename(file, path, MB_FILE_OPEN_READ_ONLY) < 0) {
+    if (!file.is_open()) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                path, mb_file_error_string(file));
-        mb_file_free(file);
+                path, file.error_string().c_str());
         return false;
     }
 
-    bool ret = search(path, file, start, end, bsize, pattern, pattern_size,
-                      max_matches);
-
-    mb_file_free(file);
-    return ret;
+    return search(path, file, start, end, bsize, pattern, pattern_size,
+                  max_matches);
 }
 
 int main(int argc, char *argv[])

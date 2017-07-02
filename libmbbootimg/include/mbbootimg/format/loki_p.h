@@ -54,7 +54,7 @@ static inline void loki_fix_header_byte_order(struct LokiHeader *header)
     header->ramdisk_addr = mb_le32toh(header->ramdisk_addr);
 }
 
-int _loki_patch_file(struct MbBiWriter *biw, struct MbFile *file,
+int _loki_patch_file(struct MbBiWriter *biw, mb::File *file,
                      const void *aboot, size_t aboot_size);
 
 MB_END_C_DECLS
