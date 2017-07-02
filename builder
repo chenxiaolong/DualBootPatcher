@@ -33,8 +33,8 @@ mkdir ~/out/ccache
 ccache -M 40G
 
 # clone DualBootPatcher source here
-cd ~/dev/
-git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && cd DualBootPatcher
+cd ~/dev
+git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && cd ~/dev/DualBootPatcher
 mkdir build
 cd ~/dev/DualBootPatcher/build
 # Build it now
