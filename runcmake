@@ -1,3 +1,0 @@
-cmake .. \
-   -DMBP_BUILD_TARGET=android \
-   -DMBP_BUILD_TYPE=debug
