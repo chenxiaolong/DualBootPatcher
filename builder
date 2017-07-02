@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo apt-get install openjdk-8-jdk libjansson-dev openssl libssl-dev libyaml-cpp-dev libboost-dev ccache python-minimal
+sudo apt-get install -y openjdk-8-jdk libjansson-dev openssl libssl-dev libyaml-cpp-dev libboost-dev ccache python-minimal
 
 mkdir ~/dev && cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' ~/dev/cmake-3.6.3/bootstrap && sudo ./bootstrap && sudo make && sudo make install &> come here
@@ -34,8 +34,8 @@ ccache -M 40G
 
 # clone DualBootPatcher source here
 cd ~/dev
-git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && sleep 15s
-cd ~/dev/DualBootPatcher && mkdir build && cd ~/dev/DualBootPatcher/build
+git clone --recursive https://github.com/yshalsager/DualbootPatcher.git && ls
+cd ~/dev/D* && mkdir build && cd ~/dev/DualBootPatcher/build
 # Build it now
 wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake
 chmod 775 ~/dev/DualBootPatcher/build/runcmake
