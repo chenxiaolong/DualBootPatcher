@@ -38,7 +38,8 @@ before_script:
 - ccache -M 40G
 script:
 - echo "clone DualBootPatcher source"
-- git clone --recursive https://github.com/yshalsager/DualbootPatcher.git $HOME/dev/DualBootPatcher && cd DualBootPatcher && mkdir build && cd build
+- git clone --recursive https://github.com/yshalsager/DualbootPatcher.git $HOME/dev/DualBootPatcher
+- cd $HOME/dev/DualBootPatcher && mkdir build && cd build
 - echo "Building..."
 - cmake .. \
    -DMBP_BUILD_TARGET=android \
