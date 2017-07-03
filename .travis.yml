@@ -25,7 +25,6 @@ before_script:
 - cd ~/dev/android-sdk && mkdir platforms && cd ~/dev/android-sdk/platforms
 - wget https://dl.google.com/android/repository/platform-25_r03.zip && unzip -qq platform-25_r03.zip -d ~/dev/android-sdk/platforms/android-25
 - echo "Set Variables"
-- env | grep CCACHE && env | grep NDK
 - echo "export USE_CCACHE=1" >> ~/.bashrc
 - echo "export CCACHE_DIR=~/out/ccache" >> ~/.bashrc
 - echo "export ANDROID_HOME=~/dev/android-sdk" >> ~/.bashrc
