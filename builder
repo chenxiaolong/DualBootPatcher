@@ -3,6 +3,8 @@ echo "Fix Previous Buid"
 sudo dpkg --configure -a && sudo apt install -f && sudo apt-get autoremove &> /dev/null
 echo "Installing Packages"
 sudo apt-get install -y openjdk-8-jdk libjansson-dev openssl libssl-dev libyaml-cpp-dev libboost-dev ccache python-minimal &> /dev/null
+echo "Addidtion Packages"
+
 echo "Downloading cmake"
 mkdir ~/dev && cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 echo "Building cmake"
@@ -34,11 +36,12 @@ echo "set ccache size to 40 Gb"
 mkdir ~/out
 mkdir ~/out/ccache
 ccache -M 40G
-
 echo "clone DualBootPatcher source"
 cd ~/dev
 git clone --recursive https://github.com/yshalsager/DualbootPatcher.git DualBootPatcher && cd DualBootPatcher && mkdir build && cd build
 echo "Building..."
-wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake && chmod 775 ~/dev/DualBootPatcher/build/runcmake && ./runcmake
+cmake .. \
+   -DMBP_BUILD_TARGET=android \
+   -DMBP_BUILD_TYPE=debug
 echo "Finishing Build"
 make clean && make && rm -rf assets && cpack -G TXZ && make apk && make android-system_armeabi-v7a && make -C data/devices && ./utilities/create.sh
