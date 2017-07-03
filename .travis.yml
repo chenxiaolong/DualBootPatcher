@@ -13,7 +13,7 @@ before_script:
 - echo "Downloading cmake"
 - mkdir ~/dev && cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 - echo "Building cmake"
-- sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' ~/dev/cmake-3.6.3/bootstrap && sudo ./bootstrap && sudo make && sudo make install &> come here
+- sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' ~/dev/cmake-3.6.3/bootstrap && sudo ./bootstrap && sudo make && sudo make install
 - echo "get Android NDK R15 & SDK R25.0.3"
 - cd ~/dev && mkdir android-ndk && cd ~/dev/android-ndk
 - echo "Downloading NDK"
