@@ -3,13 +3,12 @@ echo "Fix Previous Buid"
 sudo dpkg --configure -a && sudo apt install -f && sudo apt-get autoremove &> /dev/null
 echo "Installing Packages"
 sudo apt-get install -y openjdk-8-jdk libjansson-dev openssl libssl-dev libyaml-cpp-dev libboost-dev ccache python-minimal &> /dev/null
-echo "Addidtion Packages"
-
+echo "Addition Packages"
+sudo apt-get install -y lzop git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip maven schedtool &> /dev/null
 echo "Downloading cmake"
 mkdir ~/dev && cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 echo "Building cmake"
 sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' ~/dev/cmake-3.6.3/bootstrap && sudo ./bootstrap && sudo make && sudo make install &> come here
-
 echo "get Android NDK R15 & SDK R25.0.3"
 cd ~/dev && mkdir android-ndk && cd ~/dev/android-ndk
 echo "Downloading NDK"
