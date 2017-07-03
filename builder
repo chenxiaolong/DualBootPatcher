@@ -38,9 +38,7 @@ ccache -M 40G
 echo "clone DualBootPatcher source"
 cd ~/dev
 git clone --recursive https://github.com/yshalsager/DualbootPatcher.git DualBootPatcher && cd DualBootPatcher && mkdir build && cd build
-echo "Building..."
-cmake .. \
-   -DMBP_BUILD_TARGET=android \
-   -DMBP_BUILD_TYPE=debug
+eecho "Building..."
+wget https://github.com/yshalsager/DualBootPatcher/raw/master/runcmake && chmod 775 ~/dev/DualBootPatcher/build/runcmake && ./runcmake
 echo "Finishing Build"
 make clean && make && rm -rf assets && cpack -G TXZ && make apk && make android-system_armeabi-v7a && make -C data/devices && ./utilities/create.sh
