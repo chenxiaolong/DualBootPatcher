@@ -12,10 +12,10 @@ sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTST
 echo "get Android NDK R15 & SDK R25.0.3"
 cd ~/dev && mkdir android-ndk && cd ~/dev/android-ndk
 echo "Downloading NDK"
-wget https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip &> come here && unzip -qq android-ndk-r15-linux-x86_64.zip
+wget https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip && unzip -qq android-ndk-r15-linux-x86_64.zip
 echo "Downloading SDK Build Tools"
 cd ~/dev && mkdir android-sdk && cd ~/dev/android-sdk && mkdir build-tools && cd ~/dev/android-sdk/build-tools
-wget https://dl.google.com/android/repository/tools_r25.0.3-linux.zip &> come here && unzip -qq tools_r25.0.3-linux.zip -d ~/dev/android-sdk/build-tools/25.0.3
+wget https://dl.google.com/android/repository/tools_r25.0.3-linux.zip && unzip -qq tools_r25.0.3-linux.zip -d ~/dev/android-sdk/build-tools/25.0.3
 echo "Downloading SDK Platform"
 cd ~/dev/android-sdk && mkdir platforms && cd ~/dev/android-sdk/platforms
 wget https://dl.google.com/android/repository/platform-25_r03.zip && unzip -qq platform-25_r03.zip -d ~/dev/android-sdk/platforms/android-25
