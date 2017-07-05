@@ -47,7 +47,6 @@
     - htc_m8
     - htc_m8whl
     - htc_m8qlul
-    - htc_mecdug
   architecture: armeabi-v7a
 
   block_devs:
