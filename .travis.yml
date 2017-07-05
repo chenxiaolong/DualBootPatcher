@@ -41,9 +41,6 @@ script:
 - git clone --recursive https://github.com/yshalsager/DualbootPatcher.git $HOME/dev/DualBootPatcher
 - cd $HOME/dev/DualBootPatcher && mkdir build && cd build
 - echo "Building..."
-- cmake .. \ <<EOF
-  -DMBP_BUILD_TARGET=android \
-  -DMBP_BUILD_TYPE=debug
-  EOF
+- cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
 - echo "Finishing Build"
 - make && rm -rf assets && cpack -G TXZ && make apk && make android-system_armeabi-v7a && make -C data/devices && ./utilities/create.sh
