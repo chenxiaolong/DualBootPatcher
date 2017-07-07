@@ -38,7 +38,7 @@ struct SonyElfReaderCtx
     struct SegmentReaderCtx segctx;
 };
 
-int find_sony_elf_header(struct MbBiReader *bir, struct MbFile *file,
+int find_sony_elf_header(struct MbBiReader *bir, mb::File *file,
                          struct Sony_Elf32_Ehdr *header_out);
 
 int sony_elf_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);

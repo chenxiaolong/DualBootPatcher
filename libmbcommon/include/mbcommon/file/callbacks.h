@@ -21,15 +21,72 @@
 
 #include "mbcommon/file.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
-MB_EXPORT int mb_file_open_callbacks(struct MbFile *file,
-                                     MbFileOpenCb open_cb,
-                                     MbFileCloseCb close_cb,
-                                     MbFileReadCb read_cb,
-                                     MbFileWriteCb write_cb,
-                                     MbFileSeekCb seek_cb,
-                                     MbFileTruncateCb truncate_cb,
-                                     void *userdata);
+class CallbackFilePrivate;
+class MB_EXPORT CallbackFile : public File
+{
+    MB_DECLARE_PRIVATE(CallbackFile)
 
-MB_END_C_DECLS
+public:
+    typedef FileStatus (*OpenCb)(File &file, void *userdata);
+    typedef FileStatus (*CloseCb)(File &file, void *userdata);
+    typedef FileStatus (*ReadCb)(File &file, void *userdata,
+                                 void *buf, size_t size,
+                                 size_t *bytes_read);
+    typedef FileStatus (*WriteCb)(File &file, void *userdata,
+                                  const void *buf, size_t size,
+                                  size_t *bytes_written);
+    typedef FileStatus (*SeekCb)(File &file, void *userdata,
+                                 int64_t offset, int whence,
+                                 uint64_t *new_offset);
+    typedef FileStatus (*TruncateCb)(File &file, void *userdata,
+                                     uint64_t size);
+
+    CallbackFile();
+    CallbackFile(OpenCb open_cb,
+                 CloseCb close_cb,
+                 ReadCb read_cb,
+                 WriteCb write_cb,
+                 SeekCb seek_cb,
+                 TruncateCb truncate_cb,
+                 void *userdata);
+    virtual ~CallbackFile();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFile)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(CallbackFile)
+
+    FileStatus open(OpenCb open_cb,
+                    CloseCb close_cb,
+                    ReadCb read_cb,
+                    WriteCb write_cb,
+                    SeekCb seek_cb,
+                    TruncateCb truncate_cb,
+                    void *userdata);
+
+protected:
+    /*! \cond INTERNAL */
+    CallbackFile(CallbackFilePrivate *priv);
+    CallbackFile(CallbackFilePrivate *priv,
+                 OpenCb open_cb,
+                 CloseCb close_cb,
+                 ReadCb read_cb,
+                 WriteCb write_cb,
+                 SeekCb seek_cb,
+                 TruncateCb truncate_cb,
+                 void *userdata);
+    /*! \endcond */
+
+    virtual FileStatus on_open() override;
+    virtual FileStatus on_close() override;
+    virtual FileStatus on_read(void *buf, size_t size,
+                               size_t *bytes_read) override;
+    virtual FileStatus on_write(const void *buf, size_t size,
+                                size_t *bytes_written) override;
+    virtual FileStatus on_seek(int64_t offset, int whence,
+                               uint64_t *new_offset) override;
+    virtual FileStatus on_truncate(uint64_t size) override;
+};
+
+}

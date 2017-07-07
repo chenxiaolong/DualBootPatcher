@@ -19,22 +19,52 @@
 
 #pragma once
 
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file.h"
 
-#ifdef __cplusplus
-#  include <cstdbool>
-#else
-#  include <stdbool.h>
-#endif
+#include "mbcommon/file/open_mode.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
-MB_EXPORT int mb_file_open_fd(struct MbFile *file,
-                              int fd, bool owned);
+class FdFilePrivate;
+class MB_EXPORT FdFile : public File
+{
+    MB_DECLARE_PRIVATE(FdFile)
 
-MB_EXPORT int mb_file_open_fd_filename(struct MbFile *file,
-                                       const char *filename, int mode);
-MB_EXPORT int mb_file_open_fd_filename_w(struct MbFile *file,
-                                         const wchar_t *filename, int mode);
+public:
+    FdFile();
+    FdFile(int fd, bool owned);
+    FdFile(const std::string &filename, FileOpenMode mode);
+    FdFile(const std::wstring &filename, FileOpenMode mode);
+    virtual ~FdFile();
 
-MB_END_C_DECLS
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFile)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FdFile)
+
+    FileStatus open(int fd, bool owned);
+    FileStatus open(const std::string &filename, FileOpenMode mode);
+    FileStatus open(const std::wstring &filename, FileOpenMode mode);
+
+protected:
+    /*! \cond INTERNAL */
+    FdFile(FdFilePrivate *priv);
+    FdFile(FdFilePrivate *priv,
+           int fd, bool owned);
+    FdFile(FdFilePrivate *priv,
+           const std::string &filename, FileOpenMode mode);
+    FdFile(FdFilePrivate *priv,
+           const std::wstring &filename, FileOpenMode mode);
+    /*! \endcond */
+
+    virtual FileStatus on_open() override;
+    virtual FileStatus on_close() override;
+    virtual FileStatus on_read(void *buf, size_t size,
+                               size_t *bytes_read) override;
+    virtual FileStatus on_write(const void *buf, size_t size,
+                                size_t *bytes_written) override;
+    virtual FileStatus on_seek(int64_t offset, int whence,
+                               uint64_t *new_offset) override;
+    virtual FileStatus on_truncate(uint64_t size) override;
+};
+
+}

@@ -183,9 +183,9 @@ static bool extract_theme(const std::string &path, const std::string &target,
 
         const char *suffix;
 
-        if (mb_starts_with(path, common_prefix.c_str())) {
+        if (mb::starts_with(path, common_prefix)) {
             suffix = path + common_prefix.size();
-        } else if (mb_starts_with(path, theme_prefix.c_str())) {
+        } else if (mb::starts_with(path, theme_prefix)) {
             suffix = path + theme_prefix.size();
         } else {
             LOGV("Skipping: %s", path);

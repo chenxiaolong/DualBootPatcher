@@ -27,22 +27,21 @@
 #include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
 
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedFile;
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 struct AndroidWriterSHA1Test : public ::testing::Test
 {
 protected:
-    ScopedFile _file;
     ScopedWriter _biw;
     void *_buf;
     size_t _buf_size;
+    mb::MemoryFile _file;
 
     AndroidWriterSHA1Test()
-        : _file(mb_file_new(), mb_file_free)
-        , _biw(mb_bi_writer_new(), mb_bi_writer_free)
+        : _biw(mb_bi_writer_new(), mb_bi_writer_free)
         , _buf(nullptr)
         , _buf_size(0)
+        , _file(&_buf, &_buf_size)
     {
     }
 
@@ -53,14 +52,12 @@ protected:
 
     virtual void SetUp()
     {
-        ASSERT_TRUE(!!_file);
         ASSERT_TRUE(!!_biw);
 
-        ASSERT_EQ(mb_file_open_memory_dynamic(_file.get(), &_buf, &_buf_size),
-                  MB_FILE_OK);
+        ASSERT_TRUE(_file.is_open());
 
         ASSERT_EQ(mb_bi_writer_set_format_android(_biw.get()), MB_BI_OK);
-        ASSERT_EQ(mb_bi_writer_open(_biw.get(), _file.get(), false), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_open(_biw.get(), &_file, false), MB_BI_OK);
     }
 
     virtual void TearDown()
@@ -90,7 +87,7 @@ protected:
             if (mb_bi_entry_type(entry) & types) {
                 ASSERT_EQ(mb_bi_writer_write_data(_biw.get(), "hello", 5, &n),
                           MB_BI_OK);
-                ASSERT_EQ(n, 5);
+                ASSERT_EQ(n, 5u);
             }
         }
         ASSERT_EQ(ret, MB_BI_EOF);

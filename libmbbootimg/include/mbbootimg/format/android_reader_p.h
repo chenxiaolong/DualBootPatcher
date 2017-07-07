@@ -48,13 +48,13 @@ struct AndroidReaderCtx
     struct SegmentReaderCtx segctx;
 };
 
-int find_android_header(struct MbBiReader *bir, struct MbFile *file,
+int find_android_header(struct MbBiReader *bir, mb::File *file,
                         uint64_t max_header_offset,
                         struct AndroidHeader *header_out, uint64_t *offset_out);
-int find_samsung_seandroid_magic(struct MbBiReader *bir, struct MbFile *file,
+int find_samsung_seandroid_magic(struct MbBiReader *bir, mb::File *file,
                                  struct AndroidHeader *hdr,
                                  uint64_t *offset_out);
-int find_bump_magic(struct MbBiReader *bir, struct MbFile *file,
+int find_bump_magic(struct MbBiReader *bir, mb::File *file,
                     struct AndroidHeader *hdr, uint64_t *offset_out);
 int android_set_header(struct AndroidHeader *hdr, struct MbBiHeader *header);
 

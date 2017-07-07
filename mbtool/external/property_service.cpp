@@ -116,7 +116,7 @@ uint32_t property_set(const std::string& name, const std::string& value) {
     prop_info* pi = (prop_info*) mb__system_property_find(name.c_str());
     if (pi != nullptr) {
         // ro.* properties are actually "write-once".
-        if (mb_starts_with(name.c_str(), "ro.")) {
+        if (mb::starts_with(name, "ro.")) {
             LOGE("property_set(\"%s\", \"%s\") failed: property already set",
                  name.c_str(), value.c_str());
             return PROP_ERROR_READ_ONLY_PROPERTY;
@@ -268,7 +268,7 @@ static void handle_property_set(SocketConnection& socket,
     return;
   }
 
-  if (mb_starts_with(name.c_str(), "ctl.")) {
+  if (mb::starts_with(name, "ctl.")) {
     LOGV("Ignoring control message: %s=%s", name.c_str(), value.c_str());
     if (!legacy_protocol) {
       socket.SendUint32(PROP_SUCCESS);

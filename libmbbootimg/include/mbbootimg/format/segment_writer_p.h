@@ -82,12 +82,12 @@ struct SegmentWriterEntry * _segment_writer_next_entry(struct SegmentWriterCtx *
 void _segment_writer_update_size_if_unset(struct SegmentWriterCtx *ctx,
                                           uint32_t size);
 
-int _segment_writer_get_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_get_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                               struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_data(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_write_data(struct SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
                                size_t *bytes_written, struct MbBiWriter *biw);
-int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                  struct MbBiWriter *biw);

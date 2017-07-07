@@ -22,12 +22,20 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file/memory.h"
+#include "mbcommon/file_p.h"
 
 /*! \cond INTERNAL */
-MB_BEGIN_C_DECLS
-
-struct MemoryFileCtx
+namespace mb
 {
+
+class MemoryFilePrivate : public FilePrivate
+{
+public:
+    MemoryFilePrivate();
+    virtual ~MemoryFilePrivate();
+
+    void clear();
+
     void *data;
     size_t size;
 
@@ -39,5 +47,5 @@ struct MemoryFileCtx
     bool fixed_size;
 };
 
-MB_END_C_DECLS
+}
 /*! \endcond */

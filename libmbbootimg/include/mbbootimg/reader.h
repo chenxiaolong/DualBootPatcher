@@ -38,7 +38,11 @@ MB_BEGIN_C_DECLS
 struct MbBiReader;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
+
+namespace mb
+{
+class File;
+}
 
 // Construction/destruction
 MB_EXPORT struct MbBiReader * mb_bi_reader_new(void);
@@ -50,7 +54,7 @@ MB_EXPORT int mb_bi_reader_open_filename(struct MbBiReader *bir,
 MB_EXPORT int mb_bi_reader_open_filename_w(struct MbBiReader *bir,
                                            const wchar_t *filename);
 MB_EXPORT int mb_bi_reader_open(struct MbBiReader *bir,
-                                struct MbFile *file, bool owned);
+                                mb::File *file, bool owned);
 MB_EXPORT int mb_bi_reader_close(struct MbBiReader *bir);
 
 // Operations

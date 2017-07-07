@@ -86,7 +86,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
                                    const std::string &device_id,
                                    bool use_fuse_exfat)
 {
-    char *tmp_path = nullptr;
+    std::string tmp_path;
     int tmp_fd = -1;
     FILE *fp_in = nullptr;
     FILE *fp_out = nullptr;
@@ -98,13 +98,9 @@ static bool _rp_patch_default_prop(const std::string &dir,
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = mb_format("%s.XXXXXX", path.c_str());
-    if (!tmp_path) {
-        LOGE("Out of memory");
-        goto done;
-    }
+    tmp_path = mb::format("%s.XXXXXX", path.c_str());
 
-    tmp_fd = mkstemp(tmp_path);
+    tmp_fd = mkstemp(&tmp_path[0]);
     if (tmp_fd < 0) {
         LOGE("%s: Failed to create temporary file: %s",
              path.c_str(), strerror(errno));
@@ -121,7 +117,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
     fp_out = fdopen(tmp_fd, "wb");
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
-             tmp_path, strerror(errno));
+             tmp_path.c_str(), strerror(errno));
         goto done;
     }
 
@@ -129,13 +125,13 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
-        if (mb_starts_with(buf, "ro.patcher.")) {
+        if (mb::starts_with(buf, "ro.patcher.")) {
             continue;
         }
 
         if (fwrite(buf, 1, n, fp_out) != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
-                 tmp_path, strerror(errno));
+                 tmp_path.c_str(), strerror(errno));
             goto done;
         }
     }
@@ -146,13 +142,13 @@ static bool _rp_patch_default_prop(const std::string &dir,
             || fprintf(fp_out, "ro.patcher.use_fuse_exfat=%s\n",
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
-             tmp_path, strerror(errno));
+             tmp_path.c_str(), strerror(errno));
         goto done;
     }
 
     if (fclose(fp_out) < 0) {
         LOGE("%s: Failed to close file: %s",
-             tmp_path, strerror(errno));
+             tmp_path.c_str(), strerror(errno));
         goto done;
     }
 
@@ -175,9 +171,8 @@ done:
         fclose(fp_out);
     }
 
-    unlink(tmp_path);
+    unlink(tmp_path.c_str());
 
-    free(tmp_path);
     free(buf);
 
     return ret;

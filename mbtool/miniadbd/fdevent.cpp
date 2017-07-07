@@ -42,15 +42,13 @@ int SHELL_EXIT_NOTIFY_FD = -1;
 
 static void fatal(const char *fn, const char *fmt, ...)
 {
-    char *new_fmt = mb_format("%s: %s", fn, fmt);
-    if (new_fmt) {
-        va_list ap;
-        va_start(ap, fmt);
-        VLOGE(new_fmt, ap);
-        va_end(ap);
+    std::string new_fmt = mb::format("%s: %s", fn, fmt);
 
-        free(new_fmt);
-    }
+    va_list ap;
+    va_start(ap, fmt);
+    VLOGE(new_fmt.c_str(), ap);
+    va_end(ap);
+
     abort();
 }
 

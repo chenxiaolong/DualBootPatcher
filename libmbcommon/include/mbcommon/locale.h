@@ -21,69 +21,35 @@
 
 #include "mbcommon/common.h"
 
-#ifdef __cplusplus
-#  include <cstddef>
-#else
-#  include <stddef.h>
-#endif
+#include <string>
 
-MB_BEGIN_C_DECLS
-
-MB_EXPORT wchar_t * mb_mbs_to_wcs(const char *str);
-MB_EXPORT char * mb_wcs_to_mbs(const wchar_t *str);
-MB_EXPORT wchar_t * mb_utf8_to_wcs(const char *str);
-MB_EXPORT char * mb_wcs_to_utf8(const wchar_t *str);
-
-MB_EXPORT wchar_t * mb_mbs_to_wcs_len(const char *str, size_t size);
-MB_EXPORT char * mb_wcs_to_mbs_len(const wchar_t *str, size_t size);
-MB_EXPORT wchar_t * mb_utf8_to_wcs_len(const char *str, size_t size);
-MB_EXPORT char * mb_wcs_to_utf8_len(const wchar_t *str, size_t size);
-
-MB_END_C_DECLS
-
-#ifdef __cplusplus
 namespace mb
 {
 
-MB_EXPORT inline wchar_t * mbs_to_wcs(const char *str)
-{
-    return mb_mbs_to_wcs(str);
-}
+MB_EXPORT bool mbs_to_wcs_n(std::wstring &out, const char *str, size_t len);
+MB_EXPORT std::wstring mbs_to_wcs_n(const char *str, size_t len);
+MB_EXPORT bool wcs_to_mbs_n(std::string &out, const wchar_t *str, size_t len);
+MB_EXPORT std::string wcs_to_mbs_n(const wchar_t *str, size_t len);
+MB_EXPORT bool utf8_to_wcs_n(std::wstring &out, const char *str, size_t len);
+MB_EXPORT std::wstring utf8_to_wcs_n(const char *str, size_t len);
+MB_EXPORT bool wcs_to_utf8_n(std::string &out, const wchar_t *str, size_t len);
+MB_EXPORT std::string wcs_to_utf8_n(const wchar_t *str, size_t len);
 
-MB_EXPORT inline char * wcs_to_mbs(const wchar_t *str)
-{
-    return mb_wcs_to_mbs(str);
-}
-
-MB_EXPORT inline wchar_t * utf8_to_wcs(const char *str)
-{
-    return mb_utf8_to_wcs(str);
-}
-
-MB_EXPORT inline char * wcs_to_utf8(const wchar_t *str)
-{
-    return mb_wcs_to_utf8(str);
-}
-
-MB_EXPORT inline wchar_t * mbs_to_wcs_len(const char *str, size_t size)
-{
-    return mb_mbs_to_wcs_len(str, size);
-}
-
-MB_EXPORT inline char * wcs_to_mbs_len(const wchar_t *str, size_t size)
-{
-    return mb_wcs_to_mbs_len(str, size);
-}
-
-MB_EXPORT inline wchar_t * utf8_to_wcs_len(const char *str, size_t size)
-{
-    return mb_utf8_to_wcs_len(str, size);
-}
-
-MB_EXPORT inline char * wcs_to_utf8_len(const wchar_t *str, size_t size)
-{
-    return mb_wcs_to_utf8_len(str, size);
-}
+MB_EXPORT bool mbs_to_wcs(std::wstring &out, const char *str);
+MB_EXPORT bool mbs_to_wcs(std::wstring &out, const std::string &str);
+MB_EXPORT std::wstring mbs_to_wcs(const char *str);
+MB_EXPORT std::wstring mbs_to_wcs(const std::string &str);
+MB_EXPORT bool wcs_to_mbs(std::string &out, const wchar_t *str);
+MB_EXPORT bool wcs_to_mbs(std::string &out, const std::wstring &str);
+MB_EXPORT std::string wcs_to_mbs(const wchar_t *str);
+MB_EXPORT std::string wcs_to_mbs(const std::wstring &str);
+MB_EXPORT bool utf8_to_wcs(std::wstring &out, const char *str);
+MB_EXPORT bool utf8_to_wcs(std::wstring &out, const std::string &str);
+MB_EXPORT std::wstring utf8_to_wcs(const char *str);
+MB_EXPORT std::wstring utf8_to_wcs(const std::string &str);
+MB_EXPORT bool wcs_to_utf8(std::string &out, const wchar_t *str);
+MB_EXPORT bool wcs_to_utf8(std::string &out, const std::wstring &str);
+MB_EXPORT std::string wcs_to_utf8(const wchar_t *str);
+MB_EXPORT std::string wcs_to_utf8(const std::wstring &str);
 
 }
-#endif

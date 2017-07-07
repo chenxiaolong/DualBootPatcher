@@ -198,7 +198,7 @@ static std::string find_block_dev(const char * const *search_dirs,
 {
     struct stat sb;
 
-    if (mb_starts_with(partition.c_str(), "mmcblk")) {
+    if (mb::starts_with(partition, "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -238,11 +238,11 @@ static bool add_extra_images(const char *multiboot_dir,
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !mb_ends_with(name.c_str(), ".img")) {
+        if (name == ".img" || !mb::ends_with(name, ".img")) {
             // Skip non-images
             continue;
         }
-        if (mb_starts_with(name.c_str(), "boot.img")) {
+        if (mb::starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }

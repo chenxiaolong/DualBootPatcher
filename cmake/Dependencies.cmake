@@ -19,7 +19,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android)
 endif()
 
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    include(cmake/dependencies/gtest.cmake)
+    include(cmake/dependencies/googletest.cmake)
     include(cmake/dependencies/libarchive.cmake)
     include(cmake/dependencies/liblzma.cmake)
     include(cmake/dependencies/lz4.cmake)

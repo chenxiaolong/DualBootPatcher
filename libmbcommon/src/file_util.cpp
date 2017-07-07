@@ -31,66 +31,67 @@
 
 /*!
  * \file mbcommon/file_util.h
- * \brief Useful utility functions for MbFile API
+ * \brief Useful utility functions for File API
  */
 
 /*!
- * \typedef MbFileSearchResultCallback
+ * \typedef FileSearchResultCallback
  *
  * \note The file position must not change after a successful return of this
  *       callback. If file operations need to be performed, save the file
- *       position beforehand with mb_file_seek() and restore it afterwards. Note
+ *       position beforehand with File::seek() and restore it afterwards. Note
  *       that the file position is unlikely to match \p offset.
  *
- * \param file MbFile handle
+ * \param file File handle
  * \param offset Offset of match
  * \param userdata User callback data
  *
  * \return
- *   * Return #MB_FILE_OK if the search can continue
- *   * Return #MB_FILE_WARN if the search should stop, but return MB_FILE_OK
- *   * Return \<= #MB_FILE_FAILED if the search should fail
+ *   * Return #FileStatus::OK if the search can continue
+ *   * Return #FileStatus::WARN if the search should stop
+ *   * Return \<= #FileStatus::FAILED if the search should fail
  */
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
 /*!
- * \brief Read from an MbFile handle.
+ * \brief Read from a File handle.
  *
- * This function differs from mb_file_read() in that it will call mb_file_read()
- * repeatedly until the buffer is filled or EOF is reached. If mb_file_read()
- * returns #MB_FILE_RETRY, the read operation will be automatically reattempted.
- * Thus, this function will never return #MB_FILE_RETRY.
+ * This function differs from File::read() in that it will call File::read()
+ * repeatedly until the buffer is filled or EOF is reached. If File::read()
+ * returns #FileStatus::RETRY, the read operation will be automatically
+ * reattempted. Thus, this function will never return #FileStatus::RETRY.
  *
  * \note \p bytes_read is updated with the number of bytes successfully read
  *       even when this function fails. Take this into account if reattempting
  *       the read operation.
  *
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
  * \param[out] bytes_read Output number of bytes that were read. A short read
  *                        indicates end of file. This parameter cannot be NULL.
  *
  * \return
- *   * #MB_FILE_OK if some bytes are read or EOF is reached
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support reading
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if some bytes are read or EOF is reached
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support reading
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_read_fully(struct MbFile *file, void *buf, size_t size,
-                       size_t *bytes_read)
+FileStatus file_read_fully(File &file, void *buf, size_t size,
+                           size_t *bytes_read)
 {
     size_t n;
-    int ret;
+    FileStatus ret;
 
     *bytes_read = 0;
 
     while (*bytes_read < size) {
-        ret = mb_file_read(file, static_cast<char *>(buf) + *bytes_read,
-                           size - *bytes_read, &n);
-        if (ret == MB_FILE_RETRY) {
+        ret = file.read(static_cast<char *>(buf) + *bytes_read,
+                        size - *bytes_read, &n);
+        if (ret == FileStatus::RETRY) {
             continue;
-        } else if (ret < 0) {
+        } else if (ret < FileStatus::OK) {
             return ret;
         } else if (n == 0) {
             break;
@@ -99,48 +100,47 @@ int mb_file_read_fully(struct MbFile *file, void *buf, size_t size,
         *bytes_read += n;
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
 /*!
- * \brief Write to an MbFile handle.
+ * \brief Write to a File handle.
  *
- * This function differs from mb_file_write() in that it will call
- * mb_file_write() repeatedly until the buffer is filled or EOF is reached. If
- * mb_file_write() returns #MB_FILE_RETRY, the write operation will be
+ * This function differs from File::write() in that it will call
+ * File::write() repeatedly until the buffer is filled or EOF is reached. If
+ * File::write() returns #FileStatus::RETRY, the write operation will be
  * automatically reattempted. Thus, this function will never return
- * #MB_FILE_RETRY.
+ * #FileStatus::RETRY.
  *
  * \note \p bytes_written is updated with the number of bytes successfully
  *       written even when this function fails. Take this into account if
  *       reattempting the write operation.
  *
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] buf Buffer to write from
  * \param[in] size Buffer size
  * \param[out] bytes_written Output number of bytes that were written. This
  *                           parameter cannot be NULL.
  *
  * \return
- *   * #MB_FILE_OK if some bytes are written
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support writing
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if some bytes are written
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support writing
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_write_fully(struct MbFile *file, const void *buf, size_t size,
-                        size_t *bytes_written)
+FileStatus file_write_fully(File &file, const void *buf, size_t size,
+                            size_t *bytes_written)
 {
     size_t n;
-    int ret;
+    FileStatus ret;
 
     *bytes_written = 0;
 
     while (*bytes_written < size) {
-        ret = mb_file_write(file,
-                            static_cast<const char *>(buf) + *bytes_written,
-                            size - *bytes_written, &n);
-        if (ret == MB_FILE_RETRY) {
+        ret = file.write(static_cast<const char *>(buf) + *bytes_written,
+                         size - *bytes_written, &n);
+        if (ret == FileStatus::RETRY) {
             continue;
-        } else if (ret < 0) {
+        } else if (ret < FileStatus::OK) {
             return ret;
         } else if (n == 0) {
             break;
@@ -149,46 +149,46 @@ int mb_file_write_fully(struct MbFile *file, const void *buf, size_t size,
         *bytes_written += n;
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
 /*!
- * \brief Read from an MbFile handle and discard the data.
+ * \brief Read from a File handle and discard the data.
  *
- * This function will repeatedly call mb_file_read() and discard any data that
- * is read. If mb_file_read() returns #MB_FILE_RETRY, the read operation will be
- * automatically reattempted. Thus, this function will never return
- * #MB_FILE_RETRY.
+ * This function will repeatedly call File::read() and discard any data that
+ * is read. If File::read() returns #FileStatus::RETRY, the read operation will
+ * be automatically reattempted. Thus, this function will never return
+ * #FileStatus::RETRY.
  *
  * \note \p bytes_discarded is updated with the number of bytes successfully
  *       read even when this function fails. Take this into account if
  *       reattempting the read operation.
  *
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] size Number of bytes to discard
  * \param[out] bytes_discarded Output number of bytes that were read. A short
  *                             read indicates end of file. This parameter cannot
  *                             be NULL.
  *
  * \return
- *   * #MB_FILE_OK if some bytes are discarded or EOF is reached
- *   * #MB_FILE_UNSUPPORTED if the handle source does not support reading
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if some bytes are discarded or EOF is reached
+ *   * #FileStatus::UNSUPPORTED if the handle source does not support reading
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_read_discard(struct MbFile *file, uint64_t size,
-                         uint64_t *bytes_discarded)
+FileStatus file_read_discard(File &file, uint64_t size,
+                             uint64_t *bytes_discarded)
 {
     char buf[10240];
     size_t n;
-    int ret;
+    FileStatus ret;
 
     *bytes_discarded = 0;
 
     while (*bytes_discarded < size) {
-        ret = mb_file_read(file, buf, std::min<uint64_t>(size, sizeof(buf)), &n);
-        if (ret == MB_FILE_RETRY) {
+        ret = file.read(buf, std::min<uint64_t>(size, sizeof(buf)), &n);
+        if (ret == FileStatus::RETRY) {
             continue;
-        } else if (ret < 0) {
+        } else if (ret < FileStatus::OK) {
             return ret;
         } else if (n == 0) {
             break;
@@ -197,8 +197,26 @@ int mb_file_read_discard(struct MbFile *file, uint64_t size,
         *bytes_discarded += n;
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
+
+/*!
+ * \typedef FileSearchResultCallback
+ *
+ * \brief Search result callback for file_search()
+ *
+ * \sa file_search()
+ *
+ * \param file File handle
+ * \param userdata User callback data
+ * \param offset File offset of search result
+ *
+ * \return
+ *   * #FileStatus::OK to continue search
+ *   * #FileStatus::WARN to stop search, but have file_search() report a
+ *     successful result
+ *   * \<= #FileStatus::FAILED if an error occurs
+ */
 
 /*!
  * \brief Search file for binary sequence
@@ -223,7 +241,7 @@ int mb_file_read_discard(struct MbFile *file, uint64_t size,
  *       seek to a known location before attempting further read or write
  *       operations.
  *
- * \param file MbFile handle
+ * \param file File handle
  * \param start Start offset or negative number for beginning of file
  * \param end End offset or negative number for end of file
  * \param bsize Buffer size or 0 to automatically choose a size
@@ -234,16 +252,16 @@ int mb_file_read_discard(struct MbFile *file, uint64_t size,
  * \param userdata User callback data
  *
  * \return
- *   * #MB_FILE_OK if the search completes successfully
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if the search completes successfully
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
-                   size_t bsize, const void *pattern,
-                   size_t pattern_size, int64_t max_matches,
-                   MbFileSearchResultCallback result_cb,
-                   void *userdata)
+FileStatus file_search(File &file, int64_t start, int64_t end,
+                       size_t bsize, const void *pattern,
+                       size_t pattern_size, int64_t max_matches,
+                       FileSearchResultCallback result_cb,
+                       void *userdata)
 {
-    int ret = MB_FILE_OK;
+    FileStatus ret = FileStatus::OK;
     char *buf = nullptr;
     size_t buf_size;
     char *ptr;
@@ -255,9 +273,9 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
 
     // Check boundaries
     if (start >= 0 && end >= 0 && end < start) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "End offset < start offset");
-        ret = MB_FILE_FAILED;
+        file.set_error(FileError::INVALID_ARGUMENT,
+                       "End offset < start offset");
+        ret = FileStatus::FAILED;
         goto done;
     }
 
@@ -281,17 +299,17 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
 
     // Ensure buffer is large enough
     if (buf_size < pattern_size) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Buffer size cannot be less than pattern size");
-        ret = MB_FILE_FAILED;
+        file.set_error(FileError::INVALID_ARGUMENT,
+                       "Buffer size cannot be less than pattern size");
+        ret = FileStatus::FAILED;
         goto done;
     }
 
     buf = static_cast<char *>(malloc(buf_size));
     if (!buf) {
-        mb_file_set_error(file, -errno, "Failed to allocate buffer: %s",
-                          strerror(errno));
-        ret = MB_FILE_FAILED;
+        file.set_error(-errno, "Failed to allocate buffer: %s",
+                       strerror(errno));
+        ret = FileStatus::FAILED;
         goto done;
     }
 
@@ -302,19 +320,19 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
     }
 
     // Seek to starting point
-    ret = mb_file_seek(file, offset, SEEK_SET, nullptr);
-    if (ret == MB_FILE_UNSUPPORTED) {
+    ret = file.seek(offset, SEEK_SET, nullptr);
+    if (ret == FileStatus::UNSUPPORTED) {
         uint64_t discarded;
-        ret = mb_file_read_discard(file, offset, &discarded);
-        if (ret < 0) {
+        ret = file_read_discard(file, offset, &discarded);
+        if (ret < FileStatus::OK) {
             goto done;
         } else if (discarded != offset) {
-            mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                              "Reached EOF before starting offset");
-            ret = MB_FILE_FATAL;
+            file.set_error(FileError::INVALID_ARGUMENT,
+                           "Reached EOF before starting offset");
+            ret = FileStatus::FATAL;
             goto done;
         }
-    } else if (ret < 0) {
+    } else if (ret < FileStatus::OK) {
         goto done;
     }
 
@@ -323,8 +341,8 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
     ptr_remain = buf_size;
 
     while (true) {
-        ret = mb_file_read_fully(file, ptr, ptr_remain, &n);
-        if (ret < 0) {
+        ret = file_read_fully(file, ptr, ptr_remain, &n);
+        if (ret < FileStatus::OK) {
             goto done;
         }
 
@@ -342,9 +360,9 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
         // Ensure that offset + n (and consequently, offset + diff) cannot
         // overflow
         if (n > UINT64_MAX - offset) {
-            mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                              "Read overflows offset value");
-            ret = MB_FILE_FAILED;
+            file.set_error(FileError::INTERNAL_ERROR,
+                           "Read overflows offset value");
+            ret = FileStatus::FAILED;
             goto done;
         }
 
@@ -357,17 +375,17 @@ int mb_file_search(struct MbFile *file, int64_t start, int64_t end,
             // Stop if match falls outside of ending boundary
             if (end >= 0 && offset + match - buf + pattern_size
                     > static_cast<uint64_t>(end)) {
-                ret = MB_FILE_OK;
+                ret = FileStatus::OK;
                 goto done;
             }
 
             // Invoke callback
             ret = result_cb(file, userdata, offset + match - buf);
-            if (ret == MB_FILE_WARN) {
+            if (ret == FileStatus::WARN) {
                 // Stop searching early
-                ret = MB_FILE_OK;
+                ret = FileStatus::OK;
                 goto done;
-            } else if (ret < 0) {
+            } else if (ret < FileStatus::OK) {
                 goto done;
             }
 
@@ -405,10 +423,11 @@ done:
 /*!
  * \brief Move data in file
  *
- * This function is equivalent to `memmove()`, except it operates on a MbFile
+ * This function is equivalent to `memmove()`, except it operates on a File
  * handle. The source and destination regions can overlap. In the degenerate
  * case where \p src == \p dest or \p size == 0, no operation will be performed,
- * but the function will return #MB_BI_OK and set \p size_moved accordingly.
+ * but the function will return #FileStatus::OK and set \p size_moved
+ * accordingly.
  *
  * \note This function is very seek-heavy and may be slow if the handle cannot
  *       seek efficiently. It will perform two seeks per loop interation. Each
@@ -418,34 +437,34 @@ done:
  *       bytes have been copied from offset \p src to offset \p dest. This is
  *       true even if \p src \< \p dest, resulting in a backwards copy.
  *
- * \param[in] file MbFile handle
+ * \param[in] file File handle
  * \param[in] src Source offset
  * \param[in] dest Destination offset
  * \param[in] size Size of data to move
  * \param[out] size_moved Pointer to store size of data that is moved
  *
  * \return
- *   * #MB_FILE_OK if the data is successfully moved
- *   * \<= #MB_FILE_WARN if an error occurs
+ *   * #FileStatus::OK if the data is successfully moved
+ *   * \<= #FileStatus::WARN if an error occurs
  */
-int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
-                 uint64_t size, uint64_t *size_moved)
+FileStatus file_move(File &file, uint64_t src, uint64_t dest,
+                     uint64_t size, uint64_t *size_moved)
 {
     char buf[10240];
     size_t n_read;
     size_t n_written;
-    int ret;
+    FileStatus ret;
 
     // Check if we need to do anything
     if (src == dest || size == 0) {
         *size_moved = size;
-        return MB_FILE_OK;
+        return FileStatus::OK;
     }
 
     if (src > UINT64_MAX - size || dest > UINT64_MAX - size) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Offset + size overflows integer");
-        return MB_FILE_FAILED;
+        file.set_error(FileError::INVALID_ARGUMENT,
+                       "Offset + size overflows integer");
+        return FileStatus::FAILED;
     }
 
     *size_moved = 0;
@@ -457,28 +476,28 @@ int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
                     sizeof(buf), size - *size_moved);
 
             // Seek to source offset
-            ret = mb_file_seek(file, src + *size_moved, SEEK_SET, nullptr);
-            if (ret != MB_FILE_OK) {
+            ret = file.seek(src + *size_moved, SEEK_SET, nullptr);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Read data from source
-            ret = mb_file_read_fully(file, buf, to_read, &n_read);
-            if (ret != MB_FILE_OK) {
+            ret = file_read_fully(file, buf, to_read, &n_read);
+            if (ret != FileStatus::OK) {
                 return ret;
             } else if (n_read == 0) {
                 break;
             }
 
             // Seek to destination offset
-            ret = mb_file_seek(file, dest + *size_moved, SEEK_SET, nullptr);
-            if (ret != MB_FILE_OK) {
+            ret = file.seek(dest + *size_moved, SEEK_SET, nullptr);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Write data to destination
-            ret = mb_file_write_fully(file, buf, n_read, &n_written);
-            if (ret != MB_FILE_OK) {
+            ret = file_write_fully(file, buf, n_read, &n_written);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
@@ -495,30 +514,30 @@ int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
                     sizeof(buf), size - *size_moved);
 
             // Seek to source offset
-            ret = mb_file_seek(file, src + size - *size_moved - to_read,
-                               SEEK_SET, nullptr);
-            if (ret != MB_FILE_OK) {
+            ret = file.seek(src + size - *size_moved - to_read,
+                            SEEK_SET, nullptr);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Read data form source
-            ret = mb_file_read_fully(file, buf, to_read, &n_read);
-            if (ret != MB_FILE_OK) {
+            ret = file_read_fully(file, buf, to_read, &n_read);
+            if (ret != FileStatus::OK) {
                 return ret;
             } else if (n_read == 0) {
                 break;
             }
 
             // Seek to destination offset
-            ret = mb_file_seek(file, dest + size - *size_moved - n_read,
-                               SEEK_SET, nullptr);
-            if (ret != MB_FILE_OK) {
+            ret = file.seek(dest + size - *size_moved - n_read,
+                            SEEK_SET, nullptr);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Write data to destination
-            ret = mb_file_write_fully(file, buf, n_read, &n_written);
-            if (ret != MB_FILE_OK) {
+            ret = file_write_fully(file, buf, n_read, &n_written);
+            if (ret != FileStatus::OK) {
                 return ret;
             }
 
@@ -531,7 +550,7 @@ int mb_file_move(struct MbFile *file, uint64_t src, uint64_t dest,
         }
     }
 
-    return MB_FILE_OK;
+    return FileStatus::OK;
 }
 
-MB_END_C_DECLS
+}

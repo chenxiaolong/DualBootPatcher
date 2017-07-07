@@ -377,19 +377,19 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
         EdifyTokenString *token = (EdifyTokenString *)(*it);
         const std::string unescaped = token->unescapedString();
 
-        if (mb_ends_with(unescaped.c_str(), "reboot")) {
+        if (mb::ends_with(unescaped, "reboot")) {
             foundReboot = true;
         }
-        if (mb_ends_with(unescaped.c_str(), "mount")) {
+        if (mb::ends_with(unescaped, "mount")) {
             foundMount = true;
         }
-        if (mb_ends_with(unescaped.c_str(), "umount")) {
+        if (mb::ends_with(unescaped, "umount")) {
             foundUmount = true;
         }
-        if (mb_ends_with(unescaped.c_str(), "/format.sh")) {
+        if (mb::ends_with(unescaped, "/format.sh")) {
             foundFormatSh = true;
         }
-        if (mb_ends_with(unescaped.c_str(), "/mke2fs")) {
+        if (mb::ends_with(unescaped, "/mke2fs")) {
             foundMke2fs = true;
         }
 
@@ -659,7 +659,7 @@ bool StandardPatcher::patchTransferList(const std::string &directory)
     lines = StringUtils::split(contents, '\n');
 
     for (auto it = lines.begin(); it != lines.end();) {
-        if (mb_starts_with(it->c_str(), "erase ")) {
+        if (mb::starts_with(*it, "erase ")) {
             it = lines.erase(it);
         } else {
             ++it;

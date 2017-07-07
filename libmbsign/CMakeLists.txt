@@ -93,18 +93,12 @@ if(variants AND MBP_ENABLE_TESTS)
         ${MBSIGN_TESTS_SOURCES}
     )
 
-    # Includes
-    target_include_directories(
-        mbsign_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
-    )
-
     # Link dependencies
     target_link_libraries(
         mbsign_tests
         mbsign-static
-        ${GTEST_BOTH_LIBRARIES}
+        gtest
+        gtest_main
     )
 
     # Target C++11

@@ -22,35 +22,68 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file/posix.h"
-#include "mbcommon/file/vtable_p.h"
+#include "mbcommon/file_p.h"
 
 /*! \cond INTERNAL */
-MB_BEGIN_C_DECLS
-
-struct PosixFileCtx
+namespace mb
 {
+
+struct PosixFileFuncs
+{
+    // sys/stat.h
+    virtual int fn_fstat(int fildes, struct stat *buf) = 0;
+
+    // stdio.h
+    virtual int fn_fclose(FILE *stream) = 0;
+    virtual int fn_ferror(FILE *stream) = 0;
+    virtual int fn_fileno(FILE *stream) = 0;
+#ifdef _WIN32
+    virtual FILE * fn_wfopen(const wchar_t *filename, const wchar_t *mode) = 0;
+#else
+    virtual FILE * fn_fopen(const char *path, const char *mode) = 0;
+#endif
+    virtual size_t fn_fread(void *ptr, size_t size, size_t nmemb,
+                            FILE *stream) = 0;
+    virtual int fn_fseeko(FILE *stream, off_t offset, int whence) = 0;
+    virtual off_t fn_ftello(FILE *stream) = 0;
+    virtual size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
+                             FILE *stream) = 0;
+
+    // unistd.h
+    virtual int fn_ftruncate64(int fd, off_t length) = 0;
+};
+
+class PosixFilePrivate : public FilePrivate
+{
+public:
+    PosixFilePrivate();
+    virtual ~PosixFilePrivate();
+
+    void clear();
+
+#ifdef _WIN32
+    static const wchar_t * convert_mode(FileOpenMode mode);
+#else
+    static const char * convert_mode(FileOpenMode mode);
+#endif
+
+    PosixFileFuncs *funcs;
+
     FILE *fp;
     bool owned;
 #ifdef _WIN32
-    wchar_t *filename;
+    std::wstring filename;
     const wchar_t *mode;
 #else
-    char *filename;
+    std::string filename;
     const char *mode;
 #endif
 
     bool can_seek;
 
-    SysVtable vtable;
+protected:
+    PosixFilePrivate(PosixFileFuncs *funcs);
 };
 
-int _mb_file_open_FILE(SysVtable *vtable, struct MbFile *file, FILE *fp,
-                       bool owned);
-
-int _mb_file_open_FILE_filename(SysVtable *vtable, struct MbFile *file,
-                                const char *filename, int mode);
-int _mb_file_open_FILE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                  const wchar_t *filename, int mode);
-
-MB_END_C_DECLS
+}
 /*! \endcond */

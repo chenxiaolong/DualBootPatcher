@@ -61,6 +61,7 @@ int loki_writer_write_header(MbBiWriter *biw, void *userdata,
                              MbBiHeader *header)
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
+    mb::FileStatus file_ret;
     int ret;
 
     // Construct header
@@ -153,12 +154,12 @@ int loki_writer_write_header(MbBiWriter *biw, void *userdata,
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
-    ret = mb_file_seek(biw->file, ctx->hdr.page_size, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
-        mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+    file_ret = biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr);
+    if (file_ret != mb::FileStatus::OK) {
+        mb_bi_writer_set_error(biw, biw->file->error(),
                                "Failed to seek to first page: %s",
-                               mb_file_error_string(biw->file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               biw->file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     return MB_BI_OK;
@@ -254,7 +255,7 @@ int loki_writer_finish_entry(MbBiWriter *biw, void *userdata)
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == MB_BI_ENTRY_DEVICE_TREE
             && !SHA1_Update(&ctx->sha_ctx, "\x00\x00\x00\x00", 4)) {
-        mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to update SHA1 hash");
         return MB_BI_FATAL;
     }
@@ -263,7 +264,7 @@ int loki_writer_finish_entry(MbBiWriter *biw, void *userdata)
     if (swentry->type != MB_BI_ENTRY_ABOOT
             && (swentry->type != MB_BI_ENTRY_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&ctx->sha_ctx, &le32_size, sizeof(le32_size))) {
-        mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to update SHA1 hash");
         return MB_BI_FATAL;
     }
@@ -287,24 +288,27 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
     SegmentWriterEntry *swentry;
+    mb::FileStatus file_ret;
     int ret;
     size_t n;
 
     if (ctx->have_file_size) {
-        ret = mb_file_seek(biw->file, ctx->file_size, SEEK_SET, nullptr);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->seek(ctx->file_size, SEEK_SET, nullptr);
+        if (file_ret != mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to seek to end of file: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
     } else {
-        ret = mb_file_seek(biw->file, 0, SEEK_CUR, &ctx->file_size);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->seek(0, SEEK_CUR, &ctx->file_size);
+        if (file_ret != mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to get file offset: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -315,12 +319,13 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
     // If successful, finish up the boot image
     if (!swentry) {
         // Truncate to set size
-        ret = mb_file_truncate(biw->file, ctx->file_size);
-        if (ret < 0) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->truncate(ctx->file_size);
+        if (file_ret < mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to truncate file: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Set ID
@@ -337,21 +342,23 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
         android_fix_header_byte_order(&hdr);
 
         // Seek back to beginning to write header
-        ret = mb_file_seek(biw->file, 0, SEEK_SET, nullptr);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = biw->file->seek(0, SEEK_SET, nullptr);
+        if (file_ret != mb::FileStatus::OK) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to seek to beginning: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Write header
-        ret = mb_file_write_fully(biw->file, &hdr, sizeof(hdr), &n);
-        if (ret != MB_FILE_OK || n != sizeof(hdr)) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
+        file_ret = mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), &n);
+        if (file_ret != mb::FileStatus::OK || n != sizeof(hdr)) {
+            mb_bi_writer_set_error(biw, biw->file->error(),
                                    "Failed to write header: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   biw->file->error_string().c_str());
+            return file_ret == mb::FileStatus::FATAL
+                    ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Patch with Loki

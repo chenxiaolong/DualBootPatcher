@@ -83,41 +83,20 @@ std::string Rom::full_data_path()
 
 std::string Rom::boot_image_path()
 {
-    std::string result;
-
-    char *path = mb_format(MULTIBOOT_DIR "/%s/boot.img", id.c_str());
-    if (path) {
-        result = get_raw_path(path);
-        free(path);
-    }
-
-    return result;
+    return get_raw_path(mb::format(
+            MULTIBOOT_DIR "/%s/boot.img", id.c_str()));
 }
 
 std::string Rom::config_path()
 {
-    std::string result;
-
-    char *path = mb_format(MULTIBOOT_DIR "/%s/config.json", id.c_str());
-    if (path) {
-        result = get_raw_path(path);
-        free(path);
-    }
-
-    return result;
+    return get_raw_path(mb::format(
+            MULTIBOOT_DIR "/%s/config.json", id.c_str()));
 }
 
 std::string Rom::thumbnail_path()
 {
-    std::string result;
-
-    char *path = mb_format(MULTIBOOT_DIR "/%s/thumbnail.webp", id.c_str());
-    if (path) {
-        result = get_raw_path(path);
-        free(path);
-    }
-
-    return result;
+    return get_raw_path(mb::format(
+            MULTIBOOT_DIR "/%s/thumbnail.webp", id.c_str()));
 }
 
 std::shared_ptr<Rom> Roms::create_rom_primary()
@@ -238,7 +217,7 @@ void Roms::add_data_roms()
     struct dirent *ent;
     while ((ent = readdir(dp))) {
         if (strcmp(ent->d_name, "data-slot-") == 0
-                || !mb_starts_with(ent->d_name, "data-slot-")) {
+                || !mb::starts_with(ent->d_name, "data-slot-")) {
             continue;
         }
 
@@ -287,7 +266,7 @@ void Roms::add_extsd_roms()
     struct dirent *ent;
     while ((ent = readdir(dp))) {
         if (strcmp(ent->d_name, "extsd-slot-") == 0
-                || !mb_starts_with(ent->d_name, "extsd-slot-")) {
+                || !mb::starts_with(ent->d_name, "extsd-slot-")) {
             continue;
         }
 
@@ -423,15 +402,15 @@ std::shared_ptr<Rom> Roms::create_rom(const std::string &id)
         return create_rom_primary();
     } else if (id == "dual") {
         return create_rom_dual();
-    } else if (mb_starts_with(id.c_str(), "multi-slot-")) {
+    } else if (mb::starts_with(id.c_str(), "multi-slot-")) {
         unsigned int num;
         if (sscanf(id.c_str(), "multi-slot-%u", &num) == 1) {
             return create_rom_multi_slot(num);
         }
-    } else if (mb_starts_with(id.c_str(), "data-slot-")
+    } else if (mb::starts_with(id.c_str(), "data-slot-")
             && id != "data-slot-") {
         return create_rom_data_slot(id.substr(10));
-    } else if (mb_starts_with(id.c_str(), "extsd-slot-")
+    } else if (mb::starts_with(id.c_str(), "extsd-slot-")
             && id != "extsd-slot-") {
         return create_rom_extsd_slot(id.substr(11));
     }
@@ -443,9 +422,9 @@ bool Roms::is_valid(const std::string &id)
 {
     return id == "primary"
             || id == "dual"
-            || (id != "multi-slot-" && mb_starts_with(id.c_str(), "multi-slot-"))
-            || (id != "data-slot-" && mb_starts_with(id.c_str(), "data-slot-"))
-            || (id != "extsd-slot-" && mb_starts_with(id.c_str(), "extsd-slot-"));
+            || (id != "multi-slot-" && mb::starts_with(id.c_str(), "multi-slot-"))
+            || (id != "data-slot-" && mb::starts_with(id.c_str(), "data-slot-"))
+            || (id != "extsd-slot-" && mb::starts_with(id.c_str(), "extsd-slot-"));
 }
 
 std::string Roms::get_system_partition()
@@ -512,7 +491,7 @@ std::string Roms::get_extsd_partition()
 
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // Skip useless mounts
-            if (!mb_starts_with(entry.dir.c_str(), prefix_mnt)) {
+            if (!mb::starts_with(entry.dir.c_str(), prefix_mnt)) {
                 continue;
             }
 
@@ -560,13 +539,13 @@ std::string get_raw_path(const std::string &path)
     std::string result;
 
     // This is faster than doing util::path_split()...
-    if (path == "/system" || mb_starts_with(path.c_str(), "/system/")) {
+    if (path == "/system" || mb::starts_with(path.c_str(), "/system/")) {
         result = Roms::get_system_partition();
         result += path.substr(7);
-    } else if (path == "/cache" || mb_starts_with(path.c_str(), "/cache/")) {
+    } else if (path == "/cache" || mb::starts_with(path.c_str(), "/cache/")) {
         result = Roms::get_cache_partition();
         result += path.substr(6);
-    } else if (path == "/data" || mb_starts_with(path.c_str(), "/data/")) {
+    } else if (path == "/data" || mb::starts_with(path.c_str(), "/data/")) {
         result = Roms::get_data_partition();
         result += path.substr(5);
     } else {

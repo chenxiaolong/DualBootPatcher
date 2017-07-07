@@ -48,10 +48,10 @@ MB_BEGIN_C_DECLS
  * \pre The file position can be at any offset prior to calling this function.
  *
  * \post The file pointer position is undefined after this function returns.
- *       Use mb_file_seek() to return to a known position.
+ *       Use File::seek() to return to a known position.
  *
  * \param[in] bir MbBiReader for setting error messages
- * \param[in] file MbFile handle
+ * \param[in] file mb::File handle
  * \param[in] offset Offset to read MTK header
  * \param[out] mtkhdr_out Pointer to store MTK header (in host byte order)
  *
@@ -61,27 +61,27 @@ MB_BEGIN_C_DECLS
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int read_mtk_header(MbBiReader *bir, MbFile *file,
+int read_mtk_header(MbBiReader *bir, mb::File *file,
                     uint64_t offset, MtkHeader *mtkhdr_out)
 {
     MtkHeader mtkhdr;
     size_t n;
-    int ret;
+    mb::FileStatus file_ret;
 
-    ret = mb_file_seek(file, offset, SEEK_SET, nullptr);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = file->seek(offset, SEEK_SET, nullptr);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to seek to MTK header at %" PRIu64 ": %s",
-                               offset, mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               offset, file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    ret = mb_file_read_fully(file, &mtkhdr, sizeof(mtkhdr), &n);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    file_ret = mb::file_read_fully(*file, &mtkhdr, sizeof(mtkhdr), &n);
+    if (file_ret < mb::FileStatus::OK) {
+        mb_bi_reader_set_error(bir, file->error(),
                                "Failed to read MTK header: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               file->error_string().c_str());
+        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != sizeof(MtkHeader)
@@ -104,10 +104,10 @@ int read_mtk_header(MbBiReader *bir, MbFile *file,
  * \pre The file position can be at any offset prior to calling this function.
  *
  * \post The file pointer position is undefined after this function returns.
- *       Use mb_file_seek() to return to a known position.
+ *       Use File::seek() to return to a known position.
  *
  * \param[in] bir MbBiReader for setting error messages
- * \param[in] file MbFile handle
+ * \param[in] file mb::File handle
  * \param[in] hdr Android boot image header (in host byte order)
  * \param[out] kernel_mtkhdr_out Pointer to store kernel MTK header
  *                               (in host byte order)
@@ -122,7 +122,7 @@ int read_mtk_header(MbBiReader *bir, MbFile *file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_mtk_headers(MbBiReader *bir, MbFile *file,
+int find_mtk_headers(MbBiReader *bir, mb::File *file,
                      AndroidHeader *hdr,
                      MtkHeader *kernel_mtkhdr_out,
                      uint64_t *kernel_offset_out,

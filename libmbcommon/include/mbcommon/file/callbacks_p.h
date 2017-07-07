@@ -21,16 +21,29 @@
 
 #include "mbcommon/guard_p.h"
 
-#include <cstddef>
-
-#include "mbcommon/common.h"
+#include "mbcommon/file/callbacks.h"
+#include "mbcommon/file_p.h"
 
 /*! \cond INTERNAL */
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
-// Wrap libc functions that aren't available on some platforms
+class CallbackFilePrivate : public FilePrivate
+{
+public:
+    CallbackFilePrivate();
+    virtual ~CallbackFilePrivate();
 
-void * _mb_mempcpy(void *dest, const void *src, size_t n);
+    void clear();
 
-MB_END_C_DECLS
+    CallbackFile::OpenCb open_cb;
+    CallbackFile::CloseCb close_cb;
+    CallbackFile::ReadCb read_cb;
+    CallbackFile::WriteCb write_cb;
+    CallbackFile::SeekCb seek_cb;
+    CallbackFile::TruncateCb truncate_cb;
+    void *userdata;
+};
+
+}
 /*! \endcond */

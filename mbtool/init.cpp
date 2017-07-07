@@ -201,7 +201,7 @@ static util::CmdlineIterAction set_kernel_properties_cb(const char *name,
 {
     (void) userdata;
 
-    if (mb_starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
+    if (mb::starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
         char buf[PROP_NAME_MAX];
         int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name + 12);
         if (n >= 0 && n < (int) sizeof(buf)) {
@@ -341,7 +341,7 @@ static bool fix_file_contexts(const char *path)
     });
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (mb_starts_with(line, "/data/media(")
+        if (mb::starts_with(line, "/data/media(")
                 && !strstr(line, "<<none>>")) {
             fputc('#', fp_new.get());
         }
@@ -467,7 +467,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
 
         if (enable_appsync) {
-            if (mb_starts_with(line, "service")) {
+            if (mb::starts_with(line, "service")) {
                 inside_service = strstr(line, "installd") != nullptr;
             } else if (inside_service && is_completely_whitespace(line)) {
                 inside_service = false;
@@ -496,7 +496,7 @@ static bool add_mbtool_services(bool enable_appsync)
         // Disable installd. mbtool's appsync will spawn it on demand
         if (enable_appsync
                 && !has_disabled_installd
-                && mb_starts_with(line, "service")
+                && mb::starts_with(line, "service")
                 && strstr(line, "installd")) {
             fputs("    disabled\n", fp_new.get());
         }
@@ -570,7 +570,7 @@ static bool strip_manual_mounts()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb_ends_with(ent->d_name, ".rc")) {
+                || !mb::ends_with(ent->d_name, ".rc")) {
             continue;
         }
 
@@ -792,8 +792,8 @@ static std::string find_fstab()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb_starts_with(ent->d_name, "init")
-                || !mb_ends_with(ent->d_name, ".rc")) {
+                || !mb::starts_with(ent->d_name, "init")
+                || !mb::ends_with(ent->d_name, ".rc")) {
             continue;
         }
 

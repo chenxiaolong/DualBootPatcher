@@ -26,10 +26,11 @@
 
 struct MbBiReader;
 struct MbBiWriter;
-struct MbFile;
 
 namespace mb
 {
+
+class File;
 
 class InstallerUtil
 {
@@ -59,8 +60,8 @@ public:
                              const std::string &with);
 
 private:
-    static bool copy_file_to_file(MbFile *fin, MbFile *fout, uint64_t to_copy);
-    static bool copy_file_to_file_eof(MbFile *fin, MbFile *fout);
+    static bool copy_file_to_file(File &fin, File &fout, uint64_t to_copy);
+    static bool copy_file_to_file_eof(File &fin, File &fout);
 };
 
 }

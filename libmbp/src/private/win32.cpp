@@ -43,13 +43,7 @@ std::string win32ErrorToString(DWORD win32Error)
     std::wstring message(messageBuffer, size);
     LocalFree(messageBuffer);
 
-    std::string result;
-    char *temp = mb::wcs_to_utf8(message.c_str());
-    if (temp) {
-        result = temp;
-        free(temp);
-    }
-    return result;
+    return mb::wcs_to_utf8(message);
 }
 
 }

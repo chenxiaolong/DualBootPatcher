@@ -21,6 +21,7 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
 
 #include <grp.h>
 #include <pwd.h>
@@ -88,12 +89,8 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            char *msg = mb_format("%s: Failed to chown: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "%s: Failed to chown: %s",
+                       _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

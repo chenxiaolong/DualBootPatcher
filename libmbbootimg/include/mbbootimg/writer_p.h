@@ -22,6 +22,8 @@
 #include "mbbootimg/guard_p.h"
 
 #ifdef __cplusplus
+#  include <string>
+
 #  include <cstddef>
 #else
 #  include <stddef.h>
@@ -63,7 +65,6 @@ MB_BEGIN_C_DECLS
 struct MbBiWriter;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
 
 typedef int (*FormatWriterSetOption)(struct MbBiWriter *biw, void *userdata,
                                      const char *key, const char *value);
@@ -119,12 +120,12 @@ struct MbBiWriter
     WriterState state;
 
     // File
-    struct MbFile *file;
+    mb::File *file;
     bool file_owned;
 
     // Error
     int error_code;
-    char *error_string;
+    std::string error_string;
 
     struct FormatWriter format;
     bool format_set;
