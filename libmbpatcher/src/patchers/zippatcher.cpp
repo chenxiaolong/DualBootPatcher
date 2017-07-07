@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbpatcher/patchers/multibootpatcher.h"
+#include "mbpatcher/patchers/zippatcher.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -47,7 +47,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class MultiBootPatcher::Impl
+class ZipPatcher::Impl
 {
 public:
     PatcherConfig *pc;
@@ -93,43 +93,43 @@ public:
 /*! \endcond */
 
 
-const std::string MultiBootPatcher::Id("MultiBootPatcher");
+const std::string ZipPatcher::Id("ZipPatcher");
 
 
-MultiBootPatcher::MultiBootPatcher(PatcherConfig * const pc)
+ZipPatcher::ZipPatcher(PatcherConfig * const pc)
     : m_impl(new Impl())
 {
     m_impl->pc = pc;
 }
 
-MultiBootPatcher::~MultiBootPatcher()
+ZipPatcher::~ZipPatcher()
 {
 }
 
-ErrorCode MultiBootPatcher::error() const
+ErrorCode ZipPatcher::error() const
 {
     return m_impl->error;
 }
 
-std::string MultiBootPatcher::id() const
+std::string ZipPatcher::id() const
 {
     return Id;
 }
 
-void MultiBootPatcher::setFileInfo(const FileInfo * const info)
+void ZipPatcher::setFileInfo(const FileInfo * const info)
 {
     m_impl->info = info;
 }
 
-void MultiBootPatcher::cancelPatching()
+void ZipPatcher::cancelPatching()
 {
     m_impl->cancelled = true;
 }
 
-bool MultiBootPatcher::patchFile(ProgressUpdatedCallback progressCb,
-                                 FilesUpdatedCallback filesCb,
-                                 DetailsUpdatedCallback detailsCb,
-                                 void *userData)
+bool ZipPatcher::patchFile(ProgressUpdatedCallback progressCb,
+                           FilesUpdatedCallback filesCb,
+                           DetailsUpdatedCallback detailsCb,
+                           void *userData)
 {
     m_impl->cancelled = false;
 
@@ -177,7 +177,7 @@ struct CopySpec {
     std::string target;
 };
 
-bool MultiBootPatcher::Impl::patchZip()
+bool ZipPatcher::Impl::patchZip()
 {
     std::unordered_set<std::string> excludeFromPass1;
 
@@ -349,8 +349,8 @@ bool MultiBootPatcher::Impl::patchZip()
  * - Files needed by an AutoPatcher are extracted to the temporary directory.
  * - Otherwise, the file is copied directly to the output zip.
  */
-bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
-                                   const std::unordered_set<std::string> &exclude)
+bool ZipPatcher::Impl::pass1(const std::string &temporaryDir,
+                             const std::unordered_set<std::string> &exclude)
 {
     unzFile uf = MinizipUtils::ctxGetUnzFile(zInput);
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
@@ -416,8 +416,8 @@ bool MultiBootPatcher::Impl::pass1(const std::string &temporaryDir,
  * - Patch files in the temporary directory using the AutoPatchers and add the
  *   resulting files to the output zip
  */
-bool MultiBootPatcher::Impl::pass2(const std::string &temporaryDir,
-                                   const std::unordered_set<std::string> &files)
+bool ZipPatcher::Impl::pass2(const std::string &temporaryDir,
+                             const std::unordered_set<std::string> &files)
 {
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
@@ -461,7 +461,7 @@ bool MultiBootPatcher::Impl::pass2(const std::string &temporaryDir,
     return true;
 }
 
-bool MultiBootPatcher::Impl::openInputArchive()
+bool ZipPatcher::Impl::openInputArchive()
 {
     assert(zInput == nullptr);
 
@@ -477,7 +477,7 @@ bool MultiBootPatcher::Impl::openInputArchive()
     return true;
 }
 
-void MultiBootPatcher::Impl::closeInputArchive()
+void ZipPatcher::Impl::closeInputArchive()
 {
     assert(zInput != nullptr);
 
@@ -489,7 +489,7 @@ void MultiBootPatcher::Impl::closeInputArchive()
     zInput = nullptr;
 }
 
-bool MultiBootPatcher::Impl::openOutputArchive()
+bool ZipPatcher::Impl::openOutputArchive()
 {
     assert(zOutput == nullptr);
 
@@ -505,7 +505,7 @@ bool MultiBootPatcher::Impl::openOutputArchive()
     return true;
 }
 
-void MultiBootPatcher::Impl::closeOutputArchive()
+void ZipPatcher::Impl::closeOutputArchive()
 {
     assert(zOutput != nullptr);
 
@@ -517,28 +517,28 @@ void MultiBootPatcher::Impl::closeOutputArchive()
     zOutput = nullptr;
 }
 
-void MultiBootPatcher::Impl::updateProgress(uint64_t bytes, uint64_t maxBytes)
+void ZipPatcher::Impl::updateProgress(uint64_t bytes, uint64_t maxBytes)
 {
     if (progressCb) {
         progressCb(bytes, maxBytes, userData);
     }
 }
 
-void MultiBootPatcher::Impl::updateFiles(uint64_t files, uint64_t maxFiles)
+void ZipPatcher::Impl::updateFiles(uint64_t files, uint64_t maxFiles)
 {
     if (filesCb) {
         filesCb(files, maxFiles, userData);
     }
 }
 
-void MultiBootPatcher::Impl::updateDetails(const std::string &msg)
+void ZipPatcher::Impl::updateDetails(const std::string &msg)
 {
     if (detailsCb) {
         detailsCb(msg, userData);
     }
 }
 
-void MultiBootPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
+void ZipPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
 {
     Impl *impl = static_cast<Impl *>(userData);
     impl->updateProgress(impl->bytes + bytes, impl->maxBytes);
@@ -559,9 +559,9 @@ inline std::size_t insertAndFindMax(const std::vector<SomeType> &list1,
     return max;
 }
 
-std::string MultiBootPatcher::createInfoProp(const PatcherConfig * const pc,
-                                             const std::string &romId,
-                                             bool always_patch_ramdisk)
+std::string ZipPatcher::createInfoProp(const PatcherConfig * const pc,
+                                       const std::string &romId,
+                                       bool always_patch_ramdisk)
 {
     (void) pc;
 

@@ -30,11 +30,11 @@ namespace mb
 namespace patcher
 {
 
-class MultiBootPatcher : public Patcher
+class ZipPatcher : public Patcher
 {
 public:
-    explicit MultiBootPatcher(PatcherConfig * const pc);
-    ~MultiBootPatcher();
+    explicit ZipPatcher(PatcherConfig * const pc);
+    ~ZipPatcher();
 
     static const std::string Id;
 

@@ -240,7 +240,7 @@ public class PatchFileFragment extends Fragment implements
         mFABAddZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                startFileSelection(PatcherUtils.PATCHER_ID_MULTIBOOTPATCHER);
+                startFileSelection(PatcherUtils.PATCHER_ID_ZIPPATCHER);
                 mFAB.close(true);
             }
         });

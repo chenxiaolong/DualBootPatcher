@@ -28,7 +28,7 @@
 #include "mblog/logging.h"
 
 #include "mbpatcher/patcherconfig.h"
-#include "mbpatcher/patchers/multibootpatcher.h"
+#include "mbpatcher/patchers/zippatcher.h"
 #include "mbpatcher/private/miniziputils.h"
 
 
@@ -186,7 +186,7 @@ bool RamdiskUpdater::Impl::createZip()
     if (cancelled) return false;
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->romId(), true);
+            ZipPatcher::createInfoProp(pc, info->romId(), true);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));

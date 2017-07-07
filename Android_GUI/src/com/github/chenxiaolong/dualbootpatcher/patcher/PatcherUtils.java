@@ -44,7 +44,7 @@ public class PatcherUtils {
     private static final String PREFIX_DATA_SLOT = "data-slot-";
     private static final String PREFIX_EXTSD_SLOT = "extsd-slot-";
 
-    public static final String PATCHER_ID_MULTIBOOTPATCHER = "MultiBootPatcher";
+    public static final String PATCHER_ID_ZIPPATCHER = "ZipPatcher";
     public static final String PATCHER_ID_ODINPATCHER = "OdinPatcher";
 
     private static boolean sInitialized;

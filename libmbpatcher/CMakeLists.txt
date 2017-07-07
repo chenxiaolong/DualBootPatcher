@@ -17,9 +17,9 @@ set(MBPATCHER_SOURCES
     src/autopatchers/standardpatcher.cpp
     src/autopatchers/mountcmdpatcher.cpp
     # Patchers
-    src/patchers/multibootpatcher.cpp
     src/patchers/odinpatcher.cpp
     src/patchers/ramdiskupdater.cpp
+    src/patchers/zippatcher.cpp
     # SHA1 library
     external/sha.cpp
 )

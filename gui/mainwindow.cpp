@@ -205,7 +205,7 @@ void MainWindow::onChooseFileItemClicked(QAction *action)
     Q_D(MainWindow);
 
     if (action == d->chooseFlashableZip) {
-        d->patcherId = QStringLiteral("MultiBootPatcher");
+        d->patcherId = QStringLiteral("ZipPatcher");
         chooseFile(tr("Flashable zips (*.zip)"));
     } else if (action == d->chooseOdinImage) {
         d->patcherId = QStringLiteral("OdinPatcher");

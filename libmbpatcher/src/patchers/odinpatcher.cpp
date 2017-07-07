@@ -43,7 +43,7 @@
 #include "mblog/logging.h"
 
 #include "mbpatcher/patcherconfig.h"
-#include "mbpatcher/patchers/multibootpatcher.h"
+#include "mbpatcher/patchers/zippatcher.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
 #include "mbpatcher/private/stringutils.h"
@@ -328,7 +328,7 @@ bool OdinPatcher::Impl::patchTar()
     updateDetails("multiboot/info.prop");
 
     const std::string infoProp =
-            MultiBootPatcher::createInfoProp(pc, info->romId(), false);
+            ZipPatcher::createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));

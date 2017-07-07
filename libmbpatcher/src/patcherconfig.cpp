@@ -29,9 +29,9 @@
 // Patchers
 #include "mbpatcher/autopatchers/standardpatcher.h"
 #include "mbpatcher/autopatchers/mountcmdpatcher.h"
-#include "mbpatcher/patchers/multibootpatcher.h"
 #include "mbpatcher/patchers/odinpatcher.h"
 #include "mbpatcher/patchers/ramdiskupdater.h"
+#include "mbpatcher/patchers/zippatcher.h"
 
 
 namespace mb
@@ -150,9 +150,9 @@ void PatcherConfig::setTempDirectory(std::string path)
 std::vector<std::string> PatcherConfig::patchers() const
 {
     return {
-        MultiBootPatcher::Id,
         OdinPatcher::Id,
         RamdiskUpdater::Id,
+        ZipPatcher::Id,
     };
 }
 
@@ -180,12 +180,12 @@ Patcher * PatcherConfig::createPatcher(const std::string &id)
 {
     Patcher *p = nullptr;
 
-    if (id == MultiBootPatcher::Id) {
-        p = new MultiBootPatcher(this);
-    } else if (id == OdinPatcher::Id) {
+    if (id == OdinPatcher::Id) {
         p = new OdinPatcher(this);
     } else if (id == RamdiskUpdater::Id) {
         p = new RamdiskUpdater(this);
+    } else if (id == ZipPatcher::Id) {
+        p = new ZipPatcher(this);
     }
 
     if (p != nullptr) {
