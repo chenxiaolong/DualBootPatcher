@@ -37,7 +37,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class StandardPatcher::Impl
+class StandardPatcherPrivate
 {
 public:
     const PatcherConfig *pc;
@@ -64,11 +64,12 @@ const std::string StandardPatcher::SystemTransferList
 
 
 StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info) :
-    m_impl(new Impl())
+                                 const FileInfo * const info)
+    : _priv_ptr(new StandardPatcherPrivate())
 {
-    m_impl->pc = pc;
-    m_impl->info = info;
+    MB_PRIVATE(StandardPatcher);
+    priv->pc = pc;
+    priv->info = info;
 }
 
 StandardPatcher::~StandardPatcher()
@@ -558,6 +559,8 @@ bool StandardPatcher::patchFiles(const std::string &directory)
 
 bool StandardPatcher::patchUpdater(const std::string &directory)
 {
+    MB_PRIVATE(StandardPatcher);
+
     std::string contents;
     std::string path;
 
@@ -584,7 +587,7 @@ bool StandardPatcher::patchUpdater(const std::string &directory)
     EdifyTokenizer::dump(tokens);
 #endif
 
-    Device *device = m_impl->info->device();
+    Device *device = priv->info->device();
     auto systemDevs = mb_device_system_block_devs(device);
     auto cacheDevs = mb_device_cache_block_devs(device);
     auto dataDevs = mb_device_data_block_devs(device);

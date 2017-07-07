@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class FileInfoPrivate;
 class MB_EXPORT FileInfo
 {
+    MB_DECLARE_PRIVATE(FileInfo)
+
 public:
     explicit FileInfo();
     ~FileInfo();
@@ -49,8 +52,7 @@ public:
     void setRomId(std::string id);
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<FileInfoPrivate> _priv_ptr;
 };
 
 }

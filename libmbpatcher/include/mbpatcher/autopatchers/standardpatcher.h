@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class StandardPatcherPrivate;
 class StandardPatcher : public AutoPatcher
 {
+    MB_DECLARE_PRIVATE(StandardPatcher)
+
 public:
     explicit StandardPatcher(const PatcherConfig * const pc,
                              const FileInfo * const info);
@@ -56,8 +59,7 @@ public:
     bool patchTransferList(const std::string &directory);
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<StandardPatcherPrivate> _priv_ptr;
 };
 
 }

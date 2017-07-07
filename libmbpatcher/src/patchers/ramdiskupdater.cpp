@@ -38,7 +38,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class RamdiskUpdater::Impl
+class RamdiskUpdaterPrivate
 {
 public:
     PatcherConfig *pc;
@@ -62,9 +62,10 @@ const std::string RamdiskUpdater::Id("RamdiskUpdater");
 
 
 RamdiskUpdater::RamdiskUpdater(PatcherConfig * const pc)
-    : m_impl(new Impl())
+    : _priv_ptr(new RamdiskUpdaterPrivate())
 {
-    m_impl->pc = pc;
+    MB_PRIVATE(RamdiskUpdater);
+    priv->pc = pc;
 }
 
 RamdiskUpdater::~RamdiskUpdater()
@@ -73,7 +74,8 @@ RamdiskUpdater::~RamdiskUpdater()
 
 ErrorCode RamdiskUpdater::error() const
 {
-    return m_impl->error;
+    MB_PRIVATE(const RamdiskUpdater);
+    return priv->error;
 }
 
 std::string RamdiskUpdater::id() const
@@ -83,12 +85,14 @@ std::string RamdiskUpdater::id() const
 
 void RamdiskUpdater::setFileInfo(const FileInfo * const info)
 {
-    m_impl->info = info;
+    MB_PRIVATE(RamdiskUpdater);
+    priv->info = info;
 }
 
 void RamdiskUpdater::cancelPatching()
 {
-    m_impl->cancelled = true;
+    MB_PRIVATE(RamdiskUpdater);
+    priv->cancelled = true;
 }
 
 bool RamdiskUpdater::patchFile(ProgressUpdatedCallback progressCb,
@@ -101,18 +105,20 @@ bool RamdiskUpdater::patchFile(ProgressUpdatedCallback progressCb,
     (void) detailsCb;
     (void) userData;
 
-    m_impl->cancelled = false;
+    MB_PRIVATE(RamdiskUpdater);
 
-    assert(m_impl->info != nullptr);
+    priv->cancelled = false;
 
-    bool ret = m_impl->createZip();
+    assert(priv->info != nullptr);
 
-    if (m_impl->zOutput != nullptr) {
-        m_impl->closeOutputArchive();
+    bool ret = priv->createZip();
+
+    if (priv->zOutput != nullptr) {
+        priv->closeOutputArchive();
     }
 
-    if (m_impl->cancelled) {
-        m_impl->error = ErrorCode::PatchingCancelled;
+    if (priv->cancelled) {
+        priv->error = ErrorCode::PatchingCancelled;
         return false;
     }
 
@@ -124,7 +130,7 @@ struct CopySpec {
     std::string target;
 };
 
-bool RamdiskUpdater::Impl::createZip()
+bool RamdiskUpdaterPrivate::createZip()
 {
     ErrorCode result;
 
@@ -232,7 +238,7 @@ bool RamdiskUpdater::Impl::createZip()
     return true;
 }
 
-bool RamdiskUpdater::Impl::openOutputArchive()
+bool RamdiskUpdaterPrivate::openOutputArchive()
 {
     assert(zOutput == nullptr);
 
@@ -248,7 +254,7 @@ bool RamdiskUpdater::Impl::openOutputArchive()
     return true;
 }
 
-void RamdiskUpdater::Impl::closeOutputArchive()
+void RamdiskUpdaterPrivate::closeOutputArchive()
 {
     assert(zOutput != nullptr);
 

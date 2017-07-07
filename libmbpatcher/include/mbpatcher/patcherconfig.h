@@ -36,8 +36,11 @@ namespace patcher
 class Patcher;
 class AutoPatcher;
 
+class PatcherConfigPrivate;
 class MB_EXPORT PatcherConfig
 {
+    MB_DECLARE_PRIVATE(PatcherConfig)
+
 public:
     PatcherConfig();
     ~PatcherConfig();
@@ -66,8 +69,7 @@ public:
     PatcherConfig & operator=(PatcherConfig &&) & = default;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<PatcherConfigPrivate> _priv_ptr;
 };
 
 }

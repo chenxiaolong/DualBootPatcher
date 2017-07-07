@@ -47,7 +47,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class ZipPatcher::Impl
+class ZipPatcherPrivate
 {
 public:
     PatcherConfig *pc;
@@ -63,9 +63,9 @@ public:
     ErrorCode error;
 
     // Callbacks
-    ProgressUpdatedCallback progressCb;
-    FilesUpdatedCallback filesCb;
-    DetailsUpdatedCallback detailsCb;
+    ZipPatcher::ProgressUpdatedCallback progressCb;
+    ZipPatcher::FilesUpdatedCallback filesCb;
+    ZipPatcher::DetailsUpdatedCallback detailsCb;
     void *userData;
 
     // Patching
@@ -97,9 +97,10 @@ const std::string ZipPatcher::Id("ZipPatcher");
 
 
 ZipPatcher::ZipPatcher(PatcherConfig * const pc)
-    : m_impl(new Impl())
+    : _priv_ptr(new ZipPatcherPrivate())
 {
-    m_impl->pc = pc;
+    MB_PRIVATE(ZipPatcher);
+    priv->pc = pc;
 }
 
 ZipPatcher::~ZipPatcher()
@@ -108,7 +109,8 @@ ZipPatcher::~ZipPatcher()
 
 ErrorCode ZipPatcher::error() const
 {
-    return m_impl->error;
+    MB_PRIVATE(const ZipPatcher);
+    return priv->error;
 }
 
 std::string ZipPatcher::id() const
@@ -118,12 +120,14 @@ std::string ZipPatcher::id() const
 
 void ZipPatcher::setFileInfo(const FileInfo * const info)
 {
-    m_impl->info = info;
+    MB_PRIVATE(ZipPatcher);
+    priv->info = info;
 }
 
 void ZipPatcher::cancelPatching()
 {
-    m_impl->cancelled = true;
+    MB_PRIVATE(ZipPatcher);
+    priv->cancelled = true;
 }
 
 bool ZipPatcher::patchFile(ProgressUpdatedCallback progressCb,
@@ -131,41 +135,42 @@ bool ZipPatcher::patchFile(ProgressUpdatedCallback progressCb,
                            DetailsUpdatedCallback detailsCb,
                            void *userData)
 {
-    m_impl->cancelled = false;
+    MB_PRIVATE(ZipPatcher);
+    priv->cancelled = false;
 
-    assert(m_impl->info != nullptr);
+    assert(priv->info != nullptr);
 
-    m_impl->progressCb = progressCb;
-    m_impl->filesCb = filesCb;
-    m_impl->detailsCb = detailsCb;
-    m_impl->userData = userData;
+    priv->progressCb = progressCb;
+    priv->filesCb = filesCb;
+    priv->detailsCb = detailsCb;
+    priv->userData = userData;
 
-    m_impl->bytes = 0;
-    m_impl->maxBytes = 0;
-    m_impl->files = 0;
-    m_impl->maxFiles = 0;
+    priv->bytes = 0;
+    priv->maxBytes = 0;
+    priv->files = 0;
+    priv->maxFiles = 0;
 
-    bool ret = m_impl->patchZip();
+    bool ret = priv->patchZip();
 
-    m_impl->progressCb = nullptr;
-    m_impl->filesCb = nullptr;
-    m_impl->detailsCb = nullptr;
-    m_impl->userData = nullptr;
+    priv->progressCb = nullptr;
+    priv->filesCb = nullptr;
+    priv->detailsCb = nullptr;
+    priv->userData = nullptr;
 
-    for (auto *p : m_impl->autoPatchers) {
-        m_impl->pc->destroyAutoPatcher(p);
+    for (auto *p : priv->autoPatchers) {
+        priv->pc->destroyAutoPatcher(p);
     }
-    m_impl->autoPatchers.clear();
+    priv->autoPatchers.clear();
 
-    if (m_impl->zInput != nullptr) {
-        m_impl->closeInputArchive();
+    if (priv->zInput != nullptr) {
+        priv->closeInputArchive();
     }
-    if (m_impl->zOutput != nullptr) {
-        m_impl->closeOutputArchive();
+    if (priv->zOutput != nullptr) {
+        priv->closeOutputArchive();
     }
 
-    if (m_impl->cancelled) {
-        m_impl->error = ErrorCode::PatchingCancelled;
+    if (priv->cancelled) {
+        priv->error = ErrorCode::PatchingCancelled;
         return false;
     }
 
@@ -177,7 +182,7 @@ struct CopySpec {
     std::string target;
 };
 
-bool ZipPatcher::Impl::patchZip()
+bool ZipPatcherPrivate::patchZip()
 {
     std::unordered_set<std::string> excludeFromPass1;
 
@@ -306,7 +311,8 @@ bool ZipPatcher::Impl::patchZip()
     updateFiles(++files, maxFiles);
     updateDetails("multiboot/info.prop");
 
-    const std::string infoProp = createInfoProp(pc, info->romId(), false);
+    const std::string infoProp =
+            ZipPatcher::createInfoProp(pc, info->romId(), false);
     result = MinizipUtils::addFile(
             zf, "multiboot/info.prop",
             std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
@@ -349,8 +355,8 @@ bool ZipPatcher::Impl::patchZip()
  * - Files needed by an AutoPatcher are extracted to the temporary directory.
  * - Otherwise, the file is copied directly to the output zip.
  */
-bool ZipPatcher::Impl::pass1(const std::string &temporaryDir,
-                             const std::unordered_set<std::string> &exclude)
+bool ZipPatcherPrivate::pass1(const std::string &temporaryDir,
+                              const std::unordered_set<std::string> &exclude)
 {
     unzFile uf = MinizipUtils::ctxGetUnzFile(zInput);
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
@@ -416,8 +422,8 @@ bool ZipPatcher::Impl::pass1(const std::string &temporaryDir,
  * - Patch files in the temporary directory using the AutoPatchers and add the
  *   resulting files to the output zip
  */
-bool ZipPatcher::Impl::pass2(const std::string &temporaryDir,
-                             const std::unordered_set<std::string> &files)
+bool ZipPatcherPrivate::pass2(const std::string &temporaryDir,
+                              const std::unordered_set<std::string> &files)
 {
     zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
 
@@ -461,7 +467,7 @@ bool ZipPatcher::Impl::pass2(const std::string &temporaryDir,
     return true;
 }
 
-bool ZipPatcher::Impl::openInputArchive()
+bool ZipPatcherPrivate::openInputArchive()
 {
     assert(zInput == nullptr);
 
@@ -477,7 +483,7 @@ bool ZipPatcher::Impl::openInputArchive()
     return true;
 }
 
-void ZipPatcher::Impl::closeInputArchive()
+void ZipPatcherPrivate::closeInputArchive()
 {
     assert(zInput != nullptr);
 
@@ -489,7 +495,7 @@ void ZipPatcher::Impl::closeInputArchive()
     zInput = nullptr;
 }
 
-bool ZipPatcher::Impl::openOutputArchive()
+bool ZipPatcherPrivate::openOutputArchive()
 {
     assert(zOutput == nullptr);
 
@@ -505,7 +511,7 @@ bool ZipPatcher::Impl::openOutputArchive()
     return true;
 }
 
-void ZipPatcher::Impl::closeOutputArchive()
+void ZipPatcherPrivate::closeOutputArchive()
 {
     assert(zOutput != nullptr);
 
@@ -517,31 +523,31 @@ void ZipPatcher::Impl::closeOutputArchive()
     zOutput = nullptr;
 }
 
-void ZipPatcher::Impl::updateProgress(uint64_t bytes, uint64_t maxBytes)
+void ZipPatcherPrivate::updateProgress(uint64_t bytes, uint64_t maxBytes)
 {
     if (progressCb) {
         progressCb(bytes, maxBytes, userData);
     }
 }
 
-void ZipPatcher::Impl::updateFiles(uint64_t files, uint64_t maxFiles)
+void ZipPatcherPrivate::updateFiles(uint64_t files, uint64_t maxFiles)
 {
     if (filesCb) {
         filesCb(files, maxFiles, userData);
     }
 }
 
-void ZipPatcher::Impl::updateDetails(const std::string &msg)
+void ZipPatcherPrivate::updateDetails(const std::string &msg)
 {
     if (detailsCb) {
         detailsCb(msg, userData);
     }
 }
 
-void ZipPatcher::Impl::laProgressCb(uint64_t bytes, void *userData)
+void ZipPatcherPrivate::laProgressCb(uint64_t bytes, void *userData)
 {
-    Impl *impl = static_cast<Impl *>(userData);
-    impl->updateProgress(impl->bytes + bytes, impl->maxBytes);
+    auto *priv = static_cast<ZipPatcherPrivate *>(userData);
+    priv->updateProgress(priv->bytes + bytes, priv->maxBytes);
 }
 
 template<typename SomeType, typename Predicate>

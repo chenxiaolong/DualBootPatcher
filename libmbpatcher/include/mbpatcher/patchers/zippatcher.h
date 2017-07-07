@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class ZipPatcherPrivate;
 class ZipPatcher : public Patcher
 {
+    MB_DECLARE_PRIVATE(ZipPatcher)
+
 public:
     explicit ZipPatcher(PatcherConfig * const pc);
     ~ZipPatcher();
@@ -58,8 +61,7 @@ public:
                                       bool always_patch_ramdisk);
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<ZipPatcherPrivate> _priv_ptr;
 };
 
 }

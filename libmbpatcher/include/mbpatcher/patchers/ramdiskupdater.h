@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class RamdiskUpdaterPrivate;
 class RamdiskUpdater : public Patcher
 {
+    MB_DECLARE_PRIVATE(RamdiskUpdater)
+
 public:
     explicit RamdiskUpdater(PatcherConfig * const pc);
     ~RamdiskUpdater();
@@ -54,8 +57,7 @@ public:
     virtual void cancelPatching() override;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<RamdiskUpdaterPrivate> _priv_ptr;
 };
 
 }

@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class OdinPatcherPrivate;
 class OdinPatcher : public Patcher
 {
+    MB_DECLARE_PRIVATE(OdinPatcher)
+
 public:
     explicit OdinPatcher(PatcherConfig * const pc);
     ~OdinPatcher();
@@ -54,8 +57,7 @@ public:
     virtual void cancelPatching() override;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<OdinPatcherPrivate> _priv_ptr;
 };
 
 }

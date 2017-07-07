@@ -30,8 +30,11 @@ namespace mb
 namespace patcher
 {
 
+class MountCmdPatcherPrivate;
 class MountCmdPatcher : public AutoPatcher
 {
+    MB_DECLARE_PRIVATE(MountCmdPatcher)
+
 public:
     explicit MountCmdPatcher(const PatcherConfig * const pc,
                              const FileInfo * const info);
@@ -49,8 +52,7 @@ public:
     virtual bool patchFiles(const std::string &directory) override;
 
 private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
+    std::unique_ptr<MountCmdPatcherPrivate> _priv_ptr;
 };
 
 }

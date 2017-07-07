@@ -26,7 +26,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class FileInfo::Impl
+class FileInfoPrivate
 {
 public:
     Device *device;
@@ -49,7 +49,7 @@ public:
  */
 
 
-FileInfo::FileInfo() : m_impl(new Impl())
+FileInfo::FileInfo() : _priv_ptr(new FileInfoPrivate())
 {
 }
 
@@ -64,7 +64,8 @@ FileInfo::~FileInfo()
  */
 std::string FileInfo::inputPath() const
 {
-    return m_impl->inputPath;
+    MB_PRIVATE(const FileInfo);
+    return priv->inputPath;
 }
 
 /*!
@@ -74,17 +75,20 @@ std::string FileInfo::inputPath() const
  */
 void FileInfo::setInputPath(std::string path)
 {
-    m_impl->inputPath = std::move(path);
+    MB_PRIVATE(FileInfo);
+    priv->inputPath = std::move(path);
 }
 
 std::string FileInfo::outputPath() const
 {
-    return m_impl->outputPath;
+    MB_PRIVATE(const FileInfo);
+    return priv->outputPath;
 }
 
 void FileInfo::setOutputPath(std::string path)
 {
-    m_impl->outputPath = std::move(path);
+    MB_PRIVATE(FileInfo);
+    priv->outputPath = std::move(path);
 }
 
 /*!
@@ -94,7 +98,8 @@ void FileInfo::setOutputPath(std::string path)
  */
 Device * FileInfo::device() const
 {
-    return m_impl->device;
+    MB_PRIVATE(const FileInfo);
+    return priv->device;
 }
 
 /*!
@@ -104,17 +109,20 @@ Device * FileInfo::device() const
  */
 void FileInfo::setDevice(Device * const device)
 {
-    m_impl->device = device;
+    MB_PRIVATE(FileInfo);
+    priv->device = device;
 }
 
 std::string FileInfo::romId() const
 {
-    return m_impl->romId;
+    MB_PRIVATE(const FileInfo);
+    return priv->romId;
 }
 
 void FileInfo::setRomId(std::string id)
 {
-    m_impl->romId = std::move(id);
+    MB_PRIVATE(FileInfo);
+    priv->romId = std::move(id);
 }
 
 }

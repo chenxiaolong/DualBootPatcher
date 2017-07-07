@@ -31,7 +31,7 @@ namespace patcher
 {
 
 /*! \cond INTERNAL */
-class MountCmdPatcher::Impl
+class MountCmdPatcherPrivate
 {
 public:
     const PatcherConfig *pc;
@@ -51,11 +51,12 @@ static const std::string InstallerScript =
 
 
 MountCmdPatcher::MountCmdPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info) :
-    m_impl(new Impl())
+                                 const FileInfo * const info)
+    : _priv_ptr(new MountCmdPatcherPrivate())
 {
-    m_impl->pc = pc;
-    m_impl->info = info;
+    MB_PRIVATE(MountCmdPatcher);
+    priv->pc = pc;
+    priv->info = info;
 }
 
 MountCmdPatcher::~MountCmdPatcher()
