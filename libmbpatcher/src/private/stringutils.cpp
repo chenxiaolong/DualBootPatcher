@@ -24,23 +24,6 @@
 #include <cstdarg>
 #include <cstring>
 
-std::string StringUtils::format(const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    std::size_t size = vsnprintf(nullptr, 0, fmt, ap) + 1;
-    va_end(ap);
-
-    std::unique_ptr<char[]> buf(new char[size]);
-
-    va_start(ap, fmt);
-    vsnprintf(buf.get(), size, fmt, ap);
-    va_end(ap);
-
-    return std::string(buf.get(), buf.get() + size - 1);
-}
-
 std::vector<std::string> StringUtils::splitData(const std::vector<unsigned char> &data,
                                                 unsigned char delim)
 {

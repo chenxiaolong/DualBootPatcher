@@ -27,8 +27,6 @@
 class StringUtils
 {
 public:
-    static std::string format(const char *fmt, ...) MB_PRINTF(1, 2);
-
     static std::vector<std::string> splitData(const std::vector<unsigned char> &data,
                                               unsigned char delim);
     static std::vector<std::string> split(const std::string &str, char delim);

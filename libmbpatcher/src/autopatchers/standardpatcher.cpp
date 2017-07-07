@@ -274,13 +274,13 @@ replaceEdifyMount(std::vector<EdifyToken *> *tokens,
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/system"));
+                                   format(MOUNT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/cache"));
+                                   format(MOUNT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/data"));
+                                   format(MOUNT_FMT, "/data"));
         }
     }
     return rightParen + 1;
@@ -328,13 +328,13 @@ replaceEdifyUnmount(std::vector<EdifyToken *> *tokens,
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/system"));
+                                   format(UNMOUNT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/cache"));
+                                   format(UNMOUNT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/data"));
+                                   format(UNMOUNT_FMT, "/data"));
         }
     }
     return rightParen + 1;
@@ -416,38 +416,38 @@ replaceEdifyRunProgram(std::vector<EdifyToken *> *tokens,
     } else if (foundUmount) {
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/system"));
+                                   format(UNMOUNT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/cache"));
+                                   format(UNMOUNT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(UNMOUNT_FMT, "/data"));
+                                   format(UNMOUNT_FMT, "/data"));
         }
     } else if (foundMount) {
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/system"));
+                                   format(MOUNT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/cache"));
+                                   format(MOUNT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(MOUNT_FMT, "/data"));
+                                   format(MOUNT_FMT, "/data"));
         }
     } else if (foundFormatSh) {
         return replaceFunction(tokens, funcName, leftParen, rightParen,
-                               StringUtils::format(FORMAT_FMT, "/system"));
+                               format(FORMAT_FMT, "/system"));
     } else if (foundMke2fs) {
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/system"));
+                                   format(FORMAT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/cache"));
+                                   format(FORMAT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/data"));
+                                   format(FORMAT_FMT, "/data"));
         }
     }
 
@@ -480,10 +480,10 @@ replaceEdifyDeleteRecursive(std::vector<EdifyToken *> *tokens,
 
         if (unescaped == "/system" || unescaped == "/system/") {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/system"));
+                                   format(FORMAT_FMT, "/system"));
         } else if (unescaped == "/cache" || unescaped == "/cache/") {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/cache"));
+                                   format(FORMAT_FMT, "/cache"));
         }
     }
     return rightParen + 1;
@@ -531,13 +531,13 @@ replaceEdifyFormat(std::vector<EdifyToken *> *tokens,
 
         if (isSystem) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/system"));
+                                   format(FORMAT_FMT, "/system"));
         } else if (isCache) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/cache"));
+                                   format(FORMAT_FMT, "/cache"));
         } else if (isData) {
             return replaceFunction(tokens, funcName, leftParen, rightParen,
-                                   StringUtils::format(FORMAT_FMT, "/data"));
+                                   format(FORMAT_FMT, "/data"));
         }
     }
     return rightParen + 1;
