@@ -20,8 +20,6 @@ set(MBPATCHER_SOURCES
     src/patchers/odinpatcher.cpp
     src/patchers/ramdiskupdater.cpp
     src/patchers/zippatcher.cpp
-    # SHA1 library
-    external/sha.cpp
 )
 
 if(WIN32)
