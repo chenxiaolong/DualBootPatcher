@@ -1272,7 +1272,7 @@ Installer::ProceedState Installer::install_stage_initialize()
                 _has_block_image = true;
                 // Flashing an Odin image discards the system image anyway, so
                 // there's no point in copying the data.
-                // TODO: libmbp should be setting this option in info.prop
+                // TODO: libmbpatcher should be setting this option in info.prop
                 if (item.path != "system.img.sparse") {
                     _copy_to_temp_image = true;
                 }

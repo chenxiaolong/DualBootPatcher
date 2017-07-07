@@ -40,7 +40,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         PRIVATE
         Qt5::Core
         Qt5::Widgets
-        mbp-shared
+        mbpatcher-shared
     )
 
     if(${MBP_PORTABLE})

@@ -52,7 +52,7 @@ target_link_libraries(
     mbbootui-gui
     mbbootui-config
     mbutil-static
-    mbp-static
+    mbpatcher-static
     mbdevice-static
     mblog-static
     mbcommon-static

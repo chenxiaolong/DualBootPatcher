@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,30 +17,41 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mainwindow.h"
+#pragma once
 
-#include <QtCore/QStringBuilder>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QMessageBox>
+#include <memory>
 
-#include <iostream>
-
-#if !defined(DATA_DIR)
-#  error DATA_DIR must be defined
-#endif
+#include "mbcommon/common.h"
+#include "mbdevice/device.h"
 
 
-int main(int argc, char *argv[])
+namespace mb
 {
-    QApplication a(argc, argv);
+namespace patcher
+{
 
-    a.setApplicationName(QObject::tr("Dual Boot Patcher"));
+class MB_EXPORT FileInfo
+{
+public:
+    explicit FileInfo();
+    ~FileInfo();
 
-    mb::patcher::PatcherConfig pc;
-    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
+    std::string inputPath() const;
+    void setInputPath(std::string path);
 
-    MainWindow w(&pc);
-    w.show();
+    std::string outputPath() const;
+    void setOutputPath(std::string path);
 
-    return a.exec();
+    Device * device() const;
+    void setDevice(Device * const device);
+
+    std::string romId() const;
+    void setRomId(std::string id);
+
+private:
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+
+}
 }

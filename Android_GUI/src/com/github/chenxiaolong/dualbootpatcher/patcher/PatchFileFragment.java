@@ -548,7 +548,7 @@ public class PatchFileFragment extends Fragment implements
     }
 
     /**
-     * Called when the patcher data and libmbp have been initialized
+     * Called when the patcher data and libmbpatcher have been initialized
      *
      * This method is guaranteed to be called only once during between onStart() and onStop()
      */

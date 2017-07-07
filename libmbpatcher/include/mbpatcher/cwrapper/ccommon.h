@@ -17,30 +17,17 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mainwindow.h"
+#pragma once
 
-#include <QtCore/QStringBuilder>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QMessageBox>
+#include "mbcommon/common.h"
 
-#include <iostream>
-
-#if !defined(DATA_DIR)
-#  error DATA_DIR must be defined
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+MB_EXPORT void mbpatcher_free(void *data);
+MB_EXPORT void mbpatcher_free_array(void **array);
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-
-    a.setApplicationName(QObject::tr("Dual Boot Patcher"));
-
-    mb::patcher::PatcherConfig pc;
-    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
-
-    MainWindow w(&pc);
-    w.show();
-
-    return a.exec();
+#ifdef __cplusplus
 }
+#endif

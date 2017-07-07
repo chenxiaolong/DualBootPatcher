@@ -20,18 +20,18 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <mbp/fileinfo.h>
-#include <mbp/patcherconfig.h>
-#include <mbp/patcherinterface.h>
+#include <mbpatcher/fileinfo.h>
+#include <mbpatcher/patcherconfig.h>
+#include <mbpatcher/patcherinterface.h>
 
 #include <QtCore/QMetaType>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QWidget>
 
 
-typedef mbp::Patcher * PatcherPtr;
+typedef mb::patcher::Patcher * PatcherPtr;
 Q_DECLARE_METATYPE(PatcherPtr)
-typedef mbp::FileInfo * FileInfoPtr;
+typedef mb::patcher::FileInfo * FileInfoPtr;
 Q_DECLARE_METATYPE(FileInfoPtr)
 
 class MainWindowPrivate;
@@ -41,7 +41,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(mbp::PatcherConfig *pc, QWidget* parent = 0);
+    MainWindow(mb::patcher::PatcherConfig *pc, QWidget* parent = 0);
     ~MainWindow();
 
 signals:

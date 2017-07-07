@@ -24,7 +24,7 @@
 
 #include <mbdevice/json.h>
 #include <mbdevice/validate.h>
-#include <mbp/errors.h>
+#include <mbpatcher/errors.h>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -44,7 +44,7 @@ MainWindowPrivate::MainWindowPrivate()
 {
 }
 
-MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
+MainWindow::MainWindow(mb::patcher::PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
     Q_D(MainWindow);
@@ -617,7 +617,7 @@ void MainWindow::startPatching()
     QString outputPath(QDir::toNativeSeparators(
             qFileInfo.dir().filePath(outputName)));
 
-    FileInfoPtr fileInfo = new mbp::FileInfo();
+    FileInfoPtr fileInfo = new mb::patcher::FileInfo();
     fileInfo->setInputPath(inputPath.toUtf8().constData());
     fileInfo->setOutputPath(outputPath.toUtf8().constData());
     fileInfo->setDevice(d->device);
@@ -638,45 +638,45 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
 }
 
 
-static QString errorToString(const mbp::ErrorCode &error) {
+static QString errorToString(const mb::patcher::ErrorCode &error) {
     switch (error) {
-    case mbp::ErrorCode::NoError:
+    case mb::patcher::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
-    case mbp::ErrorCode::MemoryAllocationError:
+    case mb::patcher::ErrorCode::MemoryAllocationError:
         return QObject::tr("Failed to allocate memory");
-    case mbp::ErrorCode::PatcherCreateError:
+    case mb::patcher::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
-    case mbp::ErrorCode::AutoPatcherCreateError:
+    case mb::patcher::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher");
-    case mbp::ErrorCode::FileOpenError:
+    case mb::patcher::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
-    case mbp::ErrorCode::FileCloseError:
+    case mb::patcher::ErrorCode::FileCloseError:
         return QObject::tr("Failed to close file");
-    case mbp::ErrorCode::FileReadError:
+    case mb::patcher::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file");
-    case mbp::ErrorCode::FileWriteError:
+    case mb::patcher::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file");
-    case mbp::ErrorCode::FileSeekError:
+    case mb::patcher::ErrorCode::FileSeekError:
         return QObject::tr("Failed to seek file");
-    case mbp::ErrorCode::FileTellError:
+    case mb::patcher::ErrorCode::FileTellError:
         return QObject::tr("Failed to get file position");
-    case mbp::ErrorCode::ArchiveReadOpenError:
+    case mb::patcher::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
-    case mbp::ErrorCode::ArchiveReadDataError:
+    case mb::patcher::ErrorCode::ArchiveReadDataError:
         return QObject::tr("Failed to read archive data for file");
-    case mbp::ErrorCode::ArchiveReadHeaderError:
+    case mb::patcher::ErrorCode::ArchiveReadHeaderError:
         return QObject::tr("Failed to read archive entry header");
-    case mbp::ErrorCode::ArchiveWriteOpenError:
+    case mb::patcher::ErrorCode::ArchiveWriteOpenError:
         return QObject::tr("Failed to open archive for writing");
-    case mbp::ErrorCode::ArchiveWriteDataError:
+    case mb::patcher::ErrorCode::ArchiveWriteDataError:
         return QObject::tr("Failed to write archive data for file");
-    case mbp::ErrorCode::ArchiveWriteHeaderError:
+    case mb::patcher::ErrorCode::ArchiveWriteHeaderError:
         return QObject::tr("Failed to write archive header for file");
-    case mbp::ErrorCode::ArchiveCloseError:
+    case mb::patcher::ErrorCode::ArchiveCloseError:
         return QObject::tr("Failed to close archive");
-    case mbp::ErrorCode::ArchiveFreeError:
+    case mb::patcher::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::PatchingCancelled:
+    case mb::patcher::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     default:
         assert(false);

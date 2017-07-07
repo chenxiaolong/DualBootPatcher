@@ -27,7 +27,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 
 import org.apache.commons.io.Charsets;
