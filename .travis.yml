@@ -12,7 +12,7 @@ before_script:
   schedtool &> /dev/null
 - echo "Building Jansson"
 - mkdir ~/dev && cd ~/dev && wget http://www.digip.org/jansson/releases/jansson-2.10.tar.gz && tar xzf jansson-2.10.tar.gz && cd jansson-2.10
-- ./configure && make && make install
+- sudo ./configure && sudo make && sudo make install
 - echo "Downloading cmake"
 - cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 - echo "Building cmake"
