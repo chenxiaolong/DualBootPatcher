@@ -50,13 +50,13 @@ public:
 
     virtual std::string id() const override;
 
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
+    virtual std::vector<std::string> new_files() const override;
+    virtual std::vector<std::string> existing_files() const override;
 
-    virtual bool patchFiles(const std::string &directory) override;
+    virtual bool patch_files(const std::string &directory) override;
 
-    bool patchUpdater(const std::string &directory);
-    bool patchTransferList(const std::string &directory);
+    bool patch_updater(const std::string &directory);
+    bool patch_transfer_list(const std::string &directory);
 
 private:
     std::unique_ptr<StandardPatcherPrivate> _priv_ptr;

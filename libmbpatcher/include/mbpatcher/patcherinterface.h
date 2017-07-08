@@ -64,7 +64,7 @@ public:
     /*!
      * \brief Sets the FileInfo object corresponding to the file to patch
      */
-    virtual void setFileInfo(const FileInfo * const info) = 0;
+    virtual void set_file_info(const FileInfo * const info) = 0;
 
     /*!
      * \brief Start patching the file
@@ -72,15 +72,15 @@ public:
      * This method starts the patching operations for the current file. The
      * callback parameters can be passed nullptr if they are not needed.
      *
-     * \param progressCb Callback for receiving current progress values
-     * \param filesCb Callback for receiving current files count
-     * \param detailsCb Callback for receiving detailed progress text
-     * \param userData Pointer to pass to callback functions
+     * \param progress_cb Callback for receiving current progress values
+     * \param files_cb Callback for receiving current files count
+     * \param details_cb Callback for receiving detailed progress text
+     * \param userdata Pointer to pass to callback functions
      */
-    virtual bool patchFile(ProgressUpdatedCallback progressCb,
-                           FilesUpdatedCallback filesCb,
-                           DetailsUpdatedCallback detailsCb,
-                           void *userData) = 0;
+    virtual bool patch_file(ProgressUpdatedCallback progress_cb,
+                            FilesUpdatedCallback files_cb,
+                            DetailsUpdatedCallback details_cb,
+                            void *userdata) = 0;
 
     /*!
      * \brief Cancel the patching of a file
@@ -88,7 +88,7 @@ public:
      * This method allows the patching process to be cancelled. This is only
      * useful if the patching operation is being done on a thread.
      */
-    virtual void cancelPatching() = 0;
+    virtual void cancel_patching() = 0;
 };
 
 
@@ -127,19 +127,19 @@ public:
      * \warning Currently unimplemented. A valid list returned by a child class
      *          will be ignored.
      */
-    virtual std::vector<std::string> newFiles() const = 0;
+    virtual std::vector<std::string> new_files() const = 0;
 
     /*!
      * \brief List of existing files to be patched in the zip file
      */
-    virtual std::vector<std::string> existingFiles() const = 0;
+    virtual std::vector<std::string> existing_files() const = 0;
 
     /*!
      * \brief Start patching the file
      *
      * \param directory Directory containing the files to be patched
      */
-    virtual bool patchFiles(const std::string &directory) = 0;
+    virtual bool patch_files(const std::string &directory) = 0;
 };
 
 }

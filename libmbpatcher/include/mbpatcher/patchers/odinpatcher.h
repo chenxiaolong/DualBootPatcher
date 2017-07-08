@@ -47,14 +47,14 @@ public:
     virtual std::string id() const override;
 
     // Patching
-    virtual void setFileInfo(const FileInfo * const info) override;
+    virtual void set_file_info(const FileInfo * const info) override;
 
-    virtual bool patchFile(ProgressUpdatedCallback progressCb,
-                           FilesUpdatedCallback filesCb,
-                           DetailsUpdatedCallback detailsCb,
-                           void *userData) override;
+    virtual bool patch_file(ProgressUpdatedCallback progress_cb,
+                            FilesUpdatedCallback files_cb,
+                            DetailsUpdatedCallback details_cb,
+                            void *userdata) override;
 
-    virtual void cancelPatching() override;
+    virtual void cancel_patching() override;
 
 private:
     std::unique_ptr<OdinPatcherPrivate> _priv_ptr;

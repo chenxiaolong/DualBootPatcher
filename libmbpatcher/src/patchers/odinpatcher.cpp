@@ -71,51 +71,54 @@ public:
     PatcherConfig *pc;
     const FileInfo *info;
 
-    uint64_t oldBytes;
+    uint64_t old_bytes;
     uint64_t bytes;
-    uint64_t maxBytes;
+    uint64_t max_bytes;
 
     volatile bool cancelled;
 
     ErrorCode error;
 
-    unsigned char laBuf[10240];
+    unsigned char la_buf[10240];
 #ifdef __ANDROID__
-    FdFile laFile;
+    FdFile la_file;
     int fd = -1;
 #else
-    StandardFile laFile;
+    StandardFile la_file;
 #endif
 
     std::unordered_set<std::string> added_files;
 
     // Callbacks
-    OdinPatcher::ProgressUpdatedCallback progressCb;
-    OdinPatcher::DetailsUpdatedCallback detailsCb;
-    void *userData;
+    OdinPatcher::ProgressUpdatedCallback progress_cb;
+    OdinPatcher::DetailsUpdatedCallback details_cb;
+    void *userdata;
 
     // Patching
-    archive *aInput = nullptr;
-    MinizipUtils::ZipCtx *zOutput = nullptr;
+    archive *a_input = nullptr;
+    MinizipUtils::ZipCtx *z_output = nullptr;
 
-    bool patchTar();
+    bool patch_tar();
 
-    bool processFile(archive *a, archive_entry *entry, bool sparse);
-    bool processContents(archive *a, int depth);
-    bool openInputArchive();
-    bool closeInputArchive();
-    bool openOutputArchive();
-    bool closeOutputArchive();
+    bool process_file(archive *a, archive_entry *entry, bool sparse);
+    bool process_contents(archive *a, int depth);
+    bool open_input_archive();
+    bool close_input_archive();
+    bool open_output_archive();
+    bool close_output_archive();
 
-    void updateProgress(uint64_t bytes, uint64_t maxBytes);
-    void updateDetails(const std::string &msg);
+    void update_progress(uint64_t bytes, uint64_t max_bytes);
+    void update_details(const std::string &msg);
 
-    static la_ssize_t laNestedReadCb(archive *a, void *userdata, const void **buffer);
+    static la_ssize_t la_nested_read_cb(archive *a, void *userdata,
+                                        const void **buffer);
 
-    static la_ssize_t laReadCb(archive *a, void *userdata, const void **buffer);
-    static la_int64_t laSkipCb(archive *a, void *userdata, la_int64_t request);
-    static int laOpenCb(archive *a, void *userdata);
-    static int laCloseCb(archive *a, void *userdata);
+    static la_ssize_t la_read_cb(archive *a, void *userdata,
+                                 const void **buffer);
+    static la_int64_t la_skip_cb(archive *a, void *userdata,
+                                 la_int64_t request);
+    static int la_open_cb(archive *a, void *userdata);
+    static int la_close_cb(archive *a, void *userdata);
 };
 /*! \endcond */
 
@@ -145,24 +148,24 @@ std::string OdinPatcher::id() const
     return Id;
 }
 
-void OdinPatcher::setFileInfo(const FileInfo * const info)
+void OdinPatcher::set_file_info(const FileInfo * const info)
 {
     MB_PRIVATE(OdinPatcher);
     priv->info = info;
 }
 
-void OdinPatcher::cancelPatching()
+void OdinPatcher::cancel_patching()
 {
     MB_PRIVATE(OdinPatcher);
     priv->cancelled = true;
 }
 
-bool OdinPatcher::patchFile(ProgressUpdatedCallback progressCb,
-                            FilesUpdatedCallback filesCb,
-                            DetailsUpdatedCallback detailsCb,
-                            void *userData)
+bool OdinPatcher::patch_file(ProgressUpdatedCallback progress_cb,
+                             FilesUpdatedCallback files_cb,
+                             DetailsUpdatedCallback details_cb,
+                             void *userdata)
 {
-    (void) filesCb;
+    (void) files_cb;
 
     MB_PRIVATE(OdinPatcher);
 
@@ -170,25 +173,25 @@ bool OdinPatcher::patchFile(ProgressUpdatedCallback progressCb,
 
     assert(priv->info != nullptr);
 
-    priv->progressCb = progressCb;
-    priv->detailsCb = detailsCb;
-    priv->userData = userData;
+    priv->progress_cb = progress_cb;
+    priv->details_cb = details_cb;
+    priv->userdata = userdata;
 
-    priv->oldBytes = 0;
+    priv->old_bytes = 0;
     priv->bytes = 0;
-    priv->maxBytes = 0;
+    priv->max_bytes = 0;
 
-    bool ret = priv->patchTar();
+    bool ret = priv->patch_tar();
 
-    priv->progressCb = nullptr;
-    priv->detailsCb = nullptr;
-    priv->userData = nullptr;
+    priv->progress_cb = nullptr;
+    priv->details_cb = nullptr;
+    priv->userdata = nullptr;
 
-    if (priv->aInput != nullptr) {
-        priv->closeInputArchive();
+    if (priv->a_input != nullptr) {
+        priv->close_input_archive();
     }
-    if (priv->zOutput != nullptr) {
-        priv->closeOutputArchive();
+    if (priv->z_output != nullptr) {
+        priv->close_output_archive();
     }
 
     if (priv->cancelled) {
@@ -200,7 +203,7 @@ bool OdinPatcher::patchFile(ProgressUpdatedCallback progressCb,
 }
 
 #ifdef __ANDROID__
-static bool convertToInt(const char *str, int *out)
+static bool convert_to_int(const char *str, int *out)
 {
     char *end;
     errno = 0;
@@ -214,85 +217,85 @@ static bool convertToInt(const char *str, int *out)
 }
 #endif
 
-struct CopySpec {
+struct CopySpec
+{
     std::string source;
     std::string target;
 };
 
-bool OdinPatcherPrivate::patchTar()
+bool OdinPatcherPrivate::patch_tar()
 {
 #ifdef __ANDROID__
     static const char *prefix = "/proc/self/fd/";
     fd = -1;
-    if (starts_with(info->inputPath(), prefix)) {
-        std::string fdStr = info->inputPath().substr(strlen(prefix));
-        if (!convertToInt(fdStr.c_str(), &fd)) {
-            LOGE("Invalid fd: %s", fdStr.c_str());
+    if (starts_with(info->input_path(), prefix)) {
+        std::string fd_str = info->input_path().substr(strlen(prefix));
+        if (!convert_to_int(fd_str.c_str(), &fd)) {
+            LOGE("Invalid fd: %s", fd_str.c_str());
             error = ErrorCode::FileOpenError;
             return false;
         }
         LOGD("Input path '%s' is a file descriptor: %d",
-             info->inputPath().c_str(), fd);
+             info->input_path().c_str(), fd);
     }
 #endif
 
-    updateProgress(bytes, maxBytes);
+    update_progress(bytes, max_bytes);
 
-    if (!openInputArchive()) {
+    if (!open_input_archive()) {
         return false;
     }
-    if (!openOutputArchive()) {
+    if (!open_output_archive()) {
         return false;
     }
 
     if (cancelled) return false;
 
     // Get file size and seek back to original location
-    uint64_t currentPos;
-    if (laFile.seek(0, SEEK_CUR, &currentPos) != FileStatus::OK
-            || laFile.seek(0, SEEK_END, &maxBytes) != FileStatus::OK
-            || laFile.seek(currentPos, SEEK_SET, nullptr)
-                    != FileStatus::OK) {
-        LOGE("%s: Failed to seek: %s", info->inputPath().c_str(),
-             laFile.error_string().c_str());
+    uint64_t current_pos;
+    if (la_file.seek(0, SEEK_CUR, &current_pos) != FileStatus::OK
+            || la_file.seek(0, SEEK_END, &max_bytes) != FileStatus::OK
+            || la_file.seek(current_pos, SEEK_SET, nullptr) != FileStatus::OK) {
+        LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
+             la_file.error_string().c_str());
         error = ErrorCode::FileSeekError;
         return false;
     }
 
     if (cancelled) return false;
 
-    if (!processContents(aInput, 0)) {
+    if (!process_contents(a_input, 0)) {
         return false;
     }
 
-    std::string archDir(pc->dataDirectory());
-    archDir += "/binaries/android/";
-    archDir += mb_device_architecture(info->device());
+    std::string arch_dir(pc->data_directory());
+    arch_dir += "/binaries/android/";
+    arch_dir += mb_device_architecture(info->device());
 
-    std::vector<CopySpec> toCopy{
+    std::vector<CopySpec> to_copy {
         {
-            archDir + "/odinupdater",
+            arch_dir + "/odinupdater",
             "META-INF/com/google/android/update-binary.orig"
         }, {
-            archDir + "/odinupdater.sig",
+            arch_dir + "/odinupdater.sig",
             "META-INF/com/google/android/update-binary.orig.sig"
         }, {
-            archDir + "/fuse-sparse",
+            arch_dir + "/fuse-sparse",
             "fuse-sparse"
         }, {
-            archDir + "/fuse-sparse.sig",
+            arch_dir + "/fuse-sparse.sig",
             "fuse-sparse.sig"
         }, {
-            archDir + "/mbtool_recovery",
+            arch_dir + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
-            archDir + "/mbtool_recovery.sig",
+            arch_dir + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh",
+            pc->data_directory() + "/scripts/bb-wrapper.sh",
             "multiboot/bb-wrapper.sh"
         }, {
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh.sig",
+            pc->data_directory() + "/scripts/bb-wrapper.sh.sig",
             "multiboot/bb-wrapper.sh.sig"
         }
     };
@@ -309,20 +312,20 @@ bool OdinPatcherPrivate::patchTar()
     };
 
     for (auto const &binary : binaries) {
-        toCopy.push_back({archDir + "/" + binary,
+        to_copy.push_back({arch_dir + "/" + binary,
                           "multiboot/binaries/" + binary});
     }
 
-    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
+    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
 
     ErrorCode result;
 
-    for (const CopySpec &spec : toCopy) {
+    for (const CopySpec &spec : to_copy) {
         if (cancelled) return false;
 
-        updateDetails(spec.target);
+        update_details(spec.target);
 
-        result = MinizipUtils::addFile(zf, spec.target, spec.source);
+        result = MinizipUtils::add_file(zf, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             error = result;
             return false;
@@ -331,13 +334,13 @@ bool OdinPatcherPrivate::patchTar()
 
     if (cancelled) return false;
 
-    updateDetails("multiboot/info.prop");
+    update_details("multiboot/info.prop");
 
-    const std::string infoProp =
-            ZipPatcher::createInfoProp(pc, info->romId(), false);
-    result = MinizipUtils::addFile(
+    const std::string info_prop =
+            ZipPatcher::create_info_prop(pc, info->rom_id(), false);
+    result = MinizipUtils::add_file(
             zf, "multiboot/info.prop",
-            std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
+            std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
@@ -345,7 +348,7 @@ bool OdinPatcherPrivate::patchTar()
 
     if (cancelled) return false;
 
-    updateDetails("multiboot/device.json");
+    update_details("multiboot/device.json");
 
     char *json = mb_device_to_json(info->device());
     if (!json) {
@@ -353,7 +356,7 @@ bool OdinPatcherPrivate::patchTar()
         return false;
     }
 
-    result = MinizipUtils::addFile(
+    result = MinizipUtils::add_file(
             zf, "multiboot/device.json",
             std::vector<unsigned char>(json, json + strlen(json)));
     free(json);
@@ -368,17 +371,17 @@ bool OdinPatcherPrivate::patchTar()
     return true;
 }
 
-bool OdinPatcherPrivate::processFile(archive *a, archive_entry *entry,
-                                     bool sparse)
+bool OdinPatcherPrivate::process_file(archive *a, archive_entry *entry,
+                                      bool sparse)
 {
     const char *name = archive_entry_pathname(entry);
-    std::string zipName(name);
+    std::string zip_name(name);
 
     if (sparse) {
         if (ends_with(name, ".ext4")) {
-            zipName.erase(zipName.size() - 5);
+            zip_name.erase(zip_name.size() - 5);
         }
-        zipName += ".sparse";
+        zip_name += ".sparse";
     }
 
     // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
@@ -387,12 +390,12 @@ bool OdinPatcherPrivate::processFile(archive *a, archive_entry *entry,
     zip_fileinfo zi;
     memset(&zi, 0, sizeof(zi));
 
-    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
+    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
 
     // Open file in output zip
-    int mzRet = zipOpenNewFileInZip2_64(
+    int mz_ret = zipOpenNewFileInZip2_64(
         zf,                    // file
-        zipName.c_str(),       // filename
+        zip_name.c_str(),      // filename
         &zi,                   // zip_fileinfo
         nullptr,               // extrafield_local
         0,                     // size_extrafield_local
@@ -404,30 +407,30 @@ bool OdinPatcherPrivate::processFile(archive *a, archive_entry *entry,
         0,                     // raw
         zip64                  // zip64
     );
-    if (mzRet != ZIP_OK) {
+    if (mz_ret != ZIP_OK) {
         LOGE("minizip: Failed to open new file in output zip: %s",
-             MinizipUtils::zipErrorString(mzRet).c_str());
+             MinizipUtils::zip_error_string(mz_ret).c_str());
         error = ErrorCode::ArchiveWriteHeaderError;
         return false;
     }
 
-    la_ssize_t nRead;
+    la_ssize_t n_read;
     char buf[10240];
-    while ((nRead = archive_read_data(a, buf, sizeof(buf))) > 0) {
+    while ((n_read = archive_read_data(a, buf, sizeof(buf))) > 0) {
         if (cancelled) return false;
 
-        mzRet = zipWriteInFileInZip(zf, buf, nRead);
-        if (mzRet != ZIP_OK) {
+        mz_ret = zipWriteInFileInZip(zf, buf, n_read);
+        if (mz_ret != ZIP_OK) {
             LOGE("minizip: Failed to write %s in output zip: %s",
-                 zipName.c_str(),
-                 MinizipUtils::zipErrorString(mzRet).c_str());
+                 zip_name.c_str(),
+                 MinizipUtils::zip_error_string(mz_ret).c_str());
             error = ErrorCode::ArchiveWriteDataError;
             zipCloseFileInZip(zf);
             return false;
         }
     }
 
-    if (nRead != 0) {
+    if (n_read != 0) {
         LOGE("libarchive: Failed to read %s: %s",
              name, archive_error_string(a));
         error = ErrorCode::ArchiveReadDataError;
@@ -436,10 +439,10 @@ bool OdinPatcherPrivate::processFile(archive *a, archive_entry *entry,
     }
 
     // Close file in output zip
-    mzRet = zipCloseFileInZip(zf);
-    if (mzRet != ZIP_OK) {
+    mz_ret = zipCloseFileInZip(zf);
+    if (mz_ret != ZIP_OK) {
         LOGE("minizip: Failed to close file in output zip: %s",
-             MinizipUtils::zipErrorString(mzRet).c_str());
+             MinizipUtils::zip_error_string(mz_ret).c_str());
         error = ErrorCode::ArchiveWriteDataError;
         return false;
     }
@@ -479,7 +482,7 @@ struct NestedCtx
     }
 };
 
-bool OdinPatcherPrivate::processContents(archive *a, int depth)
+bool OdinPatcherPrivate::process_contents(archive *a, int depth)
 {
     if (depth > 1) {
         LOGW("Not traversing nested archive: depth > 1");
@@ -487,9 +490,9 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
     }
 
     archive_entry *entry;
-    int laRet;
+    int la_ret;
 
-    while ((laRet = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
+    while ((la_ret = archive_read_next_header(a, &entry)) == ARCHIVE_OK) {
         if (cancelled) return false;
 
         const char *name = archive_entry_pathname(entry);
@@ -497,7 +500,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
             continue;
         }
 
-        updateDetails(name);
+        update_details(name);
 
         // Certain files may be duplicated. For example, the cache.img file is
         // shipped on both the CSC and HOME_CSC tarballs.
@@ -510,7 +513,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
             LOGV("%sHandling boot image: %s", indent(depth), name);
             added_files.insert(name);
 
-            if (!processFile(a, entry, false)) {
+            if (!process_file(a, entry, false)) {
                 return false;
             }
         } else if (starts_with(name, "cache.img")
@@ -518,7 +521,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
             LOGV("%sHandling sparse image: %s", indent(depth), name);
             added_files.insert(name);
 
-            if (!processFile(a, entry, true)) {
+            if (!process_file(a, entry, true)) {
                 return false;
             }
         } else if (ends_with(name, ".tar.md5")) {
@@ -533,7 +536,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
             archive_read_support_format_tar(ctx.nested);
 
             int ret = archive_read_open2(ctx.nested, &ctx, nullptr,
-                                         &laNestedReadCb, nullptr, nullptr);
+                                         &la_nested_read_cb, nullptr, nullptr);
             if (ret != ARCHIVE_OK) {
                 LOGE("libarchive: Failed to open nested archive: %s: %s",
                      name, archive_error_string(ctx.nested));
@@ -541,7 +544,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
                 return false;
             }
 
-            if (!processContents(ctx.nested, depth + 1)) {
+            if (!process_contents(ctx.nested, depth + 1)) {
                 return false;
             }
         } else {
@@ -556,7 +559,7 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
         }
     }
 
-    if (laRet != ARCHIVE_EOF) {
+    if (la_ret != ARCHIVE_EOF) {
         LOGE("libarchive: Failed to read header: %s",
              archive_error_string(a));
         error = ErrorCode::ArchiveReadHeaderError;
@@ -568,26 +571,26 @@ bool OdinPatcherPrivate::processContents(archive *a, int depth)
     return true;
 }
 
-bool OdinPatcherPrivate::openInputArchive()
+bool OdinPatcherPrivate::open_input_archive()
 {
-    assert(aInput == nullptr);
+    assert(a_input == nullptr);
 
-    aInput = archive_read_new();
+    a_input = archive_read_new();
 
-    archive_read_support_format_zip(aInput);
-    archive_read_support_format_tar(aInput);
-    archive_read_support_filter_gzip(aInput);
-    archive_read_support_filter_xz(aInput);
+    archive_read_support_format_zip(a_input);
+    archive_read_support_format_tar(a_input);
+    archive_read_support_filter_gzip(a_input);
+    archive_read_support_filter_xz(a_input);
 
     // Our callbacks use the libmbcommon File API, which supports LFS on every
     // platform. Also allows progress info by counting number of bytes read.
-    int ret = archive_read_open2(aInput, this, &laOpenCb, &laReadCb,
-                                 &laSkipCb, &laCloseCb);
+    int ret = archive_read_open2(a_input, this, &la_open_cb, &la_read_cb,
+                                 &la_skip_cb, &la_close_cb);
     if (ret != ARCHIVE_OK) {
         LOGW("libarchive: Failed to open for reading: %s",
-             archive_error_string(aInput));
-        archive_read_free(aInput);
-        aInput = nullptr;
+             archive_error_string(a_input));
+        archive_read_free(a_input);
+        a_input = nullptr;
         error = ErrorCode::ArchiveReadOpenError;
         return false;
     }
@@ -595,34 +598,34 @@ bool OdinPatcherPrivate::openInputArchive()
     return true;
 }
 
-bool OdinPatcherPrivate::closeInputArchive()
+bool OdinPatcherPrivate::close_input_archive()
 {
-    assert(aInput != nullptr);
+    assert(a_input != nullptr);
 
     bool ret = true;
 
-    if (archive_read_close(aInput) != ARCHIVE_OK) {
+    if (archive_read_close(a_input) != ARCHIVE_OK) {
         LOGW("libarchive: Failed to close archive: %s",
-             archive_error_string(aInput));
+             archive_error_string(a_input));
         // Don't clobber previous error
         //error = ErrorCode::ArchiveCloseError;
         ret = false;
     }
-    archive_read_free(aInput);
-    aInput = nullptr;
+    archive_read_free(a_input);
+    a_input = nullptr;
 
     return ret;
 }
 
-bool OdinPatcherPrivate::openOutputArchive()
+bool OdinPatcherPrivate::open_output_archive()
 {
-    assert(zOutput == nullptr);
+    assert(z_output == nullptr);
 
-    zOutput = MinizipUtils::openOutputFile(info->outputPath());
+    z_output = MinizipUtils::open_output_file(info->output_path());
 
-    if (!zOutput) {
+    if (!z_output) {
         LOGE("minizip: Failed to open for writing: %s",
-             info->outputPath().c_str());
+             info->output_path().c_str());
         error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }
@@ -630,51 +633,51 @@ bool OdinPatcherPrivate::openOutputArchive()
     return true;
 }
 
-bool OdinPatcherPrivate::closeOutputArchive()
+bool OdinPatcherPrivate::close_output_archive()
 {
-    assert(zOutput != nullptr);
+    assert(z_output != nullptr);
 
-    int ret = MinizipUtils::closeOutputFile(zOutput);
+    int ret = MinizipUtils::close_output_file(z_output);
     if (ret != ZIP_OK) {
         LOGW("minizip: Failed to close archive: %s",
-             MinizipUtils::zipErrorString(ret).c_str());
+             MinizipUtils::zip_error_string(ret).c_str());
         // Don't clobber previous error
         //error = ErrorCode::ArchiveCloseError;
         return false;
     }
-    zOutput = nullptr;
+    z_output = nullptr;
 
     return true;
 }
 
-void OdinPatcherPrivate::updateProgress(uint64_t bytes, uint64_t maxBytes)
+void OdinPatcherPrivate::update_progress(uint64_t bytes, uint64_t max_bytes)
 {
-    if (progressCb) {
-        bool shouldCall = true;
-        if (maxBytes > 0) {
+    if (progress_cb) {
+        bool should_call = true;
+        if (max_bytes > 0) {
             // Rate limit... call back only if percentage exceeds 0.01%
-            double oldRatio = (double) oldBytes / maxBytes;
-            double newRatio = (double) bytes / maxBytes;
-            if (newRatio - oldRatio < 0.0001) {
-                shouldCall = false;
+            double old_ratio = (double) old_bytes / max_bytes;
+            double new_ratio = (double) bytes / max_bytes;
+            if (new_ratio - old_ratio < 0.0001) {
+                should_call = false;
             }
         }
-        if (shouldCall) {
-            progressCb(bytes, maxBytes, userData);
-            oldBytes = bytes;
+        if (should_call) {
+            progress_cb(bytes, max_bytes, userdata);
+            old_bytes = bytes;
         }
     }
 }
 
-void OdinPatcherPrivate::updateDetails(const std::string &msg)
+void OdinPatcherPrivate::update_details(const std::string &msg)
 {
-    if (detailsCb) {
-        detailsCb(msg, userData);
+    if (details_cb) {
+        details_cb(msg, userdata);
     }
 }
 
-la_ssize_t OdinPatcherPrivate::laNestedReadCb(archive *a, void *userdata,
-                                              const void **buffer)
+la_ssize_t OdinPatcherPrivate::la_nested_read_cb(archive *a, void *userdata,
+                                                 const void **buffer)
 {
     (void) a;
 
@@ -685,74 +688,74 @@ la_ssize_t OdinPatcherPrivate::laNestedReadCb(archive *a, void *userdata,
     return archive_read_data(ctx->parent, ctx->buf, sizeof(ctx->buf));
 }
 
-la_ssize_t OdinPatcherPrivate::laReadCb(archive *a, void *userdata,
-                                        const void **buffer)
+la_ssize_t OdinPatcherPrivate::la_read_cb(archive *a, void *userdata,
+                                          const void **buffer)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
-    *buffer = priv->laBuf;
-    size_t bytesRead;
+    *buffer = priv->la_buf;
+    size_t bytes_read;
 
-    if (priv->laFile.read(priv->laBuf, sizeof(priv->laBuf), &bytesRead)
+    if (priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), &bytes_read)
             != FileStatus::OK) {
-        LOGE("%s: Failed to read: %s", priv->info->inputPath().c_str(),
-             priv->laFile.error_string().c_str());
+        LOGE("%s: Failed to read: %s", priv->info->input_path().c_str(),
+             priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileReadError;
         return -1;
     }
 
-    priv->bytes += bytesRead;
-    priv->updateProgress(priv->bytes, priv->maxBytes);
-    return static_cast<la_ssize_t>(bytesRead);
+    priv->bytes += bytes_read;
+    priv->update_progress(priv->bytes, priv->max_bytes);
+    return static_cast<la_ssize_t>(bytes_read);
 }
 
-la_int64_t OdinPatcherPrivate::laSkipCb(archive *a, void *userdata,
-                                        la_int64_t request)
+la_int64_t OdinPatcherPrivate::la_skip_cb(archive *a, void *userdata,
+                                          la_int64_t request)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    if (priv->laFile.seek(request, SEEK_CUR, nullptr) != FileStatus::OK) {
-        LOGE("%s: Failed to seek: %s", priv->info->inputPath().c_str(),
-             priv->laFile.error_string().c_str());
+    if (priv->la_file.seek(request, SEEK_CUR, nullptr) != FileStatus::OK) {
+        LOGE("%s: Failed to seek: %s", priv->info->input_path().c_str(),
+             priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileSeekError;
         return -1;
     }
 
     priv->bytes += request;
-    priv->updateProgress(priv->bytes, priv->maxBytes);
+    priv->update_progress(priv->bytes, priv->max_bytes);
     return request;
 }
 
-int OdinPatcherPrivate::laOpenCb(archive *a, void *userdata)
+int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
     FileStatus ret;
 
 #ifdef _WIN32
-    std::wstring wFilename;
-    if (!utf8_to_wcs(wFilename, priv->info->inputPath())) {
+    std::wstring w_filename;
+    if (!utf8_to_wcs(w_filename, priv->info->input_path())) {
         LOGE("%s: Failed to convert from UTF8 to WCS",
-             priv->info->inputPath().c_str());
+             priv->info->input_path().c_str());
         priv->error = ErrorCode::FileOpenError;
         return -1;
     }
 
-    ret = priv->laFile.open(wFilename, FileOpenMode::READ_ONLY);
+    ret = priv->la_file.open(w_filename, FileOpenMode::READ_ONLY);
 #else
 #  ifdef __ANDROID__
     if (priv->fd >= 0) {
-        ret = priv->laFile.open(priv->fd, false);
+        ret = priv->la_file.open(priv->fd, false);
     } else
 #  endif
-    ret = priv->laFile.open(priv->info->inputPath(),
+    ret = priv->la_file.open(priv->info->input_path(),
                             FileOpenMode::READ_ONLY);
 #endif
 
     if (ret != FileStatus::OK) {
-        LOGE("%s: Failed to open: %s", priv->info->inputPath().c_str(),
-             priv->laFile.error_string().c_str());
+        LOGE("%s: Failed to open: %s", priv->info->input_path().c_str(),
+             priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileOpenError;
         return -1;
     }
@@ -760,15 +763,15 @@ int OdinPatcherPrivate::laOpenCb(archive *a, void *userdata)
     return 0;
 }
 
-int OdinPatcherPrivate::laCloseCb(archive *a, void *userdata)
+int OdinPatcherPrivate::la_close_cb(archive *a, void *userdata)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    auto ret = priv->laFile.close();
+    auto ret = priv->la_file.close();
     if (ret != FileStatus::OK) {
-        LOGE("%s: Failed to close: %s", priv->info->inputPath().c_str(),
-             priv->laFile.error_string().c_str());
+        LOGE("%s: Failed to close: %s", priv->info->input_path().c_str(),
+             priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileCloseError;
         return -1;
     }

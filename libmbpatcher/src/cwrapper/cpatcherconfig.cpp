@@ -63,7 +63,7 @@ CPatcherConfig * mbpatcher_config_create(void)
 /*!
  * \brief Destroys a CPatcherConfig object.
  *
- * \param config CPatcherConfig to destroy
+ * \param pc CPatcherConfig to destroy
  */
 void mbpatcher_config_destroy(CPatcherConfig *pc)
 {
@@ -80,7 +80,7 @@ void mbpatcher_config_destroy(CPatcherConfig *pc)
  * \note The returned ErrorCode should be freed with mbpatcher_error_destroy()
  *       when it is no longer needed.
  *
- * \param config CPatcherConfig object
+ * \param pc CPatcherConfig object
  *
  * \return ErrorCode
  *
@@ -106,7 +106,7 @@ void mbpatcher_config_destroy(CPatcherConfig *pc)
 char * mbpatcher_config_data_directory(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return string_to_cstring(config->dataDirectory());
+    return string_to_cstring(config->data_directory());
 }
 
 /*!
@@ -123,7 +123,7 @@ char * mbpatcher_config_data_directory(const CPatcherConfig *pc)
 char * mbpatcher_config_temp_directory(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return string_to_cstring(config->tempDirectory());
+    return string_to_cstring(config->temp_directory());
 }
 
 /*!
@@ -137,7 +137,7 @@ char * mbpatcher_config_temp_directory(const CPatcherConfig *pc)
 void mbpatcher_config_set_data_directory(CPatcherConfig *pc, char *path)
 {
     CAST(pc);
-    config->setDataDirectory(path);
+    config->set_data_directory(path);
 }
 
 /*!
@@ -151,7 +151,7 @@ void mbpatcher_config_set_data_directory(CPatcherConfig *pc, char *path)
 void mbpatcher_config_set_temp_directory(CPatcherConfig *pc, char *path)
 {
     CAST(pc);
-    config->setTempDirectory(path);
+    config->set_temp_directory(path);
 }
 
 /*!
@@ -185,7 +185,7 @@ char ** mbpatcher_config_patchers(const CPatcherConfig *pc)
 char ** mbpatcher_config_autopatchers(const CPatcherConfig *pc)
 {
     CCAST(pc);
-    return vector_to_cstring_array(config->autoPatchers());
+    return vector_to_cstring_array(config->auto_patchers());
 }
 
 /*!
@@ -201,7 +201,7 @@ CPatcher * mbpatcher_config_create_patcher(CPatcherConfig *pc,
                                            const char *id)
 {
     CAST(pc);
-    auto *p = config->createPatcher(id);
+    auto *p = config->create_patcher(id);
     return reinterpret_cast<CPatcher *>(p);
 }
 
@@ -221,7 +221,7 @@ CAutoPatcher * mbpatcher_config_create_autopatcher(CPatcherConfig *pc,
 {
     CAST(pc);
     auto const *fi = reinterpret_cast<const mb::patcher::FileInfo *>(info);
-    auto *ap = config->createAutoPatcher(id, fi);
+    auto *ap = config->create_auto_patcher(id, fi);
     return reinterpret_cast<CAutoPatcher *>(ap);
 }
 
@@ -237,7 +237,7 @@ void mbpatcher_config_destroy_patcher(CPatcherConfig *pc, CPatcher *patcher)
 {
     CAST(pc);
     auto *p = reinterpret_cast<mb::patcher::Patcher *>(patcher);
-    config->destroyPatcher(p);
+    config->destroy_patcher(p);
 }
 
 /*!
@@ -253,7 +253,7 @@ void mbpatcher_config_destroy_autopatcher(CPatcherConfig *pc,
 {
     CAST(pc);
     auto *ap = reinterpret_cast<mb::patcher::AutoPatcher *>(patcher);
-    config->destroyAutoPatcher(ap);
+    config->destroy_auto_patcher(ap);
 }
 
 }

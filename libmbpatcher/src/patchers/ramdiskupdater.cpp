@@ -48,12 +48,12 @@ public:
 
     ErrorCode error;
 
-    MinizipUtils::ZipCtx *zOutput = nullptr;
+    MinizipUtils::ZipCtx *z_output = nullptr;
 
-    bool createZip();
+    bool create_zip();
 
-    bool openOutputArchive();
-    void closeOutputArchive();
+    bool open_output_archive();
+    void close_output_archive();
 };
 /*! \endcond */
 
@@ -83,27 +83,27 @@ std::string RamdiskUpdater::id() const
     return Id;
 }
 
-void RamdiskUpdater::setFileInfo(const FileInfo * const info)
+void RamdiskUpdater::set_file_info(const FileInfo * const info)
 {
     MB_PRIVATE(RamdiskUpdater);
     priv->info = info;
 }
 
-void RamdiskUpdater::cancelPatching()
+void RamdiskUpdater::cancel_patching()
 {
     MB_PRIVATE(RamdiskUpdater);
     priv->cancelled = true;
 }
 
-bool RamdiskUpdater::patchFile(ProgressUpdatedCallback progressCb,
-                               FilesUpdatedCallback filesCb,
-                               DetailsUpdatedCallback detailsCb,
-                               void *userData)
+bool RamdiskUpdater::patch_file(ProgressUpdatedCallback progress_cb,
+                                FilesUpdatedCallback files_cb,
+                                DetailsUpdatedCallback details_cb,
+                                void *userdata)
 {
-    (void) progressCb;
-    (void) filesCb;
-    (void) detailsCb;
-    (void) userData;
+    (void) progress_cb;
+    (void) files_cb;
+    (void) details_cb;
+    (void) userdata;
 
     MB_PRIVATE(RamdiskUpdater);
 
@@ -111,10 +111,10 @@ bool RamdiskUpdater::patchFile(ProgressUpdatedCallback progressCb,
 
     assert(priv->info != nullptr);
 
-    bool ret = priv->createZip();
+    bool ret = priv->create_zip();
 
-    if (priv->zOutput != nullptr) {
-        priv->closeOutputArchive();
+    if (priv->z_output != nullptr) {
+        priv->close_output_archive();
     }
 
     if (priv->cancelled) {
@@ -125,40 +125,41 @@ bool RamdiskUpdater::patchFile(ProgressUpdatedCallback progressCb,
     return ret;
 }
 
-struct CopySpec {
+struct CopySpec
+{
     std::string source;
     std::string target;
 };
 
-bool RamdiskUpdaterPrivate::createZip()
+bool RamdiskUpdaterPrivate::create_zip()
 {
     ErrorCode result;
 
     // Unlike the old patcher, we'll write directly to the new file
-    if (!openOutputArchive()) {
+    if (!open_output_archive()) {
         return false;
     }
 
-    zipFile zf = MinizipUtils::ctxGetZipFile(zOutput);
+    zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
 
     if (cancelled) return false;
 
-    std::string archDir(pc->dataDirectory());
-    archDir += "/binaries/android/";
-    archDir += mb_device_architecture(info->device());
+    std::string arch_dir(pc->data_directory());
+    arch_dir += "/binaries/android/";
+    arch_dir += mb_device_architecture(info->device());
 
     std::vector<CopySpec> toCopy{
         {
-            archDir + "/mbtool_recovery",
+            arch_dir + "/mbtool_recovery",
             "META-INF/com/google/android/update-binary"
         }, {
-            archDir + "/mbtool_recovery.sig",
+            arch_dir + "/mbtool_recovery.sig",
             "META-INF/com/google/android/update-binary.sig"
         }, {
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh",
+            pc->data_directory() + "/scripts/bb-wrapper.sh",
             "multiboot/bb-wrapper.sh"
         }, {
-            pc->dataDirectory() + "/scripts/bb-wrapper.sh.sig",
+            pc->data_directory() + "/scripts/bb-wrapper.sh.sig",
             "multiboot/bb-wrapper.sh.sig"
         }
     };
@@ -175,14 +176,14 @@ bool RamdiskUpdaterPrivate::createZip()
     };
 
     for (auto const &binary : binaries) {
-        toCopy.push_back({archDir + "/" + binary,
+        toCopy.push_back({arch_dir + "/" + binary,
                           "multiboot/binaries/" + binary});
     }
 
     for (const CopySpec &spec : toCopy) {
         if (cancelled) return false;
 
-        result = MinizipUtils::addFile(zf, spec.target, spec.source);
+        result = MinizipUtils::add_file(zf, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             error = result;
             return false;
@@ -191,11 +192,11 @@ bool RamdiskUpdaterPrivate::createZip()
 
     if (cancelled) return false;
 
-    const std::string infoProp =
-            ZipPatcher::createInfoProp(pc, info->romId(), true);
-    result = MinizipUtils::addFile(
+    const std::string info_prop =
+            ZipPatcher::create_info_prop(pc, info->rom_id(), true);
+    result = MinizipUtils::add_file(
             zf, "multiboot/info.prop",
-            std::vector<unsigned char>(infoProp.begin(), infoProp.end()));
+            std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
@@ -209,7 +210,7 @@ bool RamdiskUpdaterPrivate::createZip()
         return false;
     }
 
-    result = MinizipUtils::addFile(
+    result = MinizipUtils::add_file(
             zf, "multiboot/device.json",
             std::vector<unsigned char>(json, json + strlen(json)));
     free(json);
@@ -224,7 +225,7 @@ bool RamdiskUpdaterPrivate::createZip()
     // Create dummy "installer"
     std::string installer("#!/sbin/sh");
 
-    result = MinizipUtils::addFile(
+    result = MinizipUtils::add_file(
             zf, "META-INF/com/google/android/update-binary.orig",
             std::vector<unsigned char>(installer.begin(), installer.end()));
 
@@ -238,15 +239,15 @@ bool RamdiskUpdaterPrivate::createZip()
     return true;
 }
 
-bool RamdiskUpdaterPrivate::openOutputArchive()
+bool RamdiskUpdaterPrivate::open_output_archive()
 {
-    assert(zOutput == nullptr);
+    assert(z_output == nullptr);
 
-    zOutput = MinizipUtils::openOutputFile(info->outputPath());
+    z_output = MinizipUtils::open_output_file(info->output_path());
 
-    if (!zOutput) {
+    if (!z_output) {
         LOGE("minizip: Failed to open for writing: %s",
-             info->outputPath().c_str());
+             info->output_path().c_str());
         error = ErrorCode::ArchiveWriteOpenError;
         return false;
     }
@@ -254,16 +255,16 @@ bool RamdiskUpdaterPrivate::openOutputArchive()
     return true;
 }
 
-void RamdiskUpdaterPrivate::closeOutputArchive()
+void RamdiskUpdaterPrivate::close_output_archive()
 {
-    assert(zOutput != nullptr);
+    assert(z_output != nullptr);
 
-    int ret = MinizipUtils::closeOutputFile(zOutput);
+    int ret = MinizipUtils::close_output_file(z_output);
     if (ret != ZIP_OK) {
         LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 
-    zOutput = nullptr;
+    z_output = nullptr;
 }
 
 }

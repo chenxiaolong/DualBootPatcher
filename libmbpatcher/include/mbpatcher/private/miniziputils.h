@@ -38,55 +38,57 @@ class MinizipUtils
 public:
     struct ArchiveStats {
         uint64_t files;
-        uint64_t totalSize;
+        uint64_t total_size;
     };
 
-    static std::string unzErrorString(int ret);
+    static std::string unz_error_string(int ret);
 
-    static std::string zipErrorString(int ret);
+    static std::string zip_error_string(int ret);
 
     struct UnzCtx;
     struct ZipCtx;
 
-    static unzFile ctxGetUnzFile(UnzCtx *ctx);
+    static unzFile ctx_get_unz_file(UnzCtx *ctx);
 
-    static zipFile ctxGetZipFile(ZipCtx *ctx);
+    static zipFile ctx_get_zip_file(ZipCtx *ctx);
 
-    static UnzCtx * openInputFile(std::string path);
+    static UnzCtx * open_input_file(std::string path);
 
-    static ZipCtx * openOutputFile(std::string path);
+    static ZipCtx * open_output_file(std::string path);
 
-    static int closeInputFile(UnzCtx *ctx);
+    static int close_input_file(UnzCtx *ctx);
 
-    static int closeOutputFile(ZipCtx *ctx);
+    static int close_output_file(ZipCtx *ctx);
 
-    static ErrorCode archiveStats(const std::string &path,
-                                  ArchiveStats *stats,
-                                  std::vector<std::string> ignore);
+    static ErrorCode archive_stats(const std::string &path,
+                                   ArchiveStats *stats,
+                                   std::vector<std::string> ignore);
 
-    static bool getInfo(unzFile uf,
-                        unz_file_info64 *fi,
-                        std::string *filename);
+    static bool get_info(unzFile uf,
+                         unz_file_info64 *fi,
+                         std::string *filename);
 
-    static bool copyFileRaw(unzFile uf,
-                            zipFile zf,
-                            const std::string &name,
-                            void (*cb)(uint64_t bytes, void *), void *userData);
+    static bool copy_file_raw(unzFile uf,
+                              zipFile zf,
+                              const std::string &name,
+                              void (*cb)(uint64_t bytes, void *),
+                              void *userData);
 
-    static bool readToMemory(unzFile uf,
-                             std::vector<unsigned char> *output,
-                             void (*cb)(uint64_t bytes, void *), void *userData);
+    static bool read_to_memory(unzFile uf,
+                               std::vector<unsigned char> *output,
+                               void (*cb)(uint64_t bytes, void *),
+                               void *userData);
 
-    static bool extractFile(unzFile uf,
-                            const std::string &directory);
+    static bool extract_file(unzFile uf,
+                             const std::string &directory);
 
-    static ErrorCode addFile(zipFile zf,
-                             const std::string &name,
-                             const std::vector<unsigned char> &contents);
+    static ErrorCode add_file(zipFile zf,
+                              const std::string &name,
+                              const std::vector<unsigned char> &contents);
 
-    static ErrorCode addFile(zipFile zf,
-                             const std::string &name,
-                             const std::string &path);
+    static ErrorCode add_file(zipFile zf,
+                              const std::string &name,
+                              const std::string &path);
 };
 
 }

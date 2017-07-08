@@ -73,26 +73,26 @@ std::string MountCmdPatcher::id() const
     return Id;
 }
 
-std::vector<std::string> MountCmdPatcher::newFiles() const
+std::vector<std::string> MountCmdPatcher::new_files() const
 {
-    return std::vector<std::string>();
+    return {};
 }
 
-std::vector<std::string> MountCmdPatcher::existingFiles() const
+std::vector<std::string> MountCmdPatcher::existing_files() const
 {
     return { FlashScript, InstallerScript };
 }
 
-static bool spaceOrEnd(const char *ptr)
+static bool space_or_end(const char *ptr)
 {
     return !*ptr || isspace(*ptr);
 }
 
-static bool patchFile(const std::string &path)
+static bool patch_file(const std::string &path)
 {
     std::string contents;
 
-    ErrorCode ret = FileUtils::readToString(path, &contents);
+    ErrorCode ret = FileUtils::read_to_string(path, &contents);
     if (ret != ErrorCode::NoError) {
         return false;
     }
@@ -105,22 +105,22 @@ static bool patchFile(const std::string &path)
         // Skip whitespace
         for (; *ptr && isspace(*ptr); ++ptr);
 
-        if ((strncmp(ptr, "mount", 5) == 0 && spaceOrEnd(ptr + 5))
-                || (strncmp(ptr, "umount", 6) == 0 && spaceOrEnd(ptr + 6))) {
+        if ((strncmp(ptr, "mount", 5) == 0 && space_or_end(ptr + 5))
+                || (strncmp(ptr, "umount", 6) == 0 && space_or_end(ptr + 6))) {
             line.insert(ptr - line.data(), "/sbin/");
         }
     }
 
     contents = StringUtils::join(lines, "\n");
-    FileUtils::writeFromString(path, contents);
+    FileUtils::write_from_string(path, contents);
 
     return true;
 }
 
-bool MountCmdPatcher::patchFiles(const std::string &directory)
+bool MountCmdPatcher::patch_files(const std::string &directory)
 {
-    patchFile(directory + "/" + FlashScript);
-    patchFile(directory + "/" + InstallerScript);
+    patch_file(directory + "/" + FlashScript);
+    patch_file(directory + "/" + InstallerScript);
 
     // Don't fail if an error occurs
     return true;

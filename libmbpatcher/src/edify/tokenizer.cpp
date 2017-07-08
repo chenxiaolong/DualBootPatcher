@@ -228,7 +228,7 @@ std::string EdifyTokenString::generate()
     return m_str;
 }
 
-std::string EdifyTokenString::unescapedString()
+std::string EdifyTokenString::unescaped_string()
 {
     std::string out;
     // TODO: Check return value
@@ -278,7 +278,7 @@ void EdifyTokenString::escape(const std::string &str, std::string *out)
     out->swap(output);
 }
 
-static int hexCharToInt(char c)
+static int hex_char_to_int(char c)
 {
     if (c >= '0' && c <= '9') {
         return c - '0';
@@ -327,8 +327,8 @@ bool EdifyTokenString::unescape(const std::string &str, std::string *out)
                     // Need 4 chars: \xYY
                     return false;
                 }
-                int digit1 = hexCharToInt(str[i + 2]);
-                int digit2 = hexCharToInt(str[i + 3]);
+                int digit1 = hex_char_to_int(str[i + 2]);
+                int digit2 = hex_char_to_int(str[i + 3]);
                 if (digit1 < 0 || digit2 < 0) {
                     // One of the chars is not a valid hex character
                     return false;
@@ -368,7 +368,7 @@ std::string EdifyTokenUnknown::generate()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool EdifyTokenizer::isValidUnquoted(char c)
+bool EdifyTokenizer::is_valid_unquoted(char c)
 {
     return std::isalnum(c)
             || c == '_'
@@ -377,8 +377,8 @@ bool EdifyTokenizer::isValidUnquoted(char c)
             || c == '.';
 }
 
-bool EdifyTokenizer::nextToken(const char *data, std::size_t size,
-                               std::size_t *pos, EdifyToken **token)
+bool EdifyTokenizer::next_token(const char *data, std::size_t size,
+                                std::size_t *pos, EdifyToken **token)
 {
     std::size_t p = *pos;
     assert(p < size);
@@ -446,11 +446,11 @@ bool EdifyTokenizer::nextToken(const char *data, std::size_t size,
             p += 1;
         }
         *token = new EdifyTokenComment(std::move(buf));
-    } else if (isValidUnquoted(data[p])) {
+    } else if (is_valid_unquoted(data[p])) {
         std::string buf;
         buf += data[p];
         p += 1;
-        while (size - p >= 1 && isValidUnquoted(data[p])) {
+        while (size - p >= 1 && is_valid_unquoted(data[p])) {
             buf += data[p];
             p += 1;
         }
@@ -504,7 +504,7 @@ bool EdifyTokenizer::tokenize(const char *data, std::size_t size,
             break;
         } else if (pos == size) {
             break;
-        } else if (!nextToken(data, size, &pos, &token)) {
+        } else if (!next_token(data, size, &pos, &token)) {
             fail = true;
             break;
         }
@@ -544,34 +544,34 @@ std::string EdifyTokenizer::untokenize(const std::vector<EdifyToken *>::iterator
 
 void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
 {
-    const char *tokenName = nullptr;
+    const char *token_name = nullptr;
 
     for (std::size_t i = 0; i < tokens.size(); ++i) {
         EdifyToken *t = tokens[i];
 
         switch (t->type()) {
-        case EdifyTokenType::If:         tokenName = "If";         break;
-        case EdifyTokenType::Then:       tokenName = "Then";       break;
-        case EdifyTokenType::Else:       tokenName = "Else";       break;
-        case EdifyTokenType::Endif:      tokenName = "Endif";      break;
-        case EdifyTokenType::And:        tokenName = "And";        break;
-        case EdifyTokenType::Or:         tokenName = "Or";         break;
-        case EdifyTokenType::Equals:     tokenName = "Equals";     break;
-        case EdifyTokenType::NotEquals:  tokenName = "NotEquals";  break;
-        case EdifyTokenType::Not:        tokenName = "Not";        break;
-        case EdifyTokenType::LeftParen:  tokenName = "LeftParen";  break;
-        case EdifyTokenType::RightParen: tokenName = "RightParen"; break;
-        case EdifyTokenType::Semicolon:  tokenName = "Semicolon";  break;
-        case EdifyTokenType::Comma:      tokenName = "Comma";      break;
-        case EdifyTokenType::Concat:     tokenName = "Concat";     break;
-        case EdifyTokenType::Newline:    tokenName = "Newline";    break;
-        case EdifyTokenType::Whitespace: tokenName = "Whitespace"; break;
-        case EdifyTokenType::Comment:    tokenName = "Comment";    break;
-        case EdifyTokenType::String:     tokenName = "String";     break;
-        case EdifyTokenType::Unknown:    tokenName = "Unknown";    break;
+        case EdifyTokenType::If:         token_name = "If";         break;
+        case EdifyTokenType::Then:       token_name = "Then";       break;
+        case EdifyTokenType::Else:       token_name = "Else";       break;
+        case EdifyTokenType::Endif:      token_name = "Endif";      break;
+        case EdifyTokenType::And:        token_name = "And";        break;
+        case EdifyTokenType::Or:         token_name = "Or";         break;
+        case EdifyTokenType::Equals:     token_name = "Equals";     break;
+        case EdifyTokenType::NotEquals:  token_name = "NotEquals";  break;
+        case EdifyTokenType::Not:        token_name = "Not";        break;
+        case EdifyTokenType::LeftParen:  token_name = "LeftParen";  break;
+        case EdifyTokenType::RightParen: token_name = "RightParen"; break;
+        case EdifyTokenType::Semicolon:  token_name = "Semicolon";  break;
+        case EdifyTokenType::Comma:      token_name = "Comma";      break;
+        case EdifyTokenType::Concat:     token_name = "Concat";     break;
+        case EdifyTokenType::Newline:    token_name = "Newline";    break;
+        case EdifyTokenType::Whitespace: token_name = "Whitespace"; break;
+        case EdifyTokenType::Comment:    token_name = "Comment";    break;
+        case EdifyTokenType::String:     token_name = "String";     break;
+        case EdifyTokenType::Unknown:    token_name = "Unknown";    break;
         }
 
-        LOGD("%" MB_PRIzu ": %-20s: %s", i, tokenName, t->generate().c_str());
+        LOGD("%" MB_PRIzu ": %-20s: %s", i, token_name, t->generate().c_str());
     }
 }
 

@@ -30,9 +30,9 @@ class FileInfoPrivate
 {
 public:
     Device *device;
-    std::string inputPath;
-    std::string outputPath;
-    std::string romId;
+    std::string input_path;
+    std::string output_path;
+    std::string rom_id;
 };
 /*! \endcond */
 
@@ -62,10 +62,10 @@ FileInfo::~FileInfo()
  *
  * \return File path
  */
-std::string FileInfo::inputPath() const
+std::string FileInfo::input_path() const
 {
     MB_PRIVATE(const FileInfo);
-    return priv->inputPath;
+    return priv->input_path;
 }
 
 /*!
@@ -73,22 +73,22 @@ std::string FileInfo::inputPath() const
  *
  * \param path File path
  */
-void FileInfo::setInputPath(std::string path)
+void FileInfo::set_input_path(std::string path)
 {
     MB_PRIVATE(FileInfo);
-    priv->inputPath = std::move(path);
+    priv->input_path = std::move(path);
 }
 
-std::string FileInfo::outputPath() const
+std::string FileInfo::output_path() const
 {
     MB_PRIVATE(const FileInfo);
-    return priv->outputPath;
+    return priv->output_path;
 }
 
-void FileInfo::setOutputPath(std::string path)
+void FileInfo::set_output_path(std::string path)
 {
     MB_PRIVATE(FileInfo);
-    priv->outputPath = std::move(path);
+    priv->output_path = std::move(path);
 }
 
 /*!
@@ -107,22 +107,22 @@ Device * FileInfo::device() const
  *
  * \param device Target device
  */
-void FileInfo::setDevice(Device * const device)
+void FileInfo::set_device(Device * const device)
 {
     MB_PRIVATE(FileInfo);
     priv->device = device;
 }
 
-std::string FileInfo::romId() const
+std::string FileInfo::rom_id() const
 {
     MB_PRIVATE(const FileInfo);
-    return priv->romId;
+    return priv->rom_id;
 }
 
-void FileInfo::setRomId(std::string id)
+void FileInfo::set_rom_id(std::string id)
 {
     MB_PRIVATE(FileInfo);
-    priv->romId = std::move(id);
+    priv->rom_id = std::move(id);
 }
 
 }

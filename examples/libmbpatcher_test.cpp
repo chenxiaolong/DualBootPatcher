@@ -118,22 +118,22 @@ int main(int argc, char *argv[]) {
     }
 
     mb::patcher::PatcherConfig pc;
-    pc.setDataDirectory("data");
+    pc.set_data_directory("data");
 
     mb::patcher::FileInfo fi;
-    fi.setDevice(device.get());
-    fi.setInputPath(input_path);
-    fi.setOutputPath(output_path);
-    fi.setRomId(rom_id);
+    fi.set_device(device.get());
+    fi.set_input_path(input_path);
+    fi.set_output_path(output_path);
+    fi.set_rom_id(rom_id);
 
-    auto *patcher = pc.createPatcher(patcher_id);
+    auto *patcher = pc.create_patcher(patcher_id);
     if (!patcher) {
         fprintf(stderr, "Invalid patcher ID: %s\n", patcher_id);
         return EXIT_FAILURE;
     }
 
-    patcher->setFileInfo(&fi);
-    bool ret = patcher->patchFile(&mbp_progress_cb, nullptr, nullptr, nullptr);
+    patcher->set_file_info(&fi);
+    bool ret = patcher->patch_file(&mbp_progress_cb, nullptr, nullptr, nullptr);
 
     if (!ret) {
         fprintf(stderr, "Error: %d\n", static_cast<int>(patcher->error()));

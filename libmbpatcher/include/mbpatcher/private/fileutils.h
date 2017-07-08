@@ -35,22 +35,22 @@ namespace patcher
 class FileUtils
 {
 public:
-    static ErrorCode openFile(StandardFile &file, const std::string &path,
-                              FileOpenMode mode);
+    static ErrorCode open_file(StandardFile &file, const std::string &path,
+                               FileOpenMode mode);
 
-    static ErrorCode readToMemory(const std::string &path,
-                                  std::vector<unsigned char> *contents);
-    static ErrorCode readToString(const std::string &path,
-                                  std::string *contents);
+    static ErrorCode read_to_memory(const std::string &path,
+                                    std::vector<unsigned char> *contents);
+    static ErrorCode read_to_string(const std::string &path,
+                                    std::string *contents);
 
-    static ErrorCode writeFromMemory(const std::string &path,
-                                     const std::vector<unsigned char> &contents);
-    static ErrorCode writeFromString(const std::string &path,
-                                     const std::string &contents);
+    static ErrorCode write_from_memory(const std::string &path,
+                                       const std::vector<unsigned char> &contents);
+    static ErrorCode write_from_string(const std::string &path,
+                                       const std::string &contents);
 
-    static std::string systemTemporaryDir();
+    static std::string system_temporary_dir();
 
-    static std::string createTemporaryDir(const std::string &directory);
+    static std::string create_temporary_dir(const std::string &directory);
 };
 
 }

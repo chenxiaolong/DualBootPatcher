@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     a.setApplicationName(QObject::tr("Dual Boot Patcher"));
 
     mb::patcher::PatcherConfig pc;
-    pc.setDataDirectory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
+    pc.set_data_directory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
 
     MainWindow w(&pc);
     w.show();

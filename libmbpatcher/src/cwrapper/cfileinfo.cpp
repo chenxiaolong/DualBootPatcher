@@ -84,7 +84,7 @@ void mbpatcher_fileinfo_destroy(CFileInfo *info)
 char * mbpatcher_fileinfo_input_path(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->inputPath());
+    return string_to_cstring(fi->input_path());
 }
 
 /*!
@@ -98,19 +98,19 @@ char * mbpatcher_fileinfo_input_path(const CFileInfo *info)
 void mbpatcher_fileinfo_set_input_path(CFileInfo *info, const char *path)
 {
     CAST(info);
-    fi->setInputPath(path);
+    fi->set_input_path(path);
 }
 
 char * mbpatcher_fileinfo_output_path(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->outputPath());
+    return string_to_cstring(fi->output_path());
 }
 
 void mbpatcher_fileinfo_set_output_path(CFileInfo *info, const char *path)
 {
     CAST(info);
-    fi->setOutputPath(path);
+    fi->set_output_path(path);
 }
 
 /*!
@@ -139,19 +139,19 @@ struct Device * mbpatcher_fileinfo_device(const CFileInfo *info)
 void mbpatcher_fileinfo_set_device(CFileInfo *info, struct Device *device)
 {
     CAST(info);
-    fi->setDevice(device);
+    fi->set_device(device);
 }
 
 char * mbpatcher_fileinfo_rom_id(const CFileInfo *info)
 {
     CCAST(info);
-    return string_to_cstring(fi->romId());
+    return string_to_cstring(fi->rom_id());
 }
 
 void mbpatcher_fileinfo_set_rom_id(CFileInfo *info, const char *id)
 {
     CAST(info);
-    fi->setRomId(id);
+    fi->set_rom_id(id);
 }
 
 }

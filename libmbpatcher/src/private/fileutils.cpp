@@ -41,20 +41,20 @@ namespace mb
 namespace patcher
 {
 
-ErrorCode FileUtils::openFile(StandardFile &file, const std::string &path,
-                              FileOpenMode mode)
+ErrorCode FileUtils::open_file(StandardFile &file, const std::string &path,
+                               FileOpenMode mode)
 {
     FileStatus ret;
 
 #ifdef _WIN32
-    std::wstring wFilename;
+    std::wstring w_filename;
 
-    if (!utf8_to_wcs(wFilename, path)) {
+    if (!utf8_to_wcs(w_filename, path)) {
         LOGE("%s: Failed to convert from UTF8 to WCS", path.c_str());
         return ErrorCode::FileOpenError;
     }
 
-    ret = file.open(wFilename, mode);
+    ret = file.open(w_filename, mode);
 #else
     ret = file.open(path, mode);
 #endif
@@ -71,12 +71,12 @@ ErrorCode FileUtils::openFile(StandardFile &file, const std::string &path,
  *
  * \return Success or not
  */
-ErrorCode FileUtils::readToMemory(const std::string &path,
-                                  std::vector<unsigned char> *contents)
+ErrorCode FileUtils::read_to_memory(const std::string &path,
+                                    std::vector<unsigned char> *contents)
 {
     StandardFile file;
 
-    auto error = openFile(file, path, FileOpenMode::READ_ONLY);
+    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), file.error_string().c_str());
@@ -93,9 +93,9 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
 
     std::vector<unsigned char> data(size);
 
-    size_t bytesRead;
-    if (file.read(data.data(), data.size(), &bytesRead) != FileStatus::OK
-            || bytesRead != size) {
+    size_t bytes_read;
+    if (file.read(data.data(), data.size(), &bytes_read) != FileStatus::OK
+            || bytes_read != size) {
         LOGE("%s: Failed to read file: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileReadError;
@@ -114,12 +114,12 @@ ErrorCode FileUtils::readToMemory(const std::string &path,
  *
  * \return Success or not
  */
-ErrorCode FileUtils::readToString(const std::string &path,
-                                  std::string *contents)
+ErrorCode FileUtils::read_to_string(const std::string &path,
+                                    std::string *contents)
 {
     StandardFile file;
 
-    auto error = openFile(file, path, FileOpenMode::READ_ONLY);
+    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), file.error_string().c_str());
@@ -137,9 +137,9 @@ ErrorCode FileUtils::readToString(const std::string &path,
     std::string data;
     data.resize(size);
 
-    size_t bytesRead;
-    if (file.read(&data[0], data.size(), &bytesRead) != FileStatus::OK
-            || bytesRead != size) {
+    size_t bytes_read;
+    if (file.read(&data[0], data.size(), &bytes_read) != FileStatus::OK
+            || bytes_read != size) {
         LOGE("%s: Failed to read file: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileReadError;
@@ -150,21 +150,21 @@ ErrorCode FileUtils::readToString(const std::string &path,
     return ErrorCode::NoError;
 }
 
-ErrorCode FileUtils::writeFromMemory(const std::string &path,
-                                     const std::vector<unsigned char> &contents)
+ErrorCode FileUtils::write_from_memory(const std::string &path,
+                                       const std::vector<unsigned char> &contents)
 {
     StandardFile file;
 
-    auto error = openFile(file, path, FileOpenMode::WRITE_ONLY);
+    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    size_t bytesWritten;
-    if (file.write(contents.data(), contents.size(), &bytesWritten)
-            != FileStatus::OK || bytesWritten != contents.size()) {
+    size_t bytes_written;
+    if (file.write(contents.data(), contents.size(), &bytes_written)
+            != FileStatus::OK || bytes_written != contents.size()) {
         LOGE("%s: Failed to write file: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileWriteError;
@@ -173,21 +173,21 @@ ErrorCode FileUtils::writeFromMemory(const std::string &path,
     return ErrorCode::NoError;
 }
 
-ErrorCode FileUtils::writeFromString(const std::string &path,
-                                     const std::string &contents)
+ErrorCode FileUtils::write_from_string(const std::string &path,
+                                       const std::string &contents)
 {
     StandardFile file;
 
-    auto error = openFile(file, path, FileOpenMode::WRITE_ONLY);
+    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    size_t bytesWritten;
-    if (file.write(contents.data(), contents.size(), &bytesWritten)
-            != FileStatus::OK || bytesWritten != contents.size()) {
+    size_t bytes_written;
+    if (file.write(contents.data(), contents.size(), &bytes_written)
+            != FileStatus::OK || bytes_written != contents.size()) {
         LOGE("%s: Failed to write file: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileWriteError;
@@ -197,7 +197,7 @@ ErrorCode FileUtils::writeFromString(const std::string &path,
 }
 
 #ifdef _WIN32
-static bool directoryExists(const wchar_t *path)
+static bool directory_exists(const wchar_t *path)
 {
     DWORD dwAttrib = GetFileAttributesW(path);
 
@@ -205,58 +205,58 @@ static bool directoryExists(const wchar_t *path)
             && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
 }
 #else
-static bool directoryExists(const char *path)
+static bool directory_exists(const char *path)
 {
     struct stat sb;
     return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
 }
 #endif
 
-std::string FileUtils::systemTemporaryDir()
+std::string FileUtils::system_temporary_dir()
 {
 #ifdef _WIN32
     const wchar_t *value;
-    std::wstring wPath;
+    std::wstring w_path;
     std::string path;
 
-    if ((value = _wgetenv(L"TMP")) && directoryExists(value)) {
-        wPath = value;
+    if ((value = _wgetenv(L"TMP")) && directory_exists(value)) {
+        w_path = value;
         goto done;
     }
-    if ((value = _wgetenv(L"TEMP")) && directoryExists(value)) {
-        wPath = value;
+    if ((value = _wgetenv(L"TEMP")) && directory_exists(value)) {
+        w_path = value;
         goto done;
     }
     if ((value = _wgetenv(L"LOCALAPPDATA"))) {
-        wPath = value;
-        wPath += L"\\Temp";
-        if (directoryExists(wPath.c_str())) {
+        w_path = value;
+        w_path += L"\\Temp";
+        if (directory_exists(w_path.c_str())) {
             goto done;
         }
     }
     if ((value = _wgetenv(L"USERPROFILE"))) {
-        wPath = value;
-        wPath += L"\\Temp";
-        if (directoryExists(wPath.c_str())) {
+        w_path = value;
+        w_path += L"\\Temp";
+        if (directory_exists(w_path.c_str())) {
             goto done;
         }
     }
 
 done:
-    return wcs_to_utf8(wPath);
+    return wcs_to_utf8(w_path);
 #else
     const char *value;
 
-    if ((value = getenv("TMPDIR")) && directoryExists(value)) {
+    if ((value = getenv("TMPDIR")) && directory_exists(value)) {
         return value;
     }
-    if ((value = getenv("TMP")) && directoryExists(value)) {
+    if ((value = getenv("TMP")) && directory_exists(value)) {
         return value;
     }
-    if ((value = getenv("TEMP")) && directoryExists(value)) {
+    if ((value = getenv("TEMP")) && directory_exists(value)) {
         return value;
     }
-    if ((value = getenv("TEMPDIR")) && directoryExists(value)) {
+    if ((value = getenv("TEMPDIR")) && directory_exists(value)) {
         return value;
     }
 
@@ -264,7 +264,7 @@ done:
 #endif
 }
 
-std::string FileUtils::createTemporaryDir(const std::string &directory)
+std::string FileUtils::create_temporary_dir(const std::string &directory)
 {
 #ifdef _WIN32
     // This Win32 code is adapted from the awesome libuv library (MIT-licensed)
@@ -272,14 +272,14 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
 
     constexpr char possible[] =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    constexpr size_t numChars = 62;
-    constexpr size_t numX = 6;
+    constexpr size_t num_chars = 62;
+    constexpr size_t num_x = 6;
     constexpr char suffix[] = "\\mbpatcher-";
 
-    HCRYPTPROV hProv;
+    HCRYPTPROV h_prov;
 
     bool ret = CryptAcquireContext(
-        &hProv,                 // phProv
+        &h_prov,                // phProv
         nullptr,                // pszContainer
         nullptr,                // pszProvider
         PROV_RSA_FULL,          // dwProvType
@@ -287,46 +287,46 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
     );
     if (!ret) {
         LOGE("CryptAcquireContext() failed: %s",
-             win32ErrorToString(GetLastError()).c_str());
+             win32_error_to_string(GetLastError()).c_str());
         return std::string();
     }
 
-    std::string newPath = directory;        // Path
-    newPath += suffix;                      // "\mbpatcher-"
-    newPath.resize(newPath.size() + numX);  // Unique part
+    std::string new_path = directory;           // Path
+    new_path += suffix;                         // "\mbpatcher-"
+    new_path.resize(new_path.size() + num_x);   // Unique part
 
-    char *unique = &newPath[newPath.size() - numX];
+    char *unique = &new_path[new_path.size() - num_x];
 
     unsigned int tries = TMP_MAX;
     do {
         uint64_t v;
 
         ret = CryptGenRandom(
-            hProv,      // hProv
+            h_prov,     // hProv
             sizeof(v),  // dwLen
             (BYTE *) &v // pbBuffer
         );
         if (!ret) {
             LOGE("CryptGenRandom() failed: %s",
-                 win32ErrorToString(GetLastError()).c_str());
+                 win32_error_to_string(GetLastError()).c_str());
             break;
         }
 
-        for (size_t i = 0; i < numX; ++i) {
-            unique[i] = possible[v % numChars];
-            v /= numChars;
+        for (size_t i = 0; i < num_x; ++i) {
+            unique[i] = possible[v % num_chars];
+            v /= num_chars;
         }
 
         // This is not particularly fast, but it'll do for now
-        std::wstring wNewPath;
-        if (!utf8_to_wcs(wNewPath, newPath)) {
+        std::wstring w_new_path;
+        if (!utf8_to_wcs(w_new_path, new_path)) {
             LOGE("Failed to convert UTF-8 to WCS: %s",
-                 win32ErrorToString(GetLastError()).c_str());
+                 win32_error_to_string(GetLastError()).c_str());
             break;
         }
 
         ret = CreateDirectoryW(
-            wNewPath.c_str(),   // lpPathName
+            w_new_path.c_str(), // lpPathName
             nullptr             // lpSecurityAttributes
         );
 
@@ -334,25 +334,25 @@ std::string FileUtils::createTemporaryDir(const std::string &directory)
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
             LOGE("CreateDirectoryW() failed: %s",
-                 win32ErrorToString(GetLastError()).c_str());
-            newPath.clear();
+                 win32_error_to_string(GetLastError()).c_str());
+            new_path.clear();
             break;
         }
     } while (--tries);
 
     bool released = CryptReleaseContext(
-        hProv,  // hProv
+        h_prov, // hProv
         0       // dwFlags
     );
     assert(released);
 
-    return newPath;
+    return new_path;
 #else
-    std::string dirTemplate(directory);
-    dirTemplate += "/mbpatcher-XXXXXX";
+    std::string dir_template(directory);
+    dir_template += "/mbpatcher-XXXXXX";
 
-    if (mkdtemp(&dirTemplate[0])) {
-        return dirTemplate;
+    if (mkdtemp(&dir_template[0])) {
+        return dir_template;
     }
 
     return {};

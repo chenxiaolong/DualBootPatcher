@@ -105,8 +105,8 @@ MainWindow::~MainWindow()
     Q_D(MainWindow);
 
     if (d->patcher) {
-        d->patcher->cancelPatching();
-        d->pc->destroyPatcher(d->patcher);
+        d->patcher->cancel_patching();
+        d->pc->destroy_patcher(d->patcher);
         d->patcher = nullptr;
     }
 
@@ -260,7 +260,7 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 {
     Q_D(MainWindow);
 
-    d->pc->destroyPatcher(d->patcher);
+    d->pc->destroy_patcher(d->patcher);
     d->patcher = nullptr;
 
     d->patcherNewFile = newFile;
@@ -426,7 +426,7 @@ void MainWindow::populateDevices()
     Q_D(MainWindow);
 
     // TODO: This shouldn't be done in the GUI thread
-    QString path(QString::fromStdString(d->pc->dataDirectory())
+    QString path(QString::fromStdString(d->pc->data_directory())
             % QStringLiteral("/devices.json"));
     QFile file(path);
 
@@ -618,12 +618,12 @@ void MainWindow::startPatching()
             qFileInfo.dir().filePath(outputName)));
 
     FileInfoPtr fileInfo = new mb::patcher::FileInfo();
-    fileInfo->setInputPath(inputPath.toUtf8().constData());
-    fileInfo->setOutputPath(outputPath.toUtf8().constData());
-    fileInfo->setDevice(d->device);
-    fileInfo->setRomId(romId.toUtf8().constData());
+    fileInfo->set_input_path(inputPath.toUtf8().constData());
+    fileInfo->set_output_path(outputPath.toUtf8().constData());
+    fileInfo->set_device(d->device);
+    fileInfo->set_rom_id(romId.toUtf8().constData());
 
-    d->patcher = d->pc->createPatcher(d->patcherId.toStdString());
+    d->patcher = d->pc->create_patcher(d->patcherId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
@@ -713,16 +713,16 @@ static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
 
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
-    patcher->setFileInfo(info);
+    patcher->set_file_info(info);
 
-    bool ret = patcher->patchFile(&progressUpdatedCbWrapper,
-                                  &filesUpdatedCbWrapper,
-                                  &detailsUpdatedCbWrapper,
-                                  this);
+    bool ret = patcher->patch_file(&progressUpdatedCbWrapper,
+                                   &filesUpdatedCbWrapper,
+                                   &detailsUpdatedCbWrapper,
+                                   this);
 
-    QString newFile(QString::fromStdString(info->outputPath()));
+    QString newFile(QString::fromStdString(info->output_path()));
 
-    patcher->setFileInfo(nullptr);
+    patcher->set_file_info(nullptr);
     delete info;
 
     if (!ret) {

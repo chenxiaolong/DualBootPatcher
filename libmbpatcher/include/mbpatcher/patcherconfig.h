@@ -47,26 +47,24 @@ public:
 
     ErrorCode error() const;
 
-    std::string dataDirectory() const;
-    std::string tempDirectory() const;
+    std::string data_directory() const;
+    std::string temp_directory() const;
 
-    void setDataDirectory(std::string path);
-    void setTempDirectory(std::string path);
+    void set_data_directory(std::string path);
+    void set_temp_directory(std::string path);
 
     std::vector<std::string> patchers() const;
-    std::vector<std::string> autoPatchers() const;
+    std::vector<std::string> auto_patchers() const;
 
-    Patcher * createPatcher(const std::string &id);
-    AutoPatcher * createAutoPatcher(const std::string &id,
-                                    const FileInfo * const info);
+    Patcher * create_patcher(const std::string &id);
+    AutoPatcher * create_auto_patcher(const std::string &id,
+                                      const FileInfo * const info);
 
-    void destroyPatcher(Patcher *patcher);
-    void destroyAutoPatcher(AutoPatcher *patcher);
+    void destroy_patcher(Patcher *patcher);
+    void destroy_auto_patcher(AutoPatcher *patcher);
 
-    PatcherConfig(const PatcherConfig &) = delete;
-    PatcherConfig(PatcherConfig &&) = default;
-    PatcherConfig & operator=(const PatcherConfig &) & = delete;
-    PatcherConfig & operator=(PatcherConfig &&) & = default;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PatcherConfig)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(PatcherConfig)
 
 private:
     std::unique_ptr<PatcherConfigPrivate> _priv_ptr;

@@ -39,17 +39,17 @@ public:
     explicit FileInfo();
     ~FileInfo();
 
-    std::string inputPath() const;
-    void setInputPath(std::string path);
+    std::string input_path() const;
+    void set_input_path(std::string path);
 
-    std::string outputPath() const;
-    void setOutputPath(std::string path);
+    std::string output_path() const;
+    void set_output_path(std::string path);
 
     Device * device() const;
-    void setDevice(Device * const device);
+    void set_device(Device * const device);
 
-    std::string romId() const;
-    void setRomId(std::string id);
+    std::string rom_id() const;
+    void set_rom_id(std::string id);
 
 private:
     std::unique_ptr<FileInfoPrivate> _priv_ptr;

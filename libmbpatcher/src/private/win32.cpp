@@ -27,23 +27,23 @@ namespace mb
 namespace patcher
 {
 
-std::string win32ErrorToString(DWORD win32Error)
+std::string win32_error_to_string(DWORD win32_error)
 {
-    LPWSTR messageBuffer = nullptr;
+    LPWSTR message_buffer = nullptr;
     size_t size = FormatMessageW(
         FORMAT_MESSAGE_ALLOCATE_BUFFER
             | FORMAT_MESSAGE_FROM_SYSTEM
             | FORMAT_MESSAGE_IGNORE_INSERTS,            // dwFlags
         nullptr,                                        // lpSource
-        win32Error,                                     // dwMessageId
+        win32_error,                                    // dwMessageId
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
-        (LPWSTR) &messageBuffer,                        // lpBuffer
+        (LPWSTR) &message_buffer,                       // lpBuffer
         0,                                              // nSize
         nullptr                                         // Arguments
     );
 
-    std::wstring message(messageBuffer, size);
-    LocalFree(messageBuffer);
+    std::wstring message(message_buffer, size);
+    LocalFree(message_buffer);
 
     return wcs_to_utf8(message);
 }

@@ -46,10 +46,10 @@ public:
 
     virtual std::string id() const override;
 
-    virtual std::vector<std::string> newFiles() const override;
-    virtual std::vector<std::string> existingFiles() const override;
+    virtual std::vector<std::string> new_files() const override;
+    virtual std::vector<std::string> existing_files() const override;
 
-    virtual bool patchFiles(const std::string &directory) override;
+    virtual bool patch_files(const std::string &directory) override;
 
 private:
     std::unique_ptr<MountCmdPatcherPrivate> _priv_ptr;

@@ -47,18 +47,18 @@ public:
     virtual std::string id() const override;
 
     // Patching
-    virtual void setFileInfo(const FileInfo * const info) override;
+    virtual void set_file_info(const FileInfo * const info) override;
 
-    virtual bool patchFile(ProgressUpdatedCallback progressCb,
-                           FilesUpdatedCallback filesCb,
-                           DetailsUpdatedCallback detailsCb,
-                           void *userData) override;
+    virtual bool patch_file(ProgressUpdatedCallback progress_cb,
+                            FilesUpdatedCallback files_cb,
+                            DetailsUpdatedCallback details_cb,
+                            void *userdata) override;
 
-    virtual void cancelPatching() override;
+    virtual void cancel_patching() override;
 
-    static std::string createInfoProp(const PatcherConfig * const pc,
-                                      const std::string &romId,
-                                      bool always_patch_ramdisk);
+    static std::string create_info_prop(const PatcherConfig * const pc,
+                                        const std::string &rom_id,
+                                        bool always_patch_ramdisk);
 
 private:
     std::unique_ptr<ZipPatcherPrivate> _priv_ptr;

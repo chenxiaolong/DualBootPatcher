@@ -29,7 +29,7 @@ namespace mb
 namespace patcher
 {
 
-std::string win32ErrorToString(DWORD win32Error);
+std::string win32_error_to_string(DWORD win32_error);
 
 }
 }

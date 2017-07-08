@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
 namespace patcher
@@ -241,7 +243,7 @@ public:
     EdifyTokenString(std::string str, Type type);
     virtual std::string generate() override;
 
-    std::string unescapedString();
+    std::string unescaped_string();
     std::string string();
 
 protected:
@@ -279,14 +281,14 @@ public:
     static void dump(const std::vector<EdifyToken *> &tokens);
 
 private:
-    static bool isValidUnquoted(char c);
+    static bool is_valid_unquoted(char c);
 
-    static bool nextToken(const char *data, std::size_t size, std::size_t *pos,
-                          EdifyToken **token);
+    static bool next_token(const char *data, std::size_t size, std::size_t *pos,
+                           EdifyToken **token);
 
-    EdifyTokenizer() = delete;
-    EdifyTokenizer(const EdifyTokenizer &) = delete;
-    EdifyTokenizer(EdifyTokenizer &&) = delete;
+    MB_DISABLE_DEFAULT_CONSTRUCTOR(EdifyTokenizer)
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(EdifyTokenizer)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(EdifyTokenizer)
 };
 
 }

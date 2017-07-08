@@ -53,35 +53,35 @@
 
 extern "C" {
 
-struct CallbackWrapper {
-    ProgressUpdatedCallback progressCb;
-    FilesUpdatedCallback filesCb;
-    DetailsUpdatedCallback detailsCb;
-    void *userData;
+struct CallbackWrapper
+{
+    ProgressUpdatedCallback progress_cb;
+    FilesUpdatedCallback files_cb;
+    DetailsUpdatedCallback details_cb;
+    void *userdata;
 };
-typedef struct CallbackWrapper CallbackWrapper;
 
-void progressCbWrapper(uint64_t bytes, uint64_t maxBytes, void *userData)
+void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes, void *userdata)
 {
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
-    if (wrapper->progressCb != nullptr) {
-        wrapper->progressCb(bytes, maxBytes, wrapper->userData);
+    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
+    if (wrapper->progress_cb != nullptr) {
+        wrapper->progress_cb(bytes, max_bytes, wrapper->userdata);
     }
 }
 
-void filesCbWrapper(uint64_t files, uint64_t maxFiles, void *userData)
+void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
 {
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
-    if (wrapper->filesCb) {
-        wrapper->filesCb(files, maxFiles, userData);
+    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
+    if (wrapper->files_cb) {
+        wrapper->files_cb(files, max_files, userdata);
     }
 }
 
-void detailsCbWrapper(const std::string &text, void *userData)
+void details_cb_wrapper(const std::string &text, void *userdata)
 {
-    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userData);
-    if (wrapper->detailsCb) {
-        wrapper->detailsCb(text.c_str(), wrapper->userData);
+    CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
+    if (wrapper->details_cb) {
+        wrapper->details_cb(text.c_str(), wrapper->userdata);
     }
 }
 
@@ -134,7 +134,7 @@ char * mbpatcher_patcher_id(const CPatcher *patcher)
 void mbpatcher_patcher_set_fileinfo(CPatcher *patcher, const CFileInfo *info)
 {
     CASTP(patcher);
-    p->setFileInfo(reinterpret_cast<const mb::patcher::FileInfo *>(info));
+    p->set_file_info(reinterpret_cast<const mb::patcher::FileInfo *>(info));
 }
 
 /*!
@@ -157,13 +157,14 @@ bool mbpatcher_patcher_patch_file(CPatcher *patcher,
     CASTP(patcher);
 
     CallbackWrapper wrapper;
-    wrapper.progressCb = progressCb;
-    wrapper.filesCb = filesCb;
-    wrapper.detailsCb = detailsCb;
-    wrapper.userData = userData;
+    wrapper.progress_cb = progressCb;
+    wrapper.files_cb = filesCb;
+    wrapper.details_cb = detailsCb;
+    wrapper.userdata = userData;
 
-    return p->patchFile(&progressCbWrapper, &filesCbWrapper, &detailsCbWrapper,
-                        reinterpret_cast<void *>(&wrapper));
+    return p->patch_file(&progress_cb_wrapper, &files_cb_wrapper,
+                         &details_cb_wrapper,
+                         reinterpret_cast<void *>(&wrapper));
 }
 
 /*!
@@ -176,7 +177,7 @@ bool mbpatcher_patcher_patch_file(CPatcher *patcher,
 void mbpatcher_patcher_cancel_patching(CPatcher *patcher)
 {
     CASTP(patcher);
-    p->cancelPatching();
+    p->cancel_patching();
 }
 
 /*!
@@ -231,7 +232,7 @@ char * mbpatcher_autopatcher_id(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->newFiles());
+    return vector_to_cstring_array(ap->new_files());
 }
 
 /*!
@@ -248,7 +249,7 @@ char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_existing_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->existingFiles());
+    return vector_to_cstring_array(ap->existing_files());
 }
 
 /*!
@@ -264,7 +265,7 @@ bool mbpatcher_autopatcher_patch_files(CAutoPatcher *patcher,
                                        const char *directory)
 {
     CASTAP(patcher);
-    return ap->patchFiles(directory);
+    return ap->patch_files(directory);
 }
 
 }
