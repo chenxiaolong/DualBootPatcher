@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,30 +17,43 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mainwindow.h"
+#pragma once
 
-#include <QtCore/QStringBuilder>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QMessageBox>
+#include <memory>
 
-#include <iostream>
-
-#if !defined(DATA_DIR)
-#  error DATA_DIR must be defined
-#endif
+#include "mbcommon/common.h"
+#include "mbdevice/device.h"
 
 
-int main(int argc, char *argv[])
+namespace mb
 {
-    QApplication a(argc, argv);
+namespace patcher
+{
 
-    a.setApplicationName(QObject::tr("Dual Boot Patcher"));
+class FileInfoPrivate;
+class MB_EXPORT FileInfo
+{
+    MB_DECLARE_PRIVATE(FileInfo)
 
-    mb::patcher::PatcherConfig pc;
-    pc.set_data_directory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
+public:
+    explicit FileInfo();
+    ~FileInfo();
 
-    MainWindow w(&pc);
-    w.show();
+    std::string input_path() const;
+    void set_input_path(std::string path);
 
-    return a.exec();
+    std::string output_path() const;
+    void set_output_path(std::string path);
+
+    Device * device() const;
+    void set_device(Device * const device);
+
+    std::string rom_id() const;
+    void set_rom_id(std::string id);
+
+private:
+    std::unique_ptr<FileInfoPrivate> _priv_ptr;
+};
+
+}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,30 +17,17 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mainwindow.h"
+#pragma once
 
-#include <QtCore/QStringBuilder>
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QMessageBox>
+#include <string>
+#include <vector>
 
-#include <iostream>
+#include "mbcommon/common.h"
 
-#if !defined(DATA_DIR)
-#  error DATA_DIR must be defined
-#endif
-
-
-int main(int argc, char *argv[])
+class StringUtils
 {
-    QApplication a(argc, argv);
-
-    a.setApplicationName(QObject::tr("Dual Boot Patcher"));
-
-    mb::patcher::PatcherConfig pc;
-    pc.set_data_directory(a.applicationDirPath().toStdString() + "/" + DATA_DIR);
-
-    MainWindow w(&pc);
-    w.show();
-
-    return a.exec();
-}
+public:
+    static std::vector<std::string> split(const std::string &str, char delim);
+    static std::string join(std::vector<std::string> &list,
+                            const std::string &delim);
+};

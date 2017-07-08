@@ -27,7 +27,7 @@ import com.github.chenxiaolong.dualbootpatcher.R;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff;
 
 import org.apache.commons.io.Charsets;
@@ -44,7 +44,7 @@ public class PatcherUtils {
     private static final String PREFIX_DATA_SLOT = "data-slot-";
     private static final String PREFIX_EXTSD_SLOT = "extsd-slot-";
 
-    public static final String PATCHER_ID_MULTIBOOTPATCHER = "MultiBootPatcher";
+    public static final String PATCHER_ID_ZIPPATCHER = "ZipPatcher";
     public static final String PATCHER_ID_ODINPATCHER = "OdinPatcher";
 
     private static boolean sInitialized;

@@ -218,7 +218,7 @@ public class SwitcherUtils {
      * and thus "primary" will be returned.
      *
      * @param file Boot image file
-     * @return String containing the ROM ID or null if an error occurs within libmbp.
+     * @return String containing the ROM ID or null if an error occurs within libmbpatcher.
      */
     @Nullable
     public static String getBootImageRomId(File file) {
