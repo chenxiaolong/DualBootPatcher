@@ -155,6 +155,10 @@ namespace mb
  */
 
 /*! \cond INTERNAL */
+FilePrivate::FilePrivate()
+{
+}
+
 FilePrivate::~FilePrivate()
 {
 }
