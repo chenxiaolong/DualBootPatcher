@@ -64,6 +64,8 @@ public:
     Win32FilePrivate();
     virtual ~Win32FilePrivate();
 
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32FilePrivate)
+
     void clear();
 
     LPCWSTR win32_error_string(DWORD error_code);

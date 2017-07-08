@@ -54,6 +54,8 @@ public:
     FdFilePrivate();
     virtual ~FdFilePrivate();
 
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFilePrivate)
+
     void clear();
 
     static int convert_mode(FileOpenMode mode);

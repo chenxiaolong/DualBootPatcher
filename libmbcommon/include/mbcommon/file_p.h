@@ -40,7 +40,10 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)
 class FilePrivate
 {
 public:
+    FilePrivate();
     virtual ~FilePrivate();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
 
     FileState state;
 
