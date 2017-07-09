@@ -33,6 +33,7 @@ before_script:
 - echo "export ANDROID_HOME=~/dev/android-sdk" >> ~/.bashrc
 - echo "export ANDROID_NDK_HOME=~/dev/android-ndk/android-ndk-r15" >> ~/.bashrc
 - echo "export ANDROID_NDK=~/dev/android-ndk/android-ndk-r15" >> ~/.bashrc
+- echo "export LD_LIBRARY_PATH=/usr/lib64" >> ~/.bashrc
 - echo "reload bash environment"
 - source ~/.bashrc
 - env | grep CCACHE && env | grep NDK
