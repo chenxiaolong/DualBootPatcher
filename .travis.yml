@@ -10,13 +10,14 @@ before_script:
   curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev
   libx11-dev lib32z-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip maven
   schedtool &> /dev/null
-- echo "Building Jansson"
-- mkdir ~/dev && cd ~/dev && wget http://www.digip.org/jansson/releases/jansson-2.8.tar.gz && tar xzf jansson-2.8.tar.gz && cd jansson-2.8
-- sudo ./configure && sudo make && sudo make install
 - echo "Downloading cmake"
-- cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
+- mkdir ~/dev && cd ~/dev && wget https://cmake.org/files/v3.6/cmake-3.6.3.tar.gz && tar xzf cmake-3.6.3.tar.gz && cd ~/dev/cmake-3.6.3
 - echo "Building cmake"
 - sudo sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' ~/dev/cmake-3.6.3/bootstrap && sudo ./bootstrap && sudo make && sudo make install
+- echo "Building Jansson"
+- cd ~/dev && wget https://github.com/akheron/jansson/archive/v2.10.tar.gz && tar xzf jansson-2.10.tar.gz && cd jansson-2.10
+- sudo autoreconf -fi && mkdir build && cd build && cmake ..
+- sudo make && sudo make check && sudo make install
 - echo "get Android NDK R15 & SDK R25.0.3"
 - cd ~/dev && mkdir android-ndk && cd ~/dev/android-ndk
 - echo "Downloading NDK"
@@ -33,7 +34,6 @@ before_script:
 - echo "export ANDROID_HOME=~/dev/android-sdk" >> ~/.bashrc
 - echo "export ANDROID_NDK_HOME=~/dev/android-ndk/android-ndk-r15" >> ~/.bashrc
 - echo "export ANDROID_NDK=~/dev/android-ndk/android-ndk-r15" >> ~/.bashrc
-- echo "export LD_LIBRARY_PATH=/usr/lib64" >> ~/.bashrc
 - echo "reload bash environment"
 - source ~/.bashrc
 - env | grep CCACHE && env | grep NDK
