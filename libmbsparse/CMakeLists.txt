@@ -9,6 +9,8 @@ set(MBSPARSE_TESTS_SOURCES
     tests/test_sparse.cpp
 )
 
+add_definitions(-DMBSPARSE_BUILD)
+
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)

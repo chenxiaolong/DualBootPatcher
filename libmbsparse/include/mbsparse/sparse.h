@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  * Copyright (C) 2010 The Android Open Source Project
  *
  * This file is part of DualBootPatcher
@@ -20,43 +20,48 @@
 
 #pragma once
 
-#include "mbcommon/common.h"
-#include "mbsparse/sparse_header.h"
+#include "mbcommon/file.h"
 
-#ifdef __cplusplus
-#include <cstdio>
-#else
-#include <stdbool.h>
-#include <stdio.h>
-#endif
+namespace mb
+{
+namespace sparse
+{
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class SparseFilePrivate;
+class MB_EXPORT SparseFile : public File
+{
+    MB_DECLARE_PRIVATE(SparseFile)
 
-typedef bool (*SparseOpenCb)(void *userData);
-typedef bool (*SparseCloseCb)(void *userData);
-typedef bool (*SparseReadCb)(void *buf, uint64_t size, uint64_t *bytesRead,
-                             void *userData);
-typedef bool (*SparseSeekCb)(int64_t offset, int whence, void *userData);
-typedef bool (*SparseSkipCb)(uint64_t offset, void *userData);
+public:
+    SparseFile();
+    SparseFile(File *file);
+    virtual ~SparseFile();
 
-struct SparseCtx;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFile)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SparseFile)
 
-MB_EXPORT struct SparseCtx * sparseCtxNew();
-MB_EXPORT bool sparseCtxFree(struct SparseCtx *ctx);
+    // File open
+    FileStatus open(File *file);
 
-MB_EXPORT bool sparseOpen(struct SparseCtx *ctx, SparseOpenCb openCb,
-                          SparseCloseCb closeCb, SparseReadCb readCb,
-                          SparseSeekCb seekCb, SparseSkipCb skipCb,
-                          void *userData);
-MB_EXPORT bool sparseClose(struct SparseCtx *ctx);
-MB_EXPORT bool sparseRead(struct SparseCtx *ctx, void *buf, uint64_t size,
-                          uint64_t *bytesRead);
-MB_EXPORT bool sparseSeek(struct SparseCtx *ctx, int64_t offset, int whence);
-MB_EXPORT bool sparseTell(struct SparseCtx *ctx, uint64_t *offset);
-MB_EXPORT bool sparseSize(struct SparseCtx *ctx, uint64_t *size);
+    // File size
+    uint64_t size();
 
-#ifdef __cplusplus
+protected:
+    /*! \cond INTERNAL */
+    SparseFile(SparseFilePrivate *priv);
+    SparseFile(SparseFilePrivate *priv, File *file);
+    /*! \endcond */
+
+    virtual FileStatus on_open() override;
+    virtual FileStatus on_close() override;
+    virtual FileStatus on_read(void *buf, size_t size,
+                               size_t *bytes_read) override;
+    virtual FileStatus on_seek(int64_t offset, int whence,
+                               uint64_t *new_offset) override;
+
+private:
+    std::unique_ptr<SparseFilePrivate> _priv_ptr;
+};
+
 }
-#endif
+}

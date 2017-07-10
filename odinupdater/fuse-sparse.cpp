@@ -1,5 +1,25 @@
+/*
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ *
+ * This file is part of DualBootPatcher
+ *
+ * DualBootPatcher is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * DualBootPatcher is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #define FUSE_USE_VERSION 26
 
+#include <mutex>
 #include <new>
 
 #include <cerrno>
@@ -9,7 +29,6 @@
 #include <cstring>
 
 #include <fcntl.h>
-#include <pthread.h>
 #include <unistd.h>
 
 // fuse
@@ -33,76 +52,10 @@ static uint64_t sparse_size;
 
 struct context
 {
-    SparseCtx *sctx;
-    mb::StandardFile file;
-    pthread_mutex_t mutex;
+    mb::StandardFile source_file;
+    mb::sparse::SparseFile sparse_file;
+    std::mutex mutex;
 };
-
-/*!
- * \brief Open callback for sparseOpen()
- */
-static bool cb_open(void *userData)
-{
-    context *ctx = static_cast<context *>(userData);
-    if (ctx->file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
-            != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to open: %s\n",
-                source_fd_path, ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
-
-/*!
- * \brief Close callback for sparseOpen()
- */
-static bool cb_close(void *userData)
-{
-    context *ctx = static_cast<context *>(userData);
-    if (ctx->file.close() != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to close: %s\n",
-                source_fd_path, ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
-
-/*!
- * \brief Read callback for sparseOpen()
- */
-static bool cb_read(void *buf, uint64_t size, uint64_t *bytesRead,
-                    void *userData)
-{
-    context *ctx = static_cast<context *>(userData);
-    size_t total = 0;
-    while (size > 0) {
-        size_t partial;
-        if (ctx->file.read(buf, size, &partial) != mb::FileStatus::OK) {
-            fprintf(stderr, "%s: Failed to read: %s\n",
-                    source_fd_path, ctx->file.error_string().c_str());
-            return false;
-        }
-        size -= partial;
-        total += partial;
-        buf = static_cast<char *>(buf) + partial;
-    }
-    *bytesRead = total;
-    return true;
-}
-
-/*!
- * \brief Seek callback for sparseOpen()
- */
-static bool cb_seek(int64_t offset, int whence, void *userData)
-{
-    context *ctx = static_cast<context *>(userData);
-    if (ctx->file.seek(offset, whence, nullptr) != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to seek: %s\n",
-                source_fd_path, ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
 
 /*!
  * \brief Open callback for fuse
@@ -120,17 +73,21 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    ctx->sctx = sparseCtxNew();
-    if (!ctx->sctx) {
+    if (ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
+            != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to open file: %s\n",
+                source_fd_path, ctx->source_file.error_string().c_str());
+        auto error = ctx->source_file.error();
         delete ctx;
-        return -ENOMEM;
+        return error < 0 ? error : -EIO;
     }
 
-    if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
-                    ctx)) {
-        sparseCtxFree(ctx->sctx);
+    if (ctx->sparse_file.open(&ctx->source_file) != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to open sparse file: %s\n",
+                source_fd_path, ctx->sparse_file.error_string().c_str());
+        auto error = ctx->sparse_file.error();
         delete ctx;
-        return -EIO;
+        return error < 0 ? error : -EIO;
     }
 
     fi->fh = reinterpret_cast<uint64_t>(ctx);
@@ -146,7 +103,6 @@ static int fuse_release(const char *path, fuse_file_info *fi)
     (void) path;
 
     context *ctx = reinterpret_cast<context *>(fi->fh);
-    sparseCtxFree(ctx->sctx);
     delete ctx;
 
     return 0;
@@ -162,16 +118,19 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
                             OFF_T offset)
 {
     // Seek to position
-    if (!sparseSeek(ctx->sctx, offset, SEEK_SET)) {
-        return -1;
+    if (ctx->sparse_file.seek(offset, SEEK_SET, nullptr)
+            != mb::FileStatus::OK) {
+        auto error = ctx->sparse_file.error();
+        return error < 0 ? error : -EIO;
     }
 
-    uint64_t bytes_read;
-    if (!sparseRead(ctx->sctx, buf, size, &bytes_read)) {
-        return -1;
+    size_t n;
+    if (ctx->sparse_file.read(buf, size, &n) != mb::FileStatus::OK) {
+        auto error = ctx->sparse_file.error();
+        return error < 0 ? error : -EIO;
     }
 
-    return bytes_read;
+    return n;
 }
 
 /*!
@@ -184,11 +143,8 @@ static int fuse_read(const char *path, char *buf, size_t size, OFF_T offset,
 
     context *ctx = reinterpret_cast<context *>(fi->fh);
 
-    pthread_mutex_lock(&ctx->mutex);
-    int ret = fuse_read_locked(ctx, buf, size, offset);
-    pthread_mutex_unlock(&ctx->mutex);
-
-    return ret;
+    std::lock_guard<std::mutex> lock(ctx->mutex);
+    return fuse_read_locked(ctx, buf, size, offset);
 }
 
 /*!
@@ -209,32 +165,26 @@ static int fuse_getattr(const char *path, struct stat *stbuf)
  */
 static int get_sparse_file_size()
 {
-    context *ctx = new(std::nothrow) context();
-    if (!ctx) {
-        return -ENOMEM;
+    mb::StandardFile source_file;
+    mb::sparse::SparseFile sparse_file;
+
+    if (source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
+            != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to open file: %s\n",
+                source_fd_path, source_file.error_string().c_str());
+        auto error = source_file.error();
+        return error < 0 ? error : -EIO;
     }
 
-    ctx->sctx = sparseCtxNew();
-    if (!ctx->sctx) {
-        delete ctx;
-        return -ENOMEM;
+    if (sparse_file.open(&source_file) != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to open sparse file: %s\n",
+                source_fd_path, sparse_file.error_string().c_str());
+        auto error = sparse_file.error();
+        return error < 0 ? error : -EIO;
     }
 
-    if (!sparseOpen(ctx->sctx, &cb_open, &cb_close, &cb_read, &cb_seek, nullptr,
-                    ctx)) {
-        sparseCtxFree(ctx->sctx);
-        delete ctx;
-        return -EIO;
-    }
+    sparse_size = sparse_file.size();
 
-    if (!sparseSize(ctx->sctx, &sparse_size)) {
-        sparseCtxFree(ctx->sctx);
-        delete ctx;
-        return -EIO;
-    }
-
-    sparseCtxFree(ctx->sctx);
-    delete ctx;
     return 0;
 }
 
