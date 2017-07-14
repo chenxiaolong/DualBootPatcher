@@ -8,6 +8,7 @@ set(files
     dexp.yml
     elephone.yml
     google.yml
+    htc.yml
     huawei.yml
     jiayu.yml
     leeco.yml
