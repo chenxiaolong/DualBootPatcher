@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,67 +26,6 @@
 #include "mbcommon/file/standard.h"
 #include "mbsparse/sparse.h"
 
-typedef std::unique_ptr<SparseCtx, bool (*)(SparseCtx *)> ScopedSparseCtx;
-
-struct Context
-{
-    std::string path;
-    mb::StandardFile file;
-};
-
-bool cbOpen(void *userData)
-{
-    Context *ctx = static_cast<Context *>(userData);
-    if (ctx->file.open(ctx->path, mb::FileOpenMode::READ_ONLY)
-            != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to open: %s\n",
-                ctx->path.c_str(), ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool cbClose(void *userData)
-{
-    Context *ctx = static_cast<Context *>(userData);
-    if (ctx->file.close() != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to close: %s\n",
-                ctx->path.c_str(), ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
-
-bool cbRead(void *buf, uint64_t size, uint64_t *bytesRead, void *userData)
-{
-    Context *ctx = static_cast<Context *>(userData);
-    size_t total = 0;
-    while (size > 0) {
-        size_t partial;
-        if (ctx->file.read(buf, size, &partial) != mb::FileStatus::OK) {
-            fprintf(stderr, "%s: Failed to read: %s\n",
-                    ctx->path.c_str(), ctx->file.error_string().c_str());
-            return false;
-        }
-        size -= partial;
-        total += partial;
-        buf = static_cast<char *>(buf) + partial;
-    }
-    *bytesRead = total;
-    return true;
-}
-
-bool cbSeek(int64_t offset, int whence, void *userData)
-{
-    Context *ctx = static_cast<Context *>(userData);
-    if (ctx->file.seek(offset, whence, nullptr) != mb::FileStatus::OK) {
-        fprintf(stderr, "%s: Failed to seek: %s\n",
-                ctx->path.c_str(), ctx->file.error_string().c_str());
-        return false;
-    }
-    return true;
-}
-
 int main(int argc, char *argv[])
 {
     if (argc != 3) {
@@ -94,53 +33,64 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    const char *inputFile = argv[1];
-    const char *outputFile = argv[2];
+    const char *input_path = argv[1];
+    const char *output_path = argv[2];
 
-    Context ctx;
-    ctx.path = inputFile;
+    mb::StandardFile input_file;
+    mb::StandardFile output_file;
+    mb::sparse::SparseFile sparse_file;
 
-    ScopedSparseCtx sparseCtx(sparseCtxNew(), &sparseCtxFree);
-    if (!sparseCtx) {
-        fprintf(stderr, "Out of memory\n");
+    if (input_file.open(input_path, mb::FileOpenMode::READ_ONLY)
+            != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to open for reading: %s\n",
+                input_path, input_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    if (!sparseOpen(sparseCtx.get(), &cbOpen, &cbClose, &cbRead, &cbSeek,
-                    nullptr, &ctx)) {
+    if (sparse_file.open(&input_file) != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: %s\n",
+                input_path, sparse_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    mb::StandardFile file;
-
-    if (file.open(outputFile, mb::FileOpenMode::WRITE_ONLY)
+    if (output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY)
             != mb::FileStatus::OK) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                outputFile, file.error_string().c_str());
+                output_path, output_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    uint64_t bytesRead;
+    size_t n_read;
     char buf[10240];
-    bool ret;
-    while ((ret = sparseRead(sparseCtx.get(), buf, sizeof(buf), &bytesRead))
-            && bytesRead > 0) {
+    mb::FileStatus ret;
+    while ((ret = sparse_file.read(buf, sizeof(buf), &n_read))
+            == mb::FileStatus::OK && n_read > 0) {
         char *ptr = buf;
-        size_t bytesWritten;
-        while (bytesRead > 0) {
-            if (file.write(buf, bytesRead, &bytesWritten)
+        size_t n_written;
+
+        while (n_read > 0) {
+            if (output_file.write(buf, n_read, &n_written)
                     != mb::FileStatus::OK) {
-                fprintf(stderr, "%s: Failed to write: %s\n",
-                        outputFile, file.error_string().c_str());
+                fprintf(stderr, "%s: Failed to write file: %s\n",
+                        output_path, output_file.error_string().c_str());
                 return EXIT_FAILURE;
             }
-            bytesRead -= bytesWritten;
-            ptr += bytesWritten;
+            n_read -= n_written;
+            ptr += n_written;
         }
     }
-    if (!ret) {
+
+    if (ret != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to read file: %s\n",
+                input_path, sparse_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    return file.close() == mb::FileStatus::OK ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (output_file.close() != mb::FileStatus::OK) {
+        fprintf(stderr, "%s: Failed to close file: %s\n",
+                output_path, output_file.error_string().c_str());
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
