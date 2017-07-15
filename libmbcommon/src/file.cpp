@@ -38,7 +38,7 @@
 #define ENSURE_STATE(STATES) \
     do { \
         if (!(priv->state & (STATES))) { \
-            set_error(FileError::PROGRAMMER_ERROR, \
+            set_error(make_error_code(FileError::InvalidState), \
                       "%s: Invalid state: "\
                       "expected 0x%hx, actual: 0x%hx", \
                       __func__, (STATES), priv->state); \
@@ -341,7 +341,7 @@ FileStatus File::close()
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
  * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file. This parameter cannot be NULL.
+ *                        of file.
  *
  * \return
  *   * #FileStatus::OK if some bytes were read or EOF is reached
@@ -349,20 +349,13 @@ FileStatus File::close()
  *   * #FileStatus::UNSUPPORTED if the handle source does not support reading
  *   * \<= #FileStatus::WARN if an error occurs
  */
-FileStatus File::read(void *buf, size_t size, size_t *bytes_read)
+FileStatus File::read(void *buf, size_t size, size_t &bytes_read)
 {
     GET_PIMPL_OR_RETURN(FileStatus::FATAL);
     ENSURE_STATE(FileState::OPENED);
 
-    auto ret = FileStatus::UNSUPPORTED;
+    auto ret = on_read(buf, size, bytes_read);
 
-    if (!bytes_read) {
-        set_error(FileError::PROGRAMMER_ERROR,
-                  "%s: bytes_read is NULL", __func__);
-        ret = FileStatus::FATAL;
-    } else {
-        ret = on_read(buf, size, bytes_read);
-    }
     if (ret <= FileStatus::FATAL) {
         priv->state = FileState::FATAL;
     }
@@ -386,8 +379,7 @@ FileStatus File::read(void *buf, size_t size, size_t *bytes_read)
  *
  * \param[in] buf Buffer to write from
  * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written. This
- *                           parameter cannot be NULL.
+ * \param[out] bytes_written Output number of bytes that were written.
  *
  * \return
  *   * #FileStatus::OK if some bytes were written
@@ -395,20 +387,13 @@ FileStatus File::read(void *buf, size_t size, size_t *bytes_read)
  *   * #FileStatus::UNSUPPORTED if the handle source does not support writing
  *   * \<= #FileStatus::WARN if an error occurs
  */
-FileStatus File::write(const void *buf, size_t size, size_t *bytes_written)
+FileStatus File::write(const void *buf, size_t size, size_t &bytes_written)
 {
     GET_PIMPL_OR_RETURN(FileStatus::FATAL);
     ENSURE_STATE(FileState::OPENED);
 
-    auto ret = FileStatus::UNSUPPORTED;
+    auto ret = on_write(buf, size, bytes_written);
 
-    if (!bytes_written) {
-        set_error(FileError::PROGRAMMER_ERROR,
-                  "%s: bytes_written is NULL", __func__);
-        ret = FileStatus::FATAL;
-    } else {
-        ret = on_write(buf, size, bytes_written);
-    }
     if (ret <= FileStatus::FATAL) {
         priv->state = FileState::FATAL;
     }
@@ -435,7 +420,7 @@ FileStatus File::seek(int64_t offset, int whence, uint64_t *new_offset)
 
     uint64_t new_offset_temp;
 
-    auto ret = on_seek(offset, whence, &new_offset_temp);
+    auto ret = on_seek(offset, whence, new_offset_temp);
 
     if (ret == FileStatus::OK) {
         if (new_offset) {
@@ -506,13 +491,11 @@ bool File::is_fatal()
  *
  * \note The return value is undefined if an operation did not fail.
  *
- * \return Error code for failed operation. If \>= 0, then the file is one of
- *         the FileError entries. If \< 0, then the error code is
- *         implementation-defined (usually `-errno` or `-GetLastError()`).
+ * \return Error code for failed operation. Test against FileError or std::errc.
  */
-int File::error()
+std::error_code File::error()
 {
-    GET_PIMPL_OR_RETURN(0);
+    GET_PIMPL_OR_RETURN({});
 
     return priv->error_code;
 }
@@ -537,20 +520,19 @@ std::string File::error_string()
  *
  * \sa File::set_error_v()
  *
- * \param error_code Error code
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ... `printf()`-style format arguments
  *
- * \return FileStatus::OK if the error was successfully set or
- *         FileStatus::FAILED if an error occured
+ * \return Whether the error was successfully set
  */
-FileStatus File::set_error(int error_code, const char *fmt, ...)
+bool File::set_error(std::error_code ec, const char *fmt, ...)
 {
-    FileStatus ret;
+    bool ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = set_error_v(error_code, fmt, ap);
+    ret = set_error_v(ec, fmt, ap);
     va_end(ap);
 
     return ret;
@@ -561,20 +543,26 @@ FileStatus File::set_error(int error_code, const char *fmt, ...)
  *
  * \sa File::set_error()
  *
- * \param error_code Error code
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ap `printf()`-style format arguments as a va_list
  *
- * \return FileStatus::OK if the error was successfully set or
- *         FileStatus::FAILED if an error occured
+ * \return Whether the error was successfully set
  */
-FileStatus File::set_error_v(int error_code, const char *fmt, va_list ap)
+bool File::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
-    GET_PIMPL_OR_RETURN(FileStatus::FATAL);
+    GET_PIMPL_OR_RETURN(false);
 
-    priv->error_code = error_code;
-    return format_v(priv->error_string, fmt, ap)
-            ? FileStatus::OK : FileStatus::FAILED;
+    priv->error_code = ec;
+
+    if (!format_v(priv->error_string, fmt, ap)) {
+        return false;
+    }
+
+    priv->error_string += ": ";
+    priv->error_string += ec.message();
+
+    return true;
 }
 
 /*!
@@ -654,13 +642,13 @@ FileStatus File::on_close()
  *
  * \return #FileStatus::UNSUPPORTED
  */
-FileStatus File::on_read(void *buf, size_t size, size_t *bytes_read)
+FileStatus File::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     (void) buf;
     (void) size;
     (void) bytes_read;
 
-    set_error(FileError::UNSUPPORTED,
+    set_error(make_error_code(FileError::UnsupportedRead),
               "%s: Read callback not supported", __func__);
     return FileStatus::UNSUPPORTED;
 }
@@ -688,13 +676,13 @@ FileStatus File::on_read(void *buf, size_t size, size_t *bytes_read)
  *
  * \return #FileStatus::UNSUPPORTED
  */
-FileStatus File::on_write(const void *buf, size_t size, size_t *bytes_written)
+FileStatus File::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     (void) buf;
     (void) size;
     (void) bytes_written;
 
-    set_error(FileError::UNSUPPORTED,
+    set_error(make_error_code(FileError::UnsupportedWrite),
               "%s: Write callback not supported", __func__);
     return FileStatus::UNSUPPORTED;
 }
@@ -716,18 +704,17 @@ FileStatus File::on_write(const void *buf, size_t size, size_t *bytes_written)
  *
  * \param[in] offset File position offset
  * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset. This parameter is guaranteed
- *                        to be non-NULL.
+ * \param[out] new_offset Output new file offset
  *
  * \return #FileStatus::UNSUPPORTED
  */
-FileStatus File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
+FileStatus File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     (void) offset;
     (void) whence;
     (void) new_offset;
 
-    set_error(FileError::UNSUPPORTED,
+    set_error(make_error_code(FileError::UnsupportedSeek),
               "%s: Seek callback not supported", __func__);
     return FileStatus::UNSUPPORTED;
 }
@@ -758,7 +745,7 @@ FileStatus File::on_truncate(uint64_t size)
 {
     (void) size;
 
-    set_error(FileError::UNSUPPORTED,
+    set_error(make_error_code(FileError::UnsupportedTruncate),
               "%s: Truncate callback not supported", __func__);
     return FileStatus::UNSUPPORTED;
 }

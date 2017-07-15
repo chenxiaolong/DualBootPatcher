@@ -72,15 +72,15 @@ int find_loki_header(MbBiReader *bir, mb::File *file,
 
     file_ret = file->seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr);
     if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Loki magic not found: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_WARN;
     }
 
-    file_ret = mb::file_read_fully(*file, &header, sizeof(header), &n);
+    file_ret = mb::file_read_fully(*file, &header, sizeof(header), n);
     if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -149,7 +149,7 @@ int loki_find_ramdisk_address(MbBiReader *bir, mb::File *file,
                                    LOKI_SHELLCODE_SIZE - 9, 1, result_cb,
                                    &offset);
         if (file_ret < mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, file->error(),
+            mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                    "Failed to search for Loki shellcode: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -166,7 +166,7 @@ int loki_find_ramdisk_address(MbBiReader *bir, mb::File *file,
 
         file_ret = file->seek(offset, SEEK_SET, nullptr);
         if (file_ret < mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, file->error(),
+            mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                    "Failed to seek to ramdisk address offset: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -174,9 +174,9 @@ int loki_find_ramdisk_address(MbBiReader *bir, mb::File *file,
         }
 
         file_ret = mb::file_read_fully(*file, &ramdisk_addr,
-                                       sizeof(ramdisk_addr), &n);
+                                       sizeof(ramdisk_addr), n);
         if (file_ret < mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, file->error(),
+            mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                    "Failed to read ramdisk address offset: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -281,7 +281,7 @@ int loki_old_find_gzip_offset(MbBiReader *bir, mb::File *file,
         }
 
         // Read next bytes for flags
-        ret = mb::file_read_fully(file, &flags, sizeof(flags), &n);
+        ret = mb::file_read_fully(file, &flags, sizeof(flags), n);
         if (ret != mb::FileStatus::OK) {
             return ret;
         } else if (n != sizeof(flags)) {
@@ -310,7 +310,7 @@ int loki_old_find_gzip_offset(MbBiReader *bir, mb::File *file,
                                sizeof(gzip_deflate_magic), -1, result_cb,
                                &result);
     if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to search for gzip magic: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -379,7 +379,7 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, mb::File *file,
 
     file_ret = file->seek(-aboot_size, SEEK_END, &aboot_offset);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to end of file: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -406,16 +406,16 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, mb::File *file,
 
         file_ret = file->seek(cur_offset, SEEK_SET, nullptr);
         if (file_ret != mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, file->error(),
+            mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                    "Failed to seek: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
                     ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
-        file_ret = mb::file_read_fully(*file, buf, to_read, &n);
+        file_ret = mb::file_read_fully(*file, buf, to_read, n);
         if (file_ret != mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, file->error(),
+            mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                    "Failed to read: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -473,20 +473,20 @@ int find_linux_kernel_size(MbBiReader *bir, mb::File *file,
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     file_ret = file->seek(kernel_offset + 0x2c, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to kernel header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, &kernel_size, sizeof(kernel_size), &n);
+    file_ret = mb::file_read_fully(*file, &kernel_size, sizeof(kernel_size), n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read size from kernel header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     } else if (n != sizeof(kernel_size)) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Unexpected EOF when reading kernel header");
         return MB_BI_WARN;
     }
@@ -883,7 +883,7 @@ int loki_reader_go_to_entry(MbBiReader *bir, void *userdata, MbBiEntry *entry,
 
 int loki_reader_read_data(MbBiReader *bir, void *userdata,
                           void *buf, size_t buf_size,
-                          size_t *bytes_read)
+                          size_t &bytes_read)
 {
     LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
 

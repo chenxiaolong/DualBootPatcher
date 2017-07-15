@@ -430,7 +430,7 @@ int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
     if (!file->is_open()) {
         // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
                                file->error_string().c_str());
         delete file;
@@ -465,7 +465,7 @@ int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
     if (!file->is_open()) {
         // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
                                file->error_string().c_str());
         delete file;
@@ -522,7 +522,7 @@ int mb_bi_reader_open(MbBiReader *bir, mb::File *file, bool owned)
                 // Seek to beginning
                 file_ret = bir->file->seek(0, SEEK_SET, nullptr);
                 if (file_ret < mb::FileStatus::OK) {
-                    mb_bi_reader_set_error(bir, bir->file->error(),
+                    mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                            "Failed to seek file: %s",
                                            bir->file->error_string().c_str());
                     ret = file_ret == mb::FileStatus::FATAL
@@ -672,7 +672,7 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
     // Seek to beginning
     file_ret = bir->file->seek(0, SEEK_SET, nullptr);
     if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, bir->file->error(),
+        mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                "Failed to seek file: %s",
                                bir->file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -866,7 +866,7 @@ int mb_bi_reader_read_data(MbBiReader *bir, void *buf, size_t size,
     }
 
     ret = bir->format->read_data_cb(bir, bir->format->userdata, buf, size,
-                                    bytes_read);
+                                    *bytes_read);
     if (ret == MB_BI_OK) {
         // Do not alter state. Stay in ReaderState::DATA
     } else if (ret <= MB_BI_FATAL) {

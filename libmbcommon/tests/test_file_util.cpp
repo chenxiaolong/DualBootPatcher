@@ -40,7 +40,7 @@ TEST_F(FileUtilTest, ReadFullyNormal)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillRepeatedly(testing::DoAll(testing::SetArgReferee<2>(2),
                                            testing::Return(mb::FileStatus::OK)));
 
     // Open file
@@ -48,7 +48,7 @@ TEST_F(FileUtilTest, ReadFullyNormal)
 
     char buf[10];
     size_t n;
-    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), &n),
+    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, 10u);
 }
@@ -57,15 +57,15 @@ TEST_F(FileUtilTest, ReadFullyEOF)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::OK)));
 
     // Open file
@@ -73,7 +73,7 @@ TEST_F(FileUtilTest, ReadFullyEOF)
 
     char buf[10];
     size_t n;
-    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), &n),
+    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, 8u);
 }
@@ -82,15 +82,15 @@ TEST_F(FileUtilTest, ReadFullyPartialFail)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::FAILED)));
 
     // Open file
@@ -98,7 +98,7 @@ TEST_F(FileUtilTest, ReadFullyPartialFail)
 
     char buf[10];
     size_t n;
-    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), &n),
+    ASSERT_EQ(mb::file_read_fully(_file, buf, sizeof(buf), n),
               mb::FileStatus::FAILED);
     ASSERT_EQ(n, 8u);
 }
@@ -107,14 +107,14 @@ TEST_F(FileUtilTest, WriteFullyNormal)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillRepeatedly(testing::DoAll(testing::SetArgReferee<2>(2),
                                            testing::Return(mb::FileStatus::OK)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     size_t n;
-    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, &n),
+    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, 10u);
 }
@@ -123,22 +123,22 @@ TEST_F(FileUtilTest, WriteFullyEOF)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::OK)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     size_t n;
-    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, &n),
+    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, 8u);
 }
@@ -147,22 +147,22 @@ TEST_F(FileUtilTest, WriteFullyPartialFail)
 {
     EXPECT_CALL(_file, on_write(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::FAILED)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     size_t n;
-    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, &n),
+    ASSERT_EQ(mb::file_write_fully(_file, "xxxxxxxxxx", 10, n),
               mb::FileStatus::FAILED);
     ASSERT_EQ(n, 8u);
 }
@@ -171,14 +171,14 @@ TEST_F(FileUtilTest, ReadDiscardNormal)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillRepeatedly(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillRepeatedly(testing::DoAll(testing::SetArgReferee<2>(2),
                                            testing::Return(mb::FileStatus::OK)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     uint64_t n;
-    ASSERT_EQ(mb::file_read_discard(_file, 10, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_read_discard(_file, 10, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 10u);
 }
 
@@ -186,22 +186,22 @@ TEST_F(FileUtilTest, ReadDiscardEOF)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::OK)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     uint64_t n;
-    ASSERT_EQ(mb::file_read_discard(_file, 10, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_read_discard(_file, 10, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 8u);
 }
 
@@ -209,22 +209,22 @@ TEST_F(FileUtilTest, ReadDiscardPartialFail)
 {
     EXPECT_CALL(_file, on_read(testing::_, testing::_, testing::_))
             .Times(5)
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(2),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(2),
                                      testing::Return(mb::FileStatus::OK)))
-            .WillOnce(testing::DoAll(testing::SetArgPointee<2>(0),
+            .WillOnce(testing::DoAll(testing::SetArgReferee<2>(0),
                                      testing::Return(mb::FileStatus::FAILED)));
 
     // Open file
     ASSERT_EQ(_file.open(), mb::FileStatus::OK);
 
     uint64_t n;
-    ASSERT_EQ(mb::file_read_discard(_file, 10, &n), mb::FileStatus::FAILED);
+    ASSERT_EQ(mb::file_read_discard(_file, 10, n), mb::FileStatus::FAILED);
     ASSERT_EQ(n, 8u);
 }
 
@@ -253,7 +253,7 @@ TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
 
     ASSERT_EQ(mb::file_search(file, 20, 10, 0, "x", 1, -1, &_result_cb, this),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("offset"), std::string::npos);
 }
 
@@ -287,7 +287,7 @@ TEST_F(FileSearchTest, CheckBufferSize)
     // Too small
     ASSERT_EQ(mb::file_search(file, -1, -1, 1, "xxx", 3, -1,
                               &_result_cb, this), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Buffer size"), std::string::npos);
 
     // Equal to pattern size
@@ -313,10 +313,10 @@ TEST(FileMoveTest, DegenerateCasesShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     // src == dest
-    ASSERT_EQ(mb::file_move(file, 0, 0, 3, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 0, 0, 3, n), mb::FileStatus::OK);
 
     // size == 0
-    ASSERT_EQ(mb::file_move(file, 3, 0, 0, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 3, 0, 0, n), mb::FileStatus::OK);
 }
 
 TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
@@ -327,7 +327,7 @@ TEST(FileMoveTest, NormalForwardsCopyShouldSucceed)
     mb::MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, 2, 0, 3, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 2, 0, 3, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 3u);
     ASSERT_STREQ(buf, "cdedef");
 }
@@ -340,7 +340,7 @@ TEST(FileMoveTest, NormalBackwardsCopyShouldSucceed)
     mb::MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, 0, 2, 3, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 0, 2, 3, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 3u);
     ASSERT_STREQ(buf, "ababcf");
 }
@@ -353,7 +353,7 @@ TEST(FileMoveTest, OutOfBoundsForwardsCopyShouldCopyPartially)
     mb::MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, 2, 0, 5, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 2, 0, 5, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 4u);
     ASSERT_STREQ(buf, "cdefef");
 }
@@ -366,7 +366,7 @@ TEST(FileMoveTest, OutOfBoundsBackwardsCopyShouldCopyPartially)
     mb::MemoryFile file(buf, sizeof(buf) - 1);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, 0, 2, 5, &n), mb::FileStatus::OK);
+    ASSERT_EQ(mb::file_move(file, 0, 2, 5, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 4u);
     ASSERT_STREQ(buf, "ababcd");
 }
@@ -386,7 +386,7 @@ TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
     mb::MemoryFile file(buf, buf_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, buf_size / 2, 0, buf_size / 2, &n),
+    ASSERT_EQ(mb::file_move(file, buf_size / 2, 0, buf_size / 2, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, buf_size / 2);
 
@@ -412,7 +412,7 @@ TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
     mb::MemoryFile file(buf, buf_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(mb::file_move(file, 0, buf_size / 2, buf_size / 2, &n),
+    ASSERT_EQ(mb::file_move(file, 0, buf_size / 2, buf_size / 2, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, buf_size / 2);
 

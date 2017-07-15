@@ -63,13 +63,13 @@ int main(int argc, char *argv[])
     size_t n_read;
     char buf[10240];
     mb::FileStatus ret;
-    while ((ret = sparse_file.read(buf, sizeof(buf), &n_read))
+    while ((ret = sparse_file.read(buf, sizeof(buf), n_read))
             == mb::FileStatus::OK && n_read > 0) {
         char *ptr = buf;
         size_t n_written;
 
         while (n_read > 0) {
-            if (output_file.write(buf, n_read, &n_written)
+            if (output_file.write(buf, n_read, n_written)
                     != mb::FileStatus::OK) {
                 fprintf(stderr, "%s: Failed to write file: %s\n",
                         output_path, output_file.error_string().c_str());

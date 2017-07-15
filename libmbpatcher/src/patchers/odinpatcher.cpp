@@ -696,7 +696,7 @@ la_ssize_t OdinPatcherPrivate::la_read_cb(archive *a, void *userdata,
     *buffer = priv->la_buf;
     size_t bytes_read;
 
-    if (priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), &bytes_read)
+    if (priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), bytes_read)
             != FileStatus::OK) {
         LOGE("%s: Failed to read: %s", priv->info->input_path().c_str(),
              priv->la_file.error_string().c_str());

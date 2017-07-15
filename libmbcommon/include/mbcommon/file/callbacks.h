@@ -34,13 +34,13 @@ public:
     typedef FileStatus (*CloseCb)(File &file, void *userdata);
     typedef FileStatus (*ReadCb)(File &file, void *userdata,
                                  void *buf, size_t size,
-                                 size_t *bytes_read);
+                                 size_t &bytes_read);
     typedef FileStatus (*WriteCb)(File &file, void *userdata,
                                   const void *buf, size_t size,
-                                  size_t *bytes_written);
+                                  size_t &bytes_written);
     typedef FileStatus (*SeekCb)(File &file, void *userdata,
                                  int64_t offset, int whence,
-                                 uint64_t *new_offset);
+                                 uint64_t &new_offset);
     typedef FileStatus (*TruncateCb)(File &file, void *userdata,
                                      uint64_t size);
 
@@ -81,11 +81,11 @@ protected:
     virtual FileStatus on_open() override;
     virtual FileStatus on_close() override;
     virtual FileStatus on_read(void *buf, size_t size,
-                               size_t *bytes_read) override;
+                               size_t &bytes_read) override;
     virtual FileStatus on_write(const void *buf, size_t size,
-                                size_t *bytes_written) override;
+                                size_t &bytes_written) override;
     virtual FileStatus on_seek(int64_t offset, int whence,
-                               uint64_t *new_offset) override;
+                               uint64_t &new_offset) override;
     virtual FileStatus on_truncate(uint64_t size) override;
 };
 

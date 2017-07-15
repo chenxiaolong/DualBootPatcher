@@ -76,7 +76,7 @@ namespace mb
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
  * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file. This parameter is guaranteed to be non-NULL.
+ *                        of file.
  *
  * \return
  *   * Return #FileStatus::OK if some bytes were read or EOF is reached
@@ -94,8 +94,7 @@ namespace mb
  * \param[in] file File handle
  * \param[in] buf Buffer to write from
  * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written. This
- *                           parameter is guaranteed to be non-NULL.
+ * \param[out] bytes_written Output number of bytes that were written.
  *
  * \return
  *   * Return #FileStatus::OK if some bytes were written
@@ -113,8 +112,7 @@ namespace mb
  * \param[in] file File handle
  * \param[in] offset File position offset
  * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset. This parameter is guaranteed
- *                        to be non-NULL.
+ * \param[out] new_offset Output new file offset
  *
  * \return
  *   * Return #FileStatus::OK if the file position was successfully set
@@ -305,7 +303,7 @@ FileStatus CallbackFile::on_close()
     return ret;
 }
 
-FileStatus CallbackFile::on_read(void *buf, size_t size, size_t *bytes_read)
+FileStatus CallbackFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -317,7 +315,7 @@ FileStatus CallbackFile::on_read(void *buf, size_t size, size_t *bytes_read)
 }
 
 FileStatus CallbackFile::on_write(const void *buf, size_t size,
-                                  size_t *bytes_written)
+                                  size_t &bytes_written)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -329,7 +327,7 @@ FileStatus CallbackFile::on_write(const void *buf, size_t size,
 }
 
 FileStatus CallbackFile::on_seek(int64_t offset, int whence,
-                                 uint64_t *new_offset)
+                                 uint64_t &new_offset)
 {
     MB_PRIVATE(CallbackFile);
 

@@ -34,24 +34,6 @@
  * \brief Useful utility functions for File API
  */
 
-/*!
- * \typedef FileSearchResultCallback
- *
- * \note The file position must not change after a successful return of this
- *       callback. If file operations need to be performed, save the file
- *       position beforehand with File::seek() and restore it afterwards. Note
- *       that the file position is unlikely to match \p offset.
- *
- * \param file File handle
- * \param offset Offset of match
- * \param userdata User callback data
- *
- * \return
- *   * Return #FileStatus::OK if the search can continue
- *   * Return #FileStatus::WARN if the search should stop
- *   * Return \<= #FileStatus::FAILED if the search should fail
- */
-
 namespace mb
 {
 
@@ -71,7 +53,7 @@ namespace mb
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
  * \param[out] bytes_read Output number of bytes that were read. A short read
- *                        indicates end of file. This parameter cannot be NULL.
+ *                        indicates end of file.
  *
  * \return
  *   * #FileStatus::OK if some bytes are read or EOF is reached
@@ -79,16 +61,16 @@ namespace mb
  *   * \<= #FileStatus::WARN if an error occurs
  */
 FileStatus file_read_fully(File &file, void *buf, size_t size,
-                           size_t *bytes_read)
+                           size_t &bytes_read)
 {
     size_t n;
     FileStatus ret;
 
-    *bytes_read = 0;
+    bytes_read = 0;
 
-    while (*bytes_read < size) {
-        ret = file.read(static_cast<char *>(buf) + *bytes_read,
-                        size - *bytes_read, &n);
+    while (bytes_read < size) {
+        ret = file.read(static_cast<char *>(buf) + bytes_read,
+                        size - bytes_read, n);
         if (ret == FileStatus::RETRY) {
             continue;
         } else if (ret < FileStatus::OK) {
@@ -97,7 +79,7 @@ FileStatus file_read_fully(File &file, void *buf, size_t size,
             break;
         }
 
-        *bytes_read += n;
+        bytes_read += n;
     }
 
     return FileStatus::OK;
@@ -119,8 +101,7 @@ FileStatus file_read_fully(File &file, void *buf, size_t size,
  * \param[in] file File handle
  * \param[in] buf Buffer to write from
  * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written. This
- *                           parameter cannot be NULL.
+ * \param[out] bytes_written Output number of bytes that were written.
  *
  * \return
  *   * #FileStatus::OK if some bytes are written
@@ -128,16 +109,16 @@ FileStatus file_read_fully(File &file, void *buf, size_t size,
  *   * \<= #FileStatus::WARN if an error occurs
  */
 FileStatus file_write_fully(File &file, const void *buf, size_t size,
-                            size_t *bytes_written)
+                            size_t &bytes_written)
 {
     size_t n;
     FileStatus ret;
 
-    *bytes_written = 0;
+    bytes_written = 0;
 
-    while (*bytes_written < size) {
-        ret = file.write(static_cast<const char *>(buf) + *bytes_written,
-                         size - *bytes_written, &n);
+    while (bytes_written < size) {
+        ret = file.write(static_cast<const char *>(buf) + bytes_written,
+                         size - bytes_written, n);
         if (ret == FileStatus::RETRY) {
             continue;
         } else if (ret < FileStatus::OK) {
@@ -146,7 +127,7 @@ FileStatus file_write_fully(File &file, const void *buf, size_t size,
             break;
         }
 
-        *bytes_written += n;
+        bytes_written += n;
     }
 
     return FileStatus::OK;
@@ -167,8 +148,7 @@ FileStatus file_write_fully(File &file, const void *buf, size_t size,
  * \param[in] file File handle
  * \param[in] size Number of bytes to discard
  * \param[out] bytes_discarded Output number of bytes that were read. A short
- *                             read indicates end of file. This parameter cannot
- *                             be NULL.
+ *                             read indicates end of file.
  *
  * \return
  *   * #FileStatus::OK if some bytes are discarded or EOF is reached
@@ -176,16 +156,16 @@ FileStatus file_write_fully(File &file, const void *buf, size_t size,
  *   * \<= #FileStatus::WARN if an error occurs
  */
 FileStatus file_read_discard(File &file, uint64_t size,
-                             uint64_t *bytes_discarded)
+                             uint64_t &bytes_discarded)
 {
     char buf[10240];
     size_t n;
     FileStatus ret;
 
-    *bytes_discarded = 0;
+    bytes_discarded = 0;
 
-    while (*bytes_discarded < size) {
-        ret = file.read(buf, std::min<uint64_t>(size, sizeof(buf)), &n);
+    while (bytes_discarded < size) {
+        ret = file.read(buf, std::min<uint64_t>(size, sizeof(buf)), n);
         if (ret == FileStatus::RETRY) {
             continue;
         } else if (ret < FileStatus::OK) {
@@ -194,7 +174,7 @@ FileStatus file_read_discard(File &file, uint64_t size,
             break;
         }
 
-        *bytes_discarded += n;
+        bytes_discarded += n;
     }
 
     return FileStatus::OK;
@@ -204,6 +184,11 @@ FileStatus file_read_discard(File &file, uint64_t size,
  * \typedef FileSearchResultCallback
  *
  * \brief Search result callback for file_search()
+ *
+ * \note The file position must not change after a successful return of this
+ *       callback. If file operations need to be performed, save the file
+ *       position beforehand with File::seek() and restore it afterwards. Note
+ *       that the file position is unlikely to match \p offset.
  *
  * \sa file_search()
  *
@@ -273,7 +258,7 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
 
     // Check boundaries
     if (start >= 0 && end >= 0 && end < start) {
-        file.set_error(FileError::INVALID_ARGUMENT,
+        file.set_error(make_error_code(FileError::InvalidArgument),
                        "End offset < start offset");
         ret = FileStatus::FAILED;
         goto done;
@@ -299,7 +284,7 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
 
     // Ensure buffer is large enough
     if (buf_size < pattern_size) {
-        file.set_error(FileError::INVALID_ARGUMENT,
+        file.set_error(make_error_code(FileError::InvalidArgument),
                        "Buffer size cannot be less than pattern size");
         ret = FileStatus::FAILED;
         goto done;
@@ -307,8 +292,8 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
 
     buf = static_cast<char *>(malloc(buf_size));
     if (!buf) {
-        file.set_error(-errno, "Failed to allocate buffer: %s",
-                       strerror(errno));
+        file.set_error(std::error_code(errno, std::generic_category()),
+                       "Failed to allocate buffer");
         ret = FileStatus::FAILED;
         goto done;
     }
@@ -323,11 +308,11 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
     ret = file.seek(offset, SEEK_SET, nullptr);
     if (ret == FileStatus::UNSUPPORTED) {
         uint64_t discarded;
-        ret = file_read_discard(file, offset, &discarded);
+        ret = file_read_discard(file, offset, discarded);
         if (ret < FileStatus::OK) {
             goto done;
         } else if (discarded != offset) {
-            file.set_error(FileError::INVALID_ARGUMENT,
+            file.set_error(make_error_code(FileError::InvalidArgument),
                            "Reached EOF before starting offset");
             ret = FileStatus::FATAL;
             goto done;
@@ -341,7 +326,7 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
     ptr_remain = buf_size;
 
     while (true) {
-        ret = file_read_fully(file, ptr, ptr_remain, &n);
+        ret = file_read_fully(file, ptr, ptr_remain, n);
         if (ret < FileStatus::OK) {
             goto done;
         }
@@ -360,7 +345,7 @@ FileStatus file_search(File &file, int64_t start, int64_t end,
         // Ensure that offset + n (and consequently, offset + diff) cannot
         // overflow
         if (n > UINT64_MAX - offset) {
-            file.set_error(FileError::INTERNAL_ERROR,
+            file.set_error(make_error_code(FileError::IntegerOverflow),
                            "Read overflows offset value");
             ret = FileStatus::FAILED;
             goto done;
@@ -448,7 +433,7 @@ done:
  *   * \<= #FileStatus::WARN if an error occurs
  */
 FileStatus file_move(File &file, uint64_t src, uint64_t dest,
-                     uint64_t size, uint64_t *size_moved)
+                     uint64_t size, uint64_t &size_moved)
 {
     char buf[10240];
     size_t n_read;
@@ -457,32 +442,32 @@ FileStatus file_move(File &file, uint64_t src, uint64_t dest,
 
     // Check if we need to do anything
     if (src == dest || size == 0) {
-        *size_moved = size;
+        size_moved = size;
         return FileStatus::OK;
     }
 
     if (src > UINT64_MAX - size || dest > UINT64_MAX - size) {
-        file.set_error(FileError::INVALID_ARGUMENT,
+        file.set_error(make_error_code(FileError::InvalidArgument),
                        "Offset + size overflows integer");
         return FileStatus::FAILED;
     }
 
-    *size_moved = 0;
+    size_moved = 0;
 
     if (dest < src) {
         // Copy forwards
-        while (*size_moved < size) {
+        while (size_moved < size) {
             size_t to_read = std::min<uint64_t>(
-                    sizeof(buf), size - *size_moved);
+                    sizeof(buf), size - size_moved);
 
             // Seek to source offset
-            ret = file.seek(src + *size_moved, SEEK_SET, nullptr);
+            ret = file.seek(src + size_moved, SEEK_SET, nullptr);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Read data from source
-            ret = file_read_fully(file, buf, to_read, &n_read);
+            ret = file_read_fully(file, buf, to_read, n_read);
             if (ret != FileStatus::OK) {
                 return ret;
             } else if (n_read == 0) {
@@ -490,18 +475,18 @@ FileStatus file_move(File &file, uint64_t src, uint64_t dest,
             }
 
             // Seek to destination offset
-            ret = file.seek(dest + *size_moved, SEEK_SET, nullptr);
+            ret = file.seek(dest + size_moved, SEEK_SET, nullptr);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Write data to destination
-            ret = file_write_fully(file, buf, n_read, &n_written);
+            ret = file_write_fully(file, buf, n_read, n_written);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
-            *size_moved += n_written;
+            size_moved += n_written;
 
             if (n_written < n_read) {
                 break;
@@ -509,19 +494,19 @@ FileStatus file_move(File &file, uint64_t src, uint64_t dest,
         }
     } else {
         // Copy backwards
-        while (*size_moved < size) {
+        while (size_moved < size) {
             size_t to_read = std::min<uint64_t>(
-                    sizeof(buf), size - *size_moved);
+                    sizeof(buf), size - size_moved);
 
             // Seek to source offset
-            ret = file.seek(src + size - *size_moved - to_read,
+            ret = file.seek(src + size - size_moved - to_read,
                             SEEK_SET, nullptr);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Read data form source
-            ret = file_read_fully(file, buf, to_read, &n_read);
+            ret = file_read_fully(file, buf, to_read, n_read);
             if (ret != FileStatus::OK) {
                 return ret;
             } else if (n_read == 0) {
@@ -529,19 +514,19 @@ FileStatus file_move(File &file, uint64_t src, uint64_t dest,
             }
 
             // Seek to destination offset
-            ret = file.seek(dest + size - *size_moved - n_read,
+            ret = file.seek(dest + size - size_moved - n_read,
                             SEEK_SET, nullptr);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
             // Write data to destination
-            ret = file_write_fully(file, buf, n_read, &n_written);
+            ret = file_write_fully(file, buf, n_read, n_written);
             if (ret != FileStatus::OK) {
                 return ret;
             }
 
-            *size_moved += n_written;
+            size_moved += n_written;
 
             if (n_written < n_read) {
                 // Hit EOF. Subtract bytes beyond EOF that we can't copy

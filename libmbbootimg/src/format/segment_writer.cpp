@@ -146,7 +146,7 @@ int _segment_writer_get_entry(SegmentWriterCtx *ctx, mb::File *file,
     if (!ctx->have_pos) {
         file_ret = file->seek(0, SEEK_CUR, &ctx->pos);
         if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to get current offset: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -202,7 +202,7 @@ int _segment_writer_write_entry(SegmentWriterCtx *ctx, mb::File *file,
 
 int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
-                               size_t *bytes_written, MbBiWriter *biw)
+                               size_t &bytes_written, MbBiWriter *biw)
 {
     mb::FileStatus file_ret;
 
@@ -216,12 +216,12 @@ int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
 
     file_ret = mb::file_write_fully(*file, buf, buf_size, bytes_written);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write data: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-    } else if (*bytes_written != buf_size) {
-        mb_bi_writer_set_error(biw, file->error(),
+    } else if (bytes_written != buf_size) {
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Write was truncated: %s",
                                file->error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
@@ -250,7 +250,7 @@ int _segment_writer_finish_entry(SegmentWriterCtx *ctx, mb::File *file,
 
         file_ret = file->seek(skip, SEEK_CUR, &new_pos);
         if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to seek to page boundary: %s",
                                    file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL

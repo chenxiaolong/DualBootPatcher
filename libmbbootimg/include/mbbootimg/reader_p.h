@@ -79,7 +79,7 @@ typedef int (*FormatReaderGoToEntry)(struct MbBiReader *bir, void *userdata,
                                      struct MbBiEntry *entry, int entry_type);
 typedef int (*FormatReaderReadData)(struct MbBiReader *bir, void *userdata,
                                     void *buf, size_t buf_size,
-                                    size_t *bytes_read);
+                                    size_t &bytes_read);
 typedef int (*FormatReaderFree)(struct MbBiReader *bir, void *userdata);
 
 struct FormatReader

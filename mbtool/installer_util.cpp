@@ -603,8 +603,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         }
 
         size_t n;
-        ret = file_write_fully(fout, target_pattern,
-                               sizeof(target_pattern), &n);
+        ret = file_write_fully(fout, target_pattern, sizeof(target_pattern), n);
         if (ret != FileStatus::OK || n != sizeof(target_pattern)) {
             LOGE("%s: Failed to write target pattern: %s",
                  output_file.c_str(), fout.error_string().c_str());
@@ -671,13 +670,13 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        ret = mb::file_read_fully(fin, buf, to_read, &n);
+        ret = mb::file_read_fully(fin, buf, to_read, n);
         if (ret != FileStatus::OK || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        ret = mb::file_write_fully(fout, buf, to_read, &n);
+        ret = mb::file_write_fully(fout, buf, to_read, n);
         if (ret != FileStatus::OK || n != to_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
@@ -697,7 +696,7 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     FileStatus ret;
 
     while (true) {
-        ret = mb::file_read_fully(fin, buf, sizeof(buf), &n_read);
+        ret = mb::file_read_fully(fin, buf, sizeof(buf), n_read);
         if (ret != FileStatus::OK) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
@@ -705,7 +704,7 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
             break;
         }
 
-        ret = mb::file_write_fully(fout, buf, n_read, &n_written);
+        ret = mb::file_write_fully(fout, buf, n_read, n_written);
         if (ret != FileStatus::OK || n_written != n_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;

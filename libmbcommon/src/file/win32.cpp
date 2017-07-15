@@ -129,30 +129,6 @@ void Win32FilePrivate::clear()
     append = false;
 }
 
-LPCWSTR Win32FilePrivate::win32_error_string(DWORD error_code)
-{
-    LocalFree(error);
-
-    size_t size = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER
-            | FORMAT_MESSAGE_FROM_SYSTEM
-            | FORMAT_MESSAGE_IGNORE_INSERTS,        // dwFlags
-        nullptr,                                    // lpSource
-        error_code,                                 // dwMessageId
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // dwLanguageId
-        reinterpret_cast<LPWSTR>(&error),           // lpBuffer
-        0,                                          // nSize
-        nullptr                                     // Arguments
-    );
-
-    if (size == 0) {
-        error = nullptr;
-        return L"(FormatMessageW failed)";
-    }
-
-    return error;
-}
-
 bool Win32FilePrivate::convert_mode(FileOpenMode mode,
                                     DWORD &access_out,
                                     DWORD &sharing_out,
@@ -368,7 +344,7 @@ FileStatus Win32File::open(const std::string &filename, FileOpenMode mode)
         // Convert filename to platform-native encoding
         std::wstring native_filename;
         if (!mbs_to_wcs(native_filename, filename)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
             return FileStatus::FATAL;
         }
@@ -382,7 +358,7 @@ FileStatus Win32File::open(const std::string &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
             return FileStatus::FATAL;
         }
@@ -425,7 +401,7 @@ FileStatus Win32File::open(const std::wstring &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
             return FileStatus::FATAL;
         }
@@ -452,9 +428,8 @@ FileStatus Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(-GetLastError(),
-                      "Failed to open file: %ls",
-                      priv->win32_error_string(GetLastError()));
+            set_error(std::error_code(GetLastError(), std::system_category()),
+                      "Failed to open file");
             return FileStatus::FAILED;
         }
     }
@@ -470,9 +445,8 @@ FileStatus Win32File::on_close()
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(-GetLastError(),
-                  "Failed to close file: %ls",
-                  priv->win32_error_string(GetLastError()));
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to close file");
         ret = FileStatus::FAILED;
     }
 
@@ -482,7 +456,7 @@ FileStatus Win32File::on_close()
     return ret;
 }
 
-FileStatus Win32File::on_read(void *buf, size_t size, size_t *bytes_read)
+FileStatus Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(Win32File);
 
@@ -501,18 +475,17 @@ FileStatus Win32File::on_read(void *buf, size_t size, size_t *bytes_read)
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to read file: %ls",
-                  priv->win32_error_string(GetLastError()));
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to read file");
         return FileStatus::FAILED;
     }
 
-    *bytes_read = n;
+    bytes_read = n;
     return FileStatus::OK;
 }
 
 FileStatus Win32File::on_write(const void *buf, size_t size,
-                               size_t *bytes_written)
+                               size_t &bytes_written)
 {
     MB_PRIVATE(Win32File);
 
@@ -522,7 +495,7 @@ FileStatus Win32File::on_write(const void *buf, size_t size,
     // native append mode.
     if (priv->append) {
         uint64_t pos;
-        FileStatus seek_ret = on_seek(0, SEEK_END, &pos);
+        FileStatus seek_ret = on_seek(0, SEEK_END, pos);
         if (seek_ret != FileStatus::OK) {
             return seek_ret;
         }
@@ -541,17 +514,16 @@ FileStatus Win32File::on_write(const void *buf, size_t size,
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to write file: %ls",
-                  priv->win32_error_string(GetLastError()));
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to write file");
         return FileStatus::FAILED;
     }
 
-    *bytes_written = n;
+    bytes_written = n;
     return FileStatus::OK;
 }
 
-FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
+FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(Win32File);
 
@@ -570,7 +542,7 @@ FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
         move_method = FILE_END;
         break;
     default:
-        set_error(FileError::INVALID_ARGUMENT,
+        set_error(make_error_code(FileError::InvalidArgument),
                   "Invalid whence argument: %d", whence);
         return FileStatus::FAILED;
     }
@@ -585,13 +557,12 @@ FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to seek file: %ls",
-                  priv->win32_error_string(GetLastError()));
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to seek file");
         return FileStatus::FAILED;
     }
 
-    *new_offset = new_pos.QuadPart;
+    new_offset = new_pos.QuadPart;
     return FileStatus::OK;
 }
 
@@ -604,27 +575,26 @@ FileStatus Win32File::on_truncate(uint64_t size)
     uint64_t temp;
 
     // Get current position
-    ret2 = on_seek(0, SEEK_CUR, &current_pos);
+    ret2 = on_seek(0, SEEK_CUR, current_pos);
     if (ret2 != FileStatus::OK) {
         return ret2;
     }
 
     // Move to new position
-    ret2 = on_seek(size, SEEK_SET, &temp);
+    ret2 = on_seek(size, SEEK_SET, temp);
     if (ret2 != FileStatus::OK) {
         return ret2;
     }
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(-GetLastError(),
-                  "Failed to set EOF position: %ls",
-                  priv->win32_error_string(GetLastError()));
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to set EOF position");
         ret = FileStatus::FAILED;
     }
 
     // Move back to initial position
-    ret2 = on_seek(current_pos, SEEK_SET, &temp);
+    ret2 = on_seek(current_pos, SEEK_SET, temp);
     if (ret2 != FileStatus::OK) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore

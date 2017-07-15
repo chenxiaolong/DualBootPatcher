@@ -58,7 +58,7 @@ int loki_writer_write_entry(struct MbBiWriter *biw, void *userdata,
                             struct MbBiEntry *entry);
 int loki_writer_write_data(struct MbBiWriter *biw, void *userdata,
                            const void *buf, size_t buf_size,
-                           size_t *bytes_written);
+                           size_t &bytes_written);
 int loki_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
 int loki_writer_close(struct MbBiWriter *biw, void *userdata);
 int loki_writer_free(struct MbBiWriter *bir, void *userdata);

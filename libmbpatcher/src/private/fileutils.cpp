@@ -94,7 +94,7 @@ ErrorCode FileUtils::read_to_memory(const std::string &path,
     std::vector<unsigned char> data(size);
 
     size_t bytes_read;
-    if (file.read(data.data(), data.size(), &bytes_read) != FileStatus::OK
+    if (file.read(data.data(), data.size(), bytes_read) != FileStatus::OK
             || bytes_read != size) {
         LOGE("%s: Failed to read file: %s",
              path.c_str(), file.error_string().c_str());
@@ -138,7 +138,7 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
     data.resize(size);
 
     size_t bytes_read;
-    if (file.read(&data[0], data.size(), &bytes_read) != FileStatus::OK
+    if (file.read(&data[0], data.size(), bytes_read) != FileStatus::OK
             || bytes_read != size) {
         LOGE("%s: Failed to read file: %s",
              path.c_str(), file.error_string().c_str());
@@ -163,7 +163,7 @@ ErrorCode FileUtils::write_from_memory(const std::string &path,
     }
 
     size_t bytes_written;
-    if (file.write(contents.data(), contents.size(), &bytes_written)
+    if (file.write(contents.data(), contents.size(), bytes_written)
             != FileStatus::OK || bytes_written != contents.size()) {
         LOGE("%s: Failed to write file: %s",
              path.c_str(), file.error_string().c_str());
@@ -186,7 +186,7 @@ ErrorCode FileUtils::write_from_string(const std::string &path,
     }
 
     size_t bytes_written;
-    if (file.write(contents.data(), contents.size(), &bytes_written)
+    if (file.write(contents.data(), contents.size(), bytes_written)
             != FileStatus::OK || bytes_written != contents.size()) {
         LOGE("%s: Failed to write file: %s",
              path.c_str(), file.error_string().c_str());

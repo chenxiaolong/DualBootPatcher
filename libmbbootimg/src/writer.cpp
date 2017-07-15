@@ -434,7 +434,7 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
     if (!file->is_open()) {
         // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
@@ -470,7 +470,7 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
     if (!file->is_open()) {
         // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
         // at this point
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
@@ -830,7 +830,7 @@ int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
     }
 
     ret = biw->format.write_data_cb(biw, biw->format.userdata, buf, size,
-                                    bytes_written);
+                                    *bytes_written);
     if (ret == MB_BI_OK) {
         // Do not alter state. Stay in WriterState::DATA
     } else if (ret <= MB_BI_FATAL) {

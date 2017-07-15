@@ -55,7 +55,7 @@ TEST(FileStaticMemoryTest, ReadInBounds)
     mb::MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 1u);
     ASSERT_EQ(out[0], 'x');
 }
@@ -71,7 +71,7 @@ TEST(FileStaticMemoryTest, ReadOutOfBounds)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::OK);
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 0u);
 }
 
@@ -85,7 +85,7 @@ TEST(FileStaticMemoryTest, ReadEmpty)
     mb::MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 0u);
 }
 
@@ -99,7 +99,7 @@ TEST(FileStaticMemoryTest, ReadTooLarge)
     mb::MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 1u);
     ASSERT_EQ(out[0], 'x');
 }
@@ -113,7 +113,7 @@ TEST(FileStaticMemoryTest, WriteInBounds)
     mb::MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("y", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("y", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
     ASSERT_EQ(in[0], 'y');
 }
@@ -128,7 +128,7 @@ TEST(FileStaticMemoryTest, WriteOutOfBounds)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::OK);
-    ASSERT_EQ(file.write("y", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("y", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 0u);
 }
 
@@ -141,7 +141,7 @@ TEST(FileStaticMemoryTest, WriteTooLarge)
     mb::MemoryFile file(in, in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("yz", 2, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("yz", 2, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
     ASSERT_EQ(in[0], 'y');
 }
@@ -187,40 +187,40 @@ TEST(FileStaticMemoryTest, SeekInvalid)
 
     // Negative SEEK_SET
     ASSERT_EQ(file.seek(-10, SEEK_SET, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_CUR
     ASSERT_EQ(file.seek(-100, SEEK_CUR, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_END
     ASSERT_EQ(file.seek(-100, SEEK_END, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 #endif
 }
@@ -234,7 +234,7 @@ TEST(FileStaticMemoryTest, CheckTruncateUnsupported)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(10), mb::FileStatus::UNSUPPORTED);
-    ASSERT_EQ(file.error(), mb::FileError::UNSUPPORTED);
+    ASSERT_EQ(file.error(), mb::FileError::UnsupportedTruncate);
     ASSERT_NE(file.error_string().find("truncate"), std::string::npos);
 }
 
@@ -274,7 +274,7 @@ TEST(FileDynamicMemoryTest, ReadInBounds)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 1u);
     ASSERT_EQ(out[0], 'x');
 
@@ -295,7 +295,7 @@ TEST(FileDynamicMemoryTest, ReadOutOfBounds)
 
     ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::OK);
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 0u);
 
     free(in);
@@ -311,7 +311,7 @@ TEST(FileDynamicMemoryTest, ReadEmpty)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 0u);
 
     free(in);
@@ -329,7 +329,7 @@ TEST(FileDynamicMemoryTest, ReadTooLarge)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.read(out, sizeof(out), &out_size), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(out, sizeof(out), out_size), mb::FileStatus::OK);
     ASSERT_EQ(out_size, 1u);
     ASSERT_EQ(out[0], 'x');
 
@@ -347,7 +347,7 @@ TEST(FileDynamicMemoryTest, WriteInBounds)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("y", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("y", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
     ASSERT_EQ(static_cast<char *>(in)[0], 'y');
 
@@ -367,7 +367,7 @@ TEST(FileDynamicMemoryTest, WriteOutOfBounds)
 
     ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::OK);
 
-    ASSERT_EQ(file.write("y", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("y", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
     ASSERT_EQ(in_size, 11u);
     ASSERT_NE(in, nullptr);
@@ -385,7 +385,7 @@ TEST(FileDynamicMemoryTest, WriteEmpty)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
     ASSERT_EQ(in_size, 1u);
     ASSERT_NE(in, nullptr);
@@ -405,7 +405,7 @@ TEST(FileDynamicMemoryTest, WriteTooLarge)
     mb::MemoryFile file(&in, &in_size);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.write("yz", 2, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("yz", 2, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 2u);
     ASSERT_EQ(in_size, 2u);
     ASSERT_NE(in, nullptr);
@@ -461,40 +461,40 @@ TEST(FileDynamicMemoryTest, SeekInvalid)
 
     // Negative SEEK_SET
     ASSERT_EQ(file.seek(-10, SEEK_SET, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_CUR
     ASSERT_EQ(file.seek(-100, SEEK_CUR, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_END
     ASSERT_EQ(file.seek(-100, SEEK_END, &pos), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
     ASSERT_EQ(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END, &pos),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 #endif
 

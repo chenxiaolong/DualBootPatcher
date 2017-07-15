@@ -352,7 +352,7 @@ static bool load_block_devs()
 }
 
 static mb::FileStatus cb_zip_read(mb::File &file, void *userdata,
-                                  void *buf, size_t size, size_t *bytes_read)
+                                  void *buf, size_t size, size_t &bytes_read)
 {
     (void) file;
 
@@ -374,7 +374,7 @@ static mb::FileStatus cb_zip_read(mb::File &file, void *userdata,
         buf = (char *) buf + n;
     }
 
-    *bytes_read = total;
+    bytes_read = total;
     return mb::FileStatus::OK;
 }
 
@@ -433,7 +433,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
 
     set_progress(0);
 
-    while ((ret = sparse_file.read(buf, sizeof(buf), &n)) == mb::FileStatus::OK
+    while ((ret = sparse_file.read(buf, sizeof(buf), n)) == mb::FileStatus::OK
             && n > 0) {
         // Rate limit: update progress only after difference exceeds 0.1%
         double old_ratio = static_cast<double>(old_bytes) / max_bytes;
@@ -447,7 +447,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         size_t nwritten;
 
         while (n > 0) {
-            if (out_file.write(buf, n, &nwritten) != mb::FileStatus::OK) {
+            if (out_file.write(buf, n, nwritten) != mb::FileStatus::OK) {
                 error("%s: Failed to write file: %s",
                       out_filename, out_file.error_string().c_str());
                 return ExtractResult::ERROR;

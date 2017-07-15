@@ -71,15 +71,15 @@ int find_sony_elf_header(MbBiReader *bir, mb::File *file,
 
     file_ret = file->seek(0, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, &header, sizeof(header), &n);
+    file_ret = mb::file_read_fully(*file, &header, sizeof(header), n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -180,7 +180,7 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
 
         file_ret = bir->file->seek(pos, SEEK_SET, nullptr);
         if (file_ret < mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, bir->file->error(),
+            mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                    "Failed to seek to segment %" PRIu16
                                    " at %" PRIu64 ": %s", i, pos,
                                    bir->file->error_string().c_str());
@@ -188,9 +188,9 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
                     ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
-        file_ret = mb::file_read_fully(*bir->file, &phdr, sizeof(phdr), &n);
+        file_ret = mb::file_read_fully(*bir->file, &phdr, sizeof(phdr), n);
         if (file_ret < mb::FileStatus::OK) {
-            mb_bi_reader_set_error(bir, bir->file->error(),
+            mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                    "Failed to read segment %" PRIu16 ": %s",
                                    i, bir->file->error_string().c_str());
             return file_ret == mb::FileStatus::FATAL
@@ -220,16 +220,16 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
 
             file_ret = bir->file->seek(phdr.p_offset, SEEK_SET, nullptr);
             if (file_ret < mb::FileStatus::OK) {
-                mb_bi_reader_set_error(bir, bir->file->error(),
+                mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                        "Failed to seek to cmdline: %s",
                                        bir->file->error_string().c_str());
                 return file_ret == mb::FileStatus::FATAL
                         ? MB_BI_FATAL : MB_BI_FAILED;
             }
 
-            file_ret = mb::file_read_fully(*bir->file, cmdline, phdr.p_memsz, &n);
+            file_ret = mb::file_read_fully(*bir->file, cmdline, phdr.p_memsz, n);
             if (file_ret < mb::FileStatus::OK) {
-                mb_bi_reader_set_error(bir, bir->file->error(),
+                mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                        "Failed to read cmdline: %s",
                                        bir->file->error_string().c_str());
                 return file_ret == mb::FileStatus::FATAL
@@ -328,7 +328,7 @@ int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
 
 int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
                               void *buf, size_t buf_size,
-                              size_t *bytes_read)
+                              size_t &bytes_read)
 {
     SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
 

@@ -331,7 +331,7 @@ FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
 #ifdef _WIN32
         std::wstring native_filename;
         if (!mbs_to_wcs(native_filename, filename)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
             return FileStatus::FATAL;
         }
@@ -342,7 +342,7 @@ FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
         // Convert mode to fopen-compatible mode string
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
             return FileStatus::FATAL;
         }
@@ -379,7 +379,7 @@ FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 #else
         std::string native_filename;
         if (!wcs_to_mbs(native_filename, filename)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert WCS filename to MBS");
             return FileStatus::FATAL;
         }
@@ -388,7 +388,7 @@ FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
         // Convert mode to fopen-compatible mode string
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
             return FileStatus::FATAL;
         }
@@ -413,7 +413,8 @@ FileStatus PosixFile::on_open()
 #endif
                 priv->filename.c_str(), priv->mode);
         if (!priv->fp) {
-            set_error(-errno, "Failed to open file: %s", strerror(errno));
+            set_error(std::error_code(errno, std::generic_category()),
+                      "Failed to open file");
             return FileStatus::FAILED;
         }
     }
@@ -427,12 +428,14 @@ FileStatus PosixFile::on_open()
     fd = priv->funcs->fn_fileno(priv->fp);
     if (fd >= 0) {
         if (priv->funcs->fn_fstat(fd, &sb) < 0) {
-            set_error(-errno, "Failed to stat file: %s", strerror(errno));
+            set_error(std::error_code(errno, std::generic_category()),
+                      "Failed to stat file");
             return FileStatus::FAILED;
         }
 
         if (S_ISDIR(sb.st_mode)) {
-            set_error(-EISDIR, "Cannot open directory");
+            set_error(std::make_error_code(std::errc::is_a_directory),
+                      "Failed to open file");
             return FileStatus::FAILED;
         }
 
@@ -457,7 +460,8 @@ FileStatus PosixFile::on_close()
     FileStatus ret = FileStatus::OK;
 
     if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
-        set_error(-errno, "Failed to close file: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to close file");
         ret = FileStatus::FAILED;
     }
 
@@ -467,59 +471,63 @@ FileStatus PosixFile::on_close()
     return ret;
 }
 
-FileStatus PosixFile::on_read(void *buf, size_t size, size_t *bytes_read)
+FileStatus PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(PosixFile);
 
     size_t n = priv->funcs->fn_fread(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(-errno, "Failed to read file: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to read file");
         return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
     }
 
-    *bytes_read = n;
+    bytes_read = n;
     return FileStatus::OK;
 }
 
 FileStatus PosixFile::on_write(const void *buf, size_t size,
-                               size_t *bytes_written)
+                               size_t &bytes_written)
 {
     MB_PRIVATE(PosixFile);
 
     size_t n = priv->funcs->fn_fwrite(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(-errno, "Failed to write file: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to write file");
         return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
     }
 
-    *bytes_written = n;
+    bytes_written = n;
     return FileStatus::OK;
 }
 
-FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t *new_offset)
+FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(PosixFile);
 
     off64_t old_pos, new_pos;
 
     if (!priv->can_seek) {
-        set_error(FileError::UNSUPPORTED,
-                  "Seek not supported: %s", strerror(errno));
+        set_error(make_error_code(FileError::UnsupportedSeek),
+                  "Seek not supported");
         return FileStatus::UNSUPPORTED;
     }
 
     // Get current file position
     old_pos = priv->funcs->fn_ftello(priv->fp);
     if (old_pos < 0) {
-        set_error(-errno, "Failed to get file position: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to get file position");
         return FileStatus::FAILED;
     }
 
     // Try to seek
     if (priv->funcs->fn_fseeko(priv->fp, offset, whence) < 0) {
-        set_error(-errno, "Failed to seek file: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to seek file");
         return FileStatus::FAILED;
     }
 
@@ -527,12 +535,13 @@ FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t *new_offset)
     new_pos = priv->funcs->fn_ftello(priv->fp);
     if (new_pos < 0) {
         // Try to restore old position
-        set_error(-errno, "Failed to get file position: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to get file position");
         return priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) == 0
                 ? FileStatus::FAILED : FileStatus::FATAL;
     }
 
-    *new_offset = new_pos;
+    new_offset = new_pos;
     return FileStatus::OK;
 }
 
@@ -542,12 +551,14 @@ FileStatus PosixFile::on_truncate(uint64_t size)
 
     int fd = priv->funcs->fn_fileno(priv->fp);
     if (fd < 0) {
-        set_error(FileError::UNSUPPORTED, "fileno() not supported for fp");
+        set_error(make_error_code(FileError::UnsupportedTruncate),
+                  "fileno() not supported for fp");
         return FileStatus::UNSUPPORTED;
     }
 
     if (priv->funcs->fn_ftruncate64(fd, size) < 0) {
-        set_error(-errno, "Failed to truncate file: %s", strerror(errno));
+        set_error(std::error_code(errno, std::generic_category()),
+                  "Failed to truncate file");
         return FileStatus::FAILED;
     }
 

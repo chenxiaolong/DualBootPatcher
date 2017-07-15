@@ -188,7 +188,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsFailure)
     TestableWin32File file(&_funcs);
     ASSERT_EQ(file.open("x", mb::FileOpenMode::READ_ONLY),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, OpenFilenameMbsInvalidMode)
@@ -196,7 +196,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsInvalidMode)
     TestableWin32File file(&_funcs);
     ASSERT_EQ(file.open("x", static_cast<mb::FileOpenMode>(-1)),
               mb::FileStatus::FATAL);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
 }
 
 TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
@@ -221,7 +221,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsFailure)
     TestableWin32File file(&_funcs);
     ASSERT_EQ(file.open(L"x", mb::FileOpenMode::READ_ONLY),
               mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, OpenFilenameWcsInvalidMode)
@@ -229,7 +229,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsInvalidMode)
     TestableWin32File file(&_funcs);
     ASSERT_EQ(file.open(L"x", static_cast<mb::FileOpenMode>(-1)),
               mb::FileStatus::FATAL);
-    ASSERT_EQ(file.error(), mb::FileError::INVALID_ARGUMENT);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
 }
 
 TEST_F(FileWin32Test, CloseUnownedFile)
@@ -267,7 +267,7 @@ TEST_F(FileWin32Test, CloseFailure)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.close(), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, ReadSuccess)
@@ -284,7 +284,7 @@ TEST_F(FileWin32Test, ReadSuccess)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
 }
 
@@ -302,7 +302,7 @@ TEST_F(FileWin32Test, ReadSuccessMaxSize)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.read(, nullptr, static_cast<size_t>(UINT_MAX) + 1, &n),
+    ASSERT_EQ(file.read(, nullptr, static_cast<size_t>(UINT_MAX) + 1, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, UINT_MAX);
 }
@@ -322,7 +322,7 @@ TEST_F(FileWin32Test, ReadEof)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 0u);
 }
 
@@ -338,8 +338,8 @@ TEST_F(FileWin32Test, ReadFailure)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, &n), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::FAILED);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, WriteSuccess)
@@ -355,7 +355,7 @@ TEST_F(FileWin32Test, WriteSuccess)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
 }
 
@@ -373,7 +373,7 @@ TEST_F(FileWin32Test, WriteSuccessMaxSize)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write(nullptr, static_cast<size_t>(UINT_MAX) + 1, &n),
+    ASSERT_EQ(file.write(nullptr, static_cast<size_t>(UINT_MAX) + 1, n),
               mb::FileStatus::OK);
     ASSERT_EQ(n, UINT_MAX);
 }
@@ -392,7 +392,7 @@ TEST_F(FileWin32Test, WriteEof)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 0u);
 }
 
@@ -407,8 +407,8 @@ TEST_F(FileWin32Test, WriteFailure)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::FAILED);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, WriteAppendSuccess)
@@ -432,7 +432,7 @@ TEST_F(FileWin32Test, WriteAppendSuccess)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::OK);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
     ASSERT_EQ(n, 1u);
 }
 
@@ -450,8 +450,8 @@ TEST_F(FileWin32Test, WriteAppendSeekFailure)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, &n), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::FAILED);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, SeekSuccess)
@@ -505,7 +505,7 @@ TEST_F(FileWin32Test, SeekFailed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, TruncateSuccess)
@@ -557,7 +557,7 @@ TEST_F(FileWin32Test, TruncateFailed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(1024), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, TruncateFirstSeekFailed)
@@ -572,7 +572,7 @@ TEST_F(FileWin32Test, TruncateFirstSeekFailed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(1024), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, TruncateSecondSeekFailed)
@@ -593,7 +593,7 @@ TEST_F(FileWin32Test, TruncateSecondSeekFailed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(1024), mb::FileStatus::FAILED);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
 TEST_F(FileWin32Test, TruncateThirdSeekFailed)
@@ -619,5 +619,5 @@ TEST_F(FileWin32Test, TruncateThirdSeekFailed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(file.truncate(1024), mb::FileStatus::FATAL);
-    ASSERT_EQ(file.error(), -ERROR_INVALID_HANDLE);
+    ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }

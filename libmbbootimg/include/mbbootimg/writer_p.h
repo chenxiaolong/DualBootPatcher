@@ -78,7 +78,7 @@ typedef int (*FormatWriterWriteEntry)(struct MbBiWriter *biw, void *userdata,
                                       struct MbBiEntry *entry);
 typedef int (*FormatWriterWriteData)(struct MbBiWriter *biw, void *userdata,
                                      const void *buf, size_t buf_size,
-                                     size_t *bytes_written);
+                                     size_t &bytes_written);
 typedef int (*FormatWriterFinishEntry)(struct MbBiWriter *biw, void *userdata);
 typedef int (*FormatWriterClose)(struct MbBiWriter *biw, void *userdata);
 typedef int (*FormatWriterFree)(struct MbBiWriter *biw, void *userdata);

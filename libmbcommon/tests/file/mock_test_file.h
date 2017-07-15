@@ -62,11 +62,11 @@ protected:
     virtual mb::FileStatus on_open() override;
     virtual mb::FileStatus on_close() override;
     virtual mb::FileStatus on_read(void *buf, size_t size,
-                                   size_t *bytes_read) override;
+                                   size_t &bytes_read) override;
     virtual mb::FileStatus on_write(const void *buf, size_t size,
-                                    size_t *bytes_written) override;
+                                    size_t &bytes_written) override;
     virtual mb::FileStatus on_seek(int64_t offset, int whence,
-                                   uint64_t *new_offset) override;
+                                   uint64_t &new_offset) override;
     virtual mb::FileStatus on_truncate(uint64_t size) override;
 
 public:
@@ -80,11 +80,11 @@ struct MockTestFile : public TestFile
     MOCK_METHOD0(on_open, mb::FileStatus());
     MOCK_METHOD0(on_close, mb::FileStatus());
     MOCK_METHOD3(on_read, mb::FileStatus(void *buf, size_t size,
-                                         size_t *bytes_read));
+                                         size_t &bytes_read));
     MOCK_METHOD3(on_write, mb::FileStatus(const void *buf, size_t size,
-                                          size_t *bytes_written));
+                                          size_t &bytes_written));
     MOCK_METHOD3(on_seek, mb::FileStatus(int64_t offset, int whence,
-                                         uint64_t *new_offset));
+                                         uint64_t &new_offset));
     MOCK_METHOD1(on_truncate, mb::FileStatus(uint64_t size));
 
     MockTestFile();
@@ -93,10 +93,10 @@ struct MockTestFile : public TestFile
 
     mb::FileStatus orig_on_open();
     mb::FileStatus orig_on_close();
-    mb::FileStatus orig_on_read(void *buf, size_t size, size_t *bytes_read);
+    mb::FileStatus orig_on_read(void *buf, size_t size, size_t &bytes_read);
     mb::FileStatus orig_on_write(const void *buf, size_t size,
-                                 size_t *bytes_written);
+                                 size_t &bytes_written);
     mb::FileStatus orig_on_seek(int64_t offset, int whence,
-                                uint64_t *new_offset);
+                                uint64_t &new_offset);
     mb::FileStatus orig_on_truncate(uint64_t size);
 };

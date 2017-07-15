@@ -147,15 +147,15 @@ static int _loki_read_android_header(MbBiWriter *biw, mb::File *file,
 
     file_ret = file->seek(0, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, ahdr, sizeof(*ahdr), &n);
+    file_ret = mb::file_read_fully(*file, ahdr, sizeof(*ahdr), n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to read Android header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -182,15 +182,15 @@ static int _loki_write_android_header(MbBiWriter *biw, mb::File *file,
 
     file_ret = file->seek(0, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, &dup, sizeof(dup), &n);
+    file_ret = mb::file_write_fully(*file, &dup, sizeof(dup), n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write Android header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -215,15 +215,15 @@ static int _loki_write_loki_header(MbBiWriter *biw, mb::File *file,
 
     file_ret = file->seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to seek to Loki header offset: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, &dup, sizeof(dup), &n);
+    file_ret = mb::file_write_fully(*file, &dup, sizeof(dup), n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write Loki header: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -246,9 +246,9 @@ static int _loki_move_dt_image(MbBiWriter *biw, mb::File *file,
 
     // Move DT image
     file_ret = mb::file_move(*file, aboot_offset, aboot_offset + fake_size,
-                             dt_size, &n);
+                             dt_size, n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to move DT image: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
@@ -279,16 +279,16 @@ static int _loki_write_aboot(MbBiWriter *biw, mb::File *file,
 
     file_ret = file->seek(aboot_offset, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to seek to ramdisk offset: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     file_ret = mb::file_write_fully(*file, aboot + aboot_func_offset,
-                                    fake_size, &n);
+                                    fake_size, n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write aboot segment: %s",
                                file->error_string().c_str());
         return MB_BI_FATAL;
@@ -312,15 +312,15 @@ static int _loki_write_shellcode(MbBiWriter *biw, mb::File *file,
 
     file_ret = file->seek(aboot_offset + aboot_func_align, SEEK_SET, nullptr);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to seek to shellcode offset: %s",
                                file->error_string().c_str());
         return MB_BI_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, patch, LOKI_SHELLCODE_SIZE, &n);
+    file_ret = mb::file_write_fully(*file, patch, LOKI_SHELLCODE_SIZE, n);
     if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write shellcode: %s",
                                file->error_string().c_str());
         return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;

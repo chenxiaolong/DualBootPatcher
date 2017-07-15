@@ -551,7 +551,7 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
     size_t bytes_written;
 
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        if (file.write(buf, n, &bytes_written) != FileStatus::OK) {
+        if (file.write(buf, n, bytes_written) != FileStatus::OK) {
             LOGE("%s: Failed to write file: %s",
                  full_path.c_str(), file.error_string().c_str());
             unzCloseCurrentFile(uf);
@@ -744,7 +744,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     char buf[32768];
     size_t bytes_read;
 
-    while ((file_ret = file.read(buf, sizeof(buf), &bytes_read))
+    while ((file_ret = file.read(buf, sizeof(buf), bytes_read))
             == FileStatus::OK && bytes_read > 0) {
         ret = zipWriteInFileInZip(zf, buf, bytes_read);
         if (ret != ZIP_OK) {

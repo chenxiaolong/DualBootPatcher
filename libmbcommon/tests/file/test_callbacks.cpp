@@ -56,7 +56,7 @@ struct FileCallbacksTest : testing::Test
 
     static mb::FileStatus _read_cb(mb::File &file, void *userdata,
                                    void *buf, size_t size,
-                                   size_t *bytes_read)
+                                   size_t &bytes_read)
     {
         (void) file;
         (void) buf;
@@ -71,7 +71,7 @@ struct FileCallbacksTest : testing::Test
 
     static mb::FileStatus _write_cb(mb::File &file, void *userdata,
                                     const void *buf, size_t size,
-                                    size_t *bytes_written)
+                                    size_t &bytes_written)
     {
         (void) file;
         (void) buf;
@@ -86,7 +86,7 @@ struct FileCallbacksTest : testing::Test
 
     static mb::FileStatus _seek_cb(mb::File &file, void *userdata,
                                    int64_t offset, int whence,
-                                   uint64_t *new_offset)
+                                   uint64_t &new_offset)
     {
         (void) file;
         (void) offset;
@@ -121,8 +121,8 @@ TEST_F(FileCallbacksTest, CheckCallbackConstructorWorks)
     uint64_t offset;
 
     ASSERT_TRUE(file.is_open());
-    ASSERT_EQ(file.read(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
-    ASSERT_EQ(file.write(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.read(nullptr, 0, n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.write(nullptr, 0, n), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.seek(0, SEEK_SET, &offset), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.truncate(0), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.close(), mb::FileStatus::OK);
@@ -144,8 +144,8 @@ TEST_F(FileCallbacksTest, CheckOpenFunctionWorks)
 
     ASSERT_EQ(file.open(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
                         _truncate_cb, this), mb::FileStatus::OK);
-    ASSERT_EQ(file.read(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
-    ASSERT_EQ(file.write(nullptr, 0, &n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.read(nullptr, 0, n), mb::FileStatus::UNSUPPORTED);
+    ASSERT_EQ(file.write(nullptr, 0, n), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.seek(0, SEEK_SET, &offset), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.truncate(0), mb::FileStatus::UNSUPPORTED);
     ASSERT_EQ(file.close(), mb::FileStatus::OK);
