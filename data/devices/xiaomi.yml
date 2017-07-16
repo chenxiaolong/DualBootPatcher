@@ -1134,7 +1134,6 @@
     base_dirs:
       - /dev/block/platform/soc/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
-      - /dev/block
     system:
       - /dev/block/platform/soc/7824900.sdhci/by-name/system
       - /dev/block/bootdevice/by-name/system
