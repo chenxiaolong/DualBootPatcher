@@ -1189,7 +1189,7 @@
       - /dev/block/mmcblk0p42
       # config
       - /dev/block/bootdevice/by-name/config
-     - /dev/block/mmcblk0p29
+      - /dev/block/mmcblk0p29
      # devcfg
       - /dev/block/bootdevice/by-name/devcfg
       - /dev/block/mmcblk0p10
@@ -1219,7 +1219,7 @@
       - /dev/block/mmcblk0p43
       # keymasterbak
       - /dev/block/bootdevice/by-name/keymasterbak
-      /dev/block/mmcblk0p44
+      - /dev/block/mmcblk0p44
       # keystore
       - /dev/block/bootdevice/by-name/keystore
       - /dev/block/mmcblk0p28
