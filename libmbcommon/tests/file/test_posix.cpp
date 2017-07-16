@@ -165,7 +165,7 @@ TEST_F(FilePosixTest, OpenFilenameMbsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open("x", mb::FileOpenMode::READ_ONLY), mb::FileStatus::OK);
+    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
 }
 
 TEST_F(FilePosixTest, OpenFilenameMbsFailure)
@@ -179,16 +179,14 @@ TEST_F(FilePosixTest, OpenFilenameMbsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open("x", mb::FileOpenMode::READ_ONLY),
-              mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
 TEST_F(FilePosixTest, OpenFilenameMbsInvalidMode)
 {
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open("x", static_cast<mb::FileOpenMode>(-1)),
-              mb::FileStatus::FATAL);
+    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
     ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
 }
 
@@ -205,7 +203,7 @@ TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(L"x", mb::FileOpenMode::READ_ONLY), mb::FileStatus::OK);
+    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
 }
 
 TEST_F(FilePosixTest, OpenFilenameWcsFailure)
@@ -219,16 +217,14 @@ TEST_F(FilePosixTest, OpenFilenameWcsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(L"x", mb::FileOpenMode::READ_ONLY),
-              mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
 TEST_F(FilePosixTest, OpenFilenameWcsInvalidMode)
 {
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(L"x", static_cast<mb::FileOpenMode>(-1)),
-              mb::FileStatus::FATAL);
+    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
     ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
 }
 
@@ -241,7 +237,7 @@ TEST_F(FilePosixTest, OpenFstatFailed)
             .WillOnce(testing::Return(0));
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(g_fp, false), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.open(g_fp, false));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -259,7 +255,7 @@ TEST_F(FilePosixTest, OpenDirectory)
             .WillOnce(testing::Return(0));
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(g_fp, false), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.open(g_fp, false));
     ASSERT_EQ(file.error(), std::errc::is_a_directory);
 }
 
@@ -277,7 +273,7 @@ TEST_F(FilePosixTest, OpenFile)
             .WillOnce(testing::Return(0));
 
     TestablePosixFile file(&_funcs);
-    ASSERT_EQ(file.open(g_fp, false), mb::FileStatus::OK);
+    ASSERT_TRUE(file.open(g_fp, false));
 }
 
 TEST_F(FilePosixTest, CloseUnownedFile)
@@ -289,7 +285,7 @@ TEST_F(FilePosixTest, CloseUnownedFile)
     TestablePosixFile file(&_funcs, g_fp, false);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.close(), mb::FileStatus::OK);
+    ASSERT_TRUE(file.close());
 }
 
 TEST_F(FilePosixTest, CloseOwnedFile)
@@ -302,7 +298,7 @@ TEST_F(FilePosixTest, CloseOwnedFile)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.close(), mb::FileStatus::OK);
+    ASSERT_TRUE(file.close());
 }
 
 TEST_F(FilePosixTest, CloseFailure)
@@ -314,7 +310,7 @@ TEST_F(FilePosixTest, CloseFailure)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.close(), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.close());
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -330,7 +326,7 @@ TEST_F(FilePosixTest, ReadSuccess)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::OK);
+    ASSERT_TRUE(file.read(&c, 1, n));
     ASSERT_EQ(n, 1u);
 }
 
@@ -346,7 +342,7 @@ TEST_F(FilePosixTest, ReadEof)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::OK);
+    ASSERT_TRUE(file.read(&c, 1, n));
     ASSERT_EQ(n, 0u);
 }
 
@@ -363,7 +359,7 @@ TEST_F(FilePosixTest, ReadFailure)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.read(&c, 1, n));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -384,7 +380,7 @@ TEST_F(FilePosixTest, ReadFailureEINTR)
 
     char c;
     size_t n;
-    ASSERT_EQ(file.read(&c, 1, n), mb::FileStatus::RETRY);
+    ASSERT_FALSE(file.read(&c, 1, n));
     ASSERT_EQ(file.error(), std::errc::interrupted);
 }
 
@@ -399,7 +395,7 @@ TEST_F(FilePosixTest, WriteSuccess)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
+    ASSERT_TRUE(file.write("x", 1, n));
     ASSERT_EQ(n, 1u);
 }
 
@@ -414,7 +410,7 @@ TEST_F(FilePosixTest, WriteEof)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::OK);
+    ASSERT_TRUE(file.write("x", 1, n));
     ASSERT_EQ(n, 0u);
 }
 
@@ -430,7 +426,7 @@ TEST_F(FilePosixTest, WriteFailure)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.write("x", 1, n));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -450,7 +446,7 @@ TEST_F(FilePosixTest, WriteFailureEINTR)
     ASSERT_TRUE(file.is_open());
 
     size_t n;
-    ASSERT_EQ(file.write("x", 1, n), mb::FileStatus::RETRY);
+    ASSERT_FALSE(file.write("x", 1, n));
     ASSERT_EQ(file.error(), std::errc::interrupted);
 }
 
@@ -478,7 +474,7 @@ TEST_F(FilePosixTest, SeekSuccess)
     ASSERT_TRUE(file.is_open());
 
     uint64_t offset;
-    ASSERT_EQ(file.seek(10, SEEK_SET, &offset), mb::FileStatus::OK);
+    ASSERT_TRUE(file.seek(10, SEEK_SET, &offset));
     ASSERT_EQ(offset, 10u);
 }
 
@@ -508,7 +504,7 @@ TEST_F(FilePosixTest, SeekSuccessLargeFile)
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
     uint64_t offset;
-    ASSERT_EQ(file.seek(LFS_SIZE, SEEK_SET, &offset), mb::FileStatus::OK);
+    ASSERT_TRUE(file.seek(LFS_SIZE, SEEK_SET, &offset));
     ASSERT_EQ(offset, LFS_SIZE);
 }
 #undef LFS_SIZE
@@ -535,7 +531,7 @@ TEST_F(FilePosixTest, SeekFseekFailed)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -559,7 +555,7 @@ TEST_F(FilePosixTest, SeekFtellFailed)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -587,7 +583,7 @@ TEST_F(FilePosixTest, SeekSecondFtellFailed)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -616,7 +612,8 @@ TEST_F(FilePosixTest, SeekSecondFtellFatal)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::FATAL);
+    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
+    ASSERT_TRUE(file.is_fatal());
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -625,7 +622,7 @@ TEST_F(FilePosixTest, SeekUnsupported)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::UNSUPPORTED);
+    ASSERT_FALSE(file.seek(10, SEEK_SET, nullptr));
     ASSERT_EQ(file.error(), mb::FileError::UnsupportedSeek);
 }
 
@@ -643,7 +640,7 @@ TEST_F(FilePosixTest, TruncateSuccess)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.truncate(1024), mb::FileStatus::OK);
+    ASSERT_TRUE(file.truncate(1024));
 }
 
 TEST_F(FilePosixTest, TruncateUnsupported)
@@ -656,7 +653,7 @@ TEST_F(FilePosixTest, TruncateUnsupported)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.truncate(1024), mb::FileStatus::UNSUPPORTED);
+    ASSERT_FALSE(file.truncate(1024));
     ASSERT_EQ(file.error(), mb::FileError::UnsupportedTruncate);
 }
 
@@ -673,6 +670,6 @@ TEST_F(FilePosixTest, TruncateFailed)
     TestablePosixFile file(&_funcs, g_fp, true);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(file.truncate(1024), mb::FileStatus::FAILED);
+    ASSERT_FALSE(file.truncate(1024));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }

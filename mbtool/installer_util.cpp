@@ -545,17 +545,16 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     StandardFile fout;
     // TODO: Replace with std::optional after switching to C++17
     std::pair<bool, uint64_t> offset;
-    FileStatus ret;
 
     // Open input file
-    if (fin.open(input_file, FileOpenMode::READ_ONLY) != FileStatus::OK) {
+    if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
         LOGE("%s: Failed to open for reading: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Open output file
-    if (fout.open(output_file, FileOpenMode::WRITE_ONLY) != FileStatus::OK) {
+    if (!fout.open(output_file, FileOpenMode::WRITE_ONLY)) {
         LOGE("%s: Failed to open for writing: %s",
              output_file.c_str(), fout.error_string().c_str());
         return false;
@@ -563,26 +562,24 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     // Replace pattern
     auto result_cb = [](File &file, void *userdata, uint64_t offset)
-            -> FileStatus {
+            -> FileSearchAction {
         (void) file;
         std::pair<bool, uint64_t> *ptr =
                 static_cast<std::pair<bool, uint64_t> *>(userdata);
         ptr->first = true;
         ptr->second = offset;
-        return FileStatus::OK;
+        return FileSearchAction::Stop;
     };
 
-    ret = file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern),
-                      1, result_cb, &offset);
-    if (ret < FileStatus::OK) {
+    if (!file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern), 1,
+                     result_cb, &offset)) {
         LOGE("%s: Error when searching for pattern: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Copy data
-    ret = fin.seek(0, SEEK_SET, nullptr);
-    if (ret != FileStatus::OK) {
+    if (!fin.seek(0, SEEK_SET, nullptr)) {
         LOGE("%s: Failed to seek to beginning: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
@@ -595,16 +592,15 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
             return false;
         }
 
-        ret = fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr);
-        if (ret != FileStatus::OK) {
+        if (!fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr)) {
             LOGE("%s: Failed to skip pattern: %s",
                  input_file.c_str(), fin.error_string().c_str());
             return false;
         }
 
         size_t n;
-        ret = file_write_fully(fout, target_pattern, sizeof(target_pattern), n);
-        if (ret != FileStatus::OK || n != sizeof(target_pattern)) {
+        if (!file_write_fully(fout, target_pattern, sizeof(target_pattern), n)
+                || n != sizeof(target_pattern)) {
             LOGE("%s: Failed to write target pattern: %s",
                  output_file.c_str(), fout.error_string().c_str());
             return false;
@@ -615,8 +611,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    ret = fout.close();
-    if (ret != FileStatus::OK) {
+    if (!fout.close()) {
         LOGE("%s: Failed to close file: %s",
              output_file.c_str(), fout.error_string().c_str());
         return false;
@@ -665,19 +660,16 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
     size_t n;
-    FileStatus ret;
 
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        ret = mb::file_read_fully(fin, buf, to_read, n);
-        if (ret != FileStatus::OK || n != to_read) {
+        if (!mb::file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        ret = mb::file_write_fully(fout, buf, to_read, n);
-        if (ret != FileStatus::OK || n != to_read) {
+        if (!mb::file_write_fully(fout, buf, to_read, n) || n != to_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
@@ -693,19 +685,17 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     char buf[10240];
     size_t n_read;
     size_t n_written;
-    FileStatus ret;
 
     while (true) {
-        ret = mb::file_read_fully(fin, buf, sizeof(buf), n_read);
-        if (ret != FileStatus::OK) {
+        if (!mb::file_read_fully(fin, buf, sizeof(buf), n_read)) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        ret = mb::file_write_fully(fout, buf, n_read, n_written);
-        if (ret != FileStatus::OK || n_written != n_read) {
+        if (!mb::file_write_fully(fout, buf, n_read, n_written)
+                || n_written != n_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }

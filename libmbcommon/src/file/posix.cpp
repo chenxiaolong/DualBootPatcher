@@ -295,11 +295,9 @@ PosixFile::~PosixFile()
  * \param owned Whether the `FILE *` instance should be owned by the File
  *              handle
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus PosixFile::open(FILE *fp, bool owned)
+bool PosixFile::open(FILE *fp, bool owned)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -319,11 +317,9 @@ FileStatus PosixFile::open(FILE *fp, bool owned)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
+bool PosixFile::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -333,7 +329,7 @@ FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
         if (!mbs_to_wcs(native_filename, filename)) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
-            return FileStatus::FATAL;
+            return false;
         }
 #else
         auto native_filename = filename;
@@ -344,7 +340,7 @@ FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
         if (!mode_str) {
             set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->fp = nullptr;
@@ -365,11 +361,9 @@ FileStatus PosixFile::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
+bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -381,7 +375,7 @@ FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
         if (!wcs_to_mbs(native_filename, filename)) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert WCS filename to MBS");
-            return FileStatus::FATAL;
+            return false;
         }
 #endif
 
@@ -390,7 +384,7 @@ FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
         if (!mode_str) {
             set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->fp = nullptr;
@@ -401,7 +395,7 @@ FileStatus PosixFile::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-FileStatus PosixFile::on_open()
+bool PosixFile::on_open()
 {
     MB_PRIVATE(PosixFile);
 
@@ -415,7 +409,7 @@ FileStatus PosixFile::on_open()
         if (!priv->fp) {
             set_error(std::error_code(errno, std::generic_category()),
                       "Failed to open file");
-            return FileStatus::FAILED;
+            return false;
         }
     }
 
@@ -430,13 +424,13 @@ FileStatus PosixFile::on_open()
         if (priv->funcs->fn_fstat(fd, &sb) < 0) {
             set_error(std::error_code(errno, std::generic_category()),
                       "Failed to stat file");
-            return FileStatus::FAILED;
+            return false;
         }
 
         if (S_ISDIR(sb.st_mode)) {
             set_error(std::make_error_code(std::errc::is_a_directory),
                       "Failed to open file");
-            return FileStatus::FAILED;
+            return false;
         }
 
         // Enable seekability based on file type because lseek(fd, 0, SEEK_CUR)
@@ -450,19 +444,19 @@ FileStatus PosixFile::on_open()
         }
     }
 
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus PosixFile::on_close()
+bool PosixFile::on_close()
 {
     MB_PRIVATE(PosixFile);
 
-    FileStatus ret = FileStatus::OK;
+    bool ret = true;
 
     if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to close file");
-        ret = FileStatus::FAILED;
+        ret = false;
     }
 
     // Reset to allow opening another file
@@ -471,7 +465,7 @@ FileStatus PosixFile::on_close()
     return ret;
 }
 
-FileStatus PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
+bool PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(PosixFile);
 
@@ -480,15 +474,14 @@ FileStatus PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to read file");
-        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
+        return false;
     }
 
     bytes_read = n;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus PosixFile::on_write(const void *buf, size_t size,
-                               size_t &bytes_written)
+bool PosixFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     MB_PRIVATE(PosixFile);
 
@@ -497,14 +490,14 @@ FileStatus PosixFile::on_write(const void *buf, size_t size,
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to write file");
-        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
+        return false;
     }
 
     bytes_written = n;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(PosixFile);
 
@@ -513,7 +506,7 @@ FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     if (!priv->can_seek) {
         set_error(make_error_code(FileError::UnsupportedSeek),
                   "Seek not supported");
-        return FileStatus::UNSUPPORTED;
+        return false;
     }
 
     // Get current file position
@@ -521,14 +514,14 @@ FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     if (old_pos < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to get file position");
-        return FileStatus::FAILED;
+        return false;
     }
 
     // Try to seek
     if (priv->funcs->fn_fseeko(priv->fp, offset, whence) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to seek file");
-        return FileStatus::FAILED;
+        return false;
     }
 
     // Get new position
@@ -537,15 +530,17 @@ FileStatus PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         // Try to restore old position
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to get file position");
-        return priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) == 0
-                ? FileStatus::FAILED : FileStatus::FATAL;
+        if (priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) != 0) {
+            set_fatal(true);
+        }
+        return false;
     }
 
     new_offset = new_pos;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus PosixFile::on_truncate(uint64_t size)
+bool PosixFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(PosixFile);
 
@@ -553,16 +548,16 @@ FileStatus PosixFile::on_truncate(uint64_t size)
     if (fd < 0) {
         set_error(make_error_code(FileError::UnsupportedTruncate),
                   "fileno() not supported for fp");
-        return FileStatus::UNSUPPORTED;
+        return false;
     }
 
     if (priv->funcs->fn_ftruncate64(fd, size) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
-        return FileStatus::FAILED;
+        return false;
     }
 
-    return FileStatus::OK;
+    return true;
 }
 
 }

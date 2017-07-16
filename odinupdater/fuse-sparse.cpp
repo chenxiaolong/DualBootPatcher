@@ -73,8 +73,7 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    if (ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
-            != mb::FileStatus::OK) {
+    if (!ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 source_fd_path, ctx->source_file.error_string().c_str());
         auto error = ctx->source_file.error();
@@ -84,7 +83,7 @@ static int fuse_open(const char *path, fuse_file_info *fi)
                 ? -error.value() : -EIO;
     }
 
-    if (ctx->sparse_file.open(&ctx->source_file) != mb::FileStatus::OK) {
+    if (!ctx->sparse_file.open(&ctx->source_file)) {
         fprintf(stderr, "%s: Failed to open sparse file: %s\n",
                 source_fd_path, ctx->sparse_file.error_string().c_str());
         auto error = ctx->sparse_file.error();
@@ -122,8 +121,7 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
                             OFF_T offset)
 {
     // Seek to position
-    if (ctx->sparse_file.seek(offset, SEEK_SET, nullptr)
-            != mb::FileStatus::OK) {
+    if (!ctx->sparse_file.seek(offset, SEEK_SET, nullptr)) {
         auto error = ctx->sparse_file.error();
         return (error.category() == std::generic_category()
                 || error.category() == std::system_category())
@@ -131,7 +129,7 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
     }
 
     size_t n;
-    if (ctx->sparse_file.read(buf, size, n) != mb::FileStatus::OK) {
+    if (!ctx->sparse_file.read(buf, size, n)) {
         auto error = ctx->sparse_file.error();
         return (error.category() == std::generic_category()
                 || error.category() == std::system_category())
@@ -176,8 +174,7 @@ static int get_sparse_file_size()
     mb::StandardFile source_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)
-            != mb::FileStatus::OK) {
+    if (!source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 source_fd_path, source_file.error_string().c_str());
         auto error = source_file.error();
@@ -186,7 +183,7 @@ static int get_sparse_file_size()
                 ? -error.value() : -EIO;
     }
 
-    if (sparse_file.open(&source_file) != mb::FileStatus::OK) {
+    if (!sparse_file.open(&source_file)) {
         fprintf(stderr, "%s: Failed to open sparse file: %s\n",
                 source_fd_path, sparse_file.error_string().c_str());
         auto error = sparse_file.error();

@@ -41,7 +41,7 @@ public:
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SparseFile)
 
     // File open
-    FileStatus open(File *file);
+    bool open(File *file);
 
     // File size
     uint64_t size();
@@ -52,12 +52,12 @@ protected:
     SparseFile(SparseFilePrivate *priv, File *file);
     /*! \endcond */
 
-    virtual FileStatus on_open() override;
-    virtual FileStatus on_close() override;
-    virtual FileStatus on_read(void *buf, size_t size,
-                               size_t &bytes_read) override;
-    virtual FileStatus on_seek(int64_t offset, int whence,
-                               uint64_t &new_offset) override;
+    virtual bool on_open() override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
 
 private:
     std::unique_ptr<SparseFilePrivate> _priv_ptr;

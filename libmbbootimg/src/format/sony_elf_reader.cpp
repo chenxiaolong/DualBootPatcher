@@ -67,22 +67,19 @@ int find_sony_elf_header(MbBiReader *bir, mb::File *file,
 {
     Sony_Elf32_Ehdr header;
     size_t n;
-    mb::FileStatus file_ret;
 
-    file_ret = file->seek(0, SEEK_SET, nullptr);
-    if (file_ret != mb::FileStatus::OK) {
+    if (!file->seek(0, SEEK_SET, nullptr)) {
         mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, &header, sizeof(header), n);
-    if (file_ret != mb::FileStatus::OK) {
+    if (!mb::file_read_fully(*file, &header, sizeof(header), n)) {
         mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read header: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     } else if (n != sizeof(header)) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
                                "Too small to be Sony ELF image");
@@ -141,7 +138,6 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
                                 MbBiHeader *header)
 {
     SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
-    mb::FileStatus file_ret;
     int ret;
 
     if (!ctx->have_header) {
@@ -178,23 +174,19 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
         Sony_Elf32_Phdr phdr;
         size_t n;
 
-        file_ret = bir->file->seek(pos, SEEK_SET, nullptr);
-        if (file_ret < mb::FileStatus::OK) {
+        if (!bir->file->seek(pos, SEEK_SET, nullptr)) {
             mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                    "Failed to seek to segment %" PRIu16
                                    " at %" PRIu64 ": %s", i, pos,
                                    bir->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
-        file_ret = mb::file_read_fully(*bir->file, &phdr, sizeof(phdr), n);
-        if (file_ret < mb::FileStatus::OK) {
+        if (!mb::file_read_fully(*bir->file, &phdr, sizeof(phdr), n)) {
             mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                    "Failed to read segment %" PRIu16 ": %s",
                                    i, bir->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         } else if (n != sizeof(phdr)) {
             mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
                                    "Unexpected EOF when reading segment"
@@ -218,22 +210,18 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
                 return MB_BI_WARN;
             }
 
-            file_ret = bir->file->seek(phdr.p_offset, SEEK_SET, nullptr);
-            if (file_ret < mb::FileStatus::OK) {
+            if (!bir->file->seek(phdr.p_offset, SEEK_SET, nullptr)) {
                 mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                        "Failed to seek to cmdline: %s",
                                        bir->file->error_string().c_str());
-                return file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
+                return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             }
 
-            file_ret = mb::file_read_fully(*bir->file, cmdline, phdr.p_memsz, n);
-            if (file_ret < mb::FileStatus::OK) {
+            if (!mb::file_read_fully(*bir->file, cmdline, phdr.p_memsz, n)) {
                 mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                        "Failed to read cmdline: %s",
                                        bir->file->error_string().c_str());
-                return file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
+                return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             } else if (n != phdr.p_memsz) {
                 mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
                                        "Unexpected EOF when reading cmdline");

@@ -35,8 +35,8 @@ public:
     }
 
 protected:
-    virtual mb::FileStatus on_seek(int64_t offset, int whence,
-                                   uint64_t &new_offset) override
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override
     {
         switch (_seekability) {
         case mb::sparse::Seekability::CAN_SEEK:
@@ -49,10 +49,12 @@ protected:
         case mb::sparse::Seekability::CAN_READ:
             break;
         default:
-            return mb::FileStatus::FATAL;
+            set_fatal(true);
+            return false;
         }
 
-        return mb::FileStatus::UNSUPPORTED;
+        set_error(mb::make_error_code(mb::FileError::UnsupportedSeek), "");
+        return false;
     }
 
 private:
@@ -81,7 +83,7 @@ struct SparseTest : testing::Test
 
     void SetUp() override
     {
-        ASSERT_EQ(_source_file.open(&_data, &_size), mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.open(&_data, &_size));
     }
 
     void build_valid_data()
@@ -100,8 +102,7 @@ struct SparseTest : testing::Test
         shdr.image_checksum = 0;
         fix_sparse_header_byte_order(shdr);
 
-        ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
         mb::sparse::ChunkHeader chdr;
 
@@ -112,10 +113,8 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n),
-                  mb::FileStatus::OK);
-        ASSERT_EQ(_source_file.write("0123456789abcdef", 16, n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+        ASSERT_TRUE(_source_file.write("0123456789abcdef", 16, n));
 
         // [2/4] Add fill chunk header
         chdr = {};
@@ -124,12 +123,10 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz + sizeof(uint32_t);
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
 
         uint32_t fill_val = mb_htole32(0x12345678);
-        ASSERT_EQ(_source_file.write(&fill_val, sizeof(fill_val), n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&fill_val, sizeof(fill_val), n));
 
         // [3/4] Add skip chunk header
         chdr = {};
@@ -138,8 +135,7 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz;
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
 
         // [4/4] Add CRC32 chunk header
         chdr = {};
@@ -148,13 +144,11 @@ struct SparseTest : testing::Test
         chdr.total_sz = shdr.chunk_hdr_sz + sizeof(uint32_t);
         fix_chunk_header_byte_order(chdr);
 
-        ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n),
-                  mb::FileStatus::OK);
-        ASSERT_EQ(_source_file.write("\x00\x00\x00\x00", 4, n),
-                  mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+        ASSERT_TRUE(_source_file.write("\x00\x00\x00\x00", 4, n));
 
         // Move back to beginning of the file
-        ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+        ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
     }
 
     static void fix_sparse_header_byte_order(mb::sparse::SparseHeader &header)
@@ -183,12 +177,12 @@ constexpr unsigned char SparseTest::expected_valid_data[];
 
 TEST_F(SparseTest, CheckOpeningUnopenedFileFails)
 {
-    ASSERT_EQ(_source_file.close(), mb::FileStatus::OK);
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::FAILED);
+    ASSERT_TRUE(_source_file.close());
+    ASSERT_FALSE(_file.open(&_source_file));
     ASSERT_NE(_file.error_string().find("not open"), std::string::npos);
 }
 
-TEST_F(SparseTest, CheckSparseHeaderInvalidMagicFatal)
+TEST_F(SparseTest, CheckSparseHeaderInvalidMagicFailure)
 {
     mb::sparse::SparseHeader shdr = {};
     shdr.magic = 0xaabbccdd;
@@ -204,16 +198,15 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMagicFatal)
 
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.truncate(shdr.total_blks * shdr.blk_sz),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
+    ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::FATAL);
+    ASSERT_FALSE(_file.open(&_source_file));
     ASSERT_NE(_file.error_string().find("magic"), std::string::npos);
 }
 
-TEST_F(SparseTest, CheckSparseHeaderInvalidMajorVersionFatal)
+TEST_F(SparseTest, CheckSparseHeaderInvalidMajorVersionFailure)
 {
     mb::sparse::SparseHeader shdr = {};
     shdr.magic = mb::sparse::SPARSE_HEADER_MAGIC;
@@ -229,12 +222,11 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMajorVersionFatal)
 
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.truncate(shdr.total_blks * shdr.blk_sz),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
+    ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::FATAL);
+    ASSERT_FALSE(_file.open(&_source_file));
     ASSERT_NE(_file.error_string().find("major version"), std::string::npos);
 }
 
@@ -254,15 +246,14 @@ TEST_F(SparseTest, CheckSparseHeaderInvalidMinorVersionOk)
 
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.truncate(shdr.total_blks * shdr.blk_sz),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
+    ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.open(&_source_file));
 }
 
-TEST_F(SparseTest, CheckSparseHeaderUndersizedSparseHeaderSizeFatal)
+TEST_F(SparseTest, CheckSparseHeaderUndersizedSparseHeaderSizeFailure)
 {
     mb::sparse::SparseHeader shdr = {};
     shdr.magic = mb::sparse::SPARSE_HEADER_MAGIC;
@@ -278,16 +269,15 @@ TEST_F(SparseTest, CheckSparseHeaderUndersizedSparseHeaderSizeFatal)
 
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.truncate(shdr.total_blks * shdr.blk_sz),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
+    ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::FATAL);
+    ASSERT_FALSE(_file.open(&_source_file));
     ASSERT_NE(_file.error_string().find("sparse header"), std::string::npos);
 }
 
-TEST_F(SparseTest, CheckSparseHeaderUndersizedChunkHeaderSizeFatal)
+TEST_F(SparseTest, CheckSparseHeaderUndersizedChunkHeaderSizeFailure)
 {
     mb::sparse::SparseHeader shdr = {};
     shdr.magic = mb::sparse::SPARSE_HEADER_MAGIC;
@@ -303,12 +293,11 @@ TEST_F(SparseTest, CheckSparseHeaderUndersizedChunkHeaderSizeFatal)
 
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.truncate(shdr.total_blks * shdr.blk_sz),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
+    ASSERT_TRUE(_source_file.truncate(shdr.total_blks * shdr.blk_sz));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::FATAL);
+    ASSERT_FALSE(_file.open(&_source_file));
     ASSERT_NE(_file.error_string().find("chunk header"), std::string::npos);
 }
 
@@ -329,7 +318,7 @@ TEST_F(SparseTest, CheckInvalidRawChunkFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_RAW;
@@ -337,12 +326,13 @@ TEST_F(SparseTest, CheckInvalidRawChunkFatal)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz + 1;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.write("1234", 4, n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.write("1234", 4, n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("data blocks"), std::string::npos);
 }
 
@@ -363,7 +353,7 @@ TEST_F(SparseTest, CheckInvalidFillChunkFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_FILL;
@@ -371,11 +361,12 @@ TEST_F(SparseTest, CheckInvalidFillChunkFatal)
     chdr.total_sz = shdr.chunk_hdr_sz + 0;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("Data size"), std::string::npos);
 }
 
@@ -396,7 +387,7 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_DONT_CARE;
@@ -404,11 +395,12 @@ TEST_F(SparseTest, CheckInvalidSkipChunkFatal)
     chdr.total_sz = shdr.chunk_hdr_sz + 1;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("Data size"), std::string::npos);
 }
 
@@ -429,7 +421,7 @@ TEST_F(SparseTest, CheckInvalidCrc32ChunkFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_CRC32;
@@ -437,11 +429,12 @@ TEST_F(SparseTest, CheckInvalidCrc32ChunkFatal)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("data size"), std::string::npos);
 }
 
@@ -462,7 +455,7 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_FILL;
@@ -470,11 +463,12 @@ TEST_F(SparseTest, CheckInvalidChunkTotalSizeFatal)
     chdr.total_sz = shdr.chunk_hdr_sz - 1;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("chunk size"), std::string::npos);
 }
 
@@ -495,7 +489,7 @@ TEST_F(SparseTest, CheckInvalidChunkTypeFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = 0xaabb;
@@ -503,11 +497,12 @@ TEST_F(SparseTest, CheckInvalidChunkTypeFatal)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("chunk type"), std::string::npos);
 }
 
@@ -528,7 +523,7 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_FILL;
@@ -536,12 +531,12 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFatal)
     chdr.total_sz = shdr.chunk_hdr_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr) / 2, n),
-              mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr) / 2, n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("chunk header"), std::string::npos);
 }
 
@@ -562,7 +557,7 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_RAW;
@@ -570,12 +565,13 @@ TEST_F(SparseTest, CheckReadOversizedChunkDataFatal)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.write("01234567", 8, n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.write("01234567", 8, n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("file size"), std::string::npos);
 }
 
@@ -596,7 +592,7 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFatal)
     char buf[1024];
     size_t n;
 
-    ASSERT_EQ(_source_file.write(&shdr, sizeof(shdr), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&shdr, sizeof(shdr), n));
 
     mb::sparse::ChunkHeader chdr = {};
     chdr.chunk_type = mb::sparse::CHUNK_TYPE_RAW;
@@ -604,12 +600,13 @@ TEST_F(SparseTest, CheckReadUndersizedChunkDataFatal)
     chdr.total_sz = shdr.chunk_hdr_sz + chdr.chunk_sz * shdr.blk_sz;
     fix_chunk_header_byte_order(chdr);
 
-    ASSERT_EQ(_source_file.write(&chdr, sizeof(chdr), n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.write("0123", 1, n), mb::FileStatus::OK);
-    ASSERT_EQ(_source_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(_source_file.write(&chdr, sizeof(chdr), n));
+    ASSERT_TRUE(_source_file.write("0123", 1, n));
+    ASSERT_TRUE(_source_file.seek(0, SEEK_SET, nullptr));
 
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::FATAL);
+    ASSERT_TRUE(_file.open(&_source_file));
+    ASSERT_FALSE(_file.read(buf, sizeof(buf), n));
+    ASSERT_TRUE(_file.is_fatal());
     ASSERT_NE(_file.error_string().find("chunk does not end"),
               std::string::npos);
 }
@@ -624,38 +621,38 @@ TEST_F(SparseTest, ReadValidDataWithSeekableFile)
     build_valid_data();
 
     // Check that valid sparse header can be opened
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.open(&_source_file));
 
     // Check that the entire file could be read and that the contents are
     // correct
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.read(buf, sizeof(buf), n));
     ASSERT_EQ(n, sizeof(expected_valid_data));
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that partial read on chunk boundary works
-    ASSERT_EQ(_file.seek(-16, SEEK_END, nullptr), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.seek(-16, SEEK_END, nullptr));
+    ASSERT_TRUE(_file.read(buf, sizeof(buf), n));
     ASSERT_EQ(n, 16u);
     ASSERT_EQ(memcmp(buf, expected_valid_data + 32, 16), 0);
 
     // Check that partial read not on chunk boundary works
-    ASSERT_EQ(_file.seek(33, SEEK_SET, nullptr), mb::FileStatus::OK);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.seek(33, SEEK_SET, nullptr));
+    ASSERT_TRUE(_file.read(buf, sizeof(buf), n));
     ASSERT_EQ(n, 15u);
     ASSERT_EQ(memcmp(buf, expected_valid_data + 33, 15), 0);
 
     // Check that seeking past EOF is allowed and doing so returns no data
-    ASSERT_EQ(_file.seek(1000, SEEK_SET, nullptr), mb::FileStatus::OK);
-    ASSERT_EQ(_file.seek(1000, SEEK_CUR, &pos), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.seek(1000, SEEK_SET, nullptr));
+    ASSERT_TRUE(_file.seek(1000, SEEK_CUR, &pos));
     ASSERT_EQ(pos, 2000u);
-    ASSERT_EQ(_file.read(buf, sizeof(buf), n), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.read(buf, sizeof(buf), n));
     ASSERT_EQ(n, 0u);
 
     // Check that seeking to the end of the sparse file works
-    ASSERT_EQ(_file.seek(0, SEEK_END, &pos), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.seek(0, SEEK_END, &pos));
     ASSERT_EQ(pos, 48u);
 
-    ASSERT_EQ(_file.close(), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.close());
 }
 
 TEST_F(SparseTest, ReadValidDataWithSkippableFile)
@@ -665,33 +662,34 @@ TEST_F(SparseTest, ReadValidDataWithSkippableFile)
     size_t remaining = sizeof(buf);
     size_t n;
     uint64_t total = 0;
-    mb::FileStatus ret;
+    bool ret;
     build_valid_data();
 
     // Check that valid sparse header can be opened
     _source_file.set_seekability(mb::sparse::Seekability::CAN_SKIP);
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.open(&_source_file));
 
     // Check that the entire file could be read and that the contents are
     // correct. Read one byte at a time to test that a read while the sparse
     // file pointer is in the middle of a raw chunk works.
     while (remaining > 0
-            && (ret = _file.read(ptr, 1, n)) == mb::FileStatus::OK
+            && (ret = _file.read(ptr, 1, n))
             && n > 0) {
         ptr += n;
         total += n;
         remaining -= n;
     }
-    ASSERT_EQ(ret, mb::FileStatus::OK);
+    ASSERT_TRUE(ret);
     ASSERT_EQ(total, sizeof(expected_valid_data));
     ASSERT_EQ(remaining, sizeof(buf) - sizeof(expected_valid_data));
     ASSERT_EQ(n, 0u);
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that seeking fails
-    ASSERT_EQ(_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::UNSUPPORTED);
+    ASSERT_FALSE(_file.seek(0, SEEK_SET, nullptr));
+    ASSERT_EQ(_file.error(), mb::FileError::UnsupportedSeek);
 
-    ASSERT_EQ(_file.close(), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.close());
 }
 
 TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
@@ -701,31 +699,32 @@ TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
     size_t remaining = sizeof(buf);
     size_t n;
     uint64_t total = 0;
-    mb::FileStatus ret;
+    bool ret;
     build_valid_data();
 
     // Check that valid sparse header can be opened
     _source_file.set_seekability(mb::sparse::Seekability::CAN_READ);
-    ASSERT_EQ(_file.open(&_source_file), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.open(&_source_file));
 
     // Check that the entire file could be read and that the contents are
     // correct. Read one byte at a time to test that a read while the sparse
     // file pointer is in the middle of a raw chunk works.
     while (remaining > 0
-            && (ret = _file.read(ptr, 1, n)) == mb::FileStatus::OK
+            && (ret = _file.read(ptr, 1, n))
             && n > 0) {
         ptr += n;
         total += n;
         remaining -= n;
     }
-    ASSERT_EQ(ret, mb::FileStatus::OK);
+    ASSERT_TRUE(ret);
     ASSERT_EQ(total, sizeof(expected_valid_data));
     ASSERT_EQ(remaining, sizeof(buf) - sizeof(expected_valid_data));
     ASSERT_EQ(n, 0u);
     ASSERT_EQ(memcmp(buf, expected_valid_data, sizeof(expected_valid_data)), 0);
 
     // Check that seeking fails
-    ASSERT_EQ(_file.seek(0, SEEK_SET, nullptr), mb::FileStatus::UNSUPPORTED);
+    ASSERT_FALSE(_file.seek(0, SEEK_SET, nullptr));
+    ASSERT_EQ(_file.error(), mb::FileError::UnsupportedSeek);
 
-    ASSERT_EQ(_file.close(), mb::FileStatus::OK);
+    ASSERT_TRUE(_file.close());
 }

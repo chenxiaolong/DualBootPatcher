@@ -41,9 +41,7 @@ namespace mb
  *
  * \param file File handle
  *
- * \return
- *   * Return #FileStatus::OK if the file was successfully opened
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether the file was successfully opened
  */
 
 /*!
@@ -53,18 +51,16 @@ namespace mb
  *
  * This callback, if registered, will be called once and only once once to clean
  * up the resources, regardless of the current state. In other words, this
- * callback will be called even if a function returns #FileStatus::FATAL. If any
- * memory, file handles, or other resources need to be freed, this callback is
- * the place to do so.
+ * callback will be called even if is_fatal() returns true. If any memory, file
+ * handles, or other resources need to be freed, this callback is the place to
+ * do so.
  *
  * It is guaranteed that no further callbacks will be invoked after this
  * callback executes.
  *
  * \param file File handle
  *
- * \return
- *   * Return #FileStatus::OK if the file was successfully closed
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether the file was successfully closed
  */
 
 /*!
@@ -78,12 +74,7 @@ namespace mb
  * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
  *                        of file.
  *
- * \return
- *   * Return #FileStatus::OK if some bytes were read or EOF is reached
- *   * Return #FileStatus::RETRY if the same operation should be reattempted
- *   * Return #FileStatus::UNSUPPORTED if the file does not support reading
- *     (Not registering a read callback has the same effect.)
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether some bytes were read or EOF was reached
  */
 
 /*!
@@ -96,12 +87,7 @@ namespace mb
  * \param[in] size Buffer size
  * \param[out] bytes_written Output number of bytes that were written.
  *
- * \return
- *   * Return #FileStatus::OK if some bytes were written
- *   * Return #FileStatus::RETRY if the same operation should be reattempted
- *   * Return #FileStatus::UNSUPPORTED if the file does not support writing
- *     (Not registering a read callback has the same effect.)
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether some bytes were successfully written
  */
 
 /*!
@@ -114,11 +100,7 @@ namespace mb
  * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
  * \param[out] new_offset Output new file offset
  *
- * \return
- *   * Return #FileStatus::OK if the file position was successfully set
- *   * Return #FileStatus::UNSUPPORTED if the file does not support seeking
- *     (Not registering a seek callback has the same effect.)
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether the file position was successfully set
  */
 
 /*!
@@ -131,11 +113,7 @@ namespace mb
  * \param file File handle
  * \param size New size of file
  *
- * \return
- *   * Return #FileStatus::OK if the file size was successfully changed
- *   * Return #FileStatus::UNSUPPORTED if the handle source does not support
- *     truncation (Not registering a truncate callback has the same effect.)
- *   * Return \<= #FileStatus::WARN if an error occurs
+ * \return Return whether the file size was successfully changed
  */
 
 /*! \cond INTERNAL */
@@ -249,13 +227,13 @@ CallbackFile::~CallbackFile()
  * \param truncate_cb File truncate callback
  * \param userdata Data pointer to pass to callbacks
  */
-FileStatus CallbackFile::open(OpenCb open_cb,
-                              CloseCb close_cb,
-                              ReadCb read_cb,
-                              WriteCb write_cb,
-                              SeekCb seek_cb,
-                              TruncateCb truncate_cb,
-                              void *userdata)
+bool CallbackFile::open(OpenCb open_cb,
+                        CloseCb close_cb,
+                        ReadCb read_cb,
+                        WriteCb write_cb,
+                        SeekCb seek_cb,
+                        TruncateCb truncate_cb,
+                        void *userdata)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -274,7 +252,7 @@ FileStatus CallbackFile::open(OpenCb open_cb,
     return File::open();
 }
 
-FileStatus CallbackFile::on_open()
+bool CallbackFile::on_open()
 {
     MB_PRIVATE(CallbackFile);
 
@@ -285,11 +263,11 @@ FileStatus CallbackFile::on_open()
     }
 }
 
-FileStatus CallbackFile::on_close()
+bool CallbackFile::on_close()
 {
     MB_PRIVATE(CallbackFile);
 
-    FileStatus ret;
+    bool ret;
 
     if (priv->close_cb) {
         ret = priv->close_cb(*this, priv->userdata);
@@ -303,7 +281,7 @@ FileStatus CallbackFile::on_close()
     return ret;
 }
 
-FileStatus CallbackFile::on_read(void *buf, size_t size, size_t &bytes_read)
+bool CallbackFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -314,8 +292,7 @@ FileStatus CallbackFile::on_read(void *buf, size_t size, size_t &bytes_read)
     }
 }
 
-FileStatus CallbackFile::on_write(const void *buf, size_t size,
-                                  size_t &bytes_written)
+bool CallbackFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -326,8 +303,7 @@ FileStatus CallbackFile::on_write(const void *buf, size_t size,
     }
 }
 
-FileStatus CallbackFile::on_seek(int64_t offset, int whence,
-                                 uint64_t &new_offset)
+bool CallbackFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -338,7 +314,7 @@ FileStatus CallbackFile::on_seek(int64_t offset, int whence,
     }
 }
 
-FileStatus CallbackFile::on_truncate(uint64_t size)
+bool CallbackFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(CallbackFile);
 

@@ -40,21 +40,19 @@ int main(int argc, char *argv[])
     mb::StandardFile output_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (input_file.open(input_path, mb::FileOpenMode::READ_ONLY)
-            != mb::FileStatus::OK) {
+    if (!input_file.open(input_path, mb::FileOpenMode::READ_ONLY)) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
                 input_path, input_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    if (sparse_file.open(&input_file) != mb::FileStatus::OK) {
+    if (!sparse_file.open(&input_file)) {
         fprintf(stderr, "%s: %s\n",
                 input_path, sparse_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    if (output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY)
-            != mb::FileStatus::OK) {
+    if (!output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY)) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
                 output_path, output_file.error_string().c_str());
         return EXIT_FAILURE;
@@ -62,15 +60,13 @@ int main(int argc, char *argv[])
 
     size_t n_read;
     char buf[10240];
-    mb::FileStatus ret;
-    while ((ret = sparse_file.read(buf, sizeof(buf), n_read))
-            == mb::FileStatus::OK && n_read > 0) {
+    bool ret;
+    while ((ret = sparse_file.read(buf, sizeof(buf), n_read)) && n_read > 0) {
         char *ptr = buf;
         size_t n_written;
 
         while (n_read > 0) {
-            if (output_file.write(buf, n_read, n_written)
-                    != mb::FileStatus::OK) {
+            if (!output_file.write(buf, n_read, n_written)) {
                 fprintf(stderr, "%s: Failed to write file: %s\n",
                         output_path, output_file.error_string().c_str());
                 return EXIT_FAILURE;
@@ -80,13 +76,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (ret != mb::FileStatus::OK) {
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read file: %s\n",
                 input_path, sparse_file.error_string().c_str());
         return EXIT_FAILURE;
     }
 
-    if (output_file.close() != mb::FileStatus::OK) {
+    if (!output_file.close()) {
         fprintf(stderr, "%s: Failed to close file: %s\n",
                 output_path, output_file.error_string().c_str());
         return EXIT_FAILURE;

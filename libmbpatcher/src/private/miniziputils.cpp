@@ -551,7 +551,7 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
     size_t bytes_written;
 
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        if (file.write(buf, n, bytes_written) != FileStatus::OK) {
+        if (!file.write(buf, n, bytes_written)) {
             LOGE("%s: Failed to write file: %s",
                  full_path.c_str(), file.error_string().c_str());
             unzCloseCurrentFile(uf);
@@ -570,7 +570,7 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
         return false;
     }
 
-    if (file.close() != FileStatus::OK) {
+    if (!file.close()) {
         LOGE("%s: Failed to close file: %s",
              full_path.c_str(), file.error_string().c_str());
         return false;
@@ -689,7 +689,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
 {
     // Copy file into archive
     StandardFile file;
-    FileStatus file_ret;
+    bool file_ret;
     int ret;
 
     auto error = FileUtils::open_file(file, path,
@@ -701,8 +701,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     }
 
     uint64_t size;
-    if (file.seek(0, SEEK_END, &size) != FileStatus::OK
-            || file.seek(0, SEEK_SET, nullptr) != FileStatus::OK) {
+    if (!file.seek(0, SEEK_END, &size) || !file.seek(0, SEEK_SET, nullptr)) {
         LOGE("%s: Failed to seek file: %s",
              path.c_str(), file.error_string().c_str());
         return ErrorCode::FileSeekError;
@@ -745,7 +744,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     size_t bytes_read;
 
     while ((file_ret = file.read(buf, sizeof(buf), bytes_read))
-            == FileStatus::OK && bytes_read > 0) {
+            && bytes_read > 0) {
         ret = zipWriteInFileInZip(zf, buf, bytes_read);
         if (ret != ZIP_OK) {
             LOGE("minizip: Failed to write inner file data: %s",
@@ -755,7 +754,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
             return ErrorCode::ArchiveWriteDataError;
         }
     }
-    if (file_ret != FileStatus::OK) {
+    if (!file_ret) {
         LOGE("%s: Failed to read data: %s",
              path.c_str(), file.error_string().c_str());
         zipCloseFileInZip(zf);

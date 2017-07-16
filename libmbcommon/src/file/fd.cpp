@@ -269,11 +269,9 @@ FdFile::~FdFile()
  * \param fd File descriptor
  * \param owned Whether the file descriptor should be owned by the File handle
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus FdFile::open(int fd, bool owned)
+bool FdFile::open(int fd, bool owned)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -293,11 +291,9 @@ FileStatus FdFile::open(int fd, bool owned)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus FdFile::open(const std::string &filename, FileOpenMode mode)
+bool FdFile::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -307,7 +303,7 @@ FileStatus FdFile::open(const std::string &filename, FileOpenMode mode)
         if (!mbs_to_wcs(native_filename, filename)) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
-            return FileStatus::FATAL;
+            return false;
         }
 #else
         auto native_filename = filename;
@@ -318,7 +314,7 @@ FileStatus FdFile::open(const std::string &filename, FileOpenMode mode)
         if (flags < 0) {
             set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->fd = -1;
@@ -339,11 +335,9 @@ FileStatus FdFile::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus FdFile::open(const std::wstring &filename, FileOpenMode mode)
+bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -355,7 +349,7 @@ FileStatus FdFile::open(const std::wstring &filename, FileOpenMode mode)
         if (!wcs_to_mbs(native_filename, filename)) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert WCS filename to MBS");
-            return FileStatus::FATAL;
+            return false;
         }
 #endif
 
@@ -364,7 +358,7 @@ FileStatus FdFile::open(const std::wstring &filename, FileOpenMode mode)
         if (flags < 0) {
             set_error(make_error_code(FileError::InvalidArgument),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->fd = -1;
@@ -375,7 +369,7 @@ FileStatus FdFile::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-FileStatus FdFile::on_open()
+bool FdFile::on_open()
 {
     MB_PRIVATE(FdFile);
 
@@ -389,7 +383,7 @@ FileStatus FdFile::on_open()
         if (priv->fd < 0) {
             set_error(std::error_code(errno, std::generic_category()),
                       "Failed to open file");
-            return FileStatus::FAILED;
+            return false;
         }
     }
 
@@ -398,28 +392,28 @@ FileStatus FdFile::on_open()
     if (priv->funcs->fn_fstat(priv->fd, &sb) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to stat file");
-        return FileStatus::FAILED;
+        return false;
     }
 
     if (S_ISDIR(sb.st_mode)) {
         set_error(std::make_error_code(std::errc::is_a_directory),
                   "Failed to open file");
-        return FileStatus::FAILED;
+        return false;
     }
 
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus FdFile::on_close()
+bool FdFile::on_close()
 {
     MB_PRIVATE(FdFile);
 
-    FileStatus ret = FileStatus::OK;
+    bool ret = true;
 
     if (priv->owned && priv->fd >= 0 && priv->funcs->fn_close(priv->fd) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to close file");
-        ret = FileStatus::FAILED;
+        ret = false;
     }
 
     // Reset to allow opening another file
@@ -428,7 +422,7 @@ FileStatus FdFile::on_close()
     return ret;
 }
 
-FileStatus FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
+bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(FdFile);
 
@@ -440,14 +434,14 @@ FileStatus FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
     if (n < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to read file");
-        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
+        return false;
     }
 
     bytes_read = n;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     MB_PRIVATE(FdFile);
 
@@ -459,14 +453,14 @@ FileStatus FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
     if (n < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to write file");
-        return errno == EINTR ? FileStatus::RETRY : FileStatus::FAILED;
+        return false;
     }
 
     bytes_written = n;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(FdFile);
 
@@ -474,24 +468,24 @@ FileStatus FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     if (ret < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to seek file");
-        return FileStatus::FAILED;
+        return false;
     }
 
     new_offset = ret;
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus FdFile::on_truncate(uint64_t size)
+bool FdFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(FdFile);
 
     if (priv->funcs->fn_ftruncate64(priv->fd, size) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
-        return FileStatus::FAILED;
+        return false;
     }
 
-    return FileStatus::OK;
+    return true;
 }
 
 }

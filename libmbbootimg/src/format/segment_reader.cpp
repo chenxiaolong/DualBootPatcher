@@ -137,7 +137,6 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
                                   MbBiEntry *entry, SegmentReaderEntry *srentry,
                                   MbBiReader *bir)
 {
-    mb::FileStatus file_ret;
     int ret;
 
     if (srentry->offset > UINT64_MAX - srentry->size) {
@@ -151,10 +150,8 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
     uint64_t read_cur_offset = read_start_offset;
 
     if (ctx->read_cur_offset != srentry->offset) {
-        file_ret = file->seek(read_start_offset, SEEK_SET, nullptr);
-        if (file_ret < mb::FileStatus::OK) {
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+        if (!file->seek(read_start_offset, SEEK_SET, nullptr)) {
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
     }
 
@@ -219,13 +216,11 @@ int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
         return MB_BI_FAILED;
     }
 
-    mb::FileStatus file_ret =
-            mb::file_read_fully(*file, buf, to_copy, bytes_read);
-    if (file_ret < mb::FileStatus::OK) {
+    if (!mb::file_read_fully(*file, buf, to_copy, bytes_read)) {
         mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read data: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     ctx->read_cur_offset += bytes_read;

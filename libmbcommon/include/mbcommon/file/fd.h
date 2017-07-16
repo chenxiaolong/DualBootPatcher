@@ -41,9 +41,9 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFile)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FdFile)
 
-    FileStatus open(int fd, bool owned);
-    FileStatus open(const std::string &filename, FileOpenMode mode);
-    FileStatus open(const std::wstring &filename, FileOpenMode mode);
+    bool open(int fd, bool owned);
+    bool open(const std::string &filename, FileOpenMode mode);
+    bool open(const std::wstring &filename, FileOpenMode mode);
 
 protected:
     /*! \cond INTERNAL */
@@ -56,15 +56,15 @@ protected:
            const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual FileStatus on_open() override;
-    virtual FileStatus on_close() override;
-    virtual FileStatus on_read(void *buf, size_t size,
-                               size_t &bytes_read) override;
-    virtual FileStatus on_write(const void *buf, size_t size,
-                                size_t &bytes_written) override;
-    virtual FileStatus on_seek(int64_t offset, int whence,
-                               uint64_t &new_offset) override;
-    virtual FileStatus on_truncate(uint64_t size) override;
+    virtual bool on_open() override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_write(const void *buf, size_t size,
+                          size_t &bytes_written) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+    virtual bool on_truncate(uint64_t size) override;
 };
 
 }

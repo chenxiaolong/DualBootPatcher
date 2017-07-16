@@ -24,26 +24,33 @@
 namespace mb
 {
 
-typedef FileStatus (*FileSearchResultCallback)(File &file, void *userdata,
-                                               uint64_t offset);
+enum class FileSearchAction
+{
+    Continue,
+    Stop,
+    Fail,
+};
 
-MB_EXPORT FileStatus file_read_fully(File &file,
-                                     void *buf, size_t size,
-                                     size_t &bytes_read);
-MB_EXPORT FileStatus file_write_fully(File &file,
-                                      const void *buf, size_t size,
-                                      size_t &bytes_written);
+typedef FileSearchAction (*FileSearchResultCallback)(File &file, void *userdata,
+                                                     uint64_t offset);
 
-MB_EXPORT FileStatus file_read_discard(File &file, uint64_t size,
-                                       uint64_t &bytes_discarded);
+MB_EXPORT bool file_read_fully(File &file,
+                               void *buf, size_t size,
+                               size_t &bytes_read);
+MB_EXPORT bool file_write_fully(File &file,
+                                const void *buf, size_t size,
+                                size_t &bytes_written);
 
-MB_EXPORT FileStatus file_search(File &file, int64_t start, int64_t end,
-                                 size_t bsize, const void *pattern,
-                                 size_t pattern_size, int64_t max_matches,
-                                 FileSearchResultCallback result_cb,
-                                 void *userdata);
+MB_EXPORT bool file_read_discard(File &file, uint64_t size,
+                                 uint64_t &bytes_discarded);
 
-MB_EXPORT FileStatus file_move(File &file, uint64_t src, uint64_t dest,
-                               uint64_t size, uint64_t &size_moved);
+MB_EXPORT bool file_search(File &file, int64_t start, int64_t end,
+                           size_t bsize, const void *pattern,
+                           size_t pattern_size, int64_t max_matches,
+                           FileSearchResultCallback result_cb,
+                           void *userdata);
+
+MB_EXPORT bool file_move(File &file, uint64_t src, uint64_t dest,
+                         uint64_t size, uint64_t &size_moved);
 
 }

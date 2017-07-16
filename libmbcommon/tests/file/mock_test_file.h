@@ -59,15 +59,15 @@ public:
     using mb::File::open;
 
 protected:
-    virtual mb::FileStatus on_open() override;
-    virtual mb::FileStatus on_close() override;
-    virtual mb::FileStatus on_read(void *buf, size_t size,
-                                   size_t &bytes_read) override;
-    virtual mb::FileStatus on_write(const void *buf, size_t size,
-                                    size_t &bytes_written) override;
-    virtual mb::FileStatus on_seek(int64_t offset, int whence,
-                                   uint64_t &new_offset) override;
-    virtual mb::FileStatus on_truncate(uint64_t size) override;
+    virtual bool on_open() override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_write(const void *buf, size_t size,
+                          size_t &bytes_written) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+    virtual bool on_truncate(uint64_t size) override;
 
 public:
     std::vector<unsigned char> _buf;
@@ -77,26 +77,24 @@ public:
 
 struct MockTestFile : public TestFile
 {
-    MOCK_METHOD0(on_open, mb::FileStatus());
-    MOCK_METHOD0(on_close, mb::FileStatus());
-    MOCK_METHOD3(on_read, mb::FileStatus(void *buf, size_t size,
-                                         size_t &bytes_read));
-    MOCK_METHOD3(on_write, mb::FileStatus(const void *buf, size_t size,
-                                          size_t &bytes_written));
-    MOCK_METHOD3(on_seek, mb::FileStatus(int64_t offset, int whence,
-                                         uint64_t &new_offset));
-    MOCK_METHOD1(on_truncate, mb::FileStatus(uint64_t size));
+    MOCK_METHOD0(on_open, bool());
+    MOCK_METHOD0(on_close, bool());
+    MOCK_METHOD3(on_read, bool(void *buf, size_t size,
+                               size_t &bytes_read));
+    MOCK_METHOD3(on_write, bool(const void *buf, size_t size,
+                                size_t &bytes_written));
+    MOCK_METHOD3(on_seek, bool(int64_t offset, int whence,
+                               uint64_t &new_offset));
+    MOCK_METHOD1(on_truncate, bool(uint64_t size));
 
     MockTestFile();
     MockTestFile(TestFileCounters *counters);
     virtual ~MockTestFile();
 
-    mb::FileStatus orig_on_open();
-    mb::FileStatus orig_on_close();
-    mb::FileStatus orig_on_read(void *buf, size_t size, size_t &bytes_read);
-    mb::FileStatus orig_on_write(const void *buf, size_t size,
-                                 size_t &bytes_written);
-    mb::FileStatus orig_on_seek(int64_t offset, int whence,
-                                uint64_t &new_offset);
-    mb::FileStatus orig_on_truncate(uint64_t size);
+    bool orig_on_open();
+    bool orig_on_close();
+    bool orig_on_read(void *buf, size_t size, size_t &bytes_read);
+    bool orig_on_write(const void *buf, size_t size, size_t &bytes_written);
+    bool orig_on_seek(int64_t offset, int whence, uint64_t &new_offset);
+    bool orig_on_truncate(uint64_t size);
 };

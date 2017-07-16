@@ -38,8 +38,8 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MemoryFile)
 
-    FileStatus open(const void *buf, size_t size);
-    FileStatus open(void **buf_ptr, size_t *size_ptr);
+    bool open(const void *buf, size_t size);
+    bool open(void **buf_ptr, size_t *size_ptr);
 
 protected:
     /*! \cond INTERNAL */
@@ -50,14 +50,14 @@ protected:
                void **buf_ptr, size_t *size_ptr);
     /*! \endcond */
 
-    virtual FileStatus on_close() override;
-    virtual FileStatus on_read(void *buf, size_t size,
-                               size_t &bytes_read) override;
-    virtual FileStatus on_write(const void *buf, size_t size,
-                                size_t &bytes_written) override;
-    virtual FileStatus on_seek(int64_t offset, int whence,
-                               uint64_t &new_offset) override;
-    virtual FileStatus on_truncate(uint64_t size) override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_write(const void *buf, size_t size,
+                          size_t &bytes_written) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+    virtual bool on_truncate(uint64_t size) override;
 };
 
 }
