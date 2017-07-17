@@ -432,9 +432,7 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
-        // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
-        // at this point
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
@@ -468,9 +466,7 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
-        // Always return MB_BI_FAILED as FileStatus::FATAL would not affect us
-        // at this point
-        mb_bi_writer_set_error(biw, file->error(),
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
@@ -541,7 +537,6 @@ done:
  */
 int mb_bi_writer_close(MbBiWriter *biw)
 {
-    mb::FileStatus file_ret;
     int ret = MB_BI_OK;
 
     // Avoid double-closing or closing nothing
@@ -551,12 +546,9 @@ int mb_bi_writer_close(MbBiWriter *biw)
         }
 
         if (biw->file && biw->file_owned) {
-            file_ret = biw->file->close();
-            if (file_ret < mb::FileStatus::OK) {
-                int ret2 = file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
-                if (ret2 < ret) {
-                    ret = ret2;
+            if (!biw->file->close()) {
+                if (MB_BI_FAILED < ret) {
+                    ret = MB_BI_FAILED;
                 }
             }
 
@@ -830,7 +822,7 @@ int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
     }
 
     ret = biw->format.write_data_cb(biw, biw->format.userdata, buf, size,
-                                    bytes_written);
+                                    *bytes_written);
     if (ret == MB_BI_OK) {
         // Do not alter state. Stay in WriterState::DATA
     } else if (ret <= MB_BI_FATAL) {

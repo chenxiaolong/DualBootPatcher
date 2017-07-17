@@ -66,22 +66,19 @@ int read_mtk_header(MbBiReader *bir, mb::File *file,
 {
     MtkHeader mtkhdr;
     size_t n;
-    mb::FileStatus file_ret;
 
-    file_ret = file->seek(offset, SEEK_SET, nullptr);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!file->seek(offset, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to MTK header at %" PRIu64 ": %s",
                                offset, file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, &mtkhdr, sizeof(mtkhdr), &n);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!mb::file_read_fully(*file, &mtkhdr, sizeof(mtkhdr), n)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read MTK header: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != sizeof(MtkHeader)
@@ -359,7 +356,7 @@ int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata, MbBiEntry *entry,
 
 int mtk_reader_read_data(MbBiReader *bir, void *userdata,
                          void *buf, size_t buf_size,
-                         size_t *bytes_read)
+                         size_t &bytes_read)
 {
     MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
 

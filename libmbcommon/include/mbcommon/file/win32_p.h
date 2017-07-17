@@ -68,8 +68,6 @@ public:
 
     void clear();
 
-    LPCWSTR win32_error_string(DWORD error_code);
-
     static bool convert_mode(FileOpenMode mode,
                              DWORD &access_out,
                              DWORD &sharing_out,

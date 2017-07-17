@@ -113,12 +113,11 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFilePrivate)
 
-    FileStatus wread(void *buf, size_t size);
-    FileStatus wseek(int64_t offset);
-    FileStatus skip_bytes(uint64_t bytes);
+    bool wread(void *buf, size_t size);
+    bool wseek(int64_t offset);
+    bool skip_bytes(uint64_t bytes);
 
-    FileStatus process_sparse_header(const void *preread_data,
-                                     size_t preread_size);
+    bool process_sparse_header(const void *preread_data, size_t preread_size);
 
     bool process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
                            ChunkInfo &chunk_out);
@@ -131,7 +130,7 @@ public:
     bool process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
                        ChunkInfo &chunk_out);
 
-    FileStatus move_to_chunk(uint64_t offset);
+    bool move_to_chunk(uint64_t offset);
 
     File *file;
     Seekability seekability;

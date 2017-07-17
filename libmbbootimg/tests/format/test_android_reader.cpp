@@ -67,7 +67,7 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     // Seek to bad location initially
-    ASSERT_EQ(file.seek(10, SEEK_SET, nullptr), mb::FileStatus::OK);
+    ASSERT_TRUE(file.seek(10, SEEK_SET, nullptr));
 
     ASSERT_EQ(find_android_header(bir.get(), &file,
                                   ANDROID_MAX_HEADER_OFFSET,

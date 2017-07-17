@@ -73,7 +73,6 @@ int find_android_header(MbBiReader *bir, mb::File *file,
 {
     unsigned char buf[ANDROID_MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
     size_t n;
-    mb::FileStatus file_ret;
     void *ptr;
     size_t offset;
 
@@ -85,21 +84,19 @@ int find_android_header(MbBiReader *bir, mb::File *file,
         return MB_BI_WARN;
     }
 
-    file_ret = file->seek(0, SEEK_SET, nullptr);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!file->seek(0, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(
-            *file, buf, max_header_offset + sizeof(AndroidHeader), &n);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!mb::file_read_fully(*file, buf,
+                             max_header_offset + sizeof(AndroidHeader), n)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read header: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     ptr = mb_memmem(buf, n, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
@@ -151,7 +148,6 @@ int find_samsung_seandroid_magic(MbBiReader *bir, mb::File *file,
 {
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
     size_t n;
-    mb::FileStatus file_ret;
     uint64_t pos = 0;
 
     // Skip header, whose size cannot exceed the page size
@@ -173,20 +169,18 @@ int find_samsung_seandroid_magic(MbBiReader *bir, mb::File *file,
     pos += hdr->dt_size;
     pos += align_page_size<uint64_t>(pos, hdr->page_size);
 
-    file_ret = file->seek(pos, SEEK_SET, nullptr);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!file->seek(pos, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "SEAndroid magic not found: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, buf, sizeof(buf), &n);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!mb::file_read_fully(*file, buf, sizeof(buf), n)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read SEAndroid magic: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != SAMSUNG_SEANDROID_MAGIC_SIZE
@@ -225,7 +219,6 @@ int find_bump_magic(MbBiReader *bir, mb::File *file,
 {
     unsigned char buf[BUMP_MAGIC_SIZE];
     size_t n;
-    mb::FileStatus file_ret;
     uint64_t pos = 0;
 
     // Skip header, whose size cannot exceed the page size
@@ -247,20 +240,18 @@ int find_bump_magic(MbBiReader *bir, mb::File *file,
     pos += hdr->dt_size;
     pos += align_page_size<uint64_t>(pos, hdr->page_size);
 
-    file_ret = file->seek(pos, SEEK_SET, nullptr);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!file->seek(pos, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "SEAndroid magic not found: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_read_fully(*file, buf, sizeof(buf), &n);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!mb::file_read_fully(*file, buf, sizeof(buf), n)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read SEAndroid magic: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != BUMP_MAGIC_SIZE || memcmp(buf, BUMP_MAGIC, n) != 0) {
@@ -546,7 +537,7 @@ int android_reader_go_to_entry(MbBiReader *bir, void *userdata,
 
 int android_reader_read_data(MbBiReader *bir, void *userdata,
                              void *buf, size_t buf_size,
-                             size_t *bytes_read)
+                             size_t &bytes_read)
 {
     AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
 

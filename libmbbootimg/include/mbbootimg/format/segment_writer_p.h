@@ -88,6 +88,6 @@ int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, struct MbBiWriter *biw);
 int _segment_writer_write_data(struct SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
-                               size_t *bytes_written, struct MbBiWriter *biw);
+                               size_t &bytes_written, struct MbBiWriter *biw);
 int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                  struct MbBiWriter *biw);

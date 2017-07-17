@@ -50,7 +50,7 @@ int sony_elf_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
                                 struct MbBiEntry *entry, int entry_type);
 int sony_elf_reader_read_data(struct MbBiReader *bir, void *userdata,
                               void *buf, size_t buf_size,
-                              size_t *bytes_read);
+                              size_t &bytes_read);
 int sony_elf_reader_free(struct MbBiReader *bir, void *userdata);
 
 MB_END_C_DECLS

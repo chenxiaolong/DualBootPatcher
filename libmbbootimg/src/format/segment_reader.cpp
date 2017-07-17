@@ -137,7 +137,6 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
                                   MbBiEntry *entry, SegmentReaderEntry *srentry,
                                   MbBiReader *bir)
 {
-    mb::FileStatus file_ret;
     int ret;
 
     if (srentry->offset > UINT64_MAX - srentry->size) {
@@ -151,10 +150,8 @@ int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
     uint64_t read_cur_offset = read_start_offset;
 
     if (ctx->read_cur_offset != srentry->offset) {
-        file_ret = file->seek(read_start_offset, SEEK_SET, nullptr);
-        if (file_ret < mb::FileStatus::OK) {
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+        if (!file->seek(read_start_offset, SEEK_SET, nullptr)) {
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
     }
 
@@ -205,7 +202,7 @@ int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
 }
 
 int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
-                              void *buf, size_t buf_size, size_t *bytes_read,
+                              void *buf, size_t buf_size, size_t &bytes_read,
                               MbBiReader *bir)
 {
     size_t to_copy = std::min<uint64_t>(
@@ -219,19 +216,17 @@ int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
         return MB_BI_FAILED;
     }
 
-    mb::FileStatus file_ret =
-            mb::file_read_fully(*file, buf, to_copy, bytes_read);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
+    if (!mb::file_read_fully(*file, buf, to_copy, bytes_read)) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to read data: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    ctx->read_cur_offset += *bytes_read;
+    ctx->read_cur_offset += bytes_read;
 
     // Fail if we reach EOF early
-    if (*bytes_read == 0 && ctx->read_cur_offset != ctx->read_end_offset
+    if (bytes_read == 0 && ctx->read_cur_offset != ctx->read_end_offset
             && !ctx->entry->can_truncate) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
                                "Entry is truncated "
@@ -240,5 +235,5 @@ int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
         return MB_BI_FATAL;
     }
 
-    return *bytes_read == 0 ? MB_BI_EOF : MB_BI_OK;
+    return bytes_read == 0 ? MB_BI_EOF : MB_BI_OK;
 }

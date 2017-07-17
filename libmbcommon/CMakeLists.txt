@@ -15,6 +15,7 @@ set(MBCOMMON_SOURCES
     src/file/posix.cpp
     src/file/standard.cpp
     src/file.cpp
+    src/file_error.cpp
     src/file_util.cpp
     src/libc/stdio.cpp
     src/libc/string.cpp
@@ -34,6 +35,7 @@ set(MBCOMMON_TESTS_SOURCES
     tests/file/test_posix.cpp
     tests/test_endian.cpp
     tests/test_file.cpp
+    tests/test_file_error.cpp
     tests/test_file_util.cpp
     tests/test_locale.cpp
     tests/test_string.cpp
