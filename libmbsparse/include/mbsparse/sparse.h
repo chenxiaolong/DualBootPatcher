@@ -1,62 +1,67 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  * Copyright (C) 2010 The Android Open Source Project
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
-#include "mbcommon/common.h"
-#include "mbsparse/sparse_header.h"
+#include "mbcommon/file.h"
 
-#ifdef __cplusplus
-#include <cstdio>
-#else
-#include <stdbool.h>
-#include <stdio.h>
-#endif
+namespace mb
+{
+namespace sparse
+{
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class SparseFilePrivate;
+class MB_EXPORT SparseFile : public File
+{
+    MB_DECLARE_PRIVATE(SparseFile)
 
-typedef bool (*SparseOpenCb)(void *userData);
-typedef bool (*SparseCloseCb)(void *userData);
-typedef bool (*SparseReadCb)(void *buf, uint64_t size, uint64_t *bytesRead,
-                             void *userData);
-typedef bool (*SparseSeekCb)(int64_t offset, int whence, void *userData);
-typedef bool (*SparseSkipCb)(uint64_t offset, void *userData);
+public:
+    SparseFile();
+    SparseFile(File *file);
+    virtual ~SparseFile();
 
-struct SparseCtx;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFile)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SparseFile)
 
-MB_EXPORT struct SparseCtx * sparseCtxNew();
-MB_EXPORT bool sparseCtxFree(struct SparseCtx *ctx);
+    // File open
+    bool open(File *file);
 
-MB_EXPORT bool sparseOpen(struct SparseCtx *ctx, SparseOpenCb openCb,
-                          SparseCloseCb closeCb, SparseReadCb readCb,
-                          SparseSeekCb seekCb, SparseSkipCb skipCb,
-                          void *userData);
-MB_EXPORT bool sparseClose(struct SparseCtx *ctx);
-MB_EXPORT bool sparseRead(struct SparseCtx *ctx, void *buf, uint64_t size,
-                          uint64_t *bytesRead);
-MB_EXPORT bool sparseSeek(struct SparseCtx *ctx, int64_t offset, int whence);
-MB_EXPORT bool sparseTell(struct SparseCtx *ctx, uint64_t *offset);
-MB_EXPORT bool sparseSize(struct SparseCtx *ctx, uint64_t *size);
+    // File size
+    uint64_t size();
 
-#ifdef __cplusplus
+protected:
+    /*! \cond INTERNAL */
+    SparseFile(SparseFilePrivate *priv);
+    SparseFile(SparseFilePrivate *priv, File *file);
+    /*! \endcond */
+
+    virtual bool on_open() override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+
+private:
+    std::unique_ptr<SparseFilePrivate> _priv_ptr;
+};
+
 }
-#endif
+}

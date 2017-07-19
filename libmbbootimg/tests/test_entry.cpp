@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -33,16 +33,16 @@ TEST(BootImgEntryTest, CheckDefaultValues)
     ASSERT_TRUE(!!entry);
 
     // Check private fields
-    ASSERT_EQ(entry->fields_set, 0);
+    ASSERT_EQ(entry->fields_set, 0u);
     ASSERT_EQ(entry->field.type, 0);
     ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0);
+    ASSERT_EQ(entry->field.size, 0u);
 
     // Check public API
     ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
     ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
     ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
     ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
 }
 
@@ -82,14 +82,14 @@ TEST(BootImgEntryTest, CheckGettersSetters)
     mb_bi_entry_set_size(entry.get(), 1234);
     ASSERT_TRUE(mb_bi_entry_size_is_set(entry.get()));
     ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 1234);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234);
+    ASSERT_EQ(entry->field.size, 1234u);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234u);
 
     mb_bi_entry_unset_size(entry.get());
     ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
     ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 0);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0);
+    ASSERT_EQ(entry->field.size, 0u);
+    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
 }
 
 TEST(BootImgEntryTest, CheckClone)
@@ -135,8 +135,8 @@ TEST(BootImgEntryTest, CheckClear)
 
     mb_bi_entry_clear(entry.get());
 
-    ASSERT_EQ(entry->fields_set, 0);
+    ASSERT_EQ(entry->fields_set, 0u);
     ASSERT_EQ(entry->field.type, 0);
     ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0);
+    ASSERT_EQ(entry->field.size, 0u);
 }

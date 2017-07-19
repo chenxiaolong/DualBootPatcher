@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "switcher.h"
@@ -198,7 +198,7 @@ static std::string find_block_dev(const char * const *search_dirs,
 {
     struct stat sb;
 
-    if (mb_starts_with(partition.c_str(), "mmcblk")) {
+    if (mb::starts_with(partition, "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -238,11 +238,11 @@ static bool add_extra_images(const char *multiboot_dir,
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !mb_ends_with(name.c_str(), ".img")) {
+        if (name == ".img" || !mb::ends_with(name, ".img")) {
             // Skip non-images
             continue;
         }
-        if (mb_starts_with(name.c_str(), "boot.img")) {
+        if (mb::starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }

@@ -1,25 +1,28 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbpio/win32/delete.h"
 
 #include <windows.h>
+
+#include <memory>
+#include <type_traits>
 
 #include "mbcommon/locale.h"
 
@@ -32,19 +35,7 @@ namespace io
 namespace win32
 {
 
-class ScopedFindHandle {
-public:
-    ScopedFindHandle(HANDLE h) : handle(h)
-    {
-    }
-
-    ~ScopedFindHandle() {
-        FindClose(handle);
-    }
-
-private:
-    HANDLE handle;
-};
+typedef std::unique_ptr<std::remove_pointer<HANDLE>::type, decltype(FindClose) *> ScopedFindHandle;
 
 static bool win32RecursiveDelete(const std::wstring &path)
 {
@@ -54,7 +45,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
     WIN32_FIND_DATAW findData;
 
     // First, delete the contents of the directory, recursively for subdirectories
-    HANDLE searchHandle = FindFirstFileExW(
+    HANDLE _searchHandle = FindFirstFileExW(
         mask.c_str(),           // lpFileName
         FindExInfoBasic,        // fInfoLevelId
         &findData,              // lpFindFileData
@@ -62,7 +53,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
         nullptr,                // lpSearchFilter
         0                       // dwAdditionalFlags
     );
-    if (searchHandle == INVALID_HANDLE_VALUE) {
+    if (_searchHandle == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         if (error != ERROR_FILE_NOT_FOUND) {
             setLastError(Error::PlatformError, priv::format(
@@ -71,7 +62,8 @@ static bool win32RecursiveDelete(const std::wstring &path)
             return false;
         }
     } else {
-        ScopedFindHandle scope(searchHandle);
+        ScopedFindHandle searchHandle(_searchHandle, &FindClose);
+
         while (true) {
             if (wcscmp(findData.cFileName, L".") != 0
                     && wcscmp(findData.cFileName, L"..") != 0) {
@@ -97,7 +89,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
             }
 
             // Advance to the next file in the directory
-            if (!FindNextFileW(searchHandle, &findData)) {
+            if (!FindNextFileW(searchHandle.get(), &findData)) {
                 DWORD error = GetLastError();
                 if (error != ERROR_NO_MORE_FILES) {
                     setLastError(Error::PlatformError, priv::format(
@@ -123,14 +115,13 @@ static bool win32RecursiveDelete(const std::wstring &path)
 
 bool deleteRecursively(const std::string &path)
 {
-    wchar_t *wPath = mb::utf8_to_wcs(path.c_str());
-    if (!wPath) {
+    std::wstring wPath;
+
+    if (!mb::utf8_to_wcs(wPath, path)) {
         return false;
     }
 
-    bool ret = win32RecursiveDelete(wPath);
-    free(wPath);
-    return ret;
+    return win32RecursiveDelete(wPath);
 }
 
 }

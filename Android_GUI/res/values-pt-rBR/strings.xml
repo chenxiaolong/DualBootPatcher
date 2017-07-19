@@ -138,6 +138,7 @@ Continuar com a troca de ROM?</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">A ROM que esta rodando no momento não pode ser limpa.</string>
   <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Trabalho em segundo plano</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">O nome e a miniatura da ROM não pôde ser carregado por que as permissões de armazenamento foram negadas.</string>
   <!--Accessibility text for the ROM logo images-->
@@ -269,8 +270,11 @@ Você gostaria de alterar o local de instalação?</string>
   <!--Backup name input field hint for backup name dialog-->
   <string name="br_name_dialog_hint">Entre com o nome do backup...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Aperte no botão flutuante para adicionar arquivos para modificar.</string>
   <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Adicione um zip instalável</string>
   <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Adicione uma imagem Odin</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">O adaptador não pode modificar os arquivos sem o acesso a leitura e escrita no armazenamento interno.
 Por favor garanta as permissões de armazenamento para poder adaptar os arquivos.</string>
@@ -462,6 +466,14 @@ Isto pode ter acontecido se uma versão não-oficial do app esta sendo usada ou 
   <string name="mbtool_dialog_version_too_old">A mbtool atual é muito ultrapassada. É preciso atualizar para ter certas funções funcionando, como trocar de ROMs. Vai ser preciso acesso root.</string>
   <!--Confirm dialog message shown when updating mbtool failed-->
   <string name="mbtool_dialog_update_failed">Falha ao atualizar a mbtool. Muita operações como trocar de ROMs não funcionarão.</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Digite um nome de arquivo</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">Selecionar</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">Salvar</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Nova pasta</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Procurar</string>
   <!--Word/phrase for None (used in eg. a list)-->

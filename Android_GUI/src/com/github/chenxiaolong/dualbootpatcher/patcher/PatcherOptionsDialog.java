@@ -289,7 +289,7 @@ public class PatcherOptionsDialog extends DialogFragment implements LoaderCallba
     }
 
     /**
-     * Refresh the list of supported devices from libmbp.
+     * Refresh the list of supported devices from libmbpatcher.
      */
     private void refreshDevices(Device[] devices, Device currentDevice) {
         mDevices.clear();

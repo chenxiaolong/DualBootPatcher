@@ -1,31 +1,63 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "mbcommon/file.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
-MB_EXPORT int mb_file_open_memory_static(struct MbFile *file,
-                                         const void *buf, size_t size);
-MB_EXPORT int mb_file_open_memory_dynamic(struct MbFile *file,
-                                          void **buf_ptr, size_t *size_ptr);
+class MemoryFilePrivate;
+class MB_EXPORT MemoryFile : public File
+{
+    MB_DECLARE_PRIVATE(MemoryFile)
 
-MB_END_C_DECLS
+public:
+    MemoryFile();
+    MemoryFile(const void *buf, size_t size);
+    MemoryFile(void **buf_ptr, size_t *size_ptr);
+    virtual ~MemoryFile();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MemoryFile)
+
+    bool open(const void *buf, size_t size);
+    bool open(void **buf_ptr, size_t *size_ptr);
+
+protected:
+    /*! \cond INTERNAL */
+    MemoryFile(MemoryFilePrivate *priv);
+    MemoryFile(MemoryFilePrivate *priv,
+               const void *buf, size_t size);
+    MemoryFile(MemoryFilePrivate *priv,
+               void **buf_ptr, size_t *size_ptr);
+    /*! \endcond */
+
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_write(const void *buf, size_t size,
+                          size_t &bytes_written) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+    virtual bool on_truncate(uint64_t size) override;
+};
+
+}

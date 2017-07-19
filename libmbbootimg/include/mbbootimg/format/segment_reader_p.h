@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -77,16 +77,16 @@ struct SegmentReaderEntry * _segment_reader_next_entry(struct SegmentReaderCtx *
 struct SegmentReaderEntry * _segment_reader_find_entry(struct SegmentReaderCtx *ctx,
                                                        int entry_type);
 
-int _segment_reader_move_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_move_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                   struct MbBiEntry *entry,
                                   struct SegmentReaderEntry *srentry,
                                   struct MbBiReader *bir);
 
-int _segment_reader_read_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_read_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                struct MbBiEntry *entry, struct MbBiReader *bir);
-int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, struct MbFile *file,
+int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, int entry_type,
                                 struct MbBiReader *bir);
-int _segment_reader_read_data(struct SegmentReaderCtx *ctx, struct MbFile *file,
-                              void *buf, size_t buf_size, size_t *bytes_read,
+int _segment_reader_read_data(struct SegmentReaderCtx *ctx, mb::File *file,
+                              void *buf, size_t buf_size, size_t &bytes_read,
                               struct MbBiReader *bir);

@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -54,7 +54,7 @@ TEST_F(DeviceTest, CheckDefaultValues)
     ASSERT_EQ(mb_device_codenames(_device), nullptr);
     ASSERT_EQ(mb_device_name(_device), nullptr);
     ASSERT_EQ(mb_device_architecture(_device), nullptr);
-    ASSERT_EQ(mb_device_flags(_device), 0);
+    ASSERT_EQ(mb_device_flags(_device), 0u);
     ASSERT_EQ(mb_device_block_dev_base_dirs(_device), nullptr);
     ASSERT_EQ(mb_device_system_block_devs(_device), nullptr);
     ASSERT_EQ(mb_device_cache_block_devs(_device), nullptr);
@@ -66,7 +66,7 @@ TEST_F(DeviceTest, CheckDefaultValues)
     /* Boot UI */
 
     ASSERT_EQ(mb_device_tw_supported(_device), false);
-    ASSERT_EQ(mb_device_tw_flags(_device), 0);
+    ASSERT_EQ(mb_device_tw_flags(_device), 0u);
     ASSERT_EQ(mb_device_tw_pixel_format(_device), TW_PIXEL_FORMAT_DEFAULT);
     ASSERT_EQ(mb_device_tw_force_pixel_format(_device), TW_FORCE_PIXEL_FORMAT_NONE);
     ASSERT_EQ(mb_device_tw_overscan_percent(_device), 0);

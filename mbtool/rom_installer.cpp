@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "rom_installer.h"
@@ -164,8 +164,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
 {
     // /sbin is not going to be populated with anything useful in a normal boot
     // image. We can almost guarantee that a recovery image is going to be
-    // installed though, so we'll open the recovery partition with libmbp and
-    // extract its /sbin with libarchive into the chroot's /sbin.
+    // installed though, so we'll open the recovery partition with libmbpatcher
+    // and extract its /sbin with libarchive into the chroot's /sbin.
 
     std::string block_dev(_recovery_block_dev);
     bool using_boot = false;
@@ -326,24 +326,16 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     {
-        char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
-        if (!tmpfile) {
-            LOGE("Out of memory");
-            return false;
-        }
+        std::string tmpfile = mb::format("%s.XXXXXX", output_dir.c_str());
 
-        auto free_temp_file = util::finally([&]{
-            free(tmpfile);
-        });
-
-        int tmpfd = mkstemp(tmpfile);
+        int tmpfd = mkstemp(&tmpfile[0]);
         if (tmpfd < 0) {
             LOGE("Failed to create temporary file: %s", strerror(errno));
             return false;
         }
 
         // We don't need the path
-        unlink(tmpfile);
+        unlink(tmpfile.c_str());
 
         auto close_fd = util::finally([&]{
             close(tmpfd);
@@ -374,7 +366,6 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
     }
 
     archive_read_support_filter_gzip(in.get());
-    archive_read_support_filter_lzop(in.get());
     archive_read_support_filter_lz4(in.get());
     archive_read_support_filter_lzma(in.get());
     archive_read_support_filter_xz(in.get());
@@ -406,17 +397,10 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
 
         if (nested) {
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
-                char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
-                if (!tmpfile) {
-                    LOGE("Out of memory");
-                    return false;
-                }
+                std::string tmpfile = mb::format(
+                        "%s.XXXXXX", output_dir.c_str());
 
-                auto free_temp_file = util::finally([&]{
-                    free(tmpfile);
-                });
-
-                int tmpfd = mkstemp(tmpfile);
+                int tmpfd = mkstemp(&tmpfile[0]);
                 if (tmpfd < 0) {
                     LOGE("Failed to create temporary file: %s",
                          strerror(errno));
@@ -424,7 +408,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                 }
 
                 // We don't need the path
-                unlink(tmpfile);
+                unlink(tmpfile.c_str());
 
                 auto close_fd = util::finally([&]{
                     close(tmpfd);
@@ -436,7 +420,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
         } else {
             if (strcmp(path, "default.prop") == 0) {
                 path = "default.recovery.prop";
-            } else if (!mb_starts_with(path, "sbin/")) {
+            } else if (!mb::starts_with(path, "sbin/")) {
                 continue;
             }
 

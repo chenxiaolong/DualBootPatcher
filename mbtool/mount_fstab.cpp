@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mount_fstab.h"
@@ -239,7 +239,7 @@ static bool path_matches(const char *path, const char *pattern)
     if (strchr(pattern, '*')) {
         return fnmatch(pattern, path, 0) == 0;
     } else {
-        return mb_starts_with(path, pattern);
+        return mb::starts_with(path, pattern);
     }
 }
 
@@ -334,7 +334,7 @@ static bool mount_exfat_fuse(const char *source, const char *target)
 static bool mount_exfat_kernel(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    char *args = mb_format(
+    std::string args = mb::format(
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
@@ -344,12 +344,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
             | MS_NOEXEC;
     // For Motorola: MS_RELATIME
 
-    if (!args) {
-        return false;
-    }
-
-    int ret = mount(source, target, "exfat", flags, args);
-    free(args);
+    int ret = mount(source, target, "exfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "exfat", target, strerror(errno));
@@ -364,7 +359,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
 static bool mount_vfat(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    char *args = mb_format(
+    std::string args = mb::format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
     int flags = MS_NODEV
@@ -375,12 +370,7 @@ static bool mount_vfat(const char *source, const char *target)
             | MS_NOATIME
             | MS_NODIRATIME;
 
-    if (!args) {
-        return false;
-    }
-
-    int ret = mount(source, target, "vfat", flags, args);
-    free(args);
+    int ret = mount(source, target, "vfat", flags, args.c_str());
     if (ret < 0) {
         LOGE("Failed to mount %s (%s) at %s: %s",
              source, "vfat", target, strerror(errno));

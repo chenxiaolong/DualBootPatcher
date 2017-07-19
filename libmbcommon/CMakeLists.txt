@@ -10,11 +10,12 @@ configure_file(
 set(MBCOMMON_SOURCES
     src/file/callbacks.cpp
     src/file/fd.cpp
-    src/file/filename.cpp
     src/file/memory.cpp
+    src/file/open_mode.cpp
     src/file/posix.cpp
-    src/file/vtable.cpp
+    src/file/standard.cpp
     src/file.cpp
+    src/file_error.cpp
     src/file_util.cpp
     src/libc/stdio.cpp
     src/libc/string.cpp
@@ -26,6 +27,7 @@ set(MBCOMMON_SOURCES
 set(MBCOMMON_TESTS_SOURCES
     # Helpers
     tests/main.cpp
+    tests/file/mock_test_file.cpp
     # Tests
     tests/file/test_callbacks.cpp
     tests/file/test_fd.cpp
@@ -33,6 +35,7 @@ set(MBCOMMON_TESTS_SOURCES
     tests/file/test_posix.cpp
     tests/test_endian.cpp
     tests/test_file.cpp
+    tests/test_file_error.cpp
     tests/test_file_util.cpp
     tests/test_locale.cpp
     tests/test_string.cpp
@@ -146,18 +149,12 @@ if(variants AND MBP_ENABLE_TESTS)
         ${MBCOMMON_TESTS_SOURCES}
     )
 
-    # Includes
-    target_include_directories(
-        mbcommon_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
-    )
-
     # Link dependencies
     target_link_libraries(
         mbcommon_tests
         mbcommon-static
-        ${GTEST_BOTH_LIBRARIES}
+        gmock
+        gmock_main
     )
 
     # Target C++11

@@ -28,7 +28,6 @@ set(MBUTIL_SOURCES
     src/external/system_properties.cpp
     src/external/system_properties_compat.c
     external/android_reboot.c
-    external/mntent.c
 )
 
 set_source_files_properties(

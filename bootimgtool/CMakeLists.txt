@@ -2,6 +2,10 @@ set(BOOTIMGTOOL_SOURCES
     bootimgtool.cpp
 )
 
+if(WIN32)
+    list(APPEND BOOTIMGTOOL_SOURCES bootimgtool.rc)
+endif()
+
 set(variants)
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)

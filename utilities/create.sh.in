@@ -4,7 +4,7 @@ set -e
 
 version='@MBP_VERSION@'
 zip_file="@CMAKE_CURRENT_BINARY_DIR@/DualBootUtilities-${version}.zip"
-aroma='@CMAKE_CURRENT_BINARY_DIR@/aroma-@AROMA_VER@.zip'
+aroma='@THIRD_PARTY_AROMA_FILE@'
 temp_dir="$(mktemp -d "@CMAKE_CURRENT_BINARY_DIR@/tmp.XXXXXXXXXX")"
 
 rm -f "${zip_file}"

@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -22,12 +22,15 @@
 #include "mbbootimg/guard_p.h"
 
 #ifdef __cplusplus
+#  include <string>
+
 #  include <cstddef>
 #else
 #  include <stddef.h>
 #endif
 
 #include "mbcommon/common.h"
+#include "mbcommon/file.h"
 
 #define READER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
@@ -63,7 +66,6 @@ MB_BEGIN_C_DECLS
 struct MbBiReader;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
 
 typedef int (*FormatReaderBidder)(struct MbBiReader *bir, void *userdata,
                                   int best_bid);
@@ -77,7 +79,7 @@ typedef int (*FormatReaderGoToEntry)(struct MbBiReader *bir, void *userdata,
                                      struct MbBiEntry *entry, int entry_type);
 typedef int (*FormatReaderReadData)(struct MbBiReader *bir, void *userdata,
                                     void *buf, size_t buf_size,
-                                    size_t *bytes_read);
+                                    size_t &bytes_read);
 typedef int (*FormatReaderFree)(struct MbBiReader *bir, void *userdata);
 
 struct FormatReader
@@ -115,12 +117,12 @@ struct MbBiReader
     ReaderState state;
 
     // File
-    struct MbFile *file;
+    mb::File *file;
     bool file_owned;
 
     // Error
     int error_code;
-    char *error_string;
+    std::string error_string;
 
     struct FormatReader formats[MAX_FORMATS];
     size_t formats_len;

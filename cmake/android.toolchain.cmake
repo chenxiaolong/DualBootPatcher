@@ -39,6 +39,16 @@
 
 cmake_minimum_required(VERSION 3.6.0)
 
+# CMake invokes the toolchain file twice during the first build, but only once
+# during subsequent rebuilds. This was causing the various flags to be added
+# twice on the first build, and on a rebuild ninja would see only one set of the
+# flags and rebuild the world.
+# https://github.com/android-ndk/ndk/issues/323
+if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
+	return()
+endif(ANDROID_NDK_TOOLCHAIN_INCLUDED)
+set(ANDROID_NDK_TOOLCHAIN_INCLUDED true)
+
 # Android NDK
 get_filename_component(ANDROID_NDK "$ENV{ANDROID_NDK}" ABSOLUTE)
 file(TO_CMAKE_PATH "${ANDROID_NDK}" ANDROID_NDK)
@@ -143,12 +153,12 @@ endif()
 if(NOT ANDROID_ABI)
 	set(ANDROID_ABI armeabi-v7a)
 endif()
-if(ANDROID_PLATFORM MATCHES "^android-([0-8]|10|11)$")
-	set(ANDROID_PLATFORM android-9)
+if(ANDROID_PLATFORM MATCHES "^android-([0-8]|1[0-13])$")
+	set(ANDROID_PLATFORM android-14)
 elseif(ANDROID_PLATFORM STREQUAL android-20)
 	set(ANDROID_PLATFORM android-19)
 elseif(NOT ANDROID_PLATFORM)
-	set(ANDROID_PLATFORM android-9)
+	set(ANDROID_PLATFORM android-14)
 endif()
 string(REPLACE "android-" "" ANDROID_PLATFORM_LEVEL ${ANDROID_PLATFORM})
 if(ANDROID_ABI MATCHES "64(-v8a)?$" AND ANDROID_PLATFORM_LEVEL LESS 21)
@@ -184,16 +194,11 @@ set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
 	ANDROID_DISABLE_RELRO
 	ANDROID_DISABLE_FORMAT_STRING_CHECKS
 	ANDROID_CCACHE
-	ANDROID_UNIFIED_HEADERS)
+	ANDROID_DEPRECATED_HEADERS)
 
 # Standard cross-compiling stuff.
 set(ANDROID TRUE)
-if(CMAKE_VERSION VERSION_LESS 3.7)
-    set(CMAKE_SYSTEM_NAME Android)
-else()
-    # Avoid using CMake 3.7's built-in Android platform
-    set(CMAKE_SYSTEM_NAME AndroidCompat)
-endif()
+set(CMAKE_SYSTEM_NAME Android)
 set(CMAKE_SYSTEM_VERSION ${ANDROID_PLATFORM_LEVEL})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -260,6 +265,9 @@ set(ANDROID_COMPILER_FLAGS_RELEASE)
 set(ANDROID_LINKER_FLAGS)
 set(ANDROID_LINKER_FLAGS_EXE)
 
+# Don't re-export libgcc symbols in every binary.
+list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libgcc.a)
+
 # STL.
 set(ANDROID_STL_STATIC_LIBRARIES)
 set(ANDROID_STL_SHARED_LIBRARIES)
@@ -308,7 +316,7 @@ endif()
 list(APPEND CMAKE_FIND_ROOT_PATH "${ANDROID_NDK}")
 
 # Sysroot.
-if(NOT ANDROID_UNIFIED_HEADERS)
+if(ANDROID_DEPRECATED_HEADERS)
 	set(CMAKE_SYSROOT
 		"${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_SYSROOT_ABI}")
 else()
@@ -357,6 +365,8 @@ set(ANDROID_TOOLCHAIN_PREFIX "${ANDROID_TOOLCHAIN_ROOT}/bin/${ANDROID_TOOLCHAIN_
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
 	set(ANDROID_TOOLCHAIN_SUFFIX .exe)
 endif()
+
+set(ANDROID_HOST_PREBUILTS "${ANDROID_NDK}/prebuilt/${ANDROID_HOST_TAG}")
 
 if(ANDROID_TOOLCHAIN STREQUAL clang)
 	set(ANDROID_LLVM_TOOLCHAIN_PREFIX "${ANDROID_NDK}/toolchains/llvm/prebuilt/${ANDROID_HOST_TAG}/bin/")
@@ -455,6 +465,9 @@ if(ANDROID_ABI STREQUAL mips)
 	list(APPEND ANDROID_COMPILER_FLAGS
 		-mips32)
 endif()
+if(ANDROID_ABI STREQUAL "mips64" AND ANDROID_TOOLCHAIN STREQUAL clang)
+  list(APPEND ANDROID_COMPILER_FLAGS "-fintegrated-as")
+endif()
 if(ANDROID_ABI MATCHES "^armeabi" AND ANDROID_TOOLCHAIN STREQUAL clang)
 	# Disable integrated-as for better compatibility.
 	list(APPEND ANDROID_COMPILER_FLAGS
@@ -491,8 +504,7 @@ elseif(ANDROID_STL MATCHES "^gnustl_")
 elseif(ANDROID_STL MATCHES "^c\\+\\+_")
 	set(ANDROID_STL_PREFIX llvm-libc++)
 	if(ANDROID_ABI MATCHES "^armeabi")
-		list(APPEND ANDROID_LINKER_FLAGS
-			-Wl,--exclude-libs,libunwind.a)
+		list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libunwind.a)
 	endif()
 	list(APPEND ANDROID_COMPILER_FLAGS_CXX
 		-std=c++11)
@@ -620,6 +632,12 @@ set(CMAKE_AR                "${ANDROID_AR}" CACHE FILEPATH "Archiver")
 set(CMAKE_RANLIB            "${ANDROID_RANLIB}" CACHE FILEPATH "Ranlib")
 set(_CMAKE_TOOLCHAIN_PREFIX "${ANDROID_TOOLCHAIN_PREFIX}")
 
+if(ANDROID_ABI STREQUAL "x86" OR ANDROID_ABI STREQUAL "x86_64")
+	set(CMAKE_ASM_NASM_COMPILER
+		"${ANDROID_HOST_PREBUILTS}/bin/yasm${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(CMAKE_ASM_NASM_COMPILER_ARG1 "-DELF")
+endif()
+
 # Set or retrieve the cached flags.
 # This is necessary in case the user sets/changes flags in subsequent
 # configures. If we included the Android flags in here, they would get
@@ -714,7 +732,7 @@ elseif(ANDROID_ABI STREQUAL x86_64)
 	set(X86_64 TRUE)
 elseif(ANDROID_ABI STREQUAL mips)
 	set(MIPS TRUE)
-elseif(ANDROID_ABI STREQUAL MIPS64)
+elseif(ANDROID_ABI STREQUAL mips64)
 	set(MIPS64 TRUE)
 endif()
 set(ANDROID_NDK_HOST_SYSTEM_NAME ${ANDROID_HOST_TAG})
@@ -725,4 +743,22 @@ set(ANDROID_SYSROOT "${CMAKE_SYSROOT}")
 set(TOOL_OS_SUFFIX ${ANDROID_TOOLCHAIN_SUFFIX})
 if(ANDROID_TOOLCHAIN STREQUAL clang)
 	set(ANDROID_COMPILER_IS_CLANG TRUE)
+endif()
+
+# CMake 3.7+ compatibility.
+if (CMAKE_VERSION VERSION_GREATER 3.7.0)
+	set(CMAKE_ANDROID_NDK ${ANDROID_NDK})
+
+	if(ANDROID_TOOLCHAIN STREQUAL gcc)
+		set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION 4.9)
+	else()
+		set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION clang)
+	endif()
+
+	set(CMAKE_ANDROID_STL_TYPE ${ANDROID_STL})
+
+	if(ANDROID_ABI MATCHES "^armeabi(-v7a)?$")
+		set(CMAKE_ANDROID_ARM_NEON ${ANDROID_ARM_NEON})
+		set(CMAKE_ANDROID_ARM_MODE ${ANDROID_ARM_MODE})
+	endif()
 endif()

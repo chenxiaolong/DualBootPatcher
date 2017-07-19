@@ -40,4 +40,31 @@
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
       - /dev/block/mmcblk0p10
+            
+- name: Meizu Pro5
+  id: PRO5
+  codenames:
+    - PRO5
+    - M86
+    - M576
+  architecture: arm64-v8a
 
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/system
+      - /dev/block/sda41
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/cache
+      - /dev/block/sda43
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/userdata
+      - /dev/block/sda44
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/bootimg
+      - /dev/block/sda26
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/recovery
+      - /dev/block/sda27
+       

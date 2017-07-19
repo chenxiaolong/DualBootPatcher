@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -82,12 +82,12 @@ struct SegmentWriterEntry * _segment_writer_next_entry(struct SegmentWriterCtx *
 void _segment_writer_update_size_if_unset(struct SegmentWriterCtx *ctx,
                                           uint32_t size);
 
-int _segment_writer_get_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_get_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                               struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_data(struct SegmentWriterCtx *ctx, struct MbFile *file,
+int _segment_writer_write_data(struct SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
-                               size_t *bytes_written, struct MbBiWriter *biw);
-int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, struct MbFile *file,
+                               size_t &bytes_written, struct MbBiWriter *biw);
+int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, mb::File *file,
                                  struct MbBiWriter *biw);

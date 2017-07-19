@@ -40,25 +40,21 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         PRIVATE
         Qt5::Core
         Qt5::Widgets
-        mbp-shared
+        mbpatcher-shared
     )
 
     if(${MBP_PORTABLE})
-        set(LOCAL_DATA_DIR "data")
-
-        target_compile_definitions(
-            gui
-            PRIVATE
-            -DPORTABLE
-            -DLOCAL_DATA_DIR="${LOCAL_DATA_DIR}"
-        )
+        set(data_dir "data")
     else()
-        target_compile_definitions(
-            gui
-            PRIVATE
-            -DDATA_DIR="${DATA_FULL_INSTALL_DIR}"
-        )
+        file(RELATIVE_PATH data_dir
+             "/${BIN_INSTALL_DIR}" "/${DATA_INSTALL_DIR}")
     endif()
+
+    target_compile_definitions(
+        gui
+        PRIVATE
+        -DDATA_DIR="${data_dir}"
+    )
 
     target_compile_definitions(
         gui

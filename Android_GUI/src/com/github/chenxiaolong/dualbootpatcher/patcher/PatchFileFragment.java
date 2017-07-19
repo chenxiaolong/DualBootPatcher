@@ -87,7 +87,8 @@ public class PatchFileFragment extends Fragment implements
         ServiceConnection, PatcherOptionsDialogListener, OnItemMovedOrDismissedListener,
         PatchFileItemClickListener, FragmentCompat.OnRequestPermissionsResultCallback,
         GenericYesNoDialogListener {
-    public static final String TAG = PatchFileFragment.class.getSimpleName();
+    public static final String FRAGMENT_TAG = PatchFileFragment.class.getCanonicalName();
+    private static final String TAG = PatchFileFragment.class.getSimpleName();
 
     private static final String DIALOG_PATCHER_OPTIONS =
             PatchFileFragment.class.getCanonicalName() + ".patcher_options";
@@ -239,7 +240,7 @@ public class PatchFileFragment extends Fragment implements
         mFABAddZip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                startFileSelection(PatcherUtils.PATCHER_ID_MULTIBOOTPATCHER);
+                startFileSelection(PatcherUtils.PATCHER_ID_ZIPPATCHER);
                 mFAB.close(true);
             }
         });
@@ -547,7 +548,7 @@ public class PatchFileFragment extends Fragment implements
     }
 
     /**
-     * Called when the patcher data and libmbp have been initialized
+     * Called when the patcher data and libmbpatcher have been initialized
      *
      * This method is guaranteed to be called only once during between onStart() and onStop()
      */

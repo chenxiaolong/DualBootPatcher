@@ -1,12 +1,12 @@
 # All of the files here are built from the PKGBUILD files in thirdparty/*/PKGBUILD.
 # All of the files are signed with my GPG key and correct hashes are provided
-# at https://snapshots.noobdev.io/repo/prebuilts, but if you don't trust me or
+# at https://dbp.noobdev.io/repo/prebuilts, but if you don't trust me or
 # my binaries, you can use your own builds builds by copying your own prebuilts
 # to thirdparty/prebuilts and updating the checksums here. It is not necessary
 # to upload the files to a server as CMake will not download the files if the
 # checksums match.
 
-set(URL_BASE "https://snapshots.noobdev.io/repo/prebuilts")
+set(URL_BASE "https://dbp.noobdev.io/repo/prebuilts")
 
 set(MBP_PREBUILTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/prebuilts"
     CACHE PATH "Prebuilts download directory")
@@ -79,6 +79,12 @@ execute_process(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}
 )
 
+################################################################################
+if(MBP_TOP_LEVEL_BUILD)
+    message(STATUS "Locking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+    file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY)
+endif()
+################################################################################
 
 ################################################################################
 # fuse-exfat for Android
@@ -111,17 +117,17 @@ endif()
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.3.1-1")
+set(LIBARCHIVE_VER "3.3.1-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=a9a4f56aed0c29b6a7f99f65e4b810bd5a3439ae04497d81c7197be1d4d8b69edccca37a0a5b5b615927d7512140b1adf75416b2f208d7e3089a54045038eaab)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=44d0c3f68f66e4e3456e58e2f3f62c6752e7e49b9044ad1a0d5e17b136d1722bdcd9966e59c4c75d3bf64b6e8ebc14e9a95fa2c5450fefebf243eee8bf4260b6)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=b7d06cac3a9bf85c82110ef75c115135b1fd4d2ff80cd9dab509454e40d82749361f30452ef1ce46575f4a7e76f0aae7e24b8f5395fffe6334fe5ce6bf2440f2)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=1024ee95c35d57f33e610befcafdc54816d6dcd221f29b4b3364f2437846c4d410fa5c87df0f539e97d373c9e1445ed3a197e9b33a223003b56757518346da89)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=e92409e20e1932a97e18c869e55ab31d0e6728446f2feefd401f1dfac3ecd4182ce036d3d23f7a08f26cc764576be5694eb793fd09b637067715e4c96edc7d1f)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=1ddad68462f8bdd744433c6c9a7c5c3aea274fb79bb946d6eec63a71eed3f9759250b05484b04d98120bd431a81050e7b72278b2c2c534d8f8d787497104f92b)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=444a2c15dce5c8d3ed308114a601df91ec065423d2f387eb52b9d3d5240e040d6dfe8c5a2518e7c80e604cc72a078142723f4666b2f36cca1b4497bbe9c3bd01)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=28dd5f06330ae38c24f5e1e2ca022956641a7972d80c38b05cdd8bc591ad530d67ef1a0fdf647a353310d07402839d1e008d676f8a7cb0c3a90ac264af6593b5)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=95a704e0145b623882b477b0dba1415d37f850105d0526d3b6f73e345781aadd189fcaaafb40f8d835b078dced6316c84fdbf1527501241250200c9130fae88f)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=ac8f260c88930ac58901531c61681ba1c2cf51826b716dffa0394d057437fe0854930bf6d2593b1d690ef525c57bfc1e22b31e90c7342f48d0911ad7368fa597)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=6cb1de2d77cf164c1ef26a29587d361c4a183af9e13fe4ce6b72c77c19556b447c2faa10482e9d657c95a63f3d4e8a723592d79ca8c8f0c54afda5c7b89d3d4f)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=5b199df7af0e9c103ee0968ffa01b9f1971a0cacf4c80a802e64b948b41e8a4c80f1555b422cf85d6403e05db88ca929b1c8a531e78ed19181348a1f9053798c)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=2b2c7ae240d148e6a3e04648a65a81db35455338b4c474320f6881652d0ddc435f19a3d16b1f5e0609da25970c9bc233b5e3a2b833e41c5672e6a25fddfc5d5f)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=5b0091cd7b737c7a0eef4efaec20c5ec0129dbf230336ded9a4a14a15f7c31e0472807b34823c9d9df99e966269593586f560846f793156675ce815690ec4e89)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=6b5911cb6e277c866d747b74d89a0e78fe1c090bcc4ac061c0d2d6903888d375c0cb31bdc9576b97df212e1d8223306742a8dd741c4b14650d1d66b3a36b7fdd)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=e52029e66b4f05f1e275ec0e4471c636af48ad18d80e89bf39797d1d925a6591ca046fe947c717b19bf4ae8d8630fd3b0156ce1bb4adc10ab09aee29d1a87951)
 else()
     set(THIRD_PARTY_LIBARCHIVE_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}" PARENT_SCOPE)
     set(THIRD_PARTY_LIBARCHIVE_LOWAPI_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}" PARENT_SCOPE)
@@ -155,21 +161,6 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092)
 else()
     set(THIRD_PARTY_LIBLZMA_DIR "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
-endif()
-
-################################################################################
-# lzo for Android
-################################################################################
-
-set(LZO_VER "2.10-1")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(lzo ${LZO_VER} armeabi-v7a SHA512=90c6725a711d066a7b90e7631a2b34ac502cf1b1f9680826e094aa867d17c6b373c99872425ca3adbd3c87c35c872781353edbd085642c4a1de87da1c3cde72f)
-    get_prebuilt(lzo ${LZO_VER} arm64-v8a   SHA512=ab8616290db4abd5e7c68d82d3f9067143cd0a508cd5b991727ce9699387a4b708bff2dc10c1bf46e99dc9a39d18597855a0b9919f60216cb1ae0f7e0acf0a7d)
-    get_prebuilt(lzo ${LZO_VER} x86         SHA512=1f4c7859c90e4eab321a85e016a85dc1e290cb2bc4e4740895c5eca750670b8c62dc1119943f4306394a7580255a62bed855b9c3c882affc826e74df88f196c5)
-    get_prebuilt(lzo ${LZO_VER} x86_64      SHA512=4502188785e66e34e8560c2d273eb22e243d8d6e8defeffcc77bf67f7ee88eb73365067a2ec83b3d571edfe1c3c2336c051fbc4f0761bb9143375d34c3ebb9c6)
-else()
-    set(THIRD_PARTY_LZO_DIR "${MBP_PREBUILTS_BINARY_DIR}/lzo/${LZO_VER}" PARENT_SCOPE)
 endif()
 
 ################################################################################
@@ -333,7 +324,7 @@ set(PROCPS_NG_VER "3.3.10")
 if(MBP_TOP_LEVEL_BUILD)
     file(
         DOWNLOAD
-        https://snapshots.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
+        https://dbp.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
         ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
         EXPECTED_HASH MD5=38489848300b3ac68297142ae943cfb5
         EXPECTED_HASH SHA512=3eb49e02b0372669f4683aa4003f97a285ba2106ed2e847c022f9db2c5a92b8be3611f1409d5fcb75c0789b03df8faeeb453e3625d26c28f2c4c842daedc1e77
@@ -355,3 +346,31 @@ if(MBP_TOP_LEVEL_BUILD)
 else()
     set(THIRD_PARTY_PROCPS_NG_DIR "${MBP_PREBUILTS_BINARY_DIR}/procps-ng" PARENT_SCOPE)
 endif()
+
+################################################################################
+# AROMA for Android
+################################################################################
+
+set(AROMA_VER "2.70RC2")
+
+if(MBP_TOP_LEVEL_BUILD)
+    file(
+        DOWNLOAD
+        #"http://forum.xda-developers.com/devdb/project/dl/?id=286&task=get"
+        "https://dbp.noobdev.io/mirror/aroma-${AROMA_VER}.zip"
+        ${MBP_PREBUILTS_DIR}/aroma-${AROMA_VER}.zip
+        EXPECTED_HASH MD5=a77c4993803db28d53cd7e6a37ec73b5
+        EXPECTED_HASH SHA512=44abff7bd536908ae8cde9a17e1fb334b59561e115f54b23bf910e1f7920b6f35ab078d3353db65c3526e25c0be27cd592470145063cafd4e05418e4bece775f
+        TLS_VERIFY ON
+        SHOW_PROGRESS
+    )
+
+    set(THIRD_PARTY_AROMA_FILE "${MBP_PREBUILTS_DIR}/aroma-${AROMA_VER}.zip" PARENT_SCOPE)
+endif()
+
+################################################################################
+if(MBP_TOP_LEVEL_BUILD)
+    message(STATUS "Unlocking prebuilts directory: ${MBP_PREBUILTS_DIR}")
+    file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
+endif()
+################################################################################

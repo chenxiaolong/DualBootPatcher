@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "installer_util.h"
@@ -38,7 +38,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -53,7 +53,6 @@
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
@@ -77,7 +76,6 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
     }
 
     archive_read_support_filter_gzip(ain.get());
-    archive_read_support_filter_lzop(ain.get());
     archive_read_support_filter_lz4(ain.get());
     archive_read_support_filter_lzma(ain.get());
     archive_read_support_filter_xz(ain.get());
@@ -291,17 +289,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    // std::string is guaranteed to be contiguous in C++11
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -472,17 +463,9 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -558,92 +541,79 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
     };
 
-    ScopedMbFile fin(mb_file_new(), &mb_file_free);
-    ScopedMbFile fout(mb_file_new(), &mb_file_free);
+    StandardFile fin;
+    StandardFile fout;
     // TODO: Replace with std::optional after switching to C++17
     std::pair<bool, uint64_t> offset;
-    int ret;
-
-    if (!fin || !fout) {
-        LOGE("Failed to allocate input or output MbFile handle");
-        return false;
-    }
 
     // Open input file
-    if (mb_file_open_filename(fin.get(), input_file.c_str(),
-                              MB_FILE_OPEN_READ_ONLY) != MB_FILE_OK) {
+    if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
         LOGE("%s: Failed to open for reading: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Open output file
-    if (mb_file_open_filename(fout.get(), output_file.c_str(),
-                              MB_FILE_OPEN_WRITE_ONLY) != MB_FILE_OK) {
+    if (!fout.open(output_file, FileOpenMode::WRITE_ONLY)) {
         LOGE("%s: Failed to open for writing: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), fout.error_string().c_str());
         return false;
     }
 
     // Replace pattern
-    auto result_cb = [](MbFile *file, void *userdata, uint64_t offset) -> int {
+    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+            -> FileSearchAction {
         (void) file;
         std::pair<bool, uint64_t> *ptr =
                 static_cast<std::pair<bool, uint64_t> *>(userdata);
         ptr->first = true;
         ptr->second = offset;
-        return MB_FILE_OK;
+        return FileSearchAction::Stop;
     };
 
-    ret = mb_file_search(fin.get(), -1, -1, 0, source_pattern,
-                         sizeof(source_pattern), 1, result_cb, &offset);
-    if (ret < 0) {
+    if (!file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern), 1,
+                     result_cb, &offset)) {
         LOGE("%s: Error when searching for pattern: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Copy data
-    ret = mb_file_seek(fin.get(), 0, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
+    if (!fin.seek(0, SEEK_SET, nullptr)) {
         LOGE("%s: Failed to seek to beginning: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     if (offset.first) {
         LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
 
-        if (!copy_file_to_file(fin.get(), fout.get(), offset.second)) {
+        if (!copy_file_to_file(fin, fout, offset.second)) {
             return false;
         }
 
-        ret = mb_file_seek(fin.get(), sizeof(source_pattern), SEEK_CUR,
-                           nullptr);
-        if (ret != MB_FILE_OK) {
+        if (!fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr)) {
             LOGE("%s: Failed to skip pattern: %s",
-                 input_file.c_str(), mb_file_error_string(fin.get()));
+                 input_file.c_str(), fin.error_string().c_str());
             return false;
         }
 
         size_t n;
-        ret = mb_file_write_fully(fout.get(), target_pattern,
-                                  sizeof(target_pattern), &n);
-        if (ret != MB_FILE_OK || n != sizeof(target_pattern)) {
+        if (!file_write_fully(fout, target_pattern, sizeof(target_pattern), n)
+                || n != sizeof(target_pattern)) {
             LOGE("%s: Failed to write target pattern: %s",
-                 output_file.c_str(), mb_file_error_string(fout.get()));
+                 output_file.c_str(), fout.error_string().c_str());
             return false;
         }
     }
 
-    if (!copy_file_to_file_eof(fin.get(), fout.get())) {
+    if (!copy_file_to_file_eof(fin, fout)) {
         return false;
     }
 
-    ret = mb_file_close(fout.get());
-    if (ret != MB_FILE_OK) {
+    if (!fout.close()) {
         LOGE("%s: Failed to close file: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), fout.error_string().c_str());
         return false;
     }
 
@@ -686,25 +656,21 @@ bool InstallerUtil::replace_file(const std::string &replace,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
-                                      uint64_t to_copy)
+bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
     size_t n;
-    int ret;
 
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        ret = mb_file_read_fully(fin, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        if (!mb::file_read_fully(fin, buf, to_read, n) || n != to_read) {
+            LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        ret = mb_file_write_fully(fout, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        if (!mb::file_write_fully(fout, buf, to_read, n) || n != to_read) {
+            LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
 
@@ -714,25 +680,23 @@ bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file_eof(MbFile *fin, MbFile *fout)
+bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
 {
     char buf[10240];
     size_t n_read;
     size_t n_written;
-    int ret;
 
     while (true) {
-        ret = mb_file_read_fully(fin, buf, sizeof(buf), &n_read);
-        if (ret != MB_FILE_OK) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        if (!mb::file_read_fully(fin, buf, sizeof(buf), n_read)) {
+            LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        ret = mb_file_write_fully(fout, buf, n_read, &n_written);
-        if (ret != MB_FILE_OK || n_written != n_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        if (!mb::file_write_fully(fout, buf, n_read, n_written)
+                || n_written != n_read) {
+            LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
     }

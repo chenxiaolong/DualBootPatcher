@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbbootimg/format/segment_writer_p.h"
@@ -136,19 +136,18 @@ void _segment_writer_update_size_if_unset(SegmentWriterCtx *ctx,
     }
 }
 
-int _segment_writer_get_entry(SegmentWriterCtx *ctx, MbFile *file,
+int _segment_writer_get_entry(SegmentWriterCtx *ctx, mb::File *file,
                               MbBiEntry *entry, MbBiWriter *biw)
 {
     SegmentWriterEntry *swentry;
     int ret;
 
     if (!ctx->have_pos) {
-        ret = mb_file_seek(file, 0, SEEK_CUR, &ctx->pos);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(file),
+        if (!file->seek(0, SEEK_CUR, &ctx->pos)) {
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to get current offset: %s",
-                                   mb_file_error_string(file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   file->error_string().c_str());
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_pos = true;
@@ -177,7 +176,7 @@ int _segment_writer_get_entry(SegmentWriterCtx *ctx, MbFile *file,
     return MB_BI_OK;
 }
 
-int _segment_writer_write_entry(SegmentWriterCtx *ctx, MbFile *file,
+int _segment_writer_write_entry(SegmentWriterCtx *ctx, mb::File *file,
                                 MbBiEntry *entry, MbBiWriter *biw)
 {
     (void) file;
@@ -198,12 +197,10 @@ int _segment_writer_write_entry(SegmentWriterCtx *ctx, MbFile *file,
     return MB_BI_OK;
 }
 
-int _segment_writer_write_data(SegmentWriterCtx *ctx, MbFile *file,
+int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
-                               size_t *bytes_written, MbBiWriter *biw)
+                               size_t &bytes_written, MbBiWriter *biw)
 {
-    int ret;
-
     // Check for overflow
     if (buf_size > UINT32_MAX || ctx->entry_size > UINT32_MAX - buf_size
             || ctx->pos > UINT64_MAX - buf_size) {
@@ -212,16 +209,15 @@ int _segment_writer_write_data(SegmentWriterCtx *ctx, MbFile *file,
         return MB_BI_FAILED;
     }
 
-    ret = mb_file_write_fully(file, buf, buf_size, bytes_written);
-    if (ret != MB_FILE_OK) {
-        mb_bi_writer_set_error(biw, mb_file_error(file),
+    if (!mb::file_write_fully(*file, buf, buf_size, bytes_written)) {
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write data: %s",
-                               mb_file_error_string(file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-    } else if (*bytes_written != buf_size) {
-        mb_bi_writer_set_error(biw, mb_file_error(file),
+                               file->error_string().c_str());
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+    } else if (bytes_written != buf_size) {
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Write was truncated: %s",
-                               mb_file_error_string(file));
+                               file->error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
         return MB_BI_FATAL;
@@ -233,11 +229,9 @@ int _segment_writer_write_data(SegmentWriterCtx *ctx, MbFile *file,
     return MB_BI_OK;
 }
 
-int _segment_writer_finish_entry(SegmentWriterCtx *ctx, MbFile *file,
+int _segment_writer_finish_entry(SegmentWriterCtx *ctx, mb::File *file,
                                  MbBiWriter *biw)
 {
-    int ret;
-
     // Update size with number of bytes written
     _segment_writer_update_size_if_unset(ctx, ctx->entry_size);
 
@@ -246,12 +240,11 @@ int _segment_writer_finish_entry(SegmentWriterCtx *ctx, MbFile *file,
         uint64_t skip = align_page_size<uint64_t>(ctx->pos, ctx->entry->align);
         uint64_t new_pos;
 
-        ret = mb_file_seek(file, skip, SEEK_CUR, &new_pos);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(file),
+        if (!file->seek(skip, SEEK_CUR, &new_pos)) {
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to seek to page boundary: %s",
-                                   mb_file_error_string(file));
-            return ret == MB_BI_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                                   file->error_string().c_str());
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->pos = new_pos;

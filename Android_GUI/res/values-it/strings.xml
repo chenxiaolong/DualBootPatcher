@@ -133,6 +133,7 @@ Continuare</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
   <string name="wipe_rom_no_wipe_current_rom">La ROM attualmente in uso non può essere eliminata.</string>
   <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Servizio in background</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
   <string name="switcher_storage_permission_required">Il nome ed i thumbnail non possono essere caricati perchè è stato negato l\'accesso alla memoria interna.</string>
   <!--Accessibility text for the ROM logo images-->
@@ -156,20 +157,29 @@ Continuare</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <string name="set_kernel_mismatched_rom">La ROM attualmente selezionata è %1$s ma, si sta tentando di impostare il kernel per la %2$s. Per favore confermare ciò che si intende fare.</string>
   <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">Backup ROM</string>
   <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">Ripristina ROM</string>
   <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Flasha il file</string>
   <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Flasha i file</string>
   <!--In-app flashing activity title-->
   <string name="in_app_flashing_title">Flasha File ZIP</string>
   <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Aggiungi file patchato</string>
   <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Aggiungi backup</string>
   <!--Title of pending action card for flashing a file-->
   <string name="in_app_flashing_action_flash_file">Installa File ZIP</string>
   <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Ripristina backup</string>
   <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
   <string name="in_app_flashing_filename">File ZIP: %s</string>
   <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Nome backup: %s</string>
   <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Destinazioni: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
   <string name="in_app_flashing_location">Posizione: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
@@ -195,7 +205,9 @@ Continuare</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="in_app_flashing_dialog_first_use">Per flashare uno ZIP direttamente dall\'app, bisogna aggiungere lo ZIP patchato premendo sull\'icona +.\n\nL\'ordine del flash può essere cambiato premendo e tenendo premuto sul file oppure può essere rimosso effettuando uno swipe su di esso.\n\nNOTA: Questa funzione è ancora sperimentale. Effettua un backup prima di continuare!</string>
   <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Scegli dalla lista un backup da ripristinare.</string>
   <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Nessun backup disponibile per il ripristino.</string>
   <!--ROM details item showing which slot the ROM is installed to-->
   <string name="rom_details_info_slot">Slot</string>
   <!--ROM details item showing the version of the ROM-->
@@ -224,20 +236,35 @@ Continuare</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
   <string name="rom_details_info_calculating">Calcolando...</string>
   <!--Backup ROM activity title-->
+  <string name="br_backup_title">Backup ROM</string>
   <!--Restore ROM activity title-->
+  <string name="br_restore_title">Ripristina ROM</string>
   <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Selezionare gli elementi di cui si vuole fare il backup.</string>
   <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Selezionare gli elementi di cui si vuole fare il ripristino.</string>
   <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">Sistema</string>
   <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Cache</string>
   <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Dati</string>
   <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Kernel</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">Configurazioni MultiBoot</string>
   <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Non è stata selezionata alcuna destinazione di cui si vuole fare il backup/ripristino.</string>
   <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Inserire un nome per il backup. Il nome non può contenere la seguente sbarra (\"/\") oppure un \".\" oppure ancora \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Inserire un nome per il backup...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Fare un tap sul FAB per aggiungere file da patchare.</string>
   <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Aggiungi uno zip flashabile</string>
   <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Aggiungi un\'immagine per Odin</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">Il patcher non può patchare i file senza l\'accesso alla memoria interna. Per favore, garantisci l\'accesso per patchare i file.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
@@ -340,20 +367,35 @@ Continuare</string>
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">Aggiornamento ramdisk</string>
   <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">Boot UI (SPERIMENTALE)</string>
   <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Installa Boot UI</string>
   <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Aggiorna Boot UI</string>
   <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">Disinstalla Boot UI</string>
   <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">Aggiornamento disponibile: %s</string>
   <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">Aggiornato</string>
   <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">Non installato</string>
   <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">Non supportato da questo dispositivo</string>
   <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">Boot UI installata correttamente</string>
   <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">Installazione Boot UI fallita</string>
   <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">Boot UI disinstallata con successo</string>
   <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">Disinstallazione Boot UI fallita</string>
   <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">La Boot UI è stata installata con successo.\n\nAssicurati che il ramdisk sia stato aggiornato con successo in ogni ROM. Altrimenti, la Boot UI, non verrà eseguita all\'avvio.</string>
   <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Backup/Ripristino (SPERIMENTALE)</string>
   <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Cambia cartella per il backup</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
   <string name="rom_settings_patcher_title">Patcher</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
@@ -365,14 +407,19 @@ Continuare</string>
   <!--Description for the initial screen preference-->
   <string name="rom_settings_initial_screen_desc">Schermata da visualizzare all\'avvio dell\'app.</string>
   <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">Utilizza tema scuro</string>
   <!--Title for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_title">Permetti intent in entrata</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Permetti ad App di terzi di inviare intent per eseguire azioni, come ad esempio effettuare lo switch delle ROM o patchare file.</string>
   <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">Mostra dialog per il reboot</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Mostra il dialog nativo di Android per il reboot invece di riavviare direttamente. Avere il dialog attivo permette di riavviare in recovery con le ROM che hanno il menù di riavvio avanzato.</string>
   <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Operazioni di patching parallele</string>
   <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Quando più file sono in coda per essere patchati, verrano processati %d alla volta.</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Condivisione individuale delle applicazioni</string>
   <!--Description for the dialog box explaining individual application sharing-->
@@ -395,10 +442,23 @@ Continuare</string>
   <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
   <string name="third_party_intents_not_allowed">Negato intent da app di terze parti. Per ricevere intent dalle altre app, attiva l\'opzione nelle impostazioni del Patcher.</string>
   <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">Avvio dell\'mbtool...\n(Questo richiederà l\'accesso root)</string>
   <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">Aggiornando mbtool...\n(Questo richiederà l\'accesso root)</string>
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool non consente la connessione di questa Po\'. Può dipendere dall\'uso di una build non ufficiale o da una malevola modifica dell\'applaicazione. Se si continua mbtool verrà terminato e sarà caricata la versione originale utilizzando i permessi di root. </string>
   <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">La versione installata di mbtool è troppo vecchia. É necessario aggiornarla affinché determinate funzioni, ma come lo switchare le ROM, possano funzionare. Sono richiesti i permessi di root. </string>
   <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">Impossibile aggiornare mbtool. Molte operazioni, come spiegare le ROM, potrebbero non funzionare. </string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Inserisci un nome per il file</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">Scegli</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">Salva</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Nuova cartella</string>
   <!--Word/phrase for Search (used in action bars)-->
   <string name="search">Cerca</string>
   <!--Word/phrase for None (used in eg. a list)-->

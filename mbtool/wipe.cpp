@@ -1,25 +1,28 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "wipe.h"
 
 #include <algorithm>
+
+#include <cerrno>
+#include <cstring>
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -90,12 +93,8 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            char *msg = mb_format("%s: Failed to remove: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            mb::format(_error_msg, "%s: Failed to remove: %s",
+                       _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "appsync.h"
@@ -107,12 +107,8 @@ static bool load_config_files()
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
         std::string config_path = rom->config_path();
-        char *packages_path = mb_format(PACKAGES_XML_PATH_FMT,
-                                        rom->full_data_path().c_str());
-        if (!packages_path) {
-            LOGW("Out of memory");
-            continue;
-        }
+        std::string packages_path = mb::format(PACKAGES_XML_PATH_FMT,
+                                               rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;
@@ -126,15 +122,13 @@ static bool load_config_files()
         }
         if (!rom_packages.load_xml(packages_path)) {
             LOGW("%s: Failed to load packages for ROM %s",
-                 packages_path, rom->id.c_str());
+                 packages_path.c_str(), rom->id.c_str());
         }
 
         if (rom->id == current_rom->id) {
             config = rom_config;
             packages = rom_packages;
         }
-
-        free(packages_path);
     }
 
     LOGD("[Config] ROM ID:                    %s", config.id.c_str());

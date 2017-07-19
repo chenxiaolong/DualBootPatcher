@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -22,6 +22,8 @@
 #include "mbbootimg/guard_p.h"
 
 #ifdef __cplusplus
+#  include <string>
+
 #  include <cstddef>
 #else
 #  include <stddef.h>
@@ -63,7 +65,6 @@ MB_BEGIN_C_DECLS
 struct MbBiWriter;
 struct MbBiEntry;
 struct MbBiHeader;
-struct MbFile;
 
 typedef int (*FormatWriterSetOption)(struct MbBiWriter *biw, void *userdata,
                                      const char *key, const char *value);
@@ -77,7 +78,7 @@ typedef int (*FormatWriterWriteEntry)(struct MbBiWriter *biw, void *userdata,
                                       struct MbBiEntry *entry);
 typedef int (*FormatWriterWriteData)(struct MbBiWriter *biw, void *userdata,
                                      const void *buf, size_t buf_size,
-                                     size_t *bytes_written);
+                                     size_t &bytes_written);
 typedef int (*FormatWriterFinishEntry)(struct MbBiWriter *biw, void *userdata);
 typedef int (*FormatWriterClose)(struct MbBiWriter *biw, void *userdata);
 typedef int (*FormatWriterFree)(struct MbBiWriter *biw, void *userdata);
@@ -119,12 +120,12 @@ struct MbBiWriter
     WriterState state;
 
     // File
-    struct MbFile *file;
+    mb::File *file;
     bool file_owned;
 
     // Error
     int error_code;
-    char *error_string;
+    std::string error_string;
 
     struct FormatWriter format;
     bool format_set;

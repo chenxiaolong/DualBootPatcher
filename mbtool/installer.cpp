@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "installer.h"
@@ -27,10 +27,10 @@
 
 // Linux/posix
 #include <fcntl.h>
-#include <mntent.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -793,20 +793,18 @@ bool Installer::change_root(const std::string &path)
     // Unmount everything besides our chroot dir
     {
         std::vector<std::string> to_unmount;
-        struct mntent ent;
-        char buf[1024];
 
-        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s",
-                 "/proc/mounts", strerror(errno));
+            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
             return false;
         }
 
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            if (strcmp(ent.mnt_dir, "/") != 0
-                    && !mb_starts_with(ent.mnt_dir, path.c_str())) {
-                to_unmount.push_back(ent.mnt_dir);
+        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+            // TODO: Use util::path_compare() instead of dumb string prefix
+            //       matching
+            if (entry.dir != "/" && !mb::starts_with(entry.dir, path)) {
+                to_unmount.push_back(std::move(entry.dir));
             }
         }
 
@@ -1170,11 +1168,7 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    char *msg = mb_format_v(fmt, ap);
-    if (msg) {
-        display_msg(std::string(msg));
-        free(msg);
-    }
+    display_msg(mb::format_v(fmt, ap));
     va_end(ap);
 }
 
@@ -1278,7 +1272,7 @@ Installer::ProceedState Installer::install_stage_initialize()
                 _has_block_image = true;
                 // Flashing an Odin image discards the system image anyway, so
                 // there's no point in copying the data.
-                // TODO: libmbp should be setting this option in info.prop
+                // TODO: libmbpatcher should be setting this option in info.prop
                 if (item.path != "system.img.sparse") {
                     _copy_to_temp_image = true;
                 }

@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -35,53 +35,53 @@ TEST(BootImgHeaderTest, CheckDefaultValues)
 
     // Check private fields
     ASSERT_EQ(header->fields_supported, MB_BI_HEADER_ALL_FIELDS);
-    ASSERT_EQ(header->fields_set, 0);
-    ASSERT_EQ(header->field.kernel_addr, 0);
-    ASSERT_EQ(header->field.ramdisk_addr, 0);
-    ASSERT_EQ(header->field.second_addr, 0);
-    ASSERT_EQ(header->field.tags_addr, 0);
-    ASSERT_EQ(header->field.ipl_addr, 0);
-    ASSERT_EQ(header->field.rpm_addr, 0);
-    ASSERT_EQ(header->field.appsbl_addr, 0);
-    ASSERT_EQ(header->field.page_size, 0);
+    ASSERT_EQ(header->fields_set, 0u);
+    ASSERT_EQ(header->field.kernel_addr, 0u);
+    ASSERT_EQ(header->field.ramdisk_addr, 0u);
+    ASSERT_EQ(header->field.second_addr, 0u);
+    ASSERT_EQ(header->field.tags_addr, 0u);
+    ASSERT_EQ(header->field.ipl_addr, 0u);
+    ASSERT_EQ(header->field.rpm_addr, 0u);
+    ASSERT_EQ(header->field.appsbl_addr, 0u);
+    ASSERT_EQ(header->field.page_size, 0u);
     ASSERT_EQ(header->field.board_name, nullptr);
     ASSERT_EQ(header->field.cmdline, nullptr);
-    ASSERT_EQ(header->field.hdr_kernel_size, 0);
-    ASSERT_EQ(header->field.hdr_ramdisk_size, 0);
-    ASSERT_EQ(header->field.hdr_second_size, 0);
-    ASSERT_EQ(header->field.hdr_dt_size, 0);
-    ASSERT_EQ(header->field.hdr_unused, 0);
-    ASSERT_EQ(header->field.hdr_id[0], 0);
-    ASSERT_EQ(header->field.hdr_id[1], 0);
-    ASSERT_EQ(header->field.hdr_id[2], 0);
-    ASSERT_EQ(header->field.hdr_id[3], 0);
-    ASSERT_EQ(header->field.hdr_id[4], 0);
-    ASSERT_EQ(header->field.hdr_id[5], 0);
-    ASSERT_EQ(header->field.hdr_id[6], 0);
-    ASSERT_EQ(header->field.hdr_id[7], 0);
-    ASSERT_EQ(header->field.hdr_entrypoint, 0);
+    ASSERT_EQ(header->field.hdr_kernel_size, 0u);
+    ASSERT_EQ(header->field.hdr_ramdisk_size, 0u);
+    ASSERT_EQ(header->field.hdr_second_size, 0u);
+    ASSERT_EQ(header->field.hdr_dt_size, 0u);
+    ASSERT_EQ(header->field.hdr_unused, 0u);
+    ASSERT_EQ(header->field.hdr_id[0], 0u);
+    ASSERT_EQ(header->field.hdr_id[1], 0u);
+    ASSERT_EQ(header->field.hdr_id[2], 0u);
+    ASSERT_EQ(header->field.hdr_id[3], 0u);
+    ASSERT_EQ(header->field.hdr_id[4], 0u);
+    ASSERT_EQ(header->field.hdr_id[5], 0u);
+    ASSERT_EQ(header->field.hdr_id[6], 0u);
+    ASSERT_EQ(header->field.hdr_id[7], 0u);
+    ASSERT_EQ(header->field.hdr_entrypoint, 0u);
 
     // Check public API
     ASSERT_EQ(mb_bi_header_board_name(header.get()), nullptr);
     ASSERT_EQ(mb_bi_header_kernel_cmdline(header.get()), nullptr);
     ASSERT_FALSE(mb_bi_header_page_size_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_kernel_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_ramdisk_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_secondboot_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_kernel_tags_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_sony_ipl_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_sony_rpm_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_sony_appsbl_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0u);
     ASSERT_FALSE(mb_bi_header_entrypoint_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0);
+    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0u);
 }
 
 TEST(BootImgHeaderTest, CheckGettersSetters)
@@ -118,42 +118,42 @@ TEST(BootImgHeaderTest, CheckGettersSetters)
     ASSERT_EQ(mb_bi_header_set_page_size(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_page_size_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_PAGE_SIZE);
-    ASSERT_EQ(header->field.page_size, 1234);
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), 1234);
+    ASSERT_EQ(header->field.page_size, 1234u);
+    ASSERT_EQ(mb_bi_header_page_size(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_page_size(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_page_size_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_PAGE_SIZE);
-    ASSERT_EQ(header->field.page_size, 0);
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0);
+    ASSERT_EQ(header->field.page_size, 0u);
+    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0u);
 
     // Kernel address field
 
     ASSERT_EQ(mb_bi_header_set_kernel_address(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_kernel_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
-    ASSERT_EQ(header->field.kernel_addr, 1234);
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 1234);
+    ASSERT_EQ(header->field.kernel_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_kernel_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_kernel_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
-    ASSERT_EQ(header->field.kernel_addr, 0);
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0);
+    ASSERT_EQ(header->field.kernel_addr, 0u);
+    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0u);
 
     // Ramdisk address field
 
     ASSERT_EQ(mb_bi_header_set_ramdisk_address(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_ramdisk_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
-    ASSERT_EQ(header->field.ramdisk_addr, 1234);
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 1234);
+    ASSERT_EQ(header->field.ramdisk_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_ramdisk_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_ramdisk_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
-    ASSERT_EQ(header->field.ramdisk_addr, 0);
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0);
+    ASSERT_EQ(header->field.ramdisk_addr, 0u);
+    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0u);
 
     // Second bootloader address field
 
@@ -161,14 +161,14 @@ TEST(BootImgHeaderTest, CheckGettersSetters)
               MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_secondboot_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
-    ASSERT_EQ(header->field.second_addr, 1234);
-    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 1234);
+    ASSERT_EQ(header->field.second_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_secondboot_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_secondboot_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
-    ASSERT_EQ(header->field.second_addr, 0);
-    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0);
+    ASSERT_EQ(header->field.second_addr, 0u);
+    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0u);
 
     // Kernel tags address field
 
@@ -176,42 +176,42 @@ TEST(BootImgHeaderTest, CheckGettersSetters)
               MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
-    ASSERT_EQ(header->field.tags_addr, 1234);
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 1234);
+    ASSERT_EQ(header->field.tags_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_kernel_tags_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_kernel_tags_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
-    ASSERT_EQ(header->field.tags_addr, 0);
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0);
+    ASSERT_EQ(header->field.tags_addr, 0u);
+    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0u);
 
     // Sony IPL address field
 
     ASSERT_EQ(mb_bi_header_set_sony_ipl_address(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_sony_ipl_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-    ASSERT_EQ(header->field.ipl_addr, 1234);
-    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 1234);
+    ASSERT_EQ(header->field.ipl_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_sony_ipl_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_sony_ipl_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-    ASSERT_EQ(header->field.ipl_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0);
+    ASSERT_EQ(header->field.ipl_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0u);
 
     // Sony RPM address field
 
     ASSERT_EQ(mb_bi_header_set_sony_rpm_address(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_sony_rpm_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-    ASSERT_EQ(header->field.rpm_addr, 1234);
-    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 1234);
+    ASSERT_EQ(header->field.rpm_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_sony_rpm_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_sony_rpm_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-    ASSERT_EQ(header->field.rpm_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0);
+    ASSERT_EQ(header->field.rpm_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0u);
 
     // Sony APPSBL address field
 
@@ -219,28 +219,28 @@ TEST(BootImgHeaderTest, CheckGettersSetters)
               MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_sony_appsbl_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-    ASSERT_EQ(header->field.appsbl_addr, 1234);
-    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 1234);
+    ASSERT_EQ(header->field.appsbl_addr, 1234u);
+    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_sony_appsbl_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_sony_appsbl_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-    ASSERT_EQ(header->field.appsbl_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0);
+    ASSERT_EQ(header->field.appsbl_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0u);
 
     // Entrypoint address field
 
     ASSERT_EQ(mb_bi_header_set_entrypoint_address(header.get(), 1234), MB_BI_OK);
     ASSERT_TRUE(mb_bi_header_entrypoint_address_is_set(header.get()));
     ASSERT_TRUE(header->fields_set & MB_BI_HEADER_FIELD_ENTRYPOINT);
-    ASSERT_EQ(header->field.hdr_entrypoint, 1234);
-    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 1234);
+    ASSERT_EQ(header->field.hdr_entrypoint, 1234u);
+    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 1234u);
 
     ASSERT_EQ(mb_bi_header_unset_entrypoint_address(header.get()), MB_BI_OK);
     ASSERT_FALSE(mb_bi_header_entrypoint_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_ENTRYPOINT);
-    ASSERT_EQ(header->field.hdr_entrypoint, 0);
-    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0);
+    ASSERT_EQ(header->field.hdr_entrypoint, 0u);
+    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0u);
 }
 
 TEST(BootImgHeaderTest, CheckSettingUnsupported)
@@ -280,8 +280,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_page_size_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_PAGE_SIZE);
-    ASSERT_EQ(header->field.page_size, 0);
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0);
+    ASSERT_EQ(header->field.page_size, 0u);
+    ASSERT_EQ(mb_bi_header_page_size(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_page_size(header.get()), MB_BI_UNSUPPORTED);
 
     // Kernel address field
@@ -292,8 +292,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_kernel_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_ADDRESS);
-    ASSERT_EQ(header->field.kernel_addr, 0);
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0);
+    ASSERT_EQ(header->field.kernel_addr, 0u);
+    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_kernel_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -305,8 +305,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_ramdisk_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_RAMDISK_ADDRESS);
-    ASSERT_EQ(header->field.ramdisk_addr, 0);
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0);
+    ASSERT_EQ(header->field.ramdisk_addr, 0u);
+    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_ramdisk_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -318,8 +318,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_secondboot_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS);
-    ASSERT_EQ(header->field.second_addr, 0);
-    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0);
+    ASSERT_EQ(header->field.second_addr, 0u);
+    ASSERT_EQ(mb_bi_header_secondboot_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_secondboot_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -331,8 +331,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_kernel_tags_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS);
-    ASSERT_EQ(header->field.tags_addr, 0);
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0);
+    ASSERT_EQ(header->field.tags_addr, 0u);
+    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_kernel_tags_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -344,8 +344,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_sony_ipl_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS);
-    ASSERT_EQ(header->field.ipl_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0);
+    ASSERT_EQ(header->field.ipl_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_ipl_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_sony_ipl_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -357,8 +357,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_sony_rpm_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS);
-    ASSERT_EQ(header->field.rpm_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0);
+    ASSERT_EQ(header->field.rpm_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_rpm_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_sony_rpm_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -370,8 +370,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_sony_appsbl_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS);
-    ASSERT_EQ(header->field.appsbl_addr, 0);
-    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0);
+    ASSERT_EQ(header->field.appsbl_addr, 0u);
+    ASSERT_EQ(mb_bi_header_sony_appsbl_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_sony_appsbl_address(header.get()),
               MB_BI_UNSUPPORTED);
 
@@ -383,8 +383,8 @@ TEST(BootImgHeaderTest, CheckSettingUnsupported)
               MB_BI_UNSUPPORTED);
     ASSERT_FALSE(mb_bi_header_entrypoint_address_is_set(header.get()));
     ASSERT_FALSE(header->fields_set & MB_BI_HEADER_FIELD_ENTRYPOINT);
-    ASSERT_EQ(header->field.hdr_entrypoint, 0);
-    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0);
+    ASSERT_EQ(header->field.hdr_entrypoint, 0u);
+    ASSERT_EQ(mb_bi_header_entrypoint_address(header.get()), 0u);
     ASSERT_EQ(mb_bi_header_unset_entrypoint_address(header.get()),
               MB_BI_UNSUPPORTED);
 }
@@ -495,29 +495,29 @@ TEST(BootImgHeaderTest, CheckClear)
 
     // Supported fields will not be cleared
     ASSERT_EQ(header->fields_supported, MB_BI_HEADER_ALL_FIELDS);
-    ASSERT_EQ(header->fields_set, 0);
-    ASSERT_EQ(header->field.kernel_addr, 0);
-    ASSERT_EQ(header->field.ramdisk_addr, 0);
-    ASSERT_EQ(header->field.second_addr, 0);
-    ASSERT_EQ(header->field.tags_addr, 0);
-    ASSERT_EQ(header->field.ipl_addr, 0);
-    ASSERT_EQ(header->field.rpm_addr, 0);
-    ASSERT_EQ(header->field.appsbl_addr, 0);
-    ASSERT_EQ(header->field.page_size, 0);
+    ASSERT_EQ(header->fields_set, 0u);
+    ASSERT_EQ(header->field.kernel_addr, 0u);
+    ASSERT_EQ(header->field.ramdisk_addr, 0u);
+    ASSERT_EQ(header->field.second_addr, 0u);
+    ASSERT_EQ(header->field.tags_addr, 0u);
+    ASSERT_EQ(header->field.ipl_addr, 0u);
+    ASSERT_EQ(header->field.rpm_addr, 0u);
+    ASSERT_EQ(header->field.appsbl_addr, 0u);
+    ASSERT_EQ(header->field.page_size, 0u);
     ASSERT_EQ(header->field.board_name, nullptr);
     ASSERT_EQ(header->field.cmdline, nullptr);
-    ASSERT_EQ(header->field.hdr_kernel_size, 0);
-    ASSERT_EQ(header->field.hdr_ramdisk_size, 0);
-    ASSERT_EQ(header->field.hdr_second_size, 0);
-    ASSERT_EQ(header->field.hdr_dt_size, 0);
-    ASSERT_EQ(header->field.hdr_unused, 0);
-    ASSERT_EQ(header->field.hdr_id[0], 0);
-    ASSERT_EQ(header->field.hdr_id[1], 0);
-    ASSERT_EQ(header->field.hdr_id[2], 0);
-    ASSERT_EQ(header->field.hdr_id[3], 0);
-    ASSERT_EQ(header->field.hdr_id[4], 0);
-    ASSERT_EQ(header->field.hdr_id[5], 0);
-    ASSERT_EQ(header->field.hdr_id[6], 0);
-    ASSERT_EQ(header->field.hdr_id[7], 0);
-    ASSERT_EQ(header->field.hdr_entrypoint, 0);
+    ASSERT_EQ(header->field.hdr_kernel_size, 0u);
+    ASSERT_EQ(header->field.hdr_ramdisk_size, 0u);
+    ASSERT_EQ(header->field.hdr_second_size, 0u);
+    ASSERT_EQ(header->field.hdr_dt_size, 0u);
+    ASSERT_EQ(header->field.hdr_unused, 0u);
+    ASSERT_EQ(header->field.hdr_id[0], 0u);
+    ASSERT_EQ(header->field.hdr_id[1], 0u);
+    ASSERT_EQ(header->field.hdr_id[2], 0u);
+    ASSERT_EQ(header->field.hdr_id[3], 0u);
+    ASSERT_EQ(header->field.hdr_id[4], 0u);
+    ASSERT_EQ(header->field.hdr_id[5], 0u);
+    ASSERT_EQ(header->field.hdr_id[6], 0u);
+    ASSERT_EQ(header->field.hdr_id[7], 0u);
+    ASSERT_EQ(header->field.hdr_entrypoint, 0u);
 }

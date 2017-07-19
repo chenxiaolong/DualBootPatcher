@@ -9,6 +9,8 @@ set(MBSPARSE_TESTS_SOURCES
     tests/test_sparse.cpp
 )
 
+add_definitions(-DMBSPARSE_BUILD)
+
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -90,18 +92,12 @@ if(variants AND MBP_ENABLE_TESTS)
         ${MBSPARSE_TESTS_SOURCES}
     )
 
-    # Includes
-    target_include_directories(
-        mbsparse_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
-    )
-
     # Link dependencies
     target_link_libraries(
         mbsparse_tests
         mbsparse-static
-        ${GTEST_BOTH_LIBRARIES}
+        gtest
+        gtest_main
     )
 
     # Target C++11

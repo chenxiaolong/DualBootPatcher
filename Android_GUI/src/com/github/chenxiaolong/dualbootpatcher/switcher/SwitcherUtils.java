@@ -52,7 +52,7 @@ import java.util.Properties;
 import mbtool.daemon.v3.FileOpenFlag;
 
 public class SwitcherUtils {
-    public static final String TAG = SwitcherUtils.class.getSimpleName();
+    private static final String TAG = SwitcherUtils.class.getSimpleName();
 
     private static final String ZIP_MULTIBOOT_DIR = "multiboot/";
     private static final String ZIP_INFO_PROP = ZIP_MULTIBOOT_DIR + "info.prop";
@@ -218,7 +218,7 @@ public class SwitcherUtils {
      * and thus "primary" will be returned.
      *
      * @param file Boot image file
-     * @return String containing the ROM ID or null if an error occurs within libmbp.
+     * @return String containing the ROM ID or null if an error occurs within libmbpatcher.
      */
     @Nullable
     public static String getBootImageRomId(File file) {

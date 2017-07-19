@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -22,34 +22,35 @@
 #include "mbcommon/guard_p.h"
 
 #include "mbcommon/file.h"
+#include "mbcommon/flags.h"
 
 /*! \cond INTERNAL */
-enum MbFileState : uint16_t
+namespace mb
 {
-    NEW             = 1U << 1,
-    OPENED          = 1U << 2,
-    CLOSED          = 1U << 3,
-    FATAL           = 1U << 4,
-    // Grouped
-    ANY_NONFATAL    = NEW | OPENED | CLOSED,
-    ANY             = ANY_NONFATAL | FATAL,
+
+enum class FileState : uint16_t
+{
+    NEW     = 1u << 0,
+    OPENED  = 1u << 1,
+    FATAL   = 1u << 2,
 };
+MB_DECLARE_FLAGS(FileStates, FileState)
+MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)
 
-struct MbFile
+class FilePrivate
 {
-    uint16_t state;
+public:
+    FilePrivate();
+    virtual ~FilePrivate();
 
-    // Callbacks
-    MbFileOpenCb open_cb;
-    MbFileCloseCb close_cb;
-    MbFileReadCb read_cb;
-    MbFileWriteCb write_cb;
-    MbFileSeekCb seek_cb;
-    MbFileTruncateCb truncate_cb;
-    void *cb_userdata;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
+
+    FileState state;
 
     // Error
-    int error_code;
-    char *error_string;
+    std::error_code error_code;
+    std::string error_string;
 };
+
+}
 /*! \endcond */

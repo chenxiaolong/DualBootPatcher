@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/locale.h"
@@ -263,72 +263,191 @@ done:
 
 #endif
 
-MB_BEGIN_C_DECLS
-
-wchar_t * mb_mbs_to_wcs(const char *str)
+namespace mb
 {
-    return mb_mbs_to_wcs_len(str, strlen(str));
-}
 
-char * mb_wcs_to_mbs(const wchar_t *str)
-{
-    return mb_wcs_to_mbs_len(str, wcslen(str));
-}
-
-wchar_t * mb_utf8_to_wcs(const char *str)
-{
-    return mb_utf8_to_wcs_len(str, strlen(str));
-}
-
-char * mb_wcs_to_utf8(const wchar_t *str)
-{
-    return mb_wcs_to_utf8_len(str, wcslen(str));
-}
-
-wchar_t * mb_mbs_to_wcs_len(const char *str, size_t size)
+bool mbs_to_wcs_n(std::wstring &out, const char *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_wcs(CP_ACP, str, size);
+    wchar_t *result = win32_convert_to_wcs(CP_ACP, str, len);
 #else
-    char *result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
-                                 str, size * sizeof(char));
-    return reinterpret_cast<wchar_t *>(result);
+    char *c_result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
+                                   str, len * sizeof(char));
+    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
 #endif
+
+    if (!result) {
+        return false;
+    }
+
+    out = result;
+    free(result);
+    return true;
 }
 
-char * mb_wcs_to_mbs_len(const wchar_t *str, size_t size)
+std::wstring mbs_to_wcs_n(const char *str, size_t len)
+{
+    std::wstring result;
+    mbs_to_wcs_n(result, str, len);
+    return result;
+}
+
+bool wcs_to_mbs_n(std::string &out, const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_mbs(CP_ACP, str, size);
+    char *result = win32_convert_to_mbs(CP_ACP, str, len);
 #else
     char *result = iconv_convert(ICONV_CODE_WCHAR_T, ICONV_CODE_DEFAULT,
                                  reinterpret_cast<const char *>(str),
-                                 size * sizeof(wchar_t));
+                                 len * sizeof(wchar_t));
+#endif
+
+    if (!result) {
+        return false;
+    }
+
+    out = result;
+    free(result);
+    return true;
+}
+
+std::string wcs_to_mbs_n(const wchar_t *str, size_t len)
+{
+    std::string result;
+    wcs_to_mbs_n(result, str, len);
     return result;
-#endif
 }
 
-wchar_t * mb_utf8_to_wcs_len(const char *str, size_t size)
+bool utf8_to_wcs_n(std::wstring &out, const char *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_wcs(CP_UTF8, str, size);
+    wchar_t *result = win32_convert_to_wcs(CP_UTF8, str, len);
 #else
-    char *result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
-                                 str, size * sizeof(char));
-    return reinterpret_cast<wchar_t *>(result);
+    char *c_result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
+                                   str, len * sizeof(char));
+    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
 #endif
+
+    if (!result) {
+        return false;
+    }
+
+    out = result;
+    free(result);
+    return true;
 }
 
-char * mb_wcs_to_utf8_len(const wchar_t *str, size_t size)
+std::wstring utf8_to_wcs_n(const char *str, size_t len)
+{
+    std::wstring result;
+    utf8_to_wcs_n(result, str, len);
+    return result;
+}
+
+bool wcs_to_utf8_n(std::string &out, const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_mbs(CP_UTF8, str, size);
+    char *result = win32_convert_to_mbs(CP_UTF8, str, len);
 #else
     char *result = iconv_convert(ICONV_CODE_WCHAR_T, ICONV_CODE_UTF_8,
                                  reinterpret_cast<const char *>(str),
-                                 size * sizeof(wchar_t));
-    return result;
+                                 len * sizeof(wchar_t));
 #endif
+
+    if (!result) {
+        return false;
+    }
+
+    out = result;
+    free(result);
+    return true;
 }
 
-MB_END_C_DECLS
+std::string wcs_to_utf8_n(const wchar_t *str, size_t len)
+{
+    std::string result;
+    wcs_to_utf8_n(result, str, len);
+    return result;
+}
+
+bool mbs_to_wcs(std::wstring &out, const char *str)
+{
+    return mbs_to_wcs_n(out, str, strlen(str));
+}
+
+bool mbs_to_wcs(std::wstring &out, const std::string &str)
+{
+    return mbs_to_wcs_n(out, str.data(), str.size());
+}
+
+std::wstring mbs_to_wcs(const char *str)
+{
+    return mbs_to_wcs_n(str, strlen(str));
+}
+
+std::wstring mbs_to_wcs(const std::string &str)
+{
+    return mbs_to_wcs_n(str.data(), str.size());
+}
+
+bool wcs_to_mbs(std::string &out, const wchar_t *str)
+{
+    return wcs_to_mbs_n(out, str, wcslen(str));
+}
+
+bool wcs_to_mbs(std::string &out, const std::wstring &str)
+{
+    return wcs_to_mbs_n(out, str.data(), str.size());
+}
+
+std::string wcs_to_mbs(const wchar_t *str)
+{
+    return wcs_to_mbs_n(str, wcslen(str));
+}
+
+std::string wcs_to_mbs(const std::wstring &str)
+{
+    return wcs_to_mbs_n(str.data(), str.size());
+}
+
+bool utf8_to_wcs(std::wstring &out, const char *str)
+{
+    return utf8_to_wcs_n(out, str, strlen(str));
+}
+
+bool utf8_to_wcs(std::wstring &out, const std::string &str)
+{
+    return utf8_to_wcs_n(out, str.data(), str.size());
+}
+
+std::wstring utf8_to_wcs(const char *str)
+{
+    return utf8_to_wcs_n(str, strlen(str));
+}
+
+std::wstring utf8_to_wcs(const std::string &str)
+{
+    return utf8_to_wcs_n(str.data(), str.size());
+}
+
+bool wcs_to_utf8(std::string &out, const wchar_t *str)
+{
+    return wcs_to_utf8_n(out, str, wcslen(str));
+}
+
+bool wcs_to_utf8(std::string &out, const std::wstring &str)
+{
+    return wcs_to_utf8_n(out, str.data(), str.size());
+}
+
+std::string wcs_to_utf8(const wchar_t *str)
+{
+    return wcs_to_utf8_n(str, wcslen(str));
+}
+
+std::string wcs_to_utf8(const std::wstring &str)
+{
+    return wcs_to_utf8_n(str.data(), str.size());
+}
+
+}

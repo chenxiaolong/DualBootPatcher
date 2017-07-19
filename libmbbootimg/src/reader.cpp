@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbbootimg/reader.h"
@@ -25,7 +25,7 @@
 #include <cstring>
 
 #include "mbcommon/file.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -350,7 +350,7 @@ int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
  */
 MbBiReader * mb_bi_reader_new()
 {
-    MbBiReader *bir = static_cast<MbBiReader *>(calloc(1, sizeof(MbBiReader)));
+    MbBiReader *bir = new(std::nothrow) MbBiReader();
     if (bir) {
         bir->state = ReaderState::NEW;
         bir->header = mb_bi_header_new();
@@ -399,8 +399,7 @@ int mb_bi_reader_free(MbBiReader *bir)
         mb_bi_header_free(bir->header);
         mb_bi_entry_free(bir->entry);
 
-        free(bir->error_string);
-        free(bir);
+        delete bir;
     }
 
     return ret;
@@ -419,23 +418,20 @@ int mb_bi_reader_free(MbBiReader *bir)
 int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
-    int ret;
 
-    MbFile *file = mb_file_new();
+    mb::File *file = new(std::nothrow) mb::StandardFile(
+            filename, mb::FileOpenMode::READ_ONLY);
     if (!file) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
                                "%s", strerror(errno));
         return MB_BI_FAILED;
     }
 
-    ret = mb_file_open_filename(file, filename, MB_FILE_OPEN_READ_ONLY);
-    if (ret != MB_FILE_OK) {
-        // Always return MB_BI_FAILED as MB_FILE_FATAL would not affect us
-        // at this point
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    if (!file->is_open()) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
-                               mb_file_error_string(file));
-        mb_file_free(file);
+                               file->error_string().c_str());
+        delete file;
         return MB_BI_FAILED;
     }
 
@@ -455,23 +451,20 @@ int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
 int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
-    int ret;
 
-    MbFile *file = mb_file_new();
+    mb::File *file = new(std::nothrow) mb::StandardFile(
+            filename, mb::FileOpenMode::READ_ONLY);
     if (!file) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
                                "%s", strerror(errno));
         return MB_BI_FAILED;
     }
 
-    ret = mb_file_open_filename_w(file, filename, MB_FILE_OPEN_READ_ONLY);
-    if (ret != MB_FILE_OK) {
-        // Always return MB_BI_FAILED as MB_FILE_FATAL would not affect us
-        // at this point
-        mb_bi_reader_set_error(bir, mb_file_error(file),
+    if (!file->is_open()) {
+        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
-                               mb_file_error_string(file));
-        mb_file_free(file);
+                               file->error_string().c_str());
+        delete file;
         return MB_BI_FAILED;
     }
 
@@ -479,23 +472,22 @@ int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
 }
 
 /*!
- * \brief Open boot image from MbFile handle.
+ * \brief Open boot image from File handle.
  *
- * If \p owned is true, then the MbFile handle will be closed and freed when the
+ * If \p owned is true, then the File handle will be closed and freed when the
  * MbBiReader is closed and freed. This is true even if this function fails. In
- * other words, if \p owned is true and this function fails, mb_file_free() will
+ * other words, if \p owned is true and this function fails, File::close() will
  * be called.
  *
  * \param bir MbBiReader
- * \param file MbFile handle
- * \param owned Whether the MbBiReader should take ownership of the MbFile
- *              handle
+ * \param file File handle
+ * \param owned Whether the MbBiReader should take ownership of the File handle
  *
  * \return
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_open(MbBiReader *bir, MbFile *file, bool owned)
+int mb_bi_reader_open(MbBiReader *bir, mb::File *file, bool owned)
 {
     int ret;
     int best_bid = 0;
@@ -523,11 +515,11 @@ int mb_bi_reader_open(MbBiReader *bir, MbFile *file, bool owned)
 
             if (cur->bidder_cb) {
                 // Seek to beginning
-                ret = mb_file_seek(bir->file, 0, SEEK_SET, nullptr);
-                if (ret < 0) {
-                    mb_bi_reader_set_error(bir, mb_file_error(bir->file),
+                if (!bir->file->seek(0, SEEK_SET, nullptr)) {
+                    mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                            "Failed to seek file: %s",
-                                           mb_file_error_string(bir->file));
+                                           bir->file->error_string().c_str());
+                    ret = bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
                     goto done;
                 }
 
@@ -561,7 +553,7 @@ int mb_bi_reader_open(MbBiReader *bir, MbFile *file, bool owned)
 done:
     if (ret != MB_BI_OK) {
         if (owned) {
-            mb_file_free(file);
+            delete file;
         }
 
         bir->file = nullptr;
@@ -590,18 +582,18 @@ done:
  */
 int mb_bi_reader_close(MbBiReader *bir)
 {
-    int ret = MB_BI_OK, ret2;
+    int ret = MB_BI_OK;
 
     // Avoid double-closing or closing nothing
     if (!(bir->state & (ReaderState::CLOSED | ReaderState::NEW))) {
         if (bir->file && bir->file_owned) {
-            ret2 = mb_file_free(bir->file);
-            if (ret2 < 0) {
-                ret2 = ret2 == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+            if (!bir->file->close()) {
+                if (MB_BI_FAILED < ret) {
+                    ret = MB_BI_FAILED;
+                }
             }
-            if (ret2 < ret) {
-                ret = ret2;
-            }
+
+            delete bir->file;
         }
 
         bir->file = nullptr;
@@ -666,12 +658,11 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
     int ret;
 
     // Seek to beginning
-    ret = mb_file_seek(bir->file, 0, SEEK_SET, nullptr);
-    if (ret < 0) {
-        mb_bi_reader_set_error(bir, mb_file_error(bir->file),
+    if (!bir->file->seek(0, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
                                "Failed to seek file: %s",
-                               mb_file_error_string(bir->file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+                               bir->file->error_string().c_str());
+        return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     mb_bi_header_clear(header);
@@ -862,7 +853,7 @@ int mb_bi_reader_read_data(MbBiReader *bir, void *buf, size_t size,
     }
 
     ret = bir->format->read_data_cb(bir, bir->format->userdata, buf, size,
-                                    bytes_read);
+                                    *bytes_read);
     if (ret == MB_BI_OK) {
         // Do not alter state. Stay in ReaderState::DATA
     } else if (ret <= MB_BI_FATAL) {
@@ -1115,7 +1106,7 @@ int mb_bi_reader_error(MbBiReader *bir)
  */
 const char * mb_bi_reader_error_string(MbBiReader *bir)
 {
-    return bir->error_string ? bir->error_string : "";
+    return bir->error_string.c_str();
 }
 
 /*!
@@ -1160,16 +1151,9 @@ int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
 int mb_bi_reader_set_error_v(MbBiReader *bir, int error_code,
                              const char *fmt, va_list ap)
 {
-    free(bir->error_string);
-
-    char *dup = mb_format_v(fmt, ap);
-    if (!dup) {
-        return MB_BI_FAILED;
-    }
-
     bir->error_code = error_code;
-    bir->error_string = dup;
-    return MB_BI_OK;
+    return mb::format_v(bir->error_string, fmt, ap)
+            ? MB_BI_OK : MB_BI_FAILED;
 }
 
 MB_END_C_DECLS

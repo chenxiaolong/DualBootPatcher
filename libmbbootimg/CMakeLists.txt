@@ -132,13 +132,6 @@ if(variants AND MBP_ENABLE_TESTS)
         ${MBBOOTIMG_TESTS_SOURCES}
     )
 
-    # Includes
-    target_include_directories(
-        mbbootimg_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
-    )
-
     # Allow using private headers
     target_compile_definitions(
         mbbootimg_tests
@@ -152,7 +145,8 @@ if(variants AND MBP_ENABLE_TESTS)
         mbbootimg-static
         mbcommon-static
         ${MBP_OPENSSL_CRYPTO_LIBRARY}
-        ${GTEST_BOTH_LIBRARIES}
+        gtest
+        gtest_main
     )
 
     # Target C++11

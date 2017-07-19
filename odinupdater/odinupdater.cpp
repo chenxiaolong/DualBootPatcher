@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <memory>
@@ -30,6 +30,10 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+// libmbcommon
+#include "mbcommon/file/callbacks.h"
+#include "mbcommon/file/standard.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -71,7 +75,6 @@
 #define PROP_BOOT_DEV           "boot"
 
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
-typedef std::unique_ptr<SparseCtx, decltype(sparseCtxFree) *> ScopedSparseCtx;
 
 enum class ExtractResult
 {
@@ -348,10 +351,12 @@ static bool load_block_devs()
     return true;
 }
 
-static bool cb_zip_read(void *buf, uint64_t size, uint64_t *bytes_read,
-                        void *user_data)
+static bool cb_zip_read(mb::File &file, void *userdata,
+                        void *buf, size_t size, size_t &bytes_read)
 {
-    archive *a = (archive *) user_data;
+    (void) file;
+
+    archive *a = static_cast<archive *>(userdata);
     uint64_t total = 0;
 
     while (size > 0) {
@@ -369,7 +374,7 @@ static bool cb_zip_read(void *buf, uint64_t size, uint64_t *bytes_read,
         buf = (char *) buf + n;
     }
 
-    *bytes_read = total;
+    bytes_read = total;
     return true;
 }
 
@@ -380,18 +385,11 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
 {
     ScopedArchive a{archive_read_new(), &archive_read_free};
-    ScopedSparseCtx ctx{sparseCtxNew(), &sparseCtxFree};
-    char buf[10240];
-    uint64_t n;
-    bool sparse_ret;
-    int fd;
-    uint64_t cur_bytes = 0;
-    uint64_t max_bytes = 0;
-    uint64_t old_bytes = 0;
-    double old_ratio;
-    double new_ratio;
+    mb::CallbackFile file;
+    mb::sparse::SparseFile sparse_file;
+    mb::StandardFile out_file;
 
-    if (!a || !ctx) {
+    if (!a) {
         error("Out of memory");
         return ExtractResult::ERROR;
     }
@@ -406,53 +404,67 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return result;
     }
 
-    if (!sparseOpen(ctx.get(), nullptr, nullptr, &cb_zip_read, nullptr, nullptr,
-                    a.get())) {
-        error("Failed to open sparse file");
+    if (!file.open(nullptr, nullptr, &cb_zip_read, nullptr, nullptr, nullptr,
+                   a.get())) {
+        error("Failed to open sparse file in zip: %s",
+              file.error_string().c_str());
         return ExtractResult::ERROR;
     }
 
-    fd = open64(out_filename,
-                O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC | O_LARGEFILE, 0600);
-    if (fd < 0) {
-        error("%s: Failed to open: %s", out_filename, strerror(errno));
+    if (!sparse_file.open(&file)) {
+        error("Failed to open sparse file: %s",
+              sparse_file.error_string().c_str());
         return ExtractResult::ERROR;
     }
 
-    auto close_fd = mb::util::finally([fd]{
-        close(fd);
-    });
+    if (!out_file.open(out_filename, mb::FileOpenMode::WRITE_ONLY)) {
+        error("%s: Failed to open for writing: %s",
+              out_filename, out_file.error_string().c_str());
+        return ExtractResult::ERROR;
+    }
 
-    sparseSize(ctx.get(), &max_bytes);
+    char buf[10240];
+    size_t n;
+    bool ret;
+    uint64_t cur_bytes = 0;
+    uint64_t max_bytes = sparse_file.size();
+    uint64_t old_bytes = 0;
 
     set_progress(0);
 
-    while ((sparse_ret = sparseRead(ctx.get(), buf, sizeof(buf), &n)) && n > 0) {
+    while ((ret = sparse_file.read(buf, sizeof(buf), n)) && n > 0) {
         // Rate limit: update progress only after difference exceeds 0.1%
-        old_ratio = (double) old_bytes / max_bytes;
-        new_ratio = (double) cur_bytes / max_bytes;
+        double old_ratio = static_cast<double>(old_bytes) / max_bytes;
+        double new_ratio = static_cast<double>(cur_bytes) / max_bytes;
         if (new_ratio - old_ratio >= 0.001) {
             set_progress(new_ratio);
             old_bytes = cur_bytes;
         }
 
         char *out_ptr = buf;
-        ssize_t nwritten;
+        size_t nwritten;
 
-        do {
-            if ((nwritten = write(fd, out_ptr, n)) < 0) {
-                error("%s: Failed to write: %s",
-                      out_filename, strerror(errno));
+        while (n > 0) {
+            if (!out_file.write(buf, n, nwritten)) {
+                error("%s: Failed to write file: %s",
+                      out_filename, out_file.error_string().c_str());
                 return ExtractResult::ERROR;
             }
 
             n -= nwritten;
             out_ptr += nwritten;
             cur_bytes += nwritten;
-        } while (n > 0);
+        }
     }
-    if (!sparse_ret) {
-        error("Failed to read sparse file %s", zip_filename);
+    if (!ret) {
+        error("Failed to read sparse file %s: %s",
+              zip_filename, sparse_file.error_string().c_str());
+        return ExtractResult::ERROR;
+    }
+
+    if (!out_file.close()) {
+        error("%s: Failed to close file: %s",
+              out_filename, out_file.error_string().c_str());
         return ExtractResult::ERROR;
     }
 

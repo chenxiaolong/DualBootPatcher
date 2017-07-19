@@ -1,0 +1,26 @@
+From c4c6471f1b550b24a94608ffb194a7c7a4b21464 Mon Sep 17 00:00:00 2001
+From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+Date: Mon, 19 Oct 2015 02:44:08 -0400
+Subject: [PATCH 1/2] Force UTF-8 as the default charset on Android since the
+ NDK doesn't support nl_langinfo
+
+---
+ libarchive/archive_string.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libarchive/archive_string.c b/libarchive/archive_string.c
+index 592ead2..f6b62d0 100644
+--- a/libarchive/archive_string.c
++++ b/libarchive/archive_string.c
+@@ -424,6 +424,8 @@ default_iconv_charset(const char *charset) {
+ 	return locale_charset();
+ #elif HAVE_NL_LANGINFO
+ 	return nl_langinfo(CODESET);
++#elif defined(__ANDROID__)
++    return "UTF-8";
+ #else
+ 	return "";
+ #endif
+-- 
+2.9.4
+
