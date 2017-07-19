@@ -64,9 +64,9 @@ public:
     Win32FilePrivate();
     virtual ~Win32FilePrivate();
 
-    void clear();
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32FilePrivate)
 
-    LPCWSTR win32_error_string(DWORD error_code);
+    void clear();
 
     static bool convert_mode(FileOpenMode mode,
                              DWORD &access_out,

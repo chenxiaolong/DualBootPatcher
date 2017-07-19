@@ -25,9 +25,9 @@ import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils;
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.FileInfo;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig;
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils;
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection;
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException;
@@ -44,8 +44,8 @@ import java.io.IOException;
 public final class CreateRamdiskUpdaterTask extends BaseServiceTask {
     private static final String TAG = CreateRamdiskUpdaterTask.class.getSimpleName();
 
-    /** {@link Patcher} ID for the libmbp patcher */
-    private static final String LIBMBP_RAMDISK_UPDATER = "RamdiskUpdater";
+    /** {@link Patcher} ID for the libmbpatcher patcher */
+    private static final String LIBMBPATCHER_RAMDISK_UPDATER = "RamdiskUpdater";
     /** Suffix for boot image backup */
     private static final String BOOT_IMAGE_BACKUP_SUFFIX = ".before-ramdisk-update.img";
 
@@ -67,12 +67,12 @@ public final class CreateRamdiskUpdaterTask extends BaseServiceTask {
     }
 
     /**
-     * Log the libmbp error and destoy the PatcherError object
+     * Log the libmbpatcher error and destoy the PatcherError object
      *
      * @param error PatcherError
      */
-    private static void logLibMbpError(int error) {
-        Log.e(TAG, "libmbp error code: " + error);
+    private static void logLibMbPatcherError(int error) {
+        Log.e(TAG, "libmbpatcher error code: " + error);
     }
 
     /**
@@ -88,9 +88,9 @@ public final class CreateRamdiskUpdaterTask extends BaseServiceTask {
         try {
             fi = new FileInfo();
             pc = PatcherUtils.newPatcherConfig(getContext());
-            patcher = pc.createPatcher(LIBMBP_RAMDISK_UPDATER);
+            patcher = pc.createPatcher(LIBMBPATCHER_RAMDISK_UPDATER);
             if (patcher == null) {
-                Log.e(TAG, "Bundled libmbp does not support " + LIBMBP_RAMDISK_UPDATER);
+                Log.e(TAG, "Bundled libmbpatcher does not support " + LIBMBPATCHER_RAMDISK_UPDATER);
                 return false;
             }
 
@@ -107,7 +107,7 @@ public final class CreateRamdiskUpdaterTask extends BaseServiceTask {
             patcher.setFileInfo(fi);
 
             if (!patcher.patchFile(null)) {
-                logLibMbpError(patcher.getError());
+                logLibMbPatcherError(patcher.getError());
                 return false;
             }
 
@@ -172,7 +172,7 @@ public final class CreateRamdiskUpdaterTask extends BaseServiceTask {
                 File zipFile = new File(
                         getContext().getCacheDir() + File.separator + "ramdisk-updater.zip");
 
-                // Run libmbp's RamdiskUpdater on the boot image
+                // Run libmbpatcher's RamdiskUpdater on the boot image
                 if (!createZip(zipFile)) {
                     Log.e(TAG, "Failed to create ramdisk updater zip");
                     return null;

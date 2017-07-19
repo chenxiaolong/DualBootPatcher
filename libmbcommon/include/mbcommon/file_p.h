@@ -40,12 +40,15 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)
 class FilePrivate
 {
 public:
+    FilePrivate();
     virtual ~FilePrivate();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
 
     FileState state;
 
     // Error
-    int error_code = 0;
+    std::error_code error_code;
     std::string error_string;
 };
 

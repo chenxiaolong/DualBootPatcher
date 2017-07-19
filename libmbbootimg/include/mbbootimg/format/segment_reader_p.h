@@ -88,5 +88,5 @@ int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
                                 struct MbBiEntry *entry, int entry_type,
                                 struct MbBiReader *bir);
 int _segment_reader_read_data(struct SegmentReaderCtx *ctx, mb::File *file,
-                              void *buf, size_t buf_size, size_t *bytes_read,
+                              void *buf, size_t buf_size, size_t &bytes_read,
                               struct MbBiReader *bir);

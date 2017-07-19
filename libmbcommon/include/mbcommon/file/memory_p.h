@@ -34,6 +34,8 @@ public:
     MemoryFilePrivate();
     virtual ~MemoryFilePrivate();
 
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFilePrivate)
+
     void clear();
 
     void *data;

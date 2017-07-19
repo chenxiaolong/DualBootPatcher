@@ -211,7 +211,7 @@ CLASS_METHOD(mblogSetLogcat)(JNIEnv *env, jclass clazz)
     (void) env;
     (void) clazz;
 
-    mb::log::set_log_tag("libmbp");
+    mb::log::set_log_tag("libmbpatcher");
     mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
 }
 

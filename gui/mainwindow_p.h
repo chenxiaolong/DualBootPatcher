@@ -23,8 +23,8 @@
 #include "mainwindow.h"
 
 #include <mbdevice/device.h>
-#include <mbp/patcherconfig.h>
-#include <mbp/patcherinterface.h>
+#include <mbpatcher/patcherconfig.h>
+#include <mbpatcher/patcherinterface.h>
 
 #include <memory>
 #include <vector>
@@ -78,11 +78,11 @@ public:
     QString fileName;
     bool autoMode;
 
-    mbp::PatcherConfig *pc = nullptr;
+    mb::patcher::PatcherConfig *pc = nullptr;
     std::vector<ScopedDevice> devices;
 
     // Selected patcher
-    mbp::Patcher *patcher = nullptr;
+    mb::patcher::Patcher *patcher = nullptr;
 
     // Patcher finish status and error message
     QString patcherNewFile;

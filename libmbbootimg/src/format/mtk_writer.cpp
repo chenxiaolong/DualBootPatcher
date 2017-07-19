@@ -46,7 +46,6 @@ static int _mtk_header_update_size(MbBiWriter *biw, mb::File *file,
 {
     uint32_t le32_size = mb_htole32(size);
     size_t n;
-    mb::FileStatus file_ret;
 
     if (offset > SIZE_MAX - offsetof(MtkHeader, size)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
@@ -54,21 +53,19 @@ static int _mtk_header_update_size(MbBiWriter *biw, mb::File *file,
         return MB_BI_FATAL;
     }
 
-    file_ret = biw->file->seek(offset + offsetof(MtkHeader, size),
-                               SEEK_SET, nullptr);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, biw->file->error(),
+    if (!biw->file->seek(offset + offsetof(MtkHeader, size), SEEK_SET,
+                         nullptr)) {
+        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to seek to MTK size field: %s",
                                biw->file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, &le32_size, sizeof(le32_size), &n);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, biw->file->error(),
+    if (!mb::file_write_fully(*file, &le32_size, sizeof(le32_size), n)) {
+        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to write MTK size field: %s",
                                biw->file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     } else if (n != sizeof(le32_size)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing MTK size field");
@@ -85,7 +82,6 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriterCtx *segctx,
     SHA_CTX sha_ctx;
     char buf[10240];
     size_t n;
-    mb::FileStatus file_ret;
 
     uint32_t kernel_mtkhdr_size = 0;
     uint32_t ramdisk_mtkhdr_size = 0;
@@ -100,28 +96,24 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriterCtx *segctx,
         SegmentWriterEntry *entry = _segment_writer_entries_get(segctx, i);
         uint64_t remain = entry->size;
 
-        file_ret = file->seek(entry->offset, SEEK_SET, nullptr);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
+        if (!file->seek(entry->offset, SEEK_SET, nullptr)) {
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to seek to entry %" MB_PRIzu ": %s",
                                    i, file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Update checksum with data
         while (remain > 0) {
             size_t to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            file_ret = mb::file_read_fully(*file, buf, to_read, &n);
-            if (file_ret != mb::FileStatus::OK) {
-                mb_bi_writer_set_error(biw, file->error(),
+            if (!mb::file_read_fully(*file, buf, to_read, n)) {
+                mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                        "Failed to read entry %" MB_PRIzu ": %s",
                                        i, file->error_string().c_str());
-                return file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
+                return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             } else if (n != to_read) {
-                mb_bi_writer_set_error(biw, file->error(),
+                mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                        "Unexpected EOF when reading entry");
                 return MB_BI_FAILED;
             }
@@ -195,7 +187,6 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
                             MbBiHeader *header)
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-    mb::FileStatus file_ret;
     int ret;
 
     // Construct header
@@ -298,12 +289,11 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
-    file_ret = biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, biw->file->error(),
+    if (!biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr)) {
+        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to seek to first page: %s",
                                biw->file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     return MB_BI_OK;
@@ -327,7 +317,7 @@ int mtk_writer_write_entry(MbBiWriter *biw, void *userdata,
 
 int mtk_writer_write_data(MbBiWriter *biw, void *userdata,
                           const void *buf, size_t buf_size,
-                          size_t *bytes_written)
+                          size_t &bytes_written)
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
 
@@ -384,18 +374,15 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
     SegmentWriterEntry *swentry;
-    mb::FileStatus file_ret;
     int ret;
     size_t n;
 
     if (!ctx->have_file_size) {
-        file_ret = biw->file->seek(0, SEEK_CUR, &ctx->file_size);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->seek(0, SEEK_CUR, &ctx->file_size)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to get file offset: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -406,13 +393,11 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
     // If successful, finish up the boot image
     if (!swentry) {
         // Truncate to set size
-        file_ret = biw->file->truncate(ctx->file_size);
-        if (file_ret < mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->truncate(ctx->file_size)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to truncate file: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Update MTK header sizes
@@ -454,23 +439,20 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         android_fix_header_byte_order(&hdr);
 
         // Seek back to beginning to write header
-        file_ret = biw->file->seek(0, SEEK_SET, nullptr);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->seek(0, SEEK_SET, nullptr)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to seek to beginning: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Write header
-        file_ret = mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), &n);
-        if (file_ret != mb::FileStatus::OK || n != sizeof(hdr)) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), n)
+                || n != sizeof(hdr)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to write header: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
     }
 

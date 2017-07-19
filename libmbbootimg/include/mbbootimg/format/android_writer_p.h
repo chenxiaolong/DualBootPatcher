@@ -57,7 +57,7 @@ int android_writer_write_entry(struct MbBiWriter *biw, void *userdata,
                                struct MbBiEntry *entry);
 int android_writer_write_data(struct MbBiWriter *biw, void *userdata,
                               const void *buf, size_t buf_size,
-                              size_t *bytes_written);
+                              size_t &bytes_written);
 int android_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
 int android_writer_close(struct MbBiWriter *biw, void *userdata);
 int android_writer_free(struct MbBiWriter *bir, void *userdata);

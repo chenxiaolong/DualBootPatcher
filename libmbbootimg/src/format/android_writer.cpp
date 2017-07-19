@@ -58,7 +58,6 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
                                 MbBiHeader *header)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    mb::FileStatus file_ret;
     int ret;
 
     // Construct header
@@ -151,12 +150,11 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
-    file_ret = biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, biw->file->error(),
+    if (!biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr)) {
+        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to seek to first page: %s",
                                biw->file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     return MB_BI_OK;
@@ -180,7 +178,7 @@ int android_writer_write_entry(MbBiWriter *biw, void *userdata,
 
 int android_writer_write_data(MbBiWriter *biw, void *userdata,
                               const void *buf, size_t buf_size,
-                              size_t *bytes_written)
+                              size_t &bytes_written)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
     int ret;
@@ -250,26 +248,21 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
     SegmentWriterEntry *swentry;
-    mb::FileStatus file_ret;
     size_t n;
 
     if (ctx->have_file_size) {
-        file_ret = biw->file->seek(ctx->file_size, SEEK_SET, nullptr);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->seek(ctx->file_size, SEEK_SET, nullptr)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to seek to end of file: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
     } else {
-        file_ret = biw->file->seek(0, SEEK_CUR, &ctx->file_size);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->seek(0, SEEK_CUR, &ctx->file_size)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to get file offset: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -282,25 +275,22 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (ctx->is_bump) {
-            file_ret = mb::file_write_fully(*biw->file, BUMP_MAGIC,
-                                            BUMP_MAGIC_SIZE, &n);
-            if (file_ret != mb::FileStatus::OK || n != BUMP_MAGIC_SIZE) {
-                mb_bi_writer_set_error(biw, biw->file->error(),
+            if (!mb::file_write_fully(*biw->file, BUMP_MAGIC,
+                                      BUMP_MAGIC_SIZE, n)
+                    || n != BUMP_MAGIC_SIZE) {
+                mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write Bump magic: %s",
                                        biw->file->error_string().c_str());
-                return file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
+                return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             }
         } else {
-            file_ret = mb::file_write_fully(*biw->file, SAMSUNG_SEANDROID_MAGIC,
-                                            SAMSUNG_SEANDROID_MAGIC_SIZE, &n);
-            if (file_ret != mb::FileStatus::OK
+            if (!mb::file_write_fully(*biw->file, SAMSUNG_SEANDROID_MAGIC,
+                                      SAMSUNG_SEANDROID_MAGIC_SIZE, n)
                     || n != SAMSUNG_SEANDROID_MAGIC_SIZE) {
-                mb_bi_writer_set_error(biw, biw->file->error(),
+                mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write SEAndroid magic: %s",
                                        biw->file->error_string().c_str());
-                return file_ret == mb::FileStatus::FATAL
-                        ? MB_BI_FATAL : MB_BI_FAILED;
+                return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             }
         }
 
@@ -318,23 +308,20 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
         android_fix_header_byte_order(&hdr);
 
         // Seek back to beginning to write header
-        file_ret = biw->file->seek(0, SEEK_SET, nullptr);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!biw->file->seek(0, SEEK_SET, nullptr)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to seek to beginning: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Write header
-        file_ret = mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), &n);
-        if (file_ret != mb::FileStatus::OK || n != sizeof(hdr)) {
-            mb_bi_writer_set_error(biw, biw->file->error(),
+        if (!mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), n)
+                || n != sizeof(hdr)) {
+            mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to write header: %s",
                                    biw->file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
     }
 

@@ -140,17 +140,14 @@ int _segment_writer_get_entry(SegmentWriterCtx *ctx, mb::File *file,
                               MbBiEntry *entry, MbBiWriter *biw)
 {
     SegmentWriterEntry *swentry;
-    mb::FileStatus file_ret;
     int ret;
 
     if (!ctx->have_pos) {
-        file_ret = file->seek(0, SEEK_CUR, &ctx->pos);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
+        if (!file->seek(0, SEEK_CUR, &ctx->pos)) {
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to get current offset: %s",
                                    file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->have_pos = true;
@@ -202,10 +199,8 @@ int _segment_writer_write_entry(SegmentWriterCtx *ctx, mb::File *file,
 
 int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
                                const void *buf, size_t buf_size,
-                               size_t *bytes_written, MbBiWriter *biw)
+                               size_t &bytes_written, MbBiWriter *biw)
 {
-    mb::FileStatus file_ret;
-
     // Check for overflow
     if (buf_size > UINT32_MAX || ctx->entry_size > UINT32_MAX - buf_size
             || ctx->pos > UINT64_MAX - buf_size) {
@@ -214,14 +209,13 @@ int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
         return MB_BI_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, buf, buf_size, bytes_written);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
+    if (!mb::file_write_fully(*file, buf, buf_size, bytes_written)) {
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Failed to write data: %s",
                                file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-    } else if (*bytes_written != buf_size) {
-        mb_bi_writer_set_error(biw, file->error(),
+        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+    } else if (bytes_written != buf_size) {
+        mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                "Write was truncated: %s",
                                file->error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
@@ -238,8 +232,6 @@ int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
 int _segment_writer_finish_entry(SegmentWriterCtx *ctx, mb::File *file,
                                  MbBiWriter *biw)
 {
-    mb::FileStatus file_ret;
-
     // Update size with number of bytes written
     _segment_writer_update_size_if_unset(ctx, ctx->entry_size);
 
@@ -248,13 +240,11 @@ int _segment_writer_finish_entry(SegmentWriterCtx *ctx, mb::File *file,
         uint64_t skip = align_page_size<uint64_t>(ctx->pos, ctx->entry->align);
         uint64_t new_pos;
 
-        file_ret = file->seek(skip, SEEK_CUR, &new_pos);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
+        if (!file->seek(skip, SEEK_CUR, &new_pos)) {
+            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
                                    "Failed to seek to page boundary: %s",
                                    file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         ctx->pos = new_pos;

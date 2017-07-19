@@ -59,6 +59,8 @@ public:
     PosixFilePrivate();
     virtual ~PosixFilePrivate();
 
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFilePrivate)
+
     void clear();
 
 #ifdef _WIN32

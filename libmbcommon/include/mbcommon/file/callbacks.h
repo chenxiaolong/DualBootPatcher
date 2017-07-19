@@ -30,19 +30,18 @@ class MB_EXPORT CallbackFile : public File
     MB_DECLARE_PRIVATE(CallbackFile)
 
 public:
-    typedef FileStatus (*OpenCb)(File &file, void *userdata);
-    typedef FileStatus (*CloseCb)(File &file, void *userdata);
-    typedef FileStatus (*ReadCb)(File &file, void *userdata,
-                                 void *buf, size_t size,
-                                 size_t *bytes_read);
-    typedef FileStatus (*WriteCb)(File &file, void *userdata,
-                                  const void *buf, size_t size,
-                                  size_t *bytes_written);
-    typedef FileStatus (*SeekCb)(File &file, void *userdata,
-                                 int64_t offset, int whence,
-                                 uint64_t *new_offset);
-    typedef FileStatus (*TruncateCb)(File &file, void *userdata,
-                                     uint64_t size);
+    typedef bool (*OpenCb)(File &file, void *userdata);
+    typedef bool (*CloseCb)(File &file, void *userdata);
+    typedef bool (*ReadCb)(File &file, void *userdata,
+                           void *buf, size_t size,
+                           size_t &bytes_read);
+    typedef bool (*WriteCb)(File &file, void *userdata,
+                            const void *buf, size_t size,
+                            size_t &bytes_written);
+    typedef bool (*SeekCb)(File &file, void *userdata,
+                           int64_t offset, int whence, uint64_t &new_offset);
+    typedef bool (*TruncateCb)(File &file, void *userdata,
+                               uint64_t size);
 
     CallbackFile();
     CallbackFile(OpenCb open_cb,
@@ -57,13 +56,13 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFile)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(CallbackFile)
 
-    FileStatus open(OpenCb open_cb,
-                    CloseCb close_cb,
-                    ReadCb read_cb,
-                    WriteCb write_cb,
-                    SeekCb seek_cb,
-                    TruncateCb truncate_cb,
-                    void *userdata);
+    bool open(OpenCb open_cb,
+              CloseCb close_cb,
+              ReadCb read_cb,
+              WriteCb write_cb,
+              SeekCb seek_cb,
+              TruncateCb truncate_cb,
+              void *userdata);
 
 protected:
     /*! \cond INTERNAL */
@@ -78,15 +77,15 @@ protected:
                  void *userdata);
     /*! \endcond */
 
-    virtual FileStatus on_open() override;
-    virtual FileStatus on_close() override;
-    virtual FileStatus on_read(void *buf, size_t size,
-                               size_t *bytes_read) override;
-    virtual FileStatus on_write(const void *buf, size_t size,
-                                size_t *bytes_written) override;
-    virtual FileStatus on_seek(int64_t offset, int whence,
-                               uint64_t *new_offset) override;
-    virtual FileStatus on_truncate(uint64_t size) override;
+    virtual bool on_open() override;
+    virtual bool on_close() override;
+    virtual bool on_read(void *buf, size_t size,
+                         size_t &bytes_read) override;
+    virtual bool on_write(const void *buf, size_t size,
+                          size_t &bytes_written) override;
+    virtual bool on_seek(int64_t offset, int whence,
+                         uint64_t &new_offset) override;
+    virtual bool on_truncate(uint64_t size) override;
 };
 
 }

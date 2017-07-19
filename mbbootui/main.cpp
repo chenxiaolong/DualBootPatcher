@@ -28,7 +28,7 @@
 #include "mbdevice/json.h"
 #include "mbdevice/validate.h"
 #include "mblog/logging.h"
-#include "mbp/patcherconfig.h"
+#include "mbpatcher/patcherconfig.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
@@ -71,7 +71,7 @@
 
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
-static mbp::PatcherConfig pc;
+static mb::patcher::PatcherConfig pc;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
@@ -230,7 +230,7 @@ static void wait_forever()
 
 struct mapping
 {
-    uint64_t libmbp;
+    uint64_t libmbdevice;
     uint64_t bootui;
 };
 
@@ -264,8 +264,8 @@ static void load_device_config()
     enum TwForcePixelFormat force_pixel_format =
             mb_device_tw_force_pixel_format(tw_device);
 
-    for (auto iter = flag_map; iter->libmbp != 0; ++iter) {
-        if (flags & iter->libmbp) {
+    for (auto iter = flag_map; iter->libmbdevice != 0; ++iter) {
+        if (flags & iter->libmbdevice) {
             tw_flags |= iter->bootui;
         }
     }

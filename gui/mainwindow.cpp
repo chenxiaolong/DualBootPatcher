@@ -24,7 +24,7 @@
 
 #include <mbdevice/json.h>
 #include <mbdevice/validate.h>
-#include <mbp/errors.h>
+#include <mbpatcher/errors.h>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -44,7 +44,7 @@ MainWindowPrivate::MainWindowPrivate()
 {
 }
 
-MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
+MainWindow::MainWindow(mb::patcher::PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
     Q_D(MainWindow);
@@ -105,8 +105,8 @@ MainWindow::~MainWindow()
     Q_D(MainWindow);
 
     if (d->patcher) {
-        d->patcher->cancelPatching();
-        d->pc->destroyPatcher(d->patcher);
+        d->patcher->cancel_patching();
+        d->pc->destroy_patcher(d->patcher);
         d->patcher = nullptr;
     }
 
@@ -205,7 +205,7 @@ void MainWindow::onChooseFileItemClicked(QAction *action)
     Q_D(MainWindow);
 
     if (action == d->chooseFlashableZip) {
-        d->patcherId = QStringLiteral("MultiBootPatcher");
+        d->patcherId = QStringLiteral("ZipPatcher");
         chooseFile(tr("Flashable zips (*.zip)"));
     } else if (action == d->chooseOdinImage) {
         d->patcherId = QStringLiteral("OdinPatcher");
@@ -260,7 +260,7 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 {
     Q_D(MainWindow);
 
-    d->pc->destroyPatcher(d->patcher);
+    d->pc->destroy_patcher(d->patcher);
     d->patcher = nullptr;
 
     d->patcherNewFile = newFile;
@@ -426,7 +426,7 @@ void MainWindow::populateDevices()
     Q_D(MainWindow);
 
     // TODO: This shouldn't be done in the GUI thread
-    QString path(QString::fromStdString(d->pc->dataDirectory())
+    QString path(QString::fromStdString(d->pc->data_directory())
             % QStringLiteral("/devices.json"));
     QFile file(path);
 
@@ -617,13 +617,13 @@ void MainWindow::startPatching()
     QString outputPath(QDir::toNativeSeparators(
             qFileInfo.dir().filePath(outputName)));
 
-    FileInfoPtr fileInfo = new mbp::FileInfo();
-    fileInfo->setInputPath(inputPath.toUtf8().constData());
-    fileInfo->setOutputPath(outputPath.toUtf8().constData());
-    fileInfo->setDevice(d->device);
-    fileInfo->setRomId(romId.toUtf8().constData());
+    FileInfoPtr fileInfo = new mb::patcher::FileInfo();
+    fileInfo->set_input_path(inputPath.toUtf8().constData());
+    fileInfo->set_output_path(outputPath.toUtf8().constData());
+    fileInfo->set_device(d->device);
+    fileInfo->set_rom_id(romId.toUtf8().constData());
 
-    d->patcher = d->pc->createPatcher(d->patcherId.toStdString());
+    d->patcher = d->pc->create_patcher(d->patcherId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
@@ -638,45 +638,45 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
 }
 
 
-static QString errorToString(const mbp::ErrorCode &error) {
+static QString errorToString(const mb::patcher::ErrorCode &error) {
     switch (error) {
-    case mbp::ErrorCode::NoError:
+    case mb::patcher::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
-    case mbp::ErrorCode::MemoryAllocationError:
+    case mb::patcher::ErrorCode::MemoryAllocationError:
         return QObject::tr("Failed to allocate memory");
-    case mbp::ErrorCode::PatcherCreateError:
+    case mb::patcher::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
-    case mbp::ErrorCode::AutoPatcherCreateError:
+    case mb::patcher::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher");
-    case mbp::ErrorCode::FileOpenError:
+    case mb::patcher::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
-    case mbp::ErrorCode::FileCloseError:
+    case mb::patcher::ErrorCode::FileCloseError:
         return QObject::tr("Failed to close file");
-    case mbp::ErrorCode::FileReadError:
+    case mb::patcher::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file");
-    case mbp::ErrorCode::FileWriteError:
+    case mb::patcher::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file");
-    case mbp::ErrorCode::FileSeekError:
+    case mb::patcher::ErrorCode::FileSeekError:
         return QObject::tr("Failed to seek file");
-    case mbp::ErrorCode::FileTellError:
+    case mb::patcher::ErrorCode::FileTellError:
         return QObject::tr("Failed to get file position");
-    case mbp::ErrorCode::ArchiveReadOpenError:
+    case mb::patcher::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
-    case mbp::ErrorCode::ArchiveReadDataError:
+    case mb::patcher::ErrorCode::ArchiveReadDataError:
         return QObject::tr("Failed to read archive data for file");
-    case mbp::ErrorCode::ArchiveReadHeaderError:
+    case mb::patcher::ErrorCode::ArchiveReadHeaderError:
         return QObject::tr("Failed to read archive entry header");
-    case mbp::ErrorCode::ArchiveWriteOpenError:
+    case mb::patcher::ErrorCode::ArchiveWriteOpenError:
         return QObject::tr("Failed to open archive for writing");
-    case mbp::ErrorCode::ArchiveWriteDataError:
+    case mb::patcher::ErrorCode::ArchiveWriteDataError:
         return QObject::tr("Failed to write archive data for file");
-    case mbp::ErrorCode::ArchiveWriteHeaderError:
+    case mb::patcher::ErrorCode::ArchiveWriteHeaderError:
         return QObject::tr("Failed to write archive header for file");
-    case mbp::ErrorCode::ArchiveCloseError:
+    case mb::patcher::ErrorCode::ArchiveCloseError:
         return QObject::tr("Failed to close archive");
-    case mbp::ErrorCode::ArchiveFreeError:
+    case mb::patcher::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::PatchingCancelled:
+    case mb::patcher::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     default:
         assert(false);
@@ -713,16 +713,16 @@ static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
 
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
-    patcher->setFileInfo(info);
+    patcher->set_file_info(info);
 
-    bool ret = patcher->patchFile(&progressUpdatedCbWrapper,
-                                  &filesUpdatedCbWrapper,
-                                  &detailsUpdatedCbWrapper,
-                                  this);
+    bool ret = patcher->patch_file(&progressUpdatedCbWrapper,
+                                   &filesUpdatedCbWrapper,
+                                   &detailsUpdatedCbWrapper,
+                                   this);
 
-    QString newFile(QString::fromStdString(info->outputPath()));
+    QString newFile(QString::fromStdString(info->output_path()));
 
-    patcher->setFileInfo(nullptr);
+    patcher->set_file_info(nullptr);
     delete info;
 
     if (!ret) {

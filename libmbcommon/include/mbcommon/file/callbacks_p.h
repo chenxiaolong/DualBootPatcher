@@ -34,6 +34,8 @@ public:
     CallbackFilePrivate();
     virtual ~CallbackFilePrivate();
 
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFilePrivate)
+
     void clear();
 
     CallbackFile::OpenCb open_cb;
