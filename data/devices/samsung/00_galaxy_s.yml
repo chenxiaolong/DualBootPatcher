@@ -558,21 +558,24 @@
       - /dev/block/platform/15570000.ufs/by-name/RADIO
 
 
-- name: Samsung Galaxy S 6 Flat/Edge (Japan,China)
-  id: zerolte
+- name: Samsung Galaxy S 6 Flat/Edge (CN/JP Variant)
+  id: zeroltechn
   codenames:
-    # Regular variant
-    - zerofltedcm
+    # Flat china variant
     - zerofltechn
+    - zerofltezh
+    - zerofltezm
+    - zeroflteke
     - zerofltezt
     - zerofltezc
-    - zerofltezh
-    - zeroflteke
-    - zerofltezm
-    # Edge variant
-    - zeroltedcm
+    # Flat japan variant
+    - zerofltedcm
+    # Edge china variant
+    - zeroltechn
     - zeroltezc
     - zeroltezt
+    # Edge japan variant
+    - zeroltedcm
   architecture: arm64-v8a
 
   block_devs:
@@ -595,7 +598,6 @@
       - /dev/block/sda9
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
-      - /dev/block/sda11
 
   boot_ui:
     supported: true
