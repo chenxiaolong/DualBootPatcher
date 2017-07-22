@@ -34,7 +34,6 @@
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/device.h"
-#include "mbdevice/validate.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
@@ -52,12 +51,14 @@
 #include "switcher.h"
 #include "wipe.h"
 
+using namespace mb::device;
+
 namespace mb
 {
 
-const char *devices_file = nullptr;
+static const char *devices_file = nullptr;
 
-static Device * get_device(const char *path)
+static bool get_device(const char *path, Device &device)
 {
     std::string prop_product_device =
             util::property_get_string("ro.product.device", {});
@@ -70,85 +71,69 @@ static Device * get_device(const char *path)
     std::vector<unsigned char> contents;
     if (!util::file_read_all(path, &contents)) {
         LOGE("%s: Failed to read file: %s", path, strerror(errno));
-        return nullptr;
+        return false;
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    Device **devices = mb_device_new_list_from_json(
-            (const char *) contents.data(), &error);
-    if (!devices) {
+    std::vector<Device> devices;
+    JsonError error;
+
+    if (!device_list_from_json(reinterpret_cast<const char *>(contents.data()),
+                               devices, error)) {
         LOGE("%s: Failed to load devices", path);
-        return nullptr;
+        return false;
     }
 
-    Device *device = nullptr;
-
-    for (auto it = devices; *it; ++it) {
-        if (mb_device_validate(*it) != 0) {
+    for (auto &d : devices) {
+        if (d.validate()) {
             LOGW("Skipping invalid device");
             continue;
         }
 
-        auto codenames = mb_device_codenames(*it);
+        auto const &codenames = d.codenames();
+        auto it = std::find_if(codenames.begin(), codenames.end(),
+                               [&](const std::string &item) {
+            return item == prop_product_device || item == prop_build_product;
+        });
 
-        for (auto it2 = codenames; *it2; ++it2) {
-            if (prop_product_device == *it2 || prop_build_product == *it2) {
-                device = *it;
-                break;
-            }
-        }
-
-        // Free any devices we don't need
-        if (device != *it) {
-            mb_device_free(*it);
+        if (it != codenames.end()) {
+            device = std::move(d);
+            return true;
         }
     }
 
-    free(devices);
-
-    if (!device) {
-        LOGE("Unknown device: %s", prop_product_device.c_str());
-        return nullptr;
-    }
-
-    return device;
+    LOGE("Unknown device: %s", prop_product_device.c_str());
+    return false;
 }
 
 static bool utilities_switch_rom(const char *rom_id, bool force)
 {
-    const char *block_dev = nullptr;
-    struct stat sb;
+    Device device;
 
     if (!devices_file) {
         LOGE("No device definitions file specified");
         return false;
     }
 
-    Device *device = get_device(devices_file);
-    if (!device) {
+    if (!get_device(devices_file, device)) {
         LOGE("Failed to detect device");
         return false;
     }
 
-    auto free_device = util::finally([&]{
-        mb_device_free(device);
+    auto const &boot_devs = device.boot_block_devs();
+    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                           [&](const std::string &path) {
+        struct stat sb;
+        return stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode);
     });
 
-    for (auto it = mb_device_boot_block_devs(device); *it; ++it) {
-        if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
-            block_dev = *it;
-            break;
-        }
-    }
-
-    if (!block_dev) {
+    if (it == boot_devs.end()) {
         LOGE("All specified boot partition paths could not be found");
         return false;
     }
 
     SwitchRomResult ret = switch_rom(
-            rom_id, block_dev, mb_device_block_dev_base_dirs(device), force);
+            rom_id, *it, device.block_dev_base_dirs(), force);
     switch (ret) {
     case SwitchRomResult::SUCCEEDED:
         LOGD("SUCCEEDED");

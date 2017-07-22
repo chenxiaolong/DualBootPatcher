@@ -21,44 +21,43 @@
 
 #include "mbdevice/device.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-enum MbDeviceJsonErrorType
+namespace mb
 {
-    // Use |std_error| field
-    MB_DEVICE_JSON_STANDARD_ERROR,
+namespace device
+{
+
+enum class JsonErrorType
+{
     // Use |line| and |column| fields
-    MB_DEVICE_JSON_PARSE_ERROR,
+    ParseError,
     // Use |context|, |expected_type|, and |actual_type| fields
-    MB_DEVICE_JSON_MISMATCHED_TYPE,
+    MismatchedType,
     // Use |context| field
-    MB_DEVICE_JSON_UNKNOWN_KEY,
+    UnknownKey,
     // Use |context] field
-    MB_DEVICE_JSON_UNKNOWN_VALUE,
+    UnknownValue,
 };
 
-struct MbDeviceJsonError
+struct JsonError
 {
-    enum MbDeviceJsonErrorType type;
+    JsonErrorType type;
 
-    int std_error;
     int line;
     int column;
-    char context[100];
-    char expected_type[20];
-    char actual_type[20];
+
+    std::string context;
+    std::string expected_type;
+    std::string actual_type;
 };
 
-MB_EXPORT struct Device * mb_device_new_from_json(const char *json,
-                                                  struct MbDeviceJsonError *error);
+MB_EXPORT bool device_from_json(const std::string &json, Device &device,
+                                JsonError &error);
 
-MB_EXPORT struct Device ** mb_device_new_list_from_json(const char *json,
-                                                        struct MbDeviceJsonError *error);
+MB_EXPORT bool device_list_from_json(const std::string &json,
+                                     std::vector<Device> &devices,
+                                     JsonError &error);
 
-MB_EXPORT char * mb_device_to_json(struct Device *device);
+MB_EXPORT bool device_to_json(const Device &device, std::string &json);
 
-#ifdef __cplusplus
 }
-#endif
+}

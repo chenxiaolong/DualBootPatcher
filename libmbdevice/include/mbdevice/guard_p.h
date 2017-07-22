@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,17 +19,6 @@
 
 #pragma once
 
-#include <sys/types.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-size_t string_array_length(char const * const *array);
-char ** string_array_dup(char const * const *array);
-char ** string_array_new(size_t n);
-void string_array_free(char **array);
-
-#ifdef __cplusplus
-}
+#ifndef MBDEVICE_BUILD
+#error libmbdevice private headers cannot be used
 #endif

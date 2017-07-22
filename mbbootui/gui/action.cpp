@@ -18,6 +18,8 @@
 
 #include "gui/action.hpp"
 
+#include <algorithm>
+
 #include <cstring>
 
 #include <linux/input.h>
@@ -377,28 +379,28 @@ void GUIAction::operation_start(const std::string& operation_name)
 {
     LOGI("operation_start: '%s'", operation_name.c_str());
     time(&Start);
-    DataManager::SetValue(TW_ACTION_BUSY, 1);
-    DataManager::SetValue(TW_UI_PROGRESS, 0);
-    DataManager::SetValue(TW_OPERATION, operation_name);
-    DataManager::SetValue(TW_OPERATION_STATE, 0);
-    DataManager::SetValue(TW_OPERATION_STATUS, 0);
+    DataManager::SetValue(VAR_TW_ACTION_BUSY, 1);
+    DataManager::SetValue(VAR_TW_UI_PROGRESS, 0);
+    DataManager::SetValue(VAR_TW_OPERATION, operation_name);
+    DataManager::SetValue(VAR_TW_OPERATION_STATE, 0);
+    DataManager::SetValue(VAR_TW_OPERATION_STATUS, 0);
 }
 
 void GUIAction::operation_end(const int operation_status)
 {
     time_t Stop;
-    DataManager::SetValue(TW_UI_PROGRESS, 100);
+    DataManager::SetValue(VAR_TW_UI_PROGRESS, 100);
     if (operation_status != 0) {
-        DataManager::SetValue(TW_OPERATION_STATUS, 1);
+        DataManager::SetValue(VAR_TW_OPERATION_STATUS, 1);
     } else {
-        DataManager::SetValue(TW_OPERATION_STATUS, 0);
+        DataManager::SetValue(VAR_TW_OPERATION_STATUS, 0);
     }
-    DataManager::SetValue(TW_OPERATION_STATE, 1);
-    DataManager::SetValue(TW_ACTION_BUSY, 0);
+    DataManager::SetValue(VAR_TW_OPERATION_STATE, 1);
+    DataManager::SetValue(VAR_TW_ACTION_BUSY, 0);
     blankTimer.resetTimerAndUnblank();
     time(&Stop);
     if ((int) difftime(Stop, Start) > 10) {
-        DataManager::Vibrate(TW_ACTION_VIBRATE);
+        DataManager::Vibrate(VAR_TW_ACTION_VIBRATE);
     }
     LOGI("operation_end - status=%d", operation_status);
 }
@@ -406,8 +408,8 @@ void GUIAction::operation_end(const int operation_status)
 int GUIAction::reboot(const std::string& arg)
 {
     sync();
-    DataManager::SetValue(TW_GUI_DONE, 1);
-    DataManager::SetValue(TW_EXIT_ACTION, arg);
+    DataManager::SetValue(VAR_TW_GUI_DONE, 1);
+    DataManager::SetValue(VAR_TW_EXIT_ACTION, arg);
 
     return 0;
 }
@@ -527,15 +529,15 @@ int GUIAction::compute(const std::string& arg)
 int GUIAction::setguitimezone(const std::string& arg __unused)
 {
     std::string SelectedZone;
-    DataManager::GetValue(TW_TIME_ZONE_GUISEL, SelectedZone); // read the selected time zone into SelectedZone
+    DataManager::GetValue(VAR_TW_TIME_ZONE_GUISEL, SelectedZone); // read the selected time zone into SelectedZone
     std::string Zone = SelectedZone.substr(0, SelectedZone.find(';')); // parse to get time zone
     std::string DSTZone = SelectedZone.substr(SelectedZone.find(';') + 1, std::string::npos); // parse to get DST component
 
     int dst;
-    DataManager::GetValue(TW_TIME_ZONE_GUIDST, dst); // check wether user chose to use DST
+    DataManager::GetValue(VAR_TW_TIME_ZONE_GUIDST, dst); // check wether user chose to use DST
 
     std::string offset;
-    DataManager::GetValue(TW_TIME_ZONE_GUIOFFSET, offset); // pull in offset
+    DataManager::GetValue(VAR_TW_TIME_ZONE_GUIOFFSET, offset); // pull in offset
 
     std::string NewTimeZone = Zone;
     if (offset != "0") {
@@ -546,7 +548,7 @@ int GUIAction::setguitimezone(const std::string& arg __unused)
         NewTimeZone += DSTZone;
     }
 
-    DataManager::SetValue(TW_TIME_ZONE, NewTimeZone);
+    DataManager::SetValue(VAR_TW_TIME_ZONE, NewTimeZone);
     DataManager::update_tz_environment_variables();
     return 0;
 }
@@ -571,7 +573,7 @@ int GUIAction::screenshot(const std::string& arg __unused)
     size_t path_len;
     int ret = 0;
 
-    strlcpy(path, tw_screenshots_path, sizeof(path));
+    strlcpy(path, tw_screenshots_path.c_str(), sizeof(path));
     strlcat(path, "/", sizeof(path));
 
     if (!mb::util::mkdir_recursive(path, 0755)) {
@@ -623,12 +625,12 @@ int GUIAction::autoboot(const std::string& arg __unused)
     operation_start("autoboot");
 
     gui_msg(Msg("autoboot_welcome")(static_cast<std::string>(Msg("app_name"))));
-    gui_msg(Msg("autoboot_version_bootui")(DataManager::GetStrValue(TW_VERSION)));
-    gui_msg(Msg("autoboot_version_mbtool")(DataManager::GetStrValue(TW_MBTOOL_VERSION)));
+    gui_msg(Msg("autoboot_version_bootui")(DataManager::GetStrValue(VAR_TW_VERSION)));
+    gui_msg(Msg("autoboot_version_mbtool")(DataManager::GetStrValue(VAR_TW_MBTOOL_VERSION)));
 
-    gui_msg(Msg("autoboot_autobooting_to")(DataManager::GetStrValue(TW_ROM_ID)));
+    gui_msg(Msg("autoboot_autobooting_to")(DataManager::GetStrValue(VAR_TW_ROM_ID)));
 
-    int timeout = DataManager::GetIntValue(TW_AUTOBOOT_TIMEOUT);
+    int timeout = DataManager::GetIntValue(VAR_TW_AUTOBOOT_TIMEOUT);
 
     for (int i = timeout; i > 0; --i) {
         gui_msg(Msg("autoboot_booting_in")(i));
@@ -665,8 +667,8 @@ int GUIAction::autoboot(const std::string& arg __unused)
         operation_end(0);
 
         // Simply exit to continue boot
-        DataManager::SetValue(TW_GUI_DONE, 1);
-        DataManager::SetValue(TW_EXIT_ACTION, "");
+        DataManager::SetValue(VAR_TW_GUI_DONE, 1);
+        DataManager::SetValue(VAR_TW_EXIT_ACTION, "");
     }
 
     return 0;
@@ -716,36 +718,20 @@ int GUIAction::switch_rom(const std::string& arg)
         // Call mbtool to switch ROMs
         gui_msg(Msg("switch_rom_switching_to")(arg));
 
-        const char * const *boot_devs = mb_device_boot_block_devs(tw_device);
-        const char *block_dev = nullptr;
+        auto const &boot_devs = tw_device.boot_block_devs();
+        auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                               [&](const std::string &path) {
+            return mb::util::path_exists(path.c_str(), true);
+        });
 
-        if (boot_devs) {
-            for (auto it = boot_devs; *it; ++it) {
-                if (mb::util::path_exists(*it, true)) {
-                    block_dev = *it;
-                    break;
-                }
-            }
-        }
-
-        if (!block_dev) {
+        if (it == boot_devs.end()) {
             gui_msg(Msg(msg::kError, "switch_rom_unknown_boot_partition"));
             ret = 1;
         }
 
-        std::vector<std::string> base_dirs;
-        const char * const *c_base_dirs =
-                mb_device_block_dev_base_dirs(tw_device);
-
-        if (c_base_dirs) {
-            for (auto it = c_base_dirs; *it; ++it) {
-                base_dirs.push_back(*it);
-            }
-        }
-
         SwitchRomResult result;
         if (ret == 0 && !mbtool_interface->switch_rom(
-                arg, block_dev, base_dirs, false, &result)) {
+                arg, *it, tw_device.block_dev_base_dirs(), false, &result)) {
             gui_msg(Msg(msg::kError, "mbtool_connection_error"));
             ret = 1;
         }
@@ -788,8 +774,8 @@ int GUIAction::switch_rom(const std::string& arg)
     operation_end(ret);
 
     if (ret == 0) {
-        DataManager::SetValue(TW_GUI_DONE, 1);
-        DataManager::SetValue(TW_EXIT_ACTION, exit_action);
+        DataManager::SetValue(VAR_TW_GUI_DONE, 1);
+        DataManager::SetValue(VAR_TW_EXIT_ACTION, exit_action);
     }
 
     return 0;
@@ -821,7 +807,7 @@ int GUIAction::setlanguage(const std::string& arg __unused)
     int op_status = 0;
 
     operation_start("Set Language");
-    PageManager::LoadLanguage(DataManager::GetStrValue(TW_LANGUAGE));
+    PageManager::LoadLanguage(DataManager::GetStrValue(VAR_TW_LANGUAGE));
     PageManager::RequestReload();
     op_status = 0; // success
 

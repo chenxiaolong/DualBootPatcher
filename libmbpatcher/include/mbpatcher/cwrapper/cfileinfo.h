@@ -36,8 +36,10 @@ MB_EXPORT void mbpatcher_fileinfo_set_input_path(CFileInfo *info, const char *pa
 MB_EXPORT char * mbpatcher_fileinfo_output_path(const CFileInfo *info);
 MB_EXPORT void mbpatcher_fileinfo_set_output_path(CFileInfo *info, const char *path);
 
+#if 0
 MB_EXPORT struct Device * mbpatcher_fileinfo_device(const CFileInfo *info);
 MB_EXPORT void mbpatcher_fileinfo_set_device(CFileInfo *info, struct Device * device);
+#endif
 
 MB_EXPORT char * mbpatcher_fileinfo_rom_id(const CFileInfo *info);
 MB_EXPORT void mbpatcher_fileinfo_set_rom_id(CFileInfo *info, const char *id);

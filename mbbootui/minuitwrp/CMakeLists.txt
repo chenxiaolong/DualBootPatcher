@@ -1,6 +1,12 @@
+# target_link_libraries() can't be used with object libraries
+get_target_property(mbcommon_include mbcommon-static INCLUDE_DIRECTORIES)
+get_target_property(mbdevice_include mbdevice-static INCLUDE_DIRECTORIES)
+
 set(include_dirs
     .
     ..
+    ${mbcommon_include}
+    ${mbdevice_include}
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${MBP_FREETYPE2_INCLUDES}
     ${MBP_LIBPNG_INCLUDES}

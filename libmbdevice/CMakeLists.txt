@@ -1,9 +1,6 @@
 set(MBDEVICE_SOURCES
-    src/device.c
+    src/device.cpp
     src/json.cpp
-    src/validate.c
-    src/internal/array.c
-    src/internal/structs.c
 )
 
 set(MBDEVICE_TESTS_SOURCES
@@ -13,6 +10,8 @@ set(MBDEVICE_TESTS_SOURCES
     tests/test_device.cpp
     tests/test_json.cpp
 )
+
+add_definitions(-DMBDEVICE_BUILD)
 
 set(variants)
 

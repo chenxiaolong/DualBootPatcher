@@ -75,6 +75,8 @@
 #define FSCK_WRAPPER_SIG            "/sbin/fsck-wrapper.sig"
 
 
+using namespace mb::device;
+
 namespace mb
 {
 
@@ -149,26 +151,20 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
  * \brief Get list of generic /system fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
+static std::vector<util::fstab_rec>
+generic_fstab_system_entries(const Device &device)
 {
     std::vector<util::fstab_rec> result;
-    const char * const *devs = nullptr;
 
-    if (device) {
-        devs = mb_device_system_block_devs(device);
-    }
-
-    if (devs) {
-        for (auto it = devs; *it; ++it) {
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/system";
-            result.back().fs_type = "auto";
-            result.back().flags = MS_RDONLY;
-            result.back().fs_options = "";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-        }
+    for (auto const &path : device.system_block_devs()) {
+        result.emplace_back();
+        result.back().blk_device = path;
+        result.back().mount_point = "/system";
+        result.back().fs_type = "auto";
+        result.back().flags = MS_RDONLY;
+        result.back().fs_options = "";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
     }
 
     return result;
@@ -178,26 +174,20 @@ static std::vector<util::fstab_rec> generic_fstab_system_entries(Device *device)
  * \brief Get list of generic /cache fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
+static std::vector<util::fstab_rec>
+generic_fstab_cache_entries(const Device &device)
 {
     std::vector<util::fstab_rec> result;
-    const char * const *devs = nullptr;
 
-    if (device) {
-        devs = mb_device_cache_block_devs(device);
-    }
-
-    if (devs) {
-        for (auto it = devs; *it; ++it) {
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/cache";
-            result.back().fs_type = "auto";
-            result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-        }
+    for (auto const &path : device.cache_block_devs()) {
+        result.emplace_back();
+        result.back().blk_device = path;
+        result.back().mount_point = "/cache";
+        result.back().fs_type = "auto";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
     }
 
     return result;
@@ -207,26 +197,20 @@ static std::vector<util::fstab_rec> generic_fstab_cache_entries(Device *device)
  * \brief Get list of generic /data fstab entries for ROMs that mount the
  *        partition manually
  */
-static std::vector<util::fstab_rec> generic_fstab_data_entries(Device *device)
+static std::vector<util::fstab_rec>
+generic_fstab_data_entries(const Device &device)
 {
     std::vector<util::fstab_rec> result;
-    const char * const *devs = nullptr;
 
-    if (device) {
-        devs = mb_device_data_block_devs(device);
-    }
-
-    if (devs) {
-        for (auto it = devs; *it; ++it) {
-            result.emplace_back();
-            result.back().blk_device = *it;
-            result.back().mount_point = "/data";
-            result.back().fs_type = "auto";
-            result.back().flags = MS_NOSUID | MS_NODEV;
-            result.back().fs_options = "";
-            result.back().fs_mgr_flags = 0;
-            result.back().vold_args = "check";
-        }
+    for (auto const &path : device.data_block_devs()) {
+        result.emplace_back();
+        result.back().blk_device = path;
+        result.back().mount_point = "/data";
+        result.back().fs_type = "auto";
+        result.back().flags = MS_NOSUID | MS_NODEV;
+        result.back().fs_options = "";
+        result.back().fs_mgr_flags = 0;
+        result.back().vold_args = "check";
     }
 
     return result;
@@ -757,7 +741,7 @@ struct FstabRecs
 };
 
 bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                   Device *device, int flags, FstabRecs *recs)
+                   const Device &device, int flags, FstabRecs *recs)
 {
     std::vector<util::fstab_rec> fstab;
 
@@ -774,7 +758,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         return false;
     }
 
-    bool include_sdcard0 = !(mb_device_flags(device) & FLAG_FSTAB_SKIP_SDCARD0);
+    bool include_sdcard0 = !(device.flags() & DeviceFlag::FstabSkipSdcard0);
 
     for (auto it = fstab.begin(); it != fstab.end();) {
         LOGD("fstab: %s", it->orig_line.c_str());
@@ -873,7 +857,7 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 Device *device, int flags)
+                 const Device &device, int flags)
 {
     std::vector<std::string> successful;
     FstabRecs recs;

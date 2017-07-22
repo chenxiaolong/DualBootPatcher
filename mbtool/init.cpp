@@ -43,7 +43,6 @@
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/dir.h"
@@ -88,6 +87,8 @@
 #else
 #error Unknown PCRE path for architecture
 #endif
+
+using namespace mb::device;
 
 namespace mb
 {
@@ -647,48 +648,29 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static std::string encode_list(const char * const *list)
+static std::string encode_list(const std::vector<std::string> &list)
 {
-    if (!list) {
-        return std::string();
-    }
-
-    // We processing char-by-char, so avoid unnecessary reallocations
-    std::size_t size = 0;
-    std::size_t list_size = 0;
-    for (auto iter = list; *iter; ++iter) {
-        std::size_t item_length = strlen(*iter);
-        size += item_length;
-        size += std::count(*iter, *iter + item_length, ',');
-        ++list_size;
-    }
-    if (size == 0) {
-        return std::string();
-    }
-    size += list_size - 1;
-
     std::string result;
-    result.reserve(size);
 
     bool first = true;
-    for (auto iter = list; *iter; ++iter) {
+    for (auto const &item : list) {
         if (!first) {
             result += ',';
         } else {
             first = false;
         }
-        for (auto c = *iter; *c; ++c) {
-            if (*c == ',' || *c == '\\') {
+        for (auto c : item) {
+            if (c == ',' || c == '\\') {
                 result += '\\';
             }
-            result += *c;
+            result += c;
         }
     }
 
     return result;
 }
 
-static bool add_props_to_default_prop(struct Device *device)
+static bool add_props_to_default_prop(const Device &device)
 {
     autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
     if (!fp) {
@@ -720,44 +702,40 @@ static bool add_props_to_default_prop(struct Device *device)
 
     // Block device paths (deprecated)
     fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
-            encode_list(mb_device_block_dev_base_dirs(device)).c_str());
+            encode_list(device.block_dev_base_dirs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
-            encode_list(mb_device_system_block_devs(device)).c_str());
+            encode_list(device.system_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
-            encode_list(mb_device_cache_block_devs(device)).c_str());
+            encode_list(device.cache_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
-            encode_list(mb_device_data_block_devs(device)).c_str());
+            encode_list(device.data_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
-            encode_list(mb_device_boot_block_devs(device)).c_str());
+            encode_list(device.boot_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
-            encode_list(mb_device_recovery_block_devs(device)).c_str());
+            encode_list(device.recovery_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
-            encode_list(mb_device_extra_block_devs(device)).c_str());
+            encode_list(device.extra_block_devs()).c_str());
 
     return true;
 }
 
-static bool symlink_base_dir(Device *device)
+static bool symlink_base_dir(const Device &device)
 {
     struct stat sb;
     if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
         return true;
     }
 
-    std::vector<std::string> base_dirs;
-    auto devs = mb_device_block_dev_base_dirs(device);
-    if (devs) {
-        for (auto it = devs; *it; ++it) {
-            if (util::path_compare(*it, UNIVERSAL_BY_NAME_DIR) != 0
-                    && stat(*it, &sb) == 0 && S_ISDIR(sb.st_mode)) {
-                if (symlink(*it, UNIVERSAL_BY_NAME_DIR) < 0) {
-                    LOGW("Failed to symlink %s to %s",
-                         *it, UNIVERSAL_BY_NAME_DIR);
-                } else {
-                    LOGE("Symlinked %s to %s",
-                         *it, UNIVERSAL_BY_NAME_DIR);
-                    return true;
-                }
+    for (auto const &path : device.block_dev_base_dirs()) {
+        if (util::path_compare(path, UNIVERSAL_BY_NAME_DIR) != 0
+                && stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            if (symlink(path.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
+                LOGW("Failed to symlink %s to %s",
+                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
+            } else {
+                LOGE("Symlinked %s to %s",
+                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
+                return true;
             }
         }
     }
@@ -1203,13 +1181,15 @@ int init_main(int argc, char *argv[])
     // critical_failure()
     device_init(false);
 
-    MbDeviceJsonError error;
-    Device *device = mb_device_new_from_json((char *) contents.data(), &error);
-    if (!device) {
+    Device device;
+    JsonError error;
+
+    if (!device_from_json(
+            reinterpret_cast<char *>(contents.data()), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
-    } else if (mb_device_validate(device) != 0) {
+    } else if (device.validate()) {
         LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
