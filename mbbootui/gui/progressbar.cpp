@@ -165,7 +165,8 @@ int GUIProgressBar::NotifyVarChange(const std::string& varName,
         return 0;
     }
 
-    if (varName == TW_UI_PROGRESS_PORTION || varName == TW_UI_PROGRESS_FRAMES) {
+    if (varName == VAR_TW_UI_PROGRESS_PORTION
+            || varName == VAR_TW_UI_PROGRESS_FRAMES) {
         std::string str;
         int cur;
 
@@ -183,7 +184,7 @@ int GUIProgressBar::NotifyVarChange(const std::string& varName,
             nextPush = 0;
         }
 
-        if (varName == TW_UI_PROGRESS_PORTION) {
+        if (varName == VAR_TW_UI_PROGRESS_PORTION) {
             mSlide = atof(value.c_str());
         } else {
             mSlideFrames = atol(value.c_str());

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,33 +17,8 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbpatcher/cwrapper/ccommon.h"
+#pragma once
 
-#include <cassert>
-#include <cstdlib>
-
-
-extern "C" {
-
-void mbpatcher_free(void *data)
-{
-    if (data == nullptr) {
-        return;
-    }
-
-    std::free(data);
-}
-
-void mbpatcher_free_array(void **array)
-{
-    if (array == nullptr) {
-        return;
-    }
-
-    for (void **temp = array; *temp != nullptr; ++temp) {
-        std::free(*temp);
-    }
-    std::free(array);
-}
-
-}
+#ifndef MBDEVICE_BUILD
+#error libmbdevice private headers cannot be used
+#endif

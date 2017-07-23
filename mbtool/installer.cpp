@@ -49,7 +49,6 @@
 
 // libmbdevice
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 
 // libmbutil
 #include "mbutil/autoclose/dir.h"
@@ -101,6 +100,8 @@
 #define HELPER_TOOL             "/update-binary-tool"
 
 
+using namespace mb::device;
+
 namespace mb {
 
 const std::string Installer::CANCELLED = "cancelled";
@@ -124,7 +125,6 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
 
 Installer::~Installer()
 {
-    mb_device_free(_device);
 }
 
 
@@ -1336,14 +1336,15 @@ Installer::ProceedState Installer::install_stage_check_device()
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    _device = mb_device_new_from_json((const char *) contents.data(), &error);
-    if (!_device) {
+    JsonError error;
+
+    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+                          _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }
 
-    if (mb_device_validate(_device) != 0) {
+    if (_device.validate()) {
         display_msg("Validation of device.json failed");
         return ProceedState::Fail;
     }
@@ -1358,7 +1359,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
     LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
-    LOGD("Target device = %s", mb_device_id(_device));
+    LOGD("Target device = %s", _device.id().c_str());
 
     if (!prop_patcher_device.empty()) {
         _detected_device = prop_patcher_device;
@@ -1376,20 +1377,13 @@ Installer::ProceedState Installer::install_stage_check_device()
     // It's an annoyance, but not a big deal
 
     // Verify codename
-    auto codenames = mb_device_codenames(_device);
-    const char *codename = nullptr;
+    auto const &codenames = _device.codenames();
+    auto it = std::find(codenames.begin(), codenames.end(), _detected_device);
 
-    for (auto iter = codenames; *iter; ++iter) {
-        if (_detected_device == *iter) {
-            codename = *iter;
-            break;
-        }
-    }
-
-    if (!codename) {
+    if (it == codenames.end()) {
         display_msg("Patched zip is for:");
-        for (auto iter = codenames; *iter; ++iter) {
-            display_msg("- %s", *iter);
+        for (auto const &codename : codenames) {
+            display_msg("- %s", codename.c_str());
         }
         display_msg("This device is '%s'", _detected_device.c_str());
 
@@ -1400,39 +1394,14 @@ Installer::ProceedState Installer::install_stage_check_device()
         return access(path.c_str(), R_OK) == 0;
     };
 
-    auto c_boot_devs = mb_device_boot_block_devs(_device);
-    auto c_recovery_devs = mb_device_recovery_block_devs(_device);
-    auto c_system_devs = mb_device_system_block_devs(_device);
-    auto c_extra_devs = mb_device_extra_block_devs(_device);
-    std::vector<std::string> boot_devs;
-    std::vector<std::string> recovery_devs;
-    std::vector<std::string> system_devs;
-    std::vector<std::string> extra_devs;
-
-    if (c_boot_devs) {
-        for (auto it = c_boot_devs; *it; ++it) {
-            boot_devs.push_back(*it);
-        }
-    }
-    if (c_recovery_devs) {
-        for (auto it = c_recovery_devs; *it; ++it) {
-            recovery_devs.push_back(*it);
-        }
-    }
-    if (c_system_devs) {
-        for (auto it = c_system_devs; *it; ++it) {
-            system_devs.push_back(*it);
-        }
-    }
-    if (c_extra_devs) {
-        for (auto it = c_extra_devs; *it; ++it) {
-            extra_devs.push_back(*it);
-        }
-    }
+    auto const &boot_devs = _device.boot_block_devs();
+    auto const &recovery_devs = _device.recovery_block_devs();
+    auto const &system_devs = _device.system_block_devs();
+    auto const &extra_devs = _device.extra_block_devs();
 
     // Find boot blockdev path
-    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
-                           find_existing_path);
+    it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                      find_existing_path);
     if (it == boot_devs.end()) {
         display_msg("Could not determine the boot block device");
         return ProceedState::Fail;
@@ -1585,10 +1554,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     if (access(boot_image_path.c_str(), R_OK) == 0) {
         // Use an empty base dirs list since we don't want to flash any non-boot
         // partitions
-        const char * const *base_dirs = { nullptr };
-
-        auto result = switch_rom(_rom->id.c_str(), _boot_block_dev.c_str(),
-                                 base_dirs, true);
+        auto result = switch_rom(_rom->id, _boot_block_dev, {}, true);
         if (result != SwitchRomResult::SUCCEEDED) {
             display_msg("Failed to switch to target ROM. Continuing anyway...");
             LOGW("Failed to switch to target ROM: %d",

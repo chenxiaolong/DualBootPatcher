@@ -1113,8 +1113,8 @@ static bool v3_mb_set_kernel(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::MbSetKernelError> error;
 
-    bool ret = set_kernel(request->rom_id()->c_str(),
-                          request->boot_blockdev()->c_str());
+    bool ret = set_kernel(request->rom_id()->str(),
+                          request->boot_blockdev()->str());
 
     if (!ret) {
         error = v3::CreateMbSetKernelError(builder);
@@ -1137,11 +1137,11 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    std::vector<const char *> block_dev_dirs;
+    std::vector<std::string> block_dev_dirs;
 
     if (request->blockdev_base_dirs()) {
         for (auto const &base_dir : *request->blockdev_base_dirs()) {
-            block_dev_dirs.push_back(base_dir->c_str());
+            block_dev_dirs.push_back(base_dir->str());
         }
     }
 
@@ -1150,9 +1150,9 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::MbSwitchRomError> error;
 
-    SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
-                                     request->boot_blockdev()->c_str(),
-                                     block_dev_dirs.data(),
+    SwitchRomResult ret = switch_rom(request->rom_id()->str(),
+                                     request->boot_blockdev()->str(),
+                                     block_dev_dirs,
                                      force_update_checksums);
 
     bool success = ret == SwitchRomResult::SUCCEEDED;

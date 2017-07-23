@@ -101,9 +101,9 @@ public:
         state = AS_NO_ACTION;
         x = y = 0;
 
-        if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT)) {
+        if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
             std::string seconds;
-            DataManager::GetValue(TW_SCREEN_TIMEOUT_SECS, seconds);
+            DataManager::GetValue(VAR_TW_SCREEN_TIMEOUT_SECS, seconds);
             blankTimer.setTime(atoi(seconds.c_str()));
             blankTimer.resetTimerAndUnblank();
         } else {
@@ -403,8 +403,8 @@ static void loopTimer(int input_timeout_ms)
 
 static int runPages(const char *page_name, const int stop_on_page_done)
 {
-    DataManager::SetValue(TW_PAGE_DONE, 0);
-    DataManager::SetValue(TW_GUI_DONE, 0);
+    DataManager::SetValue(VAR_TW_PAGE_DONE, 0);
+    DataManager::SetValue(VAR_TW_GUI_DONE, 0);
 
     if (page_name) {
         PageManager::SetStartPage(page_name);
@@ -413,7 +413,7 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 
     gGuiRunning = 1;
 
-    DataManager::SetValue(TW_LOADED, 1);
+    DataManager::SetValue(VAR_TW_LOADED, 1);
 
     struct timeval timeout;
     fd_set fdset;
@@ -483,11 +483,11 @@ static int runPages(const char *page_name, const int stop_on_page_done)
         }
 
         blankTimer.checkForTimeout();
-        if (stop_on_page_done && DataManager::GetIntValue(TW_PAGE_DONE) != 0) {
+        if (stop_on_page_done && DataManager::GetIntValue(VAR_TW_PAGE_DONE) != 0) {
             gui_changePage("main");
             break;
         }
-        if (DataManager::GetIntValue(TW_GUI_DONE) != 0) {
+        if (DataManager::GetIntValue(VAR_TW_GUI_DONE) != 0) {
             break;
         }
     }
@@ -592,7 +592,7 @@ extern "C" int gui_init()
         return -1;
     }
 
-    TWFunc::Set_Brightness(DataManager::GetStrValue(TW_BRIGHTNESS));
+    TWFunc::Set_Brightness(DataManager::GetStrValue(VAR_TW_BRIGHTNESS));
 
     // load and show splash screen
     if (PageManager::LoadPackage("splash", TWFunc::get_resource_path("splash.xml"), "splash")) {
@@ -612,7 +612,7 @@ extern "C" int gui_loadResources()
 {
 #ifndef TW_OEM_BUILD
     int check = 0;
-    DataManager::GetValue(TW_IS_ENCRYPTED, check);
+    DataManager::GetValue(VAR_TW_IS_ENCRYPTED, check);
 
     if (check) {
         if (PageManager::LoadPackage("TWRP", TWFunc::get_resource_path("ui.xml"), "decrypt")) {
@@ -650,7 +650,7 @@ extern "C" int gui_loadCustomResources()
 {
 #ifndef TW_OEM_BUILD
     // Check for a custom theme
-    if (mb::util::path_exists(tw_theme_zip_path, false)) {
+    if (mb::util::path_exists(tw_theme_zip_path.c_str(), false)) {
         // There is a custom theme, try to load it
         if (PageManager::ReloadPackage("TWRP", tw_theme_zip_path)) {
             // Custom theme failed to load, try to load stock theme

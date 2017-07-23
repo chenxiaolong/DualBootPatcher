@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,8 +27,12 @@
 #include <yaml-cpp/yaml.h>
 
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 
+
+using ScopedJsonT = std::unique_ptr<json_t, decltype(json_decref) *>;
+using ScopedCharArray = std::unique_ptr<char, decltype(free) *>;
+
+using namespace mb::device;
 
 static void * xmalloc(size_t size)
 {
@@ -87,26 +91,24 @@ static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
     }
 }
 
-static void print_json_error(const char *path, MbDeviceJsonError *error)
+static void print_json_error(const std::string &path, const JsonError &error)
 {
-    fprintf(stderr, "%s: Error: ", path);
+    fprintf(stderr, "%s: Error: ", path.c_str());
 
-    switch (error->type) {
-    case MB_DEVICE_JSON_STANDARD_ERROR:
-        fprintf(stderr, "Internal error\n");
-        break;
-    case MB_DEVICE_JSON_PARSE_ERROR:
+    switch (error.type) {
+    case JsonErrorType::ParseError:
         fprintf(stderr, "Failed to parse generated JSON\n");
         break;
-    case MB_DEVICE_JSON_MISMATCHED_TYPE:
+    case JsonErrorType::MismatchedType:
         fprintf(stderr, "Expected %s, but found %s at %s\n",
-                error->expected_type, error->actual_type, error->context);
+                error.expected_type.c_str(), error.actual_type.c_str(),
+                error.context.c_str());
         break;
-    case MB_DEVICE_JSON_UNKNOWN_KEY:
-        fprintf(stderr, "Unknown key at %s\n", error->context);
+    case JsonErrorType::UnknownKey:
+        fprintf(stderr, "Unknown key at %s\n", error.context.c_str());
         break;
-    case MB_DEVICE_JSON_UNKNOWN_VALUE:
-        fprintf(stderr, "Unknown value at %s\n", error->context);
+    case JsonErrorType::UnknownValue:
+        fprintf(stderr, "Unknown value at %s\n", error.context.c_str());
         break;
     default:
         fprintf(stderr, "Unknown error\n");
@@ -114,86 +116,85 @@ static void print_json_error(const char *path, MbDeviceJsonError *error)
     }
 }
 
-static void print_validation_error(const char *path, const char *id,
-                                   uint64_t flags)
+static void print_validation_error(const std::string &path,
+                                   const std::string &id,
+                                   ValidateFlags flags)
 {
     fprintf(stderr, "%s: [%s] Error during validation (0x%" PRIx64 "):\n",
-            path, id ? id : "unknown", flags);
+            path.c_str(), id.empty() ? "unknown" : id.c_str(),
+            static_cast<uint64_t>(flags));
 
-    struct mapping {
-        uint64_t flag;
+    struct {
+        ValidateFlag flag;
         const char *msg;
     } mappings[] = {
-        { MB_DEVICE_MISSING_ID,                        "Missing device ID" },
-        { MB_DEVICE_MISSING_CODENAMES,                 "Missing device codenames" },
-        { MB_DEVICE_MISSING_NAME,                      "Missing device name" },
-        { MB_DEVICE_MISSING_ARCHITECTURE,              "Missing device architecture" },
-        { MB_DEVICE_MISSING_SYSTEM_BLOCK_DEVS,         "Missing system block device paths" },
-        { MB_DEVICE_MISSING_CACHE_BLOCK_DEVS,          "Missing cache block device paths" },
-        { MB_DEVICE_MISSING_DATA_BLOCK_DEVS,           "Missing data block device paths" },
-        { MB_DEVICE_MISSING_BOOT_BLOCK_DEVS,           "Missing boot block device paths" },
-        { MB_DEVICE_MISSING_RECOVERY_BLOCK_DEVS,       "Missing recovery block device paths" },
-        { MB_DEVICE_MISSING_BOOT_UI_THEME,             "Missing Boot UI theme" },
-        { MB_DEVICE_MISSING_BOOT_UI_GRAPHICS_BACKENDS, "Missing Boot UI graphics backends" },
-        { 0, nullptr }
+        { ValidateFlag::MissingId,                     "Missing device ID" },
+        { ValidateFlag::MissingCodenames,              "Missing device codenames" },
+        { ValidateFlag::MissingName,                   "Missing device name" },
+        { ValidateFlag::MissingArchitecture,           "Missing device architecture" },
+        { ValidateFlag::MissingSystemBlockDevs,        "Missing system block device paths" },
+        { ValidateFlag::MissingCacheBlockDevs,         "Missing cache block device paths" },
+        { ValidateFlag::MissingDataBlockDevs,          "Missing data block device paths" },
+        { ValidateFlag::MissingBootBlockDevs,          "Missing boot block device paths" },
+        { ValidateFlag::MissingRecoveryBlockDevs,      "Missing recovery block device paths" },
+        { ValidateFlag::MissingBootUiTheme,            "Missing Boot UI theme" },
+        { ValidateFlag::MissingBootUiGraphicsBackends, "Missing Boot UI graphics backends" },
+        { ValidateFlag::InvalidArchitecture,           "Invalid device architecture" },
+        { ValidateFlag::InvalidFlags,                  "Invalid device flags" },
+        { ValidateFlag::InvalidBootUiFlags,            "Invalid Boot UI flags" },
+        { static_cast<ValidateFlag>(0),                nullptr },
     };
 
-    for (auto it = mappings; it->flag; ++it) {
+    for (auto it = mappings; it->msg; ++it) {
         if (flags & it->flag) {
             fprintf(stderr, "- %s\n", it->msg);
-            flags &= ~it->flag;
+            flags &= ~ValidateFlags(it->flag);
         }
     }
 
     if (flags) {
-        fprintf(stderr, "- Unknown remaining flags (0x%" PRIx64 ")", flags);
+        fprintf(stderr, "- Unknown remaining flags (0x%" PRIx64 ")",
+                static_cast<uint64_t>(flags));
     }
 }
 
-static bool validate(const char *path, const char *json, bool is_array)
+static bool validate(const std::string &path, const std::string &json,
+                     bool is_array)
 {
-    MbDeviceJsonError error;
+    JsonError error;
 
     if (is_array) {
-        Device **devices = mb_device_new_list_from_json(json, &error);
-        if (!devices) {
-            print_json_error(path, &error);
+        std::vector<Device> devices;
+
+        if (!device_list_from_json(json, devices, error)) {
+            print_json_error(path, error);
             return false;
         }
 
         bool failed = false;
 
-        for (Device **iter = devices; *iter; ++iter) {
-            uint64_t flags = mb_device_validate(*iter);
+        for (auto const &device : devices) {
+            auto flags = device.validate();
             if (flags) {
-                print_validation_error(path, mb_device_id(*iter), flags);
+                print_validation_error(path, device.id(), flags);
                 failed = true;
             }
-            mb_device_free(*iter);
         }
-        free(devices);
 
         if (failed) {
             return false;
         }
     } else {
-        Device *device = mb_device_new_from_json(json, &error);
-        if (!device) {
-            print_json_error(path, &error);
+        Device device;
+
+        if (!device_from_json(json, device, error)) {
+            print_json_error(path, error);
             return false;
         }
 
-        bool failed = false;
-        uint64_t flags = mb_device_validate(device);
-
+        auto flags = device.validate();
         if (flags) {
-            print_validation_error(path, mb_device_id(device), flags);
-            failed = true;
-        }
-
-        mb_device_free(device);
-
-        if (failed) {
+            print_validation_error(path, device.id(), flags);
             return false;
         }
     }
@@ -258,16 +259,15 @@ int main(int argc, char *argv[])
 
     json_set_alloc_funcs(&xmalloc, &free);
 
-    json_t *json_root = json_array();
+    ScopedJsonT json_root(json_array(), &json_decref);
 
     for (int i = optind; i < argc; ++i) {
         try {
             YAML::Node root = YAML::LoadFile(argv[i]);
-            json_t *node = yaml_node_to_json_node(root);
+            ScopedJsonT node(yaml_node_to_json_node(root), json_decref);
+            ScopedCharArray output(json_dumps(node.get(), JSON_COMPACT), &free);
 
-            char *output = json_dumps(node, JSON_COMPACT);
-            bool valid = validate(argv[i], output, json_is_array(node));
-            free(output);
+            bool valid = validate(argv[i], output.get(), json_is_array(node));
             if (!valid) {
                 return EXIT_FAILURE;
             }
@@ -276,13 +276,11 @@ int main(int argc, char *argv[])
                 size_t index;
                 json_t *elem;
 
-                json_array_foreach(node, index, elem) {
-                    json_array_append(json_root, elem);
+                json_array_foreach(node.get(), index, elem) {
+                    json_array_append(json_root.get(), elem);
                 }
-
-                json_decref(node);
             } else {
-                json_array_append_new(json_root, node);
+                json_array_append_new(json_root.get(), node.release());
             }
         } catch (const std::exception &e) {
             fprintf(stderr, "%s: Failed to convert file: %s\n",
@@ -302,19 +300,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    char *output;
+    ScopedCharArray output(nullptr, &free);
     if (styled) {
-        output = json_dumps(json_root, JSON_INDENT(4) | JSON_SORT_KEYS);
+        output.reset(json_dumps(json_root.get(),
+                                JSON_INDENT(4) | JSON_SORT_KEYS));
     } else {
-        output = json_dumps(json_root, JSON_COMPACT);
+        output.reset(json_dumps(json_root.get(), JSON_COMPACT));
     }
 
-    if (fputs(output, fp) == EOF) {
+    if (fputs(output.get(), fp) == EOF) {
         fprintf(stderr, "Failed to write JSON: %s\n", strerror(errno));
     }
-
-    free(output);
-    json_decref(json_root);
 
     if (output_file) {
         if (fclose(fp) != 0) {

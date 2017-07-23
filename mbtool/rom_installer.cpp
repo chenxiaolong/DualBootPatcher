@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -173,8 +173,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Check if the device has a combined boot/recovery partition. If the
     // FOTAKernel partition is listed, it will be used instead of the combined
     // ramdisk from the boot image
-    bool combined = mb_device_flags(_device)
-            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    bool combined = _device.flags()
+            & mb::device::DeviceFlag::HasCombinedBootAndRecovery;
     if (combined && block_dev.empty()) {
         block_dev = _boot_block_dev;
         using_boot = true;
@@ -195,24 +195,24 @@ Installer::ProceedState RomInstaller::on_checked_device()
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
         autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
         if (fp) {
-            auto system_devs = mb_device_system_block_devs(_device);
-            auto cache_devs = mb_device_cache_block_devs(_device);
-            auto data_devs = mb_device_data_block_devs(_device);
+            auto system_devs = _device.system_block_devs();
+            auto cache_devs = _device.cache_block_devs();
+            auto data_devs = _device.data_block_devs();
 
             // Set block device if it's provided and non-empty
-            const char *system_dev =
-                    system_devs && system_devs[0] && system_devs[0][0]
+            std::string system_dev =
+                    !system_devs.empty() && !system_devs[0].empty()
                     ? system_devs[0] : "dummy";
-            const char *cache_dev =
-                    cache_devs && cache_devs[0] && cache_devs[0][0]
+            std::string cache_dev =
+                    !cache_devs.empty() && !cache_devs[0].empty()
                     ? cache_devs[0] : "dummy";
-            const char *data_dev =
-                    data_devs && data_devs[0] && data_devs[0][0]
+            std::string data_dev =
+                    !data_devs.empty() && !data_devs[0].empty()
                     ? data_devs[0] : "dummy";
 
-            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
-            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
-            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev.c_str());
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev.c_str());
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev.c_str());
         }
     }
 

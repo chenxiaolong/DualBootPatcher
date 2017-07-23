@@ -820,11 +820,11 @@ int PageSet::LoadLanguage(char* languageFile, ZipArchive* package)
 
     child = parent->first_node("display");
     if (child) {
-        DataManager::SetValue(TW_LANGUAGE_DISPLAY, child->value());
+        DataManager::SetValue(VAR_TW_LANGUAGE_DISPLAY, child->value());
         resource_source = child->value();
     } else {
         LOGE("language file does not have a display value set");
-        DataManager::SetValue(TW_LANGUAGE_DISPLAY, "Not Set");
+        DataManager::SetValue(VAR_TW_LANGUAGE_DISPLAY, "Not Set");
         resource_source = languageFile;
     }
 
@@ -868,7 +868,7 @@ int PageSet::LoadDetails(LoadingContext& ctx, xml_node<>* root)
                 int width = atoi(width_attr->value());
                 int height = atoi(height_attr->value());
                 int offx = 0, offy = 0;
-                if (tw_flags & TW_FLAG_ROUND_SCREEN) {
+                if (tw_device.tw_flags() & mb::device::TwFlag::RoundScreen) {
                     xml_node<>* roundscreen = child->first_node("roundscreen");
                     if (roundscreen) {
                         LOGI("TW_ROUND_SCREEN := true, using round screen XML settings.");
@@ -885,7 +885,7 @@ int PageSet::LoadDetails(LoadingContext& ctx, xml_node<>* root)
                 if (width != 0 && height != 0) {
                     float scale_w = ((float) gr_fb_width() - ((float) offx * 2.0)) / (float) width;
                     float scale_h = ((float) gr_fb_height() - ((float) offy * 2.0)) / (float) height;
-                    if (tw_flags & TW_FLAG_ROUND_SCREEN) {
+                    if (tw_device.tw_flags() & mb::device::TwFlag::RoundScreen) {
                         float scale_off_w = (float) gr_fb_width() / (float) width;
                         float scale_off_h = (float) gr_fb_height() / (float) height;
                         tw_x_offset = offx * scale_off_w;
@@ -1342,8 +1342,8 @@ int PageManager::LoadPackage(const std::string& name,
     LOGI("Loading package: %s (%s)", name.c_str(), package.c_str());
     if (package.size() > 4 && package.substr(package.size() - 4) != ".zip") {
         LOGI("Load XML directly");
-        tw_x_offset = tw_default_x_offset;
-        tw_y_offset = tw_default_y_offset;
+        tw_x_offset = tw_device.tw_default_x_offset();
+        tw_y_offset = tw_device.tw_default_y_offset();
         if (name != "splash") {
             LoadLanguageList(nullptr);
             languageFile = LoadFileToBuffer(TWFunc::get_resource_path("languages/en.xml"), nullptr);
@@ -1513,7 +1513,7 @@ int PageManager::RunReload()
         }
     }
     if (ret_val == 0) {
-        std::string language = DataManager::GetStrValue(TW_LANGUAGE);
+        std::string language = DataManager::GetStrValue(VAR_TW_LANGUAGE);
         if (language != "en.xml") {
             LOGI("Loading language '%s'", language.c_str());
             LoadLanguage(language);
@@ -1540,7 +1540,7 @@ void PageManager::SetStartPage(const std::string& page_name)
 
 int PageManager::ChangePage(const std::string& name)
 {
-    DataManager::SetValue(TW_OPERATION_STATE, 0);
+    DataManager::SetValue(VAR_TW_OPERATION_STATE, 0);
     int ret = (mCurrentSet ? mCurrentSet->SetPage(name) : -1);
     return ret;
 }

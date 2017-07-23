@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,17 +19,22 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include "mbcommon/common.h"
 
 #ifdef __cplusplus
-extern "C" {
+#  include <string>
+#  include <vector>
 #endif
 
-size_t string_array_length(char const * const *array);
-char ** string_array_dup(char const * const *array);
-char ** string_array_new(size_t n);
-void string_array_free(char **array);
-
 #ifdef __cplusplus
+namespace mb
+{
+
+MB_EXPORT char * capi_str_to_cstr(const std::string &str);
+MB_EXPORT std::string capi_cstr_to_str(const char *cstr);
+
+MB_EXPORT char ** capi_vector_to_cstr_array(const std::vector<std::string> &array);
+MB_EXPORT std::vector<std::string> capi_cstr_array_to_vector(const char * const *array);
+
 }
 #endif

@@ -49,7 +49,7 @@ enum MountFlags : unsigned int
 };
 
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 Device *device, int flags);
+                 const mb::device::Device &device, int flags);
 bool mount_rom(const std::shared_ptr<Rom> &rom);
 
 }

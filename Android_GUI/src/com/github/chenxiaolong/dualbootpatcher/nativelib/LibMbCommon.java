@@ -21,7 +21,7 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStu
 import com.sun.jna.Native;
 
 @SuppressWarnings("unused")
-public class LibMbcommon {
+public class LibMbCommon {
     @SuppressWarnings("JniMissingFunction")
     private static class CWrapper {
         static {

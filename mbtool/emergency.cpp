@@ -42,6 +42,8 @@
 #include "multiboot.h"
 #include "reboot.h"
 
+using namespace mb::device;
+
 namespace mb
 {
 
@@ -157,17 +159,15 @@ bool emergency_reboot()
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
     std::vector<EmergencyMount> ems;
-    MbDeviceJsonError error;
+    Device device;
+    JsonError error;
 
     std::vector<unsigned char> contents;
     util::file_read_all(DEVICE_JSON_PATH, &contents);
     contents.push_back('\0');
 
-    Device *device = mb_device_new_from_json(
-            (char *) contents.data(), &error);
-    auto free_device = util::finally([&]{
-        mb_device_free(device);
-    });
+    bool loaded_json = device_from_json(
+            reinterpret_cast<char *>(contents.data()), device, error);
 
     // /data
     {
@@ -181,13 +181,10 @@ bool emergency_reboot()
 
         LOGV("Searching for data partition block device paths");
 
-        if (device) {
-            auto devs = mb_device_data_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    LOGV("- %s", *it);
-                    em.paths.push_back(*it);
-                }
+        if (loaded_json) {
+            for (auto const &path : device.data_block_devs()) {
+                LOGV("- %s", path.c_str());
+                em.paths.push_back(path);
             }
         }
 
@@ -212,13 +209,10 @@ bool emergency_reboot()
 
         LOGV("Searching for cache partition block device paths");
 
-        if (device) {
-            auto devs = mb_device_cache_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    LOGV("- %s", *it);
-                    em.paths.push_back(*it);
-                }
+        if (loaded_json) {
+            for (auto const &path : device.cache_block_devs()) {
+                LOGV("- %s", path.c_str());
+                em.paths.push_back(path);
             }
         }
 

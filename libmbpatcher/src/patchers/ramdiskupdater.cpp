@@ -146,7 +146,7 @@ bool RamdiskUpdaterPrivate::create_zip()
 
     std::string arch_dir(pc->data_directory());
     arch_dir += "/binaries/android/";
-    arch_dir += mb_device_architecture(info->device());
+    arch_dir += info->device().architecture();
 
     std::vector<CopySpec> toCopy{
         {
@@ -204,17 +204,15 @@ bool RamdiskUpdaterPrivate::create_zip()
 
     if (cancelled) return false;
 
-    char *json = mb_device_to_json(info->device());
-    if (!json) {
+    std::string json;
+    if (!device::device_to_json(info->device(), json)) {
         error = ErrorCode::MemoryAllocationError;
         return false;
     }
 
     result = MinizipUtils::add_file(
             zf, "multiboot/device.json",
-            std::vector<unsigned char>(json, json + strlen(json)));
-    free(json);
-
+            std::vector<unsigned char>(json.begin(), json.end()));
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
