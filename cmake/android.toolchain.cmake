@@ -319,8 +319,10 @@ list(APPEND CMAKE_FIND_ROOT_PATH "${ANDROID_NDK}")
 if(ANDROID_DEPRECATED_HEADERS)
 	set(CMAKE_SYSROOT
 		"${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_SYSROOT_ABI}")
+	set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
 else()
 	set(CMAKE_SYSROOT "${ANDROID_NDK}/sysroot")
+	set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
 	# The compiler driver doesn't check any arch specific include locations
 	# (though maybe we should add that). Architecture specific headers like asm/
 	# and machine/ are installed to an arch-$ARCH subdirectory of the sysroot.
