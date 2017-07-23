@@ -310,7 +310,7 @@ static bool process_boot_ui_flags(Device &device, json_t *node,
         }
 
         const std::string &str = json_string_value(value);
-        uint64_t old_flags = flags;
+        TwFlags old_flags = flags;
 
         for (auto const &item : g_tw_flag_mappings) {
             if (str == item.first) {

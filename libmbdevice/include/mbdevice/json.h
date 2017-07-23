@@ -26,10 +26,10 @@ namespace mb
 namespace device
 {
 
-enum class JsonErrorType
+enum class JsonErrorType : uint16_t
 {
     // Use |line| and |column| fields
-    ParseError,
+    ParseError = 1,
     // Use |context|, |expected_type|, and |actual_type| fields
     MismatchedType,
     // Use |context| field

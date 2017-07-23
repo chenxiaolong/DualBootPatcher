@@ -21,6 +21,10 @@
 
 #include "mbdevice/device.h"
 #include "mbdevice/json.h"
+#include "mbdevice/capi/json.h"
+
+#define TO_U(TYPE, VALUE) \
+    static_cast<std::underlying_type<TYPE>::type>(TYPE::VALUE)
 
 using namespace mb::device;
 
@@ -372,4 +376,16 @@ TEST(JsonTest, CreateJson)
     ASSERT_TRUE(device_from_json(json, d2, e2));
 
     ASSERT_EQ(d1, d2);
+}
+
+TEST(JsonTest, CheckCapiFlagsEqual)
+{
+    ASSERT_EQ(TO_U(JsonErrorType, ParseError),
+              MB_DEVICE_JSON_PARSE_ERROR);
+    ASSERT_EQ(TO_U(JsonErrorType, MismatchedType),
+              MB_DEVICE_JSON_MISMATCHED_TYPE);
+    ASSERT_EQ(TO_U(JsonErrorType, UnknownKey),
+              MB_DEVICE_JSON_UNKNOWN_KEY);
+    ASSERT_EQ(TO_U(JsonErrorType, UnknownValue),
+              MB_DEVICE_JSON_UNKNOWN_VALUE);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,33 +17,24 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbpatcher/cwrapper/ccommon.h"
+#pragma once
 
-#include <cassert>
-#include <cstdlib>
+#include "mbcommon/common.h"
 
+#ifdef __cplusplus
+#  include <string>
+#  include <vector>
+#endif
 
-extern "C" {
-
-void mbpatcher_free(void *data)
+#ifdef __cplusplus
+namespace mb
 {
-    if (data == nullptr) {
-        return;
-    }
 
-    std::free(data);
-}
+MB_EXPORT char * capi_str_to_cstr(const std::string &str);
+MB_EXPORT std::string capi_cstr_to_str(const char *cstr);
 
-void mbpatcher_free_array(void **array)
-{
-    if (array == nullptr) {
-        return;
-    }
-
-    for (void **temp = array; *temp != nullptr; ++temp) {
-        std::free(*temp);
-    }
-    std::free(array);
-}
+MB_EXPORT char ** capi_vector_to_cstr_array(const std::vector<std::string> &array);
+MB_EXPORT std::vector<std::string> capi_cstr_array_to_vector(const char * const *array);
 
 }
+#endif

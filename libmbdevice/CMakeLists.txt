@@ -1,6 +1,8 @@
 set(MBDEVICE_SOURCES
     src/device.cpp
     src/json.cpp
+    src/capi/device.cpp
+    src/capi/json.cpp
 )
 
 set(MBDEVICE_TESTS_SOURCES
@@ -8,6 +10,7 @@ set(MBDEVICE_TESTS_SOURCES
     tests/main.cpp
     # Tests
     tests/test_device.cpp
+    tests/test_flags.cpp
     tests/test_json.cpp
 )
 

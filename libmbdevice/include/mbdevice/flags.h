@@ -66,37 +66,37 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(TwFlags)
 
 constexpr std::underlying_type<TwFlag>::type TW_FLAG_MASK = (1 << 17) - 1;
 
-enum class TwPixelFormat
+enum class TwPixelFormat : uint16_t
 {
-    Default,
+    Default = 0u,
     Abgr8888,
     Rgbx8888,
     Bgra8888,
     Rgba8888,
 };
 
-enum class TwForcePixelFormat
+enum class TwForcePixelFormat : uint16_t
 {
-    None,
+    None = 0u,
     Rgb565,
 };
 
-enum class ValidateFlag : uint64_t
+enum class ValidateFlag : uint32_t
 {
-    MissingId                       = 1ull << 0,
-    MissingCodenames                = 1ull << 1,
-    MissingName                     = 1ull << 2,
-    MissingArchitecture             = 1ull << 3,
-    MissingSystemBlockDevs          = 1ull << 4,
-    MissingCacheBlockDevs           = 1ull << 5,
-    MissingDataBlockDevs            = 1ull << 6,
-    MissingBootBlockDevs            = 1ull << 7,
-    MissingRecoveryBlockDevs        = 1ull << 8,
-    MissingBootUiTheme              = 1ull << 9,
-    MissingBootUiGraphicsBackends   = 1ull << 10,
-    InvalidArchitecture             = 1ull << 11,
-    InvalidFlags                    = 1ull << 12,
-    InvalidBootUiFlags              = 1ull << 13,
+    MissingId                       = 1u << 0,
+    MissingCodenames                = 1u << 1,
+    MissingName                     = 1u << 2,
+    MissingArchitecture             = 1u << 3,
+    MissingSystemBlockDevs          = 1u << 4,
+    MissingCacheBlockDevs           = 1u << 5,
+    MissingDataBlockDevs            = 1u << 6,
+    MissingBootBlockDevs            = 1u << 7,
+    MissingRecoveryBlockDevs        = 1u << 8,
+    MissingBootUiTheme              = 1u << 9,
+    MissingBootUiGraphicsBackends   = 1u << 10,
+    InvalidArchitecture             = 1u << 11,
+    InvalidFlags                    = 1u << 12,
+    InvalidBootUiFlags              = 1u << 13,
 };
 MB_DECLARE_FLAGS(ValidateFlags, ValidateFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ValidateFlags)
