@@ -28,26 +28,22 @@ namespace device
 
 enum class JsonErrorType : uint16_t
 {
-    // Use |line| and |column| fields
+    // Use |offset| and |message| fields
     ParseError = 1,
-    // Use |context|, |expected_type|, and |actual_type| fields
-    MismatchedType,
-    // Use |context| field
-    UnknownKey,
-    // Use |context] field
-    UnknownValue,
+    // Use |schema_uri|, |schema_keyword|, and |document_uri| fields
+    SchemaValidationFailure,
 };
 
 struct JsonError
 {
     JsonErrorType type;
 
-    int line;
-    int column;
+    size_t offset;
+    std::string message;
 
-    std::string context;
-    std::string expected_type;
-    std::string actual_type;
+    std::string schema_uri;
+    std::string schema_keyword;
+    std::string document_uri;
 };
 
 MB_EXPORT bool device_from_json(const std::string &json, Device &device,
