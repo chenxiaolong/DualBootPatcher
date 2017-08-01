@@ -11,6 +11,7 @@ set(files
     elephone.yml
     google.yml
     htc.yml
+    infocus.yml
     huawei.yml
     infinix.yml
     jiayu.yml
