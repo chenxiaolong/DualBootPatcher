@@ -5,6 +5,7 @@ endif()
 set(files
     ark.yml
     asus.yml
+    cagabi.yml
     cherrymobile.yml
     coolpad.yml
     dexp.yml
