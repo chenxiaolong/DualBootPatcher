@@ -14,7 +14,7 @@ before_install:
   - wget -q http://www.digip.org/jansson/releases/jansson-2.9.tar.gz && tar xzf jansson-2.9.tar.gz && cd jansson-2.9/ && ./configure && make --quiet && sudo make install --quiet && cd --
   - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && make --quiet && sudo make install --quiet && export PATH=${PATH}:/usr/local/ssl && cd --
   - wget -q https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && tar xzf cmake-3.9.0.tar.gz && mv cmake-3.9.0 cmake && cd cmake && sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' bootstrap && ./bootstrap && make --quiet && sudo make install --quiet && cd --
-  - wget -q https://dl.google.com/android/repository/android-ndk-r15c-linux-x86_64.zip && unzip -qq android-ndk-r15c-linux-x86_64.zip && mv android-ndk-r15c android-ndk
+  - wget -q https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip && unzip -qq android-ndk-r15-linux-x86_64.zip && mv android-ndk-r15 android-ndk
   - export ANDROID_NDK_HOME=~/android-ndk
   - export ANDROID_NDK=~/android-ndk
   - cd --
