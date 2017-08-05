@@ -1,3 +1,4 @@
+
 language: android
 jdk: oraclejdk8
 
@@ -34,8 +35,8 @@ before_install:
 script:
   - travis_wait 30
   - cd --
-  - git clone https://github.com/Mysteryagr/DualBootPatcher home/travis/build/Mysteryagr/DualBootPatcher/
-  - cd home/travis/build/Mysteryagr/DualBootPatcher/
+  - git clone https://github.com/Mysteryagr/DualBootPatcher Mysteryagr/DualBootPatcher/
+  - cd $PWD/Mysteryagr/DualBootPatcher/
   - git submodule update --init --recursive
   - mkdir build
   - cd build/
@@ -43,11 +44,12 @@ script:
   - 2>/dev/null 1>&2 make
   - rm -rf assets && cpack -G TXZ
   - 2>/dev/null 1>&2 make apk
+  - cd --
 
 deploy:
   provider: releases
   api_key: "$GIT_OAUTH_TOKEN_RAHMYAPK"
-  file: "$PWD/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
+  file: "$PWD/Mysteryagr/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
   skip_cleanup: true
   on:
     tags: true
