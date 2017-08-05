@@ -11,9 +11,9 @@ android:
 before_install:
   - sudo apt install ccache expect libboost-dev libjansson-dev libssl-dev libyaml-cpp-dev openssl python-minimal
   - cd --
-  - wget -q http://www.digip.org/jansson/releases/jansson-2.9.tar.gz && tar xzf jansson-2.9.tar.gz && cd jansson-2.9/ && ./configure && make --quiet && sudo make install --quiet && cd --
-  - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && make --quiet && sudo make install --quiet && export PATH=${PATH}:/usr/local/ssl && cd --
-  - wget -q https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && tar xzf cmake-3.9.0.tar.gz && mv cmake-3.9.0 cmake && cd cmake && sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' bootstrap && ./bootstrap && make --quiet && sudo make install --quiet && cd --
+  - wget -q http://www.digip.org/jansson/releases/jansson-2.9.tar.gz && tar xzf jansson-2.9.tar.gz && cd jansson-2.9/ && ./configure && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
+  - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && export PATH=${PATH}:/usr/local/ssl && cd --
+  - wget -q https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && tar xzf cmake-3.9.0.tar.gz && mv cmake-3.9.0 cmake && cd cmake && sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' bootstrap && ./bootstrap && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
   - wget -q https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip && unzip -qq android-ndk-r15-linux-x86_64.zip && mv android-ndk-r15 android-ndk
   - export ANDROID_NDK_HOME=~/android-ndk
   - export ANDROID_NDK=~/android-ndk
@@ -32,6 +32,7 @@ before_install:
   - echo -e "y" | ./tools/android update sdk -u -a -t 128
 
 script:
+  - travis_wait 30
   - cd --
   - git clone https://github.com/Mysteryagr/DualBootPatcher home/travis/build/Mysteryagr/DualBootPatcher/
   - cd home/travis/build/Mysteryagr/DualBootPatcher/
@@ -39,9 +40,9 @@ script:
   - mkdir build
   - cd build/
   - cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
-  - make
+  - 2>/dev/null 1>&2 make
   - rm -rf assets && cpack -G TXZ
-  - make apk  
+  - 2>/dev/null 1>&2 make apk
 
 deploy:
   provider: releases
