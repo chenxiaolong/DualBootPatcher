@@ -35,8 +35,8 @@ before_install:
   - echo -e "y" | ./tools/android update sdk -u -a -t 128
 
 script:
-  - travis_wait 30
-  - cd --
+  ##- travis_wait 30
+  - cd ..
   - git clone hhttps://github.com/zac6ix/DualBootPatcher.git zac6ix/DualBootPatcher/
   - cd $PWD/zac6ix/DualBootPatcher/
   - git submodule update --init --recursive
