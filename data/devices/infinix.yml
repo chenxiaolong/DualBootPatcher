@@ -75,3 +75,71 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
+- name: Infinix Hot 3 X554
+  id: Infinix_X554
+  codenames:
+    - X554
+    - Infinix_X554
+    - Infinix-X554
+    - x554
+    - Hot3
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Infinix Hot 3 LTE X553
+  id: Infinix_X553
+  codenames:
+    - X553
+    - x553
+    - Infinix_X553
+    - X553_Infinix
+    - INFINIX-X553-A1
+    - Hot 3
+    - Infinix Hot 3
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p23
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p31
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p22
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p26
