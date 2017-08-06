@@ -3,7 +3,7 @@ language: android
 jdk: oraclejdk8
 
 os: linux
-dist: xenial
+dist: trusty
 
 android:
   components:
