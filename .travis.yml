@@ -36,8 +36,7 @@ before_install:
   - echo -e "y" | ./tools/android update sdk -u -a -t 128
 
 script:
-  ##- travis_wait 30
-  ##- cd ..
+  - cd ../
   - git clone hhttps://github.com/zac6ix/DualBootPatcher.git zac6ix/DualBootPatcher/
   - cd $PWD/zac6ix/DualBootPatcher/
   - git submodule update --init --recursive
@@ -47,7 +46,7 @@ script:
   - 2>/dev/null 1>&2 make
   - rm -rf assets && cpack -G TXZ
   - 2>/dev/null 1>&2 make apk
-  - cd ..
+  - cd ../
 
 deploy:
   provider: releases
