@@ -3,7 +3,7 @@ language: android
 jdk: oraclejdk8
 
 os: linux
-dist: trusty 
+dist: precise
 
 android:
   components:
@@ -47,25 +47,21 @@ script:
   - rm -rf assets && cpack -G TXZ
   - 2>/dev/null 1>&2 make apk
   - cd --
-
-script:
-- cd $PWD/DualBootPatcher/Android_GUI/build/outputs/apk/
-- FILE=Android_GUI-debug.apk
-- export FILE
-- hst=uploads.androidfilehost.com
-- us=iyke
-- key=HsHXIgOLoRXs
-- echo "FILE_NAME : $FILE"
-- echo " UPLOADER : Zackie Ai"
-- echo ""
-- echo "FILE_UPLOAD_IN_PROGRESS ..."
-- curl -ftp-pasv -T $FILE ftp://$us:$key@$hst
-- echo ""
-- echo " UPLOAD_COMPLETED !!!"
+  - cd --
+  - whereis Android_GUI-debug.apk
+  - cd zac6ix/DualBootPatcher/Android_GUI/build/outputs/apk/
+  - FILE=Android_GUI-debug.apk
+  - export FILE
+  - hst=uploads.androidfilehost.com
+  - us=iyke
+  - key=HsHXIgOLoRXs
+  - curl -ftp-pasv -T $FILE ftp://$us:$key@$hst
 
 deploy:
+  provider: releases
   ##token ::: f97160e5747254c94fe924cc697e51bbcefc6a88
   api_key: "$ZAC6IX_APK"
+  file: "$PWD/zac6ix/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
   skip_cleanup: true
   on:
     tags: true
