@@ -9,6 +9,7 @@ set(files
     cherrymobile.yml
     coolpad.yml
     dexp.yml
+    doogee.yml
     elephone.yml
     google.yml
     htc.yml
