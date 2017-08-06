@@ -9,6 +9,7 @@ set(files
     coolpad.yml
     dexp.yml
     elephone.yml
+    gionee.yml
     google.yml
     htc.yml
     huawei.yml
