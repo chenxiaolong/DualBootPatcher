@@ -69,3 +69,10 @@ deploy:
   on:
     tags: true
     all_branches: true
+    
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+  slack: DualBootPatcher:e1f4a29e-f8d7-4e6f-80a5-6f175412399a
+  email: false    
