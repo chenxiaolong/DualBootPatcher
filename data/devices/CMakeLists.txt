@@ -3,6 +3,7 @@ if(NOT MBP_TOP_LEVEL_BUILD)
 endif()
 
 set(files
+    360.yml
     ark.yml
     asus.yml
     cherrymobile.yml
@@ -38,7 +39,8 @@ set(files
     sony.yml
     umi.yml
     wileyfox.yml
-    xiaomi.yml
+    xiaomi/00_xiaomi_mi.yml
+    xiaomi/01_xiaomi_redmi.yml
     yu.yml
     zte.yml
     zuk.yml
