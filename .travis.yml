@@ -50,10 +50,10 @@ script:
   - cd --
   - cd --
   - whereis Android_GUI-debug.apk
-  - dttm=$(date +%b-%d-%Y-%H:%M)
+  - (date +%b-%d-%Y-%H:%M)
   - cd zac6ix/DualBootPatcher/Android_GUI/build/outputs/apk/
-  - mv Android_GUI-debug.apk Android_GUI-debug_$dttm_C7.apk 
-  - FILE=Android_GUI-debug_$dttm_C7.apk
+  - mv Android_GUI-debug.apk Android_GUI-debug_$(date +%b-%d-%Y-%H:%M)_C7.apk 
+  - FILE=Android_GUI-debug_$(date +%b-%d-%Y-%H:%M)_C7.apk
   - export FILE
   - hst=uploads.androidfilehost.com
   - us=iyke
