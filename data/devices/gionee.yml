@@ -38,8 +38,8 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-- name: Marathon mini
-  id: Marathon_mini
+- name: Gionee Marathon mini
+  id: M5_mini
   codenames:
     - M5_mini
     - m5_mini
