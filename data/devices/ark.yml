@@ -3,6 +3,7 @@
   id: benefit3
   codenames:
     - benefit3
+    - peach
   architecture: armeabi-v7a
 
   block_devs:
