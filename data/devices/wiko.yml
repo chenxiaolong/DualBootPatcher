@@ -4,7 +4,7 @@
   codenames:
     - ROBBY
     - v3750
-    - v3750AN
+    - V3750AN
   architecture: armeabi-v7a
 
   block_devs:
