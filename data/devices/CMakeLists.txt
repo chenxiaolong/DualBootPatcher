@@ -3,6 +3,7 @@ if(NOT MBP_TOP_LEVEL_BUILD)
 endif()
 
 set(files
+    alcatel.yml
     ark.yml
     asus.yml
     cagabi.yml
