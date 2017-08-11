@@ -229,6 +229,7 @@
     - hwALE-H:5.0
     - hwALE-H:6.1
     - hwALE-H:6.0
+    - hwgra
     - ALICE_TL23
     - ALICE_TL21
   architecture: arm64-v8a
@@ -266,6 +267,7 @@
     - hwALE-H:5.0
     - hwALE-H:6.1
     - hwALE-H:6.0
+    - hwgra
     - ALICE_TL23
     - ALICE_TL21
   architecture: arm64-v8a
@@ -303,6 +305,7 @@
     - hwALE-H:5.0
     - hwALE-H:6.1
     - hwALE-H:6.0
+    - hwgra	
     - ALICE_TL23
     - ALICE_TL21
   architecture: arm64-v8a
