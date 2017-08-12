@@ -15,7 +15,6 @@ Host packages:
 mingw-w64 packages:
 
 - gtest
-- jansson
 - libarchive
 - OpenSSL
 - qt5
@@ -106,7 +105,6 @@ If you're using Arch Linux, the mingw packages are available in the AUR.
         libglib-2.0-0.dll
         libharfbuzz-0.dll
         libintl-8.dll
-        libjansson-4.dll
         liblz4.dll
         liblzma-5.dll
         libpcre-1.dll
