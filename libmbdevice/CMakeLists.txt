@@ -25,12 +25,22 @@ set(MBDEVICE_SCHEMAS
 
 make_directory("${generated_dir}")
 
-# libmbdevice needs to be built for hosttools target too
+# This is a terrible hack
+# - The hosttools target will build schemas2cpp for the host and use it when
+#   building libmbdevice
+# - The desktop target will use the hosttools-compiled schemas2cpp binary to
+#   support cross-compilation
+# - The Android targets will do the same as the desktop target, except that
+#   there will be no dependency on hosttools because the binary path is supplied
+#   by the parent CMake invocation
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     set(schemas2cpp_deps schemas2cpp)
     set(schemas2cpp_command $<TARGET_FILE:schemas2cpp>)
-else()
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
     set(schemas2cpp_deps hosttools)
+    set(schemas2cpp_command ${SCHEMAS2CPP_COMMAND})
+else()
+    set(schemas2cpp_deps)
     set(schemas2cpp_command ${SCHEMAS2CPP_COMMAND})
 endif()
 

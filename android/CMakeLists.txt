@@ -43,6 +43,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
             -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
+            -DSCHEMAS2CPP_COMMAND=${SCHEMAS2CPP_COMMAND}
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
@@ -85,6 +86,11 @@ if(MBP_TOP_LEVEL_BUILD)
             BUILD_ALWAYS 1
             INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
             VERBATIM
+        )
+
+        add_dependencies(
+            android-system_${abi}
+            hosttools
         )
 
         set(result_files
@@ -132,6 +138,11 @@ if(MBP_TOP_LEVEL_BUILD)
                 BUILD_ALWAYS 1
                 INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
                 VERBATIM
+            )
+
+            add_dependencies(
+                android-app_${abi}
+                hosttools
             )
 
             ExternalProject_Get_Property(android-app_${abi} BINARY_DIR)
