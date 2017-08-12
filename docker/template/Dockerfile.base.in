@@ -21,7 +21,7 @@ RUN dnf -y install gnupg \
     && curl -Lo /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64" \
     && curl -Lo /tmp/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
-    && gpg --keyserver ha.pool.sks-keyservers.net \
+    && gpg --keyserver keyserver.ubuntu.com \
         --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && gpg --batch --verify /tmp/gosu.asc /usr/local/bin/gosu \
     && rm -r "${GNUPGHOME}" /tmp/gosu.asc \
@@ -36,7 +36,7 @@ RUN dnf -y install gnupg \
     && curl -Lo /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini" \
     && curl -Lo /tmp/tini.asc "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
-    && gpg --keyserver ha.pool.sks-keyservers.net \
+    && gpg --keyserver keyserver.ubuntu.com \
         --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7 \
     && gpg --batch --verify /tmp/tini.asc /usr/local/bin/tini \
     && rm -r "${GNUPGHOME}" /tmp/tini.asc \
