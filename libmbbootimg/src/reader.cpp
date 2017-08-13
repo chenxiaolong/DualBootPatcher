@@ -106,8 +106,7 @@
  * \brief Format reader callback to read next entry
  *
  * \note This callback *must* be able to skip to the next entry if the user does
- *       not read or finish reading the entry data with
- *       mb_bi_reader_read_data().
+ *       not read or finish reading the entry data with reader_read_data().
  *
  * \param[in] bir MbBiReader
  * \param[in] userdata User callback data
@@ -162,7 +161,7 @@
  *
  * \brief Format reader callback to clean up resources
  *
- * This function will be called during a call to mb_bi_reader_free(), regardless
+ * This function will be called during a call to reader_free(), regardless
  * of the current state. It is guaranteed to only be called once. The function
  * may return any valid status code, but the resources *must* be cleaned up.
  *
@@ -190,23 +189,23 @@ static struct
     {
         FORMAT_ANDROID,
         FORMAT_NAME_ANDROID,
-        mb_bi_reader_enable_format_android
+        reader_enable_format_android
     }, {
         FORMAT_BUMP,
         FORMAT_NAME_BUMP,
-        mb_bi_reader_enable_format_bump
+        reader_enable_format_bump
     }, {
         FORMAT_LOKI,
         FORMAT_NAME_LOKI,
-        mb_bi_reader_enable_format_loki
+        reader_enable_format_loki
     }, {
         FORMAT_MTK,
         FORMAT_NAME_MTK,
-        mb_bi_reader_enable_format_mtk
+        reader_enable_format_mtk
     }, {
         FORMAT_SONY_ELF,
         FORMAT_NAME_SONY_ELF,
-        mb_bi_reader_enable_format_sony_elf
+        reader_enable_format_sony_elf
     }, {
         0,
         nullptr,
@@ -222,7 +221,7 @@ static struct
  *
  * \note The \p bidder_cb callback is optional. If a bidder callback is not
  *       provided, then the format can only be used if explicitly forced via
- *       mb_bi_reader_set_format_by_code() or mb_bi_reader_set_format_by_name().
+ *       reader_set_format_by_code() or reader_set_format_by_name().
  *
  * \param bir MbBiReader
  * \param userdata User callback data
@@ -241,17 +240,17 @@ static struct
  *   * #RET_WARN if the format has already been registered before
  *   * \<= #RET_FAILED if an error occurs
  */
-int _mb_bi_reader_register_format(MbBiReader *bir,
-                                  void *userdata,
-                                  int type,
-                                  const std::string &name,
-                                  FormatReaderBidder bidder_cb,
-                                  FormatReaderSetOption set_option_cb,
-                                  FormatReaderReadHeader read_header_cb,
-                                  FormatReaderReadEntry read_entry_cb,
-                                  FormatReaderGoToEntry go_to_entry_cb,
-                                  FormatReaderReadData read_data_cb,
-                                  FormatReaderFree free_cb)
+int _reader_register_format(MbBiReader *bir,
+                            void *userdata,
+                            int type,
+                            const std::string &name,
+                            FormatReaderBidder bidder_cb,
+                            FormatReaderSetOption set_option_cb,
+                            FormatReaderReadHeader read_header_cb,
+                            FormatReaderReadEntry read_entry_cb,
+                            FormatReaderGoToEntry go_to_entry_cb,
+                            FormatReaderReadData read_data_cb,
+                            FormatReaderFree free_cb)
 {
     int ret;
     FormatReader format;
@@ -272,8 +271,8 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
     format.userdata = userdata;
 
     if (bir->formats_len == MAX_FORMATS) {
-        mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                               "Too many formats enabled");
+        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                         "Too many formats enabled");
         ret = RET_FAILED;
         goto done;
     }
@@ -281,9 +280,9 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
     for (size_t i = 0; i < bir->formats_len; ++i) {
         if ((FORMAT_BASE_MASK & bir->formats[i].type)
                 == (FORMAT_BASE_MASK & type)) {
-            mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                                   "%s format (0x%x) already enabled",
-                                   name.c_str(), type);
+            reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                             "%s format (0x%x) already enabled",
+                             name.c_str(), type);
             ret = RET_WARN;
             goto done;
         }
@@ -296,7 +295,7 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
 
 done:
     if (ret != RET_OK) {
-        int ret2 = _mb_bi_reader_free_format(bir, &format);
+        int ret2 = _reader_free_format(bir, &format);
         if (ret2 < ret) {
             ret = ret2;
         }
@@ -323,7 +322,7 @@ done:
  *   * \<= #RET_WARN if an error occurs (though the resources will still be
  *     cleaned up)
  */
-int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
+int _reader_free_format(MbBiReader *bir, FormatReader *format)
 {
     READER_ENSURE_STATE(bir, ReaderState::ANY);
     int ret = RET_OK;
@@ -343,7 +342,7 @@ int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
  * \return New MbBiReader or NULL if memory could not be allocated. If the
  *         function fails, `errno` will be set accordingly.
  */
-MbBiReader * mb_bi_reader_new()
+MbBiReader * reader_new()
 {
     MbBiReader *bir = new MbBiReader();
     bir->state = ReaderState::NEW;
@@ -354,7 +353,7 @@ MbBiReader * mb_bi_reader_new()
  * \brief Free an MbBiReader.
  *
  * If the reader has not been closed, it will be closed and the result of
- * mb_bi_reader_close() will be returned. Otherwise, #RET_OK will be returned.
+ * reader_close() will be returned. Otherwise, #RET_OK will be returned.
  * Regardless of the return value, the reader will always be freed and should no
  * longer be used.
  *
@@ -364,17 +363,17 @@ MbBiReader * mb_bi_reader_new()
  *   * \<= #RET_WARN if an error occurs (though the resources will still be
  *     freed)
  */
-int mb_bi_reader_free(MbBiReader *bir)
+int reader_free(MbBiReader *bir)
 {
     int ret = RET_OK, ret2;
 
     if (bir) {
         if (bir->state != ReaderState::CLOSED) {
-            ret = mb_bi_reader_close(bir);
+            ret = reader_close(bir);
         }
 
         for (size_t i = 0; i < bir->formats_len; ++i) {
-            ret2 = _mb_bi_reader_free_format(bir, &bir->formats[i]);
+            ret2 = _reader_free_format(bir, &bir->formats[i]);
             if (ret2 < ret) {
                 ret = ret2;
             }
@@ -396,20 +395,20 @@ int mb_bi_reader_free(MbBiReader *bir)
  *   * #RET_OK if the boot image is successfully opened
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_open_filename(MbBiReader *bir, const std::string &filename)
+int reader_open_filename(MbBiReader *bir, const std::string &filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
     File *file = new StandardFile(filename, FileOpenMode::READ_ONLY);
     if (!file->is_open()) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
-                               "Failed to open for reading: %s",
-                               file->error_string().c_str());
+        reader_set_error(bir, file->error().value() /* TODO */,
+                         "Failed to open for reading: %s",
+                         file->error_string().c_str());
         delete file;
         return RET_FAILED;
     }
 
-    return mb_bi_reader_open(bir, file, true);
+    return reader_open(bir, file, true);
 }
 
 /*!
@@ -422,20 +421,20 @@ int mb_bi_reader_open_filename(MbBiReader *bir, const std::string &filename)
  *   * #RET_OK if the boot image is successfully opened
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_open_filename_w(MbBiReader *bir, const std::wstring &filename)
+int reader_open_filename_w(MbBiReader *bir, const std::wstring &filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
     File *file = new StandardFile(filename, FileOpenMode::READ_ONLY);
     if (!file->is_open()) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
-                               "Failed to open for reading: %s",
-                               file->error_string().c_str());
+        reader_set_error(bir, file->error().value() /* TODO */,
+                         "Failed to open for reading: %s",
+                         file->error_string().c_str());
         delete file;
         return RET_FAILED;
     }
 
-    return mb_bi_reader_open(bir, file, true);
+    return reader_open(bir, file, true);
 }
 
 /*!
@@ -454,7 +453,7 @@ int mb_bi_reader_open_filename_w(MbBiReader *bir, const std::wstring &filename)
  *   * #RET_OK if the boot image is successfully opened
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_open(MbBiReader *bir, File *file, bool owned)
+int reader_open(MbBiReader *bir, File *file, bool owned)
 {
     int ret;
     int best_bid = 0;
@@ -467,8 +466,8 @@ int mb_bi_reader_open(MbBiReader *bir, File *file, bool owned)
     bir->file_owned = owned;
 
     if (bir->formats_len == 0) {
-        mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                               "No reader formats registered");
+        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                         "No reader formats registered");
         ret = RET_FAILED;
         goto done;
     }
@@ -483,9 +482,9 @@ int mb_bi_reader_open(MbBiReader *bir, File *file, bool owned)
             if (cur->bidder_cb) {
                 // Seek to beginning
                 if (!bir->file->seek(0, SEEK_SET, nullptr)) {
-                    mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                           "Failed to seek file: %s",
-                                           bir->file->error_string().c_str());
+                    reader_set_error(bir, bir->file->error().value() /* TODO */,
+                                     "Failed to seek file: %s",
+                                     bir->file->error_string().c_str());
                     ret = bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
                     goto done;
                 }
@@ -506,8 +505,8 @@ int mb_bi_reader_open(MbBiReader *bir, File *file, bool owned)
         if (format) {
             bir->format = format;
         } else {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Failed to determine boot image format");
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Failed to determine boot image format");
             ret = RET_FAILED;
             goto done;
         }
@@ -538,7 +537,7 @@ done:
  *
  * This function will close an MbBiReader if it is open. Regardless of the
  * return value, the reader is closed and can no longer be used for further
- * operations. It should be freed with mb_bi_reader_free().
+ * operations. It should be freed with reader_free().
  *
  * \param bir MbBiReader
  *
@@ -547,7 +546,7 @@ done:
  *   * \<= #RET_WARN if the reader is opened and an error occurs while
  *     closing the reader
  */
-int mb_bi_reader_close(MbBiReader *bir)
+int reader_close(MbBiReader *bir)
 {
     int ret = RET_OK;
 
@@ -582,8 +581,8 @@ int mb_bi_reader_close(MbBiReader *bir)
  *
  * Read the header from the boot image and store a reference to the Header
  * in \p header. The value of \p header after a successful call to this function
- * should *never* be deallocated with mb_bi_header_free(). It is tracked
- * internally and will be freed when the MbBiReader is freed.
+ * should *never* be deallocated manually. It is tracked internally and will be
+ * freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
  * \param[out] header Pointer to store Header reference
@@ -592,12 +591,12 @@ int mb_bi_reader_close(MbBiReader *bir)
  *   * #RET_OK if the boot image header is successfully read
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_read_header(MbBiReader *bir, Header *&header)
+int reader_read_header(MbBiReader *bir, Header *&header)
 {
-    // State will be checked by mb_bi_reader_read_header2()
+    // State will be checked by reader_read_header2()
     int ret;
 
-    ret = mb_bi_reader_read_header2(bir, bir->header);
+    ret = reader_read_header2(bir, bir->header);
     if (ret == RET_OK) {
         header = &bir->header;
     }
@@ -619,24 +618,24 @@ int mb_bi_reader_read_header(MbBiReader *bir, Header *&header)
  *   * #RET_OK if the boot image header is successfully read
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_read_header2(MbBiReader *bir, Header &header)
+int reader_read_header2(MbBiReader *bir, Header &header)
 {
     READER_ENSURE_STATE(bir, ReaderState::HEADER);
     int ret;
 
     // Seek to beginning
     if (!bir->file->seek(0, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                               "Failed to seek file: %s",
-                               bir->file->error_string().c_str());
+        reader_set_error(bir, bir->file->error().value() /* TODO */,
+                         "Failed to seek file: %s",
+                         bir->file->error_string().c_str());
         return bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     header.clear();
 
     if (!bir->format->read_header_cb) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Missing format read_header_cb");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Missing format read_header_cb");
         bir->state = ReaderState::FATAL;
         return RET_FATAL;
     }
@@ -656,8 +655,8 @@ int mb_bi_reader_read_header2(MbBiReader *bir, Header &header)
  *
  * Read the next entry from the boot image and store a reference to the
  * Entry in \p entry. The value of \p entry after a successful call to this
- * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
- * internally and will be freed when the MbBiReader is freed.
+ * function should *never* be deallocated manually. It is tracked internally and
+ * will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
  * \param[out] entry Pointer to store Entry reference
@@ -668,12 +667,12 @@ int mb_bi_reader_read_header2(MbBiReader *bir, Header &header)
  *   * #RET_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_read_entry(MbBiReader *bir, Entry *&entry)
+int reader_read_entry(MbBiReader *bir, Entry *&entry)
 {
-    // State will be checked by mb_bi_reader_read_entry2()
+    // State will be checked by reader_read_entry2()
     int ret;
 
-    ret = mb_bi_reader_read_entry2(bir, bir->entry);
+    ret = reader_read_entry2(bir, bir->entry);
     if (ret == RET_OK) {
         entry = &bir->entry;
     }
@@ -697,7 +696,7 @@ int mb_bi_reader_read_entry(MbBiReader *bir, Entry *&entry)
  *   * #RET_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_read_entry2(MbBiReader *bir, Entry &entry)
+int reader_read_entry2(MbBiReader *bir, Entry &entry)
 {
     // Allow skipping to the next entry without reading the data
     READER_ENSURE_STATE(bir, ReaderState::ENTRY | ReaderState::DATA);
@@ -706,8 +705,8 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, Entry &entry)
     entry.clear();
 
     if (!bir->format->read_entry_cb) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Missing format read_entry_cb");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Missing format read_entry_cb");
         bir->state = ReaderState::FATAL;
         return RET_FATAL;
     }
@@ -727,8 +726,8 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, Entry &entry)
  *
  * Seek to the specified entry in the boot image and store a reference to the
  * Entry in \p entry. The vlaue of \p entry after a successful call to this
- * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
- * internally and will be freed when the MbBiReader is freed.
+ * function should *never* be deallocated manually. It is tracked internally and
+ * will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
  * \param[out] entry Pointer to store Entry reference
@@ -739,12 +738,12 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, Entry &entry)
  *   * #RET_EOF if the boot image entry is not found
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_go_to_entry(MbBiReader *bir, Entry *&entry, int entry_type)
+int reader_go_to_entry(MbBiReader *bir, Entry *&entry, int entry_type)
 {
-    // State will be checked by mb_bi_reader_go_to_entry2()
+    // State will be checked by reader_go_to_entry2()
     int ret;
 
-    ret = mb_bi_reader_go_to_entry2(bir, bir->entry, entry_type);
+    ret = reader_go_to_entry2(bir, bir->entry, entry_type);
     if (ret == RET_OK) {
         entry = &bir->entry;
     }
@@ -768,7 +767,7 @@ int mb_bi_reader_go_to_entry(MbBiReader *bir, Entry *&entry, int entry_type)
  *   * #RET_EOF if the boot image entry is not found
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
+int reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
 {
     // Allow skipping to an entry without reading the data
     READER_ENSURE_STATE(bir, ReaderState::ENTRY | ReaderState::DATA);
@@ -777,8 +776,8 @@ int mb_bi_reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
     entry.clear();
 
     if (!bir->format->go_to_entry_cb) {
-        mb_bi_reader_set_error(bir, ERROR_UNSUPPORTED,
-                               "go_to_entry_cb not defined");
+        reader_set_error(bir, ERROR_UNSUPPORTED,
+                         "go_to_entry_cb not defined");
         return RET_UNSUPPORTED;
     }
 
@@ -806,15 +805,15 @@ int mb_bi_reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
  *   * #RET_EOF if EOF is reached for the current entry
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_read_data(MbBiReader *bir, void *buf, size_t size,
-                           size_t *bytes_read)
+int reader_read_data(MbBiReader *bir, void *buf, size_t size,
+                     size_t *bytes_read)
 {
     READER_ENSURE_STATE(bir, ReaderState::DATA);
     int ret;
 
     if (!bir->format->read_data_cb) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Missing format read_data_cb");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Missing format read_data_cb");
         bir->state = ReaderState::FATAL;
         return RET_FATAL;
     }
@@ -833,9 +832,9 @@ int mb_bi_reader_read_data(MbBiReader *bir, void *buf, size_t size,
 /*!
  * \brief Get detected or forced boot image format code.
  *
- * * If mb_bi_reader_enable_format_*() was used, then the detected boot image
+ * * If reader_enable_format_*() was used, then the detected boot image
  *   format code is returned.
- * * If mb_bi_reader_set_format_*() was used, then the forced boot image format
+ * * If reader_set_format_*() was used, then the forced boot image format
  *   code is returned.
  *
  * \note The return value is meaningful only after the boot image has been
@@ -845,11 +844,11 @@ int mb_bi_reader_read_data(MbBiReader *bir, void *buf, size_t size,
  *
  * \return Boot image format code or -1 if the boot image is not open
  */
-int mb_bi_reader_format_code(MbBiReader *bir)
+int reader_format_code(MbBiReader *bir)
 {
     if (!bir->format) {
-        mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                               "No format selected");
+        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                         "No format selected");
         return -1;
     }
 
@@ -859,9 +858,9 @@ int mb_bi_reader_format_code(MbBiReader *bir)
 /*!
  * \brief Get detected or forced boot image format name.
  *
- * * If mb_bi_reader_enable_format_*() was used, then the detected boot image
+ * * If reader_enable_format_*() was used, then the detected boot image
  *   format name is returned.
- * * If mb_bi_reader_set_format_*() was used, then the forced boot image format
+ * * If reader_set_format_*() was used, then the forced boot image format
  *   name is returned.
  *
  * \note The return value is meaningful only after the boot image has been
@@ -871,11 +870,11 @@ int mb_bi_reader_format_code(MbBiReader *bir)
  *
  * \return Boot image format name or empty string if the boot image is not open
  */
-std::string mb_bi_reader_format_name(MbBiReader *bir)
+std::string reader_format_name(MbBiReader *bir)
 {
     if (!bir->format) {
-        mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                               "No format selected");
+        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                         "No format selected");
         return {};
     }
 
@@ -895,13 +894,13 @@ std::string mb_bi_reader_format_name(MbBiReader *bir)
  *   * #RET_OK if the format is successfully enabled
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_set_format_by_code(MbBiReader *bir, int code)
+int reader_set_format_by_code(MbBiReader *bir, int code)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
     int ret;
     FormatReader *format = nullptr;
 
-    ret = mb_bi_reader_enable_format_by_code(bir, code);
+    ret = reader_enable_format_by_code(bir, code);
     if (ret < 0 && ret != RET_WARN) {
         return ret;
     }
@@ -915,8 +914,8 @@ int mb_bi_reader_set_format_by_code(MbBiReader *bir, int code)
     }
 
     if (!format) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Enabled format not found");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Enabled format not found");
         bir->state = ReaderState::FATAL;
         return RET_FATAL;
     }
@@ -939,13 +938,13 @@ int mb_bi_reader_set_format_by_code(MbBiReader *bir, int code)
  *   * #RET_OK if the format is successfully set
  *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_reader_set_format_by_name(MbBiReader *bir, const std::string &name)
+int reader_set_format_by_name(MbBiReader *bir, const std::string &name)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
     int ret;
     FormatReader *format = nullptr;
 
-    ret = mb_bi_reader_enable_format_by_name(bir, name);
+    ret = reader_enable_format_by_name(bir, name);
     if (ret < 0 && ret != RET_WARN) {
         return ret;
     }
@@ -958,8 +957,8 @@ int mb_bi_reader_set_format_by_name(MbBiReader *bir, const std::string &name)
     }
 
     if (!format) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Enabled format not found");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Enabled format not found");
         bir->state = ReaderState::FATAL;
         return RET_FATAL;
     }
@@ -978,7 +977,7 @@ int mb_bi_reader_set_format_by_name(MbBiReader *bir, const std::string &name)
  *   * #RET_OK if all formats are successfully enabled
  *   * \<= #RET_FAILED if an error occurs while enabling a format
  */
-int mb_bi_reader_enable_format_all(MbBiReader *bir)
+int reader_enable_format_all(MbBiReader *bir)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
@@ -1003,7 +1002,7 @@ int mb_bi_reader_enable_format_all(MbBiReader *bir)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_by_code(MbBiReader *bir, int code)
+int reader_enable_format_by_code(MbBiReader *bir, int code)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
@@ -1013,8 +1012,8 @@ int mb_bi_reader_enable_format_by_code(MbBiReader *bir, int code)
         }
     }
 
-    mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                           "Invalid format code: %d", code);
+    reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                     "Invalid format code: %d", code);
     return RET_FAILED;
 }
 
@@ -1029,7 +1028,7 @@ int mb_bi_reader_enable_format_by_code(MbBiReader *bir, int code)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_by_name(MbBiReader *bir, const std::string &name)
+int reader_enable_format_by_name(MbBiReader *bir, const std::string &name)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
@@ -1039,8 +1038,8 @@ int mb_bi_reader_enable_format_by_name(MbBiReader *bir, const std::string &name)
         }
     }
 
-    mb_bi_reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                           "Invalid format name: %s", name.c_str());
+    reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                     "Invalid format name: %s", name.c_str());
     return RET_FAILED;
 }
 
@@ -1052,10 +1051,10 @@ int mb_bi_reader_enable_format_by_name(MbBiReader *bir, const std::string &name)
  * \param bir MbBiReader
  *
  * \return Error code for failed operation. If \>= 0, then the value is one of
- *         the MB_BI_* entries. If \< 0, then the error code is
+ *         the \ref MB_BI_ERROR_CODES entries. If \< 0, then the error code is
  *         implementation-defined (usually `-errno` or `-GetLastError()`).
  */
-int mb_bi_reader_error(MbBiReader *bir)
+int reader_error(MbBiReader *bir)
 {
     return bir->error_code;
 }
@@ -1070,7 +1069,7 @@ int mb_bi_reader_error(MbBiReader *bir)
  * \return Error string for failed operation. The string contents may be
  *         undefined, but will never be NULL or an invalid string.
  */
-const char * mb_bi_reader_error_string(MbBiReader *bir)
+const char * reader_error_string(MbBiReader *bir)
 {
     return bir->error_string.c_str();
 }
@@ -1078,7 +1077,7 @@ const char * mb_bi_reader_error_string(MbBiReader *bir)
 /*!
  * \brief Set error string for a failed operation.
  *
- * \sa mb_bi_reader_set_error_v()
+ * \sa reader_set_error_v()
  *
  * \param bir MbBiReader
  * \param error_code Error code
@@ -1088,14 +1087,13 @@ const char * mb_bi_reader_error_string(MbBiReader *bir)
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
-                           const char *fmt, ...)
+int reader_set_error(MbBiReader *bir, int error_code, const char *fmt, ...)
 {
     int ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = mb_bi_reader_set_error_v(bir, error_code, fmt, ap);
+    ret = reader_set_error_v(bir, error_code, fmt, ap);
     va_end(ap);
 
     return ret;
@@ -1104,7 +1102,7 @@ int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
 /*!
  * \brief Set error string for a failed operation.
  *
- * \sa mb_bi_reader_set_error()
+ * \sa reader_set_error()
  *
  * \param bir MbBiReader
  * \param error_code Error code
@@ -1114,8 +1112,8 @@ int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int mb_bi_reader_set_error_v(MbBiReader *bir, int error_code,
-                             const char *fmt, va_list ap)
+int reader_set_error_v(MbBiReader *bir, int error_code,
+                       const char *fmt, va_list ap)
 {
     bir->error_code = error_code;
     return format_v(bir->error_string, fmt, ap)

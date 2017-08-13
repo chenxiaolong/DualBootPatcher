@@ -82,42 +82,42 @@ int find_android_header(MbBiReader *bir, File &file,
     size_t offset;
 
     if (max_header_offset > MAX_HEADER_OFFSET) {
-        mb_bi_reader_set_error(bir, ERROR_INVALID_ARGUMENT,
-                               "Max header offset (%" PRIu64
-                               ") must be less than %" MB_PRIzu,
-                               max_header_offset, MAX_HEADER_OFFSET);
+        reader_set_error(bir, ERROR_INVALID_ARGUMENT,
+                         "Max header offset (%" PRIu64
+                         ") must be less than %" MB_PRIzu,
+                         max_header_offset, MAX_HEADER_OFFSET);
         return RET_WARN;
     }
 
     if (!file.seek(0, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to seek to beginning: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to seek to beginning: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, buf,
                          max_header_offset + sizeof(AndroidHeader), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     ptr = mb_memmem(buf, n, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     if (!ptr) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Android magic not found in first %" MB_PRIzu
-                               " bytes", MAX_HEADER_OFFSET);
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Android magic not found in first %" MB_PRIzu " bytes",
+                         MAX_HEADER_OFFSET);
         return RET_WARN;
     }
 
     offset = static_cast<unsigned char *>(ptr) - buf;
 
     if (n - offset < sizeof(AndroidHeader)) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Android header at %" MB_PRIzu
-                               " exceeds file size", offset);
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Android header at %" MB_PRIzu " exceeds file size",
+                         offset);
         return RET_WARN;
     }
 
@@ -175,24 +175,24 @@ int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
     if (!file.seek(pos, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "SEAndroid magic not found: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "SEAndroid magic not found: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, buf, sizeof(buf), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read SEAndroid magic: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read SEAndroid magic: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (n != SAMSUNG_SEANDROID_MAGIC_SIZE
             || memcmp(buf, SAMSUNG_SEANDROID_MAGIC, n) != 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "SEAndroid magic not found in last %" MB_PRIzu
-                               " bytes", SAMSUNG_SEANDROID_MAGIC_SIZE);
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "SEAndroid magic not found in last %" MB_PRIzu
+                         " bytes", SAMSUNG_SEANDROID_MAGIC_SIZE);
         return RET_WARN;
     }
 
@@ -246,23 +246,23 @@ int find_bump_magic(MbBiReader *bir, File &file,
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
     if (!file.seek(pos, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "SEAndroid magic not found: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "SEAndroid magic not found: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, buf, sizeof(buf), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read SEAndroid magic: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read SEAndroid magic: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (n != bump::BUMP_MAGIC_SIZE || memcmp(buf, bump::BUMP_MAGIC, n) != 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Bump magic not found in last %" MB_PRIzu
-                               " bytes", bump::BUMP_MAGIC_SIZE);
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Bump magic not found in last %" MB_PRIzu " bytes",
+                         bump::BUMP_MAGIC_SIZE);
         return RET_WARN;
     }
 
@@ -438,8 +438,8 @@ int android_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
 
     ret = android_set_header(ctx->hdr, header);
     if (ret != RET_OK) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Failed to set header fields");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Failed to set header fields");
         return ret;
     }
 
@@ -552,7 +552,7 @@ int android_reader_free(MbBiReader *bir, void *userdata)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_android(MbBiReader *bir)
+int reader_enable_format_android(MbBiReader *bir)
 {
     using namespace android;
 
@@ -561,17 +561,17 @@ int mb_bi_reader_enable_format_android(MbBiReader *bir)
     // Allow truncated dt image by default
     ctx->allow_truncated_dt = true;
 
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         FORMAT_ANDROID,
-                                         FORMAT_NAME_ANDROID,
-                                         &android_reader_bid,
-                                         &android_reader_set_option,
-                                         &android_reader_read_header,
-                                         &android_reader_read_entry,
-                                         &android_reader_go_to_entry,
-                                         &android_reader_read_data,
-                                         &android_reader_free);
+    return _reader_register_format(bir,
+                                   ctx,
+                                   FORMAT_ANDROID,
+                                   FORMAT_NAME_ANDROID,
+                                   &android_reader_bid,
+                                   &android_reader_set_option,
+                                   &android_reader_read_header,
+                                   &android_reader_read_entry,
+                                   &android_reader_go_to_entry,
+                                   &android_reader_read_data,
+                                   &android_reader_free);
 }
 
 }

@@ -48,7 +48,7 @@
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 extern "C" {
 
@@ -231,8 +231,7 @@ static la_ssize_t laBootImgReadCb(archive *a, void *userdata,
     size_t bytesRead;
     int ret;
 
-    ret = mb_bi_reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf),
-                                 &bytesRead);
+    ret = reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf), &bytesRead);
     if (ret == RET_EOF) {
         return 0;
     } else if (ret != RET_OK) {
@@ -248,7 +247,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
 {
     (void) clazz;
 
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     Header *header;
     Entry *entry;
     ScopedArchive a(archive_read_new(), &archive_read_free);
@@ -272,32 +271,32 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
+    ret = reader_enable_format_all(bir.get());
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        mb_bi_reader_error_string(bir.get()));
+                        reader_error_string(bir.get()));
         goto done;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), filename);
+    ret = reader_open_filename(bir.get(), filename);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename, mb_bi_reader_error_string(bir.get()));
+                        filename, reader_error_string(bir.get()));
         goto done;
     }
 
     // Read header
-    ret = mb_bi_reader_read_header(bir.get(), header);
+    ret = reader_read_header(bir.get(), header);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename, mb_bi_reader_error_string(bir.get()));
+                        filename, reader_error_string(bir.get()));
         goto done;
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
+    ret = reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
     if (ret == RET_EOF) {
         throw_exception(env, IOException,
                         "%s: Boot image is missing ramdisk", filename);
@@ -305,7 +304,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     } else if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to find ramdisk entry: %s",
-                        filename, mb_bi_reader_error_string(bir.get()));
+                        filename, reader_error_string(bir.get()));
         goto done;
     }
 
@@ -385,8 +384,8 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 {
     (void) clazz;
 
-    ScopedReader bir1(mb_bi_reader_new(), &mb_bi_reader_free);
-    ScopedReader bir2(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir1(reader_new(), &reader_free);
+    ScopedReader bir2(reader_new(), &reader_free);
     Header *header1;
     Header *header2;
     Entry *entry1;
@@ -413,50 +412,50 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Set up reader formats
-    ret = mb_bi_reader_enable_format_all(bir1.get());
+    ret = reader_enable_format_all(bir1.get());
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        mb_bi_reader_error_string(bir1.get()));
+                        reader_error_string(bir1.get()));
         goto done;
     }
-    ret = mb_bi_reader_enable_format_all(bir2.get());
+    ret = reader_enable_format_all(bir2.get());
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        mb_bi_reader_error_string(bir2.get()));
+                        reader_error_string(bir2.get()));
         goto done;
     }
 
     // Open boot images
-    ret = mb_bi_reader_open_filename(bir1.get(), filename1);
+    ret = reader_open_filename(bir1.get(), filename1);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename1, mb_bi_reader_error_string(bir1.get()));
+                        filename1, reader_error_string(bir1.get()));
         goto done;
     }
-    ret = mb_bi_reader_open_filename(bir2.get(), filename2);
+    ret = reader_open_filename(bir2.get(), filename2);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename2, mb_bi_reader_error_string(bir2.get()));
+                        filename2, reader_error_string(bir2.get()));
         goto done;
     }
 
     // Read headers
-    ret = mb_bi_reader_read_header(bir1.get(), header1);
+    ret = reader_read_header(bir1.get(), header1);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename1, mb_bi_reader_error_string(bir1.get()));
+                        filename1, reader_error_string(bir1.get()));
         goto done;
     }
-    ret = mb_bi_reader_read_header(bir2.get(), header2);
+    ret = reader_read_header(bir2.get(), header2);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename1, mb_bi_reader_error_string(bir2.get()));
+                        filename1, reader_error_string(bir2.get()));
         goto done;
     }
 
@@ -467,21 +466,21 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     // Count entries in first boot image
     {
-        while ((ret = mb_bi_reader_read_entry(bir1.get(), entry1)) == RET_OK) {
+        while ((ret = reader_read_entry(bir1.get(), entry1)) == RET_OK) {
             ++entries;
         }
 
         if (ret != RET_EOF) {
             throw_exception(env, IOException,
                             "%s: Failed to read entry: %s",
-                            filename1, mb_bi_reader_error_string(bir1.get()));
+                            filename1, reader_error_string(bir1.get()));
             goto done;
         }
     }
 
     // Compare each entry in second image to first
     {
-        while ((ret = mb_bi_reader_read_entry(bir2.get(), entry2)) == RET_OK) {
+        while ((ret = reader_read_entry(bir2.get(), entry2)) == RET_OK) {
             if (entries == 0) {
                 // Too few entries in second image
                 goto done;
@@ -489,14 +488,14 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             --entries;
 
             // Find the same entry in first image
-            ret = mb_bi_reader_go_to_entry(bir1.get(), entry1, *entry2->type());
+            ret = reader_go_to_entry(bir1.get(), entry1, *entry2->type());
             if (ret == RET_EOF) {
                 // Cannot be equal if entry is missing
                 goto done;
             } else if (ret != RET_OK) {
                 throw_exception(env, IOException,
                                 "%s: Failed to seek to entry: %s", filename1,
-                                mb_bi_reader_error_string(bir1.get()));
+                                reader_error_string(bir1.get()));
                 goto done;
             }
 
@@ -506,13 +505,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             size_t n1;
             size_t n2;
 
-            while ((ret = mb_bi_reader_read_data(
+            while ((ret = reader_read_data(
                     bir1.get(), buf1, sizeof(buf1), &n1)) == RET_OK) {
-                ret = mb_bi_reader_read_data(bir2.get(), buf2, n1, &n2);
+                ret = reader_read_data(bir2.get(), buf2, n1, &n2);
                 if (ret != RET_OK) {
                     throw_exception(env, IOException,
                                     "%s: Failed to read data: %s", filename2,
-                                    mb_bi_reader_error_string(bir2.get()));
+                                    reader_error_string(bir2.get()));
                     goto done;
                 }
 
@@ -525,7 +524,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             if (ret != RET_EOF) {
                 throw_exception(env, IOException,
                                 "%s: Failed to read data: %s", filename1,
-                                mb_bi_reader_error_string(bir1.get()));
+                                reader_error_string(bir1.get()));
                 goto done;
             }
         }
@@ -533,7 +532,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
         if (ret != RET_EOF) {
             throw_exception(env, IOException,
                             "%s: Failed to read entry: %s",
-                            filename2, mb_bi_reader_error_string(bir2.get()));
+                            filename2, reader_error_string(bir2.get()));
             goto done;
         }
     }

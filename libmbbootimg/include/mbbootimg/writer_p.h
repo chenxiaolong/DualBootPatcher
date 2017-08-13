@@ -33,11 +33,11 @@
 #define WRITER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_writer_set_error((INSTANCE), \
-                                   ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
+            writer_set_error((INSTANCE), \
+                             ERROR_PROGRAMMER_ERROR, \
+                             "%s: Invalid state: " \
+                             "expected 0x%x, actual: 0x%hx", \
+                             __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = WriterState::FATAL; \
             return RET_FATAL; \
         } \
@@ -46,11 +46,11 @@
 #define WRITER_ENSURE_STATE_GOTO(INSTANCE, STATES, RETURN_VAR, LABEL) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_writer_set_error((INSTANCE), \
-                                   ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
+            writer_set_error((INSTANCE), \
+                             ERROR_PROGRAMMER_ERROR, \
+                             "%s: Invalid state: " \
+                             "expected 0x%x, actual: 0x%hx", \
+                             __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = WriterState::FATAL; \
             (RETURN_VAR) = RET_FATAL; \
             goto LABEL; \
@@ -134,22 +134,22 @@ struct MbBiWriter
     Header header;
 };
 
-int _mb_bi_writer_register_format(MbBiWriter *biw,
-                                  void *userdata,
-                                  int type,
-                                  const std::string &name,
-                                  FormatWriterSetOption set_option_cb,
-                                  FormatWriterGetHeader get_header_cb,
-                                  FormatWriterWriteHeader write_header_cb,
-                                  FormatWriterGetEntry get_entry_cb,
-                                  FormatWriterWriteEntry write_entry_cb,
-                                  FormatWriterWriteData write_data_cb,
-                                  FormatWriterFinishEntry finish_entry_cb,
-                                  FormatWriterClose close_cb,
-                                  FormatWriterFree free_cb);
+int _writer_register_format(MbBiWriter *biw,
+                            void *userdata,
+                            int type,
+                            const std::string &name,
+                            FormatWriterSetOption set_option_cb,
+                            FormatWriterGetHeader get_header_cb,
+                            FormatWriterWriteHeader write_header_cb,
+                            FormatWriterGetEntry get_entry_cb,
+                            FormatWriterWriteEntry write_entry_cb,
+                            FormatWriterWriteData write_data_cb,
+                            FormatWriterFinishEntry finish_entry_cb,
+                            FormatWriterClose close_cb,
+                            FormatWriterFree free_cb);
 
-int _mb_bi_writer_free_format(MbBiWriter *biw,
-                              FormatWriter *format);
+int _writer_free_format(MbBiWriter *biw,
+                        FormatWriter *format);
 
 }
 }

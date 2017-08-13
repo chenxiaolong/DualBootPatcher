@@ -29,7 +29,7 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 using namespace mb::bootimg;
 using namespace mb::bootimg::loki;
@@ -38,7 +38,7 @@ using namespace mb::bootimg::loki;
 
 TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     LokiHeader source = {};
@@ -61,7 +61,7 @@ TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
 
 TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     LokiHeader header;
@@ -71,12 +71,12 @@ TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(find_loki_header(bir.get(), file, header, offset), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "Too small"));
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()), "Too small"));
 }
 
 TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     LokiHeader source = {};
@@ -96,7 +96,7 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(find_loki_header(bir.get(), file, header, offset), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Invalid loki magic"));
 }
 
@@ -104,7 +104,7 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
 
 TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -134,7 +134,7 @@ TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
 
 TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -171,7 +171,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
 
 TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -186,13 +186,13 @@ TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
 
     ASSERT_EQ(loki_find_ramdisk_address(bir.get(), file, ahdr, lhdr,
                                         ramdisk_addr), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Loki shellcode not found"));
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -218,7 +218,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
 
     ASSERT_EQ(loki_find_ramdisk_address(bir.get(), file, ahdr, lhdr,
                                         ramdisk_addr), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Unexpected EOF"));
 }
 
@@ -226,7 +226,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
 
 TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     unsigned char data[] = {
@@ -246,7 +246,7 @@ TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     unsigned char data[] = {
@@ -266,7 +266,7 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     unsigned char data[] = {
@@ -287,7 +287,7 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
 
 TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     unsigned char data[] = {
@@ -308,7 +308,7 @@ TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
 
 TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     uint64_t gzip_offset;
@@ -318,13 +318,13 @@ TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldWarn)
 
     ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), file, 4, gzip_offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "No gzip headers found"));
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     unsigned char data[] = {
@@ -338,7 +338,7 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
 
     ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), file, 4, gzip_offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "No gzip headers found"));
 }
 
@@ -346,7 +346,7 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
 
 TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -370,7 +370,7 @@ TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
 
 TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -394,7 +394,7 @@ TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
 
 TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     android::AndroidHeader ahdr = {};
@@ -412,14 +412,14 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
     ASSERT_EQ(loki_old_find_ramdisk_size(bir.get(), file, ahdr,
                                          data.size() + 1, ramdisk_size),
               RET_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "greater than"));
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()), "greater than"));
 }
 
 // Tests for find_linux_kernel_size()
 
 TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     std::vector<unsigned char> data;
@@ -442,7 +442,7 @@ TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
 
 TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     std::vector<unsigned char> data;
@@ -455,14 +455,14 @@ TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
 
     ASSERT_EQ(find_linux_kernel_size(bir.get(), file, 2048, kernel_size),
               RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "Unexpected EOF"));
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()), "Unexpected EOF"));
 }
 
 // Tests for loki_read_old_header()
 
 TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
     Header header;
 
@@ -562,7 +562,7 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
 
 TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
     Header header;
 

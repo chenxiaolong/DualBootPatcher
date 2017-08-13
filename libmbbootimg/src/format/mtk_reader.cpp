@@ -73,24 +73,23 @@ static int read_mtk_header(MbBiReader *bir, File &file,
     size_t n;
 
     if (!file.seek(offset, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to seek to MTK header at %" PRIu64 ": %s",
-                               offset, file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to seek to MTK header at %" PRIu64 ": %s",
+                         offset, file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &mtkhdr, sizeof(mtkhdr), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read MTK header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read MTK header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (n != sizeof(MtkHeader)
             || memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "MTK header not found at %" PRIu64,
-                               offset);
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "MTK header not found at %" PRIu64, offset);
         return RET_WARN;
     }
 
@@ -243,23 +242,21 @@ int mtk_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
     // Validate that the kernel and ramdisk sizes are consistent
     if (ctx->hdr.kernel_size != static_cast<uint64_t>(
             ctx->mtk_kernel_hdr.size) + sizeof(MtkHeader)) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Mismatched kernel size in Android and "
-                               "MTK headers");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Mismatched kernel size in Android and MTK headers");
         return RET_FAILED;
     }
     if (ctx->hdr.ramdisk_size != static_cast<uint64_t>(
             ctx->mtk_ramdisk_hdr.size) + sizeof(MtkHeader)) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Mismatched ramdisk size in Android and "
-                               "MTK headers");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Mismatched ramdisk size in Android and MTK headers");
         return RET_FAILED;
     }
 
     ret = android_set_header(ctx->hdr, header);
     if (ret != RET_OK) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Failed to set header fields");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Failed to set header fields");
         return ret;
     }
 
@@ -380,23 +377,23 @@ int mtk_reader_free(MbBiReader *bir, void *userdata)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_mtk(MbBiReader *bir)
+int reader_enable_format_mtk(MbBiReader *bir)
 {
     using namespace mtk;
 
     MtkReaderCtx *const ctx = new MtkReaderCtx();
 
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         FORMAT_MTK,
-                                         FORMAT_NAME_MTK,
-                                         &mtk_reader_bid,
-                                         nullptr,
-                                         &mtk_reader_read_header,
-                                         &mtk_reader_read_entry,
-                                         &mtk_reader_go_to_entry,
-                                         &mtk_reader_read_data,
-                                         &mtk_reader_free);
+    return _reader_register_format(bir,
+                                   ctx,
+                                   FORMAT_MTK,
+                                   FORMAT_NAME_MTK,
+                                   &mtk_reader_bid,
+                                   nullptr,
+                                   &mtk_reader_read_header,
+                                   &mtk_reader_read_entry,
+                                   &mtk_reader_go_to_entry,
+                                   &mtk_reader_read_data,
+                                   &mtk_reader_free);
 }
 
 }

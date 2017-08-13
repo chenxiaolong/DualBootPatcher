@@ -30,7 +30,7 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 using namespace mb::bootimg::android;
 
@@ -38,7 +38,7 @@ using namespace mb::bootimg::android;
 
 TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
@@ -56,7 +56,7 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
@@ -77,7 +77,7 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader header;
@@ -88,13 +88,13 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
 
     ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET + 1,
                                   header, offset), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Max header offset"));
 }
 
 TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader header;
@@ -105,13 +105,13 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
 
     ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
                                   header, offset), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Android magic not found"));
 }
 
 TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader header;
@@ -122,7 +122,7 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
 
     ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
                                   header, offset), RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "exceeds file size"));
 }
 
@@ -130,7 +130,7 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
 
 TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
@@ -160,7 +160,7 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
 
 TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
@@ -178,13 +178,13 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
 
     ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
 }
 
 TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
@@ -211,7 +211,7 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
 
     ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
+    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
 }
 
@@ -280,7 +280,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
     Header *_header;
 
     AndroidReaderGoToEntryTest()
-        : _bir(mb_bi_reader_new(), &mb_bi_reader_free)
+        : _bir(reader_new(), &reader_free)
     {
     }
 
@@ -310,14 +310,14 @@ struct AndroidReaderGoToEntryTest : testing::Test
         // Write secondboot
         memcpy(_data.data() + 3 * ahdr.page_size, "secondboot", 10);
 
-        ASSERT_EQ(mb_bi_reader_enable_format_android(_bir.get()), RET_OK);
+        ASSERT_EQ(reader_enable_format_android(_bir.get()), RET_OK);
 
         _file.open(_data.data(), _data.size());
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(mb_bi_reader_open(_bir.get(), &_file, false), RET_OK);
+        ASSERT_EQ(reader_open(_bir.get(), &_file, false), RET_OK);
 
-        ASSERT_EQ(mb_bi_reader_read_header(_bir.get(), _header), RET_OK);
+        ASSERT_EQ(reader_read_header(_bir.get(), _header), RET_OK);
     }
 };
 
@@ -327,17 +327,17 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_RAMDISK),
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_RAMDISK),
               RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_RAMDISK);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 7u);
     ASSERT_EQ(memcmp(buf, "ramdisk", n), 0);
 
     // We should continue at the next entry
-    ASSERT_EQ(mb_bi_reader_read_entry(_bir.get(), entry), RET_OK);
+    ASSERT_EQ(reader_read_entry(_bir.get(), entry), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 }
@@ -348,9 +348,9 @@ TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry, 0), RET_OK);
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, 0), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -361,19 +361,17 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry,
-                                       ENTRY_TYPE_SECONDBOOT),
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_SECONDBOOT),
               RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 
     // Go back to kernel
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL),
-              RET_OK);
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -385,13 +383,12 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
     size_t n;
     int ret;
 
-    while ((ret = mb_bi_reader_read_entry(_bir.get(), entry)) == RET_OK);
+    while ((ret = reader_read_entry(_bir.get(), entry)) == RET_OK);
     ASSERT_EQ(ret, RET_EOF);
 
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL),
-              RET_OK);
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(mb_bi_reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -400,10 +397,9 @@ TEST_F(AndroidReaderGoToEntryTest, GoToMissingEntryShouldFail)
 {
     Entry *entry;
 
-    ASSERT_EQ(mb_bi_reader_go_to_entry(_bir.get(), entry,
-                                       ENTRY_TYPE_DEVICE_TREE),
+    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_DEVICE_TREE),
               RET_EOF);
 
     // In EOF state now, so next read should return RET_EOF
-    ASSERT_EQ(mb_bi_reader_read_entry(_bir.get(), entry), RET_EOF);
+    ASSERT_EQ(reader_read_entry(_bir.get(), entry), RET_EOF);
 }

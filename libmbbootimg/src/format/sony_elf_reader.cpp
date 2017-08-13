@@ -74,26 +74,26 @@ int find_sony_elf_header(MbBiReader *bir, File &file,
     size_t n;
 
     if (!file.seek(0, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to seek to beginning: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to seek to beginning: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &header, sizeof(header), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(header)) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Too small to be Sony ELF image");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Too small to be Sony ELF image");
         return RET_WARN;
     }
 
     if (memcmp(header.e_ident, SONY_E_IDENT, SONY_EI_NIDENT) != 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Invalid ELF magic");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Invalid ELF magic");
         return RET_WARN;
     }
 
@@ -180,22 +180,22 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
         size_t n;
 
         if (!bir->file->seek(pos, SEEK_SET, nullptr)) {
-            mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                   "Failed to seek to segment %" PRIu16
-                                   " at %" PRIu64 ": %s", i, pos,
-                                   bir->file->error_string().c_str());
+            reader_set_error(bir, bir->file->error().value() /* TODO */,
+                             "Failed to seek to segment %" PRIu16
+                             " at %" PRIu64 ": %s", i, pos,
+                             bir->file->error_string().c_str());
             return bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (!file_read_fully(*bir->file, &phdr, sizeof(phdr), n)) {
-            mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                   "Failed to read segment %" PRIu16 ": %s",
-                                   i, bir->file->error_string().c_str());
+            reader_set_error(bir, bir->file->error().value() /* TODO */,
+                             "Failed to read segment %" PRIu16 ": %s",
+                             i, bir->file->error_string().c_str());
             return bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != sizeof(phdr)) {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Unexpected EOF when reading segment"
-                                   " header %" PRIu16, i);
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Unexpected EOF when reading segment"
+                             " header %" PRIu16, i);
             return RET_WARN;
         }
 
@@ -210,26 +210,26 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
             char cmdline[512];
 
             if (phdr.p_memsz >= sizeof(cmdline)) {
-                mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                       "cmdline too long");
+                reader_set_error(bir, ERROR_FILE_FORMAT,
+                                 "cmdline too long");
                 return RET_WARN;
             }
 
             if (!bir->file->seek(phdr.p_offset, SEEK_SET, nullptr)) {
-                mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                       "Failed to seek to cmdline: %s",
-                                       bir->file->error_string().c_str());
+                reader_set_error(bir, bir->file->error().value() /* TODO */,
+                                 "Failed to seek to cmdline: %s",
+                                 bir->file->error_string().c_str());
                 return bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
             }
 
             if (!file_read_fully(*bir->file, cmdline, phdr.p_memsz, n)) {
-                mb_bi_reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                       "Failed to read cmdline: %s",
-                                       bir->file->error_string().c_str());
+                reader_set_error(bir, bir->file->error().value() /* TODO */,
+                                 "Failed to read cmdline: %s",
+                                 bir->file->error_string().c_str());
                 return bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
             } else if (n != phdr.p_memsz) {
-                mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                       "Unexpected EOF when reading cmdline");
+                reader_set_error(bir, ERROR_FILE_FORMAT,
+                                 "Unexpected EOF when reading cmdline");
                 return RET_WARN;
             }
 
@@ -289,10 +289,10 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
             // dumping this segment.
             continue;
         } else {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Invalid type (0x%08" PRIx32 ") or flags"
-                                   " (0x%08" PRIx32 ") field in segment"
-                                   " %" PRIu32, phdr.p_type, phdr.p_flags, i);
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Invalid type (0x%08" PRIx32 ") or flags"
+                             " (0x%08" PRIx32 ") field in segment"
+                             " %" PRIu32, phdr.p_type, phdr.p_flags, i);
             return RET_WARN;
         }
     }
@@ -343,23 +343,23 @@ int sony_elf_reader_free(MbBiReader *bir, void *userdata)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_sony_elf(MbBiReader *bir)
+int reader_enable_format_sony_elf(MbBiReader *bir)
 {
     using namespace sonyelf;
 
     SonyElfReaderCtx *const ctx = new SonyElfReaderCtx();
 
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         FORMAT_SONY_ELF,
-                                         FORMAT_NAME_SONY_ELF,
-                                         &sony_elf_reader_bid,
-                                         nullptr,
-                                         &sony_elf_reader_read_header,
-                                         &sony_elf_reader_read_entry,
-                                         &sony_elf_reader_go_to_entry,
-                                         &sony_elf_reader_read_data,
-                                         &sony_elf_reader_free);
+    return _reader_register_format(bir,
+                                   ctx,
+                                   FORMAT_SONY_ELF,
+                                   FORMAT_NAME_SONY_ELF,
+                                   &sony_elf_reader_bid,
+                                   nullptr,
+                                   &sony_elf_reader_read_header,
+                                   &sony_elf_reader_read_entry,
+                                   &sony_elf_reader_go_to_entry,
+                                   &sony_elf_reader_read_data,
+                                   &sony_elf_reader_free);
 }
 
 }

@@ -63,14 +63,14 @@ int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
                                uint64_t align, MbBiWriter *biw)
 {
     if (_state != SegmentWriterState::Begin) {
-        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                               "Adding entry in incorrect state");
+        writer_set_error(biw, ERROR_INTERNAL_ERROR,
+                         "Adding entry in incorrect state");
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                               "Too many entries");
+        writer_set_error(biw, ERROR_INTERNAL_ERROR,
+                         "Too many entries");
         return RET_FATAL;
     }
 
@@ -157,9 +157,9 @@ int SegmentWriter::get_entry(File &file, Entry &entry, MbBiWriter *biw)
 {
     if (!_have_pos) {
         if (!file.seek(0, SEEK_CUR, &_pos)) {
-            mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
-                                   "Failed to get current offset: %s",
-                                   file.error_string().c_str());
+            writer_set_error(biw, file.error().value() /* TODO */,
+                             "Failed to get current offset: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
@@ -195,8 +195,8 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, MbBiWriter *biw)
     auto size = entry.size();
     if (size) {
         if (*size > UINT32_MAX) {
-            mb_bi_writer_set_error(biw, ERROR_INVALID_ARGUMENT,
-                                   "Invalid entry size: %" PRIu64, *size);
+            writer_set_error(biw, ERROR_INVALID_ARGUMENT,
+                             "Invalid entry size: %" PRIu64, *size);
             return RET_FAILED;
         }
 
@@ -212,20 +212,20 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
     // Check for overflow
     if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
             || _pos > UINT64_MAX - buf_size) {
-        mb_bi_writer_set_error(biw, ERROR_INVALID_ARGUMENT,
-                               "Overflow in entry size");
+        writer_set_error(biw, ERROR_INVALID_ARGUMENT,
+                         "Overflow in entry size");
         return RET_FAILED;
     }
 
     if (!file_write_fully(file, buf, buf_size, bytes_written)) {
-        mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
-                               "Failed to write data: %s",
-                               file.error_string().c_str());
+        writer_set_error(biw, file.error().value() /* TODO */,
+                         "Failed to write data: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (bytes_written != buf_size) {
-        mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
-                               "Write was truncated: %s",
-                               file.error_string().c_str());
+        writer_set_error(biw, file.error().value() /* TODO */,
+                         "Write was truncated: %s",
+                         file.error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
         return RET_FATAL;
@@ -248,9 +248,9 @@ int SegmentWriter::finish_entry(File &file, MbBiWriter *biw)
         uint64_t new_pos;
 
         if (!file.seek(skip, SEEK_CUR, &new_pos)) {
-            mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
-                                   "Failed to seek to page boundary: %s",
-                                   file.error_string().c_str());
+            writer_set_error(biw, file.error().value() /* TODO */,
+                             "Failed to seek to page boundary: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 

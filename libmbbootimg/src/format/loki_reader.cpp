@@ -75,26 +75,26 @@ int find_loki_header(MbBiReader *bir, File &file,
     size_t n;
 
     if (!file.seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Loki magic not found: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Loki magic not found: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_WARN;
     }
 
     if (!file_read_fully(file, &header, sizeof(header), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(header)) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Too small to be Loki image");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Too small to be Loki image");
         return RET_WARN;
     }
 
     if (memcmp(header.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE) != 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Invalid loki magic");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Invalid loki magic");
         return RET_WARN;
     }
 
@@ -148,35 +148,35 @@ int loki_find_ramdisk_address(MbBiReader *bir, File &file,
 
         if (!file_search(file, -1, -1, 0, LOKI_SHELLCODE,
                          LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset)) {
-            mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                                   "Failed to search for Loki shellcode: %s",
-                                   file.error_string().c_str());
+            reader_set_error(bir, file.error().value() /* TODO */,
+                             "Failed to search for Loki shellcode: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (offset == 0) {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Loki shellcode not found");
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Loki shellcode not found");
             return RET_WARN;
         }
 
         offset += LOKI_SHELLCODE_SIZE - 5;
 
         if (!file.seek(offset, SEEK_SET, nullptr)) {
-            mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                                   "Failed to seek to ramdisk address offset: %s",
-                                   file.error_string().c_str());
+            reader_set_error(bir, file.error().value() /* TODO */,
+                             "Failed to seek to ramdisk address offset: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (!file_read_fully(file, &ramdisk_addr, sizeof(ramdisk_addr), n)) {
-            mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                                   "Failed to read ramdisk address offset: %s",
-                                   file.error_string().c_str());
+            reader_set_error(bir, file.error().value() /* TODO */,
+                             "Failed to read ramdisk address offset: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != sizeof(ramdisk_addr)) {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Unexpected EOF when reading ramdisk address");
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Unexpected EOF when reading ramdisk address");
             return RET_WARN;
         }
 
@@ -185,9 +185,9 @@ int loki_find_ramdisk_address(MbBiReader *bir, File &file,
         // Otherwise, use the default for jflte (- 0x00008000 + 0x02000000)
 
         if (hdr.kernel_addr > UINT32_MAX - 0x01ff8000) {
-            mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                                   "Invalid kernel address: %" PRIu32,
-                                   hdr.kernel_addr);
+            reader_set_error(bir, ERROR_FILE_FORMAT,
+                             "Invalid kernel address: %" PRIu32,
+                             hdr.kernel_addr);
             return RET_WARN;
         }
 
@@ -295,9 +295,9 @@ int loki_old_find_gzip_offset(MbBiReader *bir, File &file,
 
     if (!file_search(file, start_offset, -1, 0, gzip_deflate_magic,
                      sizeof(gzip_deflate_magic), -1, result_cb, &result)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to search for gzip magic: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to search for gzip magic: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
@@ -308,8 +308,8 @@ int loki_old_find_gzip_offset(MbBiReader *bir, File &file,
     } else if (result.have_flag0) {
         gzip_offset_out = result.flag0_offset;
     } else {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "No gzip headers found");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "No gzip headers found");
         return RET_WARN;
     }
 
@@ -362,15 +362,15 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, File &file,
     }
 
     if (!file.seek(-aboot_size, SEEK_END, &aboot_offset)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to seek to end of file: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to seek to end of file: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (ramdisk_offset > aboot_offset) {
-        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                               "Ramdisk offset greater than aboot offset");
+        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                         "Ramdisk offset greater than aboot offset");
         return RET_FAILED;
     }
 
@@ -388,20 +388,20 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, File &file,
         cur_offset -= to_read;
 
         if (!file.seek(cur_offset, SEEK_SET, nullptr)) {
-            mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                                   "Failed to seek: %s",
-                                   file.error_string().c_str());
+            reader_set_error(bir, file.error().value() /* TODO */,
+                             "Failed to seek: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (!file_read_fully(file, buf, to_read, n)) {
-            mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                                   "Failed to read: %s",
-                                   file.error_string().c_str());
+            reader_set_error(bir, file.error().value() /* TODO */,
+                             "Failed to read: %s",
+                             file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != to_read) {
-            mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                                   "Unexpected file truncation");
+            reader_set_error(bir, ERROR_INTERNAL_ERROR,
+                             "Unexpected file truncation");
             return RET_FAILED;
         }
 
@@ -413,8 +413,8 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, File &file,
         }
     }
 
-    mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                           "Could not determine ramdisk size");
+    reader_set_error(bir, ERROR_FILE_FORMAT,
+                     "Could not determine ramdisk size");
     return RET_WARN;
 #endif
 }
@@ -450,20 +450,20 @@ int find_linux_kernel_size(MbBiReader *bir, File &file,
     // we'll use that.
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     if (!file.seek(kernel_offset + 0x2c, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to seek to kernel header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to seek to kernel header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &kernel_size, sizeof(kernel_size), n)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Failed to read size from kernel header: %s",
-                               file.error_string().c_str());
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Failed to read size from kernel header: %s",
+                         file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(kernel_size)) {
-        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
-                               "Unexpected EOF when reading kernel header");
+        reader_set_error(bir, file.error().value() /* TODO */,
+                         "Unexpected EOF when reading kernel header");
         return RET_WARN;
     }
 
@@ -507,8 +507,8 @@ int loki_read_old_header(MbBiReader *bir, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Page size cannot be 0");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Page size cannot be 0");
         return RET_WARN;
     }
 
@@ -627,8 +627,8 @@ int loki_read_new_header(MbBiReader *bir, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
-                               "Page size cannot be 0");
+        reader_set_error(bir, ERROR_FILE_FORMAT,
+                         "Page size cannot be 0");
         return RET_WARN;
     }
 
@@ -862,23 +862,23 @@ int loki_reader_free(MbBiReader *bir, void *userdata)
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_loki(MbBiReader *bir)
+int reader_enable_format_loki(MbBiReader *bir)
 {
     using namespace loki;
 
     LokiReaderCtx *const ctx = new LokiReaderCtx();
 
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         FORMAT_LOKI,
-                                         FORMAT_NAME_LOKI,
-                                         &loki_reader_bid,
-                                         nullptr,
-                                         &loki_reader_read_header,
-                                         &loki_reader_read_entry,
-                                         &loki_reader_go_to_entry,
-                                         &loki_reader_read_data,
-                                         &loki_reader_free);
+    return _reader_register_format(bir,
+                                   ctx,
+                                   FORMAT_LOKI,
+                                   FORMAT_NAME_LOKI,
+                                   &loki_reader_bid,
+                                   nullptr,
+                                   &loki_reader_read_header,
+                                   &loki_reader_read_entry,
+                                   &loki_reader_go_to_entry,
+                                   &loki_reader_read_data,
+                                   &loki_reader_free);
 }
 
 }

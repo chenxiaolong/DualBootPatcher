@@ -23,14 +23,14 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
+typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 #if 0
 TEST(AndroidWriterInternalsTest, CheckHeaderCleared)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -38,16 +38,16 @@ TEST(AndroidWriterInternalsTest, CheckHeaderCleared)
 
     MbBiHeader *header2;
 
-    ASSERT_EQ(mb_bi_header_set_page_size(ctx.client_header, 2048), RET_OK);
+    ASSERT_EQ(header_set_page_size(ctx.client_header, 2048), RET_OK);
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_FALSE(mb_bi_header_page_size_is_set(header2));
+    ASSERT_FALSE(header_page_size_is_set(header2));
 }
 
 TEST(AndroidWriterInternalsTest, CheckHeaderSupportedFields)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -57,14 +57,14 @@ TEST(AndroidWriterInternalsTest, CheckHeaderSupportedFields)
 
     // We don't care about the actual value, just that it was changed
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_NE(mb_bi_header_supported_fields(header2), MB_BI_HEADER_ALL_FIELDS);
+    ASSERT_NE(header_supported_fields(header2), HEADER_ALL_FIELDS);
 }
 
 TEST(AndroidWriterInternalsTest, CheckHeaderFieldsSet)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -76,15 +76,13 @@ TEST(AndroidWriterInternalsTest, CheckHeaderFieldsSet)
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
 
     // Set some dummy values
-    ASSERT_EQ(mb_bi_header_set_kernel_address(header2, 0x11223344), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_ramdisk_address(header2, 0x22334455), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_secondboot_address(header2, 0x33445566),
-              RET_OK);
-    ASSERT_EQ(mb_bi_header_set_kernel_tags_address(header2, 0x44556677),
-              RET_OK);
-    ASSERT_EQ(mb_bi_header_set_page_size(header2, 2048), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_board_name(header2, "hello"), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_kernel_cmdline(header2, "world"), RET_OK);
+    ASSERT_EQ(header_set_kernel_address(header2, 0x11223344), RET_OK);
+    ASSERT_EQ(header_set_ramdisk_address(header2, 0x22334455), RET_OK);
+    ASSERT_EQ(header_set_secondboot_address(header2, 0x33445566), RET_OK);
+    ASSERT_EQ(header_set_kernel_tags_address(header2, 0x44556677), RET_OK);
+    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
+    ASSERT_EQ(header_set_board_name(header2, "hello"), RET_OK);
+    ASSERT_EQ(header_set_kernel_cmdline(header2, "world"), RET_OK);
 
     // Write header
     ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2), RET_OK);
@@ -101,9 +99,9 @@ TEST(AndroidWriterInternalsTest, CheckHeaderFieldsSet)
 
 TEST(AndroidWriterInternalsTest, MissingPageSizeShouldFail)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -117,14 +115,14 @@ TEST(AndroidWriterInternalsTest, MissingPageSizeShouldFail)
     // Write header
     ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
               RET_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_writer_error_string(biw.get()), "Page size"));
+    ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Page size"));
 }
 
 TEST(AndroidWriterInternalsTest, InvalidPageSizeShouldFail)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -136,20 +134,19 @@ TEST(AndroidWriterInternalsTest, InvalidPageSizeShouldFail)
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
 
     // Set page size
-    ASSERT_EQ(mb_bi_header_set_page_size(header2, 1234), RET_OK);
+    ASSERT_EQ(header_set_page_size(header2, 1234), RET_OK);
 
     // Write header
     ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
               RET_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_writer_error_string(biw.get()),
-                       "Invalid page size"));
+    ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Invalid page size"));
 }
 
 TEST(AndroidWriterInternalsTest, OversizedBoardNameShouldFail)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -159,24 +156,23 @@ TEST(AndroidWriterInternalsTest, OversizedBoardNameShouldFail)
 
     // Get header instance
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_page_size(header2, 2048), RET_OK);
+    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
 
     // Set board name
     std::string name(BOOT_NAME_SIZE, 'c');
-    ASSERT_EQ(mb_bi_header_set_board_name(header2, name.c_str()), RET_OK);
+    ASSERT_EQ(header_set_board_name(header2, name.c_str()), RET_OK);
 
     // Write header
     ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
               RET_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_writer_error_string(biw.get()),
-                       "Board name"));
+    ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Board name"));
 }
 
 TEST(AndroidWriterInternalsTest, OversizedCmdlineShouldFail)
 {
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     ASSERT_TRUE(!!biw);
-    ScopedHeader header(mb_bi_header_new(), mb_bi_header_free);
+    ScopedHeader header(header_new(), header_free);
     ASSERT_TRUE(!!header);
 
     AndroidWriterCtx ctx = {};
@@ -186,16 +182,15 @@ TEST(AndroidWriterInternalsTest, OversizedCmdlineShouldFail)
 
     // Get header instance
     ASSERT_EQ(android_writer_get_header(biw.get(), &ctx, &header2), RET_OK);
-    ASSERT_EQ(mb_bi_header_set_page_size(header2, 2048), RET_OK);
+    ASSERT_EQ(header_set_page_size(header2, 2048), RET_OK);
 
     // Set board name
     std::string args(BOOT_ARGS_SIZE, 'c');
-    ASSERT_EQ(mb_bi_header_set_kernel_cmdline(header2, args.c_str()), RET_OK);
+    ASSERT_EQ(header_set_kernel_cmdline(header2, args.c_str()), RET_OK);
 
     // Write header
     ASSERT_EQ(android_writer_write_header(biw.get(), &ctx, header2),
               RET_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_writer_error_string(biw.get()),
-                       "Kernel cmdline"));
+    ASSERT_TRUE(strstr(writer_error_string(biw.get()), "Kernel cmdline"));
 }
 #endif

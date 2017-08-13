@@ -40,7 +40,7 @@ namespace bootimg
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_bump(MbBiReader *bir)
+int reader_enable_format_bump(MbBiReader *bir)
 {
     using namespace android;
 
@@ -48,17 +48,17 @@ int mb_bi_reader_enable_format_bump(MbBiReader *bir)
 
     ctx->is_bump = true;
 
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         FORMAT_BUMP,
-                                         FORMAT_NAME_BUMP,
-                                         &bump_reader_bid,
-                                         &android_reader_set_option,
-                                         &android_reader_read_header,
-                                         &android_reader_read_entry,
-                                         &android_reader_go_to_entry,
-                                         &android_reader_read_data,
-                                         &android_reader_free);
+    return _reader_register_format(bir,
+                                   ctx,
+                                   FORMAT_BUMP,
+                                   FORMAT_NAME_BUMP,
+                                   &bump_reader_bid,
+                                   &android_reader_set_option,
+                                   &android_reader_read_header,
+                                   &android_reader_read_entry,
+                                   &android_reader_go_to_entry,
+                                   &android_reader_read_data,
+                                   &android_reader_free);
 }
 
 }

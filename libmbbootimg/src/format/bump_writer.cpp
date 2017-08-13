@@ -40,34 +40,34 @@ namespace bootimg
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_writer_set_format_bump(MbBiWriter *biw)
+int writer_set_format_bump(MbBiWriter *biw)
 {
     using namespace android;
 
     AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
     if (!SHA1_Init(&ctx->sha_ctx)) {
-        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                               "Failed to initialize SHA_CTX");
+        writer_set_error(biw, ERROR_INTERNAL_ERROR,
+                         "Failed to initialize SHA_CTX");
         delete ctx;
         return false;
     }
 
     ctx->is_bump = true;
 
-    return _mb_bi_writer_register_format(biw,
-                                         ctx,
-                                         FORMAT_BUMP,
-                                         FORMAT_NAME_BUMP,
-                                         nullptr,
-                                         &android_writer_get_header,
-                                         &android_writer_write_header,
-                                         &android_writer_get_entry,
-                                         &android_writer_write_entry,
-                                         &android_writer_write_data,
-                                         &android_writer_finish_entry,
-                                         &android_writer_close,
-                                         &android_writer_free);
+    return _writer_register_format(biw,
+                                   ctx,
+                                   FORMAT_BUMP,
+                                   FORMAT_NAME_BUMP,
+                                   nullptr,
+                                   &android_writer_get_header,
+                                   &android_writer_write_header,
+                                   &android_writer_get_entry,
+                                   &android_writer_write_entry,
+                                   &android_writer_write_data,
+                                   &android_writer_finish_entry,
+                                   &android_writer_close,
+                                   &android_writer_free);
 }
 
 }

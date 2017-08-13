@@ -76,8 +76,8 @@
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 #define HELP_HEADERS \
     "Header fields:\n" \
@@ -688,10 +688,10 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != RET_OK
+        if (writer_write_data(biw, buf, n, &bytes_written) != RET_OK
                 || bytes_written != n) {
             fprintf(stderr, "Failed to write entry data: %s\n",
-                    mb_bi_writer_error_string(biw));
+                    writer_error_string(biw));
             return false;
         }
 
@@ -721,8 +721,7 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
     char buf[10240];
     size_t n;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n))
-            == RET_OK) {
+    while ((ret = reader_read_data(bir, buf, sizeof(buf), &n)) == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));
@@ -732,7 +731,7 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to read entry data: %s\n",
-                mb_bi_reader_error_string(bir));
+                reader_error_string(bir));
         return false;
     }
 
@@ -793,9 +792,9 @@ static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
         return false;
     }
 
-    if (mb_bi_writer_write_entry(biw, entry) != RET_OK) {
+    if (writer_write_entry(biw, entry) != RET_OK) {
         fprintf(stderr, "Failed to write entry: %s\n",
-                mb_bi_writer_error_string(biw));
+                writer_error_string(biw));
         return false;
     }
 
@@ -960,7 +959,7 @@ bool unpack_main(int argc, char *argv[])
     }
 
     // Load the boot image
-    ScopedReader bir(mb_bi_reader_new(), mb_bi_reader_free);
+    ScopedReader bir(reader_new(), reader_free);
     Header *header;
     Entry *entry;
     int ret;
@@ -971,32 +970,32 @@ bool unpack_main(int argc, char *argv[])
     }
 
     if (type) {
-        ret = mb_bi_reader_enable_format_by_name(bir.get(), type);
+        ret = reader_enable_format_by_name(bir.get(), type);
         if (ret != RET_OK) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, mb_bi_reader_error_string(bir.get()));
+                    type, reader_error_string(bir.get()));
             return false;
         }
     } else {
-        ret = mb_bi_reader_enable_format_all(bir.get());
+        ret = reader_enable_format_all(bir.get());
         if (ret != RET_OK) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
-                    mb_bi_reader_error_string(bir.get()));
+                    reader_error_string(bir.get()));
             return false;
         }
     }
 
-    ret = mb_bi_reader_open_filename(bir.get(), input_file);
+    ret = reader_open_filename(bir.get(), input_file);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+                input_file.c_str(), reader_error_string(bir.get()));
         return false;
     }
 
-    ret = mb_bi_reader_read_header(bir.get(), header);
+    ret = reader_read_header(bir.get(), header);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+                input_file.c_str(), reader_error_string(bir.get()));
         return false;
     }
 
@@ -1004,7 +1003,7 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    while ((ret = mb_bi_reader_read_entry(bir.get(), entry)) == RET_OK) {
+    while ((ret = reader_read_entry(bir.get(), entry)) == RET_OK) {
         if (!write_entry_to_file(paths, bir.get(), *entry)) {
             return false;
         }
@@ -1012,7 +1011,7 @@ bool unpack_main(int argc, char *argv[])
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to read entry: %s\n",
-                mb_bi_reader_error_string(bir.get()));
+                reader_error_string(bir.get()));
         return false;
     }
 
@@ -1124,7 +1123,7 @@ bool pack_main(int argc, char *argv[])
     prepend_if_empty(paths, input_dir, prefix);
 
     // Load the boot image
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
+    ScopedWriter biw(writer_new(), writer_free);
     Header *header;
     Entry *entry;
     int ret;
@@ -1134,23 +1133,23 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_writer_set_format_by_name(biw.get(), type);
+    ret = writer_set_format_by_name(biw.get(), type);
     if (ret != RET_OK) {
         fprintf(stderr, "Invalid boot image type: %s\n", type);
         return false;
     }
 
-    ret = mb_bi_writer_open_filename(biw.get(), output_file);
+    ret = writer_open_filename(biw.get(), output_file);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                output_file.c_str(), writer_error_string(biw.get()));
         return false;
     }
 
-    ret = mb_bi_writer_get_header(biw.get(), header);
+    ret = writer_get_header(biw.get(), header);
     if (ret != RET_OK) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                mb_bi_writer_error_string(biw.get()));
+                writer_error_string(biw.get()));
         return false;
     }
 
@@ -1158,14 +1157,14 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_writer_write_header(biw.get(), *header);
+    ret = writer_write_header(biw.get(), *header);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                output_file.c_str(), writer_error_string(biw.get()));
         return false;
     }
 
-    while ((ret = mb_bi_writer_get_entry(biw.get(), entry)) == RET_OK) {
+    while ((ret = writer_get_entry(biw.get(), entry)) == RET_OK) {
         if (!write_file_to_entry(paths, biw.get(), *entry)) {
             return false;
         }
@@ -1173,14 +1172,14 @@ bool pack_main(int argc, char *argv[])
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to get next entry: %s\n",
-                mb_bi_writer_error_string(biw.get()));
+                writer_error_string(biw.get()));
         return false;
     }
 
-    ret = mb_bi_writer_close(biw.get());
+    ret = writer_close(biw.get());
     if (ret != RET_OK) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                mb_bi_writer_error_string(biw.get()));
+                writer_error_string(biw.get()));
         return false;
     }
 

@@ -34,11 +34,11 @@
 #define READER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_reader_set_error((INSTANCE), \
-                                   ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
+            reader_set_error((INSTANCE), \
+                             ERROR_PROGRAMMER_ERROR, \
+                             "%s: Invalid state: " \
+                             "expected 0x%x, actual: 0x%hx", \
+                             __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = ReaderState::FATAL; \
             return RET_FATAL; \
         } \
@@ -47,11 +47,11 @@
 #define READER_ENSURE_STATE_GOTO(INSTANCE, STATES, RETURN_VAR, LABEL) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_reader_set_error((INSTANCE), \
-                                   ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
+            reader_set_error((INSTANCE), \
+                             ERROR_PROGRAMMER_ERROR, \
+                             "%s: Invalid state: " \
+                             "expected 0x%x, actual: 0x%hx", \
+                             __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = ReaderState::FATAL; \
             (RETURN_VAR) = RET_FATAL; \
             goto LABEL; \
@@ -132,20 +132,20 @@ struct MbBiReader
     Entry entry;
 };
 
-int _mb_bi_reader_register_format(MbBiReader *bir,
-                                  void *userdata,
-                                  int type,
-                                  const std::string &name,
-                                  FormatReaderBidder bidder_cb,
-                                  FormatReaderSetOption set_option_cb,
-                                  FormatReaderReadHeader read_header_cb,
-                                  FormatReaderReadEntry read_entry_cb,
-                                  FormatReaderGoToEntry go_to_entry_cb,
-                                  FormatReaderReadData read_data_cb,
-                                  FormatReaderFree free_cb);
+int _reader_register_format(MbBiReader *bir,
+                            void *userdata,
+                            int type,
+                            const std::string &name,
+                            FormatReaderBidder bidder_cb,
+                            FormatReaderSetOption set_option_cb,
+                            FormatReaderReadHeader read_header_cb,
+                            FormatReaderReadEntry read_entry_cb,
+                            FormatReaderGoToEntry go_to_entry_cb,
+                            FormatReaderReadData read_data_cb,
+                            FormatReaderFree free_cb);
 
-int _mb_bi_reader_free_format(MbBiReader *bir,
-                              FormatReader *format);
+int _reader_free_format(MbBiReader *bir,
+                        FormatReader *format);
 
 }
 }

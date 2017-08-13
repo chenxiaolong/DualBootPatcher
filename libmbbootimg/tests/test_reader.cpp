@@ -26,12 +26,12 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 
 TEST(BootImgReaderTest, CheckInitialValues)
 {
-    ScopedReader bir(mb_bi_reader_new(), mb_bi_reader_free);
+    ScopedReader bir(reader_new(), reader_free);
     ASSERT_TRUE(!!bir);
 
     // Should start in NEW state

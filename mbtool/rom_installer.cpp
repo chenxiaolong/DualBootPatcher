@@ -55,7 +55,7 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 namespace mb
 {
@@ -283,7 +283,7 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
 bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
+    ScopedReader bir(reader_new(), &reader_free);
     Header *header;
     Entry *entry;
     int ret;
@@ -294,35 +294,35 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
+    ret = reader_enable_format_all(bir.get());
     if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
-             mb_bi_reader_error_string(bir.get()));
+             reader_error_string(bir.get()));
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file);
+    ret = reader_open_filename(bir.get(), boot_image_file);
     if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader_error_string(bir.get()));
         return false;
     }
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), header);
+    ret = reader_read_header(bir.get(), header);
     if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader_error_string(bir.get()));
         return false;
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
+    ret = reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
     if (ret == RET_EOF) {
         LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         return false;
     } else if (ret != RET_OK) {
         LOGE("%s: Failed to find ramdisk entry: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader_error_string(bir.get()));
         return false;
     }
 
