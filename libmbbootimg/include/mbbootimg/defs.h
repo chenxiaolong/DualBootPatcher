@@ -38,11 +38,10 @@
 
 #define MB_BI_EOF                       1
 #define MB_BI_OK                        0
-#define MB_BI_RETRY                     (-1) // TODO TODO TODO TODO TODO TODO
-#define MB_BI_UNSUPPORTED               (-2)
-#define MB_BI_WARN                      (-3)
-#define MB_BI_FAILED                    (-4)
-#define MB_BI_FATAL                     (-5)
+#define MB_BI_UNSUPPORTED               (-1)
+#define MB_BI_WARN                      (-2)
+#define MB_BI_FAILED                    (-3)
+#define MB_BI_FATAL                     (-4)
 
 // Error types
 

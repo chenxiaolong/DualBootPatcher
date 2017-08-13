@@ -144,15 +144,6 @@
  */
 
 /*!
- * \def MB_BI_RETRY
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Reattempt operation
- *
- * The operation should be reattempted.
- */
-
-/*!
  * \def MB_BI_WARN
  * \ingroup MB_BI_RETURN_VALS
  *
