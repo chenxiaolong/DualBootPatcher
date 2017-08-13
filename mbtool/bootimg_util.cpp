@@ -44,7 +44,7 @@ bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
     ssize_t n_written;
     size_t remain;
 
-    while ((ret = reader_read_data(bir, buf, sizeof(buf), &n_read)) == RET_OK) {
+    while ((ret = reader_read_data(bir, buf, sizeof(buf), n_read)) == RET_OK) {
         remain = n_read;
 
         while (remain > 0) {
@@ -84,7 +84,7 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (writer_write_data(biw, buf, n, &bytes_written) != RET_OK
+        if (writer_write_data(biw, buf, n, bytes_written) != RET_OK
                 || bytes_written != n) {
             LOGE("Failed to write entry data: %s",
                  writer_error_string(biw));
@@ -117,7 +117,7 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
     char buf[10240];
     size_t n;
 
-    while ((ret = reader_read_data(bir, buf, sizeof(buf), &n)) == RET_OK) {
+    while ((ret = reader_read_data(bir, buf, sizeof(buf), n)) == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
@@ -147,8 +147,8 @@ bool bi_copy_data_to_data(MbBiReader *bir, MbBiWriter *biw)
     size_t n_read;
     size_t n_written;
 
-    while ((ret = reader_read_data(bir, buf, sizeof(buf), &n_read)) == RET_OK) {
-        ret = writer_write_data(biw, buf, n_read, &n_written);
+    while ((ret = reader_read_data(bir, buf, sizeof(buf), n_read)) == RET_OK) {
+        ret = writer_write_data(biw, buf, n_read, n_written);
         if (ret != RET_OK || n_read != n_written) {
             LOGE("Failed to write entry data: %s",
                  writer_error_string(biw));

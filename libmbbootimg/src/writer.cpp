@@ -776,7 +776,7 @@ int writer_write_entry(MbBiWriter *biw, const Entry &entry)
  *   * \<= #RET_WARN if an error occurs
  */
 int writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
-                      size_t *bytes_written)
+                      size_t &bytes_written)
 {
     WRITER_ENSURE_STATE(biw, WriterState::DATA);
     int ret;
@@ -789,7 +789,7 @@ int writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
     }
 
     ret = biw->format.write_data_cb(biw, biw->format.userdata, buf, size,
-                                    *bytes_written);
+                                    bytes_written);
     if (ret == RET_OK) {
         // Do not alter state. Stay in WriterState::DATA
     } else if (ret <= RET_FATAL) {

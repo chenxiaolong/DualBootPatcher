@@ -806,7 +806,7 @@ int reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
  *   * \<= #RET_WARN if an error occurs
  */
 int reader_read_data(MbBiReader *bir, void *buf, size_t size,
-                     size_t *bytes_read)
+                     size_t &bytes_read)
 {
     READER_ENSURE_STATE(bir, ReaderState::DATA);
     int ret;
@@ -819,7 +819,7 @@ int reader_read_data(MbBiReader *bir, void *buf, size_t size,
     }
 
     ret = bir->format->read_data_cb(bir, bir->format->userdata, buf, size,
-                                    *bytes_read);
+                                    bytes_read);
     if (ret == RET_OK) {
         // Do not alter state. Stay in ReaderState::DATA
     } else if (ret <= RET_FATAL) {

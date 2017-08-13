@@ -87,8 +87,7 @@ protected:
             ASSERT_EQ(writer_write_entry(_biw.get(), *entry), RET_OK);
 
             if (*entry->type() & types) {
-                ASSERT_EQ(writer_write_data(_biw.get(), "hello", 5, &n),
-                          RET_OK);
+                ASSERT_EQ(writer_write_data(_biw.get(), "hello", 5, n), RET_OK);
                 ASSERT_EQ(n, 5u);
             }
         }

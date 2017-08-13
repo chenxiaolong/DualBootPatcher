@@ -61,7 +61,7 @@ MB_EXPORT int reader_go_to_entry(MbBiReader *bir, Entry *&entry,
 MB_EXPORT int reader_go_to_entry2(MbBiReader *bir, Entry &entry,
                                   int entry_type);
 MB_EXPORT int reader_read_data(MbBiReader *bir, void *buf,
-                               size_t size, size_t *bytes_read);
+                               size_t size, size_t &bytes_read);
 
 // Format operations
 MB_EXPORT int reader_format_code(MbBiReader *bir);

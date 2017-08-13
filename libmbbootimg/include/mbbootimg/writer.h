@@ -59,7 +59,7 @@ MB_EXPORT int writer_get_entry(MbBiWriter *biw, Entry *&entry);
 MB_EXPORT int writer_get_entry2(MbBiWriter *biw, Entry &entry);
 MB_EXPORT int writer_write_entry(MbBiWriter *biw, const Entry &entry);
 MB_EXPORT int writer_write_data(MbBiWriter *biw, const void *buf,
-                                size_t size, size_t *bytes_written);
+                                size_t size, size_t &bytes_written);
 
 // Format operations
 MB_EXPORT int writer_format_code(MbBiWriter *biw);

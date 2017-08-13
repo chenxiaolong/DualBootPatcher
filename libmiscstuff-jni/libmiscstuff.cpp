@@ -231,7 +231,7 @@ static la_ssize_t laBootImgReadCb(archive *a, void *userdata,
     size_t bytesRead;
     int ret;
 
-    ret = reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf), &bytesRead);
+    ret = reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf), bytesRead);
     if (ret == RET_EOF) {
         return 0;
     } else if (ret != RET_OK) {
@@ -506,8 +506,8 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             size_t n2;
 
             while ((ret = reader_read_data(
-                    bir1.get(), buf1, sizeof(buf1), &n1)) == RET_OK) {
-                ret = reader_read_data(bir2.get(), buf2, n1, &n2);
+                    bir1.get(), buf1, sizeof(buf1), n1)) == RET_OK) {
+                ret = reader_read_data(bir2.get(), buf2, n1, n2);
                 if (ret != RET_OK) {
                     throw_exception(env, IOException,
                                     "%s: Failed to read data: %s", filename2,

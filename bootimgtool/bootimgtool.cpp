@@ -688,7 +688,7 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (writer_write_data(biw, buf, n, &bytes_written) != RET_OK
+        if (writer_write_data(biw, buf, n, bytes_written) != RET_OK
                 || bytes_written != n) {
             fprintf(stderr, "Failed to write entry data: %s\n",
                     writer_error_string(biw));
@@ -721,7 +721,7 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
     char buf[10240];
     size_t n;
 
-    while ((ret = reader_read_data(bir, buf, sizeof(buf), &n)) == RET_OK) {
+    while ((ret = reader_read_data(bir, buf, sizeof(buf), n)) == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));

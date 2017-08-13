@@ -330,14 +330,14 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
     ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_RAMDISK),
               RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_RAMDISK);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 7u);
     ASSERT_EQ(memcmp(buf, "ramdisk", n), 0);
 
     // We should continue at the next entry
     ASSERT_EQ(reader_read_entry(_bir.get(), entry), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 }
@@ -350,7 +350,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
 
     ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, 0), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -364,14 +364,14 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
     ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_SECONDBOOT),
               RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 
     // Go back to kernel
     ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -388,7 +388,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
 
     ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), &n), RET_OK);
+    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
