@@ -322,7 +322,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
              mb_bi_reader_error_string(bir.get()));
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), input_file.c_str());
+    ret = mb_bi_reader_open_filename(bir.get(), input_file);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
              input_file.c_str(), mb_bi_reader_error_string(bir.get()));
@@ -337,7 +337,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
              mb_bi_writer_error_string(biw.get()));
         return false;
     }
-    ret = mb_bi_writer_open_filename(biw.get(), output_file.c_str());
+    ret = mb_bi_writer_open_filename(biw.get(), output_file);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to open boot image for writing: %s",
              output_file.c_str(), mb_bi_writer_error_string(biw.get()));
@@ -348,7 +348,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("Patching boot image");
     LOGD("- Input: %s", input_file.c_str());
     LOGD("- Output: %s", output_file.c_str());
-    LOGD("- Format: %s", mb_bi_reader_format_name(bir.get()));
+    LOGD("- Format: %s", mb_bi_reader_format_name(bir.get()).c_str());
 
     // Copy header
     ret = mb_bi_reader_read_header(bir.get(), header);

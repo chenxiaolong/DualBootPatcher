@@ -19,9 +19,10 @@
 
 #pragma once
 
+#include <string>
+
 #include <cstdarg>
 #include <cstddef>
-#include <cwchar>
 
 #include "mbcommon/common.h"
 
@@ -44,9 +45,9 @@ MB_EXPORT int mb_bi_reader_free(MbBiReader *bir);
 
 // Open/close
 MB_EXPORT int mb_bi_reader_open_filename(MbBiReader *bir,
-                                         const char *filename);
+                                         const std::string &filename);
 MB_EXPORT int mb_bi_reader_open_filename_w(MbBiReader *bir,
-                                           const wchar_t *filename);
+                                           const std::wstring &filename);
 MB_EXPORT int mb_bi_reader_open(MbBiReader *bir,
                                 File *file, bool owned);
 MB_EXPORT int mb_bi_reader_close(MbBiReader *bir);
@@ -69,16 +70,16 @@ MB_EXPORT int mb_bi_reader_read_data(MbBiReader *bir, void *buf,
 
 // Format operations
 MB_EXPORT int mb_bi_reader_format_code(MbBiReader *bir);
-MB_EXPORT const char * mb_bi_reader_format_name(MbBiReader *bir);
+MB_EXPORT std::string mb_bi_reader_format_name(MbBiReader *bir);
 MB_EXPORT int mb_bi_reader_set_format_by_code(MbBiReader *bir,
                                               int code);
 MB_EXPORT int mb_bi_reader_set_format_by_name(MbBiReader *bir,
-                                              const char *name);
+                                              const std::string &name);
 MB_EXPORT int mb_bi_reader_enable_format_all(MbBiReader *bir);
 MB_EXPORT int mb_bi_reader_enable_format_by_code(MbBiReader *bir,
                                                  int code);
 MB_EXPORT int mb_bi_reader_enable_format_by_name(MbBiReader *bir,
-                                                 const char *name);
+                                                 const std::string &name);
 
 // Specific formats
 MB_EXPORT int mb_bi_reader_enable_format_android(MbBiReader *bir);

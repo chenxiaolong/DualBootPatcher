@@ -399,7 +399,7 @@ int mb_bi_writer_free(MbBiWriter *biw)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
+int mb_bi_writer_open_filename(MbBiWriter *biw, const std::string &filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
@@ -427,7 +427,7 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
+int mb_bi_writer_open_filename_w(MbBiWriter *biw, const std::wstring &filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
@@ -824,17 +824,17 @@ int mb_bi_writer_format_code(MbBiWriter *biw)
  *
  * \param biw MbBiWriter
  *
- * \return Boot image format name or NULL if no format is selected
+ * \return Boot image format name or empty string if no format is selected
  */
-const char * mb_bi_writer_format_name(MbBiWriter *biw)
+std::string mb_bi_writer_format_name(MbBiWriter *biw)
 {
     if (!biw->format_set) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
                                "No format selected");
-        return nullptr;
+        return {};
     }
 
-    return biw->format.name.c_str();
+    return biw->format.name;
 }
 
 /*!
@@ -873,18 +873,18 @@ int mb_bi_writer_set_format_by_code(MbBiWriter *biw, int code)
  *   * #MB_BI_OK if the format is successfully enabled
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_set_format_by_name(MbBiWriter *biw, const char *name)
+int mb_bi_writer_set_format_by_name(MbBiWriter *biw, const std::string &name)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
     for (auto it = writer_formats; it->func; ++it) {
-        if (strcmp(name, it->name) == 0) {
+        if (name == it->name) {
             return it->func(biw);
         }
     }
 
     mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
-                           "Invalid format name: %s", name);
+                           "Invalid format name: %s", name.c_str());
     return MB_BI_FAILED;
 }
 

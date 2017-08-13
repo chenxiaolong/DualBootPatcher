@@ -300,7 +300,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
              mb_bi_reader_error_string(bir.get()));
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file.c_str());
+    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
              boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));

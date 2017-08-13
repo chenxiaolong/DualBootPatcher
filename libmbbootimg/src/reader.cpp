@@ -396,7 +396,7 @@ int mb_bi_reader_free(MbBiReader *bir)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
+int mb_bi_reader_open_filename(MbBiReader *bir, const std::string &filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
@@ -422,7 +422,7 @@ int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
+int mb_bi_reader_open_filename_w(MbBiReader *bir, const std::wstring &filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
@@ -869,17 +869,17 @@ int mb_bi_reader_format_code(MbBiReader *bir)
  *
  * \param bir MbBiReader
  *
- * \return Boot image format name or NULL if the boot image is not open
+ * \return Boot image format name or empty string if the boot image is not open
  */
-const char * mb_bi_reader_format_name(MbBiReader *bir)
+std::string mb_bi_reader_format_name(MbBiReader *bir)
 {
     if (!bir->format) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_PROGRAMMER_ERROR,
                                "No format selected");
-        return nullptr;
+        return {};
     }
 
-    return bir->format->name.c_str();
+    return bir->format->name;
 }
 
 /*!
@@ -939,7 +939,7 @@ int mb_bi_reader_set_format_by_code(MbBiReader *bir, int code)
  *   * #MB_BI_OK if the format is successfully set
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_set_format_by_name(MbBiReader *bir, const char *name)
+int mb_bi_reader_set_format_by_name(MbBiReader *bir, const std::string &name)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
     int ret;
@@ -1030,18 +1030,18 @@ int mb_bi_reader_enable_format_by_code(MbBiReader *bir, int code)
  *   * #MB_BI_WARN if the format is already enabled
  *   * \<= #MB_BI_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_by_name(MbBiReader *bir, const char *name)
+int mb_bi_reader_enable_format_by_name(MbBiReader *bir, const std::string &name)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
     for (auto it = reader_formats; it->func; ++it) {
-        if (strcmp(name, it->name) == 0) {
+        if (name == it->name) {
             return it->func(bir);
         }
     }
 
     mb_bi_reader_set_error(bir, MB_BI_ERROR_PROGRAMMER_ERROR,
-                           "Invalid format name: %s", name);
+                           "Invalid format name: %s", name.c_str());
     return MB_BI_FAILED;
 }
 

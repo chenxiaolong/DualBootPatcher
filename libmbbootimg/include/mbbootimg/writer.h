@@ -19,9 +19,10 @@
 
 #pragma once
 
+#include <string>
+
 #include <cstdarg>
 #include <cstddef>
-#include <cwchar>
 
 #include "mbcommon/common.h"
 
@@ -44,9 +45,9 @@ MB_EXPORT int mb_bi_writer_free(MbBiWriter *biw);
 
 // Open/close
 MB_EXPORT int mb_bi_writer_open_filename(MbBiWriter *biw,
-                                         const char *filename);
+                                         const std::string &filename);
 MB_EXPORT int mb_bi_writer_open_filename_w(MbBiWriter *biw,
-                                           const wchar_t *filename);
+                                           const std::wstring &filename);
 MB_EXPORT int mb_bi_writer_open(MbBiWriter *biw, File *file,
                                 bool owned);
 MB_EXPORT int mb_bi_writer_close(MbBiWriter *biw);
@@ -69,11 +70,11 @@ MB_EXPORT int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf,
 
 // Format operations
 MB_EXPORT int mb_bi_writer_format_code(MbBiWriter *biw);
-MB_EXPORT const char * mb_bi_writer_format_name(MbBiWriter *biw);
+MB_EXPORT std::string mb_bi_writer_format_name(MbBiWriter *biw);
 MB_EXPORT int mb_bi_writer_set_format_by_code(MbBiWriter *biw,
                                               int code);
 MB_EXPORT int mb_bi_writer_set_format_by_name(MbBiWriter *biw,
-                                              const char *name);
+                                              const std::string &name);
 
 // Specific formats
 MB_EXPORT int mb_bi_writer_set_format_android(MbBiWriter *biw);

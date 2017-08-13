@@ -986,7 +986,7 @@ bool unpack_main(int argc, char *argv[])
         }
     }
 
-    ret = mb_bi_reader_open_filename(bir.get(), input_file.c_str());
+    ret = mb_bi_reader_open_filename(bir.get(), input_file);
     if (ret != MB_BI_OK) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
                 input_file.c_str(), mb_bi_reader_error_string(bir.get()));
@@ -1140,7 +1140,7 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_writer_open_filename(biw.get(), output_file.c_str());
+    ret = mb_bi_writer_open_filename(biw.get(), output_file);
     if (ret != MB_BI_OK) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
                 output_file.c_str(), mb_bi_writer_error_string(biw.get()));
