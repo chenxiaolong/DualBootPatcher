@@ -36,9 +36,9 @@ namespace bootimg
  * \param bir MbBiReader
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * #RET_WARN if the format is already enabled
+ *   * \<= #RET_FAILED if an error occurs
  */
 int mb_bi_reader_enable_format_bump(MbBiReader *bir)
 {
@@ -50,8 +50,8 @@ int mb_bi_reader_enable_format_bump(MbBiReader *bir)
 
     return _mb_bi_reader_register_format(bir,
                                          ctx,
-                                         MB_BI_FORMAT_BUMP,
-                                         MB_BI_FORMAT_NAME_BUMP,
+                                         FORMAT_BUMP,
+                                         FORMAT_NAME_BUMP,
                                          &bump_reader_bid,
                                          &android_reader_set_option,
                                          &android_reader_read_header,

@@ -53,30 +53,30 @@ static int _mtk_header_update_size(MbBiWriter *biw, File &file,
     size_t n;
 
     if (offset > SIZE_MAX - offsetof(MtkHeader, size)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "MTK header offset too large");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     if (!file.seek(offset + offsetof(MtkHeader, size), SEEK_SET, nullptr)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to MTK size field: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_write_fully(file, &le32_size, sizeof(le32_size), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write MTK size field: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(le32_size)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing MTK size field");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
@@ -91,9 +91,9 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
     uint32_t ramdisk_mtkhdr_size = 0;
 
     if (!SHA1_Init(&sha_ctx)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Failed to initialize SHA_CTX");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     for (size_t i = 0; i < seg.entries_size(); ++i) {
@@ -104,7 +104,7 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
             mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                    "Failed to seek to entry %" MB_PRIzu ": %s",
                                    i, file.error_string().c_str());
-            return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Update checksum with data
@@ -115,17 +115,17 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
                 mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                        "Failed to read entry %" MB_PRIzu ": %s",
                                        i, file.error_string().c_str());
-                return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             } else if (n != to_read) {
                 mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                        "Unexpected EOF when reading entry");
-                return MB_BI_FAILED;
+                return RET_FAILED;
             }
 
             if (!SHA1_Update(&sha_ctx, buf, n)) {
-                mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+                mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                        "Failed to update SHA1 hash");
-                return MB_BI_FAILED;
+                return RET_FAILED;
             }
 
             remain -= to_read;
@@ -161,19 +161,19 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
         }
 
         if (!SHA1_Update(&sha_ctx, &le32_size, sizeof(le32_size))) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+            mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                    "Failed to update SHA1 hash");
-            return MB_BI_FAILED;
+            return RET_FAILED;
         }
     }
 
     if (!SHA1_Final(digest, &sha_ctx)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Failed to finalize SHA1 hash");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int mtk_writer_get_header(MbBiWriter *biw, void *userdata, Header &header)
@@ -183,7 +183,7 @@ int mtk_writer_get_header(MbBiWriter *biw, void *userdata, Header &header)
 
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
@@ -220,21 +220,21 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
             ctx->hdr.page_size = *page_size;
             break;
         default:
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+            mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                    "Invalid page size: %" PRIu32, *page_size);
-            return MB_BI_FAILED;
+            return RET_FAILED;
         }
     } else {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Page size field is required");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(ctx->hdr.name)) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+            mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                    "Board name too long");
-            return MB_BI_FAILED;
+            return RET_FAILED;
         }
 
         strncpy(reinterpret_cast<char *>(ctx->hdr.name), board_name->c_str(),
@@ -243,9 +243,9 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(ctx->hdr.cmdline)) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+            mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                    "Kernel cmdline too long");
-            return MB_BI_FAILED;
+            return RET_FAILED;
         }
 
         strncpy(reinterpret_cast<char *>(ctx->hdr.cmdline), cmdline->c_str(),
@@ -262,37 +262,37 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
                                0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
                                0, false, ctx->hdr.page_size, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
                                0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
                                0, false, ctx->hdr.page_size, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                0, false, ctx->hdr.page_size, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                0, false, ctx->hdr.page_size, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     // Start writing after first page
     if (!biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr)) {
         mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to seek to first page: %s",
                                biw->file->error_string().c_str());
-        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int mtk_writer_get_entry(MbBiWriter *biw, void *userdata,
@@ -326,7 +326,7 @@ int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
     int ret;
 
     ret = ctx->seg.finish_entry(*biw->file, biw);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
@@ -335,15 +335,15 @@ int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
             && swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Entry size too large to accomodate MTK header");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
             && swentry->size != sizeof(MtkHeader)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Invalid size for MTK header entry");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     switch (swentry->type) {
@@ -361,7 +361,7 @@ int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
         break;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int mtk_writer_close(MbBiWriter *biw, void *userdata)
@@ -375,7 +375,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to get file offset: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -390,7 +390,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to truncate file: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Update MTK header sizes
@@ -411,7 +411,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
                 continue;
             }
 
-            if (ret != MB_BI_OK) {
+            if (ret != RET_OK) {
                 return ret;
             }
         }
@@ -422,7 +422,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         // incorrect.
         ret = _mtk_compute_sha1(biw, ctx->seg, *biw->file,
                                 reinterpret_cast<unsigned char *>(ctx->hdr.id));
-        if (ret != MB_BI_OK) {
+        if (ret != RET_OK) {
             return ret;
         }
 
@@ -435,7 +435,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to seek to beginning: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
@@ -444,18 +444,18 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to write header: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int mtk_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
     delete static_cast<MtkWriterCtx *>(userdata);
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 }
@@ -466,9 +466,9 @@ int mtk_writer_free(MbBiWriter *bir, void *userdata)
  * \param biw MbBiWriter
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * #RET_WARN if the format is already enabled
+ *   * \<= #RET_FAILED if an error occurs
  */
 int mb_bi_writer_set_format_mtk(MbBiWriter *biw)
 {
@@ -478,8 +478,8 @@ int mb_bi_writer_set_format_mtk(MbBiWriter *biw)
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
-                                         MB_BI_FORMAT_MTK,
-                                         MB_BI_FORMAT_NAME_MTK,
+                                         FORMAT_MTK,
+                                         FORMAT_NAME_MTK,
                                          nullptr,
                                          &mtk_writer_get_header,
                                          &mtk_writer_write_header,

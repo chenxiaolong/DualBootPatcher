@@ -58,8 +58,8 @@ protected:
 
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(mb_bi_writer_set_format_android(_biw.get()), MB_BI_OK);
-        ASSERT_EQ(mb_bi_writer_open(_biw.get(), &_file, false), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_set_format_android(_biw.get()), RET_OK);
+        ASSERT_EQ(mb_bi_writer_open(_biw.get(), &_file, false), RET_OK);
     }
 
     virtual void TearDown()
@@ -78,24 +78,24 @@ protected:
         size_t n;
 
         // Write dummy header
-        ASSERT_EQ(mb_bi_writer_get_header(_biw.get(), header), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_get_header(_biw.get(), header), RET_OK);
         ASSERT_TRUE(header->set_page_size(2048));
-        ASSERT_EQ(mb_bi_writer_write_header(_biw.get(), *header), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_write_header(_biw.get(), *header), RET_OK);
 
         // Write specified dummy entries
-        while ((ret = mb_bi_writer_get_entry(_biw.get(), entry)) == MB_BI_OK) {
-            ASSERT_EQ(mb_bi_writer_write_entry(_biw.get(), *entry), MB_BI_OK);
+        while ((ret = mb_bi_writer_get_entry(_biw.get(), entry)) == RET_OK) {
+            ASSERT_EQ(mb_bi_writer_write_entry(_biw.get(), *entry), RET_OK);
 
             if (*entry->type() & types) {
                 ASSERT_EQ(mb_bi_writer_write_data(_biw.get(), "hello", 5, &n),
-                          MB_BI_OK);
+                          RET_OK);
                 ASSERT_EQ(n, 5u);
             }
         }
-        ASSERT_EQ(ret, MB_BI_EOF);
+        ASSERT_EQ(ret, RET_EOF);
 
         // Close to write header
-        ASSERT_EQ(mb_bi_writer_close(_biw.get()), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_close(_biw.get()), RET_OK);
 
         // Check SHA1
         ASSERT_EQ(memcmp(static_cast<unsigned char *>(_buf) + 576,

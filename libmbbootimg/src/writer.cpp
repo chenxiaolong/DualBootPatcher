@@ -58,9 +58,9 @@
  * \param value Option value
  *
  * \return
- *   * Return #MB_BI_OK if the option is handled successfully
- *   * Return #MB_BI_WARN if the option cannot be handled
- *   * Return \<= #MB_BI_FAILED if an error occurs
+ *   * Return #RET_OK if the option is handled successfully
+ *   * Return #RET_WARN if the option cannot be handled
+ *   * Return \<= #RET_FAILED if an error occurs
  */
 
 /*!
@@ -74,8 +74,8 @@
  * \param[out] header Pointer to store Header instance
  *
  * \return
- *   * Return #MB_BI_OK if successful
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if successful
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -89,8 +89,8 @@
  * \param header Header instance to write
  *
  * \return
- *   * Return #MB_BI_OK if the header is successfully written
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if the header is successfully written
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -104,8 +104,8 @@
  * \param[out] entry Pointer to store Entry instance
  *
  * \return
- *   * Return #MB_BI_OK if successful
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if successful
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -119,8 +119,8 @@
  * \param entry Entry instance to write
  *
  * \return
- *   * Return #MB_BI_OK if the entry is successfully written
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if the entry is successfully written
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -139,8 +139,8 @@
  * \param[out] bytes_written Output number of bytes that were written
  *
  * \return
- *   * Return #MB_BI_OK if the entry is successfully written
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if the entry is successfully written
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -153,8 +153,8 @@
  * \param userdata User callback data
  *
  * \return
- *   * Return #MB_BI_OK if successful
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if successful
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -167,8 +167,8 @@
  * \param userdata User callback data
  *
  * \return
- *   * Return #MB_BI_OK if no errors occur while closing the boot image
- *   * Return \<= #MB_BI_WARN if an error occurs
+ *   * Return #RET_OK if no errors occur while closing the boot image
+ *   * Return \<= #RET_WARN if an error occurs
  */
 
 /*!
@@ -184,8 +184,8 @@
  * \param userdata User callback data
  *
  * \return
- *   * Return #MB_BI_OK if the cleanup completes without error
- *   * Return \<= #MB_BI_WARN if an error occurs during cleanup
+ *   * Return #RET_OK if the cleanup completes without error
+ *   * Return \<= #RET_WARN if an error occurs during cleanup
  */
 
 ///
@@ -202,24 +202,24 @@ static struct
     int (*func)(MbBiWriter *);
 } writer_formats[] = {
     {
-        MB_BI_FORMAT_ANDROID,
-        MB_BI_FORMAT_NAME_ANDROID,
+        FORMAT_ANDROID,
+        FORMAT_NAME_ANDROID,
         mb_bi_writer_set_format_android
     }, {
-        MB_BI_FORMAT_BUMP,
-        MB_BI_FORMAT_NAME_BUMP,
+        FORMAT_BUMP,
+        FORMAT_NAME_BUMP,
         mb_bi_writer_set_format_bump
     }, {
-        MB_BI_FORMAT_LOKI,
-        MB_BI_FORMAT_NAME_LOKI,
+        FORMAT_LOKI,
+        FORMAT_NAME_LOKI,
         mb_bi_writer_set_format_loki
     }, {
-        MB_BI_FORMAT_MTK,
-        MB_BI_FORMAT_NAME_MTK,
+        FORMAT_MTK,
+        FORMAT_NAME_MTK,
         mb_bi_writer_set_format_mtk
     }, {
-        MB_BI_FORMAT_SONY_ELF,
-        MB_BI_FORMAT_NAME_SONY_ELF,
+        FORMAT_SONY_ELF,
+        FORMAT_NAME_SONY_ELF,
         mb_bi_writer_set_format_sony_elf
     }, {
         0,
@@ -249,8 +249,8 @@ static struct
  * \param free_cb Free callback (optional)
  *
  * \return
- *   * #MB_BI_OK if the format is successfully registered
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully registered
+ *   * \<= #RET_FAILED if an error occurs
  */
 int _mb_bi_writer_register_format(MbBiWriter *biw,
                                   void *userdata,
@@ -295,10 +295,10 @@ int _mb_bi_writer_register_format(MbBiWriter *biw,
     biw->format = format;
     biw->format_set = true;
 
-    ret = MB_BI_OK;
+    ret = RET_OK;
 
 done:
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         int ret2 = _mb_bi_writer_free_format(biw, &format);
         if (ret2 < ret) {
             ret = ret2;
@@ -322,14 +322,14 @@ done:
  * \param format Format writer to clean up
  *
  * \return
- *   * #MB_BI_OK if the resources for \p format are successfully freed
- *   * \<= #MB_BI_WARN if an error occurs (though the resources will still be
+ *   * #RET_OK if the resources for \p format are successfully freed
+ *   * \<= #RET_WARN if an error occurs (though the resources will still be
  *     cleaned up)
  */
 int _mb_bi_writer_free_format(MbBiWriter *biw, FormatWriter *format)
 {
     WRITER_ENSURE_STATE(biw, WriterState::ANY);
-    int ret = MB_BI_OK;
+    int ret = RET_OK;
 
     if (format) {
         if (format->free_cb) {
@@ -357,19 +357,19 @@ MbBiWriter * mb_bi_writer_new()
  * \brief Free an MbBiWriter.
  *
  * If the writer has not been closed, it will be closed and the result of
- * mb_bi_writer_close() will be returned. Otherwise, #MB_BI_OK will be returned.
+ * mb_bi_writer_close() will be returned. Otherwise, #RET_OK will be returned.
  * Regardless of the return value, the writer will always be freed and should no
  * longer be used.
  *
  * \param biw MbBiWriter
  * \return
- *   * #MB_BI_OK if the writer is successfully freed
- *   * \<= #MB_BI_WARN if an error occurs (though the resources will still be
+ *   * #RET_OK if the writer is successfully freed
+ *   * \<= #RET_WARN if an error occurs (though the resources will still be
  *     freed)
  */
 int mb_bi_writer_free(MbBiWriter *biw)
 {
-    int ret = MB_BI_OK, ret2;
+    int ret = RET_OK, ret2;
 
     if (biw) {
         if (biw->state != WriterState::CLOSED) {
@@ -396,8 +396,8 @@ int mb_bi_writer_free(MbBiWriter *biw)
  * \param filename MBS filename
  *
  * \return
- *   * #MB_BI_OK if the boot image is successfully opened
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the boot image is successfully opened
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_open_filename(MbBiWriter *biw, const std::string &filename)
 {
@@ -411,7 +411,7 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const std::string &filename)
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     return mb_bi_writer_open(biw, file, true);
@@ -424,8 +424,8 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const std::string &filename)
  * \param filename WCS filename
  *
  * \return
- *   * #MB_BI_OK if the boot image is successfully opened
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the boot image is successfully opened
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_open_filename_w(MbBiWriter *biw, const std::wstring &filename)
 {
@@ -439,7 +439,7 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const std::wstring &filename)
                                "Failed to open for writing: %s",
                                file->error_string().c_str());
         delete file;
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     return mb_bi_writer_open(biw, file, true);
@@ -458,8 +458,8 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const std::wstring &filename)
  * \param owned Whether the MbBiWriter should take ownership of the File handle
  *
  * \return
- *   * #MB_BI_OK if the boot image is successfully opened
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the boot image is successfully opened
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_open(MbBiWriter *biw, File *file, bool owned)
 {
@@ -469,9 +469,9 @@ int mb_bi_writer_open(MbBiWriter *biw, File *file, bool owned)
     WRITER_ENSURE_STATE_GOTO(biw, WriterState::NEW, ret, done);
 
     if (!biw->format_set) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                                "No writer format registered");
-        ret = MB_BI_FAILED;
+        ret = RET_FAILED;
         goto done;
     }
 
@@ -479,10 +479,10 @@ int mb_bi_writer_open(MbBiWriter *biw, File *file, bool owned)
     biw->file_owned = owned;
     biw->state = WriterState::HEADER;
 
-    ret = MB_BI_OK;
+    ret = RET_OK;
 
 done:
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         if (owned) {
             delete file;
         }
@@ -500,13 +500,13 @@ done:
  * \param biw MbBiWriter
  *
  * \return
- *   * #MB_BI_OK if no error is encountered when closing the writer
- *   * \<= #MB_BI_WARN if the writer is opened and an error occurs while
+ *   * #RET_OK if no error is encountered when closing the writer
+ *   * \<= #RET_WARN if the writer is opened and an error occurs while
  *     closing the writer
  */
 int mb_bi_writer_close(MbBiWriter *biw)
 {
-    int ret = MB_BI_OK;
+    int ret = RET_OK;
 
     // Avoid double-closing or closing nothing
     if (!(biw->state & (WriterState::CLOSED | WriterState::NEW))) {
@@ -516,8 +516,8 @@ int mb_bi_writer_close(MbBiWriter *biw)
 
         if (biw->file && biw->file_owned) {
             if (!biw->file->close()) {
-                if (MB_BI_FAILED < ret) {
-                    ret = MB_BI_FAILED;
+                if (RET_FAILED < ret) {
+                    ret = RET_FAILED;
                 }
             }
 
@@ -527,7 +527,7 @@ int mb_bi_writer_close(MbBiWriter *biw)
         biw->file = nullptr;
         biw->file_owned = false;
 
-        // Don't change state to WriterState::FATAL if MB_BI_FATAL is returned.
+        // Don't change state to WriterState::FATAL if RET_FATAL is returned.
         // Otherwise, we risk double-closing the boot image. CLOSED and FATAL
         // are the same anyway, aside from the fact that boot images can be
         // closed in the latter state.
@@ -551,8 +551,8 @@ int mb_bi_writer_close(MbBiWriter *biw)
  * \param[out] header Pointer to store Header instance
  *
  * \return
- *   * #MB_BI_OK if no error occurs
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if no error occurs
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_get_header(MbBiWriter *biw, Header *&header)
 {
@@ -560,7 +560,7 @@ int mb_bi_writer_get_header(MbBiWriter *biw, Header *&header)
     int ret;
 
     ret = mb_bi_writer_get_header2(biw, biw->header);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         header = &biw->header;
     }
 
@@ -577,8 +577,8 @@ int mb_bi_writer_get_header(MbBiWriter *biw, Header *&header)
  * \param[out] header Header instance to initialize
  *
  * \return
- *   * #MB_BI_OK if no error occurs
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if no error occurs
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_get_header2(MbBiWriter *biw, Header &header)
 {
@@ -588,16 +588,16 @@ int mb_bi_writer_get_header2(MbBiWriter *biw, Header &header)
     header.clear();
 
     if (!biw->format.get_header_cb) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Missing format get_header_cb");
         biw->state = WriterState::FATAL;
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     ret = biw->format.get_header_cb(biw, biw->format.userdata, header);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         // Don't alter state
-    } else if (ret <= MB_BI_FATAL) {
+    } else if (ret <= RET_FATAL) {
         biw->state = WriterState::FATAL;
     }
 
@@ -616,8 +616,8 @@ int mb_bi_writer_get_header2(MbBiWriter *biw, Header &header)
  * \param header Header instance to write
  *
  * \return
- *   * #MB_BI_OK if the boot image header is successfully written
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the boot image header is successfully written
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_write_header(MbBiWriter *biw, const Header &header)
 {
@@ -625,16 +625,16 @@ int mb_bi_writer_write_header(MbBiWriter *biw, const Header &header)
     int ret;
 
     if (!biw->format.write_header_cb) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Missing format write_header_cb");
         biw->state = WriterState::FATAL;
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     ret = biw->format.write_header_cb(biw, biw->format.userdata, header);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         biw->state = WriterState::ENTRY;
-    } else if (ret <= MB_BI_FATAL) {
+    } else if (ret <= RET_FATAL) {
         biw->state = WriterState::FATAL;
     }
 
@@ -649,7 +649,7 @@ int mb_bi_writer_write_header(MbBiWriter *biw, const Header &header)
  * should *never* be deallocated with mb_bi_entry_free(). It is tracked
  * internally and will be freed when the MbBiWriter is freed.
  *
- * This function will return #MB_BI_EOF when there are no more entries to write.
+ * This function will return #RET_EOF when there are no more entries to write.
  * It is *strongly* recommended to check the return value of
  * mb_bi_writer_close() or mb_bi_writer_free() when closing the boot image as
  * additional steps for finalizing the boot image could fail.
@@ -658,9 +658,9 @@ int mb_bi_writer_write_header(MbBiWriter *biw, const Header &header)
  * \param[out] entry Pointer to store Entry instance
  *
  * \return
- *   * #MB_BI_OK if no error occurs
- *   * #MB_BI_EOF if the boot image has no more entries
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if no error occurs
+ *   * #RET_EOF if the boot image has no more entries
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_get_entry(MbBiWriter *biw, Entry *&entry)
 {
@@ -668,7 +668,7 @@ int mb_bi_writer_get_entry(MbBiWriter *biw, Entry *&entry)
     int ret;
 
     ret = mb_bi_writer_get_entry2(biw, biw->entry);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         entry = &biw->entry;
     }
 
@@ -685,8 +685,8 @@ int mb_bi_writer_get_entry(MbBiWriter *biw, Entry *&entry)
  * \param[out] entry Entry instance to initialize
  *
  * \return
- *   * #MB_BI_OK if no error occurs
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if no error occurs
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_get_entry2(MbBiWriter *biw, Entry &entry)
 {
@@ -697,9 +697,9 @@ int mb_bi_writer_get_entry2(MbBiWriter *biw, Entry &entry)
     if (biw->state == WriterState::DATA && biw->format.finish_entry_cb) {
         ret = biw->format.finish_entry_cb(biw, biw->format.userdata);
 
-        if (ret == MB_BI_OK) {
+        if (ret == RET_OK) {
             biw->state = WriterState::ENTRY;
-        } else if (ret <= MB_BI_FATAL) {
+        } else if (ret <= RET_FATAL) {
             biw->state = WriterState::FATAL;
             return ret;
         } else {
@@ -710,16 +710,16 @@ int mb_bi_writer_get_entry2(MbBiWriter *biw, Entry &entry)
     entry.clear();
 
     if (!biw->format.get_entry_cb) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Missing format get_entry_cb");
         biw->state = WriterState::FATAL;
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     ret = biw->format.get_entry_cb(biw, biw->format.userdata, entry);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         biw->state = WriterState::ENTRY;
-    } else if (ret <= MB_BI_FATAL) {
+    } else if (ret <= RET_FATAL) {
         biw->state = WriterState::FATAL;
     }
 
@@ -739,9 +739,9 @@ int mb_bi_writer_get_entry2(MbBiWriter *biw, Entry &entry)
  * \param entry Entry instance to write
  *
  * \return
- *   * #MB_BI_OK if the boot image entry is successfully written
- *   * #MB_BI_EOF if the boot image has no more entries
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the boot image entry is successfully written
+ *   * #RET_EOF if the boot image has no more entries
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_write_entry(MbBiWriter *biw, const Entry &entry)
 {
@@ -749,16 +749,16 @@ int mb_bi_writer_write_entry(MbBiWriter *biw, const Entry &entry)
     int ret;
 
     if (!biw->format.write_entry_cb) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Missing format write_entry_cb");
         biw->state = WriterState::FATAL;
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     ret = biw->format.write_entry_cb(biw, biw->format.userdata, entry);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         biw->state = WriterState::DATA;
-    } else if (ret <= MB_BI_FATAL) {
+    } else if (ret <= RET_FATAL) {
         biw->state = WriterState::FATAL;
     }
 
@@ -774,8 +774,8 @@ int mb_bi_writer_write_entry(MbBiWriter *biw, const Entry &entry)
  * \param[out] bytes_written Pointer to store number of bytes written
  *
  * \return
- *   * #MB_BI_OK if data is successfully written
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if data is successfully written
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
                             size_t *bytes_written)
@@ -784,17 +784,17 @@ int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
     int ret;
 
     if (!biw->format.write_data_cb) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Missing format write_data_cb");
         biw->state = WriterState::FATAL;
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     ret = biw->format.write_data_cb(biw, biw->format.userdata, buf, size,
                                     *bytes_written);
-    if (ret == MB_BI_OK) {
+    if (ret == RET_OK) {
         // Do not alter state. Stay in WriterState::DATA
-    } else if (ret <= MB_BI_FATAL) {
+    } else if (ret <= RET_FATAL) {
         biw->state = WriterState::FATAL;
     }
 
@@ -811,7 +811,7 @@ int mb_bi_writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
 int mb_bi_writer_format_code(MbBiWriter *biw)
 {
     if (!biw->format_set) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                                "No format selected");
         return -1;
     }
@@ -829,7 +829,7 @@ int mb_bi_writer_format_code(MbBiWriter *biw)
 std::string mb_bi_writer_format_name(MbBiWriter *biw)
 {
     if (!biw->format_set) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                                "No format selected");
         return {};
     }
@@ -844,23 +844,22 @@ std::string mb_bi_writer_format_name(MbBiWriter *biw)
  * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_set_format_by_code(MbBiWriter *biw, int code)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
     for (auto it = writer_formats; it->func; ++it) {
-        if ((code & MB_BI_FORMAT_BASE_MASK)
-                == (it->code & MB_BI_FORMAT_BASE_MASK)) {
+        if ((code & FORMAT_BASE_MASK) == (it->code & FORMAT_BASE_MASK)) {
             return it->func(biw);
         }
     }
 
-    mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
+    mb_bi_writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                            "Invalid format code: %d", code);
-    return MB_BI_FAILED;
+    return RET_FAILED;
 }
 
 /*!
@@ -870,8 +869,8 @@ int mb_bi_writer_set_format_by_code(MbBiWriter *biw, int code)
  * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * \<= #MB_BI_WARN if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * \<= #RET_WARN if an error occurs
  */
 int mb_bi_writer_set_format_by_name(MbBiWriter *biw, const std::string &name)
 {
@@ -883,9 +882,9 @@ int mb_bi_writer_set_format_by_name(MbBiWriter *biw, const std::string &name)
         }
     }
 
-    mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
+    mb_bi_writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                            "Invalid format name: %s", name.c_str());
-    return MB_BI_FAILED;
+    return RET_FAILED;
 }
 
 /*!
@@ -929,7 +928,7 @@ const char * mb_bi_writer_error_string(MbBiWriter *biw)
  * \param fmt `printf()`-style format string
  * \param ... `printf()`-style format arguments
  *
- * \return MB_BI_OK if the error is successfully set or MB_BI_FAILED if an
+ * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
 int mb_bi_writer_set_error(MbBiWriter *biw, int error_code,
@@ -955,7 +954,7 @@ int mb_bi_writer_set_error(MbBiWriter *biw, int error_code,
  * \param fmt `printf()`-style format string
  * \param ap `printf()`-style format arguments as a va_list
  *
- * \return MB_BI_OK if the error is successfully set or MB_BI_FAILED if an
+ * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
 int mb_bi_writer_set_error_v(MbBiWriter *biw, int error_code,
@@ -963,7 +962,7 @@ int mb_bi_writer_set_error_v(MbBiWriter *biw, int error_code,
 {
     biw->error_code = error_code;
     return format_v(biw->error_string, fmt, ap)
-            ? MB_BI_OK : MB_BI_FAILED;
+            ? RET_OK : RET_FAILED;
 }
 
 }

@@ -34,12 +34,12 @@
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
             mb_bi_writer_set_error((INSTANCE), \
-                                   MB_BI_ERROR_PROGRAMMER_ERROR, \
+                                   ERROR_PROGRAMMER_ERROR, \
                                    "%s: Invalid state: " \
                                    "expected 0x%x, actual: 0x%hx", \
                                    __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = WriterState::FATAL; \
-            return MB_BI_FATAL; \
+            return RET_FATAL; \
         } \
     } while (0)
 
@@ -47,12 +47,12 @@
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
             mb_bi_writer_set_error((INSTANCE), \
-                                   MB_BI_ERROR_PROGRAMMER_ERROR, \
+                                   ERROR_PROGRAMMER_ERROR, \
                                    "%s: Invalid state: " \
                                    "expected 0x%x, actual: 0x%hx", \
                                    __func__, (STATES), (INSTANCE)->state); \
             (INSTANCE)->state = WriterState::FATAL; \
-            (RETURN_VAR) = MB_BI_FATAL; \
+            (RETURN_VAR) = RET_FATAL; \
             goto LABEL; \
         } \
     } while (0)

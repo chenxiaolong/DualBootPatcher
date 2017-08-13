@@ -317,13 +317,13 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     // Open input boot image
     ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
              mb_bi_reader_error_string(bir.get()));
         return false;
     }
     ret = mb_bi_reader_open_filename(bir.get(), input_file);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
              input_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
@@ -332,13 +332,13 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     // Open output boot image
     ret = mb_bi_writer_set_format_by_code(
             biw.get(), mb_bi_reader_format_code(bir.get()));
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("Failed to set output boot image format: %s",
              mb_bi_writer_error_string(biw.get()));
         return false;
     }
     ret = mb_bi_writer_open_filename(biw.get(), output_file);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for writing: %s",
              output_file.c_str(), mb_bi_writer_error_string(biw.get()));
         return false;
@@ -352,25 +352,25 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     // Copy header
     ret = mb_bi_reader_read_header(bir.get(), header);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
              input_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
     }
     ret = mb_bi_writer_write_header(biw.get(), *header);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to write header: %s",
              output_file.c_str(), mb_bi_writer_error_string(biw.get()));
         return false;
     }
 
     // Write entries
-    while ((ret = mb_bi_writer_get_entry(biw.get(), out_entry)) == MB_BI_OK) {
+    while ((ret = mb_bi_writer_get_entry(biw.get(), out_entry)) == RET_OK) {
         auto type = out_entry->type();
 
         // Write entry metadata
         ret = mb_bi_writer_write_entry(biw.get(), *out_entry);
-        if (ret != MB_BI_OK) {
+        if (ret != RET_OK) {
             LOGE("%s: Failed to write entry: %s",
                  output_file.c_str(), mb_bi_writer_error_string(biw.get()));
             return false;
@@ -383,10 +383,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
             }
         } else {
             ret = mb_bi_reader_go_to_entry(bir.get(), in_entry, *type);
-            if (ret == MB_BI_EOF) {
+            if (ret == RET_EOF) {
                 LOGV("Skipping non existent boot image entry: %d", *type);
                 continue;
-            } else if (ret != MB_BI_OK) {
+            } else if (ret != RET_OK) {
                 LOGE("%s: Failed to go to entry: %d: %s",
                      input_file.c_str(), *type,
                      mb_bi_reader_error_string(bir.get()));
@@ -446,7 +446,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
     }
 
-    if (mb_bi_writer_close(biw.get()) != MB_BI_OK) {
+    if (mb_bi_writer_close(biw.get()) != RET_OK) {
         LOGE("%s: Failed to close boot image: %s",
              output_file.c_str(), mb_bi_writer_error_string(biw.get()));
         return false;

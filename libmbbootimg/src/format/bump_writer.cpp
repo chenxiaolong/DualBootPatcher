@@ -36,9 +36,9 @@ namespace bootimg
  * \param biw MbBiWriter
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * #RET_WARN if the format is already enabled
+ *   * \<= #RET_FAILED if an error occurs
  */
 int mb_bi_writer_set_format_bump(MbBiWriter *biw)
 {
@@ -47,7 +47,7 @@ int mb_bi_writer_set_format_bump(MbBiWriter *biw)
     AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
     if (!SHA1_Init(&ctx->sha_ctx)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_writer_set_error(biw, ERROR_INTERNAL_ERROR,
                                "Failed to initialize SHA_CTX");
         delete ctx;
         return false;
@@ -57,8 +57,8 @@ int mb_bi_writer_set_format_bump(MbBiWriter *biw)
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
-                                         MB_BI_FORMAT_BUMP,
-                                         MB_BI_FORMAT_NAME_BUMP,
+                                         FORMAT_BUMP,
+                                         FORMAT_NAME_BUMP,
                                          nullptr,
                                          &android_writer_get_header,
                                          &android_writer_write_header,

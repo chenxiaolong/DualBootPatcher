@@ -153,24 +153,24 @@ static int _loki_read_android_header(MbBiWriter *biw, File &file,
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &ahdr, sizeof(ahdr), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to read Android header: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(ahdr)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when reading Android header: %s",
                                file.error_string().c_str());
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     android_fix_header_byte_order(ahdr);
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _loki_write_android_header(MbBiWriter *biw, File &file,
@@ -185,22 +185,22 @@ static int _loki_write_android_header(MbBiWriter *biw, File &file,
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_write_fully(file, &dup, sizeof(dup), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write Android header: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(dup)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing Android header: %s",
                                file.error_string().c_str());
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _loki_write_loki_header(MbBiWriter *biw, File &file,
@@ -215,22 +215,22 @@ static int _loki_write_loki_header(MbBiWriter *biw, File &file,
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to Loki header offset: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_write_fully(file, &dup, sizeof(dup), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write Loki header: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(dup)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing Loki header: %s",
                                file.error_string().c_str());
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _loki_move_dt_image(MbBiWriter *biw, File &file,
@@ -244,15 +244,15 @@ static int _loki_move_dt_image(MbBiWriter *biw, File &file,
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to move DT image: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != dt_size) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "DT image truncated when moving");
         // Non-recoverable
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _loki_write_aboot(MbBiWriter *biw, File &file,
@@ -264,31 +264,31 @@ static int _loki_write_aboot(MbBiWriter *biw, File &file,
 
     if (aboot_func_offset > SIZE_MAX - fake_size
             || aboot_func_offset + fake_size > aboot_size) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "aboot func offset + fake size out of range");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     if (!file.seek(aboot_offset, SEEK_SET, nullptr)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to ramdisk offset: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_write_fully(file, aboot + aboot_func_offset, fake_size, n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write aboot segment: %s",
                                file.error_string().c_str());
-        return MB_BI_FATAL;
+        return RET_FATAL;
     } else if (n != fake_size) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing aboot segment: %s",
                                file.error_string().c_str());
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 static int _loki_write_shellcode(MbBiWriter *biw, File &file,
@@ -302,22 +302,22 @@ static int _loki_write_shellcode(MbBiWriter *biw, File &file,
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to shellcode offset: %s",
                                file.error_string().c_str());
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     if (!file_write_fully(file, patch, LOKI_SHELLCODE_SIZE, n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write shellcode: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != LOKI_SHELLCODE_SIZE) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing shellcode: %s",
                                file.error_string().c_str());
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 /*!
@@ -329,9 +329,9 @@ static int _loki_write_shellcode(MbBiWriter *biw, File &file,
  * \param aboot_size Size of aboot image
  *
  * \return
- *   * #MB_BI_OK if the boot image is successfully patched
- *   * #MB_BI_FAILED if a file operation fails non-fatally
- *   * #MB_BI_FATAL if a file operation fails fatally
+ *   * #RET_OK if the boot image is successfully patched
+ *   * #RET_FAILED if a file operation fails non-fatally
+ *   * #RET_FATAL if a file operation fails fatally
  */
 int _loki_patch_file(MbBiWriter *biw, File &file,
                      const void *aboot, size_t aboot_size)
@@ -353,9 +353,9 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
     memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
 
     if (aboot_size < MIN_ABOOT_SIZE) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INVALID_ARGUMENT,
+        mb_bi_writer_set_error(biw, ERROR_INVALID_ARGUMENT,
                                "aboot image size is too small");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     aboot_base = mb_le32toh(*reinterpret_cast<const uint32_t *>(
@@ -389,9 +389,9 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
     }
 
     if (target == 0) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Failed to find aboot function to patch");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     for (size_t i = 0; i < (sizeof(targets) / sizeof(targets[0])); ++i) {
@@ -402,13 +402,13 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
     }
 
     if (!tgt) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Unsupported aboot image");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     ret = _loki_read_android_header(biw, file, ahdr);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
@@ -426,9 +426,9 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
             + align_page_size<uint32_t>(ahdr.kernel_size, ahdr.page_size);
 
     if (!_patch_shellcode(tgt->hdr, ahdr.ramdisk_addr, patch)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_writer_set_error(biw, ERROR_FILE_FORMAT,
                                "Failed to patch shellcode");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     // Ramdisk must be aligned to a page boundary
@@ -452,13 +452,13 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
 
     // Write Android header
     ret = _loki_write_android_header(biw, file, ahdr);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
     // Write Loki header
     ret = _loki_write_loki_header(biw, file, lhdr);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
@@ -472,24 +472,24 @@ int _loki_patch_file(MbBiWriter *biw, File &file,
 
     // Move DT image
     ret = _loki_move_dt_image(biw, file, aboot_offset, fake_size, ahdr.dt_size);
-    if (ret != MB_BI_OK) {
-        return MB_BI_FATAL;
+    if (ret != RET_OK) {
+        return RET_FATAL;
     }
 
     // Write aboot
     ret = _loki_write_aboot(biw, file, aboot_ptr, aboot_size, aboot_offset,
                             aboot_func_offset, fake_size);
-    if (ret != MB_BI_OK) {
-        return MB_BI_FATAL;
+    if (ret != RET_OK) {
+        return RET_FATAL;
     }
 
     // Write shellcode
     ret = _loki_write_shellcode(biw, file, aboot_offset, offset, patch);
-    if (ret != MB_BI_OK) {
-        return MB_BI_FATAL;
+    if (ret != RET_OK) {
+        return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 }

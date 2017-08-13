@@ -62,15 +62,15 @@ int SegmentReader::entries_add(int type, uint64_t offset, uint32_t size,
                                bool can_truncate, MbBiReader *bir)
 {
     if (_state != SegmentReaderState::Begin) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
                                "Adding entry in incorrect state");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
+        mb_bi_reader_set_error(bir, ERROR_INTERNAL_ERROR,
                                "Too many entries");
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
     SegmentReaderEntry *entry = &_entries[_entries_len];
@@ -81,7 +81,7 @@ int SegmentReader::entries_add(int type, uint64_t offset, uint32_t size,
 
     ++_entries_len;
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 const SegmentReaderEntry * SegmentReader::entry() const
@@ -136,9 +136,9 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
                                  MbBiReader *bir)
 {
     if (srentry.offset > UINT64_MAX - srentry.size) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INVALID_ARGUMENT,
+        mb_bi_reader_set_error(bir, ERROR_INVALID_ARGUMENT,
                                "Entry would overflow offset");
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     uint64_t read_start_offset = srentry.offset;
@@ -147,7 +147,7 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
 
     if (_read_cur_offset != srentry.offset) {
         if (!file.seek(read_start_offset, SEEK_SET, nullptr)) {
-            return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
 
@@ -160,7 +160,7 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
     _read_end_offset = read_end_offset;
     _read_cur_offset = read_cur_offset;
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int SegmentReader::read_entry(File &file, Entry &entry, MbBiReader *bir)
@@ -169,7 +169,7 @@ int SegmentReader::read_entry(File &file, Entry &entry, MbBiReader *bir)
     if (!srentry) {
         _state = SegmentReaderState::End;
         _entry = nullptr;
-        return MB_BI_EOF;
+        return RET_EOF;
     }
 
     return move_to_entry(file, entry, *srentry, bir);
@@ -182,7 +182,7 @@ int SegmentReader::go_to_entry(File &file, Entry &entry, int entry_type,
     if (!srentry) {
         _state = SegmentReaderState::End;
         _entry = nullptr;
-        return MB_BI_EOF;
+        return RET_EOF;
     }
 
     return move_to_entry(file, entry, *srentry, bir);
@@ -195,18 +195,18 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
             buf_size, _read_end_offset - _read_cur_offset);
 
     if (_read_cur_offset > SIZE_MAX - to_copy) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
                                "Current offset %" PRIu64 " with read size %"
                                MB_PRIzu " would overflow integer",
                                _read_cur_offset, to_copy);
-        return MB_BI_FAILED;
+        return RET_FAILED;
     }
 
     if (!file_read_fully(file, buf, to_copy, bytes_read)) {
         mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read data: %s",
                                file.error_string().c_str());
-        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     _read_cur_offset += bytes_read;
@@ -214,14 +214,14 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
     // Fail if we reach EOF early
     if (bytes_read == 0 && _read_cur_offset != _read_end_offset
             && !_entry->can_truncate) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
+        mb_bi_reader_set_error(bir, ERROR_FILE_FORMAT,
                                "Entry is truncated "
                                "(expected %" PRIu64 " more bytes)",
                                _read_end_offset - _read_cur_offset);
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    return bytes_read == 0 ? MB_BI_EOF : MB_BI_OK;
+    return bytes_read == 0 ? RET_EOF : RET_OK;
 }
 
 }

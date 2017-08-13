@@ -55,7 +55,7 @@ int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata, Header &header)
 
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
@@ -160,32 +160,32 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
     ctx->seg.entries_clear();
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_SONY_IPL, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_SONY_RPM, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     ret = ctx->seg.entries_add(ENTRY_TYPE_SONY_APPSBL, 0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
+    if (ret != RET_OK) return ret;
 
     // Start writing at offset 4096
     if (!biw->file->seek(4096, SEEK_SET, nullptr)) {
         mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                "Failed to seek to first page: %s",
                                biw->file->error_string().c_str());
-        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+        return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
@@ -195,7 +195,7 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
     int ret;
 
     ret = ctx->seg.get_entry(*biw->file, entry, biw);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
@@ -210,20 +210,20 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
         entry.set_size(ctx->cmdline.size());
 
         ret = sony_elf_writer_write_entry(biw, userdata, entry);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
+        if (ret != RET_OK) return RET_FATAL;
 
         ret = sony_elf_writer_write_data(biw, userdata, ctx->cmdline.data(),
                                          ctx->cmdline.size(), n);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
+        if (ret != RET_OK) return RET_FATAL;
 
         ret = sony_elf_writer_finish_entry(biw, userdata);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
+        if (ret != RET_OK) return RET_FATAL;
 
         ret = ctx->seg.get_entry(*biw->file, entry, biw);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
+        if (ret != RET_OK) return RET_FATAL;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int sony_elf_writer_write_entry(MbBiWriter *biw, void *userdata,
@@ -249,7 +249,7 @@ int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata)
     int ret;
 
     ret = ctx->seg.finish_entry(*biw->file, biw);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         return ret;
     }
 
@@ -292,7 +292,7 @@ int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata)
         ++ctx->hdr.e_phnum;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
@@ -305,7 +305,7 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to get file offset: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         ctx->have_file_size = true;
@@ -352,7 +352,7 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to seek to beginning: %s",
                                    biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write headers
@@ -362,19 +362,19 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
                 mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write header: %s",
                                        biw->file->error_string().c_str());
-                return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
             }
         }
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
     delete static_cast<SonyElfWriterCtx *>(userdata);
-    return MB_BI_OK;
+    return RET_OK;
 }
 
 }
@@ -385,9 +385,9 @@ int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
  * \param biw MbBiWriter
  *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * #RET_WARN if the format is already enabled
+ *   * \<= #RET_FAILED if an error occurs
  */
 int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
 {
@@ -397,8 +397,8 @@ int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
-                                         MB_BI_FORMAT_SONY_ELF,
-                                         MB_BI_FORMAT_NAME_SONY_ELF,
+                                         FORMAT_SONY_ELF,
+                                         FORMAT_NAME_SONY_ELF,
                                          nullptr,
                                          &sony_elf_writer_get_header,
                                          &sony_elf_writer_write_header,

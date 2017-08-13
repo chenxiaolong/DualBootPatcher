@@ -45,7 +45,7 @@ bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
     size_t remain;
 
     while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
+            == RET_OK) {
         remain = n_read;
 
         while (remain > 0) {
@@ -59,7 +59,7 @@ bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read boot image entry data: %s",
              mb_bi_reader_error_string(bir));
         return false;
@@ -85,7 +85,7 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != MB_BI_OK
+        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != RET_OK
                 || bytes_written != n) {
             LOGE("Failed to write entry data: %s",
                  mb_bi_writer_error_string(biw));
@@ -119,7 +119,7 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
     size_t n;
 
     while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n))
-            == MB_BI_OK) {
+            == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
@@ -127,7 +127,7 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read entry data: %s",
              mb_bi_reader_error_string(bir));
         return false;
@@ -150,16 +150,16 @@ bool bi_copy_data_to_data(MbBiReader *bir, MbBiWriter *biw)
     size_t n_written;
 
     while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
+            == RET_OK) {
         ret = mb_bi_writer_write_data(biw, buf, n_read, &n_written);
-        if (ret != MB_BI_OK || n_read != n_written) {
+        if (ret != RET_OK || n_read != n_written) {
             LOGE("Failed to write entry data: %s",
                  mb_bi_writer_error_string(biw));
             return false;
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read boot image entry data: %s",
              mb_bi_reader_error_string(bir));
         return false;

@@ -19,35 +19,43 @@
 
 #pragma once
 
+namespace mb
+{
+namespace bootimg
+{
+
 // Formats
 
-#define MB_BI_FORMAT_BASE_MASK          0xff0000
-#define MB_BI_FORMAT_ANDROID            0x010000
-#define MB_BI_FORMAT_BUMP               0x020000
-#define MB_BI_FORMAT_LOKI               0x030000
-#define MB_BI_FORMAT_MTK                0x040000
-#define MB_BI_FORMAT_SONY_ELF           0x050000
+constexpr int FORMAT_BASE_MASK          = 0xff0000;
+constexpr int FORMAT_ANDROID            = 0x010000;
+constexpr int FORMAT_BUMP               = 0x020000;
+constexpr int FORMAT_LOKI               = 0x030000;
+constexpr int FORMAT_MTK                = 0x040000;
+constexpr int FORMAT_SONY_ELF           = 0x050000;
 
-#define MB_BI_FORMAT_NAME_ANDROID       "android"
-#define MB_BI_FORMAT_NAME_BUMP          "bump"
-#define MB_BI_FORMAT_NAME_LOKI          "loki"
-#define MB_BI_FORMAT_NAME_MTK           "mtk"
-#define MB_BI_FORMAT_NAME_SONY_ELF      "sony_elf"
+constexpr char FORMAT_NAME_ANDROID[]    = "android";
+constexpr char FORMAT_NAME_BUMP[]       = "bump";
+constexpr char FORMAT_NAME_LOKI[]       = "loki";
+constexpr char FORMAT_NAME_MTK[]        = "mtk";
+constexpr char FORMAT_NAME_SONY_ELF[]   = "sony_elf";
 
 // Return values
 
-#define MB_BI_EOF                       1
-#define MB_BI_OK                        0
-#define MB_BI_UNSUPPORTED               (-1)
-#define MB_BI_WARN                      (-2)
-#define MB_BI_FAILED                    (-3)
-#define MB_BI_FATAL                     (-4)
+constexpr int RET_EOF                   = 1;
+constexpr int RET_OK                    = 0;
+constexpr int RET_UNSUPPORTED           = -1;
+constexpr int RET_WARN                  = -2;
+constexpr int RET_FAILED                = -3;
+constexpr int RET_FATAL                 = -4;
 
 // Error types
 
-#define MB_BI_ERROR_NONE                0
-#define MB_BI_ERROR_INVALID_ARGUMENT    1
-#define MB_BI_ERROR_UNSUPPORTED         2
-#define MB_BI_ERROR_FILE_FORMAT         2
-#define MB_BI_ERROR_PROGRAMMER_ERROR    3
-#define MB_BI_ERROR_INTERNAL_ERROR      4
+constexpr int ERROR_NONE                = 0;
+constexpr int ERROR_INVALID_ARGUMENT    = 1;
+constexpr int ERROR_UNSUPPORTED         = 2;
+constexpr int ERROR_FILE_FORMAT         = 2;
+constexpr int ERROR_PROGRAMMER_ERROR    = 3;
+constexpr int ERROR_INTERNAL_ERROR      = 4;
+
+}
+}

@@ -295,13 +295,13 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
 
     // Open input boot image
     ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
              mb_bi_reader_error_string(bir.get()));
         return false;
     }
     ret = mb_bi_reader_open_filename(bir.get(), boot_image_file);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
              boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
@@ -309,7 +309,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
 
     // Copy header
     ret = mb_bi_reader_read_header(bir.get(), header);
-    if (ret != MB_BI_OK) {
+    if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
              boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
@@ -317,10 +317,10 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
 
     // Go to ramdisk
     ret = mb_bi_reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
-    if (ret == MB_BI_EOF) {
+    if (ret == RET_EOF) {
         LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         return false;
-    } else if (ret != MB_BI_OK) {
+    } else if (ret != RET_OK) {
         LOGE("%s: Failed to find ramdisk entry: %s",
              boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
