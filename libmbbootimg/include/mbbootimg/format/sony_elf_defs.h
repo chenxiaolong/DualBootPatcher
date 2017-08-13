@@ -19,13 +19,26 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "mbbootimg/header.h"
 
-#define SONY_ELF_SUPPORTED_FIELDS \
-        (MB_BI_HEADER_FIELD_KERNEL_ADDRESS \
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS \
-        | MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS \
-        | MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS \
-        | MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS \
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE \
-        | MB_BI_HEADER_FIELD_ENTRYPOINT)
+namespace mb
+{
+namespace bootimg
+{
+namespace sonyelf
+{
+
+constexpr uint64_t SUPPORTED_FIELDS =
+        MB_BI_HEADER_FIELD_KERNEL_ADDRESS
+        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS
+        | MB_BI_HEADER_FIELD_SONY_IPL_ADDRESS
+        | MB_BI_HEADER_FIELD_SONY_RPM_ADDRESS
+        | MB_BI_HEADER_FIELD_SONY_APPSBL_ADDRESS
+        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE
+        | MB_BI_HEADER_FIELD_ENTRYPOINT;
+
+}
+}
+}

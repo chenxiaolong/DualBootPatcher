@@ -26,31 +26,38 @@
 #include "mbbootimg/reader.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace sonyelf
+{
 
 struct SonyElfReaderCtx
 {
     // Header values
-    struct Sony_Elf32_Ehdr hdr;
+    Sony_Elf32_Ehdr hdr;
 
     bool have_header;
 
-    struct SegmentReaderCtx segctx;
+    SegmentReader seg;
 };
 
-int find_sony_elf_header(struct MbBiReader *bir, mb::File *file,
-                         struct Sony_Elf32_Ehdr *header_out);
+int find_sony_elf_header(MbBiReader *bir, mb::File &file,
+                         Sony_Elf32_Ehdr &header_out);
 
-int sony_elf_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int sony_elf_reader_read_header(struct MbBiReader *bir, void *userdata,
-                                struct MbBiHeader *header);
-int sony_elf_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                               struct MbBiEntry *entry);
-int sony_elf_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                                struct MbBiEntry *entry, int entry_type);
-int sony_elf_reader_read_data(struct MbBiReader *bir, void *userdata,
+int sony_elf_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
+int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
+                                MbBiHeader *header);
+int sony_elf_reader_read_entry(MbBiReader *bir, void *userdata,
+                               MbBiEntry *entry);
+int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                                MbBiEntry *entry, int entry_type);
+int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
                               void *buf, size_t buf_size,
                               size_t &bytes_read);
-int sony_elf_reader_free(struct MbBiReader *bir, void *userdata);
+int sony_elf_reader_free(MbBiReader *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

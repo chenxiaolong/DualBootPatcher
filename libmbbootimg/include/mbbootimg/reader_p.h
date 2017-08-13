@@ -21,13 +21,9 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <string>
+#include <string>
 
-#  include <cstddef>
-#else
-#  include <stddef.h>
-#endif
+#include <cstddef>
 
 #include "mbcommon/common.h"
 #include "mbcommon/file.h"

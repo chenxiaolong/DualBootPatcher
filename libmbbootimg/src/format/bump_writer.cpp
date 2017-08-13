@@ -25,8 +25,6 @@
 
 #include "mbbootimg/writer_p.h"
 
-MB_BEGIN_C_DECLS
-
 /*!
  * \brief Set Bump boot image output format
  *
@@ -39,23 +37,16 @@ MB_BEGIN_C_DECLS
  */
 int mb_bi_writer_set_format_bump(MbBiWriter *biw)
 {
-    AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(
-            calloc(1, sizeof(AndroidWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate AndroidWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::android;
+
+    AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
     if (!SHA1_Init(&ctx->sha_ctx)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to initialize SHA_CTX");
-        free(ctx);
+        delete ctx;
         return false;
     }
-
-    _segment_writer_init(&ctx->segctx);
 
     ctx->is_bump = true;
 
@@ -73,6 +64,3 @@ int mb_bi_writer_set_format_bump(MbBiWriter *biw)
                                          &android_writer_close,
                                          &android_writer_free);
 }
-
-
-MB_END_C_DECLS

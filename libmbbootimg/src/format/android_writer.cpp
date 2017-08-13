@@ -41,7 +41,12 @@
 #include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace android
+{
 
 int android_writer_get_header(MbBiWriter *biw, void *userdata,
                               MbBiHeader *header)
@@ -49,7 +54,7 @@ int android_writer_get_header(MbBiWriter *biw, void *userdata,
     (void) biw;
     (void) userdata;
 
-    mb_bi_header_set_supported_fields(header, ANDROID_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
 
     return MB_BI_OK;
 }
@@ -62,7 +67,7 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Construct header
     memset(&ctx->hdr, 0, sizeof(ctx->hdr));
-    memcpy(ctx->hdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(ctx->hdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
     if (mb_bi_header_kernel_address_is_set(header)) {
         ctx->hdr.kernel_addr = mb_bi_header_kernel_address(header);
@@ -131,22 +136,22 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Clear existing entries (none should exist unless this function fails and
     // the user reattempts to call it)
-    _segment_writer_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SECONDBOOT,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_SECONDBOOT,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_DEVICE_TREE,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
@@ -165,7 +170,7 @@ int android_writer_get_entry(MbBiWriter *biw, void *userdata,
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
 
-    return _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.get_entry(*biw->file, entry, biw);
 }
 
 int android_writer_write_entry(MbBiWriter *biw, void *userdata,
@@ -173,7 +178,7 @@ int android_writer_write_entry(MbBiWriter *biw, void *userdata,
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
 
-    return _segment_writer_write_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.write_entry(*biw->file, entry, biw);
 }
 
 int android_writer_write_data(MbBiWriter *biw, void *userdata,
@@ -183,8 +188,7 @@ int android_writer_write_data(MbBiWriter *biw, void *userdata,
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
     int ret;
 
-    ret = _segment_writer_write_data(&ctx->segctx, biw->file, buf, buf_size,
-                                     bytes_written, biw);
+    ret = ctx->seg.write_data(*biw->file, buf, buf_size, bytes_written, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
@@ -205,15 +209,14 @@ int android_writer_write_data(MbBiWriter *biw, void *userdata,
 int android_writer_finish_entry(MbBiWriter *biw, void *userdata)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_finish_entry(&ctx->segctx, biw->file, biw);
+    ret = ctx->seg.finish_entry(*biw->file, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // Update SHA1 hash
     uint32_t le32_size = mb_htole32(swentry->size);
@@ -247,7 +250,6 @@ int android_writer_finish_entry(MbBiWriter *biw, void *userdata)
 int android_writer_close(MbBiWriter *biw, void *userdata)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     size_t n;
 
     if (ctx->have_file_size) {
@@ -268,16 +270,16 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
         ctx->have_file_size = true;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // If successful, finish up the boot image
     if (!swentry) {
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (ctx->is_bump) {
-            if (!mb::file_write_fully(*biw->file, BUMP_MAGIC,
-                                      BUMP_MAGIC_SIZE, n)
-                    || n != BUMP_MAGIC_SIZE) {
+            if (!mb::file_write_fully(*biw->file, bump::BUMP_MAGIC,
+                                      bump::BUMP_MAGIC_SIZE, n)
+                    || n != bump::BUMP_MAGIC_SIZE) {
                 mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write Bump magic: %s",
                                        biw->file->error_string().c_str());
@@ -305,7 +307,7 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
 
         // Convert fields back to little-endian
         AndroidHeader hdr = ctx->hdr;
-        android_fix_header_byte_order(&hdr);
+        android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
         if (!biw->file->seek(0, SEEK_SET, nullptr)) {
@@ -331,10 +333,12 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
 int android_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
-    AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
-    _segment_writer_deinit(&ctx->segctx);
-    free(ctx);
+    delete static_cast<AndroidWriterCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -349,23 +353,16 @@ int android_writer_free(MbBiWriter *bir, void *userdata)
  */
 int mb_bi_writer_set_format_android(MbBiWriter *biw)
 {
-    AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(
-            calloc(1, sizeof(AndroidWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate AndroidWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::android;
+
+    AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
     if (!SHA1_Init(&ctx->sha_ctx)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to initialize SHA_CTX");
-        free(ctx);
+        delete ctx;
         return false;
     }
-
-    _segment_writer_init(&ctx->segctx);
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
@@ -381,5 +378,3 @@ int mb_bi_writer_set_format_android(MbBiWriter *biw)
                                          &android_writer_close,
                                          &android_writer_free);
 }
-
-MB_END_C_DECLS

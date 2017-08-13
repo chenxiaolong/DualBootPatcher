@@ -39,10 +39,14 @@
 #include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-#define SONY_ELF_ENTRY_CMDLINE              (-1)
+namespace mb
+{
+namespace bootimg
+{
+namespace sonyelf
+{
 
-
-MB_BEGIN_C_DECLS
+constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
 
 int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
                                MbBiHeader *header)
@@ -50,7 +54,7 @@ int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
     (void) biw;
     (void) userdata;
 
-    mb_bi_header_set_supported_fields(header, SONY_ELF_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
 
     return MB_BI_OK;
 }
@@ -61,9 +65,7 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
     int ret;
 
-    free(ctx->cmdline);
-    ctx->cmdline = nullptr;
-    ctx->cmdline_size = 0;
+    ctx->cmdline.clear();
 
     memset(&ctx->hdr, 0, sizeof(ctx->hdr));
     memset(&ctx->hdr_kernel, 0, sizeof(ctx->hdr_kernel));
@@ -122,16 +124,7 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
 
     const char *cmdline = mb_bi_header_kernel_cmdline(header);
     if (cmdline) {
-        char *dup = strdup(cmdline);
-
-        if (!dup) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                                   "Out of memory");
-            return MB_BI_FAILED;
-        }
-
-        ctx->cmdline = dup;
-        ctx->cmdline_size = strlen(dup);
+        ctx->cmdline = cmdline;
     }
 
     // Construct IPL program header
@@ -166,30 +159,24 @@ int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Clear existing entries (none should exist unless this function fails and
     // the user reattempts to call it)
-    _segment_writer_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, SONY_ELF_ENTRY_CMDLINE,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_IPL,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_IPL, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_RPM,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_RPM, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_APPSBL,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_APPSBL, 0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
     // Start writing at offset 4096
@@ -207,15 +194,14 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
                               MbBiEntry *entry)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
+    ret = ctx->seg.get_entry(*biw->file, entry, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // Silently handle cmdline entry
     if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
@@ -223,20 +209,20 @@ int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
 
         mb_bi_entry_clear(entry);
 
-        ret = mb_bi_entry_set_size(entry, ctx->cmdline_size);
+        ret = mb_bi_entry_set_size(entry, ctx->cmdline.size());
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
         ret = sony_elf_writer_write_entry(biw, userdata, entry);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
-        ret = sony_elf_writer_write_data(biw, userdata, ctx->cmdline,
-                                         ctx->cmdline_size, n);
+        ret = sony_elf_writer_write_data(biw, userdata, ctx->cmdline.data(),
+                                         ctx->cmdline.size(), n);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
         ret = sony_elf_writer_finish_entry(biw, userdata);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
 
-        ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
+        ret = ctx->seg.get_entry(*biw->file, entry, biw);
         if (ret != MB_BI_OK) return MB_BI_FATAL;
     }
 
@@ -248,7 +234,7 @@ int sony_elf_writer_write_entry(MbBiWriter *biw, void *userdata,
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
 
-    return _segment_writer_write_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.write_entry(*biw->file, entry, biw);
 }
 
 int sony_elf_writer_write_data(MbBiWriter *biw, void *userdata,
@@ -257,22 +243,20 @@ int sony_elf_writer_write_data(MbBiWriter *biw, void *userdata,
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
 
-    return _segment_writer_write_data(&ctx->segctx, biw->file, buf, buf_size,
-                                      bytes_written, biw);
+    return ctx->seg.write_data(*biw->file, buf, buf_size, bytes_written, biw);
 }
 
 int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_finish_entry(&ctx->segctx, biw->file, biw);
+    ret = ctx->seg.finish_entry(*biw->file, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     switch (swentry->type) {
     case MB_BI_ENTRY_KERNEL:
@@ -317,7 +301,6 @@ int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata)
 int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
 {
     SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     size_t n;
 
     if (!ctx->have_file_size) {
@@ -331,7 +314,7 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
         ctx->have_file_size = true;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // If successful, finish up the boot image
     if (!swentry) {
@@ -359,13 +342,13 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
             { nullptr, 0, false },
         };
 
-        sony_elf_fix_ehdr_byte_order(&hdr);
-        sony_elf_fix_phdr_byte_order(&hdr_kernel);
-        sony_elf_fix_phdr_byte_order(&hdr_ramdisk);
-        sony_elf_fix_phdr_byte_order(&hdr_cmdline);
-        sony_elf_fix_phdr_byte_order(&hdr_ipl);
-        sony_elf_fix_phdr_byte_order(&hdr_rpm);
-        sony_elf_fix_phdr_byte_order(&hdr_appsbl);
+        sony_elf_fix_ehdr_byte_order(hdr);
+        sony_elf_fix_phdr_byte_order(hdr_kernel);
+        sony_elf_fix_phdr_byte_order(hdr_ramdisk);
+        sony_elf_fix_phdr_byte_order(hdr_cmdline);
+        sony_elf_fix_phdr_byte_order(hdr_ipl);
+        sony_elf_fix_phdr_byte_order(hdr_rpm);
+        sony_elf_fix_phdr_byte_order(hdr_appsbl);
 
         // Seek back to beginning to write headers
         if (!biw->file->seek(0, SEEK_SET, nullptr)) {
@@ -393,11 +376,12 @@ int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
 int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    _segment_writer_deinit(&ctx->segctx);
-    free(ctx->cmdline);
-    free(ctx);
+    delete static_cast<SonyElfWriterCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -412,16 +396,9 @@ int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
  */
 int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(
-            calloc(1, sizeof(SonyElfWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate SonyElfWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::sonyelf;
 
-    _segment_writer_init(&ctx->segctx);
+    SonyElfWriterCtx *const ctx = new SonyElfWriterCtx();
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
@@ -437,5 +414,3 @@ int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
                                          &sony_elf_writer_close,
                                          &sony_elf_writer_free);
 }
-
-MB_END_C_DECLS

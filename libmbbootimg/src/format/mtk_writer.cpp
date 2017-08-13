@@ -39,9 +39,14 @@
 #include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace mtk
+{
 
-static int _mtk_header_update_size(MbBiWriter *biw, mb::File *file,
+static int _mtk_header_update_size(MbBiWriter *biw, mb::File &file,
                                    uint64_t offset, uint32_t size)
 {
     uint32_t le32_size = mb_htole32(size);
@@ -53,19 +58,18 @@ static int _mtk_header_update_size(MbBiWriter *biw, mb::File *file,
         return MB_BI_FATAL;
     }
 
-    if (!biw->file->seek(offset + offsetof(MtkHeader, size), SEEK_SET,
-                         nullptr)) {
-        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
+    if (!file.seek(offset + offsetof(MtkHeader, size), SEEK_SET, nullptr)) {
+        mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to seek to MTK size field: %s",
-                               biw->file->error_string().c_str());
-        return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(*file, &le32_size, sizeof(le32_size), n)) {
-        mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
+    if (!mb::file_write_fully(file, &le32_size, sizeof(le32_size), n)) {
+        mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write MTK size field: %s",
-                               biw->file->error_string().c_str());
-        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     } else if (n != sizeof(le32_size)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
                                "Unexpected EOF when writing MTK size field");
@@ -75,8 +79,8 @@ static int _mtk_header_update_size(MbBiWriter *biw, mb::File *file,
     return MB_BI_OK;
 }
 
-static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriterCtx *segctx,
-                             mb::File *file,
+static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
+                             mb::File &file,
                              unsigned char digest[SHA_DIGEST_LENGTH])
 {
     SHA_CTX sha_ctx;
@@ -92,28 +96,28 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriterCtx *segctx,
         return MB_BI_FAILED;
     }
 
-    for (size_t i = 0; i < _segment_writer_entries_size(segctx); ++i) {
-        SegmentWriterEntry *entry = _segment_writer_entries_get(segctx, i);
+    for (size_t i = 0; i < seg.entries_size(); ++i) {
+        auto const *entry = seg.entries_get(i);
         uint64_t remain = entry->size;
 
-        if (!file->seek(entry->offset, SEEK_SET, nullptr)) {
-            mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
+        if (!file.seek(entry->offset, SEEK_SET, nullptr)) {
+            mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                    "Failed to seek to entry %" MB_PRIzu ": %s",
-                                   i, file->error_string().c_str());
-            return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                                   i, file.error_string().c_str());
+            return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
         }
 
         // Update checksum with data
         while (remain > 0) {
             size_t to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            if (!mb::file_read_fully(*file, buf, to_read, n)) {
-                mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
+            if (!mb::file_read_fully(file, buf, to_read, n)) {
+                mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                        "Failed to read entry %" MB_PRIzu ": %s",
-                                       i, file->error_string().c_str());
-                return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                                       i, file.error_string().c_str());
+                return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             } else if (n != to_read) {
-                mb_bi_writer_set_error(biw, file->error().value() /* TODO */,
+                mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                        "Unexpected EOF when reading entry");
                 return MB_BI_FAILED;
             }
@@ -178,7 +182,7 @@ int mtk_writer_get_header(MbBiWriter *biw, void *userdata,
     (void) biw;
     (void) userdata;
 
-    mb_bi_header_set_supported_fields(header, MTK_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
 
     return MB_BI_OK;
 }
@@ -191,7 +195,7 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Construct header
     memset(&ctx->hdr, 0, sizeof(ctx->hdr));
-    memcpy(ctx->hdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(ctx->hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
 
     if (mb_bi_header_kernel_address_is_set(header)) {
         ctx->hdr.kernel_addr = mb_bi_header_kernel_address(header);
@@ -260,32 +264,30 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Clear existing entries (none should exist unless this function fails and
     // the user reattempts to call it)
-    _segment_writer_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
-    ret = _segment_writer_entries_add(&ctx->segctx,
-                                      MB_BI_ENTRY_MTK_KERNEL_HEADER,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_MTK_KERNEL_HEADER,
+                               0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx,
-                                      MB_BI_ENTRY_MTK_RAMDISK_HEADER,
-                                      0, false, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_MTK_RAMDISK_HEADER,
+                               0, false, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SECONDBOOT,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_SECONDBOOT,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_DEVICE_TREE,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
@@ -304,7 +306,7 @@ int mtk_writer_get_entry(MbBiWriter *biw, void *userdata,
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
 
-    return _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.get_entry(*biw->file, entry, biw);
 }
 
 int mtk_writer_write_entry(MbBiWriter *biw, void *userdata,
@@ -312,7 +314,7 @@ int mtk_writer_write_entry(MbBiWriter *biw, void *userdata,
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
 
-    return _segment_writer_write_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.write_entry(*biw->file, entry, biw);
 }
 
 int mtk_writer_write_data(MbBiWriter *biw, void *userdata,
@@ -321,22 +323,20 @@ int mtk_writer_write_data(MbBiWriter *biw, void *userdata,
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
 
-    return _segment_writer_write_data(&ctx->segctx, biw->file, buf, buf_size,
-                                      bytes_written, biw);
+    return ctx->seg.write_data(*biw->file, buf, buf_size, bytes_written, biw);
 }
 
 int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_finish_entry(&ctx->segctx, biw->file, biw);
+    ret = ctx->seg.finish_entry(*biw->file, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     if ((swentry->type == MB_BI_ENTRY_KERNEL
             || swentry->type == MB_BI_ENTRY_RAMDISK)
@@ -373,7 +373,6 @@ int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
 int mtk_writer_close(MbBiWriter *biw, void *userdata)
 {
     MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
     size_t n;
 
@@ -388,7 +387,7 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         ctx->have_file_size = true;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // If successful, finish up the boot image
     if (!swentry) {
@@ -401,17 +400,16 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         }
 
         // Update MTK header sizes
-        for (size_t i = 0; i < _segment_writer_entries_size(&ctx->segctx); ++i) {
-            SegmentWriterEntry *entry =
-                    _segment_writer_entries_get(&ctx->segctx, i);
+        for (size_t i = 0; i < ctx->seg.entries_size(); ++i) {
+            auto const *entry = ctx->seg.entries_get(i);
             switch (entry->type) {
             case MB_BI_ENTRY_MTK_KERNEL_HEADER:
-                ret = _mtk_header_update_size(biw, biw->file, entry->offset,
+                ret = _mtk_header_update_size(biw, *biw->file, entry->offset,
                                               ctx->hdr.kernel_size
                                               - sizeof(MtkHeader));
                 break;
             case MB_BI_ENTRY_MTK_RAMDISK_HEADER:
-                ret = _mtk_header_update_size(biw, biw->file, entry->offset,
+                ret = _mtk_header_update_size(biw, *biw->file, entry->offset,
                                               ctx->hdr.ramdisk_size
                                               - sizeof(MtkHeader));
                 break;
@@ -428,15 +426,15 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         // We can't fill in the sizes in the MTK headers when we're writing
         // them. Thus, if we calculated the SHA1sum during write, it would be
         // incorrect.
-        ret = _mtk_compute_sha1(biw, &ctx->segctx, biw->file,
+        ret = _mtk_compute_sha1(biw, ctx->seg, *biw->file,
                                 reinterpret_cast<unsigned char *>(ctx->hdr.id));
         if (ret != MB_BI_OK) {
             return ret;
         }
 
         // Convert fields back to little-endian
-        AndroidHeader hdr = ctx->hdr;
-        android_fix_header_byte_order(&hdr);
+        android::AndroidHeader hdr = ctx->hdr;
+        android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
         if (!biw->file->seek(0, SEEK_SET, nullptr)) {
@@ -462,10 +460,12 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
 int mtk_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-    _segment_writer_deinit(&ctx->segctx);
-    free(ctx);
+    delete static_cast<MtkWriterCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -480,16 +480,9 @@ int mtk_writer_free(MbBiWriter *bir, void *userdata)
  */
 int mb_bi_writer_set_format_mtk(MbBiWriter *biw)
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(
-            calloc(1, sizeof(MtkWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate MtkWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::mtk;
 
-    _segment_writer_init(&ctx->segctx);
+    MtkWriterCtx *const ctx = new MtkWriterCtx();
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
@@ -505,5 +498,3 @@ int mb_bi_writer_set_format_mtk(MbBiWriter *biw)
                                          &mtk_writer_close,
                                          &mtk_writer_free);
 }
-
-MB_END_C_DECLS

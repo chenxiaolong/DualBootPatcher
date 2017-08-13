@@ -77,6 +77,8 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
+using namespace mb::bootimg;
+
 #define HELP_HEADERS \
     "Header fields:\n" \
     "  cmdline         Kernel command line                           [ABLMS]\n" \
@@ -328,8 +330,8 @@ static void absolute_to_offset(uint32_t *base_ptr,
     uint32_t tags_offset = 0;
 
     if (kernel_addr_ptr) {
-        if (*kernel_addr_ptr >= ANDROID_DEFAULT_KERNEL_OFFSET) {
-            base = *kernel_addr_ptr - ANDROID_DEFAULT_KERNEL_OFFSET;
+        if (*kernel_addr_ptr >= android::DEFAULT_KERNEL_OFFSET) {
+            base = *kernel_addr_ptr - android::DEFAULT_KERNEL_OFFSET;
             kernel_offset = *kernel_addr_ptr - base;
         } else {
             can_use_offsets = false;

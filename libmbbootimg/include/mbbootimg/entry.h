@@ -19,11 +19,7 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <cstdint>
 
 #include "mbcommon/common.h"
 

@@ -39,7 +39,12 @@
 #include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace sonyelf
+{
 
 /*!
  * \brief Find and read Sony ELF boot image header
@@ -62,24 +67,24 @@ MB_BEGIN_C_DECLS
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_sony_elf_header(MbBiReader *bir, mb::File *file,
-                         Sony_Elf32_Ehdr *header_out)
+int find_sony_elf_header(MbBiReader *bir, mb::File &file,
+                         Sony_Elf32_Ehdr &header_out)
 {
     Sony_Elf32_Ehdr header;
     size_t n;
 
-    if (!file->seek(0, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
+    if (!file.seek(0, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to seek to beginning: %s",
-                               file->error_string().c_str());
-        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(*file, &header, sizeof(header), n)) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
+    if (!mb::file_read_fully(file, &header, sizeof(header), n)) {
+        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read header: %s",
-                               file->error_string().c_str());
-        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     } else if (n != sizeof(header)) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
                                "Too small to be Sony ELF image");
@@ -92,8 +97,8 @@ int find_sony_elf_header(MbBiReader *bir, mb::File *file,
         return MB_BI_WARN;
     }
 
-    sony_elf_fix_ehdr_byte_order(&header);
-    *header_out = header;
+    sony_elf_fix_ehdr_byte_order(header);
+    header_out = header;
 
     return MB_BI_OK;
 }
@@ -113,13 +118,13 @@ int sony_elf_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     int bid = 0;
     int ret;
 
-    if (best_bid >= SONY_EI_NIDENT * 8) {
+    if (best_bid >= static_cast<int>(SONY_EI_NIDENT) * 8) {
         // This is a bid we can't win, so bail out
         return MB_BI_WARN;
     }
 
     // Find the Sony ELF header
-    ret = find_sony_elf_header(bir, bir->file, &ctx->hdr);
+    ret = find_sony_elf_header(bir, *bir->file, ctx->hdr);
     if (ret == MB_BI_OK) {
         // Update bid to account for matched bits
         ctx->have_header = true;
@@ -143,14 +148,14 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
     if (!ctx->have_header) {
         // A bid might not have been performed if the user forced a particular
         // format
-        ret = find_sony_elf_header(bir, bir->file, &ctx->hdr);
+        ret = find_sony_elf_header(bir, *bir->file, ctx->hdr);
         if (ret < 0) {
             return ret;
         }
         ctx->have_header = true;
     }
 
-    mb_bi_header_set_supported_fields(header, SONY_ELF_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
 
     ret = mb_bi_header_set_entrypoint_address(header, ctx->hdr.e_entry);
     if (ret != MB_BI_OK) return ret;
@@ -167,7 +172,7 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
     pos += sizeof(Sony_Elf32_Ehdr);
 
     // Reset entries
-    _segment_reader_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
     // Read program segment headers
     for (Elf32_Half i = 0; i < ctx->hdr.e_phnum; ++i) {
@@ -198,7 +203,7 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
         pos += sizeof(phdr);
 
         // Fix byte order
-        sony_elf_fix_phdr_byte_order(&phdr);
+        sony_elf_fix_phdr_byte_order(phdr);
 
         if (phdr.p_type == SONY_E_TYPE_CMDLINE
                 && phdr.p_flags == SONY_E_FLAGS_CMDLINE) {
@@ -234,48 +239,40 @@ int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
             if (ret != MB_BI_OK) return ret;
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
-            ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                              phdr.p_offset, phdr.p_memsz,
-                                              false, bir);
+            ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+                                       phdr.p_offset, phdr.p_memsz, false, bir);
             if (ret != MB_BI_OK) return ret;
 
             ret = mb_bi_header_set_kernel_address(header, phdr.p_vaddr);
             if (ret != MB_BI_OK) return ret;
         } else if (phdr.p_type == SONY_E_TYPE_RAMDISK
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
-            ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                              phdr.p_offset, phdr.p_memsz,
-                                              false, bir);
+            ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+                                       phdr.p_offset, phdr.p_memsz, false, bir);
             if (ret != MB_BI_OK) return ret;
 
             ret = mb_bi_header_set_ramdisk_address(header, phdr.p_vaddr);
             if (ret != MB_BI_OK) return ret;
         } else if (phdr.p_type == SONY_E_TYPE_IPL
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
-            ret = _segment_reader_entries_add(&ctx->segctx,
-                                              MB_BI_ENTRY_SONY_IPL,
-                                              phdr.p_offset, phdr.p_memsz,
-                                              false, bir);
+            ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_IPL,
+                                       phdr.p_offset, phdr.p_memsz, false, bir);
             if (ret != MB_BI_OK) return ret;
 
             ret = mb_bi_header_set_sony_ipl_address(header, phdr.p_vaddr);
             if (ret != MB_BI_OK) return ret;
         } else if (phdr.p_type == SONY_E_TYPE_RPM
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
-            ret = _segment_reader_entries_add(&ctx->segctx,
-                                              MB_BI_ENTRY_SONY_RPM,
-                                              phdr.p_offset, phdr.p_memsz,
-                                              false, bir);
+            ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_RPM,
+                                       phdr.p_offset, phdr.p_memsz, false, bir);
             if (ret != MB_BI_OK) return ret;
 
             ret = mb_bi_header_set_sony_rpm_address(header, phdr.p_vaddr);
             if (ret != MB_BI_OK) return ret;
         } else if (phdr.p_type == SONY_E_TYPE_APPSBL
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
-            ret = _segment_reader_entries_add(&ctx->segctx,
-                                              MB_BI_ENTRY_SONY_APPSBL,
-                                              phdr.p_offset, phdr.p_memsz,
-                                              false, bir);
+            ret = ctx->seg.entries_add(MB_BI_ENTRY_SONY_APPSBL,
+                                       phdr.p_offset, phdr.p_memsz, false, bir);
             if (ret != MB_BI_OK) return ret;
 
             ret = mb_bi_header_set_sony_appsbl_address(header, phdr.p_vaddr);
@@ -302,7 +299,7 @@ int sony_elf_reader_read_entry(MbBiReader *bir, void *userdata,
 {
     SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
 
-    return _segment_reader_read_entry(&ctx->segctx, bir->file, entry, bir);
+    return ctx->seg.read_entry(*bir->file, entry, bir);
 }
 
 int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
@@ -310,8 +307,7 @@ int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
 {
     SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
 
-    return _segment_reader_go_to_entry(&ctx->segctx, bir->file, entry,
-                                       entry_type, bir);
+    return ctx->seg.go_to_entry(*bir->file, entry, entry_type, bir);
 }
 
 int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
@@ -320,17 +316,18 @@ int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
 {
     SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
 
-    return _segment_reader_read_data(&ctx->segctx, bir->file, buf, buf_size,
-                                     bytes_read, bir);
+    return ctx->seg.read_data(*bir->file, buf, buf_size, bytes_read, bir);
 }
 
 int sony_elf_reader_free(MbBiReader *bir, void *userdata)
 {
     (void) bir;
-    SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(userdata);
-    _segment_reader_deinit(&ctx->segctx);
-    free(ctx);
+    delete static_cast<SonyElfReaderCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -345,16 +342,9 @@ int sony_elf_reader_free(MbBiReader *bir, void *userdata)
  */
 int mb_bi_reader_enable_format_sony_elf(MbBiReader *bir)
 {
-    SonyElfReaderCtx *const ctx = static_cast<SonyElfReaderCtx *>(
-            calloc(1, sizeof(SonyElfReaderCtx)));
-    if (!ctx) {
-        mb_bi_reader_set_error(bir, -errno,
-                               "Failed to allocate SonyElfReaderCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::sonyelf;
 
-    _segment_reader_init(&ctx->segctx);
+    SonyElfReaderCtx *const ctx = new SonyElfReaderCtx();
 
     return _mb_bi_reader_register_format(bir,
                                          ctx,
@@ -368,5 +358,3 @@ int mb_bi_reader_enable_format_sony_elf(MbBiReader *bir)
                                          &sony_elf_reader_read_data,
                                          &sony_elf_reader_free);
 }
-
-MB_END_C_DECLS

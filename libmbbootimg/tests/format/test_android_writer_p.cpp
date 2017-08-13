@@ -161,7 +161,7 @@ TEST(AndroidWriterInternalsTest, OversizedBoardNameShouldFail)
     ASSERT_EQ(mb_bi_header_set_page_size(header2, 2048), MB_BI_OK);
 
     // Set board name
-    std::string name(ANDROID_BOOT_NAME_SIZE, 'c');
+    std::string name(BOOT_NAME_SIZE, 'c');
     ASSERT_EQ(mb_bi_header_set_board_name(header2, name.c_str()), MB_BI_OK);
 
     // Write header
@@ -188,7 +188,7 @@ TEST(AndroidWriterInternalsTest, OversizedCmdlineShouldFail)
     ASSERT_EQ(mb_bi_header_set_page_size(header2, 2048), MB_BI_OK);
 
     // Set board name
-    std::string args(ANDROID_BOOT_ARGS_SIZE, 'c');
+    std::string args(BOOT_ARGS_SIZE, 'c');
     ASSERT_EQ(mb_bi_header_set_kernel_cmdline(header2, args.c_str()), MB_BI_OK);
 
     // Write header

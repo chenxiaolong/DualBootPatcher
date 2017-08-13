@@ -21,6 +21,8 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <string>
+
 #include <openssl/sha.h>
 
 #include "mbbootimg/entry.h"
@@ -30,41 +32,47 @@
 #include "mbbootimg/writer.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace sonyelf
+{
 
 struct SonyElfWriterCtx
 {
     // Header values
-    struct Sony_Elf32_Ehdr hdr;
-    struct Sony_Elf32_Phdr hdr_kernel;
-    struct Sony_Elf32_Phdr hdr_ramdisk;
-    struct Sony_Elf32_Phdr hdr_cmdline;
-    struct Sony_Elf32_Phdr hdr_ipl;
-    struct Sony_Elf32_Phdr hdr_rpm;
-    struct Sony_Elf32_Phdr hdr_appsbl;
+    Sony_Elf32_Ehdr hdr;
+    Sony_Elf32_Phdr hdr_kernel;
+    Sony_Elf32_Phdr hdr_ramdisk;
+    Sony_Elf32_Phdr hdr_cmdline;
+    Sony_Elf32_Phdr hdr_ipl;
+    Sony_Elf32_Phdr hdr_rpm;
+    Sony_Elf32_Phdr hdr_appsbl;
 
     bool have_file_size;
     uint64_t file_size;
 
-    char *cmdline;
-    size_t cmdline_size;
+    std::string cmdline;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter seg;
 };
 
-int sony_elf_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                               struct MbBiHeader *header);
-int sony_elf_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                                 struct MbBiHeader *header);
-int sony_elf_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                              struct MbBiEntry *entry);
-int sony_elf_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                                struct MbBiEntry *entry);
-int sony_elf_writer_write_data(struct MbBiWriter *biw, void *userdata,
+int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
+                               MbBiHeader *header);
+int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
+                                 MbBiHeader *header);
+int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
+                              MbBiEntry *entry);
+int sony_elf_writer_write_entry(MbBiWriter *biw, void *userdata,
+                                MbBiEntry *entry);
+int sony_elf_writer_write_data(MbBiWriter *biw, void *userdata,
                                const void *buf, size_t buf_size,
                                size_t &bytes_written);
-int sony_elf_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int sony_elf_writer_close(struct MbBiWriter *biw, void *userdata);
-int sony_elf_writer_free(struct MbBiWriter *bir, void *userdata);
+int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata);
+int sony_elf_writer_close(MbBiWriter *biw, void *userdata);
+int sony_elf_writer_free(MbBiWriter *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

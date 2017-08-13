@@ -30,12 +30,17 @@
 #include "mbbootimg/writer.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace android
+{
 
 struct AndroidWriterCtx
 {
     // Header values
-    struct AndroidHeader hdr;
+    AndroidHeader hdr;
 
     bool have_file_size;
     uint64_t file_size;
@@ -44,22 +49,24 @@ struct AndroidWriterCtx
 
     SHA_CTX sha_ctx;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter seg;
 };
 
-int android_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                              struct MbBiHeader *header);
-int android_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                                struct MbBiHeader *header);
-int android_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                             struct MbBiEntry *entry);
-int android_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                               struct MbBiEntry *entry);
-int android_writer_write_data(struct MbBiWriter *biw, void *userdata,
+int android_writer_get_header(MbBiWriter *biw, void *userdata,
+                              MbBiHeader *header);
+int android_writer_write_header(MbBiWriter *biw, void *userdata,
+                                MbBiHeader *header);
+int android_writer_get_entry(MbBiWriter *biw, void *userdata,
+                             MbBiEntry *entry);
+int android_writer_write_entry(MbBiWriter *biw, void *userdata,
+                               MbBiEntry *entry);
+int android_writer_write_data(MbBiWriter *biw, void *userdata,
                               const void *buf, size_t buf_size,
                               size_t &bytes_written);
-int android_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int android_writer_close(struct MbBiWriter *biw, void *userdata);
-int android_writer_free(struct MbBiWriter *bir, void *userdata);
+int android_writer_finish_entry(MbBiWriter *biw, void *userdata);
+int android_writer_close(MbBiWriter *biw, void *userdata);
+int android_writer_free(MbBiWriter *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

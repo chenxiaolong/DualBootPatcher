@@ -26,12 +26,17 @@
 #include "mbbootimg/reader.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace android
+{
 
 struct AndroidReaderCtx
 {
     // Header values
-    struct AndroidHeader hdr;
+    AndroidHeader hdr;
 
     // Offsets
     bool have_header_offset;
@@ -45,32 +50,34 @@ struct AndroidReaderCtx
 
     bool is_bump;
 
-    struct SegmentReaderCtx segctx;
+    SegmentReader seg;
 };
 
-int find_android_header(struct MbBiReader *bir, mb::File *file,
+int find_android_header(MbBiReader *bir, mb::File &file,
                         uint64_t max_header_offset,
-                        struct AndroidHeader *header_out, uint64_t *offset_out);
-int find_samsung_seandroid_magic(struct MbBiReader *bir, mb::File *file,
-                                 struct AndroidHeader *hdr,
-                                 uint64_t *offset_out);
-int find_bump_magic(struct MbBiReader *bir, mb::File *file,
-                    struct AndroidHeader *hdr, uint64_t *offset_out);
-int android_set_header(struct AndroidHeader *hdr, struct MbBiHeader *header);
+                        AndroidHeader &header_out, uint64_t &offset_out);
+int find_samsung_seandroid_magic(MbBiReader *bir, mb::File &file,
+                                 const AndroidHeader &hdr,
+                                 uint64_t &offset_out);
+int find_bump_magic(MbBiReader *bir, mb::File &file,
+                    const AndroidHeader &hdr, uint64_t &offset_out);
+int android_set_header(const AndroidHeader &hdr, MbBiHeader *header);
 
-int android_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int bump_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int android_reader_set_option(struct MbBiReader *bir, void *userdata,
+int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
+int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
+int android_reader_set_option(MbBiReader *bir, void *userdata,
                               const char *key, const char *value);
-int android_reader_read_header(struct MbBiReader *bir, void *userdata,
-                               struct MbBiHeader *header);
-int android_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                              struct MbBiEntry *entry);
-int android_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                               struct MbBiEntry *entry, int entry_type);
-int android_reader_read_data(struct MbBiReader *bir, void *userdata,
+int android_reader_read_header(MbBiReader *bir, void *userdata,
+                               MbBiHeader *header);
+int android_reader_read_entry(MbBiReader *bir, void *userdata,
+                              MbBiEntry *entry);
+int android_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                               MbBiEntry *entry, int entry_type);
+int android_reader_read_data(MbBiReader *bir, void *userdata,
                              void *buf, size_t buf_size,
                              size_t &bytes_read);
-int android_reader_free(struct MbBiReader *bir, void *userdata);
+int android_reader_free(MbBiReader *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

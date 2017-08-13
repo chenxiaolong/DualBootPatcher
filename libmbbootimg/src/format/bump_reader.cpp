@@ -25,8 +25,6 @@
 
 #include "mbbootimg/reader_p.h"
 
-MB_BEGIN_C_DECLS
-
 /*!
  * \brief Enable support for Bump boot image format
  *
@@ -39,16 +37,9 @@ MB_BEGIN_C_DECLS
  */
 int mb_bi_reader_enable_format_bump(MbBiReader *bir)
 {
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(
-            calloc(1, sizeof(AndroidReaderCtx)));
-    if (!ctx) {
-        mb_bi_reader_set_error(bir, -errno,
-                               "Failed to allocate AndroidReaderCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::android;
 
-    _segment_reader_init(&ctx->segctx);
+    AndroidReaderCtx *const ctx = new AndroidReaderCtx();
 
     ctx->is_bump = true;
 
@@ -64,5 +55,3 @@ int mb_bi_reader_enable_format_bump(MbBiReader *bir)
                                          &android_reader_read_data,
                                          &android_reader_free);
 }
-
-MB_END_C_DECLS

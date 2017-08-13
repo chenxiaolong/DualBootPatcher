@@ -40,7 +40,12 @@
 #include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace mtk
+{
 
 /*!
  * \brief Read MTK header
@@ -61,24 +66,24 @@ MB_BEGIN_C_DECLS
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int read_mtk_header(MbBiReader *bir, mb::File *file,
-                    uint64_t offset, MtkHeader *mtkhdr_out)
+static int read_mtk_header(MbBiReader *bir, mb::File &file,
+                           uint64_t offset, MtkHeader &mtkhdr_out)
 {
     MtkHeader mtkhdr;
     size_t n;
 
-    if (!file->seek(offset, SEEK_SET, nullptr)) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
+    if (!file.seek(offset, SEEK_SET, nullptr)) {
+        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to seek to MTK header at %" PRIu64 ": %s",
-                               offset, file->error_string().c_str());
-        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               offset, file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(*file, &mtkhdr, sizeof(mtkhdr), n)) {
-        mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
+    if (!mb::file_read_fully(file, &mtkhdr, sizeof(mtkhdr), n)) {
+        mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read MTK header: %s",
-                               file->error_string().c_str());
-        return file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
+                               file.error_string().c_str());
+        return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
     if (n != sizeof(MtkHeader)
@@ -89,7 +94,7 @@ int read_mtk_header(MbBiReader *bir, mb::File *file,
         return MB_BI_WARN;
     }
 
-    *mtkhdr_out = mtkhdr;
+    mtkhdr_out = mtkhdr;
     mtk_fix_header_byte_order(mtkhdr_out);
 
     return MB_BI_OK;
@@ -119,12 +124,12 @@ int read_mtk_header(MbBiReader *bir, mb::File *file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_mtk_headers(MbBiReader *bir, mb::File *file,
-                     AndroidHeader *hdr,
-                     MtkHeader *kernel_mtkhdr_out,
-                     uint64_t *kernel_offset_out,
-                     MtkHeader *ramdisk_mtkhdr_out,
-                     uint64_t *ramdisk_offset_out)
+static int find_mtk_headers(MbBiReader *bir, mb::File &file,
+                            const android::AndroidHeader &hdr,
+                            MtkHeader &kernel_mtkhdr_out,
+                            uint64_t &kernel_offset_out,
+                            MtkHeader &ramdisk_mtkhdr_out,
+                            uint64_t &ramdisk_offset_out)
 {
     uint64_t kernel_offset;
     uint64_t ramdisk_offset;
@@ -132,28 +137,28 @@ int find_mtk_headers(MbBiReader *bir, mb::File *file,
     uint64_t pos = 0;
 
     // Header
-    pos += hdr->page_size;
+    pos += hdr.page_size;
 
     // Kernel
     kernel_offset = pos;
-    pos += hdr->kernel_size;
-    pos += align_page_size<uint64_t>(pos, hdr->page_size);
+    pos += hdr.kernel_size;
+    pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
     // Ramdisk
     ramdisk_offset = pos;
-    pos += hdr->ramdisk_size;
-    pos += align_page_size<uint64_t>(pos, hdr->page_size);
+    pos += hdr.ramdisk_size;
+    pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
     ret = read_mtk_header(bir, file, kernel_offset, kernel_mtkhdr_out);
     if (ret == MB_BI_OK) {
-        *kernel_offset_out = kernel_offset + sizeof(MtkHeader);
+        kernel_offset_out = kernel_offset + sizeof(MtkHeader);
     } else {
         return ret;
     }
 
     ret = read_mtk_header(bir, file, ramdisk_offset, ramdisk_mtkhdr_out);
     if (ret == MB_BI_OK) {
-        *ramdisk_offset_out = ramdisk_offset + sizeof(MtkHeader);
+        ramdisk_offset_out = ramdisk_offset + sizeof(MtkHeader);
     } else {
         return ret;
     }
@@ -176,18 +181,19 @@ int mtk_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     int bid = 0;
     int ret;
 
-    if (best_bid >= (ANDROID_BOOT_MAGIC_SIZE + 2 * MTK_MAGIC_SIZE) * 8) {
+    if (best_bid >= static_cast<int>(
+            android::BOOT_MAGIC_SIZE + 2 * MTK_MAGIC_SIZE) * 8) {
         // This is a bid we can't win, so bail out
         return MB_BI_WARN;
     }
 
     // Find the Android header
-    ret = find_android_header(bir, bir->file, ANDROID_MAX_HEADER_OFFSET,
-                              &ctx->hdr, &ctx->header_offset);
+    ret = find_android_header(bir, *bir->file, android::MAX_HEADER_OFFSET,
+                              ctx->hdr, ctx->header_offset);
     if (ret == MB_BI_OK) {
         // Update bid to account for matched bits
         ctx->have_header_offset = true;
-        bid += ANDROID_BOOT_MAGIC_SIZE * 8;
+        bid += android::BOOT_MAGIC_SIZE * 8;
     } else if (ret == MB_BI_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -195,9 +201,9 @@ int mtk_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
         return ret;
     }
 
-    ret = find_mtk_headers(bir, bir->file, &ctx->hdr,
-                           &ctx->mtk_kernel_hdr, &ctx->mtk_kernel_offset,
-                           &ctx->mtk_ramdisk_hdr, &ctx->mtk_ramdisk_offset);
+    ret = find_mtk_headers(bir, *bir->file, ctx->hdr,
+                           ctx->mtk_kernel_hdr, ctx->mtk_kernel_offset,
+                           ctx->mtk_ramdisk_hdr, ctx->mtk_ramdisk_offset);
     if (ret == MB_BI_OK) {
         // Update bid to account for matched bids
         ctx->have_mtkhdr_offsets = true;
@@ -218,17 +224,17 @@ int mtk_reader_read_header(MbBiReader *bir, void *userdata,
     if (!ctx->have_header_offset) {
         // A bid might not have been performed if the user forced a particular
         // format
-        ret = find_android_header(bir, bir->file, ANDROID_MAX_HEADER_OFFSET,
-                                  &ctx->hdr, &ctx->header_offset);
+        ret = find_android_header(bir, *bir->file, android::MAX_HEADER_OFFSET,
+                                  ctx->hdr, ctx->header_offset);
         if (ret < 0) {
             return ret;
         }
         ctx->have_header_offset = true;
     }
     if (!ctx->have_mtkhdr_offsets) {
-        ret = find_mtk_headers(bir, bir->file, &ctx->hdr,
-                               &ctx->mtk_kernel_hdr, &ctx->mtk_kernel_offset,
-                               &ctx->mtk_ramdisk_hdr, &ctx->mtk_ramdisk_offset);
+        ret = find_mtk_headers(bir, *bir->file, ctx->hdr,
+                               ctx->mtk_kernel_hdr, ctx->mtk_kernel_offset,
+                               ctx->mtk_ramdisk_hdr, ctx->mtk_ramdisk_offset);
         if (ret < 0) {
             return ret;
         }
@@ -251,7 +257,7 @@ int mtk_reader_read_header(MbBiReader *bir, void *userdata,
         return MB_BI_FAILED;
     }
 
-    ret = android_set_header(&ctx->hdr, header);
+    ret = android_set_header(ctx->hdr, header);
     if (ret != MB_BI_OK) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to set header fields");
@@ -273,7 +279,7 @@ int mtk_reader_read_header(MbBiReader *bir, void *userdata,
 
     // Header
     pos += ctx->header_offset;
-    pos += sizeof(AndroidHeader);
+    pos += sizeof(android::AndroidHeader);
     pos += align_page_size<uint64_t>(pos, page_size);
 
     // Kernel
@@ -296,41 +302,36 @@ int mtk_reader_read_header(MbBiReader *bir, void *userdata,
     pos += ctx->hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, page_size);
 
-    _segment_reader_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
-    ret = _segment_reader_entries_add(&ctx->segctx,
-                                      MB_BI_ENTRY_MTK_KERNEL_HEADER,
-                                      kernel_offset, sizeof(MtkHeader), false,
-                                      bir);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_MTK_KERNEL_HEADER,
+                               kernel_offset, sizeof(MtkHeader), false, bir);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      ctx->mtk_kernel_offset,
-                                      ctx->mtk_kernel_hdr.size, false, bir);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+                               ctx->mtk_kernel_offset,
+                               ctx->mtk_kernel_hdr.size, false, bir);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_reader_entries_add(&ctx->segctx,
-                                      MB_BI_ENTRY_MTK_RAMDISK_HEADER,
-                                      ramdisk_offset, sizeof(MtkHeader), false,
-                                      bir);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_MTK_RAMDISK_HEADER,
+                               ramdisk_offset, sizeof(MtkHeader), false, bir);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      ctx->mtk_ramdisk_offset,
-                                      ctx->mtk_ramdisk_hdr.size, false, bir);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+                               ctx->mtk_ramdisk_offset,
+                               ctx->mtk_ramdisk_hdr.size, false, bir);
     if (ret != MB_BI_OK) return ret;
 
     if (ctx->hdr.second_size > 0) {
-        ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_SECONDBOOT,
-                                          second_offset, ctx->hdr.second_size,
-                                          false, bir);
+        ret = ctx->seg.entries_add(MB_BI_ENTRY_SECONDBOOT,
+                                   second_offset, ctx->hdr.second_size, false,
+                                   bir);
         if (ret != MB_BI_OK) return ret;
     }
 
     if (ctx->hdr.dt_size > 0) {
-        ret = _segment_reader_entries_add(&ctx->segctx, MB_BI_ENTRY_DEVICE_TREE,
-                                          dt_offset, ctx->hdr.dt_size, false,
-                                          bir);
+        ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+                                   dt_offset, ctx->hdr.dt_size, false, bir);
         if (ret != MB_BI_OK) return ret;
     }
 
@@ -342,7 +343,7 @@ int mtk_reader_read_entry(MbBiReader *bir, void *userdata,
 {
     MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
 
-    return _segment_reader_read_entry(&ctx->segctx, bir->file, entry, bir);
+    return ctx->seg.read_entry(*bir->file, entry, bir);
 }
 
 int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata, MbBiEntry *entry,
@@ -350,8 +351,7 @@ int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata, MbBiEntry *entry,
 {
     MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
 
-    return _segment_reader_go_to_entry(&ctx->segctx, bir->file, entry,
-                                       entry_type, bir);
+    return ctx->seg.go_to_entry(*bir->file, entry, entry_type, bir);
 }
 
 int mtk_reader_read_data(MbBiReader *bir, void *userdata,
@@ -360,17 +360,18 @@ int mtk_reader_read_data(MbBiReader *bir, void *userdata,
 {
     MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
 
-    return _segment_reader_read_data(&ctx->segctx, bir->file, buf, buf_size,
-                                     bytes_read, bir);
+    return ctx->seg.read_data(*bir->file, buf, buf_size, bytes_read, bir);
 }
 
 int mtk_reader_free(MbBiReader *bir, void *userdata)
 {
     (void) bir;
-    MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(userdata);
-    _segment_reader_deinit(&ctx->segctx);
-    free(ctx);
+    delete static_cast<MtkReaderCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -385,16 +386,9 @@ int mtk_reader_free(MbBiReader *bir, void *userdata)
  */
 int mb_bi_reader_enable_format_mtk(MbBiReader *bir)
 {
-    MtkReaderCtx *const ctx = static_cast<MtkReaderCtx *>(
-            calloc(1, sizeof(MtkReaderCtx)));
-    if (!ctx) {
-        mb_bi_reader_set_error(bir, -errno,
-                               "Failed to allocate MtkReaderCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::mtk;
 
-    _segment_reader_init(&ctx->segctx);
+    MtkReaderCtx *const ctx = new MtkReaderCtx();
 
     return _mb_bi_reader_register_format(bir,
                                          ctx,
@@ -408,5 +402,3 @@ int mb_bi_reader_enable_format_mtk(MbBiReader *bir)
                                          &mtk_reader_read_data,
                                          &mtk_reader_free);
 }
-
-MB_END_C_DECLS

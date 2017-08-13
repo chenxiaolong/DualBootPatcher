@@ -41,10 +41,14 @@
 #include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-#define MAX_ABOOT_SIZE              (2 * 1024 * 1024)
+namespace mb
+{
+namespace bootimg
+{
+namespace loki
+{
 
-
-MB_BEGIN_C_DECLS
+constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 
 int loki_writer_get_header(MbBiWriter *biw, void *userdata,
                            MbBiHeader *header)
@@ -52,7 +56,7 @@ int loki_writer_get_header(MbBiWriter *biw, void *userdata,
     (void) biw;
     (void) userdata;
 
-    mb_bi_header_set_supported_fields(header, LOKI_NEW_SUPPORTED_FIELDS);
+    mb_bi_header_set_supported_fields(header, NEW_SUPPORTED_FIELDS);
 
     return MB_BI_OK;
 }
@@ -65,7 +69,7 @@ int loki_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Construct header
     memset(&ctx->hdr, 0, sizeof(ctx->hdr));
-    memcpy(ctx->hdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(ctx->hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
 
     if (mb_bi_header_kernel_address_is_set(header)) {
         ctx->hdr.kernel_addr = mb_bi_header_kernel_address(header);
@@ -134,22 +138,22 @@ int loki_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Clear existing entries (none should exist unless this function fails and
     // the user reattempts to call it)
-    _segment_writer_entries_clear(&ctx->segctx);
+    ctx->seg.entries_clear();
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_DEVICE_TREE,
-                                      0, false, ctx->hdr.page_size, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+                               0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_ABOOT,
-                                      0, true, 0, biw);
+    ret = ctx->seg.entries_add(MB_BI_ENTRY_ABOOT,
+                               0, true, 0, biw);
     if (ret != MB_BI_OK) return ret;
 
     // Start writing after first page
@@ -168,7 +172,7 @@ int loki_writer_get_entry(MbBiWriter *biw, void *userdata,
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
 
-    return _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.get_entry(*biw->file, entry, biw);
 }
 
 int loki_writer_write_entry(MbBiWriter *biw, void *userdata,
@@ -176,7 +180,7 @@ int loki_writer_write_entry(MbBiWriter *biw, void *userdata,
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
 
-    return _segment_writer_write_entry(&ctx->segctx, biw->file, entry, biw);
+    return ctx->seg.write_entry(*biw->file, entry, biw);
 }
 
 int loki_writer_write_data(MbBiWriter *biw, void *userdata,
@@ -184,38 +188,26 @@ int loki_writer_write_data(MbBiWriter *biw, void *userdata,
                            size_t &bytes_written)
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     if (swentry->type == MB_BI_ENTRY_ABOOT) {
-        if (buf_size > MAX_ABOOT_SIZE - ctx->aboot_size) {
+        if (buf_size > MAX_ABOOT_SIZE - ctx->aboot.size()) {
             mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                    "aboot image too large");
             return MB_BI_FATAL;
         }
 
-        size_t new_aboot_size = ctx->aboot_size + buf_size;
-        unsigned char *new_aboot;
+        size_t old_aboot_size = ctx->aboot.size();
+        ctx->aboot.resize(old_aboot_size + buf_size);
 
-        new_aboot = static_cast<unsigned char *>(
-                realloc(ctx->aboot, new_aboot_size));
-        if (!new_aboot) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                                   "Failed to expand aboot buffer");
-            return MB_BI_FAILED;
-        }
-
-        memcpy(new_aboot + ctx->aboot_size, buf, buf_size);
-
-        ctx->aboot = new_aboot;
-        ctx->aboot_size = new_aboot_size;
+        memcpy(ctx->aboot.data() + old_aboot_size, buf, buf_size);
 
         bytes_written = buf_size;
     } else {
-        ret = _segment_writer_write_data(&ctx->segctx, biw->file, buf, buf_size,
-                                         bytes_written, biw);
+        ret = ctx->seg.write_data(*biw->file, buf, buf_size, bytes_written,
+                                  biw);
         if (ret != MB_BI_OK) {
             return ret;
         }
@@ -237,15 +229,14 @@ int loki_writer_write_data(MbBiWriter *biw, void *userdata,
 int loki_writer_finish_entry(MbBiWriter *biw, void *userdata)
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
 
-    ret = _segment_writer_finish_entry(&ctx->segctx, biw->file, biw);
+    ret = ctx->seg.finish_entry(*biw->file, biw);
     if (ret != MB_BI_OK) {
         return ret;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // Update SHA1 hash
     uint32_t le32_size = mb_htole32(swentry->size);
@@ -285,7 +276,6 @@ int loki_writer_finish_entry(MbBiWriter *biw, void *userdata)
 int loki_writer_close(MbBiWriter *biw, void *userdata)
 {
     LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
     int ret;
     size_t n;
 
@@ -307,7 +297,7 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
         ctx->have_file_size = true;
     }
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+    auto const *swentry = ctx->seg.entry();
 
     // If successful, finish up the boot image
     if (!swentry) {
@@ -329,8 +319,8 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
         memcpy(ctx->hdr.id, digest, SHA_DIGEST_LENGTH);
 
         // Convert fields back to little-endian
-        AndroidHeader hdr = ctx->hdr;
-        android_fix_header_byte_order(&hdr);
+        android::AndroidHeader hdr = ctx->hdr;
+        android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
         if (!biw->file->seek(0, SEEK_SET, nullptr)) {
@@ -350,7 +340,8 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
         }
 
         // Patch with Loki
-        ret = _loki_patch_file(biw, biw->file, ctx->aboot, ctx->aboot_size);
+        ret = _loki_patch_file(biw, *biw->file, ctx->aboot.data(),
+                               ctx->aboot.size());
         if (ret != MB_BI_OK) {
             return ret;
         }
@@ -362,11 +353,12 @@ int loki_writer_close(MbBiWriter *biw, void *userdata)
 int loki_writer_free(MbBiWriter *bir, void *userdata)
 {
     (void) bir;
-    LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(userdata);
-    _segment_writer_deinit(&ctx->segctx);
-    free(ctx->aboot);
-    free(ctx);
+    delete static_cast<LokiWriterCtx *>(userdata);
     return MB_BI_OK;
+}
+
+}
+}
 }
 
 /*!
@@ -381,23 +373,16 @@ int loki_writer_free(MbBiWriter *bir, void *userdata)
  */
 int mb_bi_writer_set_format_loki(MbBiWriter *biw)
 {
-    LokiWriterCtx *const ctx = static_cast<LokiWriterCtx *>(
-            calloc(1, sizeof(LokiWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate LokiWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace mb::bootimg::loki;
+
+    LokiWriterCtx *const ctx = new LokiWriterCtx();
 
     if (!SHA1_Init(&ctx->sha_ctx)) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to initialize SHA_CTX");
-        free(ctx);
+        delete ctx;
         return false;
     }
-
-    _segment_writer_init(&ctx->segctx);
 
     return _mb_bi_writer_register_format(biw,
                                          ctx,
@@ -413,5 +398,3 @@ int mb_bi_writer_set_format_loki(MbBiWriter *biw)
                                          &loki_writer_close,
                                          &loki_writer_free);
 }
-
-MB_END_C_DECLS

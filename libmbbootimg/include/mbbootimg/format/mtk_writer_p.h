@@ -31,32 +31,39 @@
 #include "mbbootimg/writer.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace mtk
+{
 
 struct MtkWriterCtx
 {
     // Header values
-    struct AndroidHeader hdr;
+    android::AndroidHeader hdr;
 
     bool have_file_size;
     uint64_t file_size;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter seg;
 };
 
-int mtk_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                          struct MbBiHeader *header);
-int mtk_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                            struct MbBiHeader *header);
-int mtk_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                         struct MbBiEntry *entry);
-int mtk_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                           struct MbBiEntry *entry);
-int mtk_writer_write_data(struct MbBiWriter *biw, void *userdata,
+int mtk_writer_get_header(MbBiWriter *biw, void *userdata,
+                          MbBiHeader *header);
+int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
+                            MbBiHeader *header);
+int mtk_writer_get_entry(MbBiWriter *biw, void *userdata,
+                         MbBiEntry *entry);
+int mtk_writer_write_entry(MbBiWriter *biw, void *userdata,
+                           MbBiEntry *entry);
+int mtk_writer_write_data(MbBiWriter *biw, void *userdata,
                           const void *buf, size_t buf_size,
                           size_t &bytes_written);
-int mtk_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int mtk_writer_close(struct MbBiWriter *biw, void *userdata);
-int mtk_writer_free(struct MbBiWriter *bir, void *userdata);
+int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata);
+int mtk_writer_close(MbBiWriter *biw, void *userdata);
+int mtk_writer_free(MbBiWriter *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

@@ -27,14 +27,19 @@
 #include "mbbootimg/reader.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace mtk
+{
 
 struct MtkReaderCtx
 {
     // Header values
-    struct AndroidHeader hdr;
-    struct MtkHeader mtk_kernel_hdr;
-    struct MtkHeader mtk_ramdisk_hdr;
+    android::AndroidHeader hdr;
+    MtkHeader mtk_kernel_hdr;
+    MtkHeader mtk_ramdisk_hdr;
 
     // Offsets
     bool have_header_offset;
@@ -43,21 +48,23 @@ struct MtkReaderCtx
     uint64_t mtk_kernel_offset;
     uint64_t mtk_ramdisk_offset;
 
-    struct SegmentReaderCtx segctx;
+    SegmentReader seg;
 };
 
-int mtk_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int mtk_reader_set_option(struct MbBiReader *bir, void *userdata,
+int mtk_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
+int mtk_reader_set_option(MbBiReader *bir, void *userdata,
                           const char *key, const char *value);
-int mtk_reader_read_header(struct MbBiReader *bir, void *userdata,
-                           struct MbBiHeader *header);
-int mtk_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                          struct MbBiEntry *entry);
-int mtk_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                           struct MbBiEntry *entry, int entry_type);
-int mtk_reader_read_data(struct MbBiReader *bir, void *userdata,
+int mtk_reader_read_header(MbBiReader *bir, void *userdata,
+                           MbBiHeader *header);
+int mtk_reader_read_entry(MbBiReader *bir, void *userdata,
+                          MbBiEntry *entry);
+int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                           MbBiEntry *entry, int entry_type);
+int mtk_reader_read_data(MbBiReader *bir, void *userdata,
                          void *buf, size_t buf_size,
                          size_t &bytes_read);
-int mtk_reader_free(struct MbBiReader *bir, void *userdata);
+int mtk_reader_free(MbBiReader *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

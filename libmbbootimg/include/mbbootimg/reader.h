@@ -19,15 +19,9 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#  include <cstdarg>
-#  include <cstddef>
-#  include <cwchar>
-#else
-#  include <stdarg.h>
-#  include <stddef.h>
-#  include <wchar.h>
-#endif
+#include <cstdarg>
+#include <cstddef>
+#include <cwchar>
 
 #include "mbcommon/common.h"
 

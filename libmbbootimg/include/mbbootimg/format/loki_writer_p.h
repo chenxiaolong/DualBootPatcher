@@ -21,6 +21,8 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <vector>
+
 #include <openssl/sha.h>
 
 #include "mbbootimg/entry.h"
@@ -30,37 +32,43 @@
 #include "mbbootimg/writer.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace loki
+{
 
 struct LokiWriterCtx
 {
     // Header values
-    struct AndroidHeader hdr;
+    android::AndroidHeader hdr;
 
     bool have_file_size;
     uint64_t file_size;
 
-    unsigned char *aboot;
-    size_t aboot_size;
+    std::vector<unsigned char> aboot;
 
     SHA_CTX sha_ctx;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter seg;
 };
 
-int loki_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                           struct MbBiHeader *header);
-int loki_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                             struct MbBiHeader *header);
-int loki_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                          struct MbBiEntry *entry);
-int loki_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                            struct MbBiEntry *entry);
-int loki_writer_write_data(struct MbBiWriter *biw, void *userdata,
+int loki_writer_get_header(MbBiWriter *biw, void *userdata,
+                           MbBiHeader *header);
+int loki_writer_write_header(MbBiWriter *biw, void *userdata,
+                             MbBiHeader *header);
+int loki_writer_get_entry(MbBiWriter *biw, void *userdata,
+                          MbBiEntry *entry);
+int loki_writer_write_entry(MbBiWriter *biw, void *userdata,
+                            MbBiEntry *entry);
+int loki_writer_write_data(MbBiWriter *biw, void *userdata,
                            const void *buf, size_t buf_size,
                            size_t &bytes_written);
-int loki_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int loki_writer_close(struct MbBiWriter *biw, void *userdata);
-int loki_writer_free(struct MbBiWriter *bir, void *userdata);
+int loki_writer_finish_entry(MbBiWriter *biw, void *userdata);
+int loki_writer_close(MbBiWriter *biw, void *userdata);
+int loki_writer_free(MbBiWriter *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}

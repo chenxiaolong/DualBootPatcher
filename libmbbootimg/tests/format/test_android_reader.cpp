@@ -31,6 +31,8 @@
 typedef std::unique_ptr<MbBiHeader, decltype(mb_bi_header_free) *> ScopedHeader;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
+using namespace mb::bootimg::android;
+
 // Tests for find_android_header()
 
 TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
@@ -39,7 +41,7 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
-    memcpy(source.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
     AndroidHeader header;
     uint64_t offset;
@@ -47,9 +49,8 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), &file,
-                                  ANDROID_MAX_HEADER_OFFSET,
-                                  &header, &offset), MB_BI_OK);
+    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
+                                  header, offset), MB_BI_OK);
 }
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
@@ -58,7 +59,7 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
-    memcpy(source.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
     AndroidHeader header;
     uint64_t offset;
@@ -69,9 +70,8 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     // Seek to bad location initially
     ASSERT_TRUE(file.seek(10, SEEK_SET, nullptr));
 
-    ASSERT_EQ(find_android_header(bir.get(), &file,
-                                  ANDROID_MAX_HEADER_OFFSET,
-                                  &header, &offset), MB_BI_OK);
+    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
+                                  header, offset), MB_BI_OK);
 }
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
@@ -85,9 +85,8 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), &file,
-                                  ANDROID_MAX_HEADER_OFFSET + 1,
-                                  &header, &offset), MB_BI_WARN);
+    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET + 1,
+                                  header, offset), MB_BI_WARN);
     ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
                        "Max header offset"));
 }
@@ -103,9 +102,8 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), &file,
-                                  ANDROID_MAX_HEADER_OFFSET,
-                                  &header, &offset), MB_BI_WARN);
+    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
+                                  header, offset), MB_BI_WARN);
     ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
                        "Android magic not found"));
 }
@@ -118,12 +116,11 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
     AndroidHeader header;
     uint64_t offset;
 
-    mb::MemoryFile file(ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    mb::MemoryFile file(BOOT_MAGIC, BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), &file,
-                                  ANDROID_MAX_HEADER_OFFSET, &header, &offset),
-              MB_BI_WARN);
+    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
+                                  header, offset), MB_BI_WARN);
     ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
                        "exceeds file size"));
 }
@@ -136,7 +133,7 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
-    memcpy(source.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
     source.ramdisk_size = 0;
     source.second_size = 0;
@@ -156,8 +153,8 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), &file,
-                                           &source, &offset), MB_BI_OK);
+    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+              MB_BI_OK);
 }
 
 TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
@@ -166,7 +163,7 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
-    memcpy(source.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
     source.ramdisk_size = 0;
     source.second_size = 0;
@@ -178,8 +175,8 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), &file,
-                                           &source, &offset), MB_BI_WARN);
+    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+              MB_BI_WARN);
     ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
 }
@@ -190,7 +187,7 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
     ASSERT_TRUE(!!bir);
 
     AndroidHeader source = {};
-    memcpy(source.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     source.kernel_size = 0;
     source.ramdisk_size = 0;
     source.second_size = 0;
@@ -211,8 +208,8 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), &file,
-                                           &source, &offset), MB_BI_WARN);
+    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+              MB_BI_WARN);
     ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
 }
@@ -225,7 +222,7 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
     ASSERT_TRUE(!!header);
 
     AndroidHeader ahdr = {};
-    memcpy(ahdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    memcpy(ahdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
     ahdr.kernel_size = 1234;
     ahdr.kernel_addr = 0x11223344;
     ahdr.ramdisk_size = 2345;
@@ -242,10 +239,9 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
              "Test cmdline");
     memset(ahdr.id, 0xff, sizeof(ahdr.id));
 
-    ASSERT_EQ(android_set_header(&ahdr, header.get()), MB_BI_OK);
+    ASSERT_EQ(android_set_header(ahdr, header.get()), MB_BI_OK);
 
-    ASSERT_EQ(mb_bi_header_supported_fields(header.get()),
-              ANDROID_SUPPORTED_FIELDS);
+    ASSERT_EQ(mb_bi_header_supported_fields(header.get()), SUPPORTED_FIELDS);
 
     const char *board_name = mb_bi_header_board_name(header.get());
     ASSERT_TRUE(board_name);
@@ -292,7 +288,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
         ASSERT_TRUE(!!_bir);
 
         AndroidHeader ahdr = {};
-        memcpy(ahdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+        memcpy(ahdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
         ahdr.kernel_size = 6;
         ahdr.ramdisk_size = 7;
         ahdr.second_size = 10;

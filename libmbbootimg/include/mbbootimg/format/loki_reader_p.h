@@ -27,13 +27,18 @@
 #include "mbbootimg/reader.h"
 
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
+namespace loki
+{
 
 struct LokiReaderCtx
 {
     // Header values
-    struct AndroidHeader hdr;
-    struct LokiHeader loki_hdr;
+    android::AndroidHeader hdr;
+    LokiHeader loki_hdr;
 
     // Offsets
     bool have_header_offset;
@@ -41,49 +46,53 @@ struct LokiReaderCtx
     bool have_loki_offset;
     uint64_t loki_offset;
 
-    struct SegmentReaderCtx segctx;
+    SegmentReader seg;
 };
 
-int find_loki_header(struct MbBiReader *bir, mb::File *file,
-                     struct LokiHeader *header_out, uint64_t *offset_out);
-int loki_find_ramdisk_address(struct MbBiReader *bir, mb::File *file,
-                              const struct AndroidHeader *hdr,
-                              const struct LokiHeader *loki_hdr,
-                              uint32_t *ramdisk_addr_out);
-int loki_old_find_gzip_offset(struct MbBiReader *bir, mb::File *file,
-                              uint32_t start_offset, uint64_t *gzip_offset_out);
-int loki_old_find_ramdisk_size(struct MbBiReader *bir, mb::File *file,
-                               const struct AndroidHeader *hdr,
+int find_loki_header(MbBiReader *bir, mb::File &file,
+                     LokiHeader &header_out, uint64_t &offset_out);
+int loki_find_ramdisk_address(MbBiReader *bir, mb::File &file,
+                              const android::AndroidHeader &hdr,
+                              const LokiHeader &loki_hdr,
+                              uint32_t &ramdisk_addr_out);
+int loki_old_find_gzip_offset(MbBiReader *bir, mb::File &file,
+                              uint32_t start_offset, uint64_t &gzip_offset_out);
+int loki_old_find_ramdisk_size(MbBiReader *bir, mb::File &file,
+                               const android::AndroidHeader &hdr,
                                uint32_t ramdisk_offset,
-                               uint32_t *ramdisk_size_out);
-int find_linux_kernel_size(MbBiReader *bir, mb::File *file,
-                           uint32_t kernel_offset, uint32_t *kernel_size_out);
-int loki_read_old_header(struct MbBiReader *bir, mb::File *file,
-                         struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
-                         struct MbBiHeader *header,
-                         uint64_t *kernel_offset_out,
-                         uint32_t *kernel_size_out,
-                         uint64_t *ramdisk_offset_out,
-                         uint32_t *ramdisk_size_out);
-int loki_read_new_header(struct MbBiReader *bir, mb::File *file,
-                         struct AndroidHeader *hdr, struct LokiHeader *loki_hdr,
-                         struct MbBiHeader *header,
-                         uint64_t *kernel_offset_out,
-                         uint32_t *kernel_size_out,
-                         uint64_t *ramdisk_offset_out,
-                         uint32_t *ramdisk_size_out,
-                         uint64_t *dt_offset_out);
+                               uint32_t &ramdisk_size_out);
+int find_linux_kernel_size(MbBiReader *bir, mb::File &file,
+                           uint32_t kernel_offset, uint32_t &kernel_size_out);
+int loki_read_old_header(MbBiReader *bir, mb::File &file,
+                         const android::AndroidHeader &hdr,
+                         const LokiHeader &loki_hdr,
+                         MbBiHeader *header,
+                         uint64_t &kernel_offset_out,
+                         uint32_t &kernel_size_out,
+                         uint64_t &ramdisk_offset_out,
+                         uint32_t &ramdisk_size_out);
+int loki_read_new_header(MbBiReader *bir, mb::File &file,
+                         const android::AndroidHeader &hdr,
+                         const LokiHeader &loki_hdr,
+                         MbBiHeader *header,
+                         uint64_t &kernel_offset_out,
+                         uint32_t &kernel_size_out,
+                         uint64_t &ramdisk_offset_out,
+                         uint32_t &ramdisk_size_out,
+                         uint64_t &dt_offset_out);
 
-int loki_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int loki_reader_read_header(struct MbBiReader *bir, void *userdata,
-                            struct MbBiHeader *header);
-int loki_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                           struct MbBiEntry *entry);
-int loki_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                            struct MbBiEntry *entry, int entry_type);
-int loki_reader_read_data(struct MbBiReader *bir, void *userdata,
+int loki_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
+int loki_reader_read_header(MbBiReader *bir, void *userdata,
+                            MbBiHeader *header);
+int loki_reader_read_entry(MbBiReader *bir, void *userdata,
+                           MbBiEntry *entry);
+int loki_reader_go_to_entry(MbBiReader *bir, void *userdata,
+                            MbBiEntry *entry, int entry_type);
+int loki_reader_read_data(MbBiReader *bir, void *userdata,
                           void *buf, size_t buf_size,
                           size_t &bytes_read);
-int loki_reader_free(struct MbBiReader *bir, void *userdata);
+int loki_reader_free(MbBiReader *bir, void *userdata);
 
-MB_END_C_DECLS
+}
+}
+}
