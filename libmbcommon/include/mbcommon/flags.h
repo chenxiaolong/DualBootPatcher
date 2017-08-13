@@ -159,26 +159,26 @@ private:
 };
 
 #define MB_DECLARE_FLAGS(FLAGS, ENUM)\
-    typedef mb::Flags<ENUM> FLAGS;
+    typedef ::mb::Flags<ENUM> FLAGS;
 
 #define MB_DECLARE_OPERATORS_FOR_FLAGS(FLAGS) \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
     operator|(FLAGS::enum_type f1, FLAGS::enum_type f2) noexcept \
     { \
-        return mb::Flags<FLAGS::enum_type>(f1) | f2; \
+        return ::mb::Flags<FLAGS::enum_type>(f1) | f2; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
-    operator|(FLAGS::enum_type f1, mb::Flags<FLAGS::enum_type> f2) noexcept \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
+    operator|(FLAGS::enum_type f1, ::mb::Flags<FLAGS::enum_type> f2) noexcept \
     { \
         return f2 | f1; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
     operator&(FLAGS::enum_type f1, FLAGS::enum_type f2) noexcept \
     { \
-        return mb::Flags<FLAGS::enum_type>(f1) & f2; \
+        return ::mb::Flags<FLAGS::enum_type>(f1) & f2; \
     } \
-    constexpr inline mb::Flags<FLAGS::enum_type> \
-    operator&(FLAGS::enum_type f1, mb::Flags<FLAGS::enum_type> f2) noexcept \
+    constexpr inline ::mb::Flags<FLAGS::enum_type> \
+    operator&(FLAGS::enum_type f1, ::mb::Flags<FLAGS::enum_type> f2) noexcept \
     { \
         return f2 & f1; \
     }
