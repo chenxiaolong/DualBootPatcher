@@ -61,14 +61,13 @@ public:
     const SegmentReaderEntry * next_entry() const;
     const SegmentReaderEntry * find_entry(int entry_type);
 
-    int move_to_entry(mb::File &file, MbBiEntry *entry,
+    int move_to_entry(File &file, Entry &entry,
                       const SegmentReaderEntry &srentry,
                       MbBiReader *bir);
 
-    int read_entry(mb::File &file, MbBiEntry *entry, MbBiReader *bir);
-    int go_to_entry(mb::File &file, MbBiEntry *entry, int entry_type,
-                    MbBiReader *bir);
-    int read_data(mb::File &file, void *buf, size_t buf_size,
+    int read_entry(File &file, Entry &entry, MbBiReader *bir);
+    int go_to_entry(File &file, Entry &entry, int entry_type, MbBiReader *bir);
+    int read_data(File &file, void *buf, size_t buf_size,
                   size_t &bytes_read, MbBiReader *bir);
 
 private:

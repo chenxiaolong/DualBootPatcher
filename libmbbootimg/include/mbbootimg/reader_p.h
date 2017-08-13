@@ -28,6 +28,9 @@
 #include "mbcommon/common.h"
 #include "mbcommon/file.h"
 
+#include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
+
 #define READER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
@@ -57,31 +60,32 @@
 
 #define MAX_FORMATS     10
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 struct MbBiReader;
-struct MbBiEntry;
-struct MbBiHeader;
 
-typedef int (*FormatReaderBidder)(struct MbBiReader *bir, void *userdata,
+typedef int (*FormatReaderBidder)(MbBiReader *bir, void *userdata,
                                   int best_bid);
-typedef int (*FormatReaderSetOption)(struct MbBiReader *bir, void *userdata,
+typedef int (*FormatReaderSetOption)(MbBiReader *bir, void *userdata,
                                      const char *key, const char *value);
-typedef int (*FormatReaderReadHeader)(struct MbBiReader *bir, void *userdata,
-                                      struct MbBiHeader *header);
-typedef int (*FormatReaderReadEntry)(struct MbBiReader *bir, void *userdata,
-                                     struct MbBiEntry *entry);
-typedef int (*FormatReaderGoToEntry)(struct MbBiReader *bir, void *userdata,
-                                     struct MbBiEntry *entry, int entry_type);
-typedef int (*FormatReaderReadData)(struct MbBiReader *bir, void *userdata,
+typedef int (*FormatReaderReadHeader)(MbBiReader *bir, void *userdata,
+                                      Header &header);
+typedef int (*FormatReaderReadEntry)(MbBiReader *bir, void *userdata,
+                                     Entry &entry);
+typedef int (*FormatReaderGoToEntry)(MbBiReader *bir, void *userdata,
+                                     Entry &entry, int entry_type);
+typedef int (*FormatReaderReadData)(MbBiReader *bir, void *userdata,
                                     void *buf, size_t buf_size,
                                     size_t &bytes_read);
-typedef int (*FormatReaderFree)(struct MbBiReader *bir, void *userdata);
+typedef int (*FormatReaderFree)(MbBiReader *bir, void *userdata);
 
 struct FormatReader
 {
     int type;
-    char *name;
+    std::string name;
 
     // Callbacks
     FormatReaderBidder bidder_cb;
@@ -113,25 +117,25 @@ struct MbBiReader
     ReaderState state;
 
     // File
-    mb::File *file;
+    File *file;
     bool file_owned;
 
     // Error
     int error_code;
     std::string error_string;
 
-    struct FormatReader formats[MAX_FORMATS];
+    FormatReader formats[MAX_FORMATS];
     size_t formats_len;
-    struct FormatReader *format;
+    FormatReader *format;
 
-    struct MbBiHeader *header;
-    struct MbBiEntry *entry;
+    Header header;
+    Entry entry;
 };
 
-int _mb_bi_reader_register_format(struct MbBiReader *bir,
+int _mb_bi_reader_register_format(MbBiReader *bir,
                                   void *userdata,
                                   int type,
-                                  const char *name,
+                                  const std::string &name,
                                   FormatReaderBidder bidder_cb,
                                   FormatReaderSetOption set_option_cb,
                                   FormatReaderReadHeader read_header_cb,
@@ -140,7 +144,8 @@ int _mb_bi_reader_register_format(struct MbBiReader *bir,
                                   FormatReaderReadData read_data_cb,
                                   FormatReaderFree free_cb);
 
-int _mb_bi_reader_free_format(struct MbBiReader *bir,
-                              struct FormatReader *format);
+int _mb_bi_reader_free_format(MbBiReader *bir,
+                              FormatReader *format);
 
-MB_END_C_DECLS
+}
+}

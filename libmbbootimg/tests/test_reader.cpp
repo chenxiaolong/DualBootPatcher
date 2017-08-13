@@ -24,6 +24,8 @@
 #include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
 
@@ -46,8 +48,4 @@ TEST(BootImgReaderTest, CheckInitialValues)
     // No formats registered
     ASSERT_EQ(bir->formats_len, 0u);
     ASSERT_EQ(bir->format, nullptr);
-
-    // Header and entry allocated
-    ASSERT_NE(bir->header, nullptr);
-    ASSERT_NE(bir->entry, nullptr);
 }

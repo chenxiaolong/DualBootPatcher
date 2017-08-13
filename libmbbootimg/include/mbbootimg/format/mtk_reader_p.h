@@ -55,11 +55,11 @@ int mtk_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
 int mtk_reader_set_option(MbBiReader *bir, void *userdata,
                           const char *key, const char *value);
 int mtk_reader_read_header(MbBiReader *bir, void *userdata,
-                           MbBiHeader *header);
+                           Header &header);
 int mtk_reader_read_entry(MbBiReader *bir, void *userdata,
-                          MbBiEntry *entry);
+                          Entry &entry);
 int mtk_reader_go_to_entry(MbBiReader *bir, void *userdata,
-                           MbBiEntry *entry, int entry_type);
+                           Entry &entry, int entry_type);
 int mtk_reader_read_data(MbBiReader *bir, void *userdata,
                          void *buf, size_t buf_size,
                          size_t &bytes_read);

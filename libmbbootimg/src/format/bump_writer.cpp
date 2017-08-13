@@ -25,6 +25,11 @@
 
 #include "mbbootimg/writer_p.h"
 
+namespace mb
+{
+namespace bootimg
+{
+
 /*!
  * \brief Set Bump boot image output format
  *
@@ -37,7 +42,7 @@
  */
 int mb_bi_writer_set_format_bump(MbBiWriter *biw)
 {
-    using namespace mb::bootimg::android;
+    using namespace android;
 
     AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
@@ -63,4 +68,7 @@ int mb_bi_writer_set_format_bump(MbBiWriter *biw)
                                          &android_writer_finish_entry,
                                          &android_writer_close,
                                          &android_writer_free);
+}
+
+}
 }

@@ -50,6 +50,8 @@
 #include "bootimg_util.h"
 #include "multiboot.h"
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
@@ -303,9 +305,9 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
     ScopedWriter biw(mb_bi_writer_new(), &mb_bi_writer_free);
-    MbBiHeader *header;
-    MbBiEntry *in_entry;
-    MbBiEntry *out_entry;
+    Header *header;
+    Entry *in_entry;
+    Entry *out_entry;
     int ret;
 
     if (!bir || !biw) {
@@ -349,13 +351,13 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("- Format: %s", mb_bi_reader_format_name(bir.get()));
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
+    ret = mb_bi_reader_read_header(bir.get(), header);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to read header: %s",
              input_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
     }
-    ret = mb_bi_writer_write_header(biw.get(), header);
+    ret = mb_bi_writer_write_header(biw.get(), *header);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to write header: %s",
              output_file.c_str(), mb_bi_writer_error_string(biw.get()));
@@ -363,11 +365,11 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     }
 
     // Write entries
-    while ((ret = mb_bi_writer_get_entry(biw.get(), &out_entry)) == MB_BI_OK) {
-        int type = mb_bi_entry_type(out_entry);
+    while ((ret = mb_bi_writer_get_entry(biw.get(), out_entry)) == MB_BI_OK) {
+        auto type = out_entry->type();
 
         // Write entry metadata
-        ret = mb_bi_writer_write_entry(biw.get(), out_entry);
+        ret = mb_bi_writer_write_entry(biw.get(), *out_entry);
         if (ret != MB_BI_OK) {
             LOGE("%s: Failed to write entry: %s",
                  output_file.c_str(), mb_bi_writer_error_string(biw.get()));
@@ -375,23 +377,23 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
 
         // Special case for loki aboot
-        if (type == MB_BI_ENTRY_ABOOT) {
+        if (*type == ENTRY_TYPE_ABOOT) {
             if (bi_copy_file_to_data(ABOOT_PARTITION, biw.get())) {
                 return false;
             }
         } else {
-            ret = mb_bi_reader_go_to_entry(bir.get(), &in_entry, type);
+            ret = mb_bi_reader_go_to_entry(bir.get(), in_entry, *type);
             if (ret == MB_BI_EOF) {
-                LOGV("Skipping non existent boot image entry: %d", type);
+                LOGV("Skipping non existent boot image entry: %d", *type);
                 continue;
             } else if (ret != MB_BI_OK) {
                 LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), type,
+                     input_file.c_str(), *type,
                      mb_bi_reader_error_string(bir.get()));
                 return false;
             }
 
-            if (type == MB_BI_ENTRY_RAMDISK) {
+            if (type == ENTRY_TYPE_RAMDISK) {
                 std::string ramdisk_in(tmpdir);
                 ramdisk_in += "/ramdisk.in";
                 std::string ramdisk_out(tmpdir);
@@ -413,7 +415,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 if (!bi_copy_file_to_data(ramdisk_out, biw.get())) {
                     return false;
                 }
-            } else if (type == MB_BI_ENTRY_KERNEL) {
+            } else if (type == ENTRY_TYPE_KERNEL) {
                 std::string kernel_in(tmpdir);
                 kernel_in += "/kernel.in";
                 std::string kernel_out(tmpdir);

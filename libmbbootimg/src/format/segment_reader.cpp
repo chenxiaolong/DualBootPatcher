@@ -131,12 +131,10 @@ const SegmentReaderEntry * SegmentReader::find_entry(int entry_type)
     return nullptr;
 }
 
-int SegmentReader::move_to_entry(mb::File &file, MbBiEntry *entry,
+int SegmentReader::move_to_entry(File &file, Entry &entry,
                                  const SegmentReaderEntry &srentry,
                                  MbBiReader *bir)
 {
-    int ret;
-
     if (srentry.offset > UINT64_MAX - srentry.size) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INVALID_ARGUMENT,
                                "Entry would overflow offset");
@@ -153,11 +151,8 @@ int SegmentReader::move_to_entry(mb::File &file, MbBiEntry *entry,
         }
     }
 
-    ret = mb_bi_entry_set_type(entry, srentry.type);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_entry_set_size(entry, srentry.size);
-    if (ret != MB_BI_OK) return ret;
+    entry.set_type(srentry.type);
+    entry.set_size(srentry.size);
 
     _state = SegmentReaderState::Entries;
     _entry = &srentry;
@@ -168,8 +163,7 @@ int SegmentReader::move_to_entry(mb::File &file, MbBiEntry *entry,
     return MB_BI_OK;
 }
 
-int SegmentReader::read_entry(mb::File &file, MbBiEntry *entry,
-                              MbBiReader *bir)
+int SegmentReader::read_entry(File &file, Entry &entry, MbBiReader *bir)
 {
     auto const *srentry = next_entry();
     if (!srentry) {
@@ -181,8 +175,8 @@ int SegmentReader::read_entry(mb::File &file, MbBiEntry *entry,
     return move_to_entry(file, entry, *srentry, bir);
 }
 
-int SegmentReader::go_to_entry(mb::File &file, MbBiEntry *entry,
-                               int entry_type, MbBiReader *bir)
+int SegmentReader::go_to_entry(File &file, Entry &entry, int entry_type,
+                               MbBiReader *bir)
 {
     auto const *srentry = find_entry(entry_type);
     if (!srentry) {
@@ -194,7 +188,7 @@ int SegmentReader::go_to_entry(mb::File &file, MbBiEntry *entry,
     return move_to_entry(file, entry, *srentry, bir);
 }
 
-int SegmentReader::read_data(mb::File &file, void *buf, size_t buf_size,
+int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
                              size_t &bytes_read, MbBiReader *bir)
 {
     size_t to_copy = std::min<uint64_t>(
@@ -208,7 +202,7 @@ int SegmentReader::read_data(mb::File &file, void *buf, size_t buf_size,
         return MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(file, buf, to_copy, bytes_read)) {
+    if (!file_read_fully(file, buf, to_copy, bytes_read)) {
         mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read data: %s",
                                file.error_string().c_str());

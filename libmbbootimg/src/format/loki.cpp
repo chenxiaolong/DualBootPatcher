@@ -144,7 +144,7 @@ static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
     return found_header && found_ramdisk;
 }
 
-static int _loki_read_android_header(MbBiWriter *biw, mb::File &file,
+static int _loki_read_android_header(MbBiWriter *biw, File &file,
                                      android::AndroidHeader &ahdr)
 {
     size_t n;
@@ -156,7 +156,7 @@ static int _loki_read_android_header(MbBiWriter *biw, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(file, &ahdr, sizeof(ahdr), n)) {
+    if (!file_read_fully(file, &ahdr, sizeof(ahdr), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to read Android header: %s",
                                file.error_string().c_str());
@@ -173,7 +173,7 @@ static int _loki_read_android_header(MbBiWriter *biw, mb::File &file,
     return MB_BI_OK;
 }
 
-static int _loki_write_android_header(MbBiWriter *biw, mb::File &file,
+static int _loki_write_android_header(MbBiWriter *biw, File &file,
                                       const android::AndroidHeader &ahdr)
 {
     android::AndroidHeader dup = ahdr;
@@ -188,7 +188,7 @@ static int _loki_write_android_header(MbBiWriter *biw, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(file, &dup, sizeof(dup), n)) {
+    if (!file_write_fully(file, &dup, sizeof(dup), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write Android header: %s",
                                file.error_string().c_str());
@@ -203,7 +203,7 @@ static int _loki_write_android_header(MbBiWriter *biw, mb::File &file,
     return MB_BI_OK;
 }
 
-static int _loki_write_loki_header(MbBiWriter *biw, mb::File &file,
+static int _loki_write_loki_header(MbBiWriter *biw, File &file,
                                    const LokiHeader &lhdr)
 {
     LokiHeader dup = lhdr;
@@ -218,7 +218,7 @@ static int _loki_write_loki_header(MbBiWriter *biw, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(file, &dup, sizeof(dup), n)) {
+    if (!file_write_fully(file, &dup, sizeof(dup), n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write Loki header: %s",
                                file.error_string().c_str());
@@ -233,15 +233,14 @@ static int _loki_write_loki_header(MbBiWriter *biw, mb::File &file,
     return MB_BI_OK;
 }
 
-static int _loki_move_dt_image(MbBiWriter *biw, mb::File &file,
+static int _loki_move_dt_image(MbBiWriter *biw, File &file,
                                uint64_t aboot_offset, uint32_t fake_size,
                                uint32_t dt_size)
 {
     uint64_t n;
 
     // Move DT image
-    if (!mb::file_move(file, aboot_offset, aboot_offset + fake_size,
-                       dt_size, n)) {
+    if (!file_move(file, aboot_offset, aboot_offset + fake_size, dt_size, n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to move DT image: %s",
                                file.error_string().c_str());
@@ -256,7 +255,7 @@ static int _loki_move_dt_image(MbBiWriter *biw, mb::File &file,
     return MB_BI_OK;
 }
 
-static int _loki_write_aboot(MbBiWriter *biw, mb::File &file,
+static int _loki_write_aboot(MbBiWriter *biw, File &file,
                              const unsigned char *aboot, size_t aboot_size,
                              uint64_t aboot_offset, size_t aboot_func_offset,
                              uint32_t fake_size)
@@ -277,7 +276,7 @@ static int _loki_write_aboot(MbBiWriter *biw, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(file, aboot + aboot_func_offset, fake_size, n)) {
+    if (!file_write_fully(file, aboot + aboot_func_offset, fake_size, n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write aboot segment: %s",
                                file.error_string().c_str());
@@ -292,7 +291,7 @@ static int _loki_write_aboot(MbBiWriter *biw, mb::File &file,
     return MB_BI_OK;
 }
 
-static int _loki_write_shellcode(MbBiWriter *biw, mb::File &file,
+static int _loki_write_shellcode(MbBiWriter *biw, File &file,
                                  uint64_t aboot_offset,
                                  uint32_t aboot_func_align,
                                  unsigned char patch[LOKI_SHELLCODE_SIZE])
@@ -306,7 +305,7 @@ static int _loki_write_shellcode(MbBiWriter *biw, mb::File &file,
         return MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(file, patch, LOKI_SHELLCODE_SIZE, n)) {
+    if (!file_write_fully(file, patch, LOKI_SHELLCODE_SIZE, n)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write shellcode: %s",
                                file.error_string().c_str());
@@ -334,7 +333,7 @@ static int _loki_write_shellcode(MbBiWriter *biw, mb::File &file,
  *   * #MB_BI_FAILED if a file operation fails non-fatally
  *   * #MB_BI_FATAL if a file operation fails fatally
  */
-int _loki_patch_file(MbBiWriter *biw, mb::File &file,
+int _loki_patch_file(MbBiWriter *biw, File &file,
                      const void *aboot, size_t aboot_size)
 {
     const unsigned char *aboot_ptr =

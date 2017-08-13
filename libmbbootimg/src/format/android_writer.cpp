@@ -48,19 +48,18 @@ namespace bootimg
 namespace android
 {
 
-int android_writer_get_header(MbBiWriter *biw, void *userdata,
-                              MbBiHeader *header)
+int android_writer_get_header(MbBiWriter *biw, void *userdata, Header &header)
 {
     (void) biw;
     (void) userdata;
 
-    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
+    header.set_supported_fields(SUPPORTED_FIELDS);
 
     return MB_BI_OK;
 }
 
 int android_writer_write_header(MbBiWriter *biw, void *userdata,
-                                MbBiHeader *header)
+                                const Header &header)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
     int ret;
@@ -69,22 +68,20 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
     memset(&ctx->hdr, 0, sizeof(ctx->hdr));
     memcpy(ctx->hdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
-    if (mb_bi_header_kernel_address_is_set(header)) {
-        ctx->hdr.kernel_addr = mb_bi_header_kernel_address(header);
+    if (auto address = header.kernel_address()) {
+        ctx->hdr.kernel_addr = *address;
     }
-    if (mb_bi_header_ramdisk_address_is_set(header)) {
-        ctx->hdr.ramdisk_addr = mb_bi_header_ramdisk_address(header);
+    if (auto address = header.ramdisk_address()) {
+        ctx->hdr.ramdisk_addr = *address;
     }
-    if (mb_bi_header_secondboot_address_is_set(header)) {
-        ctx->hdr.second_addr = mb_bi_header_secondboot_address(header);
+    if (auto address = header.secondboot_address()) {
+        ctx->hdr.second_addr = *address;
     }
-    if (mb_bi_header_kernel_tags_address_is_set(header)) {
-        ctx->hdr.tags_addr = mb_bi_header_kernel_tags_address(header);
+    if (auto address = header.kernel_tags_address()) {
+        ctx->hdr.tags_addr = *address;
     }
-    if (mb_bi_header_page_size_is_set(header)) {
-        uint32_t page_size = mb_bi_header_page_size(header);
-
-        switch (mb_bi_header_page_size(header)) {
+    if (auto page_size = header.page_size()) {
+        switch (*page_size) {
         case 2048:
         case 4096:
         case 8192:
@@ -92,11 +89,11 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
         case 32768:
         case 65536:
         case 131072:
-            ctx->hdr.page_size = page_size;
+            ctx->hdr.page_size = *page_size;
             break;
         default:
             mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
-                                   "Invalid page size: %" PRIu32, page_size);
+                                   "Invalid page size: %" PRIu32, *page_size);
             return MB_BI_FAILED;
         }
     } else {
@@ -105,28 +102,25 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
         return MB_BI_FAILED;
     }
 
-    const char *board_name = mb_bi_header_board_name(header);
-    const char *cmdline = mb_bi_header_kernel_cmdline(header);
-
-    if (board_name) {
-        if (strlen(board_name) >= sizeof(ctx->hdr.name)) {
+    if (auto board_name = header.board_name()) {
+        if (board_name->size() >= sizeof(ctx->hdr.name)) {
             mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
                                    "Board name too long");
             return MB_BI_FAILED;
         }
 
-        strncpy(reinterpret_cast<char *>(ctx->hdr.name), board_name,
+        strncpy(reinterpret_cast<char *>(ctx->hdr.name), board_name->c_str(),
                 sizeof(ctx->hdr.name) - 1);
         ctx->hdr.name[sizeof(ctx->hdr.name) - 1] = '\0';
     }
-    if (cmdline) {
-        if (strlen(cmdline) >= sizeof(ctx->hdr.cmdline)) {
+    if (auto cmdline = header.kernel_cmdline()) {
+        if (cmdline->size() >= sizeof(ctx->hdr.cmdline)) {
             mb_bi_writer_set_error(biw, MB_BI_ERROR_FILE_FORMAT,
                                    "Kernel cmdline too long");
             return MB_BI_FAILED;
         }
 
-        strncpy(reinterpret_cast<char *>(ctx->hdr.cmdline), cmdline,
+        strncpy(reinterpret_cast<char *>(ctx->hdr.cmdline), cmdline->c_str(),
                 sizeof(ctx->hdr.cmdline) - 1);
         ctx->hdr.cmdline[sizeof(ctx->hdr.cmdline) - 1] = '\0';
     }
@@ -138,19 +132,19 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
     // the user reattempts to call it)
     ctx->seg.entries_clear();
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
                                0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
                                0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_SECONDBOOT,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                0, false, ctx->hdr.page_size, biw);
     if (ret != MB_BI_OK) return ret;
 
@@ -165,8 +159,7 @@ int android_writer_write_header(MbBiWriter *biw, void *userdata,
     return MB_BI_OK;
 }
 
-int android_writer_get_entry(MbBiWriter *biw, void *userdata,
-                             MbBiEntry *entry)
+int android_writer_get_entry(MbBiWriter *biw, void *userdata, Entry &entry)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
 
@@ -174,7 +167,7 @@ int android_writer_get_entry(MbBiWriter *biw, void *userdata,
 }
 
 int android_writer_write_entry(MbBiWriter *biw, void *userdata,
-                               MbBiEntry *entry)
+                               const Entry &entry)
 {
     AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(userdata);
 
@@ -222,7 +215,7 @@ int android_writer_finish_entry(MbBiWriter *biw, void *userdata)
     uint32_t le32_size = mb_htole32(swentry->size);
 
     // Include size for everything except empty DT images
-    if ((swentry->type != MB_BI_ENTRY_DEVICE_TREE || swentry->size > 0)
+    if ((swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&ctx->sha_ctx, &le32_size, sizeof(le32_size))) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
                                "Failed to update SHA1 hash");
@@ -230,16 +223,16 @@ int android_writer_finish_entry(MbBiWriter *biw, void *userdata)
     }
 
     switch (swentry->type) {
-    case MB_BI_ENTRY_KERNEL:
+    case ENTRY_TYPE_KERNEL:
         ctx->hdr.kernel_size = swentry->size;
         break;
-    case MB_BI_ENTRY_RAMDISK:
+    case ENTRY_TYPE_RAMDISK:
         ctx->hdr.ramdisk_size = swentry->size;
         break;
-    case MB_BI_ENTRY_SECONDBOOT:
+    case ENTRY_TYPE_SECONDBOOT:
         ctx->hdr.second_size = swentry->size;
         break;
-    case MB_BI_ENTRY_DEVICE_TREE:
+    case ENTRY_TYPE_DEVICE_TREE:
         ctx->hdr.dt_size = swentry->size;
         break;
     }
@@ -277,8 +270,8 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (ctx->is_bump) {
-            if (!mb::file_write_fully(*biw->file, bump::BUMP_MAGIC,
-                                      bump::BUMP_MAGIC_SIZE, n)
+            if (!file_write_fully(*biw->file, bump::BUMP_MAGIC,
+                                  bump::BUMP_MAGIC_SIZE, n)
                     || n != bump::BUMP_MAGIC_SIZE) {
                 mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write Bump magic: %s",
@@ -286,8 +279,8 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
                 return biw->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
             }
         } else {
-            if (!mb::file_write_fully(*biw->file, SAMSUNG_SEANDROID_MAGIC,
-                                      SAMSUNG_SEANDROID_MAGIC_SIZE, n)
+            if (!file_write_fully(*biw->file, SAMSUNG_SEANDROID_MAGIC,
+                                  SAMSUNG_SEANDROID_MAGIC_SIZE, n)
                     || n != SAMSUNG_SEANDROID_MAGIC_SIZE) {
                 mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                        "Failed to write SEAndroid magic: %s",
@@ -318,7 +311,7 @@ int android_writer_close(MbBiWriter *biw, void *userdata)
         }
 
         // Write header
-        if (!mb::file_write_fully(*biw->file, &hdr, sizeof(hdr), n)
+        if (!file_write_fully(*biw->file, &hdr, sizeof(hdr), n)
                 || n != sizeof(hdr)) {
             mb_bi_writer_set_error(biw, biw->file->error().value() /* TODO */,
                                    "Failed to write header: %s",
@@ -338,8 +331,6 @@ int android_writer_free(MbBiWriter *bir, void *userdata)
 }
 
 }
-}
-}
 
 /*!
  * \brief Set Android boot image output format
@@ -353,7 +344,7 @@ int android_writer_free(MbBiWriter *bir, void *userdata)
  */
 int mb_bi_writer_set_format_android(MbBiWriter *biw)
 {
-    using namespace mb::bootimg::android;
+    using namespace android;
 
     AndroidWriterCtx *const ctx = new AndroidWriterCtx();
 
@@ -377,4 +368,7 @@ int mb_bi_writer_set_format_android(MbBiWriter *biw)
                                          &android_writer_finish_entry,
                                          &android_writer_close,
                                          &android_writer_free);
+}
+
+}
 }

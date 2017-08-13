@@ -27,9 +27,9 @@
 namespace mb
 {
 
-bool bi_copy_data_to_fd(MbBiReader *bir, int fd);
-bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw);
-bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path);
-bool bi_copy_data_to_data(MbBiReader *bir, MbBiWriter *biw);
+bool bi_copy_data_to_fd(bootimg::MbBiReader *bir, int fd);
+bool bi_copy_file_to_data(const std::string &path, bootimg::MbBiWriter *biw);
+bool bi_copy_data_to_file(bootimg::MbBiReader *bir, const std::string &path);
+bool bi_copy_data_to_data(bootimg::MbBiReader *bir, bootimg::MbBiWriter *biw);
 
 }

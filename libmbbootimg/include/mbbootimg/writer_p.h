@@ -27,6 +27,9 @@
 
 #include "mbcommon/common.h"
 
+#include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
+
 #define WRITER_ENSURE_STATE(INSTANCE, STATES) \
     do { \
         if (!((INSTANCE)->state & (STATES))) { \
@@ -56,33 +59,34 @@
 
 #define MAX_FORMATS     10
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 struct MbBiWriter;
-struct MbBiEntry;
-struct MbBiHeader;
 
-typedef int (*FormatWriterSetOption)(struct MbBiWriter *biw, void *userdata,
+typedef int (*FormatWriterSetOption)(MbBiWriter *biw, void *userdata,
                                      const char *key, const char *value);
-typedef int (*FormatWriterGetHeader)(struct MbBiWriter *biw, void *userdata,
-                                     struct MbBiHeader *header);
-typedef int (*FormatWriterWriteHeader)(struct MbBiWriter *biw, void *userdata,
-                                       struct MbBiHeader *header);
-typedef int (*FormatWriterGetEntry)(struct MbBiWriter *biw, void *userdata,
-                                    struct MbBiEntry *entry);
-typedef int (*FormatWriterWriteEntry)(struct MbBiWriter *biw, void *userdata,
-                                      struct MbBiEntry *entry);
-typedef int (*FormatWriterWriteData)(struct MbBiWriter *biw, void *userdata,
+typedef int (*FormatWriterGetHeader)(MbBiWriter *biw, void *userdata,
+                                     Header &header);
+typedef int (*FormatWriterWriteHeader)(MbBiWriter *biw, void *userdata,
+                                       const Header &header);
+typedef int (*FormatWriterGetEntry)(MbBiWriter *biw, void *userdata,
+                                    Entry &entry);
+typedef int (*FormatWriterWriteEntry)(MbBiWriter *biw, void *userdata,
+                                      const Entry &entry);
+typedef int (*FormatWriterWriteData)(MbBiWriter *biw, void *userdata,
                                      const void *buf, size_t buf_size,
                                      size_t &bytes_written);
-typedef int (*FormatWriterFinishEntry)(struct MbBiWriter *biw, void *userdata);
-typedef int (*FormatWriterClose)(struct MbBiWriter *biw, void *userdata);
-typedef int (*FormatWriterFree)(struct MbBiWriter *biw, void *userdata);
+typedef int (*FormatWriterFinishEntry)(MbBiWriter *biw, void *userdata);
+typedef int (*FormatWriterClose)(MbBiWriter *biw, void *userdata);
+typedef int (*FormatWriterFree)(MbBiWriter *biw, void *userdata);
 
 struct FormatWriter
 {
     int type;
-    char *name;
+    std::string name;
 
     // Callbacks
     FormatWriterSetOption set_option_cb;
@@ -116,24 +120,24 @@ struct MbBiWriter
     WriterState state;
 
     // File
-    mb::File *file;
+    File *file;
     bool file_owned;
 
     // Error
     int error_code;
     std::string error_string;
 
-    struct FormatWriter format;
+    FormatWriter format;
     bool format_set;
 
-    struct MbBiEntry *entry;
-    struct MbBiHeader *header;
+    Entry entry;
+    Header header;
 };
 
-int _mb_bi_writer_register_format(struct MbBiWriter *biw,
+int _mb_bi_writer_register_format(MbBiWriter *biw,
                                   void *userdata,
                                   int type,
-                                  const char *name,
+                                  const std::string &name,
                                   FormatWriterSetOption set_option_cb,
                                   FormatWriterGetHeader get_header_cb,
                                   FormatWriterWriteHeader write_header_cb,
@@ -144,7 +148,8 @@ int _mb_bi_writer_register_format(struct MbBiWriter *biw,
                                   FormatWriterClose close_cb,
                                   FormatWriterFree free_cb);
 
-int _mb_bi_writer_free_format(struct MbBiWriter *biw,
-                              struct FormatWriter *format);
+int _mb_bi_writer_free_format(MbBiWriter *biw,
+                              FormatWriter *format);
 
-MB_END_C_DECLS
+}
+}

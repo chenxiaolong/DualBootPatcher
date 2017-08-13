@@ -27,79 +27,78 @@
 
 #include "mbbootimg/defs.h"
 
-MB_BEGIN_C_DECLS
-
-struct MbBiReader;
-struct MbBiEntry;
-struct MbBiHeader;
-
 namespace mb
 {
 class File;
-}
+
+namespace bootimg
+{
+
+struct MbBiReader;
+class Entry;
+class Header;
 
 // Construction/destruction
-MB_EXPORT struct MbBiReader * mb_bi_reader_new(void);
-MB_EXPORT int mb_bi_reader_free(struct MbBiReader *bir);
+MB_EXPORT MbBiReader * mb_bi_reader_new(void);
+MB_EXPORT int mb_bi_reader_free(MbBiReader *bir);
 
 // Open/close
-MB_EXPORT int mb_bi_reader_open_filename(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_open_filename(MbBiReader *bir,
                                          const char *filename);
-MB_EXPORT int mb_bi_reader_open_filename_w(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_open_filename_w(MbBiReader *bir,
                                            const wchar_t *filename);
-MB_EXPORT int mb_bi_reader_open(struct MbBiReader *bir,
-                                mb::File *file, bool owned);
-MB_EXPORT int mb_bi_reader_close(struct MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_open(MbBiReader *bir,
+                                File *file, bool owned);
+MB_EXPORT int mb_bi_reader_close(MbBiReader *bir);
 
 // Operations
-MB_EXPORT int mb_bi_reader_read_header(struct MbBiReader *bir,
-                                       struct MbBiHeader **header);
-MB_EXPORT int mb_bi_reader_read_header2(struct MbBiReader *bir,
-                                        struct MbBiHeader *header);
-MB_EXPORT int mb_bi_reader_read_entry(struct MbBiReader *bir,
-                                      struct MbBiEntry **entry);
-MB_EXPORT int mb_bi_reader_read_entry2(struct MbBiReader *bir,
-                                       struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_reader_go_to_entry(struct MbBiReader *bir,
-                                       struct MbBiEntry **entry,
-                                       int entry_type);
-MB_EXPORT int mb_bi_reader_go_to_entry2(struct MbBiReader *bir,
-                                        struct MbBiEntry *entry,
-                                        int entry_type);
-MB_EXPORT int mb_bi_reader_read_data(struct MbBiReader *bir, void *buf,
+MB_EXPORT int mb_bi_reader_read_header(MbBiReader *bir,
+                                       Header *&header);
+MB_EXPORT int mb_bi_reader_read_header2(MbBiReader *bir,
+                                        Header &header);
+MB_EXPORT int mb_bi_reader_read_entry(MbBiReader *bir,
+                                      Entry *&entry);
+MB_EXPORT int mb_bi_reader_read_entry2(MbBiReader *bir,
+                                       Entry &entry);
+MB_EXPORT int mb_bi_reader_go_to_entry(MbBiReader *bir,
+                                       Entry *&entry, int entry_type);
+MB_EXPORT int mb_bi_reader_go_to_entry2(MbBiReader *bir,
+                                        Entry &entry, int entry_type);
+MB_EXPORT int mb_bi_reader_read_data(MbBiReader *bir, void *buf,
                                      size_t size, size_t *bytes_read);
 
 // Format operations
-MB_EXPORT int mb_bi_reader_format_code(struct MbBiReader *bir);
-MB_EXPORT const char * mb_bi_reader_format_name(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_set_format_by_code(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_format_code(MbBiReader *bir);
+MB_EXPORT const char * mb_bi_reader_format_name(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_set_format_by_code(MbBiReader *bir,
                                               int code);
-MB_EXPORT int mb_bi_reader_set_format_by_name(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_set_format_by_name(MbBiReader *bir,
                                               const char *name);
-MB_EXPORT int mb_bi_reader_enable_format_all(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_enable_format_by_code(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_enable_format_all(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_by_code(MbBiReader *bir,
                                                  int code);
-MB_EXPORT int mb_bi_reader_enable_format_by_name(struct MbBiReader *bir,
+MB_EXPORT int mb_bi_reader_enable_format_by_name(MbBiReader *bir,
                                                  const char *name);
 
 // Specific formats
-MB_EXPORT int mb_bi_reader_enable_format_android(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_enable_format_bump(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_enable_format_loki(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_enable_format_mtk(struct MbBiReader *bir);
-MB_EXPORT int mb_bi_reader_enable_format_sony_elf(struct MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_android(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_bump(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_loki(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_mtk(MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_enable_format_sony_elf(MbBiReader *bir);
 
 // Error handling functions
-MB_EXPORT int mb_bi_reader_error(struct MbBiReader *bir);
-MB_EXPORT const char * mb_bi_reader_error_string(struct MbBiReader *bir);
+MB_EXPORT int mb_bi_reader_error(MbBiReader *bir);
+MB_EXPORT const char * mb_bi_reader_error_string(MbBiReader *bir);
 MB_PRINTF(3, 4)
-MB_EXPORT int mb_bi_reader_set_error(struct MbBiReader *bir, int error_code,
+MB_EXPORT int mb_bi_reader_set_error(MbBiReader *bir, int error_code,
                                      const char *fmt, ...);
-MB_EXPORT int mb_bi_reader_set_error_v(struct MbBiReader *bir, int error_code,
+MB_EXPORT int mb_bi_reader_set_error_v(MbBiReader *bir, int error_code,
                                        const char *fmt, va_list ap);
 
 // TODO TODO TODO
 // SET OPTIONS FUNCTION
 // TODO TODO TODO
 
-MB_END_C_DECLS
+}
+}

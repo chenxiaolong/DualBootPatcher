@@ -24,11 +24,13 @@
 
 #include "ramdisk_patcher.h"
 
-struct MbBiReader;
-struct MbBiWriter;
-
 namespace mb
 {
+namespace bootimg
+{
+struct MbBiReader;
+struct MbBiWriter;
+}
 
 class File;
 

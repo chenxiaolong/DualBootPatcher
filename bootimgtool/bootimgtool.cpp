@@ -73,11 +73,11 @@
 #define IMAGE_APPSBL                    "appsbl"
 
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
-
-using namespace mb::bootimg;
 
 #define HELP_HEADERS \
     "Header fields:\n" \
@@ -136,7 +136,7 @@ using namespace mb::bootimg;
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
     "                  Input type of the boot image (autodetect if unspecified)\n" \
-    "                  (one of: android, bump, loki, mtk, sonyelf)\n" \
+    "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
     "  --output-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -188,7 +188,7 @@ using namespace mb::bootimg;
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
     "                  Output type of the boot image (use header.txt if unspecified)\n" \
-    "                  (one of: android, bump, loki, mtk, sonyelf)\n" \
+    "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
     "  --input-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -423,7 +423,7 @@ static bool offset_to_absolute(uint32_t *base_ptr,
     return true;
 }
 
-static bool read_header(const std::string &path, MbBiHeader *header)
+static bool read_header(const std::string &path, Header &header)
 {
     static const char *fmt_unknown_key =
             "Unknown key: '%s'\n";
@@ -431,8 +431,6 @@ static bool read_header(const std::string &path, MbBiHeader *header)
             "Invalid value for key '%s': '%s'\n";
     static const char *fmt_unsupported =
             "Ignoring unsupported key for boot image type: '%s'\n";
-    static const char *fmt_failed_to_set =
-            "Failed to set field: '%s'\n";
 
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -490,13 +488,13 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         const char *key = ptr;
         const char *value = equals + 1;
 
-        int ret = MB_BI_OK;
+        bool ret = true;
         bool valid = true;
 
         if (strcmp(key, FIELD_CMDLINE) == 0) {
-            ret = mb_bi_header_set_kernel_cmdline(header, value);
+            ret = header.set_kernel_cmdline({value});
         } else if (strcmp(key, FIELD_BOARD) == 0) {
-            ret = mb_bi_header_set_board_name(header, value);
+            ret = header.set_board_name({value});
         } else if (strcmp(key, FIELD_BASE) == 0) {
             valid = str_to_unum(value, 16, &base);
             have_base = true;
@@ -516,31 +514,31 @@ static bool read_header(const std::string &path, MbBiHeader *header)
             uint32_t ipl_address;
             valid = str_to_unum(value, 16, &ipl_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_ipl_address(header, ipl_address);
+                ret = header.set_sony_ipl_address(ipl_address);
             }
         } else if (strcmp(key, FIELD_RPM_ADDRESS) == 0) {
             uint32_t rpm_address;
             valid = str_to_unum(value, 16, &rpm_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_rpm_address(header, rpm_address);
+                ret = header.set_sony_rpm_address(rpm_address);
             }
         } else if (strcmp(key, FIELD_APPSBL_ADDRESS) == 0) {
             uint32_t appsbl_address;
             valid = str_to_unum(value, 16, &appsbl_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_appsbl_address(header, appsbl_address);
+                ret = header.set_sony_appsbl_address(appsbl_address);
             }
         } else if (strcmp(key, FIELD_ENTRYPOINT) == 0) {
             uint32_t entrypoint;
             valid = str_to_unum(value, 16, &entrypoint);
             if (valid) {
-                ret = mb_bi_header_set_entrypoint_address(header, entrypoint);
+                ret = header.set_entrypoint_address(entrypoint);
             }
         } else if (strcmp(key, FIELD_PAGE_SIZE) == 0) {
             uint32_t page_size;
             valid = str_to_unum(value, 10, &page_size);
             if (valid) {
-                ret = mb_bi_header_set_page_size(header, page_size);
+                ret = header.set_page_size(page_size);
             }
         } else {
             fprintf(stderr, fmt_unknown_key, key);
@@ -550,12 +548,9 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         if (!valid) {
             fprintf(stderr, fmt_invalid_value, key, value);
             return false;
-        } else if (ret == MB_BI_UNSUPPORTED) {
+        } else if (!ret) {
             fprintf(stderr, fmt_unsupported, key);
             continue;
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, key);
-            return false;
         }
     }
 
@@ -567,49 +562,23 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         return false;
     }
 
-    int ret;
-
-    if (have_kernel_offset) {
-        ret = mb_bi_header_set_kernel_address(header, kernel_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_KERNEL_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_KERNEL_OFFSET);
-            return false;
-        }
+    if (have_kernel_offset && !header.set_kernel_address(kernel_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_KERNEL_OFFSET);
     }
-    if (have_ramdisk_offset) {
-        ret = mb_bi_header_set_ramdisk_address(header, ramdisk_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_RAMDISK_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_RAMDISK_OFFSET);
-            return false;
-        }
+    if (have_ramdisk_offset && !header.set_ramdisk_address(ramdisk_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_RAMDISK_OFFSET);
     }
-    if (have_second_offset) {
-        ret = mb_bi_header_set_secondboot_address(header, second_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_SECOND_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_SECOND_OFFSET);
-            return false;
-        }
+    if (have_second_offset && !header.set_secondboot_address(second_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_SECOND_OFFSET);
     }
-    if (have_tags_offset) {
-        ret = mb_bi_header_set_kernel_tags_address(header, tags_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_TAGS_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_TAGS_OFFSET);
-            return false;
-        }
+    if (have_tags_offset && !header.set_kernel_tags_address(tags_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_TAGS_OFFSET);
     }
 
     return true;
 }
 
-static bool write_header(const std::string &path, MbBiHeader *header)
+static bool write_header(const std::string &path, const Header &header)
 {
     // Try to use base relative to the default kernel offset
     uint32_t base;
@@ -617,29 +586,29 @@ static bool write_header(const std::string &path, MbBiHeader *header)
     uint32_t ramdisk_offset;
     uint32_t second_offset;
     uint32_t tags_offset;
-    bool have_kernel_offset = mb_bi_header_kernel_address_is_set(header);
-    bool have_ramdisk_offset = mb_bi_header_ramdisk_address_is_set(header);
-    bool have_second_offset = mb_bi_header_secondboot_address_is_set(header);
-    bool have_tags_offset = mb_bi_header_kernel_tags_address_is_set(header);
+    auto kernel_address = header.kernel_address();
+    auto ramdisk_address = header.ramdisk_address();
+    auto secondboot_address = header.secondboot_address();
+    auto kernel_tags_address = header.kernel_tags_address();
 
-    if (have_kernel_offset) {
-        kernel_offset = mb_bi_header_kernel_address(header);
+    if (kernel_address) {
+        kernel_offset = *kernel_address;
     }
-    if (have_ramdisk_offset) {
-        ramdisk_offset = mb_bi_header_ramdisk_address(header);
+    if (ramdisk_address) {
+        ramdisk_offset = *ramdisk_address;
     }
-    if (have_second_offset) {
-        second_offset = mb_bi_header_secondboot_address(header);
+    if (secondboot_address) {
+        second_offset = *secondboot_address;
     }
-    if (have_tags_offset) {
-        tags_offset = mb_bi_header_kernel_tags_address(header);
+    if (kernel_tags_address) {
+        tags_offset = *kernel_tags_address;
     }
 
     absolute_to_offset(&base,
-                       have_kernel_offset ? &kernel_offset : nullptr,
-                       have_ramdisk_offset ? &ramdisk_offset : nullptr,
-                       have_second_offset ? &second_offset : nullptr,
-                       have_tags_offset ? &tags_offset : nullptr);
+                       kernel_address ? &kernel_offset : nullptr,
+                       ramdisk_address ? &ramdisk_offset : nullptr,
+                       secondboot_address ? &second_offset : nullptr,
+                       kernel_tags_address ? &tags_offset : nullptr);
 
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -648,39 +617,39 @@ static bool write_header(const std::string &path, MbBiHeader *header)
         return false;
     }
 
-    const char *cmdline = mb_bi_header_kernel_cmdline(header);
-    const char *board_name = mb_bi_header_board_name(header);
+    auto cmdline = header.kernel_cmdline();
+    auto board_name = header.board_name();
+    auto sony_ipl_address = header.sony_ipl_address();
+    auto sony_rpm_address = header.sony_rpm_address();
+    auto sony_appsbl_address = header.sony_appsbl_address();
+    auto entrypoint_address = header.entrypoint_address();
+    auto page_size = header.page_size();
 
     bool failed =
-            (cmdline && *cmdline && fprintf(
-                    fp.get(), "%s=%s\n", FIELD_CMDLINE, cmdline) < 0)
-            || (board_name && *board_name && fprintf(
-                    fp.get(), "%s=%s\n", FIELD_BOARD, board_name) < 0)
+            (cmdline && !cmdline->empty() && fprintf(
+                    fp.get(), "%s=%s\n", FIELD_CMDLINE, cmdline->c_str()) < 0)
+            || (board_name && !board_name->empty() && fprintf(
+                    fp.get(), "%s=%s\n", FIELD_BOARD, board_name->c_str()) < 0)
             || (fprintf(
                     fp.get(), "%s=%08x\n", FIELD_BASE, base) < 0)
-            || (have_kernel_offset && fprintf(
+            || (kernel_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_KERNEL_OFFSET, kernel_offset) < 0)
-            || (have_ramdisk_offset && fprintf(
+            || (ramdisk_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_RAMDISK_OFFSET, ramdisk_offset) < 0)
-            || (have_second_offset && fprintf(
+            || (secondboot_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_SECOND_OFFSET, second_offset) < 0)
-            || (have_tags_offset && fprintf(
+            || (kernel_tags_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_TAGS_OFFSET, tags_offset) < 0)
-            || (mb_bi_header_sony_ipl_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_IPL_ADDRESS,
-                            mb_bi_header_sony_ipl_address(header)) < 0)
-            || (mb_bi_header_sony_rpm_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_RPM_ADDRESS,
-                            mb_bi_header_sony_rpm_address(header)) < 0)
-            || (mb_bi_header_sony_appsbl_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_APPSBL_ADDRESS,
-                            mb_bi_header_sony_appsbl_address(header)) < 0)
-            || (mb_bi_header_entrypoint_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_ENTRYPOINT,
-                            mb_bi_header_entrypoint_address(header)) < 0)
-            || (mb_bi_header_page_size_is_set(header) && fprintf(
-                    fp.get(), "%s=%u\n", FIELD_PAGE_SIZE,
-                            mb_bi_header_page_size(header)) < 0);
+            || (sony_ipl_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_IPL_ADDRESS, *sony_ipl_address) < 0)
+            || (sony_rpm_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_RPM_ADDRESS, *sony_rpm_address) < 0)
+            || (sony_appsbl_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_APPSBL_ADDRESS, *sony_appsbl_address) < 0)
+            || (entrypoint_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_ENTRYPOINT, *entrypoint_address) < 0)
+            || (page_size && fprintf(
+                    fp.get(), "%s=%u\n", FIELD_PAGE_SIZE, *page_size) < 0);
 
     if (failed) {
         fprintf(stderr, "%s: Failed to write file: %s\n",
@@ -777,48 +746,50 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
 }
 
 static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
-                                MbBiEntry *entry)
+                                const Entry &entry)
 {
     std::string path;
 
-    if (!mb_bi_entry_type_is_set(entry)) {
+    auto type = entry.type();
+
+    if (!type) {
         fprintf(stderr, "No entry type set!\n");
         return false;
     }
 
-    switch (mb_bi_entry_type(entry)) {
-    case MB_BI_ENTRY_KERNEL:
+    switch (*type) {
+    case ENTRY_TYPE_KERNEL:
         path = paths.kernel;
         break;
-    case MB_BI_ENTRY_RAMDISK:
+    case ENTRY_TYPE_RAMDISK:
         path = paths.ramdisk;
         break;
-    case MB_BI_ENTRY_SECONDBOOT:
+    case ENTRY_TYPE_SECONDBOOT:
         path = paths.second;
         break;
-    case MB_BI_ENTRY_DEVICE_TREE:
+    case ENTRY_TYPE_DEVICE_TREE:
         path = paths.dt;
         break;
-    case MB_BI_ENTRY_ABOOT:
+    case ENTRY_TYPE_ABOOT:
         path = paths.aboot;
         break;
-    case MB_BI_ENTRY_MTK_KERNEL_HEADER:
+    case ENTRY_TYPE_MTK_KERNEL_HEADER:
         path = paths.kernel_mtkhdr;
         break;
-    case MB_BI_ENTRY_MTK_RAMDISK_HEADER:
+    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
         path = paths.ramdisk_mtkhdr;
         break;
-    case MB_BI_ENTRY_SONY_IPL:
+    case ENTRY_TYPE_SONY_IPL:
         path = paths.ipl;
         break;
-    case MB_BI_ENTRY_SONY_RPM:
+    case ENTRY_TYPE_SONY_RPM:
         path = paths.rpm;
         break;
-    case MB_BI_ENTRY_SONY_APPSBL:
+    case ENTRY_TYPE_SONY_APPSBL:
         path = paths.appsbl;
         break;
     default:
-        fprintf(stderr, "Unknown entry type: %d\n", mb_bi_entry_type(entry));
+        fprintf(stderr, "Unknown entry type: %d\n", *type);
         return false;
     }
 
@@ -832,48 +803,50 @@ static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
 }
 
 static bool write_entry_to_file(const Paths &paths, MbBiReader *bir,
-                                MbBiEntry *entry)
+                                const Entry &entry)
 {
     std::string path;
 
-    if (!mb_bi_entry_type_is_set(entry)) {
+    auto type = entry.type();
+
+    if (!type) {
         fprintf(stderr, "No entry type set!\n");
         return false;
     }
 
-    switch (mb_bi_entry_type(entry)) {
-    case MB_BI_ENTRY_KERNEL:
+    switch (*type) {
+    case ENTRY_TYPE_KERNEL:
         path = paths.kernel;
         break;
-    case MB_BI_ENTRY_RAMDISK:
+    case ENTRY_TYPE_RAMDISK:
         path = paths.ramdisk;
         break;
-    case MB_BI_ENTRY_SECONDBOOT:
+    case ENTRY_TYPE_SECONDBOOT:
         path = paths.second;
         break;
-    case MB_BI_ENTRY_DEVICE_TREE:
+    case ENTRY_TYPE_DEVICE_TREE:
         path = paths.dt;
         break;
-    case MB_BI_ENTRY_ABOOT:
+    case ENTRY_TYPE_ABOOT:
         path = paths.aboot;
         break;
-    case MB_BI_ENTRY_MTK_KERNEL_HEADER:
+    case ENTRY_TYPE_MTK_KERNEL_HEADER:
         path = paths.kernel_mtkhdr;
         break;
-    case MB_BI_ENTRY_MTK_RAMDISK_HEADER:
+    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
         path = paths.ramdisk_mtkhdr;
         break;
-    case MB_BI_ENTRY_SONY_IPL:
+    case ENTRY_TYPE_SONY_IPL:
         path = paths.ipl;
         break;
-    case MB_BI_ENTRY_SONY_RPM:
+    case ENTRY_TYPE_SONY_RPM:
         path = paths.rpm;
         break;
-    case MB_BI_ENTRY_SONY_APPSBL:
+    case ENTRY_TYPE_SONY_APPSBL:
         path = paths.appsbl;
         break;
     default:
-        fprintf(stderr, "Unknown entry type: %d\n", mb_bi_entry_type(entry));
+        fprintf(stderr, "Unknown entry type: %d\n", *type);
         return false;
     }
 
@@ -988,8 +961,8 @@ bool unpack_main(int argc, char *argv[])
 
     // Load the boot image
     ScopedReader bir(mb_bi_reader_new(), mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
+    Header *header;
+    Entry *entry;
     int ret;
 
     if (!bir) {
@@ -1020,19 +993,19 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_reader_read_header(bir.get(), &header);
+    ret = mb_bi_reader_read_header(bir.get(), header);
     if (ret != MB_BI_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
                 input_file.c_str(), mb_bi_reader_error_string(bir.get()));
         return false;
     }
 
-    if (!write_header(paths.header, header)) {
+    if (!write_header(paths.header, *header)) {
         return false;
     }
 
-    while ((ret = mb_bi_reader_read_entry(bir.get(), &entry)) == MB_BI_OK) {
-        if (!write_entry_to_file(paths, bir.get(), entry)) {
+    while ((ret = mb_bi_reader_read_entry(bir.get(), entry)) == MB_BI_OK) {
+        if (!write_entry_to_file(paths, bir.get(), *entry)) {
             return false;
         }
     }
@@ -1152,8 +1125,8 @@ bool pack_main(int argc, char *argv[])
 
     // Load the boot image
     ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
+    Header *header;
+    Entry *entry;
     int ret;
 
     if (!biw) {
@@ -1174,26 +1147,26 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_writer_get_header(biw.get(), &header);
+    ret = mb_bi_writer_get_header(biw.get(), header);
     if (ret != MB_BI_OK) {
         fprintf(stderr, "Failed to get header instance: %s\n",
                 mb_bi_writer_error_string(biw.get()));
         return false;
     }
 
-    if (!read_header(paths.header, header)) {
+    if (!read_header(paths.header, *header)) {
         return false;
     }
 
-    ret = mb_bi_writer_write_header(biw.get(), header);
+    ret = mb_bi_writer_write_header(biw.get(), *header);
     if (ret != MB_BI_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
                 output_file.c_str(), mb_bi_writer_error_string(biw.get()));
         return false;
     }
 
-    while ((ret = mb_bi_writer_get_entry(biw.get(), &entry)) == MB_BI_OK) {
-        if (!write_file_to_entry(paths, biw.get(), entry)) {
+    while ((ret = mb_bi_writer_get_entry(biw.get(), entry)) == MB_BI_OK) {
+        if (!write_file_to_entry(paths, biw.get(), *entry)) {
             return false;
         }
     }

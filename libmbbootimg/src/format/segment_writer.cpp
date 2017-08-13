@@ -153,10 +153,8 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
     }
 }
 
-int SegmentWriter::get_entry(mb::File &file, MbBiEntry *entry, MbBiWriter *biw)
+int SegmentWriter::get_entry(File &file, Entry &entry, MbBiWriter *biw)
 {
-    int ret;
-
     if (!_have_pos) {
         if (!file.seek(0, SEEK_CUR, &_pos)) {
             mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
@@ -179,10 +177,8 @@ int SegmentWriter::get_entry(mb::File &file, MbBiEntry *entry, MbBiWriter *biw)
     // Update starting offset
     swentry->offset = _pos;
 
-    mb_bi_entry_clear(entry);
-
-    ret = mb_bi_entry_set_type(entry, swentry->type);
-    if (ret != MB_BI_OK) return ret;
+    entry.clear();
+    entry.set_type(swentry->type);
 
     _entry_size = 0;
     _state = SegmentWriterState::Entries;
@@ -191,28 +187,26 @@ int SegmentWriter::get_entry(mb::File &file, MbBiEntry *entry, MbBiWriter *biw)
     return MB_BI_OK;
 }
 
-int SegmentWriter::write_entry(mb::File &file, MbBiEntry *entry,
-                               MbBiWriter *biw)
+int SegmentWriter::write_entry(File &file, const Entry &entry, MbBiWriter *biw)
 {
     (void) file;
 
     // Use entry size if specified
-    if (mb_bi_entry_size_is_set(entry)) {
-        uint64_t size = mb_bi_entry_size(entry);
-
-        if (size > UINT32_MAX) {
+    auto size = entry.size();
+    if (size) {
+        if (*size > UINT32_MAX) {
             mb_bi_writer_set_error(biw, MB_BI_ERROR_INVALID_ARGUMENT,
-                                   "Invalid entry size: %" PRIu64, size);
+                                   "Invalid entry size: %" PRIu64, *size);
             return MB_BI_FAILED;
         }
 
-        update_size_if_unset(size);
+        update_size_if_unset(*size);
     }
 
     return MB_BI_OK;
 }
 
-int SegmentWriter::write_data(mb::File &file, const void *buf, size_t buf_size,
+int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
                               size_t &bytes_written, MbBiWriter *biw)
 {
     // Check for overflow
@@ -223,7 +217,7 @@ int SegmentWriter::write_data(mb::File &file, const void *buf, size_t buf_size,
         return MB_BI_FAILED;
     }
 
-    if (!mb::file_write_fully(file, buf, buf_size, bytes_written)) {
+    if (!file_write_fully(file, buf, buf_size, bytes_written)) {
         mb_bi_writer_set_error(biw, file.error().value() /* TODO */,
                                "Failed to write data: %s",
                                file.error_string().c_str());
@@ -243,7 +237,7 @@ int SegmentWriter::write_data(mb::File &file, const void *buf, size_t buf_size,
     return MB_BI_OK;
 }
 
-int SegmentWriter::finish_entry(mb::File &file, MbBiWriter *biw)
+int SegmentWriter::finish_entry(File &file, MbBiWriter *biw)
 {
     // Update size with number of bytes written
     update_size_if_unset(_entry_size);

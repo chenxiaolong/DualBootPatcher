@@ -21,7 +21,8 @@
 
 #include "mbbootimg/format/android_writer_p.h"
 
-typedef std::unique_ptr<MbBiHeader, decltype(mb_bi_header_free) *> ScopedHeader;
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 #if 0

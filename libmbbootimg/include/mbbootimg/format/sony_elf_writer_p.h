@@ -59,13 +59,13 @@ struct SonyElfWriterCtx
 };
 
 int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
-                               MbBiHeader *header);
+                               Header &header);
 int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
-                                 MbBiHeader *header);
+                                 const Header &header);
 int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
-                              MbBiEntry *entry);
+                              Entry &entry);
 int sony_elf_writer_write_entry(MbBiWriter *biw, void *userdata,
-                                MbBiEntry *entry);
+                                const Entry &entry);
 int sony_elf_writer_write_data(MbBiWriter *biw, void *userdata,
                                const void *buf, size_t buf_size,
                                size_t &bytes_written);

@@ -92,7 +92,7 @@
  *
  * \param[in] bir MbBiReader
  * \param[in] userdata User callback data
- * \param[out] header MbBiHeader instance to write header values
+ * \param[out] header Header instance to write header values
  *
  * \return
  *   * Return #MB_BI_OK if the header is successfully read
@@ -111,7 +111,7 @@
  *
  * \param[in] bir MbBiReader
  * \param[in] userdata User callback data
- * \param[out] entry MbBiEntry instance to write entry values
+ * \param[out] entry Entry instance to write entry values
  *
  * \return
  *   * Return #MB_BI_OK if the entry is successfully read
@@ -126,7 +126,7 @@
  *
  * \param[in] bir MbBiReader
  * \param[in] userdata User callback data
- * \param[out] entry MbBiEntry instance to write entry values
+ * \param[out] entry Entry instance to write entry values
  * \param[in] entry_type Entry type to seek to
  *
  * \return
@@ -176,7 +176,10 @@
 
 ///
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 static struct
 {
@@ -241,7 +244,7 @@ static struct
 int _mb_bi_reader_register_format(MbBiReader *bir,
                                   void *userdata,
                                   int type,
-                                  const char *name,
+                                  const std::string &name,
                                   FormatReaderBidder bidder_cb,
                                   FormatReaderSetOption set_option_cb,
                                   FormatReaderReadHeader read_header_cb,
@@ -258,7 +261,7 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
     READER_ENSURE_STATE_GOTO(bir, ReaderState::NEW, ret, done);
 
     format.type = type;
-    format.name = strdup(name);
+    format.name = name;
     format.bidder_cb = bidder_cb;
     format.set_option_cb = set_option_cb;
     format.read_header_cb = read_header_cb;
@@ -267,12 +270,6 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
     format.read_data_cb = read_data_cb;
     format.free_cb = free_cb;
     format.userdata = userdata;
-
-    if (!format.name) {
-        mb_bi_reader_set_error(bir, -errno, "%s", strerror(errno));
-        ret = MB_BI_FAILED;
-        goto done;
-    }
 
     if (bir->formats_len == MAX_FORMATS) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_PROGRAMMER_ERROR,
@@ -286,7 +283,7 @@ int _mb_bi_reader_register_format(MbBiReader *bir,
                 == (MB_BI_FORMAT_BASE_MASK & type)) {
             mb_bi_reader_set_error(bir, MB_BI_ERROR_PROGRAMMER_ERROR,
                                    "%s format (0x%x) already enabled",
-                                   name, type);
+                                   name.c_str(), type);
             ret = MB_BI_WARN;
             goto done;
         }
@@ -335,8 +332,6 @@ int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
         if (format->free_cb) {
             ret = format->free_cb(bir, format->userdata);
         }
-
-        free(format->name);
     }
 
     return ret;
@@ -350,19 +345,8 @@ int _mb_bi_reader_free_format(MbBiReader *bir, FormatReader *format)
  */
 MbBiReader * mb_bi_reader_new()
 {
-    MbBiReader *bir = new(std::nothrow) MbBiReader();
-    if (bir) {
-        bir->state = ReaderState::NEW;
-        bir->header = mb_bi_header_new();
-        bir->entry = mb_bi_entry_new();
-
-        if (!bir->header || !bir->entry) {
-            mb_bi_header_free(bir->header);
-            mb_bi_entry_free(bir->entry);
-            free(bir);
-            bir = nullptr;
-        }
-    }
+    MbBiReader *bir = new MbBiReader();
+    bir->state = ReaderState::NEW;
     return bir;
 }
 
@@ -396,9 +380,6 @@ int mb_bi_reader_free(MbBiReader *bir)
             }
         }
 
-        mb_bi_header_free(bir->header);
-        mb_bi_entry_free(bir->entry);
-
         delete bir;
     }
 
@@ -419,14 +400,7 @@ int mb_bi_reader_open_filename(MbBiReader *bir, const char *filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
-    mb::File *file = new(std::nothrow) mb::StandardFile(
-            filename, mb::FileOpenMode::READ_ONLY);
-    if (!file) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
-                               "%s", strerror(errno));
-        return MB_BI_FAILED;
-    }
-
+    File *file = new StandardFile(filename, FileOpenMode::READ_ONLY);
     if (!file->is_open()) {
         mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
@@ -452,14 +426,7 @@ int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
 {
     READER_ENSURE_STATE(bir, ReaderState::NEW);
 
-    mb::File *file = new(std::nothrow) mb::StandardFile(
-            filename, mb::FileOpenMode::READ_ONLY);
-    if (!file) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
-                               "%s", strerror(errno));
-        return MB_BI_FAILED;
-    }
-
+    File *file = new StandardFile(filename, FileOpenMode::READ_ONLY);
     if (!file->is_open()) {
         mb_bi_reader_set_error(bir, file->error().value() /* TODO */,
                                "Failed to open for reading: %s",
@@ -487,7 +454,7 @@ int mb_bi_reader_open_filename_w(MbBiReader *bir, const wchar_t *filename)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_open(MbBiReader *bir, mb::File *file, bool owned)
+int mb_bi_reader_open(MbBiReader *bir, File *file, bool owned)
 {
     int ret;
     int best_bid = 0;
@@ -613,26 +580,26 @@ int mb_bi_reader_close(MbBiReader *bir)
 /*!
  * \brief Read boot image header.
  *
- * Read the header from the boot image and store a reference to the MbBiHeader
+ * Read the header from the boot image and store a reference to the Header
  * in \p header. The value of \p header after a successful call to this function
  * should *never* be deallocated with mb_bi_header_free(). It is tracked
  * internally and will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
- * \param[out] header Pointer to store MbBiHeader reference
+ * \param[out] header Pointer to store Header reference
  *
  * \return
  *   * #MB_BI_OK if the boot image header is successfully read
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_read_header(MbBiReader *bir, MbBiHeader **header)
+int mb_bi_reader_read_header(MbBiReader *bir, Header *&header)
 {
     // State will be checked by mb_bi_reader_read_header2()
     int ret;
 
     ret = mb_bi_reader_read_header2(bir, bir->header);
     if (ret == MB_BI_OK) {
-        *header = bir->header;
+        header = &bir->header;
     }
 
     return ret;
@@ -641,18 +608,18 @@ int mb_bi_reader_read_header(MbBiReader *bir, MbBiHeader **header)
 /*!
  * \brief Read boot image header.
  *
- * Read the header from the boot image and store the header values to an
- * MbBiHeader instance allocated by the caller. The caller is responsible for
+ * Read the header from the boot image and store the header values to a
+ * Header instance allocated by the caller. The caller is responsible for
  * deallocating \p header when it is no longer needed.
  *
  * \param[in] bir MbBiReader
- * \param[out] header Pointer to MbBiHeader for storing header values
+ * \param[out] header Pointer to Header for storing header values
  *
  * \return
  *   * #MB_BI_OK if the boot image header is successfully read
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
+int mb_bi_reader_read_header2(MbBiReader *bir, Header &header)
 {
     READER_ENSURE_STATE(bir, ReaderState::HEADER);
     int ret;
@@ -665,7 +632,7 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
         return bir->file->is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    mb_bi_header_clear(header);
+    header.clear();
 
     if (!bir->format->read_header_cb) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
@@ -688,12 +655,12 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
  * \brief Read next boot image entry.
  *
  * Read the next entry from the boot image and store a reference to the
- * MbBiEntry in \p entry. The value of \p entry after a successful call to this
+ * Entry in \p entry. The value of \p entry after a successful call to this
  * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
  * internally and will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
- * \param[out] entry Pointer to store MbBiEntry reference
+ * \param[out] entry Pointer to store Entry reference
  *
  * \return
  *   * #MB_BI_OK if the boot image entry is successfully read
@@ -701,14 +668,14 @@ int mb_bi_reader_read_header2(MbBiReader *bir, MbBiHeader *header)
  *   * #MB_BI_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_read_entry(MbBiReader *bir, MbBiEntry **entry)
+int mb_bi_reader_read_entry(MbBiReader *bir, Entry *&entry)
 {
     // State will be checked by mb_bi_reader_read_entry2()
     int ret;
 
     ret = mb_bi_reader_read_entry2(bir, bir->entry);
     if (ret == MB_BI_OK) {
-        *entry = bir->entry;
+        entry = &bir->entry;
     }
 
     return ret;
@@ -718,11 +685,11 @@ int mb_bi_reader_read_entry(MbBiReader *bir, MbBiEntry **entry)
  * \brief Read next boot image entry.
  *
  * Read the next entry from the boot image and store the entry values to an
- * MbBiEntry instance allocated by the caller. The caller is responsible for
+ * Entry instance allocated by the caller. The caller is responsible for
  * deallocating \p entry when it is no longer needed.
  *
  * \param[in] bir MbBiReader
- * \param[out] entry Pointer to MbBiEntry for storing entry values
+ * \param[out] entry Pointer to Entry for storing entry values
  *
  * \return
  *   * #MB_BI_OK if the boot image entry is successfully read
@@ -730,13 +697,13 @@ int mb_bi_reader_read_entry(MbBiReader *bir, MbBiEntry **entry)
  *   * #MB_BI_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_read_entry2(MbBiReader *bir, MbBiEntry *entry)
+int mb_bi_reader_read_entry2(MbBiReader *bir, Entry &entry)
 {
     // Allow skipping to the next entry without reading the data
     READER_ENSURE_STATE(bir, ReaderState::ENTRY | ReaderState::DATA);
     int ret;
 
-    mb_bi_entry_clear(entry);
+    entry.clear();
 
     if (!bir->format->read_entry_cb) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
@@ -759,12 +726,12 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, MbBiEntry *entry)
  * \brief Seek to specific boot image entry.
  *
  * Seek to the specified entry in the boot image and store a reference to the
- * MbBiEntry in \p entry. The vlaue of \p entry after a successful call to this
+ * Entry in \p entry. The vlaue of \p entry after a successful call to this
  * function should *never* be deallocated with mb_bi_entry_free(). It is tracked
  * internally and will be freed when the MbBiReader is freed.
  *
  * \param[in] bir MbBiReader
- * \param[out] entry Pointer to store MbBiEntry reference
+ * \param[out] entry Pointer to store Entry reference
  * \param[in] entry_type Entry type to seek to (0 for first entry)
  *
  * \return
@@ -772,14 +739,14 @@ int mb_bi_reader_read_entry2(MbBiReader *bir, MbBiEntry *entry)
  *   * #MB_BI_EOF if the boot image entry is not found
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_go_to_entry(MbBiReader *bir, MbBiEntry **entry, int entry_type)
+int mb_bi_reader_go_to_entry(MbBiReader *bir, Entry *&entry, int entry_type)
 {
     // State will be checked by mb_bi_reader_go_to_entry2()
     int ret;
 
     ret = mb_bi_reader_go_to_entry2(bir, bir->entry, entry_type);
     if (ret == MB_BI_OK) {
-        *entry = bir->entry;
+        entry = &bir->entry;
     }
 
     return ret;
@@ -789,11 +756,11 @@ int mb_bi_reader_go_to_entry(MbBiReader *bir, MbBiEntry **entry, int entry_type)
  * \brief Seek to specific boot image entry.
  *
  * Seek to the specified entry in the boot image and store the entry values to
- * an MbBiEntry instance allocated by the caller. The caller is responsible for
+ * an Entry instance allocated by the caller. The caller is responsible for
  * deallocating \p entry when it is no longer needed.
  *
  * \param[in] bir MbBiReader
- * \param[out] entry Pointer to MbBiEntry for storing entry values
+ * \param[out] entry Pointer to Entry for storing entry values
  * \param[in] entry_type Entry type to seek to (0 for first entry)
  *
  * \return
@@ -801,13 +768,13 @@ int mb_bi_reader_go_to_entry(MbBiReader *bir, MbBiEntry **entry, int entry_type)
  *   * #MB_BI_EOF if the boot image entry is not found
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_reader_go_to_entry2(MbBiReader *bir, MbBiEntry *entry, int entry_type)
+int mb_bi_reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
 {
     // Allow skipping to an entry without reading the data
     READER_ENSURE_STATE(bir, ReaderState::ENTRY | ReaderState::DATA);
     int ret;
 
-    mb_bi_entry_clear(entry);
+    entry.clear();
 
     if (!bir->format->go_to_entry_cb) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_UNSUPPORTED,
@@ -909,10 +876,10 @@ const char * mb_bi_reader_format_name(MbBiReader *bir)
     if (!bir->format) {
         mb_bi_reader_set_error(bir, MB_BI_ERROR_PROGRAMMER_ERROR,
                                "No format selected");
-        return NULL;
+        return nullptr;
     }
 
-    return bir->format->name;
+    return bir->format->name.c_str();
 }
 
 /*!
@@ -984,7 +951,7 @@ int mb_bi_reader_set_format_by_name(MbBiReader *bir, const char *name)
     }
 
     for (size_t i = 0; i < bir->formats_len; ++i) {
-        if (strcmp(name, bir->formats[i].name) == 0) {
+        if (bir->formats[i].name == name) {
             format = &bir->formats[i];
             break;
         }
@@ -1152,8 +1119,9 @@ int mb_bi_reader_set_error_v(MbBiReader *bir, int error_code,
                              const char *fmt, va_list ap)
 {
     bir->error_code = error_code;
-    return mb::format_v(bir->error_string, fmt, ap)
+    return format_v(bir->error_string, fmt, ap)
             ? MB_BI_OK : MB_BI_FAILED;
 }
 
-MB_END_C_DECLS
+}
+}

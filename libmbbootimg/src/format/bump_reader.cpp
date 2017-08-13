@@ -25,6 +25,11 @@
 
 #include "mbbootimg/reader_p.h"
 
+namespace mb
+{
+namespace bootimg
+{
+
 /*!
  * \brief Enable support for Bump boot image format
  *
@@ -37,7 +42,7 @@
  */
 int mb_bi_reader_enable_format_bump(MbBiReader *bir)
 {
-    using namespace mb::bootimg::android;
+    using namespace android;
 
     AndroidReaderCtx *const ctx = new AndroidReaderCtx();
 
@@ -54,4 +59,7 @@ int mb_bi_reader_enable_format_bump(MbBiReader *bir)
                                          &android_reader_go_to_entry,
                                          &android_reader_read_data,
                                          &android_reader_free);
+}
+
+}
 }

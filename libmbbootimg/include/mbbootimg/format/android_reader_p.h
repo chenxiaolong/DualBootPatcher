@@ -53,26 +53,26 @@ struct AndroidReaderCtx
     SegmentReader seg;
 };
 
-int find_android_header(MbBiReader *bir, mb::File &file,
+int find_android_header(MbBiReader *bir, File &file,
                         uint64_t max_header_offset,
                         AndroidHeader &header_out, uint64_t &offset_out);
-int find_samsung_seandroid_magic(MbBiReader *bir, mb::File &file,
+int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
                                  const AndroidHeader &hdr,
                                  uint64_t &offset_out);
-int find_bump_magic(MbBiReader *bir, mb::File &file,
+int find_bump_magic(MbBiReader *bir, File &file,
                     const AndroidHeader &hdr, uint64_t &offset_out);
-int android_set_header(const AndroidHeader &hdr, MbBiHeader *header);
+int android_set_header(const AndroidHeader &hdr, Header &header);
 
 int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
 int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
 int android_reader_set_option(MbBiReader *bir, void *userdata,
                               const char *key, const char *value);
 int android_reader_read_header(MbBiReader *bir, void *userdata,
-                               MbBiHeader *header);
+                               Header &header);
 int android_reader_read_entry(MbBiReader *bir, void *userdata,
-                              MbBiEntry *entry);
+                              Entry &entry);
 int android_reader_go_to_entry(MbBiReader *bir, void *userdata,
-                               MbBiEntry *entry, int entry_type);
+                               Entry &entry, int entry_type);
 int android_reader_read_data(MbBiReader *bir, void *userdata,
                              void *buf, size_t buf_size,
                              size_t &bytes_read);

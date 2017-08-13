@@ -19,53 +19,61 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+
 #include <cstdint>
 
 #include "mbcommon/common.h"
+#include "mbcommon/optional.h"
 
-#define MB_BI_ENTRY_KERNEL              (1 << 0)
-#define MB_BI_ENTRY_RAMDISK             (1 << 1)
-#define MB_BI_ENTRY_SECONDBOOT          (1 << 2)
-#define MB_BI_ENTRY_DEVICE_TREE         (1 << 3)
-#define MB_BI_ENTRY_ABOOT               (1 << 4)
-#define MB_BI_ENTRY_MTK_KERNEL_HEADER   (1 << 5)
-#define MB_BI_ENTRY_MTK_RAMDISK_HEADER  (1 << 6)
-#define MB_BI_ENTRY_SONY_IPL            (1 << 7)
-#define MB_BI_ENTRY_SONY_RPM            (1 << 8)
-#define MB_BI_ENTRY_SONY_APPSBL         (1 << 9)
+namespace mb
+{
+namespace bootimg
+{
 
-MB_BEGIN_C_DECLS
+constexpr int ENTRY_TYPE_KERNEL             = 1 << 0;
+constexpr int ENTRY_TYPE_RAMDISK            = 1 << 1;
+constexpr int ENTRY_TYPE_SECONDBOOT         = 1 << 2;
+constexpr int ENTRY_TYPE_DEVICE_TREE        = 1 << 3;
+constexpr int ENTRY_TYPE_ABOOT              = 1 << 4;
+constexpr int ENTRY_TYPE_MTK_KERNEL_HEADER  = 1 << 5;
+constexpr int ENTRY_TYPE_MTK_RAMDISK_HEADER = 1 << 6;
+constexpr int ENTRY_TYPE_SONY_IPL           = 1 << 7;
+constexpr int ENTRY_TYPE_SONY_RPM           = 1 << 8;
+constexpr int ENTRY_TYPE_SONY_APPSBL        = 1 << 9;
 
-struct MbBiEntry;
+class EntryPrivate;
+class MB_EXPORT Entry
+{
+    MB_DECLARE_PRIVATE(Entry)
 
-// Basic object manipulation
+public:
+    Entry();
+    Entry(const Entry &entry);
+    Entry(Entry &&entry);
+    ~Entry();
 
-MB_EXPORT struct MbBiEntry * mb_bi_entry_new();
-MB_EXPORT void mb_bi_entry_free(struct MbBiEntry *entry);
-MB_EXPORT void mb_bi_entry_clear(struct MbBiEntry *entry);
-MB_EXPORT struct MbBiEntry * mb_bi_entry_clone(struct MbBiEntry *entry);
+    Entry & operator=(const Entry &entry);
+    Entry & operator=(Entry &&entry);
 
-// Fields
+    bool operator==(const Entry &rhs) const;
+    bool operator!=(const Entry &rhs) const;
 
-// Entry type field
+    void clear();
 
-MB_EXPORT int mb_bi_entry_type_is_set(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_type(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_type(struct MbBiEntry *entry, int type);
-MB_EXPORT int mb_bi_entry_unset_type(struct MbBiEntry *entry);
+    optional<int> type() const;
+    void set_type(optional<int> type);
 
-// Entry name field
+    optional<std::string> name() const;
+    void set_name(optional<std::string> name);
 
-MB_EXPORT const char * mb_bi_entry_name(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_name(struct MbBiEntry *entry,
-                                   const char *name);
+    optional<uint64_t> size() const;
+    void set_size(optional<uint64_t> size);
 
-// Entry size field
+private:
+    std::unique_ptr<EntryPrivate> _priv_ptr;
+};
 
-MB_EXPORT int mb_bi_entry_size_is_set(struct MbBiEntry *entry);
-MB_EXPORT uint64_t mb_bi_entry_size(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_size(struct MbBiEntry *entry,
-                                   uint64_t size);
-MB_EXPORT int mb_bi_entry_unset_size(struct MbBiEntry *entry);
-
-MB_END_C_DECLS
+}
+}

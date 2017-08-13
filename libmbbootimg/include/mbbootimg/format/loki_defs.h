@@ -86,32 +86,32 @@ constexpr bool is_lg_ramdisk_address(uint32_t address)
 
 constexpr size_t LOKI_MAX_HEADER_OFFSET = 32;
 
-constexpr uint64_t OLD_SUPPORTED_FIELDS =
-        MB_BI_HEADER_FIELD_KERNEL_SIZE
-        | MB_BI_HEADER_FIELD_KERNEL_ADDRESS
-        | MB_BI_HEADER_FIELD_RAMDISK_SIZE
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS
-        | MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS
-        | MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS
-        | MB_BI_HEADER_FIELD_PAGE_SIZE
-        | MB_BI_HEADER_FIELD_UNUSED
-        | MB_BI_HEADER_FIELD_BOARD_NAME
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE
-        | MB_BI_HEADER_FIELD_ID;
+constexpr HeaderFields OLD_SUPPORTED_FIELDS =
+        HeaderField::KernelSize
+        | HeaderField::KernelAddress
+        | HeaderField::RamdiskSize
+        | HeaderField::RamdiskAddress
+        | HeaderField::SecondbootAddress
+        | HeaderField::KernelTagsAddress
+        | HeaderField::PageSize
+        | HeaderField::Unused
+        | HeaderField::BoardName
+        | HeaderField::KernelCmdline
+        | HeaderField::Id;
 
-constexpr uint64_t NEW_SUPPORTED_FIELDS =
-        MB_BI_HEADER_FIELD_KERNEL_SIZE
-        | MB_BI_HEADER_FIELD_KERNEL_ADDRESS
-        | MB_BI_HEADER_FIELD_RAMDISK_SIZE
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS
-        | MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS
-        | MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS
-        | MB_BI_HEADER_FIELD_PAGE_SIZE
-        | MB_BI_HEADER_FIELD_DEVICE_TREE_SIZE
-        | MB_BI_HEADER_FIELD_UNUSED
-        | MB_BI_HEADER_FIELD_BOARD_NAME
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE
-        | MB_BI_HEADER_FIELD_ID;
+constexpr HeaderFields NEW_SUPPORTED_FIELDS =
+        HeaderField::KernelSize
+        | HeaderField::KernelAddress
+        | HeaderField::RamdiskSize
+        | HeaderField::RamdiskAddress
+        | HeaderField::SecondbootAddress
+        | HeaderField::KernelTagsAddress
+        | HeaderField::PageSize
+        | HeaderField::DeviceTreeSize
+        | HeaderField::Unused
+        | HeaderField::BoardName
+        | HeaderField::KernelCmdline
+        | HeaderField::Id;
 
 }
 }

@@ -27,7 +27,8 @@
 #include "mbbootimg/format/loki_reader_p.h"
 #include "mbbootimg/reader.h"
 
-typedef std::unique_ptr<MbBiHeader, decltype(mb_bi_header_free) *> ScopedHeader;
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
 using namespace mb::bootimg;
@@ -463,8 +464,7 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
 {
     ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
     ASSERT_TRUE(!!bir);
-    ScopedHeader header(mb_bi_header_new(), &mb_bi_header_free);
-    ASSERT_TRUE(!!header);
+    Header header;
 
     android::AndroidHeader ahdr = {};
     memcpy(ahdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
@@ -514,37 +514,39 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(loki_read_old_header(bir.get(), file, ahdr, lhdr,
-                                   header.get(), kernel_offset, kernel_size,
+                                   header, kernel_offset, kernel_size,
                                    ramdisk_offset, ramdisk_size),
               MB_BI_OK);
 
     // Board name
-    const char *board_name = mb_bi_header_board_name(header.get());
+    auto board_name = header.board_name();
     ASSERT_TRUE(board_name);
-    ASSERT_STREQ(board_name, reinterpret_cast<char *>(ahdr.name));
+    ASSERT_EQ(*board_name, reinterpret_cast<char *>(ahdr.name));
 
     // Kernel cmdline
-    const char *cmdline = mb_bi_header_kernel_cmdline(header.get());
+    auto cmdline = header.kernel_cmdline();
     ASSERT_TRUE(cmdline);
-    ASSERT_STREQ(cmdline, reinterpret_cast<char *>(ahdr.cmdline));
+    ASSERT_EQ(*cmdline, reinterpret_cast<char *>(ahdr.cmdline));
 
     // Page size
-    ASSERT_TRUE(mb_bi_header_page_size_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), ahdr.page_size);
+    auto page_size = header.page_size();
+    ASSERT_TRUE(page_size);
+    ASSERT_EQ(*page_size, ahdr.page_size);
 
     // Kernel address
-    ASSERT_TRUE(mb_bi_header_kernel_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), ahdr.kernel_addr);
+    auto kernel_address = header.kernel_address();
+    ASSERT_TRUE(kernel_address);
+    ASSERT_EQ(*kernel_address, ahdr.kernel_addr);
 
     // Ramdisk address
-    ASSERT_TRUE(mb_bi_header_ramdisk_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()),
-              ahdr.kernel_addr + 0x01ff8000);
+    auto ramdisk_address = header.ramdisk_address();
+    ASSERT_TRUE(ramdisk_address);
+    ASSERT_EQ(*ramdisk_address, ahdr.kernel_addr + 0x01ff8000);
 
     // Kernel tags address
-    ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()),
-              mb_bi_header_kernel_address(header.get())
+    auto kernel_tags_address = header.kernel_tags_address();
+    ASSERT_TRUE(kernel_tags_address);
+    ASSERT_EQ(*kernel_tags_address, *header.kernel_address()
             - android::DEFAULT_KERNEL_OFFSET + android::DEFAULT_TAGS_OFFSET);
 
     // Kernel image
@@ -562,8 +564,7 @@ TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
 {
     ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
     ASSERT_TRUE(!!bir);
-    ScopedHeader header(mb_bi_header_new(), &mb_bi_header_free);
-    ASSERT_TRUE(!!header);
+    Header header;
 
     android::AndroidHeader ahdr = {};
     memcpy(ahdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
@@ -618,35 +619,39 @@ TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
     ASSERT_TRUE(file.is_open());
 
     ASSERT_EQ(loki_read_new_header(bir.get(), file, ahdr, lhdr,
-                                   header.get(), kernel_offset, kernel_size,
+                                   header, kernel_offset, kernel_size,
                                    ramdisk_offset, ramdisk_size, dt_offset),
               MB_BI_OK);
 
     // Board name
-    const char *board_name = mb_bi_header_board_name(header.get());
+    auto board_name = header.board_name();
     ASSERT_TRUE(board_name);
-    ASSERT_STREQ(board_name, reinterpret_cast<char *>(ahdr.name));
+    ASSERT_EQ(*board_name, reinterpret_cast<char *>(ahdr.name));
 
     // Kernel cmdline
-    const char *cmdline = mb_bi_header_kernel_cmdline(header.get());
+    auto cmdline = header.kernel_cmdline();
     ASSERT_TRUE(cmdline);
-    ASSERT_STREQ(cmdline, reinterpret_cast<char *>(ahdr.cmdline));
+    ASSERT_EQ(*cmdline, reinterpret_cast<char *>(ahdr.cmdline));
 
     // Page size
-    ASSERT_TRUE(mb_bi_header_page_size_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), ahdr.page_size);
+    auto page_size = header.page_size();
+    ASSERT_TRUE(page_size);
+    ASSERT_EQ(*page_size, ahdr.page_size);
 
     // Kernel address
-    ASSERT_TRUE(mb_bi_header_kernel_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), ahdr.kernel_addr);
+    auto kernel_address = header.kernel_address();
+    ASSERT_TRUE(kernel_address);
+    ASSERT_EQ(*kernel_address, ahdr.kernel_addr);
 
     // Ramdisk address
-    ASSERT_TRUE(mb_bi_header_ramdisk_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0xddccbbaa);
+    auto ramdisk_address = header.ramdisk_address();
+    ASSERT_TRUE(ramdisk_address);
+    ASSERT_EQ(*ramdisk_address, 0xddccbbaa);
 
     // Kernel tags address
-    ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), ahdr.tags_addr);
+    auto kernel_tags_address = header.kernel_tags_address();
+    ASSERT_TRUE(kernel_tags_address);
+    ASSERT_EQ(*kernel_tags_address, ahdr.tags_addr);
 
     // Kernel image
     ASSERT_EQ(kernel_offset, ahdr.page_size);

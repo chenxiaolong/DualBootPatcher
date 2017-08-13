@@ -27,6 +27,8 @@
 #include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 struct AndroidWriterSHA1Test : public ::testing::Test
@@ -70,21 +72,21 @@ protected:
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 
-        MbBiHeader *header;
-        MbBiEntry *entry;
+        Header *header;
+        Entry *entry;
         int ret;
         size_t n;
 
         // Write dummy header
-        ASSERT_EQ(mb_bi_writer_get_header(_biw.get(), &header), MB_BI_OK);
-        ASSERT_EQ(mb_bi_header_set_page_size(header, 2048), MB_BI_OK);
-        ASSERT_EQ(mb_bi_writer_write_header(_biw.get(), header), MB_BI_OK);
+        ASSERT_EQ(mb_bi_writer_get_header(_biw.get(), header), MB_BI_OK);
+        ASSERT_TRUE(header->set_page_size(2048));
+        ASSERT_EQ(mb_bi_writer_write_header(_biw.get(), *header), MB_BI_OK);
 
         // Write specified dummy entries
-        while ((ret = mb_bi_writer_get_entry(_biw.get(), &entry)) == MB_BI_OK) {
-            ASSERT_EQ(mb_bi_writer_write_entry(_biw.get(), entry), MB_BI_OK);
+        while ((ret = mb_bi_writer_get_entry(_biw.get(), entry)) == MB_BI_OK) {
+            ASSERT_EQ(mb_bi_writer_write_entry(_biw.get(), *entry), MB_BI_OK);
 
-            if (mb_bi_entry_type(entry) & types) {
+            if (*entry->type() & types) {
                 ASSERT_EQ(mb_bi_writer_write_data(_biw.get(), "hello", 5, &n),
                           MB_BI_OK);
                 ASSERT_EQ(n, 5u);
@@ -121,7 +123,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernel)
         0xf7, 0x89, 0x8c, 0x5f, 0xea, 0x7f, 0x47, 0xbc, 0x68, 0x69,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
@@ -131,7 +133,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
         0x1e, 0xfb, 0xec, 0x44, 0x65, 0xf9, 0xc1, 0x62, 0x11, 0xfd,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
@@ -141,8 +143,8 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
         0x42, 0xe1, 0xaf, 0xe5, 0x4d, 0xa7, 0xc3, 0x16, 0x8f, 0x5e,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK
-            | MB_BI_ENTRY_SECONDBOOT);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
+            | ENTRY_TYPE_SECONDBOOT);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
@@ -152,6 +154,6 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
         0x09, 0x35, 0x85, 0x26, 0x06, 0x36, 0x17, 0xbb, 0x05, 0x20,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK
-            | MB_BI_ENTRY_SECONDBOOT | MB_BI_ENTRY_DEVICE_TREE);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
+            | ENTRY_TYPE_SECONDBOOT | ENTRY_TYPE_DEVICE_TREE);
 }

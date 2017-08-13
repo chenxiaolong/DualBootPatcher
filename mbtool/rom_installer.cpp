@@ -53,6 +53,7 @@
 #define DEBUG_LEAVE_STDIN_OPEN 0
 #define DEBUG_ENABLE_PASSTHROUGH 0
 
+using namespace mb::bootimg;
 
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
@@ -283,8 +284,8 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
     ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
+    Header *header;
+    Entry *entry;
     int ret;
 
     if (!bir) {
@@ -307,7 +308,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
+    ret = mb_bi_reader_read_header(bir.get(), header);
     if (ret != MB_BI_OK) {
         LOGE("%s: Failed to read header: %s",
              boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
@@ -315,7 +316,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
+    ret = mb_bi_reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
     if (ret == MB_BI_EOF) {
         LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         return false;

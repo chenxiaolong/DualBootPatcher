@@ -48,20 +48,20 @@ constexpr uint32_t DEFAULT_RAMDISK_OFFSET       = 0x01000000u;
 constexpr uint32_t DEFAULT_SECOND_OFFSET        = 0x00f00000u;
 constexpr uint32_t DEFAULT_TAGS_OFFSET          = 0x00000100u;
 
-constexpr uint64_t SUPPORTED_FIELDS             =
-        MB_BI_HEADER_FIELD_KERNEL_SIZE
-        | MB_BI_HEADER_FIELD_KERNEL_ADDRESS
-        | MB_BI_HEADER_FIELD_RAMDISK_SIZE
-        | MB_BI_HEADER_FIELD_RAMDISK_ADDRESS
-        | MB_BI_HEADER_FIELD_SECONDBOOT_SIZE
-        | MB_BI_HEADER_FIELD_SECONDBOOT_ADDRESS
-        | MB_BI_HEADER_FIELD_KERNEL_TAGS_ADDRESS
-        | MB_BI_HEADER_FIELD_PAGE_SIZE
-        | MB_BI_HEADER_FIELD_DEVICE_TREE_SIZE
-        | MB_BI_HEADER_FIELD_UNUSED
-        | MB_BI_HEADER_FIELD_BOARD_NAME
-        | MB_BI_HEADER_FIELD_KERNEL_CMDLINE
-        | MB_BI_HEADER_FIELD_ID;
+constexpr HeaderFields SUPPORTED_FIELDS         =
+        HeaderField::KernelSize
+        | HeaderField::KernelAddress
+        | HeaderField::RamdiskSize
+        | HeaderField::RamdiskAddress
+        | HeaderField::SecondbootSize
+        | HeaderField::SecondbootAddress
+        | HeaderField::KernelTagsAddress
+        | HeaderField::PageSize
+        | HeaderField::DeviceTreeSize
+        | HeaderField::Unused
+        | HeaderField::BoardName
+        | HeaderField::KernelCmdline
+        | HeaderField::Id;
 
 }
 }

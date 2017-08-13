@@ -67,11 +67,11 @@
  * \typedef FormatWriterGetHeader
  * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
  *
- * \brief Format writer callback to get MbBiHeader instance
+ * \brief Format writer callback to get Header instance
  *
  * \param[in] biw MbBiWriter
  * \param[in] userdata User callback data
- * \param[out] header Pointer to store MbBiHeader instance
+ * \param[out] header Pointer to store Header instance
  *
  * \return
  *   * Return #MB_BI_OK if successful
@@ -86,7 +86,7 @@
  *
  * \param biw MbBiWriter
  * \param userdata User callback data
- * \param header MbBiHeader instance to write
+ * \param header Header instance to write
  *
  * \return
  *   * Return #MB_BI_OK if the header is successfully written
@@ -97,11 +97,11 @@
  * \typedef FormatWriterGetEntry
  * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
  *
- * \brief Format writer callback to get MbBiEntry instance
+ * \brief Format writer callback to get Entry instance
  *
  * \param[in] biw MbBiWriter
  * \param[in] userdata User callback data
- * \param[out] entry Pointer to store MbBiEntry instance
+ * \param[out] entry Pointer to store Entry instance
  *
  * \return
  *   * Return #MB_BI_OK if successful
@@ -116,7 +116,7 @@
  *
  * \param biw MbBiWriter
  * \param userdata User callback data
- * \param entry MbBiEntry instance to write
+ * \param entry Entry instance to write
  *
  * \return
  *   * Return #MB_BI_OK if the entry is successfully written
@@ -190,7 +190,10 @@
 
 ///
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 static struct
 {
@@ -252,7 +255,7 @@ static struct
 int _mb_bi_writer_register_format(MbBiWriter *biw,
                                   void *userdata,
                                   int type,
-                                  const char *name,
+                                  const std::string &name,
                                   FormatWriterSetOption set_option_cb,
                                   FormatWriterGetHeader get_header_cb,
                                   FormatWriterWriteHeader write_header_cb,
@@ -271,7 +274,7 @@ int _mb_bi_writer_register_format(MbBiWriter *biw,
     WRITER_ENSURE_STATE_GOTO(biw, WriterState::NEW, ret, done);
 
     format.type = type;
-    format.name = strdup(name);
+    format.name = name;
     format.set_option_cb = set_option_cb;
     format.get_header_cb = get_header_cb;
     format.write_header_cb = write_header_cb;
@@ -282,12 +285,6 @@ int _mb_bi_writer_register_format(MbBiWriter *biw,
     format.close_cb = close_cb;
     format.free_cb = free_cb;
     format.userdata = userdata;
-
-    if (!format.name) {
-        mb_bi_writer_set_error(biw, -errno, "%s", strerror(errno));
-        ret = MB_BI_FAILED;
-        goto done;
-    }
 
     // Clear old format
     if (biw->format_set) {
@@ -338,8 +335,6 @@ int _mb_bi_writer_free_format(MbBiWriter *biw, FormatWriter *format)
         if (format->free_cb) {
             ret = format->free_cb(biw, format->userdata);
         }
-
-        free(format->name);
     }
 
     return ret;
@@ -353,19 +348,8 @@ int _mb_bi_writer_free_format(MbBiWriter *biw, FormatWriter *format)
  */
 MbBiWriter * mb_bi_writer_new()
 {
-    MbBiWriter *biw = new(std::nothrow) MbBiWriter();
-    if (biw) {
-        biw->state = WriterState::NEW;
-        biw->header = mb_bi_header_new();
-        biw->entry = mb_bi_entry_new();
-
-        if (!biw->header || !biw->entry) {
-            mb_bi_header_free(biw->header);
-            mb_bi_entry_free(biw->entry);
-            free(biw);
-            biw = nullptr;
-        }
-    }
+    MbBiWriter *biw = new MbBiWriter();
+    biw->state = WriterState::NEW;
     return biw;
 }
 
@@ -399,9 +383,6 @@ int mb_bi_writer_free(MbBiWriter *biw)
             }
         }
 
-        mb_bi_header_free(biw->header);
-        mb_bi_entry_free(biw->entry);
-
         delete biw;
     }
 
@@ -422,13 +403,7 @@ int mb_bi_writer_open_filename(MbBiWriter *biw, const char *filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
-    mb::File *file = new(std::nothrow) mb::StandardFile(
-            filename, mb::FileOpenMode::READ_WRITE_TRUNC);
-    if (!file) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                               "%s", strerror(errno));
-        return MB_BI_FAILED;
-    }
+    File *file = new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC);
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
@@ -456,13 +431,7 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
 {
     WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
-    mb::File *file = new(std::nothrow) mb::StandardFile(
-            filename, mb::FileOpenMode::READ_WRITE_TRUNC);
-    if (!file) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                               "%s", strerror(errno));
-        return MB_BI_FAILED;
-    }
+    File *file = new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC);
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
@@ -492,7 +461,7 @@ int mb_bi_writer_open_filename_w(MbBiWriter *biw, const wchar_t *filename)
  *   * #MB_BI_OK if the boot image is successfully opened
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_open(MbBiWriter *biw, mb::File *file, bool owned)
+int mb_bi_writer_open(MbBiWriter *biw, File *file, bool owned)
 {
     int ret;
 
@@ -572,27 +541,27 @@ int mb_bi_writer_close(MbBiWriter *biw)
 /*!
  * \brief Get boot image header instance
  *
- * Get a prepared MbBiHeader instance for use with mb_bi_writer_write_header()
+ * Get a prepared Header instance for use with mb_bi_writer_write_header()
  * and store a reference to it in \p header. The value of \p header after a
  * successful call to this function should *never* be deallocated with
  * mb_bi_header_free(). It is tracked internally and will be freed when the
  * MbBiWriter is freed.
  *
  * \param[in] biw MbBiWriter
- * \param[out] header Pointer to store MbBiHeader instance
+ * \param[out] header Pointer to store Header instance
  *
  * \return
  *   * #MB_BI_OK if no error occurs
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_get_header(MbBiWriter *biw, MbBiHeader **header)
+int mb_bi_writer_get_header(MbBiWriter *biw, Header *&header)
 {
     // State will be checked by mb_bi_writer_get_header2()
     int ret;
 
     ret = mb_bi_writer_get_header2(biw, biw->header);
     if (ret == MB_BI_OK) {
-        *header = biw->header;
+        header = &biw->header;
     }
 
     return ret;
@@ -601,22 +570,22 @@ int mb_bi_writer_get_header(MbBiWriter *biw, MbBiHeader **header)
 /*!
  * \brief Prepare boot image header instance.
  *
- * Prepare an MbBiHeader instance for use with mb_bi_writer_write_header(). The
+ * Prepare a Header instance for use with mb_bi_writer_write_header(). The
  * caller is responsible for deallocating \p header when it is no longer needed.
  *
  * \param[in] biw MbBiWriter
- * \param[out] header MbBiHeader instance to initialize
+ * \param[out] header Header instance to initialize
  *
  * \return
  *   * #MB_BI_OK if no error occurs
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_get_header2(MbBiWriter *biw, MbBiHeader *header)
+int mb_bi_writer_get_header2(MbBiWriter *biw, Header &header)
 {
     WRITER_ENSURE_STATE(biw, WriterState::HEADER);
     int ret;
 
-    mb_bi_header_clear(header);
+    header.clear();
 
     if (!biw->format.get_header_cb) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
@@ -638,19 +607,19 @@ int mb_bi_writer_get_header2(MbBiWriter *biw, MbBiHeader *header)
 /*!
  * \brief Write boot image header
  *
- * Write a header to the boot image. It is recommended to use the MbBiHeader
+ * Write a header to the boot image. It is recommended to use the Header
  * instance provided by mb_bi_writer_get_header(), but it is not strictly
  * necessary. Fields that are not supported by the boot image format will be
  * silently ignored.
  *
  * \param biw MbBiWriter
- * \param header MbBiHeader instance to write
+ * \param header Header instance to write
  *
  * \return
  *   * #MB_BI_OK if the boot image header is successfully written
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_write_header(MbBiWriter *biw, MbBiHeader *header)
+int mb_bi_writer_write_header(MbBiWriter *biw, const Header &header)
 {
     WRITER_ENSURE_STATE(biw, WriterState::HEADER);
     int ret;
@@ -675,7 +644,7 @@ int mb_bi_writer_write_header(MbBiWriter *biw, MbBiHeader *header)
 /*!
  * \brief Get boot image entry instance for the next entry
  *
- * Get an MbBiEntry instance for the next entry and store a reference to it in
+ * Get an Entry instance for the next entry and store a reference to it in
  * \p entry. The value of \p entry after a successful call to this function
  * should *never* be deallocated with mb_bi_entry_free(). It is tracked
  * internally and will be freed when the MbBiWriter is freed.
@@ -686,21 +655,21 @@ int mb_bi_writer_write_header(MbBiWriter *biw, MbBiHeader *header)
  * additional steps for finalizing the boot image could fail.
  *
  * \param[in] biw MbBiWriter
- * \param[out] entry Pointer to store MbBiEntry instance
+ * \param[out] entry Pointer to store Entry instance
  *
  * \return
  *   * #MB_BI_OK if no error occurs
  *   * #MB_BI_EOF if the boot image has no more entries
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_get_entry(MbBiWriter *biw, MbBiEntry **entry)
+int mb_bi_writer_get_entry(MbBiWriter *biw, Entry *&entry)
 {
     // State will be checked by mb_bi_writer_get_entry2()
     int ret;
 
     ret = mb_bi_writer_get_entry2(biw, biw->entry);
     if (ret == MB_BI_OK) {
-        *entry = biw->entry;
+        entry = &biw->entry;
     }
 
     return ret;
@@ -709,17 +678,17 @@ int mb_bi_writer_get_entry(MbBiWriter *biw, MbBiEntry **entry)
 /*!
  * \brief Prepare boot image entry instance for the next entry.
  *
- * Prepare an MbBiEntry instance for the next entry. The caller is responsible
+ * Prepare an Entry instance for the next entry. The caller is responsible
  * for deallocating \p entry when it is no longer needed.
  *
  * \param[in] biw MbBiWriter
- * \param[out] entry MbBiEntry instance to initialize
+ * \param[out] entry Entry instance to initialize
  *
  * \return
  *   * #MB_BI_OK if no error occurs
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_get_entry2(MbBiWriter *biw, MbBiEntry *entry)
+int mb_bi_writer_get_entry2(MbBiWriter *biw, Entry &entry)
 {
     WRITER_ENSURE_STATE(biw, WriterState::ENTRY | WriterState::DATA);
     int ret;
@@ -738,7 +707,7 @@ int mb_bi_writer_get_entry2(MbBiWriter *biw, MbBiEntry *entry)
         }
     }
 
-    mb_bi_entry_clear(entry);
+    entry.clear();
 
     if (!biw->format.get_entry_cb) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
@@ -761,20 +730,20 @@ int mb_bi_writer_get_entry2(MbBiWriter *biw, MbBiEntry *entry)
  * \brief Write boot image entry.
  *
  * Write an entry to the boot image. It is *strongly* recommended to use the
- * MbBiEntry instance provided by mb_bi_writer_get_entry(), but it is not
- * strictly necessary. If a different instance of MbBiEntry is used, the type
+ * Entry instance provided by mb_bi_writer_get_entry(), but it is not
+ * strictly necessary. If a different instance of Entry is used, the type
  * field *must* match the type field of the instance returned by
  * mb_bi_writer_get_entry().
  *
  * \param biw MbBiWriter
- * \param entry MbBiEntry instance to write
+ * \param entry Entry instance to write
  *
  * \return
  *   * #MB_BI_OK if the boot image entry is successfully written
  *   * #MB_BI_EOF if the boot image has no more entries
  *   * \<= #MB_BI_WARN if an error occurs
  */
-int mb_bi_writer_write_entry(MbBiWriter *biw, MbBiEntry *entry)
+int mb_bi_writer_write_entry(MbBiWriter *biw, const Entry &entry)
 {
     WRITER_ENSURE_STATE(biw, WriterState::ENTRY);
     int ret;
@@ -862,10 +831,10 @@ const char * mb_bi_writer_format_name(MbBiWriter *biw)
     if (!biw->format_set) {
         mb_bi_writer_set_error(biw, MB_BI_ERROR_PROGRAMMER_ERROR,
                                "No format selected");
-        return NULL;
+        return nullptr;
     }
 
-    return biw->format.name;
+    return biw->format.name.c_str();
 }
 
 /*!
@@ -993,8 +962,9 @@ int mb_bi_writer_set_error_v(MbBiWriter *biw, int error_code,
                              const char *fmt, va_list ap)
 {
     biw->error_code = error_code;
-    return mb::format_v(biw->error_string, fmt, ap)
+    return format_v(biw->error_string, fmt, ap)
             ? MB_BI_OK : MB_BI_FAILED;
 }
 
-MB_END_C_DECLS
+}
+}

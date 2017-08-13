@@ -72,7 +72,7 @@ namespace android
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_android_header(MbBiReader *bir, mb::File &file,
+int find_android_header(MbBiReader *bir, File &file,
                         uint64_t max_header_offset,
                         AndroidHeader &header_out, uint64_t &offset_out)
 {
@@ -96,8 +96,8 @@ int find_android_header(MbBiReader *bir, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(file, buf,
-                             max_header_offset + sizeof(AndroidHeader), n)) {
+    if (!file_read_fully(file, buf,
+                         max_header_offset + sizeof(AndroidHeader), n)) {
         mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read header: %s",
                                file.error_string().c_str());
@@ -148,7 +148,7 @@ int find_android_header(MbBiReader *bir, mb::File &file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_samsung_seandroid_magic(MbBiReader *bir, mb::File &file,
+int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
                                  const AndroidHeader &hdr, uint64_t &offset_out)
 {
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
@@ -181,7 +181,7 @@ int find_samsung_seandroid_magic(MbBiReader *bir, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(file, buf, sizeof(buf), n)) {
+    if (!file_read_fully(file, buf, sizeof(buf), n)) {
         mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read SEAndroid magic: %s",
                                file.error_string().c_str());
@@ -219,7 +219,7 @@ int find_samsung_seandroid_magic(MbBiReader *bir, mb::File &file,
  *   * #MB_BI_FAILED if any file operation fails non-fatally
  *   * #MB_BI_FATAL if any file operation fails fatally
  */
-int find_bump_magic(MbBiReader *bir, mb::File &file,
+int find_bump_magic(MbBiReader *bir, File &file,
                     const AndroidHeader &hdr, uint64_t &offset_out)
 {
     unsigned char buf[bump::BUMP_MAGIC_SIZE];
@@ -252,7 +252,7 @@ int find_bump_magic(MbBiReader *bir, mb::File &file,
         return file.is_fatal() ? MB_BI_FATAL : MB_BI_FAILED;
     }
 
-    if (!mb::file_read_fully(file, buf, sizeof(buf), n)) {
+    if (!file_read_fully(file, buf, sizeof(buf), n)) {
         mb_bi_reader_set_error(bir, file.error().value() /* TODO */,
                                "Failed to read SEAndroid magic: %s",
                                file.error_string().c_str());
@@ -270,10 +270,8 @@ int find_bump_magic(MbBiReader *bir, mb::File &file,
     return MB_BI_OK;
 }
 
-int android_set_header(const AndroidHeader &hdr, MbBiHeader *header)
+int android_set_header(const AndroidHeader &hdr, Header &header)
 {
-    int ret;
-
     char board_name[sizeof(hdr.name) + 1];
     char cmdline[sizeof(hdr.cmdline) + 1];
 
@@ -284,28 +282,17 @@ int android_set_header(const AndroidHeader &hdr, MbBiHeader *header)
     board_name[sizeof(hdr.name)] = '\0';
     cmdline[sizeof(hdr.cmdline)] = '\0';
 
-    mb_bi_header_set_supported_fields(header, SUPPORTED_FIELDS);
+    header.set_supported_fields(SUPPORTED_FIELDS);
 
-    ret = mb_bi_header_set_board_name(header, board_name);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_kernel_cmdline(header, cmdline);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_page_size(header, hdr.page_size);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_kernel_address(header, hdr.kernel_addr);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_ramdisk_address(header, hdr.ramdisk_addr);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_secondboot_address(header, hdr.second_addr);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = mb_bi_header_set_kernel_tags_address(header, hdr.tags_addr);
-    if (ret != MB_BI_OK) return ret;
+    if (!header.set_board_name({board_name})
+            || !header.set_kernel_cmdline({cmdline})
+            || !header.set_page_size(hdr.page_size)
+            || !header.set_kernel_address(hdr.kernel_addr)
+            || !header.set_ramdisk_address(hdr.ramdisk_addr)
+            || !header.set_secondboot_address(hdr.second_addr)
+            || !header.set_kernel_tags_address(hdr.tags_addr)) {
+        return MB_BI_UNSUPPORTED;
+    }
 
     // TODO: unused
     // TODO: id
@@ -433,8 +420,7 @@ int android_reader_set_option(MbBiReader *bir, void *userdata,
     }
 }
 
-int android_reader_read_header(MbBiReader *bir, void *userdata,
-                               MbBiHeader *header)
+int android_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
 {
     AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
     int ret;
@@ -460,7 +446,7 @@ int android_reader_read_header(MbBiReader *bir, void *userdata,
     // Calculate offsets for each section
 
     uint64_t pos = 0;
-    uint32_t page_size = mb_bi_header_page_size(header);
+    uint32_t page_size = *header.page_size();
     uint64_t kernel_offset;
     uint64_t ramdisk_offset;
     uint64_t second_offset;
@@ -497,24 +483,24 @@ int android_reader_read_header(MbBiReader *bir, void *userdata,
 
     ctx->seg.entries_clear();
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_KERNEL,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
                                kernel_offset, ctx->hdr.kernel_size, false, bir);
     if (ret != MB_BI_OK) return ret;
 
-    ret = ctx->seg.entries_add(MB_BI_ENTRY_RAMDISK,
+    ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
                                ramdisk_offset, ctx->hdr.ramdisk_size, false,
                                bir);
     if (ret != MB_BI_OK) return ret;
 
     if (ctx->hdr.second_size > 0) {
-        ret = ctx->seg.entries_add(MB_BI_ENTRY_SECONDBOOT,
+        ret = ctx->seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                    second_offset, ctx->hdr.second_size, false,
                                    bir);
         if (ret != MB_BI_OK) return ret;
     }
 
     if (ctx->hdr.dt_size > 0) {
-        ret = ctx->seg.entries_add(MB_BI_ENTRY_DEVICE_TREE,
+        ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                    dt_offset, ctx->hdr.dt_size,
                                    ctx->allow_truncated_dt, bir);
         if (ret != MB_BI_OK) return ret;
@@ -523,16 +509,15 @@ int android_reader_read_header(MbBiReader *bir, void *userdata,
     return MB_BI_OK;
 }
 
-int android_reader_read_entry(MbBiReader *bir, void *userdata,
-                              MbBiEntry *entry)
+int android_reader_read_entry(MbBiReader *bir, void *userdata, Entry &entry)
 {
     AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
 
     return ctx->seg.read_entry(*bir->file, entry, bir);
 }
 
-int android_reader_go_to_entry(MbBiReader *bir, void *userdata,
-                               MbBiEntry *entry, int entry_type)
+int android_reader_go_to_entry(MbBiReader *bir, void *userdata, Entry &entry,
+                               int entry_type)
 {
     AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
 
@@ -556,8 +541,6 @@ int android_reader_free(MbBiReader *bir, void *userdata)
 }
 
 }
-}
-}
 
 /*!
  * \brief Enable support for Android boot image format
@@ -571,7 +554,7 @@ int android_reader_free(MbBiReader *bir, void *userdata)
  */
 int mb_bi_reader_enable_format_android(MbBiReader *bir)
 {
-    using namespace mb::bootimg::android;
+    using namespace android;
 
     AndroidReaderCtx *const ctx = new AndroidReaderCtx();
 
@@ -589,4 +572,7 @@ int mb_bi_reader_enable_format_android(MbBiReader *bir)
                                          &android_reader_go_to_entry,
                                          &android_reader_read_data,
                                          &android_reader_free);
+}
+
+}
 }

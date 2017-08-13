@@ -65,11 +65,11 @@ public:
 
     void update_size_if_unset(uint32_t size);
 
-    int get_entry(mb::File &file, MbBiEntry *entry, MbBiWriter *biw);
-    int write_entry(mb::File &file, MbBiEntry *entry, MbBiWriter *biw);
-    int write_data(mb::File &file, const void *buf, size_t buf_size,
+    int get_entry(File &file, Entry &entry, MbBiWriter *biw);
+    int write_entry(File &file, const Entry &entry, MbBiWriter *biw);
+    int write_data(File &file, const void *buf, size_t buf_size,
                    size_t &bytes_written, MbBiWriter *biw);
-    int finish_entry(mb::File &file, MbBiWriter *biw);
+    int finish_entry(File &file, MbBiWriter *biw);
 
 private:
     SegmentWriterState _state;

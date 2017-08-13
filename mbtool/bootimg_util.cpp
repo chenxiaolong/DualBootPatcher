@@ -31,6 +31,8 @@
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
+using namespace mb::bootimg;
+
 namespace mb
 {
 

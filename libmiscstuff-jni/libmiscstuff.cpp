@@ -45,6 +45,8 @@
 #define IOException             "java/io/IOException"
 #define OutOfMemoryError        "java/lang/OutOfMemoryError"
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
 
@@ -247,8 +249,8 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     (void) clazz;
 
     ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
+    Header *header;
+    Entry *entry;
     ScopedArchive a(archive_read_new(), &archive_read_free);
     archive_entry *aEntry;
     LaBootImgCtx ctx;
@@ -286,7 +288,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Read header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
+    ret = mb_bi_reader_read_header(bir.get(), header);
     if (ret != MB_BI_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
@@ -295,7 +297,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
+    ret = mb_bi_reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
     if (ret == MB_BI_EOF) {
         throw_exception(env, IOException,
                         "%s: Boot image is missing ramdisk", filename);
@@ -377,111 +379,6 @@ done:
     return romId;
 }
 
-static bool bootImgHeadersEqual(MbBiHeader *header1, MbBiHeader *header2)
-{
-#define CHECK_COMPARABLE_VALUES(ISSET1, ISSET2, VALUE1, VALUE2) \
-    do { \
-        bool isset1 = (ISSET1); \
-        bool isset2 = (ISSET2); \
-        if (isset1 != isset2 \
-                || (isset1 && isset2 && (VALUE1) != (VALUE2))) { \
-            return false; \
-        } \
-    } while (0)
-
-#define CHECK_STRING_VALUES(ISSET1, ISSET2, STR1, STR2) \
-    do { \
-        bool isset1 = (ISSET1); \
-        bool isset2 = (ISSET2); \
-        if (isset1 != isset2 \
-                || (isset1 && isset2 && strcmp(STR1, STR2) != 0)) { \
-            return false; \
-        } \
-    } while (0)
-
-    // Board name
-
-    const char *name1 = mb_bi_header_board_name(header1);
-    const char *name2 = mb_bi_header_board_name(header2);
-
-    CHECK_STRING_VALUES(!!name1, !!name2, name1, name2);
-
-    // Kernel cmdline
-
-    const char *cmdline1 = mb_bi_header_kernel_cmdline(header1);
-    const char *cmdline2 = mb_bi_header_kernel_cmdline(header2);
-
-    CHECK_STRING_VALUES(!!cmdline1, !!cmdline2, cmdline1, cmdline2);
-
-    // Page size
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_page_size_is_set(header1),
-                            mb_bi_header_page_size_is_set(header2),
-                            mb_bi_header_page_size(header1),
-                            mb_bi_header_page_size(header2));
-
-    // Kernel address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_kernel_address_is_set(header1),
-                            mb_bi_header_kernel_address_is_set(header2),
-                            mb_bi_header_kernel_address(header1),
-                            mb_bi_header_kernel_address(header2));
-
-    // Ramdisk address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_ramdisk_address_is_set(header1),
-                            mb_bi_header_ramdisk_address_is_set(header2),
-                            mb_bi_header_ramdisk_address(header1),
-                            mb_bi_header_ramdisk_address(header2));
-
-    // Second bootloader address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_secondboot_address_is_set(header1),
-                            mb_bi_header_secondboot_address_is_set(header2),
-                            mb_bi_header_secondboot_address(header1),
-                            mb_bi_header_secondboot_address(header2));
-
-    // Kernel tags address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_kernel_tags_address_is_set(header1),
-                            mb_bi_header_kernel_tags_address_is_set(header2),
-                            mb_bi_header_kernel_tags_address(header1),
-                            mb_bi_header_kernel_tags_address(header2));
-
-    // Sony IPL address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_ipl_address_is_set(header1),
-                            mb_bi_header_sony_ipl_address_is_set(header2),
-                            mb_bi_header_sony_ipl_address(header1),
-                            mb_bi_header_sony_ipl_address(header2));
-
-    // Sony RPM address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_rpm_address_is_set(header1),
-                            mb_bi_header_sony_rpm_address_is_set(header2),
-                            mb_bi_header_sony_rpm_address(header1),
-                            mb_bi_header_sony_rpm_address(header2));
-
-    // Sony APPSBL address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_sony_appsbl_address_is_set(header1),
-                            mb_bi_header_sony_appsbl_address_is_set(header2),
-                            mb_bi_header_sony_appsbl_address(header1),
-                            mb_bi_header_sony_appsbl_address(header2));
-
-    // Entrypoint address
-
-    CHECK_COMPARABLE_VALUES(mb_bi_header_entrypoint_address_is_set(header1),
-                            mb_bi_header_entrypoint_address_is_set(header2),
-                            mb_bi_header_entrypoint_address(header1),
-                            mb_bi_header_entrypoint_address(header2));
-
-    return true;
-
-#undef CHECK_COMPARABLE_VALUES
-#undef CHECK_STRING_VALUES
-}
-
 JNIEXPORT jboolean JNICALL
 CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
                               jstring jfilename2)
@@ -490,10 +387,10 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     ScopedReader bir1(mb_bi_reader_new(), &mb_bi_reader_free);
     ScopedReader bir2(mb_bi_reader_new(), &mb_bi_reader_free);
-    MbBiHeader *header1;
-    MbBiHeader *header2;
-    MbBiEntry *entry1;
-    MbBiEntry *entry2;
+    Header *header1;
+    Header *header2;
+    Entry *entry1;
+    Entry *entry2;
     size_t entries = 0;
     int ret;
     const char *filename1 = nullptr;
@@ -548,14 +445,14 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Read headers
-    ret = mb_bi_reader_read_header(bir1.get(), &header1);
+    ret = mb_bi_reader_read_header(bir1.get(), header1);
     if (ret != MB_BI_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
                         filename1, mb_bi_reader_error_string(bir1.get()));
         goto done;
     }
-    ret = mb_bi_reader_read_header(bir2.get(), &header2);
+    ret = mb_bi_reader_read_header(bir2.get(), header2);
     if (ret != MB_BI_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
@@ -564,13 +461,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Compare headers
-    if (!bootImgHeadersEqual(header1, header2)) {
+    if (header1 != header2) {
         goto done;
     }
 
     // Count entries in first boot image
     {
-        while ((ret = mb_bi_reader_read_entry(bir1.get(), &entry1))
+        while ((ret = mb_bi_reader_read_entry(bir1.get(), entry1))
                 == MB_BI_OK) {
             ++entries;
         }
@@ -585,7 +482,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     // Compare each entry in second image to first
     {
-        while ((ret = mb_bi_reader_read_entry(bir2.get(), &entry2))
+        while ((ret = mb_bi_reader_read_entry(bir2.get(), entry2))
                 == MB_BI_OK) {
             if (entries == 0) {
                 // Too few entries in second image
@@ -594,8 +491,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             --entries;
 
             // Find the same entry in first image
-            ret = mb_bi_reader_go_to_entry(bir1.get(), &entry1,
-                                           mb_bi_entry_type(entry2));
+            ret = mb_bi_reader_go_to_entry(bir1.get(), entry1, *entry2->type());
             if (ret == MB_BI_EOF) {
                 // Cannot be equal if entry is missing
                 goto done;
