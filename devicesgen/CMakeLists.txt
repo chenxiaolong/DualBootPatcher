@@ -4,7 +4,6 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     target_include_directories(
         devicesgen
         PRIVATE
-        ${MBP_JANSSON_INCLUDES}
         ${MBP_YAML_CPP_INCLUDES}
     )
 
@@ -26,8 +25,8 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     target_link_libraries(
         devicesgen
         mbdevice-shared
-        ${MBP_JANSSON_LIBRARIES}
         ${MBP_YAML_CPP_LIBRARIES}
+        rapidjson
     )
 
     set_target_properties(

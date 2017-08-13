@@ -165,11 +165,9 @@
     boot:
       - /dev/block/platform/mtk-msdc.0/by-name/boot
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/boot
-      - boot
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
-      - recovery
     extra:
       - /dev/block/platform/mtk-msdc.0/by-name/metadata
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/metadata
@@ -190,7 +188,6 @@
       - /dev/block/sda
       - /dev/block/sda1
       - /dev/block/mmcblk0p4
-      - misc
 
   boot_ui:
     supported: true

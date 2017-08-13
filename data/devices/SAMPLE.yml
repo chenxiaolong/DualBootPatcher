@@ -121,10 +121,10 @@
     default_y_offset: 0
 
     # TWRP brightness sysfs path (optional).
-    brightness_path: null
+    brightness_path: '/sys/...'
 
     # TWRP secondary brightness sysfs path (optional).
-    secondary_brightness_path: null
+    secondary_brightness_path: '/sys/...'
 
     # TWRP max brightness (optional).
     max_brightness: 255
@@ -133,16 +133,16 @@
     default_brightness: 128
 
     # TWRP battery sysfs path (optional).
-    battery_path: null
+    battery_path: '/sys/...'
 
     # TWRP CPU temperature sys path (optional).
-    cpu_temp_path: null
+    cpu_temp_path: '/sys/...'
 
     # TWRP input device blacklist (optional).
-    input_blacklist: null
+    input_blacklist: ''
 
     # TWRP input device whitelist (optional).
-    input_whitelist: null
+    input_whitelist: ''
 
     # TWRP graphics backend list (required).
     #

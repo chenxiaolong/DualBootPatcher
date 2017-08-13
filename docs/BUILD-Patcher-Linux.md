@@ -9,7 +9,6 @@ If you don't have docker installed, the following packages are needed:
 - Android NDK
 - cmake
 - gtest
-- jansson
 - libarchive
 - OpenSSL
 - qt5
