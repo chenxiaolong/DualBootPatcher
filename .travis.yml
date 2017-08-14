@@ -7,7 +7,7 @@ android:
   - platform-tools
   - tools
   - build-tools-25.0.2
-  - android-23
+  - android-25
 
 before_install:
   - sudo apt install ccache expect libboost-dev libjansson-dev libssl-dev libyaml-cpp-dev openssl python-minimal
