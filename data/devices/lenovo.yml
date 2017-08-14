@@ -64,7 +64,7 @@
     default_brightness: 162
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     theme: portrait_hdpi
-    
+
 - name: Lenovo K4 Note
   id: A7010a48
   codenames:
@@ -73,8 +73,7 @@
     - K4 Note
     - Lenovo K4 Note
     - Vibe X3 Lite
-    - Lenovo A7010a48 
-    - Vibe X3 Lite
+    - Lenovo A7010a48
     - Lenovo A7010
     - A7010
     - mt6753
@@ -369,7 +368,7 @@
       - /dev/block/bootdevice/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
-      
+
 - name: Lenovo Vibe K5 & K5 Plus
   id: A6020
   codenames:
@@ -395,7 +394,7 @@
       - /dev/block/bootdevice/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
-      
+
 - name: Lenovo A7000-a
   id: A7000a
   codenames:
@@ -481,4 +480,4 @@
       - /dev/block/mmcblk0p33
     recovery:
       - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/mmcblk0p34  
+      - /dev/block/mmcblk0p34

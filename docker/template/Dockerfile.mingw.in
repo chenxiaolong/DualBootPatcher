@@ -21,7 +21,6 @@ RUN dnf -y install dnf-plugins-core \
     && dnf -y install \
         mingw32-gtest \
         mingw32-libarchive \
-        mingw32-jansson \
         mingw32-qt5-qtbase \
         upx \
         wine \

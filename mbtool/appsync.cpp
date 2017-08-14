@@ -37,8 +37,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <jansson.h>
-
 #include "mbcommon/common.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
