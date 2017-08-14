@@ -79,6 +79,7 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
+      
 - name: ZTE Redbull V5
   id: X9180
   codenames:
