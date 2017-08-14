@@ -1,4 +1,32 @@
-﻿- name: HTC 10
+---
+- name: HTC Desire Eye
+  id: eyeul
+  codenames:
+    - eyeul
+    - htc_eyetuhl
+    - htc_asia_tw
+    - Desire Eye
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p45
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p47
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p42
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p43
+- name: HTC 10
   id: pme
   codenames:
     - pme
