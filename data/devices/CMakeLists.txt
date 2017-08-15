@@ -44,6 +44,7 @@ set(files
     sony.yml
     symphony.yml
     umi.yml
+    walton.yml
     wileyfox.yml
     xiaomi.yml
     yu.yml
