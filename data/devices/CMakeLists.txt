@@ -3,6 +3,7 @@ if(NOT MBP_TOP_LEVEL_BUILD)
 endif()
 
 set(files
+    pixi4_5.yml
     ark.yml
     asus.yml
     cherrymobile.yml
