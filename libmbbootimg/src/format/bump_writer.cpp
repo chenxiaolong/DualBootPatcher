@@ -19,10 +19,6 @@
 
 #include "mbbootimg/format/android_writer_p.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-
 #include "mbbootimg/writer_p.h"
 
 namespace mb
@@ -36,38 +32,15 @@ namespace bootimg
  * \param biw MbBiWriter
  *
  * \return
- *   * #RET_OK if the format is successfully enabled
- *   * #RET_WARN if the format is already enabled
- *   * \<= #RET_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully set
+ *   * \<= #RET_WARN if an error occurs
  */
 int writer_set_format_bump(MbBiWriter *biw)
 {
     using namespace android;
 
-    AndroidWriterCtx *const ctx = new AndroidWriterCtx();
-
-    if (!SHA1_Init(&ctx->sha_ctx)) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Failed to initialize SHA_CTX");
-        delete ctx;
-        return false;
-    }
-
-    ctx->is_bump = true;
-
-    return _writer_register_format(biw,
-                                   ctx,
-                                   FORMAT_BUMP,
-                                   FORMAT_NAME_BUMP,
-                                   nullptr,
-                                   &android_writer_get_header,
-                                   &android_writer_write_header,
-                                   &android_writer_get_entry,
-                                   &android_writer_write_entry,
-                                   &android_writer_write_data,
-                                   &android_writer_finish_entry,
-                                   &android_writer_close,
-                                   &android_writer_free);
+    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(biw, true)};
+    return _writer_register_format(biw, std::move(format));
 }
 
 }

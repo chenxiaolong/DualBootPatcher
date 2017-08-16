@@ -46,6 +46,164 @@ namespace bootimg
 namespace loki
 {
 
+LokiFormatReader::LokiFormatReader(MbBiReader *bir)
+    : FormatReader(bir)
+    , _hdr()
+    , _loki_hdr()
+    , _header_offset()
+    , _loki_offset()
+    , _seg()
+{
+}
+
+LokiFormatReader::~LokiFormatReader()
+{
+}
+
+int LokiFormatReader::type()
+{
+    return FORMAT_LOKI;
+}
+
+std::string LokiFormatReader::name()
+{
+    return FORMAT_NAME_LOKI;
+}
+
+/*!
+ * \brief Perform a bid
+ *
+ * \return
+ *   * If \>= 0, the number of bits that conform to the Loki format
+ *   * #RET_WARN if this is a bid that can't be won
+ *   * #RET_FAILED if any file operations fail non-fatally
+ *   * #RET_FATAL if any file operations fail fatally
+ */
+int LokiFormatReader::bid(int best_bid)
+{
+    int bid = 0;
+    int ret;
+
+    if (best_bid >= static_cast<int>(
+            android::BOOT_MAGIC_SIZE + LOKI_MAGIC_SIZE) * 8) {
+        // This is a bid we can't win, so bail out
+        return RET_WARN;
+    }
+
+    // Find the Loki header
+    uint64_t loki_offset;
+    ret = find_loki_header(_bir, *_bir->file, _loki_hdr, loki_offset);
+    if (ret == RET_OK) {
+        // Update bid to account for matched bits
+        _loki_offset = loki_offset;
+        bid += LOKI_MAGIC_SIZE * 8;
+    } else if (ret == RET_WARN) {
+        // Header not found. This can't be a Loki boot image.
+        return 0;
+    } else {
+        return ret;
+    }
+
+    // Find the Android header
+    uint64_t header_offset;
+    ret = android::AndroidFormatReader::find_header(
+            _bir, *_bir->file, LOKI_MAX_HEADER_OFFSET, _hdr, header_offset);
+    if (ret == RET_OK) {
+        // Update bid to account for matched bits
+        _header_offset = header_offset;
+        bid += android::BOOT_MAGIC_SIZE * 8;
+    } else if (ret == RET_WARN) {
+        // Header not found. This can't be an Android boot image.
+        return 0;
+    } else {
+        return ret;
+    }
+
+    return bid;
+}
+
+int LokiFormatReader::read_header(Header &header)
+{
+    int ret;
+    uint64_t kernel_offset;
+    uint64_t ramdisk_offset;
+    uint64_t dt_offset = 0;
+    uint32_t kernel_size;
+    uint32_t ramdisk_size;
+
+    // A bid might not have been performed if the user forced a particular
+    // format
+    if (!_loki_offset) {
+        uint64_t loki_offset;
+        ret = find_loki_header(_bir, *_bir->file, _loki_hdr, loki_offset);
+        if (ret < 0) {
+            return ret;
+        }
+        _loki_offset = loki_offset;
+    }
+    if (!_header_offset) {
+        uint64_t header_offset;
+        ret = android::AndroidFormatReader::find_header(
+                _bir, *_bir->file, android::MAX_HEADER_OFFSET, _hdr,
+                header_offset);
+        if (ret < 0) {
+            return ret;
+        }
+        _header_offset = header_offset;
+    }
+
+    // New-style images record the original values of changed fields in the
+    // Android header
+    if (_loki_hdr.orig_kernel_size != 0
+            && _loki_hdr.orig_ramdisk_size != 0
+            && _loki_hdr.ramdisk_addr != 0) {
+        ret =  read_header_new(_bir, *_bir->file, _hdr, _loki_hdr, header,
+                               kernel_offset, kernel_size,
+                               ramdisk_offset, ramdisk_size,
+                               dt_offset);
+    } else {
+        ret =  read_header_old(_bir, *_bir->file, _hdr, _loki_hdr, header,
+                               kernel_offset, kernel_size,
+                               ramdisk_offset, ramdisk_size);
+    }
+    if (ret < 0) {
+        return ret;
+    }
+
+    _seg.entries_clear();
+
+    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
+                           kernel_offset, kernel_size, false, _bir);
+    if (ret != RET_OK) return ret;
+
+    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
+                           ramdisk_offset, ramdisk_size, false, _bir);
+    if (ret != RET_OK) return ret;
+
+    if (_hdr.dt_size > 0 && dt_offset != 0) {
+        ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
+                               dt_offset, _hdr.dt_size, false, _bir);
+        if (ret != RET_OK) return ret;
+    }
+
+    return RET_OK;
+}
+
+int LokiFormatReader::read_entry(Entry &entry)
+{
+    return _seg.read_entry(*_bir->file, entry, _bir);
+}
+
+int LokiFormatReader::go_to_entry(Entry &entry, int entry_type)
+{
+    return _seg.go_to_entry(*_bir->file, entry, entry_type, _bir);
+}
+
+int LokiFormatReader::read_data(void *buf, size_t buf_size, size_t &bytes_read)
+{
+    return _seg.read_data(*_bir->file, buf, buf_size, bytes_read, _bir);
+}
+
 /*!
  * \brief Find and read Loki boot image header
  *
@@ -68,8 +226,9 @@ namespace loki
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int find_loki_header(MbBiReader *bir, File &file,
-                     LokiHeader &header_out, uint64_t &offset_out)
+int LokiFormatReader::find_loki_header(MbBiReader *bir, File &file,
+                                       LokiHeader &header_out,
+                                       uint64_t &offset_out)
 {
     LokiHeader header;
     size_t n;
@@ -125,10 +284,10 @@ int find_loki_header(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int loki_find_ramdisk_address(MbBiReader *bir, File &file,
-                              const android::AndroidHeader &hdr,
-                              const LokiHeader &loki_hdr,
-                              uint32_t &ramdisk_addr_out)
+int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
+                                           const android::AndroidHeader &hdr,
+                                           const LokiHeader &loki_hdr,
+                                           uint32_t &ramdisk_addr_out)
 {
     // If the boot image was patched with a newer version of loki, find the
     // ramdisk offset in the shell code
@@ -223,8 +382,9 @@ int loki_find_ramdisk_address(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int loki_old_find_gzip_offset(MbBiReader *bir, File &file,
-                              uint32_t start_offset, uint64_t &gzip_offset_out)
+int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
+                                           uint32_t start_offset,
+                                           uint64_t &gzip_offset_out)
 {
     struct SearchResult
     {
@@ -336,10 +496,10 @@ int loki_old_find_gzip_offset(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int loki_old_find_ramdisk_size(MbBiReader *bir, File &file,
-                               const android::AndroidHeader &hdr,
-                               uint32_t ramdisk_offset,
-                               uint32_t &ramdisk_size_out)
+int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
+                                            const android::AndroidHeader &hdr,
+                                            uint32_t ramdisk_offset,
+                                            uint32_t &ramdisk_size_out)
 {
     int32_t aboot_size;
     uint64_t aboot_offset;
@@ -438,8 +598,9 @@ int loki_old_find_ramdisk_size(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int find_linux_kernel_size(MbBiReader *bir, File &file,
-                           uint32_t kernel_offset, uint32_t &kernel_size_out)
+int LokiFormatReader::find_linux_kernel_size(MbBiReader *bir, File &file,
+                                             uint32_t kernel_offset,
+                                             uint32_t &kernel_size_out)
 {
     size_t n;
     uint32_t kernel_size;
@@ -490,14 +651,14 @@ int find_linux_kernel_size(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int loki_read_old_header(MbBiReader *bir, File &file,
-                         const android::AndroidHeader &hdr,
-                         const LokiHeader &loki_hdr,
-                         Header &header,
-                         uint64_t &kernel_offset_out,
-                         uint32_t &kernel_size_out,
-                         uint64_t &ramdisk_offset_out,
-                         uint32_t &ramdisk_size_out)
+int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
+                                      const android::AndroidHeader &hdr,
+                                      const LokiHeader &loki_hdr,
+                                      Header &header,
+                                      uint64_t &kernel_offset_out,
+                                      uint32_t &kernel_size_out,
+                                      uint64_t &ramdisk_offset_out,
+                                      uint32_t &ramdisk_size_out)
 {
     uint32_t tags_addr;
     uint32_t kernel_size;
@@ -524,7 +685,7 @@ int loki_read_old_header(MbBiReader *bir, File &file,
     }
 
     // Look for gzip offset for the ramdisk
-    ret = loki_old_find_gzip_offset(
+    ret = find_gzip_offset_old(
             bir, file, hdr.page_size + kernel_size
                     + align_page_size<uint64_t>(kernel_size, hdr.page_size),
             gzip_offset);
@@ -533,14 +694,13 @@ int loki_read_old_header(MbBiReader *bir, File &file,
     }
 
     // Try to guess ramdisk size
-    ret = loki_old_find_ramdisk_size(bir, file, hdr, gzip_offset,
-                                     ramdisk_size);
+    ret = find_ramdisk_size_old(bir, file, hdr, gzip_offset, ramdisk_size);
     if (ret != RET_OK) {
         return ret;
     }
 
     // Guess original ramdisk address
-    ret = loki_find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
+    ret = find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
     if (ret != RET_OK) {
         return ret;
     }
@@ -612,15 +772,15 @@ int loki_read_old_header(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int loki_read_new_header(MbBiReader *bir, File &file,
-                         const android::AndroidHeader &hdr,
-                         const LokiHeader &loki_hdr,
-                         Header &header,
-                         uint64_t &kernel_offset_out,
-                         uint32_t &kernel_size_out,
-                         uint64_t &ramdisk_offset_out,
-                         uint32_t &ramdisk_size_out,
-                         uint64_t &dt_offset_out)
+int LokiFormatReader::read_header_new(MbBiReader *bir, File &file,
+                                      const android::AndroidHeader &hdr,
+                                      const LokiHeader &loki_hdr,
+                                      Header &header,
+                                      uint64_t &kernel_offset_out,
+                                      uint32_t &kernel_size_out,
+                                      uint64_t &ramdisk_offset_out,
+                                      uint32_t &ramdisk_size_out,
+                                      uint64_t &dt_offset_out)
 {
     uint32_t fake_size;
     uint32_t ramdisk_addr;
@@ -639,7 +799,7 @@ int loki_read_new_header(MbBiReader *bir, File &file,
     }
 
     // Find original ramdisk address
-    ret = loki_find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
+    ret = find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
     if (ret != RET_OK) {
         return ret;
     }
@@ -700,156 +860,6 @@ int loki_read_new_header(MbBiReader *bir, File &file,
     return RET_OK;
 }
 
-/*!
- * \brief Perform a bid
- *
- * \return
- *   * If \>= 0, the number of bits that conform to the Loki format
- *   * #RET_WARN if this is a bid that can't be won
- *   * #RET_FAILED if any file operations fail non-fatally
- *   * #RET_FATAL if any file operations fail fatally
- */
-int loki_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
-{
-    LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
-    int bid = 0;
-    int ret;
-
-    if (best_bid >= static_cast<int>(
-            android::BOOT_MAGIC_SIZE + LOKI_MAGIC_SIZE) * 8) {
-        // This is a bid we can't win, so bail out
-        return RET_WARN;
-    }
-
-    // Find the Loki header
-    ret = find_loki_header(bir, *bir->file, ctx->loki_hdr, ctx->loki_offset);
-    if (ret == RET_OK) {
-        // Update bid to account for matched bits
-        ctx->have_loki_offset = true;
-        bid += LOKI_MAGIC_SIZE * 8;
-    } else if (ret == RET_WARN) {
-        // Header not found. This can't be a Loki boot image.
-        return 0;
-    } else {
-        return ret;
-    }
-
-    // Find the Android header
-    ret = find_android_header(bir, *bir->file, LOKI_MAX_HEADER_OFFSET,
-                              ctx->hdr, ctx->header_offset);
-    if (ret == RET_OK) {
-        // Update bid to account for matched bits
-        ctx->have_header_offset = true;
-        bid += android::BOOT_MAGIC_SIZE * 8;
-    } else if (ret == RET_WARN) {
-        // Header not found. This can't be an Android boot image.
-        return 0;
-    } else {
-        return ret;
-    }
-
-    return bid;
-}
-
-int loki_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
-{
-    LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
-    int ret;
-    uint64_t kernel_offset;
-    uint64_t ramdisk_offset;
-    uint64_t dt_offset = 0;
-    uint32_t kernel_size;
-    uint32_t ramdisk_size;
-
-    // A bid might not have been performed if the user forced a particular
-    // format
-    if (!ctx->have_loki_offset) {
-        ret = find_loki_header(bir, *bir->file, ctx->loki_hdr,
-                               ctx->header_offset);
-        if (ret < 0) {
-            return ret;
-        }
-        ctx->have_loki_offset = true;
-    }
-    if (!ctx->have_header_offset) {
-        ret = find_android_header(bir, *bir->file, android::MAX_HEADER_OFFSET,
-                                  ctx->hdr, ctx->header_offset);
-        if (ret < 0) {
-            return ret;
-        }
-        ctx->have_header_offset = true;
-    }
-
-    // New-style images record the original values of changed fields in the
-    // Android header
-    if (ctx->loki_hdr.orig_kernel_size != 0
-            && ctx->loki_hdr.orig_ramdisk_size != 0
-            && ctx->loki_hdr.ramdisk_addr != 0) {
-        ret =  loki_read_new_header(bir, *bir->file,
-                                    ctx->hdr, ctx->loki_hdr, header,
-                                    kernel_offset, kernel_size,
-                                    ramdisk_offset, ramdisk_size,
-                                    dt_offset);
-    } else {
-        ret =  loki_read_old_header(bir, *bir->file,
-                                    ctx->hdr, ctx->loki_hdr, header,
-                                    kernel_offset, kernel_size,
-                                    ramdisk_offset, ramdisk_size);
-    }
-    if (ret < 0) {
-        return ret;
-    }
-
-    ctx->seg.entries_clear();
-
-    ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
-                               kernel_offset, kernel_size, false, bir);
-    if (ret != RET_OK) return ret;
-
-    ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
-                               ramdisk_offset, ramdisk_size, false, bir);
-    if (ret != RET_OK) return ret;
-
-    if (ctx->hdr.dt_size > 0 && dt_offset != 0) {
-        ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                                   dt_offset, ctx->hdr.dt_size, false, bir);
-        if (ret != RET_OK) return ret;
-    }
-
-    return RET_OK;
-}
-
-int loki_reader_read_entry(MbBiReader *bir, void *userdata, Entry &entry)
-{
-    LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
-
-    return ctx->seg.read_entry(*bir->file, entry, bir);
-}
-
-int loki_reader_go_to_entry(MbBiReader *bir, void *userdata, Entry &entry,
-                            int entry_type)
-{
-    LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
-
-    return ctx->seg.go_to_entry(*bir->file, entry, entry_type, bir);
-}
-
-int loki_reader_read_data(MbBiReader *bir, void *userdata,
-                          void *buf, size_t buf_size,
-                          size_t &bytes_read)
-{
-    LokiReaderCtx *const ctx = static_cast<LokiReaderCtx *>(userdata);
-
-    return ctx->seg.read_data(*bir->file, buf, buf_size, bytes_read, bir);
-}
-
-int loki_reader_free(MbBiReader *bir, void *userdata)
-{
-    (void) bir;
-    delete static_cast<LokiReaderCtx *>(userdata);
-    return RET_OK;
-}
-
 }
 
 /*!
@@ -866,19 +876,8 @@ int reader_enable_format_loki(MbBiReader *bir)
 {
     using namespace loki;
 
-    LokiReaderCtx *const ctx = new LokiReaderCtx();
-
-    return _reader_register_format(bir,
-                                   ctx,
-                                   FORMAT_LOKI,
-                                   FORMAT_NAME_LOKI,
-                                   &loki_reader_bid,
-                                   nullptr,
-                                   &loki_reader_read_header,
-                                   &loki_reader_read_entry,
-                                   &loki_reader_go_to_entry,
-                                   &loki_reader_read_data,
-                                   &loki_reader_free);
+    std::unique_ptr<FormatReader> format{new LokiFormatReader(bir)};
+    return _reader_register_format(bir, std::move(format));
 }
 
 }

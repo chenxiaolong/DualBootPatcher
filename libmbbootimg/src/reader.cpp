@@ -213,127 +213,57 @@ static struct
     },
 };
 
-/*!
- * \brief Register a format reader
- *
- * Register a format reader with an MbBiReader. If the function fails,
- * \p free_cb will be called to clean up the resources.
- *
- * \note The \p bidder_cb callback is optional. If a bidder callback is not
- *       provided, then the format can only be used if explicitly forced via
- *       reader_set_format_by_code() or reader_set_format_by_name().
- *
- * \param bir MbBiReader
- * \param userdata User callback data
- * \param type Format type (must be one of \ref MB_BI_FORMAT_CODES)
- * \param name Format name (must be one of \ref MB_BI_FORMAT_NAMES)
- * \param bidder_cb Bidder callback (optional)
- * \param set_option_cb Set option callback (optional)
- * \param read_header_cb Read header callback (required)
- * \param read_entry_cb Read entry callback (required)
- * \param go_to_entry_cb Go to entry callback (optional)
- * \param read_data_cb Read data callback (required)
- * \param free_cb Free callback (optional)
- *
- * \return
- *   * #RET_OK if the format is successfully registered
- *   * #RET_WARN if the format has already been registered before
- *   * \<= #RET_FAILED if an error occurs
- */
-int _reader_register_format(MbBiReader *bir,
-                            void *userdata,
-                            int type,
-                            const std::string &name,
-                            FormatReaderBidder bidder_cb,
-                            FormatReaderSetOption set_option_cb,
-                            FormatReaderReadHeader read_header_cb,
-                            FormatReaderReadEntry read_entry_cb,
-                            FormatReaderGoToEntry go_to_entry_cb,
-                            FormatReaderReadData read_data_cb,
-                            FormatReaderFree free_cb)
+FormatReader::FormatReader(MbBiReader *bir)
+    : _bir(bir)
 {
-    int ret;
-    FormatReader format;
-
-    // Check state, but ensure that format is freed if this function is called
-    // in an incorect state
-    READER_ENSURE_STATE_GOTO(bir, ReaderState::NEW, ret, done);
-
-    format.type = type;
-    format.name = name;
-    format.bidder_cb = bidder_cb;
-    format.set_option_cb = set_option_cb;
-    format.read_header_cb = read_header_cb;
-    format.read_entry_cb = read_entry_cb;
-    format.go_to_entry_cb = go_to_entry_cb;
-    format.read_data_cb = read_data_cb;
-    format.free_cb = free_cb;
-    format.userdata = userdata;
-
-    if (bir->formats_len == MAX_FORMATS) {
-        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                         "Too many formats enabled");
-        ret = RET_FAILED;
-        goto done;
-    }
-
-    for (size_t i = 0; i < bir->formats_len; ++i) {
-        if ((FORMAT_BASE_MASK & bir->formats[i].type)
-                == (FORMAT_BASE_MASK & type)) {
-            reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
-                             "%s format (0x%x) already enabled",
-                             name.c_str(), type);
-            ret = RET_WARN;
-            goto done;
-        }
-    }
-
-    bir->formats[bir->formats_len] = format;
-    ++bir->formats_len;
-
-    ret = RET_OK;
-
-done:
-    if (ret != RET_OK) {
-        int ret2 = _reader_free_format(bir, &format);
-        if (ret2 < ret) {
-            ret = ret2;
-        }
-    }
-
-    return ret;
 }
 
-/*!
- * \brief Free a format reader
- *
- * \note Regardless of the return value, the format reader's resources will have
- *       been cleaned up. The return value only exists to indicate if an error
- *       occurs in the process of cleaning up.
- *
- * \note If \p format is allocated on the heap, it is up to the caller to free
- *       its memory.
- *
- * \param bir MbBiReader
- * \param format Format reader to clean up
- *
- * \return
- *   * #RET_OK if the resources for \p format are successfully freed
- *   * \<= #RET_WARN if an error occurs (though the resources will still be
- *     cleaned up)
- */
-int _reader_free_format(MbBiReader *bir, FormatReader *format)
+FormatReader::~FormatReader()
 {
-    READER_ENSURE_STATE(bir, ReaderState::ANY);
-    int ret = RET_OK;
+}
 
-    if (format) {
-        if (format->free_cb) {
-            ret = format->free_cb(bir, format->userdata);
+int FormatReader::init()
+{
+    return RET_OK;
+}
+
+int FormatReader::set_option(const char *key, const char *value)
+{
+    (void) key;
+    (void) value;
+    return RET_OK;
+}
+
+int FormatReader::go_to_entry(Entry &entry, int entry_type)
+{
+    (void) entry;
+    (void) entry_type;
+    return RET_UNSUPPORTED;
+}
+
+int _reader_register_format(MbBiReader *bir,
+                            std::unique_ptr<FormatReader> format)
+{
+    READER_ENSURE_STATE(bir, ReaderState::NEW);
+
+    if (bir->formats.size() == MAX_FORMATS) {
+        reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                         "Too many formats enabled");
+        return RET_FAILED;
+    }
+
+    for (auto const &f : bir->formats) {
+        if ((FORMAT_BASE_MASK & f->type())
+                == (FORMAT_BASE_MASK & format->type())) {
+            reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
+                             "%s format (0x%x) already enabled",
+                             format->name().c_str(), format->type());
+            return RET_WARN;
         }
     }
 
-    return ret;
+    bir->formats.push_back(std::move(format));
+    return RET_OK;
 }
 
 /*!
@@ -365,18 +295,11 @@ MbBiReader * reader_new()
  */
 int reader_free(MbBiReader *bir)
 {
-    int ret = RET_OK, ret2;
+    int ret = RET_OK;
 
     if (bir) {
         if (bir->state != ReaderState::CLOSED) {
             ret = reader_close(bir);
-        }
-
-        for (size_t i = 0; i < bir->formats_len; ++i) {
-            ret2 = _reader_free_format(bir, &bir->formats[i]);
-            if (ret2 < ret) {
-                ret = ret2;
-            }
         }
 
         delete bir;
@@ -465,7 +388,7 @@ int reader_open(MbBiReader *bir, File *file, bool owned)
     bir->file = file;
     bir->file_owned = owned;
 
-    if (bir->formats_len == 0) {
+    if (bir->formats.empty()) {
         reader_set_error(bir, ERROR_PROGRAMMER_ERROR,
                          "No reader formats registered");
         ret = RET_FAILED;
@@ -474,31 +397,27 @@ int reader_open(MbBiReader *bir, File *file, bool owned)
 
     // Perform bid if a format wasn't explicitly chosen
     if (!bir->format) {
-        FormatReader *format = nullptr, *cur;
+        FormatReader *format = nullptr;
 
-        for (size_t i = 0; i < bir->formats_len; ++i) {
-            cur = &bir->formats[i];
+        for (auto &f : bir->formats) {
+            // Seek to beginning
+            if (!bir->file->seek(0, SEEK_SET, nullptr)) {
+                reader_set_error(bir, bir->file->error().value() /* TODO */,
+                                 "Failed to seek file: %s",
+                                 bir->file->error_string().c_str());
+                ret = bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                goto done;
+            }
 
-            if (cur->bidder_cb) {
-                // Seek to beginning
-                if (!bir->file->seek(0, SEEK_SET, nullptr)) {
-                    reader_set_error(bir, bir->file->error().value() /* TODO */,
-                                     "Failed to seek file: %s",
-                                     bir->file->error_string().c_str());
-                    ret = bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
-                    goto done;
-                }
-
-                // Call bidder
-                ret = cur->bidder_cb(bir, cur->userdata, best_bid);
-                if (ret > best_bid) {
-                    best_bid = ret;
-                    format = cur;
-                } else if (ret == RET_WARN) {
-                    continue;
-                } else if (ret < 0) {
-                    goto done;
-                }
+            // Call bidder
+            ret = f->bid(best_bid);
+            if (ret > best_bid) {
+                best_bid = ret;
+                format = f.get();
+            } else if (ret == RET_WARN) {
+                continue;
+            } else if (ret < 0) {
+                goto done;
             }
         }
 
@@ -633,14 +552,7 @@ int reader_read_header2(MbBiReader *bir, Header &header)
 
     header.clear();
 
-    if (!bir->format->read_header_cb) {
-        reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                         "Missing format read_header_cb");
-        bir->state = ReaderState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = bir->format->read_header_cb(bir, bir->format->userdata, header);
+    ret = bir->format->read_header(header);
     if (ret == RET_OK) {
         bir->state = ReaderState::ENTRY;
     } else if (ret <= RET_FATAL) {
@@ -704,14 +616,7 @@ int reader_read_entry2(MbBiReader *bir, Entry &entry)
 
     entry.clear();
 
-    if (!bir->format->read_entry_cb) {
-        reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                         "Missing format read_entry_cb");
-        bir->state = ReaderState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = bir->format->read_entry_cb(bir, bir->format->userdata, entry);
+    ret = bir->format->read_entry(entry);
     if (ret == RET_OK) {
         bir->state = ReaderState::DATA;
     } else if (ret <= RET_FATAL) {
@@ -775,14 +680,7 @@ int reader_go_to_entry2(MbBiReader *bir, Entry &entry, int entry_type)
 
     entry.clear();
 
-    if (!bir->format->go_to_entry_cb) {
-        reader_set_error(bir, ERROR_UNSUPPORTED,
-                         "go_to_entry_cb not defined");
-        return RET_UNSUPPORTED;
-    }
-
-    ret = bir->format->go_to_entry_cb(bir, bir->format->userdata, entry,
-                                      entry_type);
+    ret = bir->format->go_to_entry(entry, entry_type);
     if (ret == RET_OK) {
         bir->state = ReaderState::DATA;
     } else if (ret <= RET_FATAL) {
@@ -811,15 +709,7 @@ int reader_read_data(MbBiReader *bir, void *buf, size_t size,
     READER_ENSURE_STATE(bir, ReaderState::DATA);
     int ret;
 
-    if (!bir->format->read_data_cb) {
-        reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                         "Missing format read_data_cb");
-        bir->state = ReaderState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = bir->format->read_data_cb(bir, bir->format->userdata, buf, size,
-                                    bytes_read);
+    ret = bir->format->read_data(buf, size, bytes_read);
     if (ret == RET_OK) {
         // Do not alter state. Stay in ReaderState::DATA
     } else if (ret <= RET_FATAL) {
@@ -852,7 +742,7 @@ int reader_format_code(MbBiReader *bir)
         return -1;
     }
 
-    return bir->format->type;
+    return bir->format->type();
 }
 
 /*!
@@ -878,7 +768,7 @@ std::string reader_format_name(MbBiReader *bir)
         return {};
     }
 
-    return bir->format->name;
+    return bir->format->name();
 }
 
 /*!
@@ -905,10 +795,10 @@ int reader_set_format_by_code(MbBiReader *bir, int code)
         return ret;
     }
 
-    for (size_t i = 0; i < bir->formats_len; ++i) {
-        if ((FORMAT_BASE_MASK & bir->formats[i].type & code)
+    for (auto &f : bir->formats) {
+        if ((FORMAT_BASE_MASK & f->type() & code)
                 == (FORMAT_BASE_MASK & code)) {
-            format = &bir->formats[i];
+            format = f.get();
             break;
         }
     }
@@ -949,9 +839,9 @@ int reader_set_format_by_name(MbBiReader *bir, const std::string &name)
         return ret;
     }
 
-    for (size_t i = 0; i < bir->formats_len; ++i) {
-        if (bir->formats[i].name == name) {
-            format = &bir->formats[i];
+    for (auto &f : bir->formats) {
+        if (f->name() == name) {
+            format = f.get();
             break;
         }
     }

@@ -22,6 +22,7 @@
 #include "mbbootimg/guard_p.h"
 
 #include <string>
+#include <vector>
 
 #include <cstddef>
 
@@ -58,44 +59,35 @@
         } \
     } while (0)
 
-#define MAX_FORMATS     10
-
 namespace mb
 {
 namespace bootimg
 {
 
-struct MbBiReader;
+constexpr size_t MAX_FORMATS = 10;
 
-typedef int (*FormatReaderBidder)(MbBiReader *bir, void *userdata,
-                                  int best_bid);
-typedef int (*FormatReaderSetOption)(MbBiReader *bir, void *userdata,
-                                     const char *key, const char *value);
-typedef int (*FormatReaderReadHeader)(MbBiReader *bir, void *userdata,
-                                      Header &header);
-typedef int (*FormatReaderReadEntry)(MbBiReader *bir, void *userdata,
-                                     Entry &entry);
-typedef int (*FormatReaderGoToEntry)(MbBiReader *bir, void *userdata,
-                                     Entry &entry, int entry_type);
-typedef int (*FormatReaderReadData)(MbBiReader *bir, void *userdata,
-                                    void *buf, size_t buf_size,
-                                    size_t &bytes_read);
-typedef int (*FormatReaderFree)(MbBiReader *bir, void *userdata);
-
-struct FormatReader
+class FormatReader
 {
-    int type;
-    std::string name;
+public:
+    FormatReader(MbBiReader *bir);
+    virtual ~FormatReader();
 
-    // Callbacks
-    FormatReaderBidder bidder_cb;
-    FormatReaderSetOption set_option_cb;
-    FormatReaderReadHeader read_header_cb;
-    FormatReaderReadEntry read_entry_cb;
-    FormatReaderGoToEntry go_to_entry_cb;
-    FormatReaderReadData read_data_cb;
-    FormatReaderFree free_cb;
-    void *userdata;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatReader)
+
+    virtual int type() = 0;
+    virtual std::string name() = 0;
+
+    virtual int init();
+    virtual int bid(int best_bid) = 0;
+    virtual int set_option(const char *key, const char *value);
+    virtual int read_header(Header &header) = 0;
+    virtual int read_entry(Entry &entry) = 0;
+    virtual int go_to_entry(Entry &entry, int entry_type);
+    virtual int read_data(void *buf, size_t buf_size, size_t &bytes_read) = 0;
+
+protected:
+    MbBiReader *_bir;
 };
 
 enum ReaderState : unsigned short
@@ -124,8 +116,7 @@ struct MbBiReader
     int error_code;
     std::string error_string;
 
-    FormatReader formats[MAX_FORMATS];
-    size_t formats_len;
+    std::vector<std::unique_ptr<FormatReader>> formats;
     FormatReader *format;
 
     Header header;
@@ -133,19 +124,7 @@ struct MbBiReader
 };
 
 int _reader_register_format(MbBiReader *bir,
-                            void *userdata,
-                            int type,
-                            const std::string &name,
-                            FormatReaderBidder bidder_cb,
-                            FormatReaderSetOption set_option_cb,
-                            FormatReaderReadHeader read_header_cb,
-                            FormatReaderReadEntry read_entry_cb,
-                            FormatReaderGoToEntry go_to_entry_cb,
-                            FormatReaderReadData read_data_cb,
-                            FormatReaderFree free_cb);
-
-int _reader_free_format(MbBiReader *bir,
-                        FormatReader *format);
+                            std::unique_ptr<FormatReader> format);
 
 }
 }

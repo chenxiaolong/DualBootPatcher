@@ -48,6 +48,167 @@ namespace bootimg
 namespace android
 {
 
+AndroidFormatReader::AndroidFormatReader(MbBiReader *bir, bool is_bump)
+    : FormatReader(bir)
+    , _hdr()
+    , _header_offset()
+    , _samsung_offset()
+    , _bump_offset()
+    // Allow truncated device tree image by default
+    , _allow_truncated_dt(true)
+    , _is_bump(is_bump)
+    , _seg()
+{
+}
+
+AndroidFormatReader::~AndroidFormatReader()
+{
+}
+
+int AndroidFormatReader::type()
+{
+    if (_is_bump) {
+        return FORMAT_BUMP;
+    } else {
+        return FORMAT_ANDROID;
+    }
+}
+
+std::string AndroidFormatReader::name()
+{
+    if (_is_bump) {
+        return FORMAT_NAME_BUMP;
+    } else {
+        return FORMAT_NAME_ANDROID;
+    }
+}
+
+int AndroidFormatReader::bid(int best_bid)
+{
+    if (_is_bump) {
+        return bid_bump(best_bid);
+    } else {
+        return bid_android(best_bid);
+    }
+}
+
+int AndroidFormatReader::set_option(const char *key, const char *value)
+{
+    if (strcmp(key, "strict") == 0) {
+        bool strict = strcasecmp(value, "true") == 0
+                || strcasecmp(value, "yes") == 0
+                || strcasecmp(value, "y") == 0
+                || strcmp(value, "1") == 0;
+        _allow_truncated_dt = !strict;
+        return RET_OK;
+    } else {
+        return RET_WARN;
+    }
+}
+
+int AndroidFormatReader::read_header(Header &header)
+{
+    int ret;
+
+    if (!_header_offset) {
+        // A bid might not have been performed if the user forced a particular
+        // format
+        uint64_t header_offset;
+        ret = find_header(_bir, *_bir->file, MAX_HEADER_OFFSET, _hdr,
+                          header_offset);
+        if (ret < 0) {
+            return ret;
+        }
+        _header_offset = header_offset;
+    }
+
+    ret = convert_header(_hdr, header);
+    if (ret != RET_OK) {
+        reader_set_error(_bir, ERROR_INTERNAL_ERROR,
+                         "Failed to set header fields");
+        return ret;
+    }
+
+    // Calculate offsets for each section
+
+    uint64_t pos = 0;
+    uint32_t page_size = *header.page_size();
+    uint64_t kernel_offset;
+    uint64_t ramdisk_offset;
+    uint64_t second_offset;
+    uint64_t dt_offset;
+
+    // pos cannot overflow due to the nature of the operands (adding UINT32_MAX
+    // a few times can't overflow a uint64_t). File length overflow is checked
+    // during read.
+
+    // Header
+    pos += *_header_offset;
+    pos += sizeof(AndroidHeader);
+    pos += align_page_size<uint64_t>(pos, page_size);
+
+    // Kernel
+    kernel_offset = pos;
+    pos += _hdr.kernel_size;
+    pos += align_page_size<uint64_t>(pos, page_size);
+
+    // Ramdisk
+    ramdisk_offset = pos;
+    pos += _hdr.ramdisk_size;
+    pos += align_page_size<uint64_t>(pos, page_size);
+
+    // Second bootloader
+    second_offset = pos;
+    pos += _hdr.second_size;
+    pos += align_page_size<uint64_t>(pos, page_size);
+
+    // Device tree
+    dt_offset = pos;
+    pos += _hdr.dt_size;
+    pos += align_page_size<uint64_t>(pos, page_size);
+
+    _seg.entries_clear();
+
+    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
+                           kernel_offset, _hdr.kernel_size, false, _bir);
+    if (ret != RET_OK) return ret;
+
+    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
+                           ramdisk_offset, _hdr.ramdisk_size, false, _bir);
+    if (ret != RET_OK) return ret;
+
+    if (_hdr.second_size > 0) {
+        ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
+                               second_offset, _hdr.second_size, false, _bir);
+        if (ret != RET_OK) return ret;
+    }
+
+    if (_hdr.dt_size > 0) {
+        ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
+                               dt_offset, _hdr.dt_size, _allow_truncated_dt,
+                               _bir);
+        if (ret != RET_OK) return ret;
+    }
+
+    return RET_OK;
+}
+
+int AndroidFormatReader::read_entry(Entry &entry)
+{
+    return _seg.read_entry(*_bir->file, entry, _bir);
+}
+
+int AndroidFormatReader::go_to_entry(Entry &entry, int entry_type)
+{
+    return _seg.go_to_entry(*_bir->file, entry, entry_type, _bir);
+}
+
+int AndroidFormatReader::read_data(void *buf, size_t buf_size,
+                                   size_t &bytes_read)
+{
+    return _seg.read_data(*_bir->file, buf, buf_size, bytes_read, _bir);
+}
+
 /*!
  * \brief Find and read Android boot image header
  *
@@ -72,9 +233,10 @@ namespace android
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int find_android_header(MbBiReader *bir, File &file,
-                        uint64_t max_header_offset,
-                        AndroidHeader &header_out, uint64_t &offset_out)
+int AndroidFormatReader::find_header(MbBiReader *bir, File &file,
+                                     uint64_t max_header_offset,
+                                     AndroidHeader &header_out,
+                                     uint64_t &offset_out)
 {
     unsigned char buf[MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
     size_t n;
@@ -148,8 +310,10 @@ int find_android_header(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
-                                 const AndroidHeader &hdr, uint64_t &offset_out)
+int AndroidFormatReader::find_samsung_seandroid_magic(MbBiReader *bir,
+                                                      File &file,
+                                                      const AndroidHeader &hdr,
+                                                      uint64_t &offset_out)
 {
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
     size_t n;
@@ -219,8 +383,9 @@ int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int find_bump_magic(MbBiReader *bir, File &file,
-                    const AndroidHeader &hdr, uint64_t &offset_out)
+int AndroidFormatReader::find_bump_magic(MbBiReader *bir, File &file,
+                                         const AndroidHeader &hdr,
+                                         uint64_t &offset_out)
 {
     unsigned char buf[bump::BUMP_MAGIC_SIZE];
     size_t n;
@@ -270,7 +435,8 @@ int find_bump_magic(MbBiReader *bir, File &file,
     return RET_OK;
 }
 
-int android_set_header(const AndroidHeader &hdr, Header &header)
+int AndroidFormatReader::convert_header(const AndroidHeader &hdr,
+                                        Header &header)
 {
     char board_name[sizeof(hdr.name) + 1];
     char cmdline[sizeof(hdr.cmdline) + 1];
@@ -309,9 +475,8 @@ int android_set_header(const AndroidHeader &hdr, Header &header)
  *   * #RET_FAILED if any file operations fail non-fatally
  *   * #RET_FATAL if any file operations fail fatally
  */
-int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
+int AndroidFormatReader::bid_android(int best_bid)
 {
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
     int bid = 0;
     int ret;
 
@@ -322,11 +487,12 @@ int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     }
 
     // Find the Android header
-    ret = find_android_header(bir, *bir->file, MAX_HEADER_OFFSET,
-                              ctx->hdr, ctx->header_offset);
+    uint64_t header_offset;
+    ret = find_header(_bir, *_bir->file, MAX_HEADER_OFFSET, _hdr,
+                      header_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
-        ctx->have_header_offset = true;
+        _header_offset = header_offset;
         bid += BOOT_MAGIC_SIZE * 8;
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
@@ -336,11 +502,11 @@ int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     }
 
     // Find the Samsung magic
-    ret = find_samsung_seandroid_magic(bir, *bir->file, ctx->hdr,
-                                       ctx->samsung_offset);
+    uint64_t samsung_offset;
+    ret = find_samsung_seandroid_magic(_bir, *_bir->file, _hdr, samsung_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
-        ctx->have_samsung_offset = true;
+        _samsung_offset = samsung_offset;
         bid += SAMSUNG_SEANDROID_MAGIC_SIZE * 8;
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
@@ -360,9 +526,8 @@ int android_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
  *   * #RET_FAILED if any file operations fail non-fatally
  *   * #RET_FATAL if any file operations fail fatally
  */
-int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
+int AndroidFormatReader::bid_bump(int best_bid)
 {
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
     int bid = 0;
     int ret;
 
@@ -373,11 +538,12 @@ int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     }
 
     // Find the Android header
-    ret = find_android_header(bir, *bir->file, MAX_HEADER_OFFSET,
-                              ctx->hdr, ctx->header_offset);
+    uint64_t header_offset;
+    ret = find_header(_bir, *_bir->file, MAX_HEADER_OFFSET, _hdr,
+                      header_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
-        ctx->have_header_offset = true;
+        _header_offset = header_offset;
         bid += BOOT_MAGIC_SIZE * 8;
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
@@ -387,10 +553,11 @@ int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     }
 
     // Find the Bump magic
-    ret = find_bump_magic(bir, *bir->file, ctx->hdr, ctx->bump_offset);
+    uint64_t bump_offset;
+    ret = find_bump_magic(_bir, *_bir->file, _hdr, bump_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
-        ctx->have_bump_offset = true;
+        _bump_offset = bump_offset;
         bid += bump::BUMP_MAGIC_SIZE * 8;
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
@@ -399,145 +566,6 @@ int bump_reader_bid(MbBiReader *bir, void *userdata, int best_bid)
     }
 
     return bid;
-}
-
-int android_reader_set_option(MbBiReader *bir, void *userdata,
-                              const char *key, const char *value)
-{
-    (void) bir;
-
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
-
-    if (strcmp(key, "strict") == 0) {
-        bool strict = strcasecmp(value, "true") == 0
-                || strcasecmp(value, "yes") == 0
-                || strcasecmp(value, "y") == 0
-                || strcmp(value, "1") == 0;
-        ctx->allow_truncated_dt = !strict;
-        return RET_OK;
-    } else {
-        return RET_WARN;
-    }
-}
-
-int android_reader_read_header(MbBiReader *bir, void *userdata, Header &header)
-{
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
-    int ret;
-
-    if (!ctx->have_header_offset) {
-        // A bid might not have been performed if the user forced a particular
-        // format
-        ret = find_android_header(bir, *bir->file, MAX_HEADER_OFFSET,
-                                  ctx->hdr, ctx->header_offset);
-        if (ret < 0) {
-            return ret;
-        }
-        ctx->have_header_offset = true;
-    }
-
-    ret = android_set_header(ctx->hdr, header);
-    if (ret != RET_OK) {
-        reader_set_error(bir, ERROR_INTERNAL_ERROR,
-                         "Failed to set header fields");
-        return ret;
-    }
-
-    // Calculate offsets for each section
-
-    uint64_t pos = 0;
-    uint32_t page_size = *header.page_size();
-    uint64_t kernel_offset;
-    uint64_t ramdisk_offset;
-    uint64_t second_offset;
-    uint64_t dt_offset;
-
-    // pos cannot overflow due to the nature of the operands (adding UINT32_MAX
-    // a few times can't overflow a uint64_t). File length overflow is checked
-    // during read.
-
-    // Header
-    pos += ctx->header_offset;
-    pos += sizeof(AndroidHeader);
-    pos += align_page_size<uint64_t>(pos, page_size);
-
-    // Kernel
-    kernel_offset = pos;
-    pos += ctx->hdr.kernel_size;
-    pos += align_page_size<uint64_t>(pos, page_size);
-
-    // Ramdisk
-    ramdisk_offset = pos;
-    pos += ctx->hdr.ramdisk_size;
-    pos += align_page_size<uint64_t>(pos, page_size);
-
-    // Second bootloader
-    second_offset = pos;
-    pos += ctx->hdr.second_size;
-    pos += align_page_size<uint64_t>(pos, page_size);
-
-    // Device tree
-    dt_offset = pos;
-    pos += ctx->hdr.dt_size;
-    pos += align_page_size<uint64_t>(pos, page_size);
-
-    ctx->seg.entries_clear();
-
-    ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
-                               kernel_offset, ctx->hdr.kernel_size, false, bir);
-    if (ret != RET_OK) return ret;
-
-    ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
-                               ramdisk_offset, ctx->hdr.ramdisk_size, false,
-                               bir);
-    if (ret != RET_OK) return ret;
-
-    if (ctx->hdr.second_size > 0) {
-        ret = ctx->seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                                   second_offset, ctx->hdr.second_size, false,
-                                   bir);
-        if (ret != RET_OK) return ret;
-    }
-
-    if (ctx->hdr.dt_size > 0) {
-        ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                                   dt_offset, ctx->hdr.dt_size,
-                                   ctx->allow_truncated_dt, bir);
-        if (ret != RET_OK) return ret;
-    }
-
-    return RET_OK;
-}
-
-int android_reader_read_entry(MbBiReader *bir, void *userdata, Entry &entry)
-{
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
-
-    return ctx->seg.read_entry(*bir->file, entry, bir);
-}
-
-int android_reader_go_to_entry(MbBiReader *bir, void *userdata, Entry &entry,
-                               int entry_type)
-{
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
-
-    return ctx->seg.go_to_entry(*bir->file, entry, entry_type, bir);
-}
-
-int android_reader_read_data(MbBiReader *bir, void *userdata,
-                             void *buf, size_t buf_size,
-                             size_t &bytes_read)
-{
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(userdata);
-
-    return ctx->seg.read_data(*bir->file, buf, buf_size, bytes_read, bir);
-}
-
-int android_reader_free(MbBiReader *bir, void *userdata)
-{
-    (void) bir;
-    delete static_cast<AndroidReaderCtx *>(userdata);
-    return RET_OK;
 }
 
 }
@@ -556,22 +584,8 @@ int reader_enable_format_android(MbBiReader *bir)
 {
     using namespace android;
 
-    AndroidReaderCtx *const ctx = new AndroidReaderCtx();
-
-    // Allow truncated dt image by default
-    ctx->allow_truncated_dt = true;
-
-    return _reader_register_format(bir,
-                                   ctx,
-                                   FORMAT_ANDROID,
-                                   FORMAT_NAME_ANDROID,
-                                   &android_reader_bid,
-                                   &android_reader_set_option,
-                                   &android_reader_read_header,
-                                   &android_reader_read_entry,
-                                   &android_reader_go_to_entry,
-                                   &android_reader_read_data,
-                                   &android_reader_free);
+    std::unique_ptr<FormatReader> format{new AndroidFormatReader(bir, false)};
+    return _reader_register_format(bir, std::move(format));
 }
 
 }

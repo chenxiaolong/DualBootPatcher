@@ -19,10 +19,6 @@
 
 #include "mbbootimg/format/android_reader_p.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-
 #include "mbbootimg/reader_p.h"
 
 namespace mb
@@ -44,21 +40,8 @@ int reader_enable_format_bump(MbBiReader *bir)
 {
     using namespace android;
 
-    AndroidReaderCtx *const ctx = new AndroidReaderCtx();
-
-    ctx->is_bump = true;
-
-    return _reader_register_format(bir,
-                                   ctx,
-                                   FORMAT_BUMP,
-                                   FORMAT_NAME_BUMP,
-                                   &bump_reader_bid,
-                                   &android_reader_set_option,
-                                   &android_reader_read_header,
-                                   &android_reader_read_entry,
-                                   &android_reader_go_to_entry,
-                                   &android_reader_read_data,
-                                   &android_reader_free);
+    std::unique_ptr<FormatReader> format{new AndroidFormatReader(bir, true)};
+    return _reader_register_format(bir, std::move(format));
 }
 
 }

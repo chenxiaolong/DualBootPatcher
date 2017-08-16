@@ -21,6 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <memory>
 #include <string>
 
 #include <cstddef>
@@ -64,41 +65,31 @@ namespace mb
 namespace bootimg
 {
 
-struct MbBiWriter;
-
-typedef int (*FormatWriterSetOption)(MbBiWriter *biw, void *userdata,
-                                     const char *key, const char *value);
-typedef int (*FormatWriterGetHeader)(MbBiWriter *biw, void *userdata,
-                                     Header &header);
-typedef int (*FormatWriterWriteHeader)(MbBiWriter *biw, void *userdata,
-                                       const Header &header);
-typedef int (*FormatWriterGetEntry)(MbBiWriter *biw, void *userdata,
-                                    Entry &entry);
-typedef int (*FormatWriterWriteEntry)(MbBiWriter *biw, void *userdata,
-                                      const Entry &entry);
-typedef int (*FormatWriterWriteData)(MbBiWriter *biw, void *userdata,
-                                     const void *buf, size_t buf_size,
-                                     size_t &bytes_written);
-typedef int (*FormatWriterFinishEntry)(MbBiWriter *biw, void *userdata);
-typedef int (*FormatWriterClose)(MbBiWriter *biw, void *userdata);
-typedef int (*FormatWriterFree)(MbBiWriter *biw, void *userdata);
-
-struct FormatWriter
+class FormatWriter
 {
-    int type;
-    std::string name;
+public:
+    FormatWriter(MbBiWriter *biw);
+    virtual ~FormatWriter();
 
-    // Callbacks
-    FormatWriterSetOption set_option_cb;
-    FormatWriterGetHeader get_header_cb;
-    FormatWriterWriteHeader write_header_cb;
-    FormatWriterGetEntry get_entry_cb;
-    FormatWriterWriteEntry write_entry_cb;
-    FormatWriterWriteData write_data_cb;
-    FormatWriterFinishEntry finish_entry_cb;
-    FormatWriterClose close_cb;
-    FormatWriterFree free_cb;
-    void *userdata;
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatWriter)
+
+    virtual int type() = 0;
+    virtual std::string name() = 0;
+
+    virtual int init();
+    virtual int set_option(const char *key, const char *value);
+    virtual int get_header(Header &header) = 0;
+    virtual int write_header(const Header &header) = 0;
+    virtual int get_entry(Entry &entry) = 0;
+    virtual int write_entry(const Entry &entry) = 0;
+    virtual int write_data(const void *buf, size_t buf_size,
+                           size_t &bytes_written) = 0;
+    virtual int finish_entry();
+    virtual int close();
+
+protected:
+    MbBiWriter *_biw;
 };
 
 enum WriterState : unsigned short
@@ -127,29 +118,14 @@ struct MbBiWriter
     int error_code;
     std::string error_string;
 
-    FormatWriter format;
-    bool format_set;
+    std::unique_ptr<FormatWriter> format;
 
     Entry entry;
     Header header;
 };
 
 int _writer_register_format(MbBiWriter *biw,
-                            void *userdata,
-                            int type,
-                            const std::string &name,
-                            FormatWriterSetOption set_option_cb,
-                            FormatWriterGetHeader get_header_cb,
-                            FormatWriterWriteHeader write_header_cb,
-                            FormatWriterGetEntry get_entry_cb,
-                            FormatWriterWriteEntry write_entry_cb,
-                            FormatWriterWriteData write_data_cb,
-                            FormatWriterFinishEntry finish_entry_cb,
-                            FormatWriterClose close_cb,
-                            FormatWriterFree free_cb);
-
-int _writer_free_format(MbBiWriter *biw,
-                        FormatWriter *format);
+                            std::unique_ptr<FormatWriter> format);
 
 }
 }

@@ -24,6 +24,7 @@
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/format/sony_elf_p.h"
 #include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
 namespace mb
@@ -33,30 +34,35 @@ namespace bootimg
 namespace sonyelf
 {
 
-struct SonyElfReaderCtx
+class SonyElfFormatReader : public FormatReader
 {
+public:
+    SonyElfFormatReader(MbBiReader *bir);
+    virtual ~SonyElfFormatReader();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SonyElfFormatReader)
+
+    virtual int type();
+    virtual std::string name();
+
+    virtual int bid(int best_bid);
+    virtual int read_header(Header &header);
+    virtual int read_entry(Entry &entry);
+    virtual int go_to_entry(Entry &entry, int entry_type);
+    virtual int read_data(void *buf, size_t buf_size, size_t &bytes_read);
+
+    static int find_sony_elf_header(MbBiReader *bir, File &file,
+                                    Sony_Elf32_Ehdr &header_out);
+
+private:
     // Header values
-    Sony_Elf32_Ehdr hdr;
+    Sony_Elf32_Ehdr _hdr;
 
-    bool have_header;
+    bool _have_header;
 
-    SegmentReader seg;
+    SegmentReader _seg;
 };
-
-int find_sony_elf_header(MbBiReader *bir, File &file,
-                         Sony_Elf32_Ehdr &header_out);
-
-int sony_elf_reader_bid(MbBiReader *bir, void *userdata, int best_bid);
-int sony_elf_reader_read_header(MbBiReader *bir, void *userdata,
-                                Header &header);
-int sony_elf_reader_read_entry(MbBiReader *bir, void *userdata,
-                               Entry &entry);
-int sony_elf_reader_go_to_entry(MbBiReader *bir, void *userdata,
-                                Entry &entry, int entry_type);
-int sony_elf_reader_read_data(MbBiReader *bir, void *userdata,
-                              void *buf, size_t buf_size,
-                              size_t &bytes_read);
-int sony_elf_reader_free(MbBiReader *bir, void *userdata);
 
 }
 }

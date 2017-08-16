@@ -34,7 +34,7 @@ typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 using namespace mb::bootimg::android;
 
-// Tests for find_android_header()
+// Tests for find_header()
 
 TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
 {
@@ -50,8 +50,9 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
-                                  header, offset), RET_OK);
+    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+                                               MAX_HEADER_OFFSET, header,
+                                               offset), RET_OK);
 }
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
@@ -71,8 +72,9 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     // Seek to bad location initially
     ASSERT_TRUE(file.seek(10, SEEK_SET, nullptr));
 
-    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
-                                  header, offset), RET_OK);
+    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+                                               MAX_HEADER_OFFSET, header,
+                                               offset), RET_OK);
 }
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
@@ -86,8 +88,9 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET + 1,
-                                  header, offset), RET_WARN);
+    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+                                               MAX_HEADER_OFFSET + 1, header,
+                                               offset), RET_WARN);
     ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Max header offset"));
 }
@@ -103,8 +106,9 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
-                                  header, offset), RET_WARN);
+    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+                                               MAX_HEADER_OFFSET, header,
+                                               offset), RET_WARN);
     ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "Android magic not found"));
 }
@@ -120,8 +124,9 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
     mb::MemoryFile file(BOOT_MAGIC, BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_android_header(bir.get(), file, MAX_HEADER_OFFSET,
-                                  header, offset), RET_WARN);
+    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+                                               MAX_HEADER_OFFSET, header,
+                                               offset), RET_WARN);
     ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "exceeds file size"));
 }
@@ -154,7 +159,8 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+                                                                source, offset),
               RET_OK);
 }
 
@@ -176,7 +182,8 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+                                                                source, offset),
               RET_WARN);
     ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
@@ -209,13 +216,14 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_samsung_seandroid_magic(bir.get(), file, source, offset),
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+                                                                source, offset),
               RET_WARN);
     ASSERT_TRUE(strstr(reader_error_string(bir.get()),
                        "SEAndroid magic not found"));
 }
 
-// Tests for android_set_header()
+// Tests for convert_header()
 
 TEST(AndroidSetHeaderTest, ValuesShouldMatch)
 {
@@ -239,7 +247,7 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
              "Test cmdline");
     memset(ahdr.id, 0xff, sizeof(ahdr.id));
 
-    ASSERT_EQ(android_set_header(ahdr, header), RET_OK);
+    ASSERT_EQ(AndroidFormatReader::convert_header(ahdr, header), RET_OK);
 
     ASSERT_EQ(header.supported_fields(), SUPPORTED_FIELDS);
 

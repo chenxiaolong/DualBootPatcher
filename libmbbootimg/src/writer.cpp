@@ -228,116 +228,63 @@ static struct
     },
 };
 
+FormatWriter::FormatWriter(MbBiWriter *biw)
+    : _biw(biw)
+{
+}
+
+FormatWriter::~FormatWriter()
+{
+}
+
+int FormatWriter::init()
+{
+    return RET_OK;
+}
+
+int FormatWriter::set_option(const char *key, const char *value)
+{
+    (void) key;
+    (void) value;
+    return RET_OK;
+}
+
+int FormatWriter::finish_entry()
+{
+    return RET_OK;
+}
+
+int FormatWriter::close()
+{
+    return RET_OK;
+}
+
 /*!
  * \brief Register a format writer
  *
- * Register a format writer with an MbBiWriter. If the function fails,
- * \p free_cb will be called to clean up the resources.
+ * Register a format writer with an MbBiWriter. The MbBiWriter will take
+ * ownership of \p format and will clean up its resources automatically
+ * (regardless if this function fails).
  *
  * \param biw MbBiWriter
- * \param userdata User callback data
- * \param type Format type (must be one of \ref MB_BI_FORMAT_CODES)
- * \param name Format name (must be one of \ref MB_BI_FORMAT_NAMES)
- * \param set_option_cb Set option callback (optional)
- * \param get_header_cb Get header callback (required)
- * \param write_header_cb Write header callback (required)
- * \param get_entry_cb Get entry callback (required)
- * \param write_entry_cb Write entry callback (required)
- * \param write_data_cb Write data callback (required)
- * \param finish_entry_cb Finish entry callback (optional)
- * \param close_cb Close callback (optional)
- * \param free_cb Free callback (optional)
+ * \param format FormatWriter to register
  *
  * \return
  *   * #RET_OK if the format is successfully registered
  *   * \<= #RET_FAILED if an error occurs
  */
 int _writer_register_format(MbBiWriter *biw,
-                            void *userdata,
-                            int type,
-                            const std::string &name,
-                            FormatWriterSetOption set_option_cb,
-                            FormatWriterGetHeader get_header_cb,
-                            FormatWriterWriteHeader write_header_cb,
-                            FormatWriterGetEntry get_entry_cb,
-                            FormatWriterWriteEntry write_entry_cb,
-                            FormatWriterWriteData write_data_cb,
-                            FormatWriterFinishEntry finish_entry_cb,
-                            FormatWriterClose close_cb,
-                            FormatWriterFree free_cb)
+                            std::unique_ptr<FormatWriter> format)
 {
-    int ret;
-    FormatWriter format;
+    WRITER_ENSURE_STATE(biw, WriterState::NEW);
 
-    // Check state, but ensure that format is freed if this function is called
-    // in an incorect state
-    WRITER_ENSURE_STATE_GOTO(biw, WriterState::NEW, ret, done);
-
-    format.type = type;
-    format.name = name;
-    format.set_option_cb = set_option_cb;
-    format.get_header_cb = get_header_cb;
-    format.write_header_cb = write_header_cb;
-    format.get_entry_cb = get_entry_cb;
-    format.write_entry_cb = write_entry_cb;
-    format.write_data_cb = write_data_cb;
-    format.finish_entry_cb = finish_entry_cb;
-    format.close_cb = close_cb;
-    format.free_cb = free_cb;
-    format.userdata = userdata;
-
-    // Clear old format
-    if (biw->format_set) {
-        _writer_free_format(biw, &biw->format);
-    }
-
-    // Set new format
-    biw->format = format;
-    biw->format_set = true;
-
-    ret = RET_OK;
-
-done:
+    int ret = format->init();
     if (ret != RET_OK) {
-        int ret2 = _writer_free_format(biw, &format);
-        if (ret2 < ret) {
-            ret = ret2;
-        }
+        return ret;
     }
 
-    return ret;
-}
-
-/*!
- * \brief Free a format writer
- *
- * \note Regardless of the return value, the format writer's resources will have
- *       been cleaned up. The return value only exists to indicate if an error
- *       occurs in the process of cleaning up.
- *
- * \note If \p format is allocated on the heap, it is up to the caller to free
- *       its memory.
- *
- * \param biw MbBiWriter
- * \param format Format writer to clean up
- *
- * \return
- *   * #RET_OK if the resources for \p format are successfully freed
- *   * \<= #RET_WARN if an error occurs (though the resources will still be
- *     cleaned up)
- */
-int _writer_free_format(MbBiWriter *biw, FormatWriter *format)
-{
-    WRITER_ENSURE_STATE(biw, WriterState::ANY);
-    int ret = RET_OK;
-
-    if (format) {
-        if (format->free_cb) {
-            ret = format->free_cb(biw, format->userdata);
-        }
-    }
-
-    return ret;
+    biw->format = std::move(format);
+    return RET_OK;
 }
 
 /*!
@@ -369,18 +316,11 @@ MbBiWriter * writer_new()
  */
 int writer_free(MbBiWriter *biw)
 {
-    int ret = RET_OK, ret2;
+    int ret = RET_OK;
 
     if (biw) {
         if (biw->state != WriterState::CLOSED) {
             ret = writer_close(biw);
-        }
-
-        if (biw->format_set) {
-            ret2 = _writer_free_format(biw, &biw->format);
-            if (ret2 < ret) {
-                ret = ret2;
-            }
         }
 
         delete biw;
@@ -468,7 +408,7 @@ int writer_open(MbBiWriter *biw, File *file, bool owned)
     // Ensure that the file is freed even if called in an incorrect state
     WRITER_ENSURE_STATE_GOTO(biw, WriterState::NEW, ret, done);
 
-    if (!biw->format_set) {
+    if (!biw->format) {
         writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                          "No writer format registered");
         ret = RET_FAILED;
@@ -510,8 +450,8 @@ int writer_close(MbBiWriter *biw)
 
     // Avoid double-closing or closing nothing
     if (!(biw->state & (WriterState::CLOSED | WriterState::NEW))) {
-        if (biw->format_set && biw->format.close_cb) {
-            ret = biw->format.close_cb(biw, biw->format.userdata);
+        if (!!biw->format) {
+            ret = biw->format->close();
         }
 
         if (biw->file && biw->file_owned) {
@@ -586,14 +526,7 @@ int writer_get_header2(MbBiWriter *biw, Header &header)
 
     header.clear();
 
-    if (!biw->format.get_header_cb) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Missing format get_header_cb");
-        biw->state = WriterState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = biw->format.get_header_cb(biw, biw->format.userdata, header);
+    ret = biw->format->get_header(header);
     if (ret == RET_OK) {
         // Don't alter state
     } else if (ret <= RET_FATAL) {
@@ -623,14 +556,7 @@ int writer_write_header(MbBiWriter *biw, const Header &header)
     WRITER_ENSURE_STATE(biw, WriterState::HEADER);
     int ret;
 
-    if (!biw->format.write_header_cb) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Missing format write_header_cb");
-        biw->state = WriterState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = biw->format.write_header_cb(biw, biw->format.userdata, header);
+    ret = biw->format->write_header(header);
     if (ret == RET_OK) {
         biw->state = WriterState::ENTRY;
     } else if (ret <= RET_FATAL) {
@@ -693,9 +619,8 @@ int writer_get_entry2(MbBiWriter *biw, Entry &entry)
     int ret;
 
     // Finish current entry
-    if (biw->state == WriterState::DATA && biw->format.finish_entry_cb) {
-        ret = biw->format.finish_entry_cb(biw, biw->format.userdata);
-
+    if (biw->state == WriterState::DATA) {
+        ret = biw->format->finish_entry();
         if (ret == RET_OK) {
             biw->state = WriterState::ENTRY;
         } else if (ret <= RET_FATAL) {
@@ -708,14 +633,7 @@ int writer_get_entry2(MbBiWriter *biw, Entry &entry)
 
     entry.clear();
 
-    if (!biw->format.get_entry_cb) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Missing format get_entry_cb");
-        biw->state = WriterState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = biw->format.get_entry_cb(biw, biw->format.userdata, entry);
+    ret = biw->format->get_entry(entry);
     if (ret == RET_OK) {
         biw->state = WriterState::ENTRY;
     } else if (ret <= RET_FATAL) {
@@ -746,14 +664,7 @@ int writer_write_entry(MbBiWriter *biw, const Entry &entry)
     WRITER_ENSURE_STATE(biw, WriterState::ENTRY);
     int ret;
 
-    if (!biw->format.write_entry_cb) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Missing format write_entry_cb");
-        biw->state = WriterState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = biw->format.write_entry_cb(biw, biw->format.userdata, entry);
+    ret = biw->format->write_entry(entry);
     if (ret == RET_OK) {
         biw->state = WriterState::DATA;
     } else if (ret <= RET_FATAL) {
@@ -781,15 +692,7 @@ int writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
     WRITER_ENSURE_STATE(biw, WriterState::DATA);
     int ret;
 
-    if (!biw->format.write_data_cb) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Missing format write_data_cb");
-        biw->state = WriterState::FATAL;
-        return RET_FATAL;
-    }
-
-    ret = biw->format.write_data_cb(biw, biw->format.userdata, buf, size,
-                                    bytes_written);
+    ret = biw->format->write_data(buf, size, bytes_written);
     if (ret == RET_OK) {
         // Do not alter state. Stay in WriterState::DATA
     } else if (ret <= RET_FATAL) {
@@ -808,13 +711,13 @@ int writer_write_data(MbBiWriter *biw, const void *buf, size_t size,
  */
 int writer_format_code(MbBiWriter *biw)
 {
-    if (!biw->format_set) {
+    if (!biw->format) {
         writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                          "No format selected");
         return -1;
     }
 
-    return biw->format.type;
+    return biw->format->type();
 }
 
 /*!
@@ -826,13 +729,13 @@ int writer_format_code(MbBiWriter *biw)
  */
 std::string writer_format_name(MbBiWriter *biw)
 {
-    if (!biw->format_set) {
+    if (!biw->format) {
         writer_set_error(biw, ERROR_PROGRAMMER_ERROR,
                          "No format selected");
         return {};
     }
 
-    return biw->format.name;
+    return biw->format->name();
 }
 
 /*!

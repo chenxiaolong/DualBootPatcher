@@ -46,6 +46,6 @@ TEST(BootImgReaderTest, CheckInitialValues)
     ASSERT_TRUE(bir->error_string.empty());
 
     // No formats registered
-    ASSERT_EQ(bir->formats_len, 0u);
+    ASSERT_TRUE(bir->formats.empty());
     ASSERT_EQ(bir->format, nullptr);
 }

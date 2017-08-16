@@ -176,37 +176,54 @@ static int _mtk_compute_sha1(MbBiWriter *biw, SegmentWriter &seg,
     return RET_OK;
 }
 
-int mtk_writer_get_header(MbBiWriter *biw, void *userdata, Header &header)
+MtkFormatWriter::MtkFormatWriter(MbBiWriter *biw)
+    : FormatWriter(biw)
+    , _hdr()
+    , _file_size()
+    , _seg()
 {
-    (void) biw;
-    (void) userdata;
+}
 
+MtkFormatWriter::~MtkFormatWriter()
+{
+}
+
+int MtkFormatWriter::type()
+{
+    return FORMAT_MTK;
+}
+
+std::string MtkFormatWriter::name()
+{
+    return FORMAT_NAME_MTK;
+}
+
+int MtkFormatWriter::get_header(Header &header)
+{
     header.set_supported_fields(SUPPORTED_FIELDS);
 
     return RET_OK;
 }
 
-int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
-                            const Header &header)
+int MtkFormatWriter::write_header(const Header &header)
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
     int ret;
 
     // Construct header
-    memset(&ctx->hdr, 0, sizeof(ctx->hdr));
-    memcpy(ctx->hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
+    memset(&_hdr, 0, sizeof(_hdr));
+    memcpy(_hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
 
     if (auto address = header.kernel_address()) {
-        ctx->hdr.kernel_addr = *address;
+        _hdr.kernel_addr = *address;
     }
     if (auto address = header.ramdisk_address()) {
-        ctx->hdr.ramdisk_addr = *address;
+        _hdr.ramdisk_addr = *address;
     }
     if (auto address = header.secondboot_address()) {
-        ctx->hdr.second_addr = *address;
+        _hdr.second_addr = *address;
     }
     if (auto address = header.kernel_tags_address()) {
-        ctx->hdr.tags_addr = *address;
+        _hdr.tags_addr = *address;
     }
     if (auto page_size = header.page_size()) {
         switch (*page_size) {
@@ -217,40 +234,40 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
         case 32768:
         case 65536:
         case 131072:
-            ctx->hdr.page_size = *page_size;
+            _hdr.page_size = *page_size;
             break;
         default:
-            writer_set_error(biw, ERROR_FILE_FORMAT,
+            writer_set_error(_biw, ERROR_FILE_FORMAT,
                              "Invalid page size: %" PRIu32, *page_size);
             return RET_FAILED;
         }
     } else {
-        writer_set_error(biw, ERROR_FILE_FORMAT,
+        writer_set_error(_biw, ERROR_FILE_FORMAT,
                          "Page size field is required");
         return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
-        if (board_name->size() >= sizeof(ctx->hdr.name)) {
-            writer_set_error(biw, ERROR_FILE_FORMAT,
+        if (board_name->size() >= sizeof(_hdr.name)) {
+            writer_set_error(_biw, ERROR_FILE_FORMAT,
                              "Board name too long");
             return RET_FAILED;
         }
 
-        strncpy(reinterpret_cast<char *>(ctx->hdr.name), board_name->c_str(),
-                sizeof(ctx->hdr.name) - 1);
-        ctx->hdr.name[sizeof(ctx->hdr.name) - 1] = '\0';
+        strncpy(reinterpret_cast<char *>(_hdr.name), board_name->c_str(),
+                sizeof(_hdr.name) - 1);
+        _hdr.name[sizeof(_hdr.name) - 1] = '\0';
     }
     if (auto cmdline = header.kernel_cmdline()) {
-        if (cmdline->size() >= sizeof(ctx->hdr.cmdline)) {
-            writer_set_error(biw, ERROR_FILE_FORMAT,
+        if (cmdline->size() >= sizeof(_hdr.cmdline)) {
+            writer_set_error(_biw, ERROR_FILE_FORMAT,
                              "Kernel cmdline too long");
             return RET_FAILED;
         }
 
-        strncpy(reinterpret_cast<char *>(ctx->hdr.cmdline), cmdline->c_str(),
-                sizeof(ctx->hdr.cmdline) - 1);
-        ctx->hdr.cmdline[sizeof(ctx->hdr.cmdline) - 1] = '\0';
+        strncpy(reinterpret_cast<char *>(_hdr.cmdline), cmdline->c_str(),
+                sizeof(_hdr.cmdline) - 1);
+        _hdr.cmdline[sizeof(_hdr.cmdline) - 1] = '\0';
     }
 
     // TODO: UNUSED
@@ -258,153 +275,143 @@ int mtk_writer_write_header(MbBiWriter *biw, void *userdata,
 
     // Clear existing entries (none should exist unless this function fails and
     // the user reattempts to call it)
-    ctx->seg.entries_clear();
+    _seg.entries_clear();
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
-                               0, false, 0, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
+                           0, false, 0, _biw);
     if (ret != RET_OK) return ret;
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_KERNEL,
-                               0, false, ctx->hdr.page_size, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
+                           0, false, _hdr.page_size, _biw);
     if (ret != RET_OK) return ret;
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
-                               0, false, 0, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
+                           0, false, 0, _biw);
     if (ret != RET_OK) return ret;
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_RAMDISK,
-                               0, false, ctx->hdr.page_size, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
+                           0, false, _hdr.page_size, _biw);
     if (ret != RET_OK) return ret;
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                               0, false, ctx->hdr.page_size, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
+                           0, false, _hdr.page_size, _biw);
     if (ret != RET_OK) return ret;
 
-    ret = ctx->seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                               0, false, ctx->hdr.page_size, biw);
+    ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
+                           0, false, _hdr.page_size, _biw);
     if (ret != RET_OK) return ret;
 
     // Start writing after first page
-    if (!biw->file->seek(ctx->hdr.page_size, SEEK_SET, nullptr)) {
-        writer_set_error(biw, biw->file->error().value() /* TODO */,
+    if (!_biw->file->seek(_hdr.page_size, SEEK_SET, nullptr)) {
+        writer_set_error(_biw, _biw->file->error().value() /* TODO */,
                          "Failed to seek to first page: %s",
-                         biw->file->error_string().c_str());
-        return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                         _biw->file->error_string().c_str());
+        return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int mtk_writer_get_entry(MbBiWriter *biw, void *userdata,
-                         Entry &entry)
+int MtkFormatWriter::get_entry(Entry &entry)
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-
-    return ctx->seg.get_entry(*biw->file, entry, biw);
+    return _seg.get_entry(*_biw->file, entry, _biw);
 }
 
-int mtk_writer_write_entry(MbBiWriter *biw, void *userdata,
-                           const Entry &entry)
+int MtkFormatWriter::write_entry(const Entry &entry)
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-
-    return ctx->seg.write_entry(*biw->file, entry, biw);
+    return _seg.write_entry(*_biw->file, entry, _biw);
 }
 
-int mtk_writer_write_data(MbBiWriter *biw, void *userdata,
-                          const void *buf, size_t buf_size,
-                          size_t &bytes_written)
+int MtkFormatWriter::write_data(const void *buf, size_t buf_size,
+                                size_t &bytes_written)
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
-
-    return ctx->seg.write_data(*biw->file, buf, buf_size, bytes_written, biw);
+    return _seg.write_data(*_biw->file, buf, buf_size, bytes_written, _biw);
 }
 
-int mtk_writer_finish_entry(MbBiWriter *biw, void *userdata)
+int MtkFormatWriter::finish_entry()
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
     int ret;
 
-    ret = ctx->seg.finish_entry(*biw->file, biw);
+    ret = _seg.finish_entry(*_biw->file, _biw);
     if (ret != RET_OK) {
         return ret;
     }
 
-    auto const *swentry = ctx->seg.entry();
+    auto const *swentry = _seg.entry();
 
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
             && swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
-        writer_set_error(biw, ERROR_FILE_FORMAT,
+        writer_set_error(_biw, ERROR_FILE_FORMAT,
                          "Entry size too large to accomodate MTK header");
         return RET_FATAL;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
             && swentry->size != sizeof(MtkHeader)) {
-        writer_set_error(biw, ERROR_FILE_FORMAT,
+        writer_set_error(_biw, ERROR_FILE_FORMAT,
                          "Invalid size for MTK header entry");
         return RET_FATAL;
     }
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
-        ctx->hdr.kernel_size = swentry->size + sizeof(MtkHeader);
+        _hdr.kernel_size = swentry->size + sizeof(MtkHeader);
         break;
     case ENTRY_TYPE_RAMDISK:
-        ctx->hdr.ramdisk_size = swentry->size + sizeof(MtkHeader);
+        _hdr.ramdisk_size = swentry->size + sizeof(MtkHeader);
         break;
     case ENTRY_TYPE_SECONDBOOT:
-        ctx->hdr.second_size = swentry->size;
+        _hdr.second_size = swentry->size;
         break;
     case ENTRY_TYPE_DEVICE_TREE:
-        ctx->hdr.dt_size = swentry->size;
+        _hdr.dt_size = swentry->size;
         break;
     }
 
     return RET_OK;
 }
 
-int mtk_writer_close(MbBiWriter *biw, void *userdata)
+int MtkFormatWriter::close()
 {
-    MtkWriterCtx *const ctx = static_cast<MtkWriterCtx *>(userdata);
     int ret;
     size_t n;
 
-    if (!ctx->have_file_size) {
-        if (!biw->file->seek(0, SEEK_CUR, &ctx->file_size)) {
-            writer_set_error(biw, biw->file->error().value() /* TODO */,
+    if (!_file_size) {
+        uint64_t file_size;
+        if (!_biw->file->seek(0, SEEK_CUR, &file_size)) {
+            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
                              "Failed to get file offset: %s",
-                             biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                             _biw->file->error_string().c_str());
+            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        ctx->have_file_size = true;
+        _file_size = file_size;
     }
 
-    auto const *swentry = ctx->seg.entry();
+    auto const *swentry = _seg.entry();
 
     // If successful, finish up the boot image
     if (!swentry) {
         // Truncate to set size
-        if (!biw->file->truncate(ctx->file_size)) {
-            writer_set_error(biw, biw->file->error().value() /* TODO */,
+        if (!_biw->file->truncate(*_file_size)) {
+            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
                              "Failed to truncate file: %s",
-                             biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                             _biw->file->error_string().c_str());
+            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Update MTK header sizes
-        for (size_t i = 0; i < ctx->seg.entries_size(); ++i) {
-            auto const *entry = ctx->seg.entries_get(i);
+        for (size_t i = 0; i < _seg.entries_size(); ++i) {
+            auto const *entry = _seg.entries_get(i);
             switch (entry->type) {
             case ENTRY_TYPE_MTK_KERNEL_HEADER:
-                ret = _mtk_header_update_size(biw, *biw->file, entry->offset,
-                                              ctx->hdr.kernel_size
+                ret = _mtk_header_update_size(_biw, *_biw->file, entry->offset,
+                                              _hdr.kernel_size
                                               - sizeof(MtkHeader));
                 break;
             case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-                ret = _mtk_header_update_size(biw, *biw->file, entry->offset,
-                                              ctx->hdr.ramdisk_size
+                ret = _mtk_header_update_size(_biw, *_biw->file, entry->offset,
+                                              _hdr.ramdisk_size
                                               - sizeof(MtkHeader));
                 break;
             default:
@@ -420,41 +427,34 @@ int mtk_writer_close(MbBiWriter *biw, void *userdata)
         // We can't fill in the sizes in the MTK headers when we're writing
         // them. Thus, if we calculated the SHA1sum during write, it would be
         // incorrect.
-        ret = _mtk_compute_sha1(biw, ctx->seg, *biw->file,
-                                reinterpret_cast<unsigned char *>(ctx->hdr.id));
+        ret = _mtk_compute_sha1(_biw, _seg, *_biw->file,
+                                reinterpret_cast<unsigned char *>(_hdr.id));
         if (ret != RET_OK) {
             return ret;
         }
 
         // Convert fields back to little-endian
-        android::AndroidHeader hdr = ctx->hdr;
+        android::AndroidHeader hdr = _hdr;
         android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
-        if (!biw->file->seek(0, SEEK_SET, nullptr)) {
-            writer_set_error(biw, biw->file->error().value() /* TODO */,
+        if (!_biw->file->seek(0, SEEK_SET, nullptr)) {
+            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
                              "Failed to seek to beginning: %s",
-                             biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                             _biw->file->error_string().c_str());
+            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
-        if (!file_write_fully(*biw->file, &hdr, sizeof(hdr), n)
+        if (!file_write_fully(*_biw->file, &hdr, sizeof(hdr), n)
                 || n != sizeof(hdr)) {
-            writer_set_error(biw, biw->file->error().value() /* TODO */,
+            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
                              "Failed to write header: %s",
-                             biw->file->error_string().c_str());
-            return biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                             _biw->file->error_string().c_str());
+            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
 
-    return RET_OK;
-}
-
-int mtk_writer_free(MbBiWriter *bir, void *userdata)
-{
-    (void) bir;
-    delete static_cast<MtkWriterCtx *>(userdata);
     return RET_OK;
 }
 
@@ -466,29 +466,15 @@ int mtk_writer_free(MbBiWriter *bir, void *userdata)
  * \param biw MbBiWriter
  *
  * \return
- *   * #RET_OK if the format is successfully enabled
- *   * #RET_WARN if the format is already enabled
- *   * \<= #RET_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully set
+ *   * \<= #RET_WARN if an error occurs
  */
 int writer_set_format_mtk(MbBiWriter *biw)
 {
     using namespace mtk;
 
-    MtkWriterCtx *const ctx = new MtkWriterCtx();
-
-    return _writer_register_format(biw,
-                                   ctx,
-                                   FORMAT_MTK,
-                                   FORMAT_NAME_MTK,
-                                   nullptr,
-                                   &mtk_writer_get_header,
-                                   &mtk_writer_write_header,
-                                   &mtk_writer_get_entry,
-                                   &mtk_writer_write_entry,
-                                   &mtk_writer_write_data,
-                                   &mtk_writer_finish_entry,
-                                   &mtk_writer_close,
-                                   &mtk_writer_free);
+    std::unique_ptr<FormatWriter> format{new MtkFormatWriter(biw)};
+    return _writer_register_format(biw, std::move(format));
 }
 
 }
