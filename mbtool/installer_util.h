@@ -26,12 +26,6 @@
 
 namespace mb
 {
-namespace bootimg
-{
-struct MbBiReader;
-struct MbBiWriter;
-}
-
 class File;
 
 class InstallerUtil

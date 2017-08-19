@@ -19,8 +19,6 @@
 
 #include <gtest/gtest.h>
 
-#include <memory>
-
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
 
@@ -29,17 +27,13 @@
 #include "mbbootimg/reader.h"
 
 using namespace mb::bootimg;
-
-typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
-
 using namespace mb::bootimg::android;
 
 // Tests for find_header()
 
 TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
@@ -50,15 +44,13 @@ TEST(FindAndroidHeaderTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(&source, sizeof(source));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
-                                               MAX_HEADER_OFFSET, header,
-                                               offset), RET_OK);
+    ASSERT_EQ(AndroidFormatReader::find_header(reader, file, MAX_HEADER_OFFSET,
+                                               header, offset), RET_OK);
 }
 
 TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
@@ -72,15 +64,13 @@ TEST(FindAndroidHeaderTest, BadInitialFileOffsetShouldSucceed)
     // Seek to bad location initially
     ASSERT_TRUE(file.seek(10, SEEK_SET, nullptr));
 
-    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
-                                               MAX_HEADER_OFFSET, header,
-                                               offset), RET_OK);
+    ASSERT_EQ(AndroidFormatReader::find_header(reader, file, MAX_HEADER_OFFSET,
+                                               header, offset), RET_OK);
 }
 
 TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader header;
     uint64_t offset;
@@ -88,17 +78,16 @@ TEST(FindAndroidHeaderTest, OutOfBoundsMaximumOffsetShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
+    ASSERT_EQ(AndroidFormatReader::find_header(reader, file,
                                                MAX_HEADER_OFFSET + 1, header,
                                                offset), RET_WARN);
-    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
-                       "Max header offset"));
+    ASSERT_NE(reader.error_string().find("Max header offset"),
+              std::string::npos);
 }
 
 TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader header;
     uint64_t offset;
@@ -106,17 +95,15 @@ TEST(FindAndroidHeaderTest, MissingMagicShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
-                                               MAX_HEADER_OFFSET, header,
-                                               offset), RET_WARN);
-    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
-                       "Android magic not found"));
+    ASSERT_EQ(AndroidFormatReader::find_header(reader, file, MAX_HEADER_OFFSET,
+                                               header, offset), RET_WARN);
+    ASSERT_NE(reader.error_string().find("Android magic not found"),
+              std::string::npos);
 }
 
 TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader header;
     uint64_t offset;
@@ -124,19 +111,17 @@ TEST(FindAndroidHeaderTest, TruncatedHeaderShouldWarn)
     mb::MemoryFile file(BOOT_MAGIC, BOOT_MAGIC_SIZE);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_header(bir.get(), file,
-                                               MAX_HEADER_OFFSET, header,
-                                               offset), RET_WARN);
-    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
-                       "exceeds file size"));
+    ASSERT_EQ(AndroidFormatReader::find_header(reader, file, MAX_HEADER_OFFSET,
+                                               header, offset), RET_WARN);
+    ASSERT_NE(reader.error_string().find("exceeds file size"),
+              std::string::npos);
 }
 
 // Tests for find_samsung_seandroid_magic()
 
 TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
@@ -159,15 +144,14 @@ TEST(FindSEAndroidMagicTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(reader, file,
                                                                 source, offset),
               RET_OK);
 }
 
 TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
@@ -182,17 +166,16 @@ TEST(FindSEAndroidMagicTest, UndersizedImageShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(reader, file,
                                                                 source, offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
-                       "SEAndroid magic not found"));
+    ASSERT_NE(reader.error_string().find("SEAndroid magic not found"),
+              std::string::npos);
 }
 
 TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
 {
-    ScopedReader bir(reader_new(), &reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     AndroidHeader source = {};
     memcpy(source.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
@@ -216,11 +199,11 @@ TEST(FindSEAndroidMagicTest, InvalidMagicShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(bir.get(), file,
+    ASSERT_EQ(AndroidFormatReader::find_samsung_seandroid_magic(reader, file,
                                                                 source, offset),
               RET_WARN);
-    ASSERT_TRUE(strstr(reader_error_string(bir.get()),
-                       "SEAndroid magic not found"));
+    ASSERT_NE(reader.error_string().find("SEAndroid magic not found"),
+              std::string::npos);
 }
 
 // Tests for convert_header()
@@ -283,12 +266,11 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
 struct AndroidReaderGoToEntryTest : testing::Test
 {
     mb::MemoryFile _file;
-    ScopedReader _bir;
+    Reader _reader;
     std::vector<unsigned char> _data;
     Header *_header;
 
     AndroidReaderGoToEntryTest()
-        : _bir(reader_new(), &reader_free)
     {
     }
 
@@ -298,8 +280,6 @@ struct AndroidReaderGoToEntryTest : testing::Test
 
     virtual void SetUp() override
     {
-        ASSERT_TRUE(!!_bir);
-
         AndroidHeader ahdr = {};
         memcpy(ahdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
         ahdr.kernel_size = 6;
@@ -318,14 +298,14 @@ struct AndroidReaderGoToEntryTest : testing::Test
         // Write secondboot
         memcpy(_data.data() + 3 * ahdr.page_size, "secondboot", 10);
 
-        ASSERT_EQ(reader_enable_format_android(_bir.get()), RET_OK);
+        ASSERT_EQ(_reader.enable_format_android(), RET_OK);
 
         _file.open(_data.data(), _data.size());
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(reader_open(_bir.get(), &_file, false), RET_OK);
+        ASSERT_EQ(_reader.open(&_file, false), RET_OK);
 
-        ASSERT_EQ(reader_read_header(_bir.get(), _header), RET_OK);
+        ASSERT_EQ(_reader.read_header(_header), RET_OK);
     }
 };
 
@@ -335,17 +315,16 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_RAMDISK),
-              RET_OK);
+    ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_RAMDISK);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 7u);
     ASSERT_EQ(memcmp(buf, "ramdisk", n), 0);
 
     // We should continue at the next entry
-    ASSERT_EQ(reader_read_entry(_bir.get(), entry), RET_OK);
+    ASSERT_EQ(_reader.read_entry(entry), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 }
@@ -356,9 +335,9 @@ TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, 0), RET_OK);
+    ASSERT_EQ(_reader.go_to_entry(entry, 0), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -369,17 +348,16 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
     char buf[50];
     size_t n;
 
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_SECONDBOOT),
-              RET_OK);
+    ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_SECONDBOOT), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 
     // Go back to kernel
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
+    ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -391,12 +369,12 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
     size_t n;
     int ret;
 
-    while ((ret = reader_read_entry(_bir.get(), entry)) == RET_OK);
+    while ((ret = _reader.read_entry(entry)) == RET_OK);
     ASSERT_EQ(ret, RET_EOF);
 
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_KERNEL), RET_OK);
+    ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_KERNEL), RET_OK);
     ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
-    ASSERT_EQ(reader_read_data(_bir.get(), buf, sizeof(buf), n), RET_OK);
+    ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
 }
@@ -405,9 +383,8 @@ TEST_F(AndroidReaderGoToEntryTest, GoToMissingEntryShouldFail)
 {
     Entry *entry;
 
-    ASSERT_EQ(reader_go_to_entry(_bir.get(), entry, ENTRY_TYPE_DEVICE_TREE),
-              RET_EOF);
+    ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_DEVICE_TREE), RET_EOF);
 
     // In EOF state now, so next read should return RET_EOF
-    ASSERT_EQ(reader_read_entry(_bir.get(), entry), RET_EOF);
+    ASSERT_EQ(_reader.read_entry(entry), RET_EOF);
 }

@@ -39,35 +39,36 @@ namespace android
 class AndroidFormatReader : public FormatReader
 {
 public:
-    AndroidFormatReader(MbBiReader *bir, bool is_bump);
+    AndroidFormatReader(Reader &reader, bool is_bump);
     virtual ~AndroidFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
 
-    virtual int type();
-    virtual std::string name();
+    virtual int type() override;
+    virtual std::string name() override;
 
-    virtual int bid(int best_bid);
-    virtual int set_option(const char *key, const char *value);
-    virtual int read_header(Header &header);
-    virtual int read_entry(Entry &entry);
-    virtual int go_to_entry(Entry &entry, int entry_type);
-    virtual int read_data(void *buf, size_t buf_size, size_t &bytes_read);
+    virtual int set_option(const char *key, const char *value) override;
+    virtual int bid(File &file, int best_bid) override;
+    virtual int read_header(File &file, Header &header) override;
+    virtual int read_entry(File &file, Entry &entry) override;
+    virtual int go_to_entry(File &file, Entry &entry, int entry_type) override;
+    virtual int read_data(File &file, void *buf, size_t buf_size,
+                          size_t &bytes_read) override;
 
-    static int find_header(MbBiReader *bir, File &file,
+    static int find_header(Reader &reader, File &file,
                            uint64_t max_header_offset,
                            AndroidHeader &header_out, uint64_t &offset_out);
-    static int find_samsung_seandroid_magic(MbBiReader *bir, File &file,
+    static int find_samsung_seandroid_magic(Reader &reader, File &file,
                                             const AndroidHeader &hdr,
                                             uint64_t &offset_out);
-    static int find_bump_magic(MbBiReader *bir, File &file,
+    static int find_bump_magic(Reader &reader, File &file,
                                const AndroidHeader &hdr, uint64_t &offset_out);
     static int convert_header(const AndroidHeader &hdr, Header &header);
 
 private:
-    int bid_android(int best_bid);
-    int bid_bump(int best_bid);
+    int bid_android(File &file, int best_bid);
+    int bid_bump(File &file, int best_bid);
 
     // Header values
     AndroidHeader _hdr;

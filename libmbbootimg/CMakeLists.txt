@@ -26,7 +26,6 @@ set(MBBOOTIMG_TESTS_SOURCES
     # Core
     tests/test_entry.cpp
     tests/test_header.cpp
-    tests/test_reader.cpp
     tests/test_writer.cpp
     # Formats
     tests/format/test_android_reader.cpp

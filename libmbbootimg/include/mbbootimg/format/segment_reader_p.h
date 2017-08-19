@@ -54,21 +54,20 @@ public:
 
     size_t entries_size() const;
     void entries_clear();
-    int entries_add(int type, uint64_t offset, uint32_t size,
-                    bool can_truncate, MbBiReader *bir);
+    int entries_add(int type, uint64_t offset, uint32_t size, bool can_truncate,
+                    Reader &reader);
 
     const SegmentReaderEntry * entry() const;
     const SegmentReaderEntry * next_entry() const;
     const SegmentReaderEntry * find_entry(int entry_type);
 
     int move_to_entry(File &file, Entry &entry,
-                      const SegmentReaderEntry &srentry,
-                      MbBiReader *bir);
+                      const SegmentReaderEntry &srentry, Reader &reader);
 
-    int read_entry(File &file, Entry &entry, MbBiReader *bir);
-    int go_to_entry(File &file, Entry &entry, int entry_type, MbBiReader *bir);
-    int read_data(File &file, void *buf, size_t buf_size,
-                  size_t &bytes_read, MbBiReader *bir);
+    int read_entry(File &file, Entry &entry, Reader &reader);
+    int go_to_entry(File &file, Entry &entry, int entry_type, Reader &reader);
+    int read_data(File &file, void *buf, size_t buf_size, size_t &bytes_read,
+                  Reader &reader);
 
 private:
     SegmentReaderState _state;

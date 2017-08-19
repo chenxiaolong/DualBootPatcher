@@ -48,7 +48,6 @@
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
-typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 
 extern "C" {
 
@@ -219,7 +218,7 @@ CLASS_METHOD(mblogSetLogcat)(JNIEnv *env, jclass clazz)
 
 struct LaBootImgCtx
 {
-    MbBiReader *bir;
+    Reader reader;
     char buf[10240];
 };
 
@@ -231,7 +230,7 @@ static la_ssize_t laBootImgReadCb(archive *a, void *userdata,
     size_t bytesRead;
     int ret;
 
-    ret = reader_read_data(ctx->bir, ctx->buf, sizeof(ctx->buf), bytesRead);
+    ret = ctx->reader.read_data(ctx->buf, sizeof(ctx->buf), bytesRead);
     if (ret == RET_EOF) {
         return 0;
     } else if (ret != RET_OK) {
@@ -247,7 +246,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
 {
     (void) clazz;
 
-    ScopedReader bir(reader_new(), &reader_free);
+    Reader reader;
     Header *header;
     Entry *entry;
     ScopedArchive a(archive_read_new(), &archive_read_free);
@@ -262,41 +261,38 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
         goto done;
     }
 
-    if (!bir) {
-        throw_exception(env, IOException, "Failed to allocate MbBiReader");
-        goto done;
-    } else if (!a) {
+    if (!a) {
         throw_exception(env, IOException, "Failed to allocate archive");
         goto done;
     }
 
     // Open input boot image
-    ret = reader_enable_format_all(bir.get());
+    ret = reader.enable_format_all();
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        reader_error_string(bir.get()));
+                        reader.error_string().c_str());
         goto done;
     }
-    ret = reader_open_filename(bir.get(), filename);
+    ret = reader.open_filename(filename);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename, reader_error_string(bir.get()));
+                        filename, reader.error_string().c_str());
         goto done;
     }
 
     // Read header
-    ret = reader_read_header(bir.get(), header);
+    ret = reader.read_header(header);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename, reader_error_string(bir.get()));
+                        filename, reader.error_string().c_str());
         goto done;
     }
 
     // Go to ramdisk
-    ret = reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
+    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
     if (ret == RET_EOF) {
         throw_exception(env, IOException,
                         "%s: Boot image is missing ramdisk", filename);
@@ -304,7 +300,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     } else if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to find ramdisk entry: %s",
-                        filename, reader_error_string(bir.get()));
+                        filename, reader.error_string().c_str());
         goto done;
     }
 
@@ -316,7 +312,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     archive_read_support_format_cpio(a.get());
 
     // Open ramdisk archive
-    ctx.bir = bir.get();
+    ctx.reader = std::move(reader);
     ret = archive_read_open(a.get(), &ctx, nullptr, &laBootImgReadCb, nullptr);
     if (ret != ARCHIVE_OK) {
         throw_exception(env, IOException,
@@ -384,8 +380,8 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 {
     (void) clazz;
 
-    ScopedReader bir1(reader_new(), &reader_free);
-    ScopedReader bir2(reader_new(), &reader_free);
+    Reader reader1;
+    Reader reader2;
     Header *header1;
     Header *header2;
     Entry *entry1;
@@ -405,57 +401,51 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
         goto done;
     }
 
-    if (!bir1 || !bir2) {
-        throw_exception(env, IOException,
-                        "Failed to allocate MbBiReader instances");
-        goto done;
-    }
-
     // Set up reader formats
-    ret = reader_enable_format_all(bir1.get());
+    ret = reader1.enable_format_all();
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        reader_error_string(bir1.get()));
+                        reader1.error_string().c_str());
         goto done;
     }
-    ret = reader_enable_format_all(bir2.get());
+    ret = reader2.enable_format_all();
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
-                        reader_error_string(bir2.get()));
+                        reader2.error_string().c_str());
         goto done;
     }
 
     // Open boot images
-    ret = reader_open_filename(bir1.get(), filename1);
+    ret = reader1.open_filename(filename1);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename1, reader_error_string(bir1.get()));
+                        filename1, reader1.error_string().c_str());
         goto done;
     }
-    ret = reader_open_filename(bir2.get(), filename2);
+    ret = reader2.open_filename(filename2);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
-                        filename2, reader_error_string(bir2.get()));
+                        filename2, reader2.error_string().c_str());
         goto done;
     }
 
     // Read headers
-    ret = reader_read_header(bir1.get(), header1);
+    ret = reader1.read_header(header1);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename1, reader_error_string(bir1.get()));
+                        filename1, reader1.error_string().c_str());
         goto done;
     }
-    ret = reader_read_header(bir2.get(), header2);
+    ret = reader2.read_header(header2);
     if (ret != RET_OK) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
-                        filename1, reader_error_string(bir2.get()));
+                        filename2, reader2.error_string().c_str());
         goto done;
     }
 
@@ -466,21 +456,21 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     // Count entries in first boot image
     {
-        while ((ret = reader_read_entry(bir1.get(), entry1)) == RET_OK) {
+        while ((ret = reader1.read_entry(entry1)) == RET_OK) {
             ++entries;
         }
 
         if (ret != RET_EOF) {
             throw_exception(env, IOException,
                             "%s: Failed to read entry: %s",
-                            filename1, reader_error_string(bir1.get()));
+                            filename1, reader1.error_string().c_str());
             goto done;
         }
     }
 
     // Compare each entry in second image to first
     {
-        while ((ret = reader_read_entry(bir2.get(), entry2)) == RET_OK) {
+        while ((ret = reader2.read_entry(entry2)) == RET_OK) {
             if (entries == 0) {
                 // Too few entries in second image
                 goto done;
@@ -488,14 +478,14 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             --entries;
 
             // Find the same entry in first image
-            ret = reader_go_to_entry(bir1.get(), entry1, *entry2->type());
+            ret = reader1.go_to_entry(entry1, *entry2->type());
             if (ret == RET_EOF) {
                 // Cannot be equal if entry is missing
                 goto done;
             } else if (ret != RET_OK) {
                 throw_exception(env, IOException,
                                 "%s: Failed to seek to entry: %s", filename1,
-                                reader_error_string(bir1.get()));
+                                reader1.error_string().c_str());
                 goto done;
             }
 
@@ -505,13 +495,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             size_t n1;
             size_t n2;
 
-            while ((ret = reader_read_data(
-                    bir1.get(), buf1, sizeof(buf1), n1)) == RET_OK) {
-                ret = reader_read_data(bir2.get(), buf2, n1, n2);
+            while ((ret = reader1.read_data(
+                    buf1, sizeof(buf1), n1)) == RET_OK) {
+                ret = reader2.read_data(buf2, n1, n2);
                 if (ret != RET_OK) {
                     throw_exception(env, IOException,
                                     "%s: Failed to read data: %s", filename2,
-                                    reader_error_string(bir2.get()));
+                                    reader2.error_string().c_str());
                     goto done;
                 }
 
@@ -524,7 +514,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             if (ret != RET_EOF) {
                 throw_exception(env, IOException,
                                 "%s: Failed to read data: %s", filename1,
-                                reader_error_string(bir1.get()));
+                                reader1.error_string().c_str());
                 goto done;
             }
         }
@@ -532,7 +522,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
         if (ret != RET_EOF) {
             throw_exception(env, IOException,
                             "%s: Failed to read entry: %s",
-                            filename2, reader_error_string(bir2.get()));
+                            filename2, reader2.error_string().c_str());
             goto done;
         }
     }

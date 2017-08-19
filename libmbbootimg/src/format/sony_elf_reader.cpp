@@ -46,8 +46,8 @@ namespace bootimg
 namespace sonyelf
 {
 
-SonyElfFormatReader::SonyElfFormatReader(MbBiReader *bir)
-    : FormatReader(bir)
+SonyElfFormatReader::SonyElfFormatReader(Reader &reader)
+    : FormatReader(reader)
     , _hdr()
     , _have_header()
     , _seg()
@@ -77,7 +77,7 @@ std::string SonyElfFormatReader::name()
  *   * #RET_FAILED if any file operations fail non-fatally
  *   * #RET_FATAL if any file operations fail fatally
  */
-int SonyElfFormatReader::bid(int best_bid)
+int SonyElfFormatReader::bid(File &file, int best_bid)
 {
     int bid = 0;
     int ret;
@@ -88,7 +88,7 @@ int SonyElfFormatReader::bid(int best_bid)
     }
 
     // Find the Sony ELF header
-    ret = find_sony_elf_header(_bir, *_bir->file, _hdr);
+    ret = find_sony_elf_header(_reader, file, _hdr);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _have_header = true;
@@ -103,14 +103,14 @@ int SonyElfFormatReader::bid(int best_bid)
     return bid;
 }
 
-int SonyElfFormatReader::read_header(Header &header)
+int SonyElfFormatReader::read_header(File &file, Header &header)
 {
     int ret;
 
     if (!_have_header) {
         // A bid might not have been performed if the user forced a particular
         // format
-        ret = find_sony_elf_header(_bir, *_bir->file, _hdr);
+        ret = find_sony_elf_header(_reader, file, _hdr);
         if (ret < 0) {
             return ret;
         }
@@ -142,23 +142,23 @@ int SonyElfFormatReader::read_header(Header &header)
         Sony_Elf32_Phdr phdr;
         size_t n;
 
-        if (!_bir->file->seek(pos, SEEK_SET, nullptr)) {
-            reader_set_error(_bir, _bir->file->error().value() /* TODO */,
-                             "Failed to seek to segment %" PRIu16
-                             " at %" PRIu64 ": %s", i, pos,
-                             _bir->file->error_string().c_str());
-            return _bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(pos, SEEK_SET, nullptr)) {
+            _reader.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to segment %" PRIu16
+                              " at %" PRIu64 ": %s", i, pos,
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        if (!file_read_fully(*_bir->file, &phdr, sizeof(phdr), n)) {
-            reader_set_error(_bir, _bir->file->error().value() /* TODO */,
-                             "Failed to read segment %" PRIu16 ": %s",
-                             i, _bir->file->error_string().c_str());
-            return _bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file_read_fully(file, &phdr, sizeof(phdr), n)) {
+            _reader.set_error(file.error().value() /* TODO */,
+                              "Failed to read segment %" PRIu16 ": %s",
+                              i, file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != sizeof(phdr)) {
-            reader_set_error(_bir, ERROR_FILE_FORMAT,
-                             "Unexpected EOF when reading segment"
-                             " header %" PRIu16, i);
+            _reader.set_error(ERROR_FILE_FORMAT,
+                              "Unexpected EOF when reading segment"
+                              " header %" PRIu16, i);
             return RET_WARN;
         }
 
@@ -173,26 +173,25 @@ int SonyElfFormatReader::read_header(Header &header)
             char cmdline[512];
 
             if (phdr.p_memsz >= sizeof(cmdline)) {
-                reader_set_error(_bir, ERROR_FILE_FORMAT,
-                                 "cmdline too long");
+                _reader.set_error(ERROR_FILE_FORMAT, "cmdline too long");
                 return RET_WARN;
             }
 
-            if (!_bir->file->seek(phdr.p_offset, SEEK_SET, nullptr)) {
-                reader_set_error(_bir, _bir->file->error().value() /* TODO */,
-                                 "Failed to seek to cmdline: %s",
-                                 _bir->file->error_string().c_str());
-                return _bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
+            if (!file.seek(phdr.p_offset, SEEK_SET, nullptr)) {
+                _reader.set_error(file.error().value() /* TODO */,
+                                  "Failed to seek to cmdline: %s",
+                                  file.error_string().c_str());
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
 
-            if (!file_read_fully(*_bir->file, cmdline, phdr.p_memsz, n)) {
-                reader_set_error(_bir, _bir->file->error().value() /* TODO */,
-                                 "Failed to read cmdline: %s",
-                                 _bir->file->error_string().c_str());
-                return _bir->file->is_fatal() ? RET_FATAL : RET_FAILED;
+            if (!file_read_fully(file, cmdline, phdr.p_memsz, n)) {
+                _reader.set_error(file.error().value() /* TODO */,
+                                  "Failed to read cmdline: %s",
+                                  file.error_string().c_str());
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             } else if (n != phdr.p_memsz) {
-                reader_set_error(_bir, ERROR_FILE_FORMAT,
-                                 "Unexpected EOF when reading cmdline");
+                _reader.set_error(ERROR_FILE_FORMAT,
+                                  "Unexpected EOF when reading cmdline");
                 return RET_WARN;
             }
 
@@ -204,7 +203,7 @@ int SonyElfFormatReader::read_header(Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
             ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                                   phdr.p_offset, phdr.p_memsz, false, _bir);
+                                   phdr.p_offset, phdr.p_memsz, false, _reader);
             if (ret != RET_OK) return ret;
 
             if (!header.set_kernel_address(phdr.p_vaddr)) {
@@ -213,7 +212,7 @@ int SonyElfFormatReader::read_header(Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_RAMDISK
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
             ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                                   phdr.p_offset, phdr.p_memsz, false, _bir);
+                                   phdr.p_offset, phdr.p_memsz, false, _reader);
             if (ret != RET_OK) return ret;
 
             if (!header.set_ramdisk_address(phdr.p_vaddr)) {
@@ -222,7 +221,7 @@ int SonyElfFormatReader::read_header(Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_IPL
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL,
-                                   phdr.p_offset, phdr.p_memsz, false, _bir);
+                                   phdr.p_offset, phdr.p_memsz, false, _reader);
             if (ret != RET_OK) return ret;
 
             if (!header.set_sony_ipl_address(phdr.p_vaddr)) {
@@ -231,7 +230,7 @@ int SonyElfFormatReader::read_header(Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_RPM
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM,
-                                   phdr.p_offset, phdr.p_memsz, false, _bir);
+                                   phdr.p_offset, phdr.p_memsz, false, _reader);
             if (ret != RET_OK) return ret;
 
             if (!header.set_sony_rpm_address(phdr.p_vaddr)) {
@@ -240,7 +239,7 @@ int SonyElfFormatReader::read_header(Header &header)
         } else if (phdr.p_type == SONY_E_TYPE_APPSBL
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL,
-                                   phdr.p_offset, phdr.p_memsz, false, _bir);
+                                   phdr.p_offset, phdr.p_memsz, false, _reader);
             if (ret != RET_OK) return ret;
 
             if (!header.set_sony_appsbl_address(phdr.p_vaddr)) {
@@ -252,10 +251,10 @@ int SonyElfFormatReader::read_header(Header &header)
             // dumping this segment.
             continue;
         } else {
-            reader_set_error(_bir, ERROR_FILE_FORMAT,
-                             "Invalid type (0x%08" PRIx32 ") or flags"
-                             " (0x%08" PRIx32 ") field in segment"
-                             " %" PRIu32, phdr.p_type, phdr.p_flags, i);
+            _reader.set_error(ERROR_FILE_FORMAT,
+                              "Invalid type (0x%08" PRIx32 ") or flags"
+                              " (0x%08" PRIx32 ") field in segment"
+                              " %" PRIu32, phdr.p_type, phdr.p_flags, i);
             return RET_WARN;
         }
     }
@@ -263,20 +262,20 @@ int SonyElfFormatReader::read_header(Header &header)
     return RET_OK;
 }
 
-int SonyElfFormatReader::read_entry(Entry &entry)
+int SonyElfFormatReader::read_entry(File &file, Entry &entry)
 {
-    return _seg.read_entry(*_bir->file, entry, _bir);
+    return _seg.read_entry(file, entry, _reader);
 }
 
-int SonyElfFormatReader::go_to_entry(Entry &entry, int entry_type)
+int SonyElfFormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
 {
-    return _seg.go_to_entry(*_bir->file, entry, entry_type, _bir);
+    return _seg.go_to_entry(file, entry, entry_type, _reader);
 }
 
-int SonyElfFormatReader::read_data(void *buf, size_t buf_size,
+int SonyElfFormatReader::read_data(File &file, void *buf, size_t buf_size,
                                    size_t &bytes_read)
 {
-    return _seg.read_data(*_bir->file, buf, buf_size, bytes_read, _bir);
+    return _seg.read_data(file, buf, buf_size, bytes_read, _reader);
 }
 
 /*!
@@ -290,7 +289,7 @@ int SonyElfFormatReader::read_data(void *buf, size_t buf_size,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader for setting error messages
+ * \param[in] reader Reader for setting error messages
  * \param[in] file File handle
  * \param[out] header_out Pointer to store header
  *
@@ -300,33 +299,31 @@ int SonyElfFormatReader::read_data(void *buf, size_t buf_size,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int SonyElfFormatReader::find_sony_elf_header(MbBiReader *bir, File &file,
+int SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
                                               Sony_Elf32_Ehdr &header_out)
 {
     Sony_Elf32_Ehdr header;
     size_t n;
 
     if (!file.seek(0, SEEK_SET, nullptr)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to seek to beginning: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &header, sizeof(header), n)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to read header: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(header)) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Too small to be Sony ELF image");
+        reader.set_error(ERROR_FILE_FORMAT, "Too small to be Sony ELF image");
         return RET_WARN;
     }
 
     if (memcmp(header.e_ident, SONY_E_IDENT, SONY_EI_NIDENT) != 0) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Invalid ELF magic");
+        reader.set_error(ERROR_FILE_FORMAT, "Invalid ELF magic");
         return RET_WARN;
     }
 
@@ -341,19 +338,19 @@ int SonyElfFormatReader::find_sony_elf_header(MbBiReader *bir, File &file,
 /*!
  * \brief Enable support for Sony ELF boot image format
  *
- * \param bir MbBiReader
- *
  * \return
  *   * #RET_OK if the format is successfully enabled
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int reader_enable_format_sony_elf(MbBiReader *bir)
+int Reader::enable_format_sony_elf()
 {
     using namespace sonyelf;
 
-    std::unique_ptr<FormatReader> format{new SonyElfFormatReader(bir)};
-    return _reader_register_format(bir, std::move(format));
+    MB_PRIVATE(Reader);
+
+    std::unique_ptr<FormatReader> format{new SonyElfFormatReader(*this)};
+    return priv->register_format(std::move(format));
 }
 
 }

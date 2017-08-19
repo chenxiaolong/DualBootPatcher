@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <cstdarg>
@@ -35,64 +36,64 @@ class File;
 namespace bootimg
 {
 
-struct MbBiReader;
 class Entry;
 class Header;
 
-// Construction/destruction
-MB_EXPORT MbBiReader * reader_new(void);
-MB_EXPORT int reader_free(MbBiReader *bir);
+class ReaderPrivate;
+class MB_EXPORT Reader
+{
+    MB_DECLARE_PRIVATE(Reader)
 
-// Open/close
-MB_EXPORT int reader_open_filename(MbBiReader *bir,
-                                   const std::string &filename);
-MB_EXPORT int reader_open_filename_w(MbBiReader *bir,
-                                     const std::wstring &filename);
-MB_EXPORT int reader_open(MbBiReader *bir, File *file, bool owned);
-MB_EXPORT int reader_close(MbBiReader *bir);
+public:
+    Reader();
+    ~Reader();
 
-// Operations
-MB_EXPORT int reader_read_header(MbBiReader *bir, Header *&header);
-MB_EXPORT int reader_read_header2(MbBiReader *bir, Header &header);
-MB_EXPORT int reader_read_entry(MbBiReader *bir, Entry *&entry);
-MB_EXPORT int reader_read_entry2(MbBiReader *bir, Entry &entry);
-MB_EXPORT int reader_go_to_entry(MbBiReader *bir, Entry *&entry,
-                                 int entry_type);
-MB_EXPORT int reader_go_to_entry2(MbBiReader *bir, Entry &entry,
-                                  int entry_type);
-MB_EXPORT int reader_read_data(MbBiReader *bir, void *buf,
-                               size_t size, size_t &bytes_read);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Reader)
 
-// Format operations
-MB_EXPORT int reader_format_code(MbBiReader *bir);
-MB_EXPORT std::string reader_format_name(MbBiReader *bir);
-MB_EXPORT int reader_set_format_by_code(MbBiReader *bir, int code);
-MB_EXPORT int reader_set_format_by_name(MbBiReader *bir,
-                                        const std::string &name);
-MB_EXPORT int reader_enable_format_all(MbBiReader *bir);
-MB_EXPORT int reader_enable_format_by_code(MbBiReader *bir, int code);
-MB_EXPORT int reader_enable_format_by_name(MbBiReader *bir,
-                                           const std::string &name);
+    Reader(Reader &&other);
+    Reader & operator=(Reader &&rhs);
 
-// Specific formats
-MB_EXPORT int reader_enable_format_android(MbBiReader *bir);
-MB_EXPORT int reader_enable_format_bump(MbBiReader *bir);
-MB_EXPORT int reader_enable_format_loki(MbBiReader *bir);
-MB_EXPORT int reader_enable_format_mtk(MbBiReader *bir);
-MB_EXPORT int reader_enable_format_sony_elf(MbBiReader *bir);
+    // Open/close
+    int open_filename(const std::string &filename);
+    int open_filename_w(const std::wstring &filename);
+    int open(File *file, bool owned);
+    int close();
 
-// Error handling functions
-MB_EXPORT int reader_error(MbBiReader *bir);
-MB_EXPORT const char * reader_error_string(MbBiReader *bir);
-MB_PRINTF(3, 4)
-MB_EXPORT int reader_set_error(MbBiReader *bir, int error_code,
-                               const char *fmt, ...);
-MB_EXPORT int reader_set_error_v(MbBiReader *bir, int error_code,
-                                 const char *fmt, va_list ap);
+    // Operations
+    int read_header(Header *&header);
+    int read_header2(Header &header);
+    int read_entry(Entry *&entry);
+    int read_entry2(Entry &entry);
+    int go_to_entry(Entry *&entry, int entry_type);
+    int go_to_entry2(Entry &entry, int entry_type);
+    int read_data(void *buf, size_t size, size_t &bytes_read);
 
-// TODO TODO TODO
-// SET OPTIONS FUNCTION
-// TODO TODO TODO
+    // Format operations
+    int format_code();
+    std::string format_name();
+    int set_format_by_code(int code);
+    int set_format_by_name(const std::string &name);
+    int enable_format_all();
+    int enable_format_by_code(int code);
+    int enable_format_by_name(const std::string &name);
+
+    // Specific formats
+    int enable_format_android();
+    int enable_format_bump();
+    int enable_format_loki();
+    int enable_format_mtk();
+    int enable_format_sony_elf();
+
+    // Error handling
+    int error();
+    std::string error_string();
+    MB_PRINTF(3, 4)
+    int set_error(int error_code, const char *fmt, ...);
+    int set_error_v(int error_code, const char *fmt, va_list ap);
+
+private:
+    std::unique_ptr<ReaderPrivate> _priv_ptr;
+};
 
 }
 }

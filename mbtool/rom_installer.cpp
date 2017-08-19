@@ -55,8 +55,6 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
-
 namespace mb
 {
 
@@ -283,46 +281,41 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
 bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
-    ScopedReader bir(reader_new(), &reader_free);
+    Reader reader;
     Header *header;
     Entry *entry;
     int ret;
 
-    if (!bir) {
-        LOGE("Failed to allocate reader instance");
-        return false;
-    }
-
     // Open input boot image
-    ret = reader_enable_format_all(bir.get());
+    ret = reader.enable_format_all();
     if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
-             reader_error_string(bir.get()));
+             reader.error_string().c_str());
         return false;
     }
-    ret = reader_open_filename(bir.get(), boot_image_file);
+    ret = reader.open_filename(boot_image_file);
     if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Copy header
-    ret = reader_read_header(bir.get(), header);
+    ret = reader.read_header(header);
     if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Go to ramdisk
-    ret = reader_go_to_entry(bir.get(), entry, ENTRY_TYPE_RAMDISK);
+    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
     if (ret == RET_EOF) {
         LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         return false;
     } else if (ret != RET_OK) {
         LOGE("%s: Failed to find ramdisk entry: %s",
-             boot_image_file.c_str(), reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
@@ -342,7 +335,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
             close(tmpfd);
         });
 
-        return bi_copy_data_to_fd(bir.get(), tmpfd)
+        return bi_copy_data_to_fd(reader, tmpfd)
                 && extract_ramdisk_fd(tmpfd, output_dir, nested);
     }
 }

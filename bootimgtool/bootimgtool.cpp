@@ -76,7 +76,6 @@
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 #define HELP_HEADERS \
@@ -708,7 +707,7 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
     return true;
 }
 
-static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
+static bool write_data_entry_to_file(const std::string &path, Reader &reader)
 {
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -721,7 +720,7 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
     char buf[10240];
     size_t n;
 
-    while ((ret = reader_read_data(bir, buf, sizeof(buf), n)) == RET_OK) {
+    while ((ret = reader.read_data(buf, sizeof(buf), n)) == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));
@@ -731,7 +730,7 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to read entry data: %s\n",
-                reader_error_string(bir));
+                reader.error_string().c_str());
         return false;
     }
 
@@ -801,7 +800,7 @@ static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
     return write_data_file_to_entry(path, biw);
 }
 
-static bool write_entry_to_file(const Paths &paths, MbBiReader *bir,
+static bool write_entry_to_file(const Paths &paths, Reader &reader,
                                 const Entry &entry)
 {
     std::string path;
@@ -849,7 +848,7 @@ static bool write_entry_to_file(const Paths &paths, MbBiReader *bir,
         return false;
     }
 
-    return write_data_entry_to_file(path, bir);
+    return write_data_entry_to_file(path, reader);
 }
 
 bool unpack_main(int argc, char *argv[])
@@ -959,43 +958,38 @@ bool unpack_main(int argc, char *argv[])
     }
 
     // Load the boot image
-    ScopedReader bir(reader_new(), reader_free);
+    Reader reader;
     Header *header;
     Entry *entry;
     int ret;
 
-    if (!bir) {
-        fprintf(stderr, "Failed to allocate reader: %s\n", strerror(errno));
-        return false;
-    }
-
     if (type) {
-        ret = reader_enable_format_by_name(bir.get(), type);
+        ret = reader.enable_format_by_name(type);
         if (ret != RET_OK) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, reader_error_string(bir.get()));
+                    type, reader.error_string().c_str());
             return false;
         }
     } else {
-        ret = reader_enable_format_all(bir.get());
+        ret = reader.enable_format_all();
         if (ret != RET_OK) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
-                    reader_error_string(bir.get()));
+                    reader.error_string().c_str());
             return false;
         }
     }
 
-    ret = reader_open_filename(bir.get(), input_file);
+    ret = reader.open_filename(input_file);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), reader_error_string(bir.get()));
+                input_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
-    ret = reader_read_header(bir.get(), header);
+    ret = reader.read_header(header);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), reader_error_string(bir.get()));
+                input_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
@@ -1003,15 +997,15 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    while ((ret = reader_read_entry(bir.get(), entry)) == RET_OK) {
-        if (!write_entry_to_file(paths, bir.get(), *entry)) {
+    while ((ret = reader.read_entry(entry)) == RET_OK) {
+        if (!write_entry_to_file(paths, reader, *entry)) {
             return false;
         }
     }
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to read entry: %s\n",
-                reader_error_string(bir.get()));
+                reader.error_string().c_str());
         return false;
     }
 

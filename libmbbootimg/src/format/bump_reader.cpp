@@ -29,20 +29,21 @@ namespace bootimg
 /*!
  * \brief Enable support for Bump boot image format
  *
- * \param bir MbBiReader
- *
  * \return
  *   * #RET_OK if the format is successfully enabled
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int reader_enable_format_bump(MbBiReader *bir)
+int Reader::enable_format_bump()
 {
     using namespace android;
 
-    std::unique_ptr<FormatReader> format{new AndroidFormatReader(bir, true)};
-    return _reader_register_format(bir, std::move(format));
+    MB_PRIVATE(Reader);
+
+    std::unique_ptr<FormatReader> format{new AndroidFormatReader(*this, true)};
+    return priv->register_format(std::move(format));
 }
+
 
 }
 }

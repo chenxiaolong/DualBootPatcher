@@ -40,38 +40,39 @@ namespace loki
 class LokiFormatReader : public FormatReader
 {
 public:
-    LokiFormatReader(MbBiReader *bir);
+    LokiFormatReader(Reader &reader);
     virtual ~LokiFormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(LokiFormatReader)
 
-    virtual int type();
-    virtual std::string name();
+    virtual int type() override;
+    virtual std::string name() override;
 
-    virtual int bid(int best_bid);
-    virtual int read_header(Header &header);
-    virtual int read_entry(Entry &entry);
-    virtual int go_to_entry(Entry &entry, int entry_type);
-    virtual int read_data(void *buf, size_t buf_size, size_t &bytes_read);
+    virtual int bid(File &file, int best_bid) override;
+    virtual int read_header(File &file, Header &header) override;
+    virtual int read_entry(File &file, Entry &entry) override;
+    virtual int go_to_entry(File &file, Entry &entry, int entry_type) override;
+    virtual int read_data(File &file, void *buf, size_t buf_size,
+                          size_t &bytes_read) override;
 
-    static int find_loki_header(MbBiReader *bir, File &file,
+    static int find_loki_header(Reader &reader, File &file,
                                 LokiHeader &header_out, uint64_t &offset_out);
-    static int find_ramdisk_address(MbBiReader *bir, File &file,
+    static int find_ramdisk_address(Reader &reader, File &file,
                                     const android::AndroidHeader &hdr,
                                     const LokiHeader &loki_hdr,
                                     uint32_t &ramdisk_addr_out);
-    static int find_gzip_offset_old(MbBiReader *bir, File &file,
+    static int find_gzip_offset_old(Reader &reader, File &file,
                                     uint32_t start_offset,
                                     uint64_t &gzip_offset_out);
-    static int find_ramdisk_size_old(MbBiReader *bir, File &file,
+    static int find_ramdisk_size_old(Reader &reader, File &file,
                                      const android::AndroidHeader &hdr,
                                      uint32_t ramdisk_offset,
                                      uint32_t &ramdisk_size_out);
-    static int find_linux_kernel_size(MbBiReader *bir, File &file,
+    static int find_linux_kernel_size(Reader &reader, File &file,
                                       uint32_t kernel_offset,
                                       uint32_t &kernel_size_out);
-    static int read_header_old(MbBiReader *bir, File &file,
+    static int read_header_old(Reader &reader, File &file,
                                const android::AndroidHeader &hdr,
                                const LokiHeader &loki_hdr,
                                Header &header,
@@ -79,7 +80,7 @@ public:
                                uint32_t &kernel_size_out,
                                uint64_t &ramdisk_offset_out,
                                uint32_t &ramdisk_size_out);
-    static int read_header_new(MbBiReader *bir, File &file,
+    static int read_header_new(Reader &reader, File &file,
                                const android::AndroidHeader &hdr,
                                const LokiHeader &loki_hdr,
                                Header &header,

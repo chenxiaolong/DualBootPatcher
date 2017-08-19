@@ -55,7 +55,6 @@ using namespace mb::bootimg;
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiReader, decltype(reader_free) *> ScopedReader;
 typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 namespace mb
@@ -303,35 +302,34 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         util::delete_recursive(tmpdir);
     });
 
-    ScopedReader bir(reader_new(), &reader_free);
+    Reader reader;
     ScopedWriter biw(writer_new(), &writer_free);
     Header *header;
     Entry *in_entry;
     Entry *out_entry;
     int ret;
 
-    if (!bir || !biw) {
+    if (!biw) {
         LOGE("Failed to allocate reader or writer instance");
         return false;
     }
 
     // Open input boot image
-    ret = reader_enable_format_all(bir.get());
+    ret = reader.enable_format_all();
     if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
-             reader_error_string(bir.get()));
+             reader.error_string().c_str());
         return false;
     }
-    ret = reader_open_filename(bir.get(), input_file);
+    ret = reader.open_filename(input_file);
     if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), reader_error_string(bir.get()));
+             input_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Open output boot image
-    ret = writer_set_format_by_code(
-            biw.get(), reader_format_code(bir.get()));
+    ret = writer_set_format_by_code(biw.get(), reader.format_code());
     if (ret != RET_OK) {
         LOGE("Failed to set output boot image format: %s",
              writer_error_string(biw.get()));
@@ -348,13 +346,13 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("Patching boot image");
     LOGD("- Input: %s", input_file.c_str());
     LOGD("- Output: %s", output_file.c_str());
-    LOGD("- Format: %s", reader_format_name(bir.get()).c_str());
+    LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
-    ret = reader_read_header(bir.get(), header);
+    ret = reader.read_header(header);
     if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), reader_error_string(bir.get()));
+             input_file.c_str(), reader.error_string().c_str());
         return false;
     }
     ret = writer_write_header(biw.get(), *header);
@@ -382,14 +380,13 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 return false;
             }
         } else {
-            ret = reader_go_to_entry(bir.get(), in_entry, *type);
+            ret = reader.go_to_entry(in_entry, *type);
             if (ret == RET_EOF) {
                 LOGV("Skipping non existent boot image entry: %d", *type);
                 continue;
             } else if (ret != RET_OK) {
                 LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), *type,
-                     reader_error_string(bir.get()));
+                     input_file.c_str(), *type, reader.error_string().c_str());
                 return false;
             }
 
@@ -404,7 +401,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     unlink(ramdisk_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), ramdisk_in)) {
+                if (!bi_copy_data_to_file(reader, ramdisk_in)) {
                     return false;
                 }
 
@@ -426,7 +423,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     unlink(kernel_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), kernel_in)) {
+                if (!bi_copy_data_to_file(reader, kernel_in)) {
                     return false;
                 }
 
@@ -439,7 +436,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 }
             } else {
                 // Copy entry directly
-                if (!bi_copy_data_to_data(bir.get(), biw.get())) {
+                if (!bi_copy_data_to_data(reader, biw.get())) {
                     return false;
                 }
             }

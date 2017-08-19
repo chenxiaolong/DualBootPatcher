@@ -32,33 +32,6 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 
-#define READER_ENSURE_STATE(INSTANCE, STATES) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            reader_set_error((INSTANCE), \
-                             ERROR_PROGRAMMER_ERROR, \
-                             "%s: Invalid state: " \
-                             "expected 0x%x, actual: 0x%hx", \
-                             __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = ReaderState::FATAL; \
-            return RET_FATAL; \
-        } \
-    } while (0)
-
-#define READER_ENSURE_STATE_GOTO(INSTANCE, STATES, RETURN_VAR, LABEL) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            reader_set_error((INSTANCE), \
-                             ERROR_PROGRAMMER_ERROR, \
-                             "%s: Invalid state: " \
-                             "expected 0x%x, actual: 0x%hx", \
-                             __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = ReaderState::FATAL; \
-            (RETURN_VAR) = RET_FATAL; \
-            goto LABEL; \
-        } \
-    } while (0)
-
 namespace mb
 {
 namespace bootimg
@@ -69,7 +42,7 @@ constexpr size_t MAX_FORMATS = 10;
 class FormatReader
 {
 public:
-    FormatReader(MbBiReader *bir);
+    FormatReader(Reader &reader);
     virtual ~FormatReader();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
@@ -79,15 +52,16 @@ public:
     virtual std::string name() = 0;
 
     virtual int init();
-    virtual int bid(int best_bid) = 0;
     virtual int set_option(const char *key, const char *value);
-    virtual int read_header(Header &header) = 0;
-    virtual int read_entry(Entry &entry) = 0;
-    virtual int go_to_entry(Entry &entry, int entry_type);
-    virtual int read_data(void *buf, size_t buf_size, size_t &bytes_read) = 0;
+    virtual int bid(File &file, int best_bid) = 0;
+    virtual int read_header(File &file, Header &header) = 0;
+    virtual int read_entry(File &file, Entry &entry) = 0;
+    virtual int go_to_entry(File &file, Entry &entry, int entry_type);
+    virtual int read_data(File &file, void *buf, size_t buf_size,
+                          size_t &bytes_read) = 0;
 
 protected:
-    MbBiReader *_bir;
+    Reader &_reader;
 };
 
 enum ReaderState : unsigned short
@@ -103,8 +77,17 @@ enum ReaderState : unsigned short
     ANY             = ANY_NONFATAL | FATAL,
 };
 
-struct MbBiReader
+class ReaderPrivate
 {
+    MB_DECLARE_PUBLIC(Reader)
+
+public:
+    ReaderPrivate(Reader *reader);
+
+    int register_format(std::unique_ptr<FormatReader> format);
+
+    Reader *_pub_ptr;
+
     // Global state
     ReaderState state;
 
@@ -122,9 +105,6 @@ struct MbBiReader
     Header header;
     Entry entry;
 };
-
-int _reader_register_format(MbBiReader *bir,
-                            std::unique_ptr<FormatReader> format);
 
 }
 }

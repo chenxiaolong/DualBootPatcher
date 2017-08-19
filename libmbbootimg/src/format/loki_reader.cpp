@@ -46,8 +46,8 @@ namespace bootimg
 namespace loki
 {
 
-LokiFormatReader::LokiFormatReader(MbBiReader *bir)
-    : FormatReader(bir)
+LokiFormatReader::LokiFormatReader(Reader &reader)
+    : FormatReader(reader)
     , _hdr()
     , _loki_hdr()
     , _header_offset()
@@ -79,7 +79,7 @@ std::string LokiFormatReader::name()
  *   * #RET_FAILED if any file operations fail non-fatally
  *   * #RET_FATAL if any file operations fail fatally
  */
-int LokiFormatReader::bid(int best_bid)
+int LokiFormatReader::bid(File &file, int best_bid)
 {
     int bid = 0;
     int ret;
@@ -92,7 +92,7 @@ int LokiFormatReader::bid(int best_bid)
 
     // Find the Loki header
     uint64_t loki_offset;
-    ret = find_loki_header(_bir, *_bir->file, _loki_hdr, loki_offset);
+    ret = find_loki_header(_reader, file, _loki_hdr, loki_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _loki_offset = loki_offset;
@@ -107,7 +107,7 @@ int LokiFormatReader::bid(int best_bid)
     // Find the Android header
     uint64_t header_offset;
     ret = android::AndroidFormatReader::find_header(
-            _bir, *_bir->file, LOKI_MAX_HEADER_OFFSET, _hdr, header_offset);
+            _reader, file, LOKI_MAX_HEADER_OFFSET, _hdr, header_offset);
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
@@ -122,7 +122,7 @@ int LokiFormatReader::bid(int best_bid)
     return bid;
 }
 
-int LokiFormatReader::read_header(Header &header)
+int LokiFormatReader::read_header(File &file, Header &header)
 {
     int ret;
     uint64_t kernel_offset;
@@ -135,7 +135,7 @@ int LokiFormatReader::read_header(Header &header)
     // format
     if (!_loki_offset) {
         uint64_t loki_offset;
-        ret = find_loki_header(_bir, *_bir->file, _loki_hdr, loki_offset);
+        ret = find_loki_header(_reader, file, _loki_hdr, loki_offset);
         if (ret < 0) {
             return ret;
         }
@@ -144,7 +144,7 @@ int LokiFormatReader::read_header(Header &header)
     if (!_header_offset) {
         uint64_t header_offset;
         ret = android::AndroidFormatReader::find_header(
-                _bir, *_bir->file, android::MAX_HEADER_OFFSET, _hdr,
+                _reader, file, android::MAX_HEADER_OFFSET, _hdr,
                 header_offset);
         if (ret < 0) {
             return ret;
@@ -157,12 +157,12 @@ int LokiFormatReader::read_header(Header &header)
     if (_loki_hdr.orig_kernel_size != 0
             && _loki_hdr.orig_ramdisk_size != 0
             && _loki_hdr.ramdisk_addr != 0) {
-        ret =  read_header_new(_bir, *_bir->file, _hdr, _loki_hdr, header,
+        ret =  read_header_new(_reader, file, _hdr, _loki_hdr, header,
                                kernel_offset, kernel_size,
                                ramdisk_offset, ramdisk_size,
                                dt_offset);
     } else {
-        ret =  read_header_old(_bir, *_bir->file, _hdr, _loki_hdr, header,
+        ret =  read_header_old(_reader, file, _hdr, _loki_hdr, header,
                                kernel_offset, kernel_size,
                                ramdisk_offset, ramdisk_size);
     }
@@ -173,35 +173,36 @@ int LokiFormatReader::read_header(Header &header)
     _seg.entries_clear();
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           kernel_offset, kernel_size, false, _bir);
+                           kernel_offset, kernel_size, false, _reader);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           ramdisk_offset, ramdisk_size, false, _bir);
+                           ramdisk_offset, ramdisk_size, false, _reader);
     if (ret != RET_OK) return ret;
 
     if (_hdr.dt_size > 0 && dt_offset != 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                               dt_offset, _hdr.dt_size, false, _bir);
+                               dt_offset, _hdr.dt_size, false, _reader);
         if (ret != RET_OK) return ret;
     }
 
     return RET_OK;
 }
 
-int LokiFormatReader::read_entry(Entry &entry)
+int LokiFormatReader::read_entry(File &file, Entry &entry)
 {
-    return _seg.read_entry(*_bir->file, entry, _bir);
+    return _seg.read_entry(file, entry, _reader);
 }
 
-int LokiFormatReader::go_to_entry(Entry &entry, int entry_type)
+int LokiFormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
 {
-    return _seg.go_to_entry(*_bir->file, entry, entry_type, _bir);
+    return _seg.go_to_entry(file, entry, entry_type, _reader);
 }
 
-int LokiFormatReader::read_data(void *buf, size_t buf_size, size_t &bytes_read)
+int LokiFormatReader::read_data(File &file, void *buf, size_t buf_size,
+                                size_t &bytes_read)
 {
-    return _seg.read_data(*_bir->file, buf, buf_size, bytes_read, _bir);
+    return _seg.read_data(file, buf, buf_size, bytes_read, _reader);
 }
 
 /*!
@@ -215,7 +216,7 @@ int LokiFormatReader::read_data(void *buf, size_t buf_size, size_t &bytes_read)
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader
+ * \param[in] reader Reader
  * \param[in] file File handle
  * \param[out] header_out Pointer to store header
  * \param[out] offset_out Pointer to store header offset
@@ -226,7 +227,7 @@ int LokiFormatReader::read_data(void *buf, size_t buf_size, size_t &bytes_read)
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::find_loki_header(MbBiReader *bir, File &file,
+int LokiFormatReader::find_loki_header(Reader &reader, File &file,
                                        LokiHeader &header_out,
                                        uint64_t &offset_out)
 {
@@ -234,26 +235,24 @@ int LokiFormatReader::find_loki_header(MbBiReader *bir, File &file,
     size_t n;
 
     if (!file.seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Loki magic not found: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_WARN;
     }
 
     if (!file_read_fully(file, &header, sizeof(header), n)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to read header: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(header)) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Too small to be Loki image");
+        reader.set_error(ERROR_FILE_FORMAT, "Too small to be Loki image");
         return RET_WARN;
     }
 
     if (memcmp(header.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE) != 0) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Invalid loki magic");
+        reader.set_error(ERROR_FILE_FORMAT, "Invalid loki magic");
         return RET_WARN;
     }
 
@@ -272,7 +271,7 @@ int LokiFormatReader::find_loki_header(MbBiReader *bir, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header
  * \param[in] loki_hdr Loki header
@@ -284,7 +283,7 @@ int LokiFormatReader::find_loki_header(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
+int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
                                            const android::AndroidHeader &hdr,
                                            const LokiHeader &loki_hdr,
                                            uint32_t &ramdisk_addr_out)
@@ -307,34 +306,33 @@ int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
 
         if (!file_search(file, -1, -1, 0, LOKI_SHELLCODE,
                          LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset)) {
-            reader_set_error(bir, file.error().value() /* TODO */,
+            reader.set_error(file.error().value() /* TODO */,
                              "Failed to search for Loki shellcode: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (offset == 0) {
-            reader_set_error(bir, ERROR_FILE_FORMAT,
-                             "Loki shellcode not found");
+            reader.set_error(ERROR_FILE_FORMAT, "Loki shellcode not found");
             return RET_WARN;
         }
 
         offset += LOKI_SHELLCODE_SIZE - 5;
 
         if (!file.seek(offset, SEEK_SET, nullptr)) {
-            reader_set_error(bir, file.error().value() /* TODO */,
+            reader.set_error(file.error().value() /* TODO */,
                              "Failed to seek to ramdisk address offset: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (!file_read_fully(file, &ramdisk_addr, sizeof(ramdisk_addr), n)) {
-            reader_set_error(bir, file.error().value() /* TODO */,
+            reader.set_error(file.error().value() /* TODO */,
                              "Failed to read ramdisk address offset: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != sizeof(ramdisk_addr)) {
-            reader_set_error(bir, ERROR_FILE_FORMAT,
+            reader.set_error(ERROR_FILE_FORMAT,
                              "Unexpected EOF when reading ramdisk address");
             return RET_WARN;
         }
@@ -344,7 +342,7 @@ int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
         // Otherwise, use the default for jflte (- 0x00008000 + 0x02000000)
 
         if (hdr.kernel_addr > UINT32_MAX - 0x01ff8000) {
-            reader_set_error(bir, ERROR_FILE_FORMAT,
+            reader.set_error(ERROR_FILE_FORMAT,
                              "Invalid kernel address: %" PRIu32,
                              hdr.kernel_addr);
             return RET_WARN;
@@ -371,7 +369,7 @@ int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] start_offset Starting offset for search
  * \param[out] gzip_offset_out Pointer to store gzip ramdisk offset
@@ -382,7 +380,7 @@ int LokiFormatReader::find_ramdisk_address(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
+int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
                                            uint32_t start_offset,
                                            uint64_t &gzip_offset_out)
 {
@@ -455,7 +453,7 @@ int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
 
     if (!file_search(file, start_offset, -1, 0, gzip_deflate_magic,
                      sizeof(gzip_deflate_magic), -1, result_cb, &result)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to search for gzip magic: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -468,8 +466,7 @@ int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
     } else if (result.have_flag0) {
         gzip_offset_out = result.flag0_offset;
     } else {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "No gzip headers found");
+        reader.set_error(ERROR_FILE_FORMAT, "No gzip headers found");
         return RET_WARN;
     }
 
@@ -484,7 +481,7 @@ int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header
  * \param[in] ramdisk_offset Offset of ramdisk in image
@@ -496,7 +493,7 @@ int LokiFormatReader::find_gzip_offset_old(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
+int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
                                             const android::AndroidHeader &hdr,
                                             uint32_t ramdisk_offset,
                                             uint32_t &ramdisk_size_out)
@@ -522,14 +519,14 @@ int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
     }
 
     if (!file.seek(-aboot_size, SEEK_END, &aboot_offset)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to seek to end of file: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (ramdisk_offset > aboot_offset) {
-        reader_set_error(bir, ERROR_INTERNAL_ERROR,
+        reader.set_error(ERROR_INTERNAL_ERROR,
                          "Ramdisk offset greater than aboot offset");
         return RET_FAILED;
     }
@@ -548,19 +545,19 @@ int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
         cur_offset -= to_read;
 
         if (!file.seek(cur_offset, SEEK_SET, nullptr)) {
-            reader_set_error(bir, file.error().value() /* TODO */,
+            reader.set_error(file.error().value() /* TODO */,
                              "Failed to seek: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (!file_read_fully(file, buf, to_read, n)) {
-            reader_set_error(bir, file.error().value() /* TODO */,
+            reader.set_error(file.error().value() /* TODO */,
                              "Failed to read: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         } else if (n != to_read) {
-            reader_set_error(bir, ERROR_INTERNAL_ERROR,
+            reader.set_error(ERROR_INTERNAL_ERROR,
                              "Unexpected file truncation");
             return RET_FAILED;
         }
@@ -573,8 +570,7 @@ int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
         }
     }
 
-    reader_set_error(bir, ERROR_FILE_FORMAT,
-                     "Could not determine ramdisk size");
+    reader.set_error(ERROR_FILE_FORMAT, "Could not determine ramdisk size");
     return RET_WARN;
 #endif
 }
@@ -587,7 +583,7 @@ int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
  * \post The file pointer position is undefined after this function returns.
  *       Use File::seek() to return to a known position.
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] kernel_offset Offset of kernel in boot image
  * \param[out] kernel_size_out Pointer to store kernel size
@@ -598,7 +594,7 @@ int LokiFormatReader::find_ramdisk_size_old(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::find_linux_kernel_size(MbBiReader *bir, File &file,
+int LokiFormatReader::find_linux_kernel_size(Reader &reader, File &file,
                                              uint32_t kernel_offset,
                                              uint32_t &kernel_size_out)
 {
@@ -611,19 +607,19 @@ int LokiFormatReader::find_linux_kernel_size(MbBiReader *bir, File &file,
     // we'll use that.
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
     if (!file.seek(kernel_offset + 0x2c, SEEK_SET, nullptr)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to seek to kernel header: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &kernel_size, sizeof(kernel_size), n)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Failed to read size from kernel header: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (n != sizeof(kernel_size)) {
-        reader_set_error(bir, file.error().value() /* TODO */,
+        reader.set_error(file.error().value() /* TODO */,
                          "Unexpected EOF when reading kernel header");
         return RET_WARN;
     }
@@ -635,7 +631,7 @@ int LokiFormatReader::find_linux_kernel_size(MbBiReader *bir, File &file,
 /*!
  * \brief Read header for old-style Loki image
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header for image
  * \param[in] loki_hdr Loki header for image
@@ -651,7 +647,7 @@ int LokiFormatReader::find_linux_kernel_size(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
+int LokiFormatReader::read_header_old(Reader &reader, File &file,
                                       const android::AndroidHeader &hdr,
                                       const LokiHeader &loki_hdr,
                                       Header &header,
@@ -668,8 +664,7 @@ int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Page size cannot be 0");
+        reader.set_error(ERROR_FILE_FORMAT, "Page size cannot be 0");
         return RET_WARN;
     }
 
@@ -679,14 +674,14 @@ int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
             + android::DEFAULT_TAGS_OFFSET;
 
     // Try to guess kernel size
-    ret = find_linux_kernel_size(bir, file, hdr.page_size, kernel_size);
+    ret = find_linux_kernel_size(reader, file, hdr.page_size, kernel_size);
     if (ret != RET_OK) {
         return ret;
     }
 
     // Look for gzip offset for the ramdisk
     ret = find_gzip_offset_old(
-            bir, file, hdr.page_size + kernel_size
+            reader, file, hdr.page_size + kernel_size
                     + align_page_size<uint64_t>(kernel_size, hdr.page_size),
             gzip_offset);
     if (ret != RET_OK) {
@@ -694,13 +689,13 @@ int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
     }
 
     // Try to guess ramdisk size
-    ret = find_ramdisk_size_old(bir, file, hdr, gzip_offset, ramdisk_size);
+    ret = find_ramdisk_size_old(reader, file, hdr, gzip_offset, ramdisk_size);
     if (ret != RET_OK) {
         return ret;
     }
 
     // Guess original ramdisk address
-    ret = find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
+    ret = find_ramdisk_address(reader, file, hdr, loki_hdr, ramdisk_addr);
     if (ret != RET_OK) {
         return ret;
     }
@@ -755,7 +750,7 @@ int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
 /*!
  * \brief Read header for new-style Loki image
  *
- * \param[in] bir MbBiReader to set error message
+ * \param[in] reader Reader to set error message
  * \param[in] file File handle
  * \param[in] hdr Android header for image
  * \param[in] loki_hdr Loki header for image
@@ -772,7 +767,7 @@ int LokiFormatReader::read_header_old(MbBiReader *bir, File &file,
  *   * #RET_FAILED if any file operation fails non-fatally
  *   * #RET_FATAL if any file operation fails fatally
  */
-int LokiFormatReader::read_header_new(MbBiReader *bir, File &file,
+int LokiFormatReader::read_header_new(Reader &reader, File &file,
                                       const android::AndroidHeader &hdr,
                                       const LokiHeader &loki_hdr,
                                       Header &header,
@@ -787,8 +782,7 @@ int LokiFormatReader::read_header_new(MbBiReader *bir, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader_set_error(bir, ERROR_FILE_FORMAT,
-                         "Page size cannot be 0");
+        reader.set_error(ERROR_FILE_FORMAT, "Page size cannot be 0");
         return RET_WARN;
     }
 
@@ -799,7 +793,7 @@ int LokiFormatReader::read_header_new(MbBiReader *bir, File &file,
     }
 
     // Find original ramdisk address
-    ret = find_ramdisk_address(bir, file, hdr, loki_hdr, ramdisk_addr);
+    ret = find_ramdisk_address(reader, file, hdr, loki_hdr, ramdisk_addr);
     if (ret != RET_OK) {
         return ret;
     }
@@ -865,19 +859,19 @@ int LokiFormatReader::read_header_new(MbBiReader *bir, File &file,
 /*!
  * \brief Enable support for Loki boot image format
  *
- * \param bir MbBiReader
- *
  * \return
  *   * #RET_OK if the format is successfully enabled
  *   * #RET_WARN if the format is already enabled
  *   * \<= #RET_FAILED if an error occurs
  */
-int reader_enable_format_loki(MbBiReader *bir)
+int Reader::enable_format_loki()
 {
     using namespace loki;
 
-    std::unique_ptr<FormatReader> format{new LokiFormatReader(bir)};
-    return _reader_register_format(bir, std::move(format));
+    MB_PRIVATE(Reader);
+
+    std::unique_ptr<FormatReader> format{new LokiFormatReader(*this)};
+    return priv->register_format(std::move(format));
 }
 
 }
