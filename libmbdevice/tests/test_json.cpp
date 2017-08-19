@@ -174,10 +174,28 @@ static constexpr char sample_malformed[] = R"json(
 static constexpr char sample_multiple[] = R"json(
     [
         {
-            "id": "test1"
+            "name": "test1",
+            "id": "test1",
+            "codenames": ["test1"],
+            "architecture": "armeabi-v7a",
+            "block_devs": {
+                "system": ["/dev/blah"],
+                "cache": ["/dev/blah"],
+                "data": ["/dev/blah"],
+                "boot": ["/dev/blah"]
+            }
         },
         {
-            "id": "test2"
+            "name": "test2",
+            "id": "test2",
+            "codenames": ["test2"],
+            "architecture": "arm64-v8a",
+            "block_devs": {
+                "system": ["/dev/blah"],
+                "cache": ["/dev/blah"],
+                "data": ["/dev/blah"],
+                "boot": ["/dev/blah"]
+            }
         }
     ]
 )json";
@@ -289,8 +307,10 @@ TEST(JsonTest, LoadInvalidKey)
     Device device;
     JsonError error;
     ASSERT_FALSE(device_from_json(sample_invalid_key, device, error));
-    ASSERT_EQ(error.type, JsonErrorType::UnknownKey);
-    ASSERT_EQ(error.context, ".foo");
+    ASSERT_EQ(error.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(error.schema_uri, "#");
+    ASSERT_EQ(error.schema_keyword, "additionalProperties");
+    ASSERT_EQ(error.document_uri, "#/foo");
 }
 
 TEST(JsonTest, LoadInvalidValue)
@@ -298,26 +318,34 @@ TEST(JsonTest, LoadInvalidValue)
     Device d1;
     JsonError e1;
     ASSERT_FALSE(device_from_json(sample_invalid_device_flags, d1, e1));
-    ASSERT_EQ(e1.type, JsonErrorType::UnknownValue);
-    ASSERT_EQ(e1.context, ".flags[0]");
+    ASSERT_EQ(e1.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e1.schema_uri, "#/properties/flags/items");
+    ASSERT_EQ(e1.schema_keyword, "enum");
+    ASSERT_EQ(e1.document_uri, "#/flags/0");
 
     Device d2;
     JsonError e2;
     ASSERT_FALSE(device_from_json(sample_invalid_tw_flags, d2, e2));
-    ASSERT_EQ(e2.type, JsonErrorType::UnknownValue);
-    ASSERT_EQ(e2.context, ".boot_ui.flags[0]");
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui/properties/flags/items");
+    ASSERT_EQ(e2.schema_keyword, "enum");
+    ASSERT_EQ(e2.document_uri, "#/boot_ui/flags/0");
 
     Device d3;
     JsonError e3;
     ASSERT_FALSE(device_from_json(sample_invalid_tw_pixel_format, d3, e3));
-    ASSERT_EQ(e3.type, JsonErrorType::UnknownValue);
-    ASSERT_EQ(e3.context, ".boot_ui.pixel_format");
+    ASSERT_EQ(e3.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e3.schema_uri, "#/properties/boot_ui/properties/pixel_format");
+    ASSERT_EQ(e3.schema_keyword, "enum");
+    ASSERT_EQ(e3.document_uri, "#/boot_ui/pixel_format");
 
     Device d4;
     JsonError e4;
     ASSERT_FALSE(device_from_json(sample_invalid_tw_force_pixel_format, d4, e4));
-    ASSERT_EQ(e4.type, JsonErrorType::UnknownValue);
-    ASSERT_EQ(e4.context, ".boot_ui.force_pixel_format");
+    ASSERT_EQ(e4.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e4.schema_uri, "#/properties/boot_ui/properties/force_pixel_format");
+    ASSERT_EQ(e4.schema_keyword, "enum");
+    ASSERT_EQ(e4.document_uri, "#/boot_ui/force_pixel_format");
 }
 
 TEST(JsonTest, LoadInvalidType)
@@ -325,18 +353,18 @@ TEST(JsonTest, LoadInvalidType)
     Device d1;
     JsonError e1;
     ASSERT_FALSE(device_from_json(sample_invalid_root, d1, e1));
-    ASSERT_EQ(e1.type, JsonErrorType::MismatchedType);
-    ASSERT_EQ(e1.context, ".");
-    ASSERT_EQ(e1.actual_type, "array");
-    ASSERT_EQ(e1.expected_type, "object");
+    ASSERT_EQ(e1.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e1.schema_uri, "#");
+    ASSERT_EQ(e1.schema_keyword, "type");
+    ASSERT_EQ(e1.document_uri, "#");
 
     Device d2;
     JsonError e2;
     ASSERT_FALSE(device_from_json(sample_invalid_type, d2, e2));
-    ASSERT_EQ(e2.type, JsonErrorType::MismatchedType);
-    ASSERT_EQ(e2.context, ".boot_ui");
-    ASSERT_EQ(e2.actual_type, "string");
-    ASSERT_EQ(e2.expected_type, "object");
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui");
+    ASSERT_EQ(e2.schema_keyword, "type");
+    ASSERT_EQ(e2.document_uri, "#/boot_ui");
 }
 
 TEST(JsonTest, LoadMalformed)
@@ -356,10 +384,10 @@ TEST(JsonTest, LoadMultiple)
     std::vector<Device> d2;
     JsonError e2;
     ASSERT_FALSE(device_list_from_json(sample_complete, d2, e2));
-    ASSERT_EQ(e2.type, JsonErrorType::MismatchedType);
-    ASSERT_EQ(e2.context, ".");
-    ASSERT_EQ(e2.actual_type, "object");
-    ASSERT_EQ(e2.expected_type, "array");
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#");
+    ASSERT_EQ(e2.schema_keyword, "type");
+    ASSERT_EQ(e2.document_uri, "#");
 }
 
 TEST(JsonTest, CreateJson)
@@ -382,10 +410,6 @@ TEST(JsonTest, CheckCapiFlagsEqual)
 {
     ASSERT_EQ(TO_U(JsonErrorType, ParseError),
               MB_DEVICE_JSON_PARSE_ERROR);
-    ASSERT_EQ(TO_U(JsonErrorType, MismatchedType),
-              MB_DEVICE_JSON_MISMATCHED_TYPE);
-    ASSERT_EQ(TO_U(JsonErrorType, UnknownKey),
-              MB_DEVICE_JSON_UNKNOWN_KEY);
-    ASSERT_EQ(TO_U(JsonErrorType, UnknownValue),
-              MB_DEVICE_JSON_UNKNOWN_VALUE);
+    ASSERT_EQ(TO_U(JsonErrorType, SchemaValidationFailure),
+              MB_DEVICE_JSON_SCHEMA_VALIDATION_FAILURE);
 }
