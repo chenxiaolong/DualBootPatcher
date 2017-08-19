@@ -63,17 +63,17 @@ protected:
     Writer &_writer;
 };
 
-enum WriterState : unsigned short
+enum class WriterState : uint8_t
 {
-    NEW             = 1U << 1,
-    HEADER          = 1U << 2,
-    ENTRY           = 1U << 3,
-    DATA            = 1U << 4,
-    CLOSED          = 1U << 5,
-    FATAL           = 1U << 6,
-    // Grouped
-    ANY             = NEW | HEADER | ENTRY | DATA | CLOSED | FATAL,
+    New     = 1u << 1,
+    Header  = 1u << 2,
+    Entry   = 1u << 3,
+    Data    = 1u << 4,
+    Closed  = 1u << 5,
+    Fatal   = 1u << 6,
 };
+MB_DECLARE_FLAGS(WriterStates, WriterState)
+MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)
 
 class WriterPrivate
 {

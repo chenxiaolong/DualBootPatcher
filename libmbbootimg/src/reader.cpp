@@ -45,8 +45,8 @@
         if (!(priv->state & (STATES))) { \
             set_error(ERROR_PROGRAMMER_ERROR, \
                       "%s: Invalid state: "\
-                      "expected 0x%x, actual: 0x%hx", \
-                      __func__, (STATES), priv->state); \
+                      "expected 0x%hhx, actual: 0x%hhx", \
+                      __func__, static_cast<uint8_t>(STATES), priv->state); \
             return RETVAL; \
         } \
     } while (0)
@@ -245,7 +245,7 @@ int FormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
 
 ReaderPrivate::ReaderPrivate(Reader *reader)
     : _pub_ptr(reader)
-    , state(ReaderState::NEW)
+    , state(ReaderState::New)
     , owned_file()
     , file()
     , error_code()
@@ -259,10 +259,10 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format)
 {
     MB_PUBLIC(Reader);
 
-    if (state != ReaderState::NEW) {
+    if (state != ReaderState::New) {
         pub->set_error(ERROR_PROGRAMMER_ERROR,
-                       "%s: Invalid state: expected 0x%x, actual: 0x%hx",
-                      __func__, ReaderState::NEW, state);
+                       "%s: Invalid state: expected 0x%hhx, actual: 0x%hhx",
+                      __func__, ReaderState::New, state);
         return RET_FAILED;
     }
 
@@ -305,7 +305,7 @@ Reader::~Reader()
     MB_PRIVATE(Reader);
 
     if (priv) {
-        if (priv->state != ReaderState::CLOSED) {
+        if (priv->state != ReaderState::Closed) {
             close();
         }
     }
@@ -336,7 +336,7 @@ Reader & Reader::operator=(Reader &&rhs)
 int Reader::open_filename(const std::string &filename)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     std::unique_ptr<File> file(
             new StandardFile(filename, FileOpenMode::READ_ONLY));
@@ -362,7 +362,7 @@ int Reader::open_filename(const std::string &filename)
 int Reader::open_filename_w(const std::wstring &filename)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     std::unique_ptr<File> file(
             new StandardFile(filename, FileOpenMode::READ_ONLY));
@@ -417,7 +417,7 @@ int Reader::open(std::unique_ptr<File> file)
 int Reader::open(File *file)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     int best_bid = 0;
     FormatReader *format = nullptr;
@@ -459,7 +459,7 @@ int Reader::open(File *file)
         priv->format = format;
     }
 
-    priv->state = ReaderState::HEADER;
+    priv->state = ReaderState::Header;
     priv->file = file;
 
     return RET_OK;
@@ -483,7 +483,7 @@ int Reader::close()
     int ret = RET_OK;
 
     // Avoid double-closing or closing nothing
-    if (!(priv->state & (ReaderState::CLOSED | ReaderState::NEW))) {
+    if (!(priv->state & (ReaderState::Closed | ReaderState::New))) {
         if (priv->owned_file) {
             if (!priv->owned_file->close()) {
                 if (RET_FAILED < ret) {
@@ -501,7 +501,7 @@ int Reader::close()
         // closed in the latter state.
     }
 
-    priv->state = ReaderState::CLOSED;
+    priv->state = ReaderState::Closed;
 
     return ret;
 }
@@ -520,7 +520,7 @@ int Reader::close()
 int Reader::read_header(Header &header)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::HEADER, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::Header, RET_FATAL);
     int ret;
 
     // Seek to beginning
@@ -535,9 +535,9 @@ int Reader::read_header(Header &header)
 
     ret = priv->format->read_header(*priv->file, header);
     if (ret == RET_OK) {
-        priv->state = ReaderState::ENTRY;
+        priv->state = ReaderState::Entry;
     } else if (ret <= RET_FATAL) {
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
     }
 
     return ret;
@@ -561,16 +561,16 @@ int Reader::read_entry(Entry &entry)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     // Allow skipping to the next entry without reading the data
-    ENSURE_STATE_OR_RETURN(ReaderState::ENTRY | ReaderState::DATA, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::Entry | ReaderState::Data, RET_FATAL);
     int ret;
 
     entry.clear();
 
     ret = priv->format->read_entry(*priv->file, entry);
     if (ret == RET_OK) {
-        priv->state = ReaderState::DATA;
+        priv->state = ReaderState::Data;
     } else if (ret <= RET_FATAL) {
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
     }
 
     return ret;
@@ -594,16 +594,16 @@ int Reader::go_to_entry(Entry &entry, int entry_type)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     // Allow skipping to an entry without reading the data
-    ENSURE_STATE_OR_RETURN(ReaderState::ENTRY | ReaderState::DATA, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::Entry | ReaderState::Data, RET_FATAL);
     int ret;
 
     entry.clear();
 
     ret = priv->format->go_to_entry(*priv->file, entry, entry_type);
     if (ret == RET_OK) {
-        priv->state = ReaderState::DATA;
+        priv->state = ReaderState::Data;
     } else if (ret <= RET_FATAL) {
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
     }
 
     return ret;
@@ -624,14 +624,14 @@ int Reader::go_to_entry(Entry &entry, int entry_type)
 int Reader::read_data(void *buf, size_t size, size_t &bytes_read)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::DATA, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::Data, RET_FATAL);
     int ret;
 
     ret = priv->format->read_data(*priv->file, buf, size, bytes_read);
     if (ret == RET_OK) {
         // Do not alter state. Stay in ReaderState::DATA
     } else if (ret <= RET_FATAL) {
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
     }
 
     return ret;
@@ -702,7 +702,7 @@ std::string Reader::format_name()
 int Reader::set_format_by_code(int code)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
     FormatReader *format = nullptr;
 
     int ret = enable_format_by_code(code);
@@ -720,7 +720,7 @@ int Reader::set_format_by_code(int code)
 
     if (!format) {
         set_error(ERROR_INTERNAL_ERROR, "Enabled format not found");
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
 
@@ -744,7 +744,7 @@ int Reader::set_format_by_code(int code)
 int Reader::set_format_by_name(const std::string &name)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
     FormatReader *format = nullptr;
 
     int ret = enable_format_by_name(name);
@@ -761,7 +761,7 @@ int Reader::set_format_by_name(const std::string &name)
 
     if (!format) {
         set_error(ERROR_INTERNAL_ERROR, "Enabled format not found");
-        priv->state = ReaderState::FATAL;
+        priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
 
@@ -780,7 +780,7 @@ int Reader::set_format_by_name(const std::string &name)
 int Reader::enable_format_all()
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     for (auto it = reader_formats; it->func; ++it) {
         int ret = (this->*it->func)();
@@ -805,7 +805,7 @@ int Reader::enable_format_all()
 int Reader::enable_format_by_code(int code)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     for (auto it = reader_formats; it->func; ++it) {
         if ((code & FORMAT_BASE_MASK) == (it->code & FORMAT_BASE_MASK)) {
@@ -830,7 +830,7 @@ int Reader::enable_format_by_code(int code)
 int Reader::enable_format_by_name(const std::string &name)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(ReaderState::NEW, RET_FATAL);
+    ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     for (auto it = reader_formats; it->func; ++it) {
         if (name == it->name) {
