@@ -72,8 +72,7 @@ enum WriterState : unsigned short
     CLOSED          = 1U << 5,
     FATAL           = 1U << 6,
     // Grouped
-    ANY_NONFATAL    = NEW | HEADER | ENTRY | DATA | CLOSED,
-    ANY             = ANY_NONFATAL | FATAL,
+    ANY             = NEW | HEADER | ENTRY | DATA | CLOSED | FATAL,
 };
 
 class WriterPrivate
