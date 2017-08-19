@@ -303,9 +303,9 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     Reader reader;
     Writer writer;
-    Header *header;
-    Entry *in_entry;
-    Entry *out_entry;
+    Header header;
+    Entry in_entry;
+    Entry out_entry;
     int ret;
 
     // Open input boot image
@@ -349,7 +349,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
              input_file.c_str(), reader.error_string().c_str());
         return false;
     }
-    ret = writer.write_header(*header);
+    ret = writer.write_header(header);
     if (ret != RET_OK) {
         LOGE("%s: Failed to write header: %s",
              output_file.c_str(), writer.error_string().c_str());
@@ -358,10 +358,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
 
     // Write entries
     while ((ret = writer.get_entry(out_entry)) == RET_OK) {
-        auto type = out_entry->type();
+        auto type = out_entry.type();
 
         // Write entry metadata
-        ret = writer.write_entry(*out_entry);
+        ret = writer.write_entry(out_entry);
         if (ret != RET_OK) {
             LOGE("%s: Failed to write entry: %s",
                  output_file.c_str(), writer.error_string().c_str());

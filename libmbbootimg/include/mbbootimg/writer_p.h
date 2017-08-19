@@ -99,9 +99,6 @@ public:
     std::string error_string;
 
     std::unique_ptr<FormatWriter> format;
-
-    Entry entry;
-    Header header;
 };
 
 }

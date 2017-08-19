@@ -274,8 +274,6 @@ ReaderPrivate::ReaderPrivate(Reader *reader)
     , error_string()
     , formats()
     , format()
-    , header()
-    , entry()
 {
 }
 
@@ -538,46 +536,15 @@ int Reader::close()
 /*!
  * \brief Read boot image header.
  *
- * Read the header from the boot image and store a reference to the Header
- * in \p header. The value of \p header after a successful call to this function
- * should *never* be deallocated manually. It is tracked internally and will be
- * freed when the Reader is freed.
+ * Read the header from the boot image and store the header values to a Header.
  *
- * \param[out] header Pointer to store Header reference
+ * \param[out] header Reference to Header for storing header values
  *
  * \return
  *   * #RET_OK if the boot image header is successfully read
  *   * \<= #RET_WARN if an error occurs
  */
-int Reader::read_header(Header *&header)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    // State will be checked by read_header2()
-    int ret;
-
-    ret = read_header2(priv->header);
-    if (ret == RET_OK) {
-        header = &priv->header;
-    }
-
-    return ret;
-}
-
-/*!
- * \brief Read boot image header.
- *
- * Read the header from the boot image and store the header values to a
- * Header instance allocated by the caller. The caller is responsible for
- * deallocating \p header when it is no longer needed.
- *
- * \param[out] header Pointer to Header for storing header values
- *
- * \return
- *   * #RET_OK if the boot image header is successfully read
- *   * \<= #RET_WARN if an error occurs
- */
-int Reader::read_header2(Header &header)
+int Reader::read_header(Header &header)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(ReaderState::HEADER, RET_FATAL);
@@ -606,42 +573,10 @@ int Reader::read_header2(Header &header)
 /*!
  * \brief Read next boot image entry.
  *
- * Read the next entry from the boot image and store a reference to the
- * Entry in \p entry. The value of \p entry after a successful call to this
- * function should *never* be deallocated manually. It is tracked internally and
- * will be freed when the Reader is freed.
- *
- * \param[out] entry Pointer to store Entry reference
- *
- * \return
- *   * #RET_OK if the boot image entry is successfully read
- *   * #RET_EOF if the boot image has no more entries
- *   * #RET_UNSUPPORTED if the boot image format does not support seeking
- *   * \<= #RET_WARN if an error occurs
- */
-int Reader::read_entry(Entry *&entry)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    // State will be checked by read_entry2()
-    int ret;
-
-    ret = read_entry2(priv->entry);
-    if (ret == RET_OK) {
-        entry = &priv->entry;
-    }
-
-    return ret;
-}
-
-/*!
- * \brief Read next boot image entry.
- *
  * Read the next entry from the boot image and store the entry values to an
- * Entry instance allocated by the caller. The caller is responsible for
- * deallocating \p entry when it is no longer needed.
+ * Entry.
  *
- * \param[out] entry Pointer to Entry for storing entry values
+ * \param[out] entry Reference to Entry for storing entry values
  *
  * \return
  *   * #RET_OK if the boot image entry is successfully read
@@ -649,7 +584,7 @@ int Reader::read_entry(Entry *&entry)
  *   * #RET_UNSUPPORTED if the boot image format does not support seeking
  *   * \<= #RET_WARN if an error occurs
  */
-int Reader::read_entry2(Entry &entry)
+int Reader::read_entry(Entry &entry)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     // Allow skipping to the next entry without reading the data
@@ -671,42 +606,10 @@ int Reader::read_entry2(Entry &entry)
 /*!
  * \brief Seek to specific boot image entry.
  *
- * Seek to the specified entry in the boot image and store a reference to the
- * Entry in \p entry. The vlaue of \p entry after a successful call to this
- * function should *never* be deallocated manually. It is tracked internally and
- * will be freed when the Reader is freed.
- *
- * \param[out] entry Pointer to store Entry reference
- * \param[in] entry_type Entry type to seek to (0 for first entry)
- *
- * \return
- *   * #RET_OK if the boot image entry is successfully read
- *   * #RET_EOF if the boot image entry is not found
- *   * \<= #RET_WARN if an error occurs
- */
-int Reader::go_to_entry(Entry *&entry, int entry_type)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    // State will be checked by go_to_entry2()
-    int ret;
-
-    ret = go_to_entry2(priv->entry, entry_type);
-    if (ret == RET_OK) {
-        entry = &priv->entry;
-    }
-
-    return ret;
-}
-
-/*!
- * \brief Seek to specific boot image entry.
- *
  * Seek to the specified entry in the boot image and store the entry values to
- * an Entry instance allocated by the caller. The caller is responsible for
- * deallocating \p entry when it is no longer needed.
+ * an Entry.
  *
- * \param[out] entry Pointer to Entry for storing entry values
+ * \param[out] entry Reference to Entry for storing entry values
  * \param[in] entry_type Entry type to seek to (0 for first entry)
  *
  * \return
@@ -714,7 +617,7 @@ int Reader::go_to_entry(Entry *&entry, int entry_type)
  *   * #RET_EOF if the boot image entry is not found
  *   * \<= #RET_WARN if an error occurs
  */
-int Reader::go_to_entry2(Entry &entry, int entry_type)
+int Reader::go_to_entry(Entry &entry, int entry_type)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     // Allow skipping to an entry without reading the data

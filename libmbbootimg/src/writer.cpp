@@ -293,8 +293,6 @@ WriterPrivate::WriterPrivate(Writer *writer)
     , error_code()
     , error_string()
     , format()
-    , entry()
-    , header()
 {
 }
 
@@ -517,39 +515,9 @@ int Writer::close()
 }
 
 /*!
- * \brief Get boot image header instance
- *
- * Get a prepared Header instance for use with Writer::write_header()
- * and store a reference to it in \p header. The value of \p header after a
- * successful call to this function should *never* be deallocated manually.
- * It is tracked internally and will be freed when the Writer is freed.
- *
- * \param[out] header Pointer to store Header instance
- *
- * \return
- *   * #RET_OK if no error occurs
- *   * \<= #RET_WARN if an error occurs
- */
-int Writer::get_header(Header *&header)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    // State will be checked by get_header2()
-    int ret;
-
-    ret = get_header2(priv->header);
-    if (ret == RET_OK) {
-        header = &priv->header;
-    }
-
-    return ret;
-}
-
-/*!
  * \brief Prepare boot image header instance.
  *
- * Prepare a Header instance for use with Writer::write_header(). The caller
- * is responsible for deallocating \p header when it is no longer needed.
+ * Prepare a Header instance for use with Writer::write_header().
  *
  * \param[out] header Header instance to initialize
  *
@@ -557,7 +525,7 @@ int Writer::get_header(Header *&header)
  *   * #RET_OK if no error occurs
  *   * \<= #RET_WARN if an error occurs
  */
-int Writer::get_header2(Header &header)
+int Writer::get_header(Header &header)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::HEADER, RET_FATAL);
@@ -606,45 +574,14 @@ int Writer::write_header(const Header &header)
 }
 
 /*!
- * \brief Get boot image entry instance for the next entry
+ * \brief Prepare boot image entry instance for the next entry.
  *
- * Get an Entry instance for the next entry and store a reference to it in
- * \p entry. The value of \p entry after a successful call to this function
- * should *never* be deallocated manually. It is tracked internally and will be
- * freed when the Writer is freed.
+ * Prepare an Entry instance for the next entry.
  *
  * This function will return #RET_EOF when there are no more entries to write.
  * It is *strongly* recommended to check the return value of Writer::close()
  * when closing the boot image as additional steps for finalizing the boot image
  * could fail.
- *
- * \param[out] entry Pointer to store Entry instance
- *
- * \return
- *   * #RET_OK if no error occurs
- *   * #RET_EOF if the boot image has no more entries
- *   * \<= #RET_WARN if an error occurs
- */
-int Writer::get_entry(Entry *&entry)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    // State will be checked by Writer::get_entry2()
-    int ret;
-
-    ret = get_entry2(priv->entry);
-    if (ret == RET_OK) {
-        entry = &priv->entry;
-    }
-
-    return ret;
-}
-
-/*!
- * \brief Prepare boot image entry instance for the next entry.
- *
- * Prepare an Entry instance for the next entry. The caller is responsible
- * for deallocating \p entry when it is no longer needed.
  *
  * \param[out] entry Entry instance to initialize
  *
@@ -652,7 +589,7 @@ int Writer::get_entry(Entry *&entry)
  *   * #RET_OK if no error occurs
  *   * \<= #RET_WARN if an error occurs
  */
-int Writer::get_entry2(Entry &entry)
+int Writer::get_entry(Entry &entry)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::ENTRY | WriterState::DATA, RET_FATAL);

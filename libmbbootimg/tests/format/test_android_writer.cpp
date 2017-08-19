@@ -68,21 +68,21 @@ protected:
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 
-        Header *header;
-        Entry *entry;
+        Header header;
+        Entry entry;
         int ret;
         size_t n;
 
         // Write dummy header
         ASSERT_EQ(_writer.get_header(header), RET_OK);
-        ASSERT_TRUE(header->set_page_size(2048));
-        ASSERT_EQ(_writer.write_header(*header), RET_OK);
+        ASSERT_TRUE(header.set_page_size(2048));
+        ASSERT_EQ(_writer.write_header(header), RET_OK);
 
         // Write specified dummy entries
         while ((ret = _writer.get_entry(entry)) == RET_OK) {
-            ASSERT_EQ(_writer.write_entry(*entry), RET_OK);
+            ASSERT_EQ(_writer.write_entry(entry), RET_OK);
 
-            if (*entry->type() & types) {
+            if (*entry.type() & types) {
                 ASSERT_EQ(_writer.write_data("hello", 5, n), RET_OK);
                 ASSERT_EQ(n, 5u);
             }

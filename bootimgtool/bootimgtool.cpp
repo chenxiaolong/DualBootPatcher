@@ -958,8 +958,8 @@ bool unpack_main(int argc, char *argv[])
 
     // Load the boot image
     Reader reader;
-    Header *header;
-    Entry *entry;
+    Header header;
+    Entry entry;
     int ret;
 
     if (type) {
@@ -992,12 +992,12 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    if (!write_header(paths.header, *header)) {
+    if (!write_header(paths.header, header)) {
         return false;
     }
 
     while ((ret = reader.read_entry(entry)) == RET_OK) {
-        if (!write_entry_to_file(paths, reader, *entry)) {
+        if (!write_entry_to_file(paths, reader, entry)) {
             return false;
         }
     }
@@ -1117,8 +1117,8 @@ bool pack_main(int argc, char *argv[])
 
     // Load the boot image
     Writer writer;
-    Header *header;
-    Entry *entry;
+    Header header;
+    Entry entry;
     int ret;
 
     ret = writer.set_format_by_name(type);
@@ -1141,11 +1141,11 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    if (!read_header(paths.header, *header)) {
+    if (!read_header(paths.header, header)) {
         return false;
     }
 
-    ret = writer.write_header(*header);
+    ret = writer.write_header(header);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
                 output_file.c_str(), writer.error_string().c_str());
@@ -1153,7 +1153,7 @@ bool pack_main(int argc, char *argv[])
     }
 
     while ((ret = writer.get_entry(entry)) == RET_OK) {
-        if (!write_file_to_entry(paths, writer, *entry)) {
+        if (!write_file_to_entry(paths, writer, entry)) {
             return false;
         }
     }

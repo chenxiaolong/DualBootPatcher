@@ -247,8 +247,8 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     (void) clazz;
 
     Reader reader;
-    Header *header;
-    Entry *entry;
+    Header header;
+    Entry entry;
     ScopedArchive a(archive_read_new(), &archive_read_free);
     archive_entry *aEntry;
     LaBootImgCtx ctx;
@@ -382,10 +382,10 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     Reader reader1;
     Reader reader2;
-    Header *header1;
-    Header *header2;
-    Entry *entry1;
-    Entry *entry2;
+    Header header1;
+    Header header2;
+    Entry entry1;
+    Entry entry2;
     size_t entries = 0;
     int ret;
     const char *filename1 = nullptr;
@@ -478,7 +478,7 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             --entries;
 
             // Find the same entry in first image
-            ret = reader1.go_to_entry(entry1, *entry2->type());
+            ret = reader1.go_to_entry(entry1, *entry2.type());
             if (ret == RET_EOF) {
                 // Cannot be equal if entry is missing
                 goto done;

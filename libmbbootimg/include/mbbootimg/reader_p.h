@@ -101,9 +101,6 @@ public:
 
     std::vector<std::unique_ptr<FormatReader>> formats;
     FormatReader *format;
-
-    Header header;
-    Entry entry;
 };
 
 }

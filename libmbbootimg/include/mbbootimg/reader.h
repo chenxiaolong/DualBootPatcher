@@ -60,12 +60,9 @@ public:
     int close();
 
     // Operations
-    int read_header(Header *&header);
-    int read_header2(Header &header);
-    int read_entry(Entry *&entry);
-    int read_entry2(Entry &entry);
-    int go_to_entry(Entry *&entry, int entry_type);
-    int go_to_entry2(Entry &entry, int entry_type);
+    int read_header(Header &header);
+    int read_entry(Entry &entry);
+    int go_to_entry(Entry &entry, int entry_type);
     int read_data(void *buf, size_t size, size_t &bytes_read);
 
     // Format operations

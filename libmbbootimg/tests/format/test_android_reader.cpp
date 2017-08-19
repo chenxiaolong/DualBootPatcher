@@ -268,7 +268,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
     mb::MemoryFile _file;
     Reader _reader;
     std::vector<unsigned char> _data;
-    Header *_header;
+    Header _header;
 
     AndroidReaderGoToEntryTest()
     {
@@ -311,19 +311,19 @@ struct AndroidReaderGoToEntryTest : testing::Test
 
 TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
 {
-    Entry *entry;
+    Entry entry;
     char buf[50];
     size_t n;
 
     ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_RAMDISK);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_RAMDISK);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 7u);
     ASSERT_EQ(memcmp(buf, "ramdisk", n), 0);
 
     // We should continue at the next entry
     ASSERT_EQ(_reader.read_entry(entry), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_SECONDBOOT);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
@@ -331,12 +331,12 @@ TEST_F(AndroidReaderGoToEntryTest, GoToShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
 {
-    Entry *entry;
+    Entry entry;
     char buf[50];
     size_t n;
 
     ASSERT_EQ(_reader.go_to_entry(entry, 0), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_KERNEL);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
@@ -344,19 +344,19 @@ TEST_F(AndroidReaderGoToEntryTest, GoToFirstEntryShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
 {
-    Entry *entry;
+    Entry entry;
     char buf[50];
     size_t n;
 
     ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_SECONDBOOT), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_SECONDBOOT);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_SECONDBOOT);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 10u);
     ASSERT_EQ(memcmp(buf, "secondboot", n), 0);
 
     // Go back to kernel
     ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_KERNEL), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_KERNEL);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
@@ -364,7 +364,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToPreviousEntryShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
 {
-    Entry *entry;
+    Entry entry;
     char buf[50];
     size_t n;
     int ret;
@@ -373,7 +373,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
     ASSERT_EQ(ret, RET_EOF);
 
     ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_KERNEL), RET_OK);
-    ASSERT_EQ(*entry->type(), ENTRY_TYPE_KERNEL);
+    ASSERT_EQ(*entry.type(), ENTRY_TYPE_KERNEL);
     ASSERT_EQ(_reader.read_data(buf, sizeof(buf), n), RET_OK);
     ASSERT_EQ(n, 6u);
     ASSERT_EQ(memcmp(buf, "kernel", n), 0);
@@ -381,7 +381,7 @@ TEST_F(AndroidReaderGoToEntryTest, GoToAfterEOFShouldSucceed)
 
 TEST_F(AndroidReaderGoToEntryTest, GoToMissingEntryShouldFail)
 {
-    Entry *entry;
+    Entry entry;
 
     ASSERT_EQ(_reader.go_to_entry(entry, ENTRY_TYPE_DEVICE_TREE), RET_EOF);
 

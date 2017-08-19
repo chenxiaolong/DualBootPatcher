@@ -60,11 +60,9 @@ public:
     int close();
 
     // Operations
-    int get_header(Header *&header);
-    int get_header2(Header &header);
+    int get_header(Header &header);
     int write_header(const Header &header);
-    int get_entry(Entry *&entry);
-    int get_entry2(Entry &entry);
+    int get_entry(Entry &entry);
     int write_entry(const Entry &entry);
     int write_data(const void *buf, size_t size, size_t &bytes_written);
 

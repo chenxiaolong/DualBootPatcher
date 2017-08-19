@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
@@ -282,8 +283,8 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
     Reader reader;
-    Header *header;
-    Entry *entry;
+    Header header;
+    Entry entry;
     int ret;
 
     // Open input boot image
