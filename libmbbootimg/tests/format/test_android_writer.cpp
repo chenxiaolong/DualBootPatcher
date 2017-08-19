@@ -32,16 +32,16 @@ using namespace mb::bootimg;
 struct AndroidWriterSHA1Test : public ::testing::Test
 {
 protected:
-    Writer _writer;
     void *_buf;
     size_t _buf_size;
     mb::MemoryFile _file;
+    Writer _writer;
 
     AndroidWriterSHA1Test()
-        : _writer()
-        , _buf(nullptr)
+        : _buf(nullptr)
         , _buf_size(0)
         , _file(&_buf, &_buf_size)
+        , _writer()
     {
     }
 
@@ -55,7 +55,7 @@ protected:
         ASSERT_TRUE(_file.is_open());
 
         ASSERT_EQ(_writer.set_format_android(), RET_OK);
-        ASSERT_EQ(_writer.open(&_file, false), RET_OK);
+        ASSERT_EQ(_writer.open(&_file), RET_OK);
     }
 
     virtual void TearDown()

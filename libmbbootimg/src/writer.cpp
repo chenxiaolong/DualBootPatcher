@@ -40,15 +40,6 @@
         } \
     } while (0)
 
-#define GET_PIMPL_OR_GOTO(RETURN_VAR, LABEL) \
-    MB_PRIVATE(Writer); \
-    do { \
-        if (!priv) { \
-            (RETURN_VAR) = RET_FATAL; \
-            goto LABEL; \
-        } \
-    } while (0)
-
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(priv->state & (STATES))) { \
@@ -57,19 +48,6 @@
                       "expected 0x%x, actual: 0x%hx", \
                       __func__, (STATES), priv->state); \
             return RETVAL; \
-        } \
-    } while (0)
-
-#define ENSURE_STATE_OR_GOTO(STATES, RETURN_VAR, LABEL) \
-    do { \
-        if (!(priv->state & (STATES))) { \
-            set_error(ERROR_PROGRAMMER_ERROR, \
-                      "%s: Invalid state: " \
-                      "expected 0x%x, actual: 0x%hx", \
-                      __func__, (STATES), priv->state); \
-            priv->state = WriterState::FATAL; \
-            (RETURN_VAR) = RET_FATAL; \
-            goto LABEL; \
         } \
     } while (0)
 
@@ -288,8 +266,8 @@ int FormatWriter::close(File &file)
 WriterPrivate::WriterPrivate(Writer *writer)
     : _pub_ptr(writer)
     , state(WriterState::NEW)
+    , owned_file()
     , file()
-    , file_owned()
     , error_code()
     , error_string()
     , format()
@@ -381,18 +359,18 @@ int Writer::open_filename(const std::string &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::NEW, RET_FATAL);
 
-    File *file = new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC);
+    std::unique_ptr<File> file(
+            new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC));
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
         set_error(file->error().value() /* TODO */,
                   "Failed to open for writing: %s",
                   file->error_string().c_str());
-        delete file;
         return RET_FAILED;
     }
 
-    return open(file, true);
+    return open(std::move(file));
 }
 
 /*!
@@ -409,62 +387,72 @@ int Writer::open_filename_w(const std::wstring &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::NEW, RET_FATAL);
 
-    File *file = new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC);
+    std::unique_ptr<File> file(
+            new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC));
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
         set_error(file->error().value() /* TODO */,
                   "Failed to open for writing: %s",
                   file->error_string().c_str());
-        delete file;
         return RET_FAILED;
     }
 
-    return open(file, true);
+    return open(std::move(file));
 }
 
 /*!
- * Open boot image from File handle.
+ * \brief Open boot image from File handle.
  *
- * If \p owned is true, then the File handle will be closed and freed when the
- * Writer is closed and freed. This is true even if this function fails. In
- * other words, if \p owned is true and this function fails, File::close() will
- * be called.
+ * This function will take ownership of the file handle. When the Writer is
+ * closed, the file handle will also be closed.
  *
  * \param file File handle
- * \param owned Whether the Writer should take ownership of the File handle
  *
  * \return
  *   * #RET_OK if the boot image is successfully opened
  *   * \<= #RET_WARN if an error occurs
  */
-int Writer::open(File *file, bool owned)
+int Writer::open(std::unique_ptr<File> file)
 {
-    int ret;
+    GET_PIMPL_OR_RETURN(RET_FATAL);
 
-    // Ensure that the file is freed even if called in an incorrect state
-    GET_PIMPL_OR_GOTO(ret, done);
-    ENSURE_STATE_OR_GOTO(WriterState::NEW, ret, done);
+    int ret = open(file.get());
+    if (ret != RET_OK) {
+        return ret;
+    }
+
+    // Underlying pointer is not invalidated during a move
+    priv->owned_file = std::move(file);
+    return RET_OK;
+}
+
+/*!
+ * \brief Open boot image from File handle.
+ *
+ * This function will not take ownership of the file handle. When the Writer is
+ * closed, the file handle will remain open.
+ *
+ * \param file File handle
+ *
+ * \return
+ *   * #RET_OK if the boot image is successfully opened
+ *   * \<= #RET_WARN if an error occurs
+ */
+int Writer::open(File *file)
+{
+    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN(WriterState::NEW, RET_FATAL);
 
     if (!priv->format) {
         set_error(ERROR_PROGRAMMER_ERROR, "No writer format registered");
-        ret = RET_FAILED;
-        goto done;
+        return RET_FAILED;
     }
 
-    priv->file = file;
-    priv->file_owned = owned;
     priv->state = WriterState::HEADER;
+    priv->file = file;
 
-    ret = RET_OK;
-
-done:
-    if (ret != RET_OK) {
-        if (owned) {
-            delete file;
-        }
-    }
-    return ret;
+    return RET_OK;
 }
 
 /*!
@@ -490,18 +478,16 @@ int Writer::close()
             ret = priv->format->close(*priv->file);
         }
 
-        if (priv->file && priv->file_owned) {
-            if (!priv->file->close()) {
+        if (priv->owned_file) {
+            if (!priv->owned_file->close()) {
                 if (RET_FAILED < ret) {
                     ret = RET_FAILED;
                 }
             }
-
-            delete priv->file;
         }
 
+        priv->owned_file.reset();
         priv->file = nullptr;
-        priv->file_owned = false;
 
         // Don't change state to WriterState::FATAL if RET_FATAL is returned.
         // Otherwise, we risk double-closing the boot image. CLOSED and FATAL

@@ -303,7 +303,7 @@ struct AndroidReaderGoToEntryTest : testing::Test
         _file.open(_data.data(), _data.size());
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(_reader.open(&_file, false), RET_OK);
+        ASSERT_EQ(_reader.open(&_file), RET_OK);
 
         ASSERT_EQ(_reader.read_header(_header), RET_OK);
     }

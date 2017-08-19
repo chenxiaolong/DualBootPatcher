@@ -56,7 +56,8 @@ public:
     // Open/close
     int open_filename(const std::string &filename);
     int open_filename_w(const std::wstring &filename);
-    int open(File *file, bool owned);
+    int open(std::unique_ptr<File> file);
+    int open(File *file);
     int close();
 
     // Operations

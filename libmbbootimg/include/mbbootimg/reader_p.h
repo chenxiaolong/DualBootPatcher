@@ -92,8 +92,8 @@ public:
     ReaderState state;
 
     // File
+    std::unique_ptr<File> owned_file;
     File *file;
-    bool file_owned;
 
     // Error
     int error_code;
