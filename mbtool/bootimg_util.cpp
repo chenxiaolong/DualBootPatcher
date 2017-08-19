@@ -67,7 +67,7 @@ bool bi_copy_data_to_fd(Reader &reader, int fd)
     return true;
 }
 
-bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
+bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -84,10 +84,10 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (writer_write_data(biw, buf, n, bytes_written) != RET_OK
+        if (writer.write_data(buf, n, bytes_written) != RET_OK
                 || bytes_written != n) {
             LOGE("Failed to write entry data: %s",
-                 writer_error_string(biw));
+                 writer.error_string().c_str());
             return false;
         }
 
@@ -140,7 +140,7 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
     return true;
 }
 
-bool bi_copy_data_to_data(Reader &reader, MbBiWriter *biw)
+bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
     int ret;
     char buf[10240];
@@ -148,10 +148,10 @@ bool bi_copy_data_to_data(Reader &reader, MbBiWriter *biw)
     size_t n_written;
 
     while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
-        ret = writer_write_data(biw, buf, n_read, n_written);
+        ret = writer.write_data(buf, n_read, n_written);
         if (ret != RET_OK || n_read != n_written) {
             LOGE("Failed to write entry data: %s",
-                 writer_error_string(biw));
+                 writer.error_string().c_str());
             return false;
         }
     }

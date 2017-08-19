@@ -48,8 +48,8 @@ namespace sonyelf
 
 constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
 
-SonyElfFormatWriter::SonyElfFormatWriter(MbBiWriter *biw)
-    : FormatWriter(biw)
+SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
+    : FormatWriter(writer)
     , _hdr()
     , _hdr_kernel()
     , _hdr_ramdisk()
@@ -76,14 +76,16 @@ std::string SonyElfFormatWriter::name()
     return FORMAT_NAME_SONY_ELF;
 }
 
-int SonyElfFormatWriter::get_header(Header &header)
+int SonyElfFormatWriter::get_header(File &file, Header &header)
 {
+    (void) file;
+
     header.set_supported_fields(SUPPORTED_FIELDS);
 
     return RET_OK;
 }
 
-int SonyElfFormatWriter::write_header(const Header &header)
+int SonyElfFormatWriter::write_header(File &file, const Header &header)
 {
     int ret;
 
@@ -182,40 +184,40 @@ int SonyElfFormatWriter::write_header(const Header &header)
     // the user reattempts to call it)
     _seg.entries_clear();
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL, 0, false, 0, _biw);
+    ret = _seg.entries_add(ENTRY_TYPE_KERNEL, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK, 0, false, 0, _biw);
+    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
-    ret = _seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, _biw);
+    ret = _seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL, 0, false, 0, _biw);
+    ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM, 0, false, 0, _biw);
+    ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL, 0, false, 0, _biw);
+    ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL, 0, false, 0, _writer);
     if (ret != RET_OK) return ret;
 
     // Start writing at offset 4096
-    if (!_biw->file->seek(4096, SEEK_SET, nullptr)) {
-        writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                         "Failed to seek to first page: %s",
-                         _biw->file->error_string().c_str());
-        return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+    if (!file.seek(4096, SEEK_SET, nullptr)) {
+        _writer.set_error(file.error().value() /* TODO */,
+                          "Failed to seek to first page: %s",
+                          file.error_string().c_str());
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int SonyElfFormatWriter::get_entry(Entry &entry)
+int SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 {
     int ret;
 
-    ret = _seg.get_entry(*_biw->file, entry, _biw);
+    ret = _seg.get_entry(file, entry, _writer);
     if (ret != RET_OK) {
         return ret;
     }
@@ -230,38 +232,38 @@ int SonyElfFormatWriter::get_entry(Entry &entry)
 
         entry.set_size(_cmdline.size());
 
-        ret = write_entry(entry);
+        ret = write_entry(file, entry);
         if (ret != RET_OK) return RET_FATAL;
 
-        ret = write_data(_cmdline.data(), _cmdline.size(), n);
+        ret = write_data(file, _cmdline.data(), _cmdline.size(), n);
         if (ret != RET_OK) return RET_FATAL;
 
-        ret = finish_entry();
+        ret = finish_entry(file);
         if (ret != RET_OK) return RET_FATAL;
 
-        ret = get_entry(entry);
+        ret = get_entry(file, entry);
         if (ret != RET_OK) return RET_FATAL;
     }
 
     return RET_OK;
 }
 
-int SonyElfFormatWriter::write_entry(const Entry &entry)
+int SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return _seg.write_entry(*_biw->file, entry, _biw);
+    return _seg.write_entry(file, entry, _writer);
 }
 
-int SonyElfFormatWriter::write_data(const void *buf, size_t buf_size,
-                                    size_t &bytes_written)
+int SonyElfFormatWriter::write_data(File &file, const void *buf,
+                                    size_t buf_size, size_t &bytes_written)
 {
-    return _seg.write_data(*_biw->file, buf, buf_size, bytes_written, _biw);
+    return _seg.write_data(file, buf, buf_size, bytes_written, _writer);
 }
 
-int SonyElfFormatWriter::finish_entry()
+int SonyElfFormatWriter::finish_entry(File &file)
 {
     int ret;
 
-    ret = _seg.finish_entry(*_biw->file, _biw);
+    ret = _seg.finish_entry(file, _writer);
     if (ret != RET_OK) {
         return ret;
     }
@@ -308,7 +310,7 @@ int SonyElfFormatWriter::finish_entry()
     return RET_OK;
 }
 
-int SonyElfFormatWriter::close()
+int SonyElfFormatWriter::close(File &file)
 {
     size_t n;
 
@@ -349,21 +351,21 @@ int SonyElfFormatWriter::close()
         sony_elf_fix_phdr_byte_order(hdr_appsbl);
 
         // Seek back to beginning to write headers
-        if (!_biw->file->seek(0, SEEK_SET, nullptr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to seek to beginning: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(0, SEEK_SET, nullptr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to beginning: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write headers
         for (auto it = headers; it->ptr && it->can_write; ++it) {
-            if (!file_write_fully(*_biw->file, it->ptr, it->size, n)
+            if (!file_write_fully(file, it->ptr, it->size, n)
                     || n != it->size) {
-                writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                                 "Failed to write header: %s",
-                                 _biw->file->error_string().c_str());
-                return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                _writer.set_error(file.error().value() /* TODO */,
+                                  "Failed to write header: %s",
+                                  file.error_string().c_str());
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
         }
     }
@@ -376,18 +378,18 @@ int SonyElfFormatWriter::close()
 /*!
  * \brief Set Sony ELF boot image output format
  *
- * \param biw MbBiWriter
- *
  * \return
  *   * #RET_OK if the format is successfully set
  *   * \<= #RET_WARN if an error occurs
  */
-int writer_set_format_sony_elf(MbBiWriter *biw)
+int Writer::set_format_sony_elf()
 {
     using namespace sonyelf;
 
-    std::unique_ptr<FormatWriter> format{new SonyElfFormatWriter(biw)};
-    return _writer_register_format(biw, std::move(format));
+    MB_PRIVATE(Writer);
+
+    std::unique_ptr<FormatWriter> format{new SonyElfFormatWriter(*this)};
+    return priv->register_format(std::move(format));
 }
 
 }

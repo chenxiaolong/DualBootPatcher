@@ -48,8 +48,8 @@ namespace bootimg
 namespace android
 {
 
-AndroidFormatWriter::AndroidFormatWriter(MbBiWriter *biw, bool is_bump)
-    : FormatWriter(biw)
+AndroidFormatWriter::AndroidFormatWriter(Writer &writer, bool is_bump)
+    : FormatWriter(writer)
     , _hdr()
     , _file_size()
     , _is_bump(is_bump)
@@ -83,22 +83,23 @@ std::string AndroidFormatWriter::name()
 int AndroidFormatWriter::init()
 {
     if (!SHA1_Init(&_sha_ctx)) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to initialize SHA_CTX");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to initialize SHA_CTX");
         return RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int AndroidFormatWriter::get_header(Header &header)
+int AndroidFormatWriter::get_header(File &file, Header &header)
 {
+    (void) file;
+
     header.set_supported_fields(SUPPORTED_FIELDS);
 
     return RET_OK;
 }
 
-int AndroidFormatWriter::write_header(const Header &header)
+int AndroidFormatWriter::write_header(File &file, const Header &header)
 {
     int ret;
 
@@ -130,20 +131,18 @@ int AndroidFormatWriter::write_header(const Header &header)
             _hdr.page_size = *page_size;
             break;
         default:
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Invalid page size: %" PRIu32, *page_size);
+            _writer.set_error(ERROR_FILE_FORMAT,
+                              "Invalid page size: %" PRIu32, *page_size);
             return RET_FAILED;
         }
     } else {
-        writer_set_error(_biw, ERROR_FILE_FORMAT,
-                         "Page size field is required");
+        _writer.set_error(ERROR_FILE_FORMAT, "Page size field is required");
         return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(_hdr.name)) {
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Board name too long");
+            _writer.set_error(ERROR_FILE_FORMAT, "Board name too long");
             return RET_FAILED;
         }
 
@@ -153,8 +152,7 @@ int AndroidFormatWriter::write_header(const Header &header)
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Kernel cmdline too long");
+            _writer.set_error(ERROR_FILE_FORMAT, "Kernel cmdline too long");
             return RET_FAILED;
         }
 
@@ -171,48 +169,48 @@ int AndroidFormatWriter::write_header(const Header &header)
     _seg.entries_clear();
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     // Start writing after first page
-    if (!_biw->file->seek(_hdr.page_size, SEEK_SET, nullptr)) {
-        writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                         "Failed to seek to first page: %s",
-                         _biw->file->error_string().c_str());
-        return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+    if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {
+        _writer.set_error(file.error().value() /* TODO */,
+                          "Failed to seek to first page: %s",
+                          file.error_string().c_str());
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int AndroidFormatWriter::get_entry(Entry &entry)
+int AndroidFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return _seg.get_entry(*_biw->file, entry, _biw);
+    return _seg.get_entry(file, entry, _writer);
 }
 
-int AndroidFormatWriter::write_entry(const Entry &entry)
+int AndroidFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return _seg.write_entry(*_biw->file, entry, _biw);
+    return _seg.write_entry(file, entry, _writer);
 }
 
-int AndroidFormatWriter::write_data(const void *buf, size_t buf_size,
-                                    size_t &bytes_written)
+int AndroidFormatWriter::write_data(File &file, const void *buf,
+                                    size_t buf_size, size_t &bytes_written)
 {
     int ret;
 
-    ret = _seg.write_data(*_biw->file, buf, buf_size, bytes_written, _biw);
+    ret = _seg.write_data(file, buf, buf_size, bytes_written, _writer);
     if (ret != RET_OK) {
         return ret;
     }
@@ -220,8 +218,7 @@ int AndroidFormatWriter::write_data(const void *buf, size_t buf_size,
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
     if (!SHA1_Update(&_sha_ctx, buf, buf_size)) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to update SHA1 hash");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to update SHA1 hash");
         // This must be fatal as the write already happened and cannot be
         // reattempted
         return RET_FATAL;
@@ -230,11 +227,11 @@ int AndroidFormatWriter::write_data(const void *buf, size_t buf_size,
     return RET_OK;
 }
 
-int AndroidFormatWriter::finish_entry()
+int AndroidFormatWriter::finish_entry(File &file)
 {
     int ret;
 
-    ret = _seg.finish_entry(*_biw->file, _biw);
+    ret = _seg.finish_entry(file, _writer);
     if (ret != RET_OK) {
         return ret;
     }
@@ -247,8 +244,7 @@ int AndroidFormatWriter::finish_entry()
     // Include size for everything except empty DT images
     if ((swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to update SHA1 hash");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to update SHA1 hash");
         return RET_FATAL;
     }
 
@@ -270,24 +266,24 @@ int AndroidFormatWriter::finish_entry()
     return RET_OK;
 }
 
-int AndroidFormatWriter::close()
+int AndroidFormatWriter::close(File &file)
 {
     size_t n;
 
     if (_file_size) {
-        if (!_biw->file->seek(*_file_size, SEEK_SET, nullptr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to seek to end of file: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(*_file_size, SEEK_SET, nullptr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to end of file: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     } else {
         uint64_t file_size;
-        if (!_biw->file->seek(0, SEEK_CUR, &file_size)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to get file offset: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(0, SEEK_CUR, &file_size)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to get file offset: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         _file_size = file_size;
@@ -300,30 +296,30 @@ int AndroidFormatWriter::close()
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (_is_bump) {
-            if (!file_write_fully(*_biw->file, bump::BUMP_MAGIC,
+            if (!file_write_fully(file, bump::BUMP_MAGIC,
                                   bump::BUMP_MAGIC_SIZE, n)
                     || n != bump::BUMP_MAGIC_SIZE) {
-                writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                                 "Failed to write Bump magic: %s",
-                                 _biw->file->error_string().c_str());
-                return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                _writer.set_error(file.error().value() /* TODO */,
+                                  "Failed to write Bump magic: %s",
+                                  file.error_string().c_str());
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
         } else {
-            if (!file_write_fully(*_biw->file, SAMSUNG_SEANDROID_MAGIC,
+            if (!file_write_fully(file, SAMSUNG_SEANDROID_MAGIC,
                                   SAMSUNG_SEANDROID_MAGIC_SIZE, n)
                     || n != SAMSUNG_SEANDROID_MAGIC_SIZE) {
-                writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                                 "Failed to write SEAndroid magic: %s",
-                                 _biw->file->error_string().c_str());
-                return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+                _writer.set_error(file.error().value() /* TODO */,
+                                  "Failed to write SEAndroid magic: %s",
+                                  file.error_string().c_str());
+                return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
         }
 
         // Set ID
         unsigned char digest[SHA_DIGEST_LENGTH];
         if (!SHA1_Final(digest, &_sha_ctx)) {
-            writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                             "Failed to update SHA1 hash");
+            _writer.set_error(ERROR_INTERNAL_ERROR,
+                              "Failed to update SHA1 hash");
             return RET_FATAL;
         }
         memcpy(_hdr.id, digest, SHA_DIGEST_LENGTH);
@@ -333,20 +329,19 @@ int AndroidFormatWriter::close()
         android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
-        if (!_biw->file->seek(0, SEEK_SET, nullptr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to seek to beginning: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(0, SEEK_SET, nullptr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to beginning: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
-        if (!file_write_fully(*_biw->file, &hdr, sizeof(hdr), n)
-                || n != sizeof(hdr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to write header: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file_write_fully(file, &hdr, sizeof(hdr), n) || n != sizeof(hdr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to write header: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
 
@@ -358,18 +353,18 @@ int AndroidFormatWriter::close()
 /*!
  * \brief Set Android boot image output format
  *
- * \param biw MbBiWriter
- *
  * \return
  *   * #RET_OK if the format is successfully set
  *   * \<= #RET_WARN if an error occurs
  */
-int writer_set_format_android(MbBiWriter *biw)
+int Writer::set_format_android()
 {
     using namespace android;
 
-    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(biw, false)};
-    return _writer_register_format(biw, std::move(format));
+    MB_PRIVATE(Writer);
+
+    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, false)};
+    return priv->register_format(std::move(format));
 }
 
 }

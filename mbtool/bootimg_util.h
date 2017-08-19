@@ -28,8 +28,8 @@ namespace mb
 {
 
 bool bi_copy_data_to_fd(bootimg::Reader &reader, int fd);
-bool bi_copy_file_to_data(const std::string &path, bootimg::MbBiWriter *biw);
+bool bi_copy_file_to_data(const std::string &path, bootimg::Writer &writer);
 bool bi_copy_data_to_file(bootimg::Reader &reader, const std::string &path);
-bool bi_copy_data_to_data(bootimg::Reader &reader, bootimg::MbBiWriter *biw);
+bool bi_copy_data_to_data(bootimg::Reader &reader, bootimg::Writer &writer);
 
 }

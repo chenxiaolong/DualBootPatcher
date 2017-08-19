@@ -50,8 +50,8 @@ namespace loki
 
 constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 
-LokiFormatWriter::LokiFormatWriter(MbBiWriter *biw)
-    : FormatWriter(biw)
+LokiFormatWriter::LokiFormatWriter(Writer &writer)
+    : FormatWriter(writer)
     , _hdr()
     , _file_size()
     , _aboot()
@@ -77,22 +77,23 @@ std::string LokiFormatWriter::name()
 int LokiFormatWriter::init()
 {
     if (!SHA1_Init(&_sha_ctx)) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to initialize SHA_CTX");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to initialize SHA_CTX");
         return RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int LokiFormatWriter::get_header(Header &header)
+int LokiFormatWriter::get_header(File &file, Header &header)
 {
+    (void) file;
+
     header.set_supported_fields(NEW_SUPPORTED_FIELDS);
 
     return RET_OK;
 }
 
-int LokiFormatWriter::write_header(const Header &header)
+int LokiFormatWriter::write_header(File &file, const Header &header)
 {
     int ret;
 
@@ -124,20 +125,18 @@ int LokiFormatWriter::write_header(const Header &header)
             _hdr.page_size = *page_size;
             break;
         default:
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Invalid page size: %" PRIu32, *page_size);
+            _writer.set_error(ERROR_FILE_FORMAT,
+                              "Invalid page size: %" PRIu32, *page_size);
             return RET_FAILED;
         }
     } else {
-        writer_set_error(_biw, ERROR_FILE_FORMAT,
-                         "Page size field is required");
+        _writer.set_error(ERROR_FILE_FORMAT, "Page size field is required");
         return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(_hdr.name)) {
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Board name too long");
+            _writer.set_error(ERROR_FILE_FORMAT, "Board name too long");
             return RET_FAILED;
         }
 
@@ -147,8 +146,7 @@ int LokiFormatWriter::write_header(const Header &header)
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            writer_set_error(_biw, ERROR_FILE_FORMAT,
-                             "Kernel cmdline too long");
+            _writer.set_error(ERROR_FILE_FORMAT, "Kernel cmdline too long");
             return RET_FAILED;
         }
 
@@ -165,43 +163,43 @@ int LokiFormatWriter::write_header(const Header &header)
     _seg.entries_clear();
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                           0, false, _hdr.page_size, _biw);
+                           0, false, _hdr.page_size, _writer);
     if (ret != RET_OK) return ret;
 
     ret = _seg.entries_add(ENTRY_TYPE_ABOOT,
-                           0, true, 0, _biw);
+                           0, true, 0, _writer);
     if (ret != RET_OK) return ret;
 
     // Start writing after first page
-    if (!_biw->file->seek(_hdr.page_size, SEEK_SET, nullptr)) {
-        writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                         "Failed to seek to first page: %s",
-                         _biw->file->error_string().c_str());
-        return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+    if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {
+        _writer.set_error(file.error().value() /* TODO */,
+                          "Failed to seek to first page: %s",
+                          file.error_string().c_str());
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     return RET_OK;
 }
 
-int LokiFormatWriter::get_entry(Entry &entry)
+int LokiFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return _seg.get_entry(*_biw->file, entry, _biw);
+    return _seg.get_entry(file, entry, _writer);
 }
 
-int LokiFormatWriter::write_entry(const Entry &entry)
+int LokiFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return _seg.write_entry(*_biw->file, entry, _biw);
+    return _seg.write_entry(file, entry, _writer);
 }
 
-int LokiFormatWriter::write_data(const void *buf, size_t buf_size,
+int LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
                                  size_t &bytes_written)
 {
     int ret;
@@ -210,8 +208,7 @@ int LokiFormatWriter::write_data(const void *buf, size_t buf_size,
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - _aboot.size()) {
-            writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                             "aboot image too large");
+            _writer.set_error(ERROR_INTERNAL_ERROR, "aboot image too large");
             return RET_FATAL;
         }
 
@@ -222,7 +219,7 @@ int LokiFormatWriter::write_data(const void *buf, size_t buf_size,
 
         bytes_written = buf_size;
     } else {
-        ret = _seg.write_data(*_biw->file, buf, buf_size, bytes_written, _biw);
+        ret = _seg.write_data(file, buf, buf_size, bytes_written, _writer);
         if (ret != RET_OK) {
             return ret;
         }
@@ -230,8 +227,8 @@ int LokiFormatWriter::write_data(const void *buf, size_t buf_size,
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
         if (!SHA1_Update(&_sha_ctx, buf, buf_size)) {
-            writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                             "Failed to update SHA1 hash");
+            _writer.set_error(ERROR_INTERNAL_ERROR,
+                              "Failed to update SHA1 hash");
             // This must be fatal as the write already happened and cannot be
             // reattempted
             return RET_FATAL;
@@ -241,11 +238,11 @@ int LokiFormatWriter::write_data(const void *buf, size_t buf_size,
     return RET_OK;
 }
 
-int LokiFormatWriter::finish_entry()
+int LokiFormatWriter::finish_entry(File &file)
 {
     int ret;
 
-    ret = _seg.finish_entry(*_biw->file, _biw);
+    ret = _seg.finish_entry(file, _writer);
     if (ret != RET_OK) {
         return ret;
     }
@@ -258,8 +255,7 @@ int LokiFormatWriter::finish_entry()
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == ENTRY_TYPE_DEVICE_TREE
             && !SHA1_Update(&_sha_ctx, "\x00\x00\x00\x00", 4)) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to update SHA1 hash");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to update SHA1 hash");
         return RET_FATAL;
     }
 
@@ -267,8 +263,7 @@ int LokiFormatWriter::finish_entry()
     if (swentry->type != ENTRY_TYPE_ABOOT
             && (swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
-        writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                         "Failed to update SHA1 hash");
+        _writer.set_error(ERROR_INTERNAL_ERROR, "Failed to update SHA1 hash");
         return RET_FATAL;
     }
 
@@ -287,25 +282,25 @@ int LokiFormatWriter::finish_entry()
     return RET_OK;
 }
 
-int LokiFormatWriter::close()
+int LokiFormatWriter::close(File &file)
 {
     int ret;
     size_t n;
 
     if (_file_size) {
-        if (!_biw->file->seek(*_file_size, SEEK_SET, nullptr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to seek to end of file: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(*_file_size, SEEK_SET, nullptr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to end of file: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     } else {
         uint64_t file_size;
-        if (!_biw->file->seek(0, SEEK_CUR, &file_size)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to get file offset: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(0, SEEK_CUR, &file_size)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to get file offset: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         _file_size = file_size;
@@ -316,18 +311,18 @@ int LokiFormatWriter::close()
     // If successful, finish up the boot image
     if (!swentry) {
         // Truncate to set size
-        if (!_biw->file->truncate(*_file_size)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to truncate file: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.truncate(*_file_size)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to truncate file: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Set ID
         unsigned char digest[SHA_DIGEST_LENGTH];
         if (!SHA1_Final(digest, &_sha_ctx)) {
-            writer_set_error(_biw, ERROR_INTERNAL_ERROR,
-                             "Failed to update SHA1 hash");
+            _writer.set_error(ERROR_INTERNAL_ERROR,
+                              "Failed to update SHA1 hash");
             return RET_FATAL;
         }
         memcpy(_hdr.id, digest, SHA_DIGEST_LENGTH);
@@ -337,24 +332,23 @@ int LokiFormatWriter::close()
         android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
-        if (!_biw->file->seek(0, SEEK_SET, nullptr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to seek to beginning: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file.seek(0, SEEK_SET, nullptr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to seek to beginning: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
-        if (!file_write_fully(*_biw->file, &hdr, sizeof(hdr), n)
-                || n != sizeof(hdr)) {
-            writer_set_error(_biw, _biw->file->error().value() /* TODO */,
-                             "Failed to write header: %s",
-                             _biw->file->error_string().c_str());
-            return _biw->file->is_fatal() ? RET_FATAL : RET_FAILED;
+        if (!file_write_fully(file, &hdr, sizeof(hdr), n) || n != sizeof(hdr)) {
+            _writer.set_error(file.error().value() /* TODO */,
+                              "Failed to write header: %s",
+                              file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Patch with Loki
-        ret = _loki_patch_file(_biw, *_biw->file, _aboot.data(), _aboot.size());
+        ret = _loki_patch_file(_writer, file, _aboot.data(), _aboot.size());
         if (ret != RET_OK) {
             return ret;
         }
@@ -368,18 +362,18 @@ int LokiFormatWriter::close()
 /*!
  * \brief Set Loki boot image output format
  *
- * \param biw MbBiWriter
- *
  * \return
  *   * #RET_OK if the format is successfully set
  *   * \<= #RET_WARN if an error occurs
  */
-int writer_set_format_loki(MbBiWriter *biw)
+int Writer::set_format_loki()
 {
     using namespace loki;
 
-    std::unique_ptr<FormatWriter> format{new LokiFormatWriter(biw)};
-    return _writer_register_format(biw, std::move(format));
+    MB_PRIVATE(Writer);
+
+    std::unique_ptr<FormatWriter> format{new LokiFormatWriter(*this)};
+    return priv->register_format(std::move(format));
 }
 
 }

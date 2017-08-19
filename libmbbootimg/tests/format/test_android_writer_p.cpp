@@ -23,8 +23,6 @@
 
 using namespace mb::bootimg;
 
-typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
-
 #if 0
 TEST(AndroidWriterInternalsTest, CheckHeaderCleared)
 {

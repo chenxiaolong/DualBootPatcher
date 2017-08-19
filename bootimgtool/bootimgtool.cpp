@@ -76,7 +76,6 @@
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 #define HELP_HEADERS \
     "Header fields:\n" \
@@ -665,7 +664,7 @@ static bool write_header(const std::string &path, const Header &header)
     return true;
 }
 
-static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
+static bool write_data_file_to_entry(const std::string &path, Writer &writer)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -687,10 +686,10 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (writer_write_data(biw, buf, n, bytes_written) != RET_OK
+        if (writer.write_data(buf, n, bytes_written) != RET_OK
                 || bytes_written != n) {
             fprintf(stderr, "Failed to write entry data: %s\n",
-                    writer_error_string(biw));
+                    writer.error_string().c_str());
             return false;
         }
 
@@ -743,7 +742,7 @@ static bool write_data_entry_to_file(const std::string &path, Reader &reader)
     return true;
 }
 
-static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
+static bool write_file_to_entry(const Paths &paths, Writer &writer,
                                 const Entry &entry)
 {
     std::string path;
@@ -791,13 +790,13 @@ static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
         return false;
     }
 
-    if (writer_write_entry(biw, entry) != RET_OK) {
+    if (writer.write_entry(entry) != RET_OK) {
         fprintf(stderr, "Failed to write entry: %s\n",
-                writer_error_string(biw));
+                writer.error_string().c_str());
         return false;
     }
 
-    return write_data_file_to_entry(path, biw);
+    return write_data_file_to_entry(path, writer);
 }
 
 static bool write_entry_to_file(const Paths &paths, Reader &reader,
@@ -1117,33 +1116,28 @@ bool pack_main(int argc, char *argv[])
     prepend_if_empty(paths, input_dir, prefix);
 
     // Load the boot image
-    ScopedWriter biw(writer_new(), writer_free);
+    Writer writer;
     Header *header;
     Entry *entry;
     int ret;
 
-    if (!biw) {
-        fprintf(stderr, "Failed to allocate writer: %s\n", strerror(errno));
-        return false;
-    }
-
-    ret = writer_set_format_by_name(biw.get(), type);
+    ret = writer.set_format_by_name(type);
     if (ret != RET_OK) {
         fprintf(stderr, "Invalid boot image type: %s\n", type);
         return false;
     }
 
-    ret = writer_open_filename(biw.get(), output_file);
+    ret = writer.open_filename(output_file);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), writer_error_string(biw.get()));
+                output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
-    ret = writer_get_header(biw.get(), header);
+    ret = writer.get_header(header);
     if (ret != RET_OK) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                writer_error_string(biw.get()));
+                writer.error_string().c_str());
         return false;
     }
 
@@ -1151,29 +1145,29 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = writer_write_header(biw.get(), *header);
+    ret = writer.write_header(*header);
     if (ret != RET_OK) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), writer_error_string(biw.get()));
+                output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
-    while ((ret = writer_get_entry(biw.get(), entry)) == RET_OK) {
-        if (!write_file_to_entry(paths, biw.get(), *entry)) {
+    while ((ret = writer.get_entry(entry)) == RET_OK) {
+        if (!write_file_to_entry(paths, writer, *entry)) {
             return false;
         }
     }
 
     if (ret != RET_EOF) {
         fprintf(stderr, "Failed to get next entry: %s\n",
-                writer_error_string(biw.get()));
+                writer.error_string().c_str());
         return false;
     }
 
-    ret = writer_close(biw.get());
+    ret = writer.close();
     if (ret != RET_OK) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                writer_error_string(biw.get()));
+                writer.error_string().c_str());
         return false;
     }
 

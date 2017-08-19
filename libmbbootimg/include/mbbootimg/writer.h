@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <cstdarg>
@@ -35,58 +36,61 @@ class File;
 namespace bootimg
 {
 
-struct MbBiWriter;
 class Entry;
 class Header;
 
-// Construction/destruction
-MB_EXPORT MbBiWriter * writer_new(void);
-MB_EXPORT int writer_free(MbBiWriter *biw);
+class WriterPrivate;
+class MB_EXPORT Writer
+{
+    MB_DECLARE_PRIVATE(Writer)
 
-// Open/close
-MB_EXPORT int writer_open_filename(MbBiWriter *biw,
-                                   const std::string &filename);
-MB_EXPORT int writer_open_filename_w(MbBiWriter *biw,
-                                     const std::wstring &filename);
-MB_EXPORT int writer_open(MbBiWriter *biw, File *file, bool owned);
-MB_EXPORT int writer_close(MbBiWriter *biw);
+public:
+    Writer();
+    ~Writer();
 
-// Operations
-MB_EXPORT int writer_get_header(MbBiWriter *biw, Header *&header);
-MB_EXPORT int writer_get_header2(MbBiWriter *biw, Header &header);
-MB_EXPORT int writer_write_header(MbBiWriter *biw, const Header &header);
-MB_EXPORT int writer_get_entry(MbBiWriter *biw, Entry *&entry);
-MB_EXPORT int writer_get_entry2(MbBiWriter *biw, Entry &entry);
-MB_EXPORT int writer_write_entry(MbBiWriter *biw, const Entry &entry);
-MB_EXPORT int writer_write_data(MbBiWriter *biw, const void *buf,
-                                size_t size, size_t &bytes_written);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
 
-// Format operations
-MB_EXPORT int writer_format_code(MbBiWriter *biw);
-MB_EXPORT std::string writer_format_name(MbBiWriter *biw);
-MB_EXPORT int writer_set_format_by_code(MbBiWriter *biw, int code);
-MB_EXPORT int writer_set_format_by_name(MbBiWriter *biw,
-                                        const std::string &name);
+    Writer(Writer &&other);
+    Writer & operator=(Writer &&rhs);
 
-// Specific formats
-MB_EXPORT int writer_set_format_android(MbBiWriter *biw);
-MB_EXPORT int writer_set_format_bump(MbBiWriter *biw);
-MB_EXPORT int writer_set_format_loki(MbBiWriter *biw);
-MB_EXPORT int writer_set_format_mtk(MbBiWriter *biw);
-MB_EXPORT int writer_set_format_sony_elf(MbBiWriter *biw);
+    // Open/close
+    int open_filename(const std::string &filename);
+    int open_filename_w(const std::wstring &filename);
+    int open(File *file, bool owned);
+    int close();
 
-// Error handling functions
-MB_EXPORT int writer_error(MbBiWriter *biw);
-MB_EXPORT const char * writer_error_string(MbBiWriter *biw);
-MB_PRINTF(3, 4)
-MB_EXPORT int writer_set_error(MbBiWriter *biw, int error_code,
-                               const char *fmt, ...);
-MB_EXPORT int writer_set_error_v(MbBiWriter *biw, int error_code,
-                                 const char *fmt, va_list ap);
+    // Operations
+    int get_header(Header *&header);
+    int get_header2(Header &header);
+    int write_header(const Header &header);
+    int get_entry(Entry *&entry);
+    int get_entry2(Entry &entry);
+    int write_entry(const Entry &entry);
+    int write_data(const void *buf, size_t size, size_t &bytes_written);
 
-// TODO TODO TODO
-// SET OPTIONS FUNCTION
-// TODO TODO TODO
+    // Format operations
+    int format_code();
+    std::string format_name();
+    int set_format_by_code(int code);
+    int set_format_by_name(const std::string &name);
+
+    // Specific formats
+    int set_format_android();
+    int set_format_bump();
+    int set_format_loki();
+    int set_format_mtk();
+    int set_format_sony_elf();
+
+    // Error handling functions
+    int error();
+    std::string error_string();
+    MB_PRINTF(3, 4)
+    int set_error(int error_code, const char *fmt, ...);
+    int set_error_v(int error_code, const char *fmt, va_list ap);
+
+private:
+    std::unique_ptr<WriterPrivate> _priv_ptr;
+};
 
 }
 }

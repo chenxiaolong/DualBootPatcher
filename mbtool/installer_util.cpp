@@ -55,7 +55,6 @@ using namespace mb::bootimg;
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiWriter, decltype(writer_free) *> ScopedWriter;
 
 namespace mb
 {
@@ -303,16 +302,11 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     });
 
     Reader reader;
-    ScopedWriter biw(writer_new(), &writer_free);
+    Writer writer;
     Header *header;
     Entry *in_entry;
     Entry *out_entry;
     int ret;
-
-    if (!biw) {
-        LOGE("Failed to allocate reader or writer instance");
-        return false;
-    }
 
     // Open input boot image
     ret = reader.enable_format_all();
@@ -329,16 +323,16 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     }
 
     // Open output boot image
-    ret = writer_set_format_by_code(biw.get(), reader.format_code());
+    ret = writer.set_format_by_code(reader.format_code());
     if (ret != RET_OK) {
         LOGE("Failed to set output boot image format: %s",
-             writer_error_string(biw.get()));
+             writer.error_string().c_str());
         return false;
     }
-    ret = writer_open_filename(biw.get(), output_file);
+    ret = writer.open_filename(output_file);
     if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
@@ -355,28 +349,28 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
              input_file.c_str(), reader.error_string().c_str());
         return false;
     }
-    ret = writer_write_header(biw.get(), *header);
+    ret = writer.write_header(*header);
     if (ret != RET_OK) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
     // Write entries
-    while ((ret = writer_get_entry(biw.get(), out_entry)) == RET_OK) {
+    while ((ret = writer.get_entry(out_entry)) == RET_OK) {
         auto type = out_entry->type();
 
         // Write entry metadata
-        ret = writer_write_entry(biw.get(), *out_entry);
+        ret = writer.write_entry(*out_entry);
         if (ret != RET_OK) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), writer_error_string(biw.get()));
+                 output_file.c_str(), writer.error_string().c_str());
             return false;
         }
 
         // Special case for loki aboot
         if (*type == ENTRY_TYPE_ABOOT) {
-            if (bi_copy_file_to_data(ABOOT_PARTITION, biw.get())) {
+            if (bi_copy_file_to_data(ABOOT_PARTITION, writer)) {
                 return false;
             }
         } else {
@@ -409,7 +403,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(ramdisk_out, biw.get())) {
+                if (!bi_copy_file_to_data(ramdisk_out, writer)) {
                     return false;
                 }
             } else if (type == ENTRY_TYPE_KERNEL) {
@@ -431,21 +425,21 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(kernel_out, biw.get())) {
+                if (!bi_copy_file_to_data(kernel_out, writer)) {
                     return false;
                 }
             } else {
                 // Copy entry directly
-                if (!bi_copy_data_to_data(reader, biw.get())) {
+                if (!bi_copy_data_to_data(reader, writer)) {
                     return false;
                 }
             }
         }
     }
 
-    if (writer_close(biw.get()) != RET_OK) {
+    if (writer.close() != RET_OK) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 

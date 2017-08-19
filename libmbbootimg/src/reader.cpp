@@ -431,8 +431,7 @@ int Reader::open(File *file, bool owned)
     priv->file_owned = owned;
 
     if (priv->formats.empty()) {
-        set_error(ERROR_PROGRAMMER_ERROR,
-                  "No reader formats registered");
+        set_error(ERROR_PROGRAMMER_ERROR, "No reader formats registered");
         ret = RET_FAILED;
         goto done;
     }
@@ -496,7 +495,7 @@ done:
 /*!
  * \brief Close a Reader.
  *
- * This function will close an Reader if it is open. Regardless of the return
+ * This function will close a Reader if it is open. Regardless of the return
  * value, the reader is closed and can no longer be used for further operations.
  *
  * \return

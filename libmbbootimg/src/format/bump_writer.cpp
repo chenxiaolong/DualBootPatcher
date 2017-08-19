@@ -29,18 +29,18 @@ namespace bootimg
 /*!
  * \brief Set Bump boot image output format
  *
- * \param biw MbBiWriter
- *
  * \return
  *   * #RET_OK if the format is successfully set
  *   * \<= #RET_WARN if an error occurs
  */
-int writer_set_format_bump(MbBiWriter *biw)
+int Writer::set_format_bump()
 {
     using namespace android;
 
-    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(biw, true)};
-    return _writer_register_format(biw, std::move(format));
+    MB_PRIVATE(Writer);
+
+    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, true)};
+    return priv->register_format(std::move(format));
 }
 
 }

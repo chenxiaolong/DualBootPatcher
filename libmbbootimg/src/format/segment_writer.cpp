@@ -60,17 +60,16 @@ void SegmentWriter::entries_clear()
 }
 
 int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
-                               uint64_t align, MbBiWriter *biw)
+                               uint64_t align, Writer &writer)
 {
     if (_state != SegmentWriterState::Begin) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
+        writer.set_error(ERROR_INTERNAL_ERROR,
                          "Adding entry in incorrect state");
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        writer_set_error(biw, ERROR_INTERNAL_ERROR,
-                         "Too many entries");
+        writer.set_error(ERROR_INTERNAL_ERROR, "Too many entries");
         return RET_FATAL;
     }
 
@@ -153,11 +152,11 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
     }
 }
 
-int SegmentWriter::get_entry(File &file, Entry &entry, MbBiWriter *biw)
+int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
 {
     if (!_have_pos) {
         if (!file.seek(0, SEEK_CUR, &_pos)) {
-            writer_set_error(biw, file.error().value() /* TODO */,
+            writer.set_error(file.error().value() /* TODO */,
                              "Failed to get current offset: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -187,7 +186,7 @@ int SegmentWriter::get_entry(File &file, Entry &entry, MbBiWriter *biw)
     return RET_OK;
 }
 
-int SegmentWriter::write_entry(File &file, const Entry &entry, MbBiWriter *biw)
+int SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
 {
     (void) file;
 
@@ -195,7 +194,7 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, MbBiWriter *biw)
     auto size = entry.size();
     if (size) {
         if (*size > UINT32_MAX) {
-            writer_set_error(biw, ERROR_INVALID_ARGUMENT,
+            writer.set_error(ERROR_INVALID_ARGUMENT,
                              "Invalid entry size: %" PRIu64, *size);
             return RET_FAILED;
         }
@@ -207,23 +206,22 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, MbBiWriter *biw)
 }
 
 int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
-                              size_t &bytes_written, MbBiWriter *biw)
+                              size_t &bytes_written, Writer &writer)
 {
     // Check for overflow
     if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
             || _pos > UINT64_MAX - buf_size) {
-        writer_set_error(biw, ERROR_INVALID_ARGUMENT,
-                         "Overflow in entry size");
+        writer.set_error(ERROR_INVALID_ARGUMENT, "Overflow in entry size");
         return RET_FAILED;
     }
 
     if (!file_write_fully(file, buf, buf_size, bytes_written)) {
-        writer_set_error(biw, file.error().value() /* TODO */,
+        writer.set_error(file.error().value() /* TODO */,
                          "Failed to write data: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (bytes_written != buf_size) {
-        writer_set_error(biw, file.error().value() /* TODO */,
+        writer.set_error(file.error().value() /* TODO */,
                          "Write was truncated: %s",
                          file.error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
@@ -237,7 +235,7 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
     return RET_OK;
 }
 
-int SegmentWriter::finish_entry(File &file, MbBiWriter *biw)
+int SegmentWriter::finish_entry(File &file, Writer &writer)
 {
     // Update size with number of bytes written
     update_size_if_unset(_entry_size);
@@ -248,7 +246,7 @@ int SegmentWriter::finish_entry(File &file, MbBiWriter *biw)
         uint64_t new_pos;
 
         if (!file.seek(skip, SEEK_CUR, &new_pos)) {
-            writer_set_error(biw, file.error().value() /* TODO */,
+            writer.set_error(file.error().value() /* TODO */,
                              "Failed to seek to page boundary: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;

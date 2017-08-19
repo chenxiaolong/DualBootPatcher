@@ -31,35 +31,6 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 
-#define WRITER_ENSURE_STATE(INSTANCE, STATES) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            writer_set_error((INSTANCE), \
-                             ERROR_PROGRAMMER_ERROR, \
-                             "%s: Invalid state: " \
-                             "expected 0x%x, actual: 0x%hx", \
-                             __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = WriterState::FATAL; \
-            return RET_FATAL; \
-        } \
-    } while (0)
-
-#define WRITER_ENSURE_STATE_GOTO(INSTANCE, STATES, RETURN_VAR, LABEL) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            writer_set_error((INSTANCE), \
-                             ERROR_PROGRAMMER_ERROR, \
-                             "%s: Invalid state: " \
-                             "expected 0x%x, actual: 0x%hx", \
-                             __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = WriterState::FATAL; \
-            (RETURN_VAR) = RET_FATAL; \
-            goto LABEL; \
-        } \
-    } while (0)
-
-#define MAX_FORMATS     10
-
 namespace mb
 {
 namespace bootimg
@@ -68,7 +39,7 @@ namespace bootimg
 class FormatWriter
 {
 public:
-    FormatWriter(MbBiWriter *biw);
+    FormatWriter(Writer &writer);
     virtual ~FormatWriter();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatWriter)
@@ -79,17 +50,17 @@ public:
 
     virtual int init();
     virtual int set_option(const char *key, const char *value);
-    virtual int get_header(Header &header) = 0;
-    virtual int write_header(const Header &header) = 0;
-    virtual int get_entry(Entry &entry) = 0;
-    virtual int write_entry(const Entry &entry) = 0;
-    virtual int write_data(const void *buf, size_t buf_size,
+    virtual int get_header(File &file, Header &header) = 0;
+    virtual int write_header(File &file, const Header &header) = 0;
+    virtual int get_entry(File &file, Entry &entry) = 0;
+    virtual int write_entry(File &file, const Entry &entry) = 0;
+    virtual int write_data(File &file, const void *buf, size_t buf_size,
                            size_t &bytes_written) = 0;
-    virtual int finish_entry();
-    virtual int close();
+    virtual int finish_entry(File &file);
+    virtual int close(File &file);
 
 protected:
-    MbBiWriter *_biw;
+    Writer &_writer;
 };
 
 enum WriterState : unsigned short
@@ -105,8 +76,17 @@ enum WriterState : unsigned short
     ANY             = ANY_NONFATAL | FATAL,
 };
 
-struct MbBiWriter
+class WriterPrivate
 {
+    MB_DECLARE_PUBLIC(Writer)
+
+public:
+    WriterPrivate(Writer *writer);
+
+    int register_format(std::unique_ptr<FormatWriter> format);
+
+    Writer *_pub_ptr;
+
     // Global state
     WriterState state;
 
@@ -123,9 +103,6 @@ struct MbBiWriter
     Entry entry;
     Header header;
 };
-
-int _writer_register_format(MbBiWriter *biw,
-                            std::unique_ptr<FormatWriter> format);
 
 }
 }
