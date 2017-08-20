@@ -809,7 +809,7 @@ bool SparseFile::on_open()
     MB_PRIVATE(SparseFile);
 
     if (!priv->file->is_open()) {
-        set_error(make_error_code(FileError::InvalidArgument),
+        set_error(make_error_code(FileError::InvalidState),
                   "Underlying file is not open");
         return false;
     }
@@ -822,7 +822,7 @@ bool SparseFile::on_open()
     if (priv->file->seek(0, SEEK_CUR, nullptr)) {
         DEBUG("File supports forward skipping");
         priv->seekability = Seekability::CAN_SKIP;
-    } else if (priv->file->error() != FileError::Unsupported) {
+    } else if (priv->file->error() != FileErrorC::Unsupported) {
         set_error(priv->file->error(), "%s",
                   priv->file->error_string().c_str());
         return false;
@@ -844,7 +844,7 @@ bool SparseFile::on_open()
         priv->seekability = Seekability::CAN_SEEK;
         priv->cur_src_offset -= n;
         n = 0;
-    } else if (priv->file->error() != FileError::Unsupported) {
+    } else if (priv->file->error() != FileErrorC::Unsupported) {
         set_error(priv->file->error(), "%s",
                   priv->file->error_string().c_str());
         return false;
@@ -1027,7 +1027,7 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
     switch (whence) {
     case SEEK_SET:
         if (offset < 0) {
-            set_error(make_error_code(FileError::InvalidArgument),
+            set_error(make_error_code(FileError::ArgumentOutOfRange),
                       "Cannot seek to negative offset");
             return false;
         }
@@ -1052,7 +1052,7 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
         new_offset = priv->file_size + offset;
         break;
     default:
-        set_error(make_error_code(FileError::InvalidArgument),
+        set_error(make_error_code(FileError::InvalidWhence),
                   "Invalid seek whence: %d", whence);
         return false;
     }

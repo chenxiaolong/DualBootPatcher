@@ -30,6 +30,8 @@ enum class FileError
 {
     ArgumentOutOfRange      = 10,
     CannotConvertEncoding   = 11,
+    InvalidMode             = 12,
+    InvalidWhence           = 13,
 
     InvalidState            = 20,
 
@@ -41,25 +43,33 @@ enum class FileError
     IntegerOverflow         = 40,
 
     BadFileFormat           = 50,
+};
 
-    // Error groups
-    InvalidArgument         = -10,
-    Unsupported             = -30,
+enum class FileErrorC
+{
+    InvalidArgument         = 10,
+    InvalidState            = 20,
+    Unsupported             = 30,
+    InternalError           = 40,
 };
 
 MB_EXPORT std::error_code make_error_code(FileError e);
-MB_EXPORT std::error_condition make_error_condition(FileError ec);
+MB_EXPORT std::error_condition make_error_condition(FileErrorC ec);
 
 MB_EXPORT const std::error_category & file_error_category();
+MB_EXPORT const std::error_category & file_errorc_category();
 
 }
 
 namespace std
 {
-    // Allow implicit conversion from FileError to std::error_condition since
-    // the error codes are platform-independent
     template<>
-    struct MB_EXPORT is_error_condition_enum<mb::FileError> : true_type
+    struct MB_EXPORT is_error_code_enum<mb::FileError> : true_type
+    {
+    };
+
+    template<>
+    struct MB_EXPORT is_error_condition_enum<mb::FileErrorC> : true_type
     {
     };
 }

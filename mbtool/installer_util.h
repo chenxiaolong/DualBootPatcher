@@ -24,12 +24,8 @@
 
 #include "ramdisk_patcher.h"
 
-struct MbBiReader;
-struct MbBiWriter;
-
 namespace mb
 {
-
 class File;
 
 class InstallerUtil

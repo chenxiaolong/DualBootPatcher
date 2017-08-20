@@ -24,18 +24,18 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
 
+#include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_reader_p.h"
 #include "mbbootimg/reader.h"
 
-typedef std::unique_ptr<MbBiHeader, decltype(mb_bi_header_free) *> ScopedHeader;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+using namespace mb::bootimg;
+using namespace mb::bootimg::loki;
 
 // Tests for find_loki_header()
 
 TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     LokiHeader source = {};
     memcpy(source.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
@@ -52,13 +52,13 @@ TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_loki_header(bir.get(), &file, &header, &offset), MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
+              RET_OK);
 }
 
 TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     LokiHeader header;
     uint64_t offset;
@@ -66,14 +66,14 @@ TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_loki_header(bir.get(), &file, &header, &offset), MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "Too small"));
+    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
+              RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::LokiHeaderTooSmall);
 }
 
 TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     LokiHeader source = {};
     memcpy(source.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
@@ -91,19 +91,18 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_loki_header(bir.get(), &file, &header, &offset), MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
-                       "Invalid loki magic"));
+    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
+              RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::InvalidLokiMagic);
 }
 
-// Tests for loki_find_ramdisk_address()
+// Tests for find_ramdisk_address()
 
 TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
     ahdr.kernel_addr = 0x80208000;
 
     LokiHeader lhdr = {};
@@ -122,18 +121,17 @@ TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_find_ramdisk_address(bir.get(), &file, &ahdr, &lhdr,
-                                        &ramdisk_addr), MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                     ramdisk_addr), RET_OK);
 
     ASSERT_EQ(ramdisk_addr, ahdr.kernel_addr + 0x01ff8000);
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
     lhdr.ramdisk_addr = 0x82200000;
@@ -159,18 +157,17 @@ TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_find_ramdisk_address(bir.get(), &file, &ahdr, &lhdr,
-                                        &ramdisk_addr), MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                     ramdisk_addr), RET_OK);
 
     ASSERT_EQ(ramdisk_addr, 0xddccbbaa);
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
     lhdr.ramdisk_addr = 0x82200000;
@@ -180,18 +177,16 @@ TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_find_ramdisk_address(bir.get(), &file, &ahdr, &lhdr,
-                                        &ramdisk_addr), MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
-                       "Loki shellcode not found"));
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                     ramdisk_addr), RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::ShellcodeNotFound);
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
 
     LokiHeader lhdr = {};
     lhdr.ramdisk_addr = 0x82200000;
@@ -212,18 +207,16 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_find_ramdisk_address(bir.get(), &file, &ahdr, &lhdr,
-                                        &ramdisk_addr), MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
-                       "Unexpected EOF"));
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                     ramdisk_addr), RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
-// Tests for loki_old_find_gzip_offset()
+// Tests for find_gzip_offset_old()
 
 TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
@@ -234,16 +227,15 @@ TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 0, &gzip_offset),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                     gzip_offset), RET_OK);
 
     ASSERT_EQ(gzip_offset, 0u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x08,
@@ -254,16 +246,15 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 0, &gzip_offset),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                     gzip_offset), RET_OK);
 
     ASSERT_EQ(gzip_offset, 0u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
@@ -275,16 +266,15 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 0, &gzip_offset),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                     gzip_offset), RET_OK);
 
     ASSERT_EQ(gzip_offset, 4u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     unsigned char data[] = {
         0x1f, 0x8b, 0x08, 0x00,
@@ -296,32 +286,29 @@ TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 4, &gzip_offset),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                     gzip_offset), RET_OK);
 
     ASSERT_EQ(gzip_offset, 4u);
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     uint64_t gzip_offset;
 
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 4, &gzip_offset),
-              MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
-                       "No gzip headers found"));
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                     gzip_offset), RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     unsigned char data[] = {
         0x1f, 0x8b, 0x08,
@@ -332,20 +319,18 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_gzip_offset(bir.get(), &file, 4, &gzip_offset),
-              MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()),
-                       "No gzip headers found"));
+    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                     gzip_offset), RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
-// Tests for loki_old_find_ramdisk_size()
+// Tests for find_ramdisk_size_old()
 
 TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.page_size = 2048;
 
@@ -357,19 +342,18 @@ TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_ramdisk_size(bir.get(), &file, &ahdr,
-                                         ahdr.page_size, &ramdisk_size),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                      ahdr.page_size,
+                                                      ramdisk_size), RET_OK);
 
     ASSERT_EQ(ramdisk_size, ahdr.page_size);
 }
 
 TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0xf8132a0; // LG G2 (AT&T)
     ahdr.page_size = 2048;
 
@@ -381,19 +365,18 @@ TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_ramdisk_size(bir.get(), &file, &ahdr,
-                                         ahdr.page_size, &ramdisk_size),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                      ahdr.page_size,
+                                                      ramdisk_size), RET_OK);
 
     ASSERT_EQ(ramdisk_size, ahdr.page_size);
 }
 
 TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
-    AndroidHeader ahdr = {};
+    android::AndroidHeader ahdr = {};
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.page_size = 2048;
 
@@ -405,18 +388,18 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_old_find_ramdisk_size(bir.get(), &file, &ahdr,
-                                         data.size() + 1, &ramdisk_size),
-              MB_BI_FAILED);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "greater than"));
+    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                      data.size() + 1,
+                                                      ramdisk_size),
+              RET_FAILED);
+    ASSERT_EQ(reader.error(), LokiError::RamdiskOffsetGreaterThanAbootOffset);
 }
 
 // Tests for find_linux_kernel_size()
 
 TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     std::vector<unsigned char> data;
     data.resize(2048 + 0x2c);
@@ -430,16 +413,15 @@ TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_linux_kernel_size(bir.get(), &file, 2048, &kernel_size),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+                                                       kernel_size), RET_OK);
 
     ASSERT_EQ(kernel_size, 0xddccbbaa);
 }
 
 TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
+    Reader reader;
 
     std::vector<unsigned char> data;
     data.resize(2048 + 0x2c);
@@ -449,22 +431,20 @@ TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(find_linux_kernel_size(bir.get(), &file, 2048, &kernel_size),
-              MB_BI_WARN);
-    ASSERT_TRUE(strstr(mb_bi_reader_error_string(bir.get()), "Unexpected EOF"));
+    ASSERT_EQ(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+                                                       kernel_size), RET_WARN);
+    ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
-// Tests for loki_read_old_header()
+// Tests for read_header_old()
 
 TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
-    ScopedHeader header(mb_bi_header_new(), &mb_bi_header_free);
-    ASSERT_TRUE(!!header);
+    Reader reader;
+    Header header;
 
-    AndroidHeader ahdr = {};
-    memcpy(ahdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    android::AndroidHeader ahdr = {};
+    memcpy(ahdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
     ahdr.kernel_addr = 0x11223344;
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.page_size = 2048;
@@ -510,39 +490,41 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_read_old_header(bir.get(), &file, &ahdr, &lhdr,
-                                   header.get(), &kernel_offset, &kernel_size,
-                                   &ramdisk_offset, &ramdisk_size),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::read_header_old(reader, file, ahdr, lhdr,
+                                                header, kernel_offset,
+                                                kernel_size, ramdisk_offset,
+                                                ramdisk_size), RET_OK);
 
     // Board name
-    const char *board_name = mb_bi_header_board_name(header.get());
+    auto board_name = header.board_name();
     ASSERT_TRUE(board_name);
-    ASSERT_STREQ(board_name, reinterpret_cast<char *>(ahdr.name));
+    ASSERT_EQ(*board_name, reinterpret_cast<char *>(ahdr.name));
 
     // Kernel cmdline
-    const char *cmdline = mb_bi_header_kernel_cmdline(header.get());
+    auto cmdline = header.kernel_cmdline();
     ASSERT_TRUE(cmdline);
-    ASSERT_STREQ(cmdline, reinterpret_cast<char *>(ahdr.cmdline));
+    ASSERT_EQ(*cmdline, reinterpret_cast<char *>(ahdr.cmdline));
 
     // Page size
-    ASSERT_TRUE(mb_bi_header_page_size_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), ahdr.page_size);
+    auto page_size = header.page_size();
+    ASSERT_TRUE(page_size);
+    ASSERT_EQ(*page_size, ahdr.page_size);
 
     // Kernel address
-    ASSERT_TRUE(mb_bi_header_kernel_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), ahdr.kernel_addr);
+    auto kernel_address = header.kernel_address();
+    ASSERT_TRUE(kernel_address);
+    ASSERT_EQ(*kernel_address, ahdr.kernel_addr);
 
     // Ramdisk address
-    ASSERT_TRUE(mb_bi_header_ramdisk_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()),
-              ahdr.kernel_addr + 0x01ff8000);
+    auto ramdisk_address = header.ramdisk_address();
+    ASSERT_TRUE(ramdisk_address);
+    ASSERT_EQ(*ramdisk_address, ahdr.kernel_addr + 0x01ff8000);
 
     // Kernel tags address
-    ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()),
-              mb_bi_header_kernel_address(header.get())
-            - ANDROID_DEFAULT_KERNEL_OFFSET + ANDROID_DEFAULT_TAGS_OFFSET);
+    auto kernel_tags_address = header.kernel_tags_address();
+    ASSERT_TRUE(kernel_tags_address);
+    ASSERT_EQ(*kernel_tags_address, *header.kernel_address()
+            - android::DEFAULT_KERNEL_OFFSET + android::DEFAULT_TAGS_OFFSET);
 
     // Kernel image
     ASSERT_EQ(kernel_offset, ahdr.page_size);
@@ -553,17 +535,15 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
     ASSERT_EQ(ramdisk_size, ahdr.page_size);
 }
 
-// Tests for loki_read_new_header()
+// Tests for read_header_new()
 
 TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ASSERT_TRUE(!!bir);
-    ScopedHeader header(mb_bi_header_new(), &mb_bi_header_free);
-    ASSERT_TRUE(!!header);
+    Reader reader;
+    Header header;
 
-    AndroidHeader ahdr = {};
-    memcpy(ahdr.magic, ANDROID_BOOT_MAGIC, ANDROID_BOOT_MAGIC_SIZE);
+    android::AndroidHeader ahdr = {};
+    memcpy(ahdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
     ahdr.kernel_addr = 0x11223344;
     ahdr.ramdisk_addr = 0x88e0ff90; // jflteatt
     ahdr.tags_addr = 0x22334455;
@@ -614,36 +594,41 @@ TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(loki_read_new_header(bir.get(), &file, &ahdr, &lhdr,
-                                   header.get(), &kernel_offset, &kernel_size,
-                                   &ramdisk_offset, &ramdisk_size, &dt_offset),
-              MB_BI_OK);
+    ASSERT_EQ(LokiFormatReader::read_header_new(reader, file, ahdr, lhdr,
+                                                header, kernel_offset,
+                                                kernel_size, ramdisk_offset,
+                                                ramdisk_size, dt_offset),
+              RET_OK);
 
     // Board name
-    const char *board_name = mb_bi_header_board_name(header.get());
+    auto board_name = header.board_name();
     ASSERT_TRUE(board_name);
-    ASSERT_STREQ(board_name, reinterpret_cast<char *>(ahdr.name));
+    ASSERT_EQ(*board_name, reinterpret_cast<char *>(ahdr.name));
 
     // Kernel cmdline
-    const char *cmdline = mb_bi_header_kernel_cmdline(header.get());
+    auto cmdline = header.kernel_cmdline();
     ASSERT_TRUE(cmdline);
-    ASSERT_STREQ(cmdline, reinterpret_cast<char *>(ahdr.cmdline));
+    ASSERT_EQ(*cmdline, reinterpret_cast<char *>(ahdr.cmdline));
 
     // Page size
-    ASSERT_TRUE(mb_bi_header_page_size_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_page_size(header.get()), ahdr.page_size);
+    auto page_size = header.page_size();
+    ASSERT_TRUE(page_size);
+    ASSERT_EQ(*page_size, ahdr.page_size);
 
     // Kernel address
-    ASSERT_TRUE(mb_bi_header_kernel_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_address(header.get()), ahdr.kernel_addr);
+    auto kernel_address = header.kernel_address();
+    ASSERT_TRUE(kernel_address);
+    ASSERT_EQ(*kernel_address, ahdr.kernel_addr);
 
     // Ramdisk address
-    ASSERT_TRUE(mb_bi_header_ramdisk_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_ramdisk_address(header.get()), 0xddccbbaa);
+    auto ramdisk_address = header.ramdisk_address();
+    ASSERT_TRUE(ramdisk_address);
+    ASSERT_EQ(*ramdisk_address, 0xddccbbaa);
 
     // Kernel tags address
-    ASSERT_TRUE(mb_bi_header_kernel_tags_address_is_set(header.get()));
-    ASSERT_EQ(mb_bi_header_kernel_tags_address(header.get()), ahdr.tags_addr);
+    auto kernel_tags_address = header.kernel_tags_address();
+    ASSERT_TRUE(kernel_tags_address);
+    ASSERT_EQ(*kernel_tags_address, ahdr.tags_addr);
 
     // Kernel image
     ASSERT_EQ(kernel_offset, ahdr.page_size);
