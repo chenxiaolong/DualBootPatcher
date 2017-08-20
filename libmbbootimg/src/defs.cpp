@@ -187,55 +187,5 @@ namespace bootimg
  * The operation is not supported.
  */
 
-// Error codes documentation
-
-/*!
- * \defgroup MB_BI_ERROR_CODES Error codes
- *
- * \brief Possible error codes
- */
-
-/*!
- * \def ERROR_NONE
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief No error
- */
-
-/*!
- * \def ERROR_INVALID_ARGUMENT
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief An invalid argument was provided
- */
-
-/*!
- * \def ERROR_UNSUPPORTED
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The operation is not supported
- */
-
-/*!
- * \def ERROR_FILE_FORMAT
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The file does not conform to the file format
- */
-
-/*!
- * \def ERROR_PROGRAMMER_ERROR
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The function were called in an invalid state
- */
-
-/*!
- * \def ERROR_INTERNAL_ERROR
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief Internal error in the library
- */
-
 }
 }

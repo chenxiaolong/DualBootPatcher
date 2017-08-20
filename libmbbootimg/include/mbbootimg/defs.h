@@ -48,14 +48,5 @@ constexpr int RET_WARN                  = -2;
 constexpr int RET_FAILED                = -3;
 constexpr int RET_FATAL                 = -4;
 
-// Error types
-
-constexpr int ERROR_NONE                = 0;
-constexpr int ERROR_INVALID_ARGUMENT    = 1;
-constexpr int ERROR_UNSUPPORTED         = 2;
-constexpr int ERROR_FILE_FORMAT         = 2;
-constexpr int ERROR_PROGRAMMER_ERROR    = 3;
-constexpr int ERROR_INTERNAL_ERROR      = 4;
-
 }
 }
