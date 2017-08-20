@@ -31,6 +31,7 @@
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
+#include "mbbootimg/format/segment_error_p.h"
 
 namespace mb
 {
@@ -63,13 +64,13 @@ int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
                                uint64_t align, Writer &writer)
 {
     if (_state != SegmentWriterState::Begin) {
-        writer.set_error(ERROR_INTERNAL_ERROR,
-                         "Adding entry in incorrect state");
+        writer.set_error(make_error_code(
+                SegmentError::AddEntryInIncorrectState));
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        writer.set_error(ERROR_INTERNAL_ERROR, "Too many entries");
+        writer.set_error(make_error_code(SegmentError::TooManyEntries));
         return RET_FATAL;
     }
 
@@ -156,7 +157,7 @@ int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
 {
     if (!_have_pos) {
         if (!file.seek(0, SEEK_CUR, &_pos)) {
-            writer.set_error(file.error().value() /* TODO */,
+            writer.set_error(file.error(),
                              "Failed to get current offset: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -194,7 +195,7 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
     auto size = entry.size();
     if (size) {
         if (*size > UINT32_MAX) {
-            writer.set_error(ERROR_INVALID_ARGUMENT,
+            writer.set_error(make_error_code(SegmentError::InvalidEntrySize),
                              "Invalid entry size: %" PRIu64, *size);
             return RET_FAILED;
         }
@@ -211,17 +212,18 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
     // Check for overflow
     if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
             || _pos > UINT64_MAX - buf_size) {
-        writer.set_error(ERROR_INVALID_ARGUMENT, "Overflow in entry size");
+        writer.set_error(make_error_code(
+                SegmentError::WriteWouldOverflowInteger));
         return RET_FAILED;
     }
 
     if (!file_write_fully(file, buf, buf_size, bytes_written)) {
-        writer.set_error(file.error().value() /* TODO */,
+        writer.set_error(file.error(),
                          "Failed to write data: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     } else if (bytes_written != buf_size) {
-        writer.set_error(file.error().value() /* TODO */,
+        writer.set_error(file.error(),
                          "Write was truncated: %s",
                          file.error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
@@ -246,7 +248,7 @@ int SegmentWriter::finish_entry(File &file, Writer &writer)
         uint64_t new_pos;
 
         if (!file.seek(skip, SEEK_CUR, &new_pos)) {
-            writer.set_error(file.error().value() /* TODO */,
+            writer.set_error(file.error(),
                              "Failed to seek to page boundary: %s",
                              file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;

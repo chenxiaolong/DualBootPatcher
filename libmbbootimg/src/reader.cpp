@@ -43,7 +43,7 @@
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(priv->state & (STATES))) { \
-            set_error(ERROR_PROGRAMMER_ERROR, \
+            set_error(make_error_code(ReaderError::InvalidState), \
                       "%s: Invalid state: "\
                       "expected 0x%hhx, actual: 0x%hhx", \
                       __func__, static_cast<uint8_t>(STATES), priv->state); \
@@ -260,21 +260,22 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format)
     MB_PUBLIC(Reader);
 
     if (state != ReaderState::New) {
-        pub->set_error(ERROR_PROGRAMMER_ERROR,
+        pub->set_error(make_error_code(ReaderError::InvalidState),
                        "%s: Invalid state: expected 0x%hhx, actual: 0x%hhx",
                       __func__, ReaderState::New, state);
         return RET_FAILED;
     }
 
     if (formats.size() == MAX_FORMATS) {
-        pub->set_error(ERROR_PROGRAMMER_ERROR, "Too many formats enabled");
+        pub->set_error(make_error_code(ReaderError::TooManyFormats),
+                       "Too many formats enabled");
         return RET_FAILED;
     }
 
     for (auto const &f : formats) {
         if ((FORMAT_BASE_MASK & f->type())
                 == (FORMAT_BASE_MASK & format->type())) {
-            pub->set_error(ERROR_PROGRAMMER_ERROR,
+            pub->set_error(make_error_code(ReaderError::FormatAlreadyEnabled),
                            "%s format (0x%x) already enabled",
                            format->name().c_str(), format->type());
             return RET_WARN;
@@ -341,7 +342,7 @@ int Reader::open_filename(const std::string &filename)
     std::unique_ptr<File> file(
             new StandardFile(filename, FileOpenMode::READ_ONLY));
     if (!file->is_open()) {
-        set_error(file->error().value() /* TODO */,
+        set_error(file->error(),
                   "Failed to open for reading: %s",
                   file->error_string().c_str());
         return RET_FAILED;
@@ -367,7 +368,7 @@ int Reader::open_filename_w(const std::wstring &filename)
     std::unique_ptr<File> file(
             new StandardFile(filename, FileOpenMode::READ_ONLY));
     if (!file->is_open()) {
-        set_error(file->error().value() /* TODO */,
+        set_error(file->error(),
                   "Failed to open for reading: %s",
                   file->error_string().c_str());
         return RET_FAILED;
@@ -423,7 +424,7 @@ int Reader::open(File *file)
     FormatReader *format = nullptr;
 
     if (priv->formats.empty()) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No reader formats registered");
+        set_error(make_error_code(ReaderError::NoFormatsRegistered));
         return RET_FAILED;
     }
 
@@ -432,7 +433,7 @@ int Reader::open(File *file)
         for (auto &f : priv->formats) {
             // Seek to beginning
             if (!file->seek(0, SEEK_SET, nullptr)) {
-                set_error(file->error().value() /* TODO */,
+                set_error(file->error(),
                           "Failed to seek file: %s",
                           file->error_string().c_str());
                 return file->is_fatal() ? RET_FATAL : RET_FAILED;
@@ -451,7 +452,7 @@ int Reader::open(File *file)
         }
 
         if (!format) {
-            set_error(ERROR_FILE_FORMAT,
+            set_error(make_error_code(ReaderError::UnknownFileFormat),
                       "Failed to determine boot image format");
             return RET_FAILED;
         }
@@ -525,7 +526,7 @@ int Reader::read_header(Header &header)
 
     // Seek to beginning
     if (!priv->file->seek(0, SEEK_SET, nullptr)) {
-        set_error(priv->file->error().value() /* TODO */,
+        set_error(priv->file->error(),
                   "Failed to seek file: %s",
                   priv->file->error_string().c_str());
         return priv->file->is_fatal() ? RET_FATAL : RET_FAILED;
@@ -655,7 +656,7 @@ int Reader::format_code()
     GET_PIMPL_OR_RETURN(-1);
 
     if (!priv->format) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No format selected");
+        set_error(make_error_code(ReaderError::NoFormatSelected));
         return -1;
     }
 
@@ -680,7 +681,7 @@ std::string Reader::format_name()
     GET_PIMPL_OR_RETURN({});
 
     if (!priv->format) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No format selected");
+        set_error(make_error_code(ReaderError::NoFormatSelected));
         return {};
     }
 
@@ -719,7 +720,7 @@ int Reader::set_format_by_code(int code)
     }
 
     if (!format) {
-        set_error(ERROR_INTERNAL_ERROR, "Enabled format not found");
+        set_error(make_error_code(ReaderError::EnabledFormatNotFound));
         priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
@@ -760,7 +761,7 @@ int Reader::set_format_by_name(const std::string &name)
     }
 
     if (!format) {
-        set_error(ERROR_INTERNAL_ERROR, "Enabled format not found");
+        set_error(make_error_code(ReaderError::EnabledFormatNotFound));
         priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
@@ -813,7 +814,8 @@ int Reader::enable_format_by_code(int code)
         }
     }
 
-    set_error(ERROR_PROGRAMMER_ERROR, "Invalid format code: %d", code);
+    set_error(make_error_code(ReaderError::InvalidFormatCode),
+              "Invalid format code: %d", code);
     return RET_FAILED;
 }
 
@@ -838,7 +840,8 @@ int Reader::enable_format_by_name(const std::string &name)
         }
     }
 
-    set_error(ERROR_PROGRAMMER_ERROR, "Invalid format name: %s", name.c_str());
+    set_error(make_error_code(ReaderError::InvalidFormatName),
+              "Invalid format name: %s", name.c_str());
     return RET_FAILED;
 }
 
@@ -847,11 +850,9 @@ int Reader::enable_format_by_name(const std::string &name)
  *
  * \note The return value is undefined if an operation did not fail.
  *
- * \return Error code for failed operation. If \>= 0, then the value is one of
- *         the \ref MB_BI_ERROR_CODES entries. If \< 0, then the error code is
- *         implementation-defined (usually `-errno` or `-GetLastError()`).
+ * \return Error code for failed operation.
  */
-int Reader::error()
+std::error_code Reader::error()
 {
     GET_PIMPL_OR_RETURN({});
 
@@ -878,20 +879,35 @@ std::string Reader::error_string()
  *
  * \sa Reader::set_error_v()
  *
- * \param error_code Error code
+ * \param ec Error code
+ *
+ * \return RET_OK if the error is successfully set or RET_FAILED if an
+ *         error occurs
+ */
+int Reader::set_error(std::error_code ec)
+{
+    return set_error(ec, "");
+}
+
+/*!
+ * \brief Set error string for a failed operation.
+ *
+ * \sa Reader::set_error_v()
+ *
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ... `printf()`-style format arguments
  *
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int Reader::set_error(int error_code, const char *fmt, ...)
+int Reader::set_error(std::error_code ec, const char *fmt, ...)
 {
     int ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = set_error_v(error_code, fmt, ap);
+    ret = set_error_v(ec, fmt, ap);
     va_end(ap);
 
     return ret;
@@ -902,19 +918,29 @@ int Reader::set_error(int error_code, const char *fmt, ...)
  *
  * \sa Reader::set_error()
  *
- * \param error_code Error code
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ap `printf()`-style format arguments as a va_list
  *
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int Reader::set_error_v(int error_code, const char *fmt, va_list ap)
+int Reader::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
 
-    priv->error_code = error_code;
-    return format_v(priv->error_string, fmt, ap) ? RET_OK : RET_FAILED;
+    priv->error_code = ec;
+
+    if (!format_v(priv->error_string, fmt, ap)) {
+        return RET_FAILED;
+    }
+
+    if (!priv->error_string.empty()) {
+        priv->error_string += ": ";
+    }
+    priv->error_string += ec.message();
+
+    return RET_OK;
 }
 
 }

@@ -24,6 +24,7 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file/memory.h"
 
+#include "mbbootimg/format/loki_error.h"
 #include "mbbootimg/format/loki_reader_p.h"
 #include "mbbootimg/reader.h"
 
@@ -67,7 +68,7 @@ TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
               RET_WARN);
-    ASSERT_NE(reader.error_string().find("Too small"), std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::LokiHeaderTooSmall);
 }
 
 TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
@@ -92,8 +93,7 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
               RET_WARN);
-    ASSERT_NE(reader.error_string().find("Invalid loki magic"),
-              std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::InvalidLokiMagic);
 }
 
 // Tests for find_ramdisk_address()
@@ -179,8 +179,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
                                                      ramdisk_addr), RET_WARN);
-    ASSERT_NE(reader.error_string().find("Loki shellcode not found"),
-              std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::ShellcodeNotFound);
 }
 
 TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
@@ -210,7 +209,7 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
                                                      ramdisk_addr), RET_WARN);
-    ASSERT_NE(reader.error_string().find("Unexpected EOF"), std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
 // Tests for find_gzip_offset_old()
@@ -304,8 +303,7 @@ TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
                                                      gzip_offset), RET_WARN);
-    ASSERT_NE(reader.error_string().find("No gzip headers found"),
-              std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
 TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
@@ -323,8 +321,7 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
                                                      gzip_offset), RET_WARN);
-    ASSERT_NE(reader.error_string().find("No gzip headers found"),
-              std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
 // Tests for find_ramdisk_size_old()
@@ -395,7 +392,7 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
                                                       data.size() + 1,
                                                       ramdisk_size),
               RET_FAILED);
-    ASSERT_NE(reader.error_string().find("greater than"), std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::RamdiskOffsetGreaterThanAbootOffset);
 }
 
 // Tests for find_linux_kernel_size()
@@ -436,7 +433,7 @@ TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
 
     ASSERT_EQ(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
                                                        kernel_size), RET_WARN);
-    ASSERT_NE(reader.error_string().find("Unexpected EOF"), std::string::npos);
+    ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
 // Tests for read_header_old()

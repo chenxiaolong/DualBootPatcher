@@ -43,7 +43,7 @@
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(priv->state & (STATES))) { \
-            set_error(ERROR_PROGRAMMER_ERROR, \
+            set_error(make_error_code(WriterError::InvalidState), \
                       "%s: Invalid state: "\
                       "expected 0x%hhx, actual: 0x%hhx", \
                       __func__, static_cast<uint8_t>(STATES), priv->state); \
@@ -291,7 +291,7 @@ int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format)
     MB_PUBLIC(Writer);
 
     if (state != WriterState::New) {
-        pub->set_error(ERROR_PROGRAMMER_ERROR,
+        pub->set_error(make_error_code(WriterError::InvalidState),
                        "%s: Invalid state: expected 0x%hhx, actual: 0x%hhx",
                       __func__, WriterState::New, state);
         return RET_FAILED;
@@ -364,7 +364,7 @@ int Writer::open_filename(const std::string &filename)
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
-        set_error(file->error().value() /* TODO */,
+        set_error(file->error(),
                   "Failed to open for writing: %s",
                   file->error_string().c_str());
         return RET_FAILED;
@@ -392,7 +392,7 @@ int Writer::open_filename_w(const std::wstring &filename)
 
     // Open in read/write mode since some formats need to reread the file
     if (!file->is_open()) {
-        set_error(file->error().value() /* TODO */,
+        set_error(file->error(),
                   "Failed to open for writing: %s",
                   file->error_string().c_str());
         return RET_FAILED;
@@ -445,7 +445,7 @@ int Writer::open(File *file)
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     if (!priv->format) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No writer format registered");
+        set_error(make_error_code(WriterError::NoFormatRegistered));
         return RET_FAILED;
     }
 
@@ -674,7 +674,7 @@ int Writer::format_code()
     GET_PIMPL_OR_RETURN(-1);
 
     if (!priv->format) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No format selected");
+        set_error(make_error_code(WriterError::NoFormatSelected));
         return -1;
     }
 
@@ -691,7 +691,7 @@ std::string Writer::format_name()
     GET_PIMPL_OR_RETURN({});
 
     if (!priv->format) {
-        set_error(ERROR_PROGRAMMER_ERROR, "No format selected");
+        set_error(make_error_code(WriterError::NoFormatSelected));
         return {};
     }
 
@@ -718,7 +718,8 @@ int Writer::set_format_by_code(int code)
         }
     }
 
-    set_error(ERROR_PROGRAMMER_ERROR, "Invalid format code: %d", code);
+    set_error(make_error_code(WriterError::InvalidFormatCode),
+              "Invalid format code: %d", code);
     return RET_FAILED;
 }
 
@@ -742,7 +743,8 @@ int Writer::set_format_by_name(const std::string &name)
         }
     }
 
-    set_error(ERROR_PROGRAMMER_ERROR, "Invalid format name: %s", name.c_str());
+    set_error(make_error_code(WriterError::InvalidFormatName),
+              "Invalid format name: %s", name.c_str());
     return RET_FAILED;
 }
 
@@ -751,11 +753,9 @@ int Writer::set_format_by_name(const std::string &name)
  *
  * \note The return value is undefined if an operation did not fail.
  *
- * \return Error code for failed operation. If \>= 0, then the value is one of
- *         the \ref MB_BI_ERROR_CODES entries. If \< 0, then the error code is
- *         implementation-defined (usually `-errno` or `-GetLastError()`).
+ * \return Error code for failed operation.
  */
-int Writer::error()
+std::error_code Writer::error()
 {
     GET_PIMPL_OR_RETURN({});
 
@@ -782,20 +782,35 @@ std::string Writer::error_string()
  *
  * \sa Writer::set_error_v()
  *
- * \param error_code Error code
+ * \param ec Error code
+ *
+ * \return RET_OK if the error is successfully set or RET_FAILED if an
+ *         error occurs
+ */
+int Writer::set_error(std::error_code ec)
+{
+    return set_error(ec, "");
+}
+
+/*!
+ * \brief Set error string for a failed operation.
+ *
+ * \sa Writer::set_error_v()
+ *
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ... `printf()`-style format arguments
  *
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int Writer::set_error(int error_code, const char *fmt, ...)
+int Writer::set_error(std::error_code ec, const char *fmt, ...)
 {
     int ret;
     va_list ap;
 
     va_start(ap, fmt);
-    ret = set_error_v(error_code, fmt, ap);
+    ret = set_error_v(ec, fmt, ap);
     va_end(ap);
 
     return ret;
@@ -806,19 +821,29 @@ int Writer::set_error(int error_code, const char *fmt, ...)
  *
  * \sa Writer::set_error()
  *
- * \param error_code Error code
+ * \param ec Error code
  * \param fmt `printf()`-style format string
  * \param ap `printf()`-style format arguments as a va_list
  *
  * \return RET_OK if the error is successfully set or RET_FAILED if an
  *         error occurs
  */
-int Writer::set_error_v(int error_code, const char *fmt, va_list ap)
+int Writer::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
     GET_PIMPL_OR_RETURN(RET_FATAL);
 
-    priv->error_code = error_code;
-    return format_v(priv->error_string, fmt, ap) ? RET_OK : RET_FAILED;
+    priv->error_code = ec;
+
+    if (!format_v(priv->error_string, fmt, ap)) {
+        return RET_FAILED;
+    }
+
+    if (!priv->error_string.empty()) {
+        priv->error_string += ": ";
+    }
+    priv->error_string += ec.message();
+
+    return RET_OK;
 }
 
 }

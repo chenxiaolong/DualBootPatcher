@@ -28,6 +28,7 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/defs.h"
+#include "mbbootimg/reader_error.h"
 
 namespace mb
 {
@@ -83,11 +84,12 @@ public:
     int enable_format_sony_elf();
 
     // Error handling
-    int error();
+    std::error_code error();
     std::string error_string();
+    int set_error(std::error_code ec);
     MB_PRINTF(3, 4)
-    int set_error(int error_code, const char *fmt, ...);
-    int set_error_v(int error_code, const char *fmt, va_list ap);
+    int set_error(std::error_code ec, const char *fmt, ...);
+    int set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 private:
     std::unique_ptr<ReaderPrivate> _priv_ptr;

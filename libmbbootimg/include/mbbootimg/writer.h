@@ -28,6 +28,7 @@
 #include "mbcommon/common.h"
 
 #include "mbbootimg/defs.h"
+#include "mbbootimg/writer_error.h"
 
 namespace mb
 {
@@ -81,11 +82,12 @@ public:
     int set_format_sony_elf();
 
     // Error handling functions
-    int error();
+    std::error_code error();
     std::string error_string();
+    int set_error(std::error_code ec);
     MB_PRINTF(3, 4)
-    int set_error(int error_code, const char *fmt, ...);
-    int set_error_v(int error_code, const char *fmt, va_list ap);
+    int set_error(std::error_code ec, const char *fmt, ...);
+    int set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 private:
     std::unique_ptr<WriterPrivate> _priv_ptr;

@@ -35,6 +35,7 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
 #include "mbbootimg/format/android_reader_p.h"
+#include "mbbootimg/format/mtk_error.h"
 #include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
 #include "mbbootimg/reader_p.h"
@@ -73,14 +74,14 @@ static int read_mtk_header(Reader &reader, File &file,
     size_t n;
 
     if (!file.seek(offset, SEEK_SET, nullptr)) {
-        reader.set_error(file.error().value() /* TODO */,
+        reader.set_error(file.error(),
                          "Failed to seek to MTK header at %" PRIu64 ": %s",
                          offset, file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
     if (!file_read_fully(file, &mtkhdr, sizeof(mtkhdr), n)) {
-        reader.set_error(file.error().value() /* TODO */,
+        reader.set_error(file.error(),
                          "Failed to read MTK header: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -88,7 +89,7 @@ static int read_mtk_header(Reader &reader, File &file,
 
     if (n != sizeof(MtkHeader)
             || memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
-        reader.set_error(ERROR_FILE_FORMAT,
+        reader.set_error(make_error_code(MtkError::MtkHeaderNotFound),
                          "MTK header not found at %" PRIu64, offset);
         return RET_WARN;
     }
@@ -275,20 +276,20 @@ int MtkFormatReader::read_header(File &file, Header &header)
     // Validate that the kernel and ramdisk sizes are consistent
     if (_hdr.kernel_size != static_cast<uint64_t>(
             _mtk_kernel_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(ERROR_FILE_FORMAT,
-                          "Mismatched kernel size in Android and MTK headers");
+        _reader.set_error(make_error_code(
+                MtkError::MismatchedKernelSizeInHeaders));
         return RET_FAILED;
     }
     if (_hdr.ramdisk_size != static_cast<uint64_t>(
             _mtk_ramdisk_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(ERROR_FILE_FORMAT,
-                          "Mismatched ramdisk size in Android and MTK headers");
+        _reader.set_error(make_error_code(
+                MtkError::MismatchedRamdiskSizeInHeaders));
         return RET_FAILED;
     }
 
     ret = android::AndroidFormatReader::convert_header(_hdr, header);
     if (ret != RET_OK) {
-        _reader.set_error(ERROR_INTERNAL_ERROR, "Failed to set header fields");
+        _reader.set_error(make_error_code(MtkError::HeaderSetFieldsFailed));
         return ret;
     }
 

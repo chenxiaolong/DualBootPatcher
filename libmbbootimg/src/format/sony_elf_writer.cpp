@@ -204,7 +204,7 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
 
     // Start writing at offset 4096
     if (!file.seek(4096, SEEK_SET, nullptr)) {
-        _writer.set_error(file.error().value() /* TODO */,
+        _writer.set_error(file.error(),
                           "Failed to seek to first page: %s",
                           file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -352,7 +352,7 @@ int SonyElfFormatWriter::close(File &file)
 
         // Seek back to beginning to write headers
         if (!file.seek(0, SEEK_SET, nullptr)) {
-            _writer.set_error(file.error().value() /* TODO */,
+            _writer.set_error(file.error(),
                               "Failed to seek to beginning: %s",
                               file.error_string().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -362,7 +362,7 @@ int SonyElfFormatWriter::close(File &file)
         for (auto it = headers; it->ptr && it->can_write; ++it) {
             if (!file_write_fully(file, it->ptr, it->size, n)
                     || n != it->size) {
-                _writer.set_error(file.error().value() /* TODO */,
+                _writer.set_error(file.error(),
                                   "Failed to write header: %s",
                                   file.error_string().c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;

@@ -95,7 +95,7 @@ public:
     File *file;
 
     // Error
-    int error_code;
+    std::error_code error_code;
     std::string error_string;
 
     std::vector<std::unique_ptr<FormatReader>> formats;

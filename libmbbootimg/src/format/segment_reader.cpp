@@ -30,6 +30,7 @@
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format/segment_error_p.h"
 
 namespace mb
 {
@@ -62,13 +63,13 @@ int SegmentReader::entries_add(int type, uint64_t offset, uint32_t size,
                                bool can_truncate, Reader &reader)
 {
     if (_state != SegmentReaderState::Begin) {
-        reader.set_error(ERROR_INTERNAL_ERROR,
-                         "Adding entry in incorrect state");
+        reader.set_error(make_error_code(
+                SegmentError::AddEntryInIncorrectState));
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        reader.set_error(ERROR_INTERNAL_ERROR, "Too many entries");
+        reader.set_error(make_error_code(SegmentError::TooManyEntries));
         return RET_FATAL;
     }
 
@@ -135,7 +136,8 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
                                  Reader &reader)
 {
     if (srentry.offset > UINT64_MAX - srentry.size) {
-        reader.set_error(ERROR_INVALID_ARGUMENT, "Entry would overflow offset");
+        reader.set_error(make_error_code(
+                SegmentError::EntryWouldOverflowOffset));
         return RET_FAILED;
     }
 
@@ -193,7 +195,7 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
             buf_size, _read_end_offset - _read_cur_offset);
 
     if (_read_cur_offset > SIZE_MAX - to_copy) {
-        reader.set_error(ERROR_FILE_FORMAT,
+        reader.set_error(make_error_code(SegmentError::ReadWouldOverflowInteger),
                          "Current offset %" PRIu64 " with read size %"
                          MB_PRIzu " would overflow integer",
                          _read_cur_offset, to_copy);
@@ -201,7 +203,7 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
     }
 
     if (!file_read_fully(file, buf, to_copy, bytes_read)) {
-        reader.set_error(file.error().value() /* TODO */,
+        reader.set_error(file.error(),
                          "Failed to read data: %s",
                          file.error_string().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
@@ -212,7 +214,7 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
     // Fail if we reach EOF early
     if (bytes_read == 0 && _read_cur_offset != _read_end_offset
             && !_entry->can_truncate) {
-        reader.set_error(ERROR_FILE_FORMAT,
+        reader.set_error(make_error_code(SegmentError::EntryIsTruncated),
                          "Entry is truncated (expected %" PRIu64 " more bytes)",
                          _read_end_offset - _read_cur_offset);
         return RET_FATAL;
