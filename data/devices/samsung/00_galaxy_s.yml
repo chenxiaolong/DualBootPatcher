@@ -834,9 +834,7 @@
   id: dreamqlte
   codenames:
     # Regular variant
-    - SM-G950U
     - dreamqlte
-    - lineage_dreamqlte
   architecture: arm64-v8a
 
   block_devs:
