@@ -871,11 +871,9 @@
   id: dream2qlte
   codenames:
     # Regular variant
-    - SM-G955U
     - dream2qlte
     - dream2qltezh
     - dream2qltezhn
-    - lineage_dream2qlte
   architecture: arm64-v8a
 
   block_devs:
