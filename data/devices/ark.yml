@@ -3,7 +3,9 @@
   id: benefit3
   codenames:
     - benefit3
+    - benefit
     - peach
+    - trunk
   architecture: armeabi-v7a
 
   block_devs:
