@@ -1123,3 +1123,28 @@
     max_brightness: 255
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
+    
+- name: Xiaomi Redmi Note 4G
+  id: dior
+  codenames:
+    - dior
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name    
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p25
