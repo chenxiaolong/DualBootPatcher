@@ -194,7 +194,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsInvalidMode)
 {
     TestableWin32File file(&_funcs);
     ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
 }
 
 TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
@@ -225,7 +225,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsInvalidMode)
 {
     TestableWin32File file(&_funcs);
     ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
 }
 
 TEST_F(FileWin32Test, CloseUnownedFile)
