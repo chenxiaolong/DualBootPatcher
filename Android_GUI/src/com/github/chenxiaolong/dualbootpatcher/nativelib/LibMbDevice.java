@@ -53,7 +53,7 @@ public class LibMbDevice {
 
         public static class CJsonError extends PointerType {}
 
-        public class SizeT extends IntegerType {
+        public static class SizeT extends IntegerType {
             public SizeT() {
                 this(0);
             }

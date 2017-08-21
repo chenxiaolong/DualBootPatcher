@@ -62,7 +62,7 @@
     extra:
       - /dev/block/platform/dw_mmc/by-name/RADIO
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX

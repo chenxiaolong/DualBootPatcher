@@ -187,37 +187,37 @@ TEST(FileStaticMemoryTest, SeekInvalid)
 
     // Negative SEEK_SET
     ASSERT_FALSE(file.seek(-10, SEEK_SET, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_CUR
     ASSERT_FALSE(file.seek(-100, SEEK_CUR, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_END
     ASSERT_FALSE(file.seek(-100, SEEK_END, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 #endif
 }
@@ -458,37 +458,37 @@ TEST(FileDynamicMemoryTest, SeekInvalid)
 
     // Negative SEEK_SET
     ASSERT_FALSE(file.seek(-10, SEEK_SET, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_SET
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_SET, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_SET"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_CUR
     ASSERT_FALSE(file.seek(-100, SEEK_CUR, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_CUR
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_CUR, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_CUR"), std::string::npos);
 #endif
 
     // Negative out of range SEEK_END
     ASSERT_FALSE(file.seek(-100, SEEK_END, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 
 #if INT64_MAX > SIZE_MAX
     // Positive out of range SEEK_END
     ASSERT_FALSE(file.seek(static_cast<int64_t>(SIZE_MAX) + 1, SEEK_END, &pos));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Invalid SEEK_END"), std::string::npos);
 #endif
 

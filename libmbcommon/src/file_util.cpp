@@ -242,7 +242,7 @@ bool file_search(File &file, int64_t start, int64_t end,
 
     // Check boundaries
     if (start >= 0 && end >= 0 && end < start) {
-        file.set_error(make_error_code(FileError::InvalidArgument),
+        file.set_error(make_error_code(FileError::ArgumentOutOfRange),
                        "End offset < start offset");
         return false;
     }
@@ -267,7 +267,7 @@ bool file_search(File &file, int64_t start, int64_t end,
 
     // Ensure buffer is large enough
     if (buf_size < pattern_size) {
-        file.set_error(make_error_code(FileError::InvalidArgument),
+        file.set_error(make_error_code(FileError::ArgumentOutOfRange),
                        "Buffer size cannot be less than pattern size");
         return false;
     }
@@ -287,12 +287,12 @@ bool file_search(File &file, int64_t start, int64_t end,
 
     // Seek to starting point
     if (!file.seek(offset, SEEK_SET, nullptr)) {
-        if (file.error() == FileError::Unsupported) {
+        if (file.error() == FileErrorC::Unsupported) {
             uint64_t discarded;
             if (!file_read_discard(file, offset, discarded)) {
                 return false;
             } else if (discarded != offset) {
-                file.set_error(make_error_code(FileError::InvalidArgument),
+                file.set_error(make_error_code(FileError::ArgumentOutOfRange),
                                "Reached EOF before starting offset");
                 file.set_fatal(true);
                 return false;
@@ -418,7 +418,7 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
     }
 
     if (src > UINT64_MAX - size || dest > UINT64_MAX - size) {
-        file.set_error(make_error_code(FileError::InvalidArgument),
+        file.set_error(make_error_code(FileError::ArgumentOutOfRange),
                        "Offset + size overflows integer");
         return false;
     }

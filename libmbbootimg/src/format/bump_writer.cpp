@@ -19,60 +19,29 @@
 
 #include "mbbootimg/format/android_writer_p.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-
 #include "mbbootimg/writer_p.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 /*!
  * \brief Set Bump boot image output format
  *
- * \param biw MbBiWriter
- *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully set
+ *   * \<= #RET_WARN if an error occurs
  */
-int mb_bi_writer_set_format_bump(MbBiWriter *biw)
+int Writer::set_format_bump()
 {
-    AndroidWriterCtx *const ctx = static_cast<AndroidWriterCtx *>(
-            calloc(1, sizeof(AndroidWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate AndroidWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace android;
 
-    if (!SHA1_Init(&ctx->sha_ctx)) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                               "Failed to initialize SHA_CTX");
-        free(ctx);
-        return false;
-    }
+    MB_PRIVATE(Writer);
 
-    _segment_writer_init(&ctx->segctx);
-
-    ctx->is_bump = true;
-
-    return _mb_bi_writer_register_format(biw,
-                                         ctx,
-                                         MB_BI_FORMAT_BUMP,
-                                         MB_BI_FORMAT_NAME_BUMP,
-                                         nullptr,
-                                         &android_writer_get_header,
-                                         &android_writer_write_header,
-                                         &android_writer_get_entry,
-                                         &android_writer_write_entry,
-                                         &android_writer_write_data,
-                                         &android_writer_finish_entry,
-                                         &android_writer_close,
-                                         &android_writer_free);
+    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, true)};
+    return priv->register_format(std::move(format));
 }
 
-
-MB_END_C_DECLS
+}
+}

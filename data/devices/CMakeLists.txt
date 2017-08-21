@@ -37,6 +37,8 @@ set(files
     samsung/07_other.yml
     sony.yml
     umi.yml
+    walton.yml
+    wiko.yml
     wileyfox.yml
     xiaomi.yml
     yu.yml
