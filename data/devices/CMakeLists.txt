@@ -18,6 +18,7 @@ set(files
     leeco.yml
     lenovo.yml
     lg.yml
+    micromax.yml
     meizu.yml
     motorola.yml
     nokia.yml
