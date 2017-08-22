@@ -43,9 +43,9 @@ script:
   - mkdir build
   - cd build/
   - cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
-  - 2>/dev/null 1>&2 make
+  - make
   - rm -rf assets && cpack -G TXZ
-  - 2>/dev/null 1>&2 make apk
+  - make apk
   - cd --
 
 deploy:
