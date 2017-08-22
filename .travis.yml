@@ -8,9 +8,24 @@ android:
   - tools
   - build-tools-25.0.2
   - android-25
+  - platforms-android-25
+  - extra-google-m2repository
+  - extra-android-m2repository
+
+addons:
+  apt:
+    packages:
+      - build-essential
+      - ccache
+      - libboost-dev
+      - libjansson-dev
+      - libssl-dev
+      - libyaml-cpp-dev
+      - openssl
+      - python-minimal
+      - curl
 
 before_install:
-  - sudo apt install ccache expect libboost-dev libjansson-dev libssl-dev libyaml-cpp-dev openssl python-minimal
   - cd --
   - wget -q http://www.digip.org/jansson/releases/jansson-2.9.tar.gz && tar xzf jansson-2.9.tar.gz && cd jansson-2.9/ && ./configure && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
   - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && export PATH=${PATH}:/usr/local/ssl && cd --
@@ -19,18 +34,6 @@ before_install:
   - export ANDROID_NDK_HOME=~/android-ndk
   - export ANDROID_NDK=~/android-ndk
   - cd --
-  - mkdir -p android-sdk && cd android-sdk
-  - wget -q https://dl.google.com/android/repository/platform-tools_r25.0.2-linux.zip && unzip -qq platform-tools_r25.0.2-linux.zip
-  - wget -q https://dl.google.com/android/repository/build-tools_r25.0.2-linux.zip && unzip -qq build-tools_r25.0.2-linux.zip
-  - wget -q https://dl.google.com/android/repository/tools_r25.2.3-linux.zip && unzip -qq tools_r25.2.3-linux.zip
-  - export PATH=${PATH}:${ANDROID_HOME}/tools
-  - export ANDROID_HOME=~/android-sdk
-  - echo -e "y" | ./tools/android update sdk -u -a -t platform
-  - echo -e "y" | ./tools/android update sdk -u -a -t platform-tools
-  - echo -e "y" | ./tools/android update sdk -u -a -t 5
-  - echo -e "y" | ./tools/android update sdk -u -a -t source
-  - echo -e "y" | ./tools/android update sdk -u -a -t extra
-  - echo -e "y" | ./tools/android update sdk -u -a -t 128
 
 script:
   - travis_wait 30
