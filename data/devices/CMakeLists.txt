@@ -17,6 +17,7 @@ set(files
     htc.yml
     huawei.yml
     infinix.yml
+    infocus.yml
     jiayu.yml
     leeco.yml
     leagoo.yml
