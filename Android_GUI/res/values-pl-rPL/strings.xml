@@ -30,7 +30,7 @@ zaktualizowany.\n\nNaciśnij, aby spróbować ponownie.</string>
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">ROMy</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">Spatchuj plik ZIP</string>
+  <string name="title_patch_zip">Patchowanie pliku ZIP</string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Wolne miejsce</string>
   <!--Navigation drawer item for changing the ROM settings-->
@@ -128,7 +128,7 @@ przełączeniu ROMu?</string>
   <!--Title of dialog box asking for which targets to wipe-->
   <string name="wipe_rom_dialog_title">Cele do czyszczenia</string>
   <!--Title of progress dialog shown when wiping targets-->
-  <string name="wiping_targets">Twa czyszczenie ROMu</string>
+  <string name="wiping_targets">Trwa czyszczenie ROMu</string>
   <!--Toast message indicating successfully wiped targets-->
   <string name="wipe_rom_successfully_wiped">Pomyślnie wyczyszczono: %s</string>
   <!--Toast message indicating targets that failed to wipe-->
@@ -211,7 +211,7 @@ dla MultiBoot. Proszę spatchować plik przed jego instalacją.</string>
 nowszej w celu korzystania z instalacji w aplikacji.</string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
   <string name="in_app_flashing_error_no_overwrite_rom">Aby zapobiec przed uszkodzeniem lub restartem bieżącego systemu,
-Aktualizowanie bierzącego ROMu jest niedozwolone.</string>
+aktualizowanie bierzącego ROMu jest niedozwolone.</string>
   <!--Dialog message asking if the user wants to change the installation location of the zip-->
   <string name="in_app_flashing_change_install_location_desc">ZIP został spatchowany do 
 instalacji w %s. Chcesz zmienić lokalizację instalacji?</string>
@@ -283,7 +283,7 @@ ukośnik ( \"/\") lub \".\" lub \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
   <string name="br_name_dialog_hint">Wprowadź nazwę kopii zapasowej...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
-  <string name="patcher_background_message">Dotknij FAB, aby dodać pliki do patchu.</string>
+  <string name="patcher_background_message">Dotknij FAB, aby dodać pliki do patchowania.</string>
   <!--Label for FAB to add a flashable zip-->
   <string name="patcher_add_flashable_zip">Dodaj instalacyjny ZIP</string>
   <!--Label for FAB to add an Odin image-->
