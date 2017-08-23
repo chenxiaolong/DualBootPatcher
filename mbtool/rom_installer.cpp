@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
@@ -53,8 +54,7 @@
 #define DEBUG_LEAVE_STDIN_OPEN 0
 #define DEBUG_ENABLE_PASSTHROUGH 0
 
-
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+using namespace mb::bootimg;
 
 namespace mb
 {
@@ -173,8 +173,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Check if the device has a combined boot/recovery partition. If the
     // FOTAKernel partition is listed, it will be used instead of the combined
     // ramdisk from the boot image
-    bool combined = mb_device_flags(_device)
-            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    bool combined = _device.flags()
+            & mb::device::DeviceFlag::HasCombinedBootAndRecovery;
     if (combined && block_dev.empty()) {
         block_dev = _boot_block_dev;
         using_boot = true;
@@ -195,24 +195,24 @@ Installer::ProceedState RomInstaller::on_checked_device()
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
         autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
         if (fp) {
-            auto system_devs = mb_device_system_block_devs(_device);
-            auto cache_devs = mb_device_cache_block_devs(_device);
-            auto data_devs = mb_device_data_block_devs(_device);
+            auto system_devs = _device.system_block_devs();
+            auto cache_devs = _device.cache_block_devs();
+            auto data_devs = _device.data_block_devs();
 
             // Set block device if it's provided and non-empty
-            const char *system_dev =
-                    system_devs && system_devs[0] && system_devs[0][0]
+            std::string system_dev =
+                    !system_devs.empty() && !system_devs[0].empty()
                     ? system_devs[0] : "dummy";
-            const char *cache_dev =
-                    cache_devs && cache_devs[0] && cache_devs[0][0]
+            std::string cache_dev =
+                    !cache_devs.empty() && !cache_devs[0].empty()
                     ? cache_devs[0] : "dummy";
-            const char *data_dev =
-                    data_devs && data_devs[0] && data_devs[0][0]
+            std::string data_dev =
+                    !data_devs.empty() && !data_devs[0].empty()
                     ? data_devs[0] : "dummy";
 
-            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
-            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
-            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev.c_str());
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev.c_str());
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev.c_str());
         }
     }
 
@@ -282,46 +282,41 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
 bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
+    Reader reader;
+    Header header;
+    Entry entry;
     int ret;
 
-    if (!bir) {
-        LOGE("Failed to allocate reader instance");
-        return false;
-    }
-
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    ret = reader.enable_format_all();
+    if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
-             mb_bi_reader_error_string(bir.get()));
+             reader.error_string().c_str());
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = reader.open_filename(boot_image_file);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
-    if (ret != MB_BI_OK) {
+    ret = reader.read_header(header);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
-    if (ret == MB_BI_EOF) {
+    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
+    if (ret == RET_EOF) {
         LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
         return false;
-    } else if (ret != MB_BI_OK) {
+    } else if (ret != RET_OK) {
         LOGE("%s: Failed to find ramdisk entry: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
@@ -341,7 +336,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
             close(tmpfd);
         });
 
-        return bi_copy_data_to_fd(bir.get(), tmpfd)
+        return bi_copy_data_to_fd(reader, tmpfd)
                 && extract_ramdisk_fd(tmpfd, output_dir, nested);
     }
 }

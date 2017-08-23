@@ -617,7 +617,7 @@ bool ends_with_icase(const std::string &string, const std::string &suffix)
  *
  * \return
  *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ *   * -1 if an error occurred, with `errno` set accordingly
  */
 int mem_insert(void **mem, size_t *mem_size, size_t pos,
                const void *data, size_t data_size)
@@ -672,7 +672,7 @@ int mem_insert(void **mem, size_t *mem_size, size_t pos,
  *
  * \return
  *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ *   * -1 if an error occurred, with `errno` set accordingly
  */
 int str_insert(char **str, size_t pos, const char *s)
 {
@@ -716,7 +716,7 @@ int str_insert(char **str, size_t pos, const char *s)
  *
  * \return
  *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ *   * -1 if an error occurred, with `errno` set accordingly
  */
 int mem_replace(void **mem, size_t *mem_size,
                 const void *from, size_t from_size,
@@ -824,7 +824,7 @@ int mem_replace(void **mem, size_t *mem_size,
  *
  * \return
  *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ *   * -1 if an error occurred, with `errno` set accordingly
  */
 int str_replace(char **str, const char *from, const char *to,
                 size_t n, size_t *n_replaced)

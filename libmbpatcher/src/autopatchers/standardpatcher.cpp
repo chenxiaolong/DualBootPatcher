@@ -96,11 +96,11 @@ std::vector<std::string> StandardPatcher::existing_files() const
     return { UpdaterScript, SystemTransferList };
 }
 
-static bool find_items_in_string(const char *haystack,
-                                 const char * const *needles)
+static bool find_items_in_string(const std::string &haystack,
+                                 const std::vector<std::string> &needles)
 {
-    for (auto iter = needles; *iter; ++iter) {
-        if (strstr(haystack, *iter)) {
+    for (auto const &needle : needles) {
+        if (haystack.find(needle) != std::string::npos) {
             return true;
         }
     }
@@ -252,9 +252,9 @@ replace_edify_mount(std::vector<EdifyToken *> *tokens,
                     const std::vector<EdifyToken *>::iterator func_name,
                     const std::vector<EdifyToken *>::iterator left_paren,
                     const std::vector<EdifyToken *>::iterator right_paren,
-                    const char * const *system_devs,
-                    const char * const *cache_devs,
-                    const char * const *data_devs)
+                    const std::vector<std::string> &system_devs,
+                    const std::vector<std::string> &cache_devs,
+                    const std::vector<std::string> &data_devs)
 {
     // For the mount() edify function, replace with the corresponding
     // update-binary-tool command
@@ -306,9 +306,9 @@ replace_edify_unmount(std::vector<EdifyToken *> *tokens,
                       const std::vector<EdifyToken *>::iterator func_name,
                       const std::vector<EdifyToken *>::iterator left_paren,
                       const std::vector<EdifyToken *>::iterator right_paren,
-                      const char * const *system_devs,
-                      const char * const *cache_devs,
-                      const char * const *data_devs)
+                      const std::vector<std::string> &system_devs,
+                      const std::vector<std::string> &cache_devs,
+                      const std::vector<std::string> &data_devs)
 {
     // For the unmount() edify function, replace with the corresponding
     // update-binary-tool command
@@ -360,9 +360,9 @@ replace_edify_run_program(std::vector<EdifyToken *> *tokens,
                           const std::vector<EdifyToken *>::iterator func_name,
                           const std::vector<EdifyToken *>::iterator left_paren,
                           const std::vector<EdifyToken *>::iterator right_paren,
-                          const char * const *system_devs,
-                          const char * const *cache_devs,
-                          const char * const *data_devs)
+                          const std::vector<std::string> &system_devs,
+                          const std::vector<std::string> &cache_devs,
+                          const std::vector<std::string> &data_devs)
 {
     bool found_reboot = false;
     bool found_mount = false;
@@ -509,9 +509,9 @@ replace_edify_format(std::vector<EdifyToken *> *tokens,
                      const std::vector<EdifyToken *>::iterator func_name,
                      const std::vector<EdifyToken *>::iterator left_paren,
                      const std::vector<EdifyToken *>::iterator right_paren,
-                     const char * const *system_devs,
-                     const char * const *cache_devs,
-                     const char * const *data_devs)
+                     const std::vector<std::string> &system_devs,
+                     const std::vector<std::string> &cache_devs,
+                     const std::vector<std::string> &data_devs)
 {
     // For the format() edify function, replace with the corresponding
     // update-binary-tool command
@@ -588,10 +588,10 @@ bool StandardPatcher::patch_updater(const std::string &directory)
     EdifyTokenizer::dump(tokens);
 #endif
 
-    Device *device = priv->info->device();
-    auto systemDevs = mb_device_system_block_devs(device);
-    auto cacheDevs = mb_device_cache_block_devs(device);
-    auto dataDevs = mb_device_data_block_devs(device);
+    auto &&device = priv->info->device();
+    auto system_devs = device.system_block_devs();
+    auto cache_devs = device.cache_block_devs();
+    auto data_devs = device.data_block_devs();
 
     std::vector<EdifyToken *>::iterator begin = tokens.begin();
     std::vector<EdifyToken *>::iterator end;
@@ -617,18 +617,18 @@ bool StandardPatcher::patch_updater(const std::string &directory)
 
         if (t_func_name->unescaped_string() == "mount") {
             begin = replace_edify_mount(&tokens, func_name, left_paren, right_paren,
-                                        systemDevs, cacheDevs, dataDevs);
+                                        system_devs, cache_devs, data_devs);
         } else if (t_func_name->unescaped_string() == "unmount") {
             begin = replace_edify_unmount(&tokens, func_name, left_paren, right_paren,
-                                          systemDevs, cacheDevs, dataDevs);
+                                          system_devs, cache_devs, data_devs);
         } else if (t_func_name->unescaped_string() == "run_program") {
             begin = replace_edify_run_program(&tokens, func_name, left_paren, right_paren,
-                                              systemDevs, cacheDevs, dataDevs);
+                                              system_devs, cache_devs, data_devs);
         } else if (t_func_name->unescaped_string() == "delete_recursive") {
             begin = replace_edify_delete_recursive(&tokens, func_name, left_paren, right_paren);
         } else if (t_func_name->unescaped_string() == "format") {
             begin = replace_edify_format(&tokens, func_name, left_paren, right_paren,
-                                         systemDevs, cacheDevs, dataDevs);
+                                         system_devs, cache_devs, data_devs);
         } else {
             begin = func_name + 1;
         }

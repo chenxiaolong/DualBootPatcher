@@ -53,7 +53,7 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
         }
         // Get the currently selected value for the list
         DataManager::GetValue(mVariable, currentValue);
-        if (mVariable == TW_LANGUAGE) {
+        if (mVariable == VAR_TW_LANGUAGE) {
             for (auto iter = Language_List.begin(); iter != Language_List.end(); iter++) {
                 ListItem data;
                 data.displayName = iter->displayvalue;
@@ -61,7 +61,7 @@ GUIListBox::GUIListBox(xml_node<>* node) : GUIScrollList(node)
                 data.action = nullptr;
                 if (currentValue == iter->filename) {
                     data.selected = 1;
-                    DataManager::SetValue(TW_LANGUAGE_DISPLAY, iter->displayvalue);
+                    DataManager::SetValue(VAR_TW_LANGUAGE_DISPLAY, iter->displayvalue);
                 } else {
                     data.selected = 0;
                 }
@@ -200,7 +200,7 @@ void GUIListBox::SetPageFocus(int inFocus)
             }
         }
 
-        if (mVariable == TW_ROM_ID) {
+        if (mVariable == VAR_TW_ROM_ID) {
             mListItems.clear();
 
             std::vector<Rom> roms;

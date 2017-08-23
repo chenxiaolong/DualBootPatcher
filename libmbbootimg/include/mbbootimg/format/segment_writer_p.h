@@ -21,25 +21,22 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <cstdint>
 
 #include "mbbootimg/writer.h"
 
-#define SEGMENT_WRITER_MAX_ENTRIES      10
-
-enum
-#ifdef __cplusplus
-class
-#endif
-SegmentWriterState
+namespace mb
 {
-    BEGIN,
-    ENTRIES,
-    END,
+namespace bootimg
+{
+
+constexpr size_t SEGMENT_WRITER_MAX_ENTRIES = 10;
+
+enum class SegmentWriterState
+{
+    Begin,
+    Entries,
+    End,
 };
 
 struct SegmentWriterEntry
@@ -51,43 +48,41 @@ struct SegmentWriterEntry
     uint64_t align;
 };
 
-struct SegmentWriterCtx
+struct SegmentWriter
 {
-    enum SegmentWriterState state;
+public:
+    SegmentWriter();
 
-    struct SegmentWriterEntry entries[SEGMENT_WRITER_MAX_ENTRIES];
-    size_t entries_len;
-    struct SegmentWriterEntry *entry;
+    size_t entries_size() const;
+    void entries_clear();
+    int entries_add(int type, uint32_t size, bool size_set, uint64_t align,
+                    Writer &writer);
+    const SegmentWriterEntry * entries_get(size_t index);
 
-    uint32_t entry_size;
+    const SegmentWriterEntry * entry() const;
+    SegmentWriterEntry * next_entry();
+    const SegmentWriterEntry * next_entry() const;
 
-    bool have_pos;
-    uint64_t pos;
+    void update_size_if_unset(uint32_t size);
+
+    int get_entry(File &file, Entry &entry, Writer &writer);
+    int write_entry(File &file, const Entry &entry, Writer &writer);
+    int write_data(File &file, const void *buf, size_t buf_size,
+                   size_t &bytes_written, Writer &writer);
+    int finish_entry(File &file, Writer &writer);
+
+private:
+    SegmentWriterState _state;
+
+    SegmentWriterEntry _entries[SEGMENT_WRITER_MAX_ENTRIES];
+    size_t _entries_len;
+    SegmentWriterEntry *_entry;
+
+    uint32_t _entry_size;
+
+    bool _have_pos;
+    uint64_t _pos;
 };
 
-int _segment_writer_init(struct SegmentWriterCtx *ctx);
-int _segment_writer_deinit(struct SegmentWriterCtx *ctx);
-
-size_t _segment_writer_entries_size(struct SegmentWriterCtx *ctx);
-void _segment_writer_entries_clear(struct SegmentWriterCtx *ctx);
-int _segment_writer_entries_add(struct SegmentWriterCtx *ctx,
-                                int type, uint32_t size, bool size_set,
-                                uint64_t align, struct MbBiWriter *biw);
-struct SegmentWriterEntry * _segment_writer_entries_get(struct SegmentWriterCtx *ctx,
-                                                        size_t index);
-
-struct SegmentWriterEntry * _segment_writer_entry(struct SegmentWriterCtx *ctx);
-struct SegmentWriterEntry * _segment_writer_next_entry(struct SegmentWriterCtx *ctx);
-
-void _segment_writer_update_size_if_unset(struct SegmentWriterCtx *ctx,
-                                          uint32_t size);
-
-int _segment_writer_get_entry(struct SegmentWriterCtx *ctx, mb::File *file,
-                              struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_entry(struct SegmentWriterCtx *ctx, mb::File *file,
-                                struct MbBiEntry *entry, struct MbBiWriter *biw);
-int _segment_writer_write_data(struct SegmentWriterCtx *ctx, mb::File *file,
-                               const void *buf, size_t buf_size,
-                               size_t *bytes_written, struct MbBiWriter *biw);
-int _segment_writer_finish_entry(struct SegmentWriterCtx *ctx, mb::File *file,
-                                 struct MbBiWriter *biw);
+}
+}

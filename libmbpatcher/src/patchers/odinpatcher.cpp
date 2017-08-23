@@ -253,9 +253,9 @@ bool OdinPatcherPrivate::patch_tar()
 
     // Get file size and seek back to original location
     uint64_t current_pos;
-    if (la_file.seek(0, SEEK_CUR, &current_pos) != FileStatus::OK
-            || la_file.seek(0, SEEK_END, &max_bytes) != FileStatus::OK
-            || la_file.seek(current_pos, SEEK_SET, nullptr) != FileStatus::OK) {
+    if (!la_file.seek(0, SEEK_CUR, &current_pos)
+            || !la_file.seek(0, SEEK_END, &max_bytes)
+            || !la_file.seek(current_pos, SEEK_SET, nullptr)) {
         LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
              la_file.error_string().c_str());
         error = ErrorCode::FileSeekError;
@@ -270,7 +270,7 @@ bool OdinPatcherPrivate::patch_tar()
 
     std::string arch_dir(pc->data_directory());
     arch_dir += "/binaries/android/";
-    arch_dir += mb_device_architecture(info->device());
+    arch_dir += info->device().architecture();
 
     std::vector<CopySpec> to_copy {
         {
@@ -350,17 +350,15 @@ bool OdinPatcherPrivate::patch_tar()
 
     update_details("multiboot/device.json");
 
-    char *json = mb_device_to_json(info->device());
-    if (!json) {
+    std::string json;
+    if (!device::device_to_json(info->device(), json)) {
         error = ErrorCode::MemoryAllocationError;
         return false;
     }
 
     result = MinizipUtils::add_file(
             zf, "multiboot/device.json",
-            std::vector<unsigned char>(json, json + strlen(json)));
-    free(json);
-
+            std::vector<unsigned char>(json.begin(), json.end()));
     if (result != ErrorCode::NoError) {
         error = result;
         return false;
@@ -524,7 +522,7 @@ bool OdinPatcherPrivate::process_contents(archive *a, int depth)
             if (!process_file(a, entry, true)) {
                 return false;
             }
-        } else if (ends_with(name, ".tar.md5")) {
+        } else if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);
@@ -696,8 +694,7 @@ la_ssize_t OdinPatcherPrivate::la_read_cb(archive *a, void *userdata,
     *buffer = priv->la_buf;
     size_t bytes_read;
 
-    if (priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), &bytes_read)
-            != FileStatus::OK) {
+    if (!priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), bytes_read)) {
         LOGE("%s: Failed to read: %s", priv->info->input_path().c_str(),
              priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileReadError;
@@ -715,7 +712,7 @@ la_int64_t OdinPatcherPrivate::la_skip_cb(archive *a, void *userdata,
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    if (priv->la_file.seek(request, SEEK_CUR, nullptr) != FileStatus::OK) {
+    if (!priv->la_file.seek(request, SEEK_CUR, nullptr)) {
         LOGE("%s: Failed to seek: %s", priv->info->input_path().c_str(),
              priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileSeekError;
@@ -731,7 +728,7 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
-    FileStatus ret;
+    bool ret;
 
 #ifdef _WIN32
     std::wstring w_filename;
@@ -749,11 +746,10 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
         ret = priv->la_file.open(priv->fd, false);
     } else
 #  endif
-    ret = priv->la_file.open(priv->info->input_path(),
-                            FileOpenMode::READ_ONLY);
+    ret = priv->la_file.open(priv->info->input_path(), FileOpenMode::READ_ONLY);
 #endif
 
-    if (ret != FileStatus::OK) {
+    if (!ret) {
         LOGE("%s: Failed to open: %s", priv->info->input_path().c_str(),
              priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileOpenError;
@@ -768,8 +764,7 @@ int OdinPatcherPrivate::la_close_cb(archive *a, void *userdata)
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    auto ret = priv->la_file.close();
-    if (ret != FileStatus::OK) {
+    if (!priv->la_file.close()) {
         LOGE("%s: Failed to close: %s", priv->info->input_path().c_str(),
              priv->la_file.error_string().c_str());
         priv->error = ErrorCode::FileCloseError;

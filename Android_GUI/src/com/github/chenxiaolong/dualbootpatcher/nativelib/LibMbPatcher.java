@@ -59,11 +59,6 @@ public class LibMbPatcher {
         public static class CAutoPatcher extends PointerType {}
         // END: ctypes.h
 
-        // BEGIN: ccommon.h
-        static native void mbpatcher_free(Pointer data);
-        static native void mbpatcher_free_array(Pointer array);
-        // END: ccommon.h
-
         // BEGIN: cfileinfo.h
         static native CFileInfo mbpatcher_fileinfo_create();
         static native void mbpatcher_fileinfo_destroy(CFileInfo info);
@@ -118,18 +113,6 @@ public class LibMbPatcher {
         static native Pointer mbpatcher_autopatcher_existing_files(CAutoPatcher patcher);
         static native boolean mbpatcher_autopatcher_patch_files(CAutoPatcher patcher, String directory);
         // END: cpatcherinterface.h
-    }
-
-    private static String[] getStringArrayAndFree(Pointer p) {
-        String[] array = p.getStringArray(0);
-        CWrapper.mbpatcher_free_array(p);
-        return array;
-    }
-
-    private static String getStringAndFree(Pointer p) {
-        String str = p.getString(0);
-        CWrapper.mbpatcher_free(p);
-        return str;
     }
 
     private static void ensureNotNull(Object o) {
@@ -300,7 +283,7 @@ public class LibMbPatcher {
         public String getInputPath() {
             validate(mCFileInfo, FileInfo.class, "getInputPath");
             Pointer p = CWrapper.mbpatcher_fileinfo_input_path(mCFileInfo);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public void setInputPath(String path) {
@@ -313,7 +296,7 @@ public class LibMbPatcher {
         public String getOutputPath() {
             validate(mCFileInfo, FileInfo.class, "getOutputPath");
             Pointer p = CWrapper.mbpatcher_fileinfo_output_path(mCFileInfo);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public void setOutputPath(String path) {
@@ -339,7 +322,7 @@ public class LibMbPatcher {
         public String getRomId() {
             validate(mCFileInfo, FileInfo.class, "getRomId");
             Pointer p = CWrapper.mbpatcher_fileinfo_rom_id(mCFileInfo);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public void setRomId(String id) {
@@ -445,13 +428,13 @@ public class LibMbPatcher {
         public String getDataDirectory() {
             validate(mCPatcherConfig, PatcherConfig.class, "getDataDirectory");
             Pointer p = CWrapper.mbpatcher_config_data_directory(mCPatcherConfig);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public String getTempDirectory() {
             validate(mCPatcherConfig, PatcherConfig.class, "getTempDirectory");
             Pointer p = CWrapper.mbpatcher_config_temp_directory(mCPatcherConfig);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public void setDataDirectory(String path) {
@@ -471,13 +454,13 @@ public class LibMbPatcher {
         public String[] getPatchers() {
             validate(mCPatcherConfig, PatcherConfig.class, "getPatchers");
             Pointer p = CWrapper.mbpatcher_config_patchers(mCPatcherConfig);
-            return getStringArrayAndFree(p);
+            return LibC.getStringArrayAndFree(p);
         }
 
         public String[] getAutoPatchers() {
             validate(mCPatcherConfig, PatcherConfig.class, "getAutoPatchers");
             Pointer p = CWrapper.mbpatcher_config_autopatchers(mCPatcherConfig);
-            return getStringArrayAndFree(p);
+            return LibC.getStringArrayAndFree(p);
         }
 
         public Patcher createPatcher(String id) {
@@ -574,7 +557,7 @@ public class LibMbPatcher {
         public String getId() {
             validate(mCPatcher, Patcher.class, "getId");
             Pointer p = CWrapper.mbpatcher_patcher_id(mCPatcher);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public void setFileInfo(FileInfo info) {
@@ -691,19 +674,19 @@ public class LibMbPatcher {
         public String getId() {
             validate(mCAutoPatcher, AutoPatcher.class, "getId");
             Pointer p = CWrapper.mbpatcher_autopatcher_id(mCAutoPatcher);
-            return getStringAndFree(p);
+            return LibC.getStringAndFree(p);
         }
 
         public String[] newFiles() {
             validate(mCAutoPatcher, AutoPatcher.class, "newFiles");
             Pointer p = CWrapper.mbpatcher_autopatcher_new_files(mCAutoPatcher);
-            return getStringArrayAndFree(p);
+            return LibC.getStringArrayAndFree(p);
         }
 
         public String[] existingFiles() {
             validate(mCAutoPatcher, AutoPatcher.class, "existingFiles");
             Pointer p = CWrapper.mbpatcher_autopatcher_existing_files(mCAutoPatcher);
-            return getStringArrayAndFree(p);
+            return LibC.getStringArrayAndFree(p);
         }
 
         public boolean patchFiles(String directory) {

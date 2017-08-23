@@ -561,7 +561,7 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
             bool repeatKey = false;
             Layout& lay = layouts[currentLayout - 1];
             if (state == TOUCH_RELEASE && was_held == 0) {
-                DataManager::Vibrate(TW_KEYBOARD_VIBRATE);
+                DataManager::Vibrate(VAR_TW_KEYBOARD_VIBRATE);
                 if (key.layout > 0) {
                     // Switch layouts
                     if (lay.is_caps && key.layout == lay.revert_layout && !CapsLockOn) {
@@ -605,7 +605,7 @@ int GUIKeyboard::NotifyTouch(TOUCH_STATE state, int x, int y)
                 was_held = 1;
                 if (key.longpresskey > 0) {
                     // Long Press Key
-                    DataManager::Vibrate(TW_KEYBOARD_VIBRATE);
+                    DataManager::Vibrate(VAR_TW_KEYBOARD_VIBRATE);
                     PageManager::NotifyCharInput(key.longpresskey);
                 } else {
                     repeatKey = true;

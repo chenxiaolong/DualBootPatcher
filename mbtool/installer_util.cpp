@@ -50,11 +50,11 @@
 #include "bootimg_util.h"
 #include "multiboot.h"
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 namespace mb
 {
@@ -301,44 +301,38 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         util::delete_recursive(tmpdir);
     });
 
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ScopedWriter biw(mb_bi_writer_new(), &mb_bi_writer_free);
-    MbBiHeader *header;
-    MbBiEntry *in_entry;
-    MbBiEntry *out_entry;
+    Reader reader;
+    Writer writer;
+    Header header;
+    Entry in_entry;
+    Entry out_entry;
     int ret;
 
-    if (!bir || !biw) {
-        LOGE("Failed to allocate reader or writer instance");
-        return false;
-    }
-
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    ret = reader.enable_format_all();
+    if (ret != RET_OK) {
         LOGE("Failed to enable input boot image formats: %s",
-             mb_bi_reader_error_string(bir.get()));
+             reader.error_string().c_str());
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), input_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = reader.open_filename(input_file);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             input_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Open output boot image
-    ret = mb_bi_writer_set_format_by_code(
-            biw.get(), mb_bi_reader_format_code(bir.get()));
-    if (ret != MB_BI_OK) {
+    ret = writer.set_format_by_code(reader.format_code());
+    if (ret != RET_OK) {
         LOGE("Failed to set output boot image format: %s",
-             mb_bi_writer_error_string(biw.get()));
+             writer.error_string().c_str());
         return false;
     }
-    ret = mb_bi_writer_open_filename(biw.get(), output_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = writer.open_filename(output_file);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
@@ -346,52 +340,51 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("Patching boot image");
     LOGD("- Input: %s", input_file.c_str());
     LOGD("- Output: %s", output_file.c_str());
-    LOGD("- Format: %s", mb_bi_reader_format_name(bir.get()));
+    LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
-    if (ret != MB_BI_OK) {
+    ret = reader.read_header(header);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             input_file.c_str(), reader.error_string().c_str());
         return false;
     }
-    ret = mb_bi_writer_write_header(biw.get(), header);
-    if (ret != MB_BI_OK) {
+    ret = writer.write_header(header);
+    if (ret != RET_OK) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
     // Write entries
-    while ((ret = mb_bi_writer_get_entry(biw.get(), &out_entry)) == MB_BI_OK) {
-        int type = mb_bi_entry_type(out_entry);
+    while ((ret = writer.get_entry(out_entry)) == RET_OK) {
+        auto type = out_entry.type();
 
         // Write entry metadata
-        ret = mb_bi_writer_write_entry(biw.get(), out_entry);
-        if (ret != MB_BI_OK) {
+        ret = writer.write_entry(out_entry);
+        if (ret != RET_OK) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                 output_file.c_str(), writer.error_string().c_str());
             return false;
         }
 
         // Special case for loki aboot
-        if (type == MB_BI_ENTRY_ABOOT) {
-            if (bi_copy_file_to_data(ABOOT_PARTITION, biw.get())) {
+        if (*type == ENTRY_TYPE_ABOOT) {
+            if (bi_copy_file_to_data(ABOOT_PARTITION, writer)) {
                 return false;
             }
         } else {
-            ret = mb_bi_reader_go_to_entry(bir.get(), &in_entry, type);
-            if (ret == MB_BI_EOF) {
-                LOGV("Skipping non existent boot image entry: %d", type);
+            ret = reader.go_to_entry(in_entry, *type);
+            if (ret == RET_EOF) {
+                LOGV("Skipping non existent boot image entry: %d", *type);
                 continue;
-            } else if (ret != MB_BI_OK) {
+            } else if (ret != RET_OK) {
                 LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), type,
-                     mb_bi_reader_error_string(bir.get()));
+                     input_file.c_str(), *type, reader.error_string().c_str());
                 return false;
             }
 
-            if (type == MB_BI_ENTRY_RAMDISK) {
+            if (type == ENTRY_TYPE_RAMDISK) {
                 std::string ramdisk_in(tmpdir);
                 ramdisk_in += "/ramdisk.in";
                 std::string ramdisk_out(tmpdir);
@@ -402,7 +395,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     unlink(ramdisk_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), ramdisk_in)) {
+                if (!bi_copy_data_to_file(reader, ramdisk_in)) {
                     return false;
                 }
 
@@ -410,10 +403,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(ramdisk_out, biw.get())) {
+                if (!bi_copy_file_to_data(ramdisk_out, writer)) {
                     return false;
                 }
-            } else if (type == MB_BI_ENTRY_KERNEL) {
+            } else if (type == ENTRY_TYPE_KERNEL) {
                 std::string kernel_in(tmpdir);
                 kernel_in += "/kernel.in";
                 std::string kernel_out(tmpdir);
@@ -424,7 +417,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     unlink(kernel_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), kernel_in)) {
+                if (!bi_copy_data_to_file(reader, kernel_in)) {
                     return false;
                 }
 
@@ -432,21 +425,21 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(kernel_out, biw.get())) {
+                if (!bi_copy_file_to_data(kernel_out, writer)) {
                     return false;
                 }
             } else {
                 // Copy entry directly
-                if (!bi_copy_data_to_data(bir.get(), biw.get())) {
+                if (!bi_copy_data_to_data(reader, writer)) {
                     return false;
                 }
             }
         }
     }
 
-    if (mb_bi_writer_close(biw.get()) != MB_BI_OK) {
+    if (writer.close() != RET_OK) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
@@ -545,17 +538,16 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     StandardFile fout;
     // TODO: Replace with std::optional after switching to C++17
     std::pair<bool, uint64_t> offset;
-    FileStatus ret;
 
     // Open input file
-    if (fin.open(input_file, FileOpenMode::READ_ONLY) != FileStatus::OK) {
+    if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
         LOGE("%s: Failed to open for reading: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Open output file
-    if (fout.open(output_file, FileOpenMode::WRITE_ONLY) != FileStatus::OK) {
+    if (!fout.open(output_file, FileOpenMode::WRITE_ONLY)) {
         LOGE("%s: Failed to open for writing: %s",
              output_file.c_str(), fout.error_string().c_str());
         return false;
@@ -563,26 +555,24 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     // Replace pattern
     auto result_cb = [](File &file, void *userdata, uint64_t offset)
-            -> FileStatus {
+            -> FileSearchAction {
         (void) file;
         std::pair<bool, uint64_t> *ptr =
                 static_cast<std::pair<bool, uint64_t> *>(userdata);
         ptr->first = true;
         ptr->second = offset;
-        return FileStatus::OK;
+        return FileSearchAction::Stop;
     };
 
-    ret = file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern),
-                      1, result_cb, &offset);
-    if (ret < FileStatus::OK) {
+    if (!file_search(fin, -1, -1, 0, source_pattern, sizeof(source_pattern), 1,
+                     result_cb, &offset)) {
         LOGE("%s: Error when searching for pattern: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Copy data
-    ret = fin.seek(0, SEEK_SET, nullptr);
-    if (ret != FileStatus::OK) {
+    if (!fin.seek(0, SEEK_SET, nullptr)) {
         LOGE("%s: Failed to seek to beginning: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
@@ -595,17 +585,15 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
             return false;
         }
 
-        ret = fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr);
-        if (ret != FileStatus::OK) {
+        if (!fin.seek(sizeof(source_pattern), SEEK_CUR, nullptr)) {
             LOGE("%s: Failed to skip pattern: %s",
                  input_file.c_str(), fin.error_string().c_str());
             return false;
         }
 
         size_t n;
-        ret = file_write_fully(fout, target_pattern,
-                               sizeof(target_pattern), &n);
-        if (ret != FileStatus::OK || n != sizeof(target_pattern)) {
+        if (!file_write_fully(fout, target_pattern, sizeof(target_pattern), n)
+                || n != sizeof(target_pattern)) {
             LOGE("%s: Failed to write target pattern: %s",
                  output_file.c_str(), fout.error_string().c_str());
             return false;
@@ -616,8 +604,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    ret = fout.close();
-    if (ret != FileStatus::OK) {
+    if (!fout.close()) {
         LOGE("%s: Failed to close file: %s",
              output_file.c_str(), fout.error_string().c_str());
         return false;
@@ -666,19 +653,16 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
     size_t n;
-    FileStatus ret;
 
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        ret = mb::file_read_fully(fin, buf, to_read, &n);
-        if (ret != FileStatus::OK || n != to_read) {
+        if (!mb::file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        ret = mb::file_write_fully(fout, buf, to_read, &n);
-        if (ret != FileStatus::OK || n != to_read) {
+        if (!mb::file_write_fully(fout, buf, to_read, n) || n != to_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
@@ -694,19 +678,17 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     char buf[10240];
     size_t n_read;
     size_t n_written;
-    FileStatus ret;
 
     while (true) {
-        ret = mb::file_read_fully(fin, buf, sizeof(buf), &n_read);
-        if (ret != FileStatus::OK) {
+        if (!mb::file_read_fully(fin, buf, sizeof(buf), n_read)) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        ret = mb::file_write_fully(fout, buf, n_read, &n_written);
-        if (ret != FileStatus::OK || n_written != n_read) {
+        if (!mb::file_write_fully(fout, buf, n_read, n_written)
+                || n_written != n_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }

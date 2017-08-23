@@ -22,13 +22,10 @@
 #include <cstring>
 
 #include <mbdevice/json.h>
-#include <mbdevice/validate.h>
 #include <mblog/logging.h>
 #include <mbpatcher/patcherconfig.h>
 #include <mbpatcher/patcherinterface.h>
 
-
-typedef std::unique_ptr<Device, void (*)(Device *)> ScopedDevice;
 
 class BasicLogger : public mb::log::BaseLogger
 {
@@ -65,30 +62,29 @@ static bool file_read_all(const std::string &path,
     return true;
 }
 
-static Device * get_device(const char *path)
+static bool get_device(const char *path, mb::device::Device &device)
 {
     std::vector<unsigned char> contents;
     if (!file_read_all(path, &contents)) {
         fprintf(stderr, "%s: Failed to read file: %s\n", path, strerror(errno));
-        return nullptr;
+        return false;
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    Device *device = mb_device_new_from_json(
-            (const char *) contents.data(), &error);
-    if (!device) {
+    mb::device::JsonError error;
+
+    if (!mb::device::device_from_json(
+            reinterpret_cast<const char *>(contents.data()), device, error)) {
         fprintf(stderr, "%s: Failed to load devices\n", path);
-        return nullptr;
+        return false;
     }
 
-    if (mb_device_validate(device) != 0) {
+    if (device.validate() != 0) {
         fprintf(stderr, "%s: Validation failed\n", path);
-        mb_device_free(device);
-        return nullptr;
+        return false;
     }
 
-    return device;
+    return true;
 }
 
 static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
@@ -112,8 +108,9 @@ int main(int argc, char *argv[]) {
 
     mb::log::log_set_logger(std::make_shared<BasicLogger>());
 
-    ScopedDevice device(get_device(device_file), mb_device_free);
-    if (!device) {
+    mb::device::Device device;
+
+    if (!get_device(device_file, device)) {
         return EXIT_FAILURE;
     }
 
@@ -121,7 +118,7 @@ int main(int argc, char *argv[]) {
     pc.set_data_directory("data");
 
     mb::patcher::FileInfo fi;
-    fi.set_device(device.get());
+    fi.set_device(std::move(device));
     fi.set_input_path(input_path);
     fi.set_output_path(output_path);
     fi.set_rom_id(rom_id);

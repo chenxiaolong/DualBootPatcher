@@ -21,16 +21,19 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <cstdint>
 
 #include "mbcommon/common.h"
 #include "mbcommon/endian.h"
 
 #include "mbbootimg/format/mtk_defs.h"
+
+namespace mb
+{
+namespace bootimg
+{
+namespace mtk
+{
 
 struct MtkHeader
 {
@@ -40,11 +43,11 @@ struct MtkHeader
     char unused[MTK_UNUSED_SIZE];           // Unused (all 0xff)
 };
 
-MB_BEGIN_C_DECLS
-
-static inline void mtk_fix_header_byte_order(struct MtkHeader *header)
+static inline void mtk_fix_header_byte_order(MtkHeader &header)
 {
-    header->size = mb_le32toh(header->size);
+    header.size = mb_le32toh(header.size);
 }
 
-MB_END_C_DECLS
+}
+}
+}

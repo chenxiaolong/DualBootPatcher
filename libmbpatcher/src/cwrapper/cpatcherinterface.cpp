@@ -21,7 +21,7 @@
 
 #include <cassert>
 
-#include "mbpatcher/cwrapper/private/util.h"
+#include "mbcommon/capi/util.h"
 
 #include "mbpatcher/patcherinterface.h"
 
@@ -120,7 +120,7 @@ void details_cb_wrapper(const std::string &text, void *userdata)
 char * mbpatcher_patcher_id(const CPatcher *patcher)
 {
     CCASTP(patcher);
-    return string_to_cstring(p->id());
+    return mb::capi_str_to_cstr(p->id());
 }
 
 /*!
@@ -215,14 +215,14 @@ void mbpatcher_patcher_cancel_patching(CPatcher *patcher)
 char * mbpatcher_autopatcher_id(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return string_to_cstring(ap->id());
+    return mb::capi_str_to_cstr(ap->id());
 }
 
 /*!
  * \brief List of new files added by the autopatcher
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param patcher CAutoPatcher object
  * \return A NULL-terminated array containing the files
@@ -232,14 +232,14 @@ char * mbpatcher_autopatcher_id(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->new_files());
+    return mb::capi_vector_to_cstr_array(ap->new_files());
 }
 
 /*!
  * \brief List of existing files to be patched in the zip file
  *
- * \note The returned array should be freed with `mbpatcher_free_array()` when
- *       it is no longer needed.
+ * \note The returned array and its contents should be freed with `free()` when
+ *       they are no longer needed.
  *
  * \param patcher CAutoPatcher object
  * \return A NULL-terminated array containing the files
@@ -249,7 +249,7 @@ char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher)
 char ** mbpatcher_autopatcher_existing_files(const CAutoPatcher *patcher)
 {
     CCASTAP(patcher);
-    return vector_to_cstring_array(ap->existing_files());
+    return mb::capi_vector_to_cstr_array(ap->existing_files());
 }
 
 /*!

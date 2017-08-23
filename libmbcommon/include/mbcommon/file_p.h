@@ -48,7 +48,7 @@ public:
     FileState state;
 
     // Error
-    int error_code = 0;
+    std::error_code error_code;
     std::string error_string;
 };
 

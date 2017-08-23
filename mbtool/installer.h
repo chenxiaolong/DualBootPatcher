@@ -82,7 +82,7 @@ protected:
     int _flags;
     bool _passthrough;
 
-    Device *_device = nullptr;
+    mb::device::Device _device;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;

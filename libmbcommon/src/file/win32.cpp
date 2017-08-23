@@ -129,30 +129,6 @@ void Win32FilePrivate::clear()
     append = false;
 }
 
-LPCWSTR Win32FilePrivate::win32_error_string(DWORD error_code)
-{
-    LocalFree(error);
-
-    size_t size = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER
-            | FORMAT_MESSAGE_FROM_SYSTEM
-            | FORMAT_MESSAGE_IGNORE_INSERTS,        // dwFlags
-        nullptr,                                    // lpSource
-        error_code,                                 // dwMessageId
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // dwLanguageId
-        reinterpret_cast<LPWSTR>(&error),           // lpBuffer
-        0,                                          // nSize
-        nullptr                                     // Arguments
-    );
-
-    if (size == 0) {
-        error = nullptr;
-        return L"(FormatMessageW failed)";
-    }
-
-    return error;
-}
-
 bool Win32FilePrivate::convert_mode(FileOpenMode mode,
                                     DWORD &access_out,
                                     DWORD &sharing_out,
@@ -334,11 +310,9 @@ Win32File::~Win32File()
  * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
  * \param append Whether append mode should be enabled
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus Win32File::open(HANDLE handle, bool owned, bool append)
+bool Win32File::open(HANDLE handle, bool owned, bool append)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -357,20 +331,18 @@ FileStatus Win32File::open(HANDLE handle, bool owned, bool append)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus Win32File::open(const std::string &filename, FileOpenMode mode)
+bool Win32File::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
         // Convert filename to platform-native encoding
         std::wstring native_filename;
         if (!mbs_to_wcs(native_filename, filename)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
-            return FileStatus::FATAL;
+            return false;
         }
 
         DWORD access;
@@ -382,9 +354,9 @@ FileStatus Win32File::open(const std::string &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidMode),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->handle = INVALID_HANDLE_VALUE;
@@ -408,11 +380,9 @@ FileStatus Win32File::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return
- *   * #FileStatus::OK if the file is successfully opened
- *   * \<= #FileStatus::WARN if an error occurs
+ * \return Whether the file is successfully opened
  */
-FileStatus Win32File::open(const std::wstring &filename, FileOpenMode mode)
+bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -425,9 +395,9 @@ FileStatus Win32File::open(const std::wstring &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(FileError::INVALID_ARGUMENT,
+            set_error(make_error_code(FileError::InvalidMode),
                       "Invalid mode: %d", mode);
-            return FileStatus::FATAL;
+            return false;
         }
 
         priv->handle = INVALID_HANDLE_VALUE;
@@ -443,7 +413,7 @@ FileStatus Win32File::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-FileStatus Win32File::on_open()
+bool Win32File::on_open()
 {
     MB_PRIVATE(Win32File);
 
@@ -452,28 +422,26 @@ FileStatus Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(-GetLastError(),
-                      "Failed to open file: %ls",
-                      priv->win32_error_string(GetLastError()));
-            return FileStatus::FAILED;
+            set_error(std::error_code(GetLastError(), std::system_category()),
+                      "Failed to open file");
+            return false;
         }
     }
 
-    return FileStatus::OK;
+    return true;
 }
 
-FileStatus Win32File::on_close()
+bool Win32File::on_close()
 {
     MB_PRIVATE(Win32File);
 
-    FileStatus ret = FileStatus::OK;
+    bool ret = true;
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(-GetLastError(),
-                  "Failed to close file: %ls",
-                  priv->win32_error_string(GetLastError()));
-        ret = FileStatus::FAILED;
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to close file");
+        ret = false;
     }
 
     // Reset to allow opening another file
@@ -482,7 +450,7 @@ FileStatus Win32File::on_close()
     return ret;
 }
 
-FileStatus Win32File::on_read(void *buf, size_t size, size_t *bytes_read)
+bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     MB_PRIVATE(Win32File);
 
@@ -501,18 +469,16 @@ FileStatus Win32File::on_read(void *buf, size_t size, size_t *bytes_read)
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to read file: %ls",
-                  priv->win32_error_string(GetLastError()));
-        return FileStatus::FAILED;
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to read file");
+        return false;
     }
 
-    *bytes_read = n;
-    return FileStatus::OK;
+    bytes_read = n;
+    return true;
 }
 
-FileStatus Win32File::on_write(const void *buf, size_t size,
-                               size_t *bytes_written)
+bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     MB_PRIVATE(Win32File);
 
@@ -522,9 +488,8 @@ FileStatus Win32File::on_write(const void *buf, size_t size,
     // native append mode.
     if (priv->append) {
         uint64_t pos;
-        FileStatus seek_ret = on_seek(0, SEEK_END, &pos);
-        if (seek_ret != FileStatus::OK) {
-            return seek_ret;
+        if (!on_seek(0, SEEK_END, pos)) {
+            return false;
         }
     }
 
@@ -541,17 +506,16 @@ FileStatus Win32File::on_write(const void *buf, size_t size,
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to write file: %ls",
-                  priv->win32_error_string(GetLastError()));
-        return FileStatus::FAILED;
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to write file");
+        return false;
     }
 
-    *bytes_written = n;
-    return FileStatus::OK;
+    bytes_written = n;
+    return true;
 }
 
-FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
+bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(Win32File);
 
@@ -570,9 +534,9 @@ FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
         move_method = FILE_END;
         break;
     default:
-        set_error(FileError::INVALID_ARGUMENT,
+        set_error(make_error_code(FileError::InvalidWhence),
                   "Invalid whence argument: %d", whence);
-        return FileStatus::FAILED;
+        return false;
     }
 
     pos.QuadPart = offset;
@@ -585,50 +549,46 @@ FileStatus Win32File::on_seek(int64_t offset, int whence, uint64_t *new_offset)
     );
 
     if (!ret) {
-        set_error(-GetLastError(),
-                  "Failed to seek file: %ls",
-                  priv->win32_error_string(GetLastError()));
-        return FileStatus::FAILED;
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to seek file");
+        return false;
     }
 
-    *new_offset = new_pos.QuadPart;
-    return FileStatus::OK;
+    new_offset = new_pos.QuadPart;
+    return true;
 }
 
-FileStatus Win32File::on_truncate(uint64_t size)
+bool Win32File::on_truncate(uint64_t size)
 {
     MB_PRIVATE(Win32File);
 
-    FileStatus ret = FileStatus::OK, ret2;
+    bool ret = true;
     uint64_t current_pos;
     uint64_t temp;
 
     // Get current position
-    ret2 = on_seek(0, SEEK_CUR, &current_pos);
-    if (ret2 != FileStatus::OK) {
-        return ret2;
+    if (!on_seek(0, SEEK_CUR, current_pos)) {
+        return false;
     }
 
     // Move to new position
-    ret2 = on_seek(size, SEEK_SET, &temp);
-    if (ret2 != FileStatus::OK) {
-        return ret2;
+    if (!on_seek(size, SEEK_SET, temp)) {
+        return false;
     }
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(-GetLastError(),
-                  "Failed to set EOF position: %ls",
-                  priv->win32_error_string(GetLastError()));
-        ret = FileStatus::FAILED;
+        set_error(std::error_code(GetLastError(), std::system_category()),
+                  "Failed to set EOF position");
+        ret = false;
     }
 
     // Move back to initial position
-    ret2 = on_seek(current_pos, SEEK_SET, &temp);
-    if (ret2 != FileStatus::OK) {
+    if (!on_seek(current_pos, SEEK_SET, temp)) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
-        ret = FileStatus::FATAL;
+        set_fatal(true);
+        ret = false;
     }
 
     return ret;

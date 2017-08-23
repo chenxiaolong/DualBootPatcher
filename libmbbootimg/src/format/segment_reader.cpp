@@ -30,102 +30,100 @@
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/format/segment_error_p.h"
 
-int _segment_reader_init(SegmentReaderCtx *ctx)
+namespace mb
 {
-    memset(ctx, 0, sizeof(*ctx));
+namespace bootimg
+{
 
-    ctx->state = SegmentReaderState::BEGIN;
-
-    return MB_BI_OK;
+SegmentReader::SegmentReader()
+    : _state(SegmentReaderState::Begin)
+    , _entries()
+    , _entries_len()
+    , _entry()
+    , _read_start_offset()
+    , _read_end_offset()
+    , _read_cur_offset()
+{
 }
 
-int _segment_reader_deinit(SegmentReaderCtx *ctx)
+size_t SegmentReader::entries_size() const
 {
-    (void) ctx;
-    return MB_BI_OK;
+    return _entries_len;
 }
 
-size_t _segment_reader_entries_size(SegmentReaderCtx *ctx)
+void SegmentReader::entries_clear()
 {
-    return ctx->entries_len;
+    _entries_len = 0;
+    _entry = nullptr;
 }
 
-void _segment_reader_entries_clear(SegmentReaderCtx *ctx)
+int SegmentReader::entries_add(int type, uint64_t offset, uint32_t size,
+                               bool can_truncate, Reader &reader)
 {
-    ctx->entries_len = 0;
-    ctx->entry = nullptr;
-}
-
-int _segment_reader_entries_add(SegmentReaderCtx *ctx,
-                                int type, uint64_t offset, uint32_t size,
-                                bool can_truncate, MbBiReader *bir)
-{
-    if (ctx->state != SegmentReaderState::BEGIN) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
-                               "Adding entry in incorrect state");
-        return MB_BI_FATAL;
+    if (_state != SegmentReaderState::Begin) {
+        reader.set_error(make_error_code(
+                SegmentError::AddEntryInIncorrectState));
+        return RET_FATAL;
     }
 
-    if (ctx->entries_len == sizeof(ctx->entries) / sizeof(ctx->entries[0])) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INTERNAL_ERROR,
-                               "Too many entries");
-        return MB_BI_FATAL;
+    if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
+        reader.set_error(make_error_code(SegmentError::TooManyEntries));
+        return RET_FATAL;
     }
 
-    SegmentReaderEntry *entry = &ctx->entries[ctx->entries_len];
+    SegmentReaderEntry *entry = &_entries[_entries_len];
     entry->type = type;
     entry->offset = offset;
     entry->size = size;
     entry->can_truncate = can_truncate;
 
-    ++ctx->entries_len;
+    ++_entries_len;
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-SegmentReaderEntry * _segment_reader_entry(SegmentReaderCtx *ctx)
+const SegmentReaderEntry * SegmentReader::entry() const
 {
-    switch (ctx->state) {
-    case SegmentReaderState::ENTRIES:
-        return ctx->entry;
+    switch (_state) {
+    case SegmentReaderState::Entries:
+        return _entry;
     default:
         return nullptr;
     }
 }
 
-SegmentReaderEntry * _segment_reader_next_entry(SegmentReaderCtx *ctx)
+const SegmentReaderEntry * SegmentReader::next_entry() const
 {
-    switch (ctx->state) {
-    case SegmentReaderState::BEGIN:
-        if (ctx->entries_len > 0) {
-            return ctx->entries;
+    switch (_state) {
+    case SegmentReaderState::Begin:
+        if (_entries_len > 0) {
+            return _entries;
         } else {
             return nullptr;
         }
-    case SegmentReaderState::ENTRIES:
-        if (static_cast<size_t>(ctx->entry - ctx->entries + 1)
-                == ctx->entries_len) {
+    case SegmentReaderState::Entries:
+        if (static_cast<size_t>(_entry - _entries + 1) == _entries_len) {
             return nullptr;
         } else {
-            return ctx->entry + 1;
+            return _entry + 1;
         }
     default:
         return nullptr;
     }
 }
 
-SegmentReaderEntry * _segment_reader_find_entry(SegmentReaderCtx *ctx,
-                                                int entry_type)
+const SegmentReaderEntry * SegmentReader::find_entry(int entry_type)
 {
     if (entry_type == 0) {
-        if (ctx->entries_len > 0) {
-            return ctx->entries;
+        if (_entries_len > 0) {
+            return _entries;
         }
     } else {
-        for (size_t i = 0; i < ctx->entries_len; ++i) {
-            if (ctx->entries[i].type == entry_type) {
-                return &ctx->entries[i];
+        for (size_t i = 0; i < _entries_len; ++i) {
+            if (_entries[i].type == entry_type) {
+                return &_entries[i];
             }
         }
     }
@@ -133,112 +131,97 @@ SegmentReaderEntry * _segment_reader_find_entry(SegmentReaderCtx *ctx,
     return nullptr;
 }
 
-int _segment_reader_move_to_entry(SegmentReaderCtx *ctx, mb::File *file,
-                                  MbBiEntry *entry, SegmentReaderEntry *srentry,
-                                  MbBiReader *bir)
+int SegmentReader::move_to_entry(File &file, Entry &entry,
+                                 const SegmentReaderEntry &srentry,
+                                 Reader &reader)
 {
-    mb::FileStatus file_ret;
-    int ret;
-
-    if (srentry->offset > UINT64_MAX - srentry->size) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_INVALID_ARGUMENT,
-                               "Entry would overflow offset");
-        return MB_BI_FAILED;
+    if (srentry.offset > UINT64_MAX - srentry.size) {
+        reader.set_error(make_error_code(
+                SegmentError::EntryWouldOverflowOffset));
+        return RET_FAILED;
     }
 
-    uint64_t read_start_offset = srentry->offset;
-    uint64_t read_end_offset = read_start_offset + srentry->size;
+    uint64_t read_start_offset = srentry.offset;
+    uint64_t read_end_offset = read_start_offset + srentry.size;
     uint64_t read_cur_offset = read_start_offset;
 
-    if (ctx->read_cur_offset != srentry->offset) {
-        file_ret = file->seek(read_start_offset, SEEK_SET, nullptr);
-        if (file_ret < mb::FileStatus::OK) {
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+    if (_read_cur_offset != srentry.offset) {
+        if (!file.seek(read_start_offset, SEEK_SET, nullptr)) {
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
 
-    ret = mb_bi_entry_set_type(entry, srentry->type);
-    if (ret != MB_BI_OK) return ret;
+    entry.set_type(srentry.type);
+    entry.set_size(srentry.size);
 
-    ret = mb_bi_entry_set_size(entry, srentry->size);
-    if (ret != MB_BI_OK) return ret;
+    _state = SegmentReaderState::Entries;
+    _entry = &srentry;
+    _read_start_offset = read_start_offset;
+    _read_end_offset = read_end_offset;
+    _read_cur_offset = read_cur_offset;
 
-    ctx->state = SegmentReaderState::ENTRIES;
-    ctx->entry = srentry;
-    ctx->read_start_offset = read_start_offset;
-    ctx->read_end_offset = read_end_offset;
-    ctx->read_cur_offset = read_cur_offset;
-
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-int _segment_reader_read_entry(SegmentReaderCtx *ctx, mb::File *file,
-                               MbBiEntry *entry, MbBiReader *bir)
+int SegmentReader::read_entry(File &file, Entry &entry, Reader &reader)
 {
-    SegmentReaderEntry *srentry;
-
-    srentry = _segment_reader_next_entry(ctx);
+    auto const *srentry = next_entry();
     if (!srentry) {
-        ctx->state = SegmentReaderState::END;
-        ctx->entry = nullptr;
-        return MB_BI_EOF;
+        _state = SegmentReaderState::End;
+        _entry = nullptr;
+        return RET_EOF;
     }
 
-    return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
+    return move_to_entry(file, entry, *srentry, reader);
 }
 
-int _segment_reader_go_to_entry(struct SegmentReaderCtx *ctx, mb::File *file,
-                                struct MbBiEntry *entry, int entry_type,
-                                struct MbBiReader *bir)
+int SegmentReader::go_to_entry(File &file, Entry &entry, int entry_type,
+                               Reader &reader)
 {
-    SegmentReaderEntry *srentry;
-
-    srentry = _segment_reader_find_entry(ctx, entry_type);
+    auto const *srentry = find_entry(entry_type);
     if (!srentry) {
-        ctx->state = SegmentReaderState::END;
-        ctx->entry = nullptr;
-        return MB_BI_EOF;
+        _state = SegmentReaderState::End;
+        _entry = nullptr;
+        return RET_EOF;
     }
 
-    return _segment_reader_move_to_entry(ctx, file, entry, srentry, bir);
+    return move_to_entry(file, entry, *srentry, reader);
 }
 
-int _segment_reader_read_data(SegmentReaderCtx *ctx, mb::File *file,
-                              void *buf, size_t buf_size, size_t *bytes_read,
-                              MbBiReader *bir)
+int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
+                             size_t &bytes_read, Reader &reader)
 {
     size_t to_copy = std::min<uint64_t>(
-            buf_size, ctx->read_end_offset - ctx->read_cur_offset);
+            buf_size, _read_end_offset - _read_cur_offset);
 
-    if (ctx->read_cur_offset > SIZE_MAX - to_copy) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
-                               "Current offset %" PRIu64 " with read size %"
-                               MB_PRIzu " would overflow integer",
-                               ctx->read_cur_offset, to_copy);
-        return MB_BI_FAILED;
+    if (_read_cur_offset > SIZE_MAX - to_copy) {
+        reader.set_error(make_error_code(SegmentError::ReadWouldOverflowInteger),
+                         "Current offset %" PRIu64 " with read size %"
+                         MB_PRIzu " would overflow integer",
+                         _read_cur_offset, to_copy);
+        return RET_FAILED;
     }
 
-    mb::FileStatus file_ret =
-            mb::file_read_fully(*file, buf, to_copy, bytes_read);
-    if (file_ret < mb::FileStatus::OK) {
-        mb_bi_reader_set_error(bir, file->error(),
-                               "Failed to read data: %s",
-                               file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+    if (!file_read_fully(file, buf, to_copy, bytes_read)) {
+        reader.set_error(file.error(),
+                         "Failed to read data: %s",
+                         file.error_string().c_str());
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    ctx->read_cur_offset += *bytes_read;
+    _read_cur_offset += bytes_read;
 
     // Fail if we reach EOF early
-    if (*bytes_read == 0 && ctx->read_cur_offset != ctx->read_end_offset
-            && !ctx->entry->can_truncate) {
-        mb_bi_reader_set_error(bir, MB_BI_ERROR_FILE_FORMAT,
-                               "Entry is truncated "
-                               "(expected %" PRIu64 " more bytes)",
-                               ctx->read_end_offset - ctx->read_cur_offset);
-        return MB_BI_FATAL;
+    if (bytes_read == 0 && _read_cur_offset != _read_end_offset
+            && !_entry->can_truncate) {
+        reader.set_error(make_error_code(SegmentError::EntryIsTruncated),
+                         "Entry is truncated (expected %" PRIu64 " more bytes)",
+                         _read_end_offset - _read_cur_offset);
+        return RET_FATAL;
     }
 
-    return *bytes_read == 0 ? MB_BI_EOF : MB_BI_OK;
+    return bytes_read == 0 ? RET_EOF : RET_OK;
+}
+
+}
 }

@@ -22,11 +22,12 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.CWrapper.CDevice;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.CWrapper.CJsonError;
+import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 import com.sun.jna.StringArray;
-import com.sun.jna.ptr.PointerByReference;
 
 import java.util.HashMap;
 
@@ -50,114 +51,137 @@ public class LibMbDevice {
             }
         }
 
+        public static class CJsonError extends PointerType {}
+
+        public static class SizeT extends IntegerType {
+            public SizeT() {
+                this(0);
+            }
+
+            public SizeT(long value) {
+                super(Native.SIZE_T_SIZE, value, true);
+            }
+        }
+
         // BEGIN: device.h
         static native CDevice mb_device_new();
 
         static native void mb_device_free(CDevice device);
 
-        static native String mb_device_id(CDevice device);
-        static native int mb_device_set_id(CDevice device, String id);
+        static native /* char * */ Pointer mb_device_id(CDevice device);
+        static native void mb_device_set_id(CDevice device, String id);
 
-        static native Pointer mb_device_codenames(CDevice device);
-        static native int mb_device_set_codenames(CDevice device, StringArray codenames);
+        static native /* char ** */ Pointer mb_device_codenames(CDevice device);
+        static native void mb_device_set_codenames(CDevice device, StringArray codenames);
 
-        static native String mb_device_name(CDevice device);
-        static native int mb_device_set_name(CDevice device, String name);
+        static native /* char * */ Pointer mb_device_name(CDevice device);
+        static native void mb_device_set_name(CDevice device, String name);
 
-        static native String mb_device_architecture(CDevice device);
-        static native int mb_device_set_architecture(CDevice device, String architecture);
+        static native /* char * */ Pointer mb_device_architecture(CDevice device);
+        static native void mb_device_set_architecture(CDevice device, String architecture);
 
-        static native long mb_device_flags(CDevice device);
-        static native int mb_device_set_flags(CDevice device, long flags);
+        static native /* uint32_t */ int mb_device_flags(CDevice device);
+        static native void mb_device_set_flags(CDevice device, int flags);
 
-        static native Pointer mb_device_block_dev_base_dirs(CDevice device);
-        static native int mb_device_set_block_dev_base_dirs(CDevice device, StringArray baseDirs);
+        static native /* char ** */ Pointer mb_device_block_dev_base_dirs(CDevice device);
+        static native void mb_device_set_block_dev_base_dirs(CDevice device, StringArray baseDirs);
 
-        static native Pointer mb_device_system_block_devs(CDevice device);
-        static native int mb_device_set_system_block_devs(CDevice device, StringArray systemDevs);
+        static native /* char ** */ Pointer mb_device_system_block_devs(CDevice device);
+        static native void mb_device_set_system_block_devs(CDevice device, StringArray systemDevs);
 
-        static native Pointer mb_device_cache_block_devs(CDevice device);
-        static native int mb_device_set_cache_block_devs(CDevice device, StringArray cacheDevs);
+        static native /* char ** */ Pointer mb_device_cache_block_devs(CDevice device);
+        static native void mb_device_set_cache_block_devs(CDevice device, StringArray cacheDevs);
 
-        static native Pointer mb_device_data_block_devs(CDevice device);
-        static native int mb_device_set_data_block_devs(CDevice device, StringArray dataDevs);
+        static native /* char ** */ Pointer mb_device_data_block_devs(CDevice device);
+        static native void mb_device_set_data_block_devs(CDevice device, StringArray dataDevs);
 
-        static native Pointer mb_device_boot_block_devs(CDevice device);
-        static native int mb_device_set_boot_block_devs(CDevice device, StringArray bootDevs);
+        static native /* char ** */ Pointer mb_device_boot_block_devs(CDevice device);
+        static native void mb_device_set_boot_block_devs(CDevice device, StringArray bootDevs);
 
-        static native Pointer mb_device_recovery_block_devs(CDevice device);
-        static native int mb_device_set_recovery_block_devs(CDevice device, StringArray recoveryDevs);
+        static native /* char ** */ Pointer mb_device_recovery_block_devs(CDevice device);
+        static native void mb_device_set_recovery_block_devs(CDevice device, StringArray recoveryDevs);
 
-        static native Pointer mb_device_extra_block_devs(CDevice device);
-        static native int mb_device_set_extra_block_devs(CDevice device, StringArray extraDevs);
+        static native /* char ** */ Pointer mb_device_extra_block_devs(CDevice device);
+        static native void mb_device_set_extra_block_devs(CDevice device, StringArray extraDevs);
 
         /* Boot UI */
 
         static native boolean mb_device_tw_supported(CDevice device);
-        static native int mb_device_set_tw_supported(CDevice device, boolean supported);
+        static native void mb_device_set_tw_supported(CDevice device, boolean supported);
 
-        static native long mb_device_tw_flags(CDevice device);
-        static native int mb_device_set_tw_flags(CDevice device, long flags);
+        static native /* uint32_t */ int mb_device_tw_flags(CDevice device);
+        static native void mb_device_set_tw_flags(CDevice device, int flags);
 
-        static native /* enum TwPixelFormat */ int mb_device_tw_pixel_format(CDevice device);
-        static native int mb_device_set_tw_pixel_format(CDevice device, /* enum TwPixelFormat */ int format);
+        static native /* uint32_t */ int mb_device_tw_pixel_format(CDevice device);
+        static native void mb_device_set_tw_pixel_format(CDevice device, /* uint32_t */ int format);
 
-        static native /* enum TwForcePixelFormat */ int mb_device_tw_force_pixel_format(CDevice device);
-        static native int mb_device_set_tw_force_pixel_format(CDevice device, /* enum TwForcePixelFormat */ int format);
+        static native /* uint32_t */ int mb_device_tw_force_pixel_format(CDevice device);
+        static native void mb_device_set_tw_force_pixel_format(CDevice device, /* uint32_t */ int format);
 
         static native int mb_device_tw_overscan_percent(CDevice device);
-        static native int mb_device_set_tw_overscan_percent(CDevice device, int percent);
+        static native void mb_device_set_tw_overscan_percent(CDevice device, int percent);
 
         static native int mb_device_tw_default_x_offset(CDevice device);
-        static native int mb_device_set_tw_default_x_offset(CDevice device, int offset);
+        static native void mb_device_set_tw_default_x_offset(CDevice device, int offset);
 
         static native int mb_device_tw_default_y_offset(CDevice device);
-        static native int mb_device_set_tw_default_y_offset(CDevice device, int offset);
+        static native void mb_device_set_tw_default_y_offset(CDevice device, int offset);
 
-        static native String mb_device_tw_brightness_path(CDevice device);
-        static native int mb_device_set_tw_brightness_path(CDevice device, String path);
+        static native /* char * */ Pointer mb_device_tw_brightness_path(CDevice device);
+        static native void mb_device_set_tw_brightness_path(CDevice device, String path);
 
-        static native String mb_device_tw_secondary_brightness_path(CDevice device);
-        static native int mb_device_set_tw_secondary_brightness_path(CDevice device, String path);
+        static native /* char * */ Pointer mb_device_tw_secondary_brightness_path(CDevice device);
+        static native void mb_device_set_tw_secondary_brightness_path(CDevice device, String path);
 
         static native int mb_device_tw_max_brightness(CDevice device);
-        static native int mb_device_set_tw_max_brightness(CDevice device, int brightness);
+        static native void mb_device_set_tw_max_brightness(CDevice device, int brightness);
 
         static native int mb_device_tw_default_brightness(CDevice device);
-        static native int mb_device_set_tw_default_brightness(CDevice device, int brightness);
+        static native void mb_device_set_tw_default_brightness(CDevice device, int brightness);
 
-        static native String mb_device_tw_battery_path(CDevice device);
-        static native int mb_device_set_tw_battery_path(CDevice device, String path);
+        static native /* char * */ Pointer mb_device_tw_battery_path(CDevice device);
+        static native void mb_device_set_tw_battery_path(CDevice device, String path);
 
-        static native String mb_device_tw_cpu_temp_path(CDevice device);
-        static native int mb_device_set_tw_cpu_temp_path(CDevice device, String path);
+        static native /* char * */ Pointer mb_device_tw_cpu_temp_path(CDevice device);
+        static native void mb_device_set_tw_cpu_temp_path(CDevice device, String path);
 
-        static native String mb_device_tw_input_blacklist(CDevice device);
-        static native int mb_device_set_tw_input_blacklist(CDevice device, String blacklist);
+        static native /* char * */ Pointer mb_device_tw_input_blacklist(CDevice device);
+        static native void mb_device_set_tw_input_blacklist(CDevice device, String blacklist);
 
-        static native String mb_device_tw_input_whitelist(CDevice device);
-        static native int mb_device_set_tw_input_whitelist(CDevice device, String whitelist);
+        static native /* char * */ Pointer mb_device_tw_input_whitelist(CDevice device);
+        static native void mb_device_set_tw_input_whitelist(CDevice device, String whitelist);
 
-        static native Pointer mb_device_tw_graphics_backends(CDevice device);
-        static native int mb_device_set_tw_graphics_backends(CDevice device, StringArray backends);
+        static native /* char ** */ Pointer mb_device_tw_graphics_backends(CDevice device);
+        static native void mb_device_set_tw_graphics_backends(CDevice device, StringArray backends);
 
-        static native String mb_device_tw_theme(CDevice device);
-        static native int mb_device_set_tw_theme(CDevice device, String theme);
+        static native /* char * */ Pointer mb_device_tw_theme(CDevice device);
+        static native void mb_device_set_tw_theme(CDevice device, String theme);
 
         /* Other */
+
+        static native /* uint32_t */ int mb_device_validate(CDevice device);
 
         static native boolean mb_device_equals(CDevice a, CDevice b);
         // END: device.h
 
         // BEGIN: json.h
-        static native CDevice mb_device_new_from_json(String json, PointerByReference error);
+        static native CJsonError mb_device_json_error_new();
 
-        static native /* CDevice[] */ Pointer mb_device_new_list_from_json(String json, PointerByReference error);
+        static native void mb_device_json_error_free(CJsonError error);
+
+        static native /* uint16_t */ short mb_device_json_error_type(CJsonError error);
+        static native /* size_t */ SizeT mb_device_json_error_offset(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_message(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_schema_uri(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_schema_keyword(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_document_uri(CJsonError error);
+
+        static native CDevice mb_device_new_from_json(String json, CJsonError error);
+
+        static native /* CDevice ** */ Pointer mb_device_new_list_from_json(String json, CJsonError error);
+
+        static native /* char * */ Pointer mb_device_to_json(CDevice device);
         // END: json.h
-
-        // BEGIN: validate.h
-        static native long mb_device_validate(CDevice device);
-        // END: validate.h
     }
 
     private static void ensureNotNull(Object o) {
@@ -192,9 +216,71 @@ public class LibMbDevice {
         }
     }
 
-    private static void handleReturn(int ret) {
-        if (ret != 0) {
-            throw new IllegalStateException("libmbdevice returned: " + ret);
+    public static class JsonError {
+        private CJsonError mCJsonError;
+
+        public JsonError() {
+            mCJsonError = CWrapper.mb_device_json_error_new();
+            if (mCJsonError == null) {
+                throw new IllegalStateException("Failed to allocate CJsonError object");
+            }
+        }
+
+        public void destroy() {
+            if (mCJsonError != null) {
+                CWrapper.mb_device_json_error_free(mCJsonError);
+            }
+            mCJsonError = null;
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
+            destroy();
+            super.finalize();
+        }
+
+        CJsonError getPointer() {
+            return mCJsonError;
+        }
+
+        public short type() {
+            return CWrapper.mb_device_json_error_type(mCJsonError);
+        }
+
+        public long offset() {
+            return CWrapper.mb_device_json_error_offset(mCJsonError).longValue();
+        }
+
+        public String message() {
+            Pointer p = CWrapper.mb_device_json_error_message(mCJsonError);
+            if (p == null) {
+                return null;
+            }
+            return LibC.getStringAndFree(p);
+        }
+
+        public String schemaUri() {
+            Pointer p = CWrapper.mb_device_json_error_schema_uri(mCJsonError);
+            if (p == null) {
+                return null;
+            }
+            return LibC.getStringAndFree(p);
+        }
+
+        public String schemaKeyword() {
+            Pointer p = CWrapper.mb_device_json_error_schema_keyword(mCJsonError);
+            if (p == null) {
+                return null;
+            }
+            return LibC.getStringAndFree(p);
+        }
+
+        public String documentUri() {
+            Pointer p = CWrapper.mb_device_json_error_document_uri(mCJsonError);
+            if (p == null) {
+                return null;
+            }
+            return LibC.getStringAndFree(p);
         }
     }
 
@@ -303,13 +389,25 @@ public class LibMbDevice {
         };
 
         public static Device newFromJson(String json) {
-            PointerByReference error = new PointerByReference();
-            return new Device(CWrapper.mb_device_new_from_json(json, error), true);
+            JsonError error = new JsonError();
+            Device device = newFromJson(json, error);
+            error.destroy();
+            return device;
+        }
+
+        public static Device newFromJson(String json, JsonError error) {
+            return new Device(CWrapper.mb_device_new_from_json(json, error.getPointer()), true);
         }
 
         public static Device[] newListFromJson(String json) {
-            PointerByReference error = new PointerByReference();
-            Pointer p = CWrapper.mb_device_new_list_from_json(json, error);
+            JsonError error = new JsonError();
+            Device[] devices = newListFromJson(json, error);
+            error.destroy();
+            return devices;
+        }
+
+        public static Device[] newListFromJson(String json, JsonError error) {
+            Pointer p = CWrapper.mb_device_new_list_from_json(json, error.getPointer());
             if (p == null) {
                 return null;
             }
@@ -320,119 +418,115 @@ public class LibMbDevice {
                 devices[i] = new Device(new CDevice(cDevices[i]), true);
             }
 
-            LibC.CWrapper.free(p);
+            LibC.free(p);
             return devices;
         }
 
         public String getId() {
-            return CWrapper.mb_device_id(mCDevice);
+            Pointer p = CWrapper.mb_device_id(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setId(String id) {
-            handleReturn(CWrapper.mb_device_set_id(mCDevice, id));
+            CWrapper.mb_device_set_id(mCDevice, id);
         }
 
         public String[] getCodenames() {
-            Pointer ptr = CWrapper.mb_device_codenames(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_codenames(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setCodenames(String[] names) {
-            handleReturn(CWrapper.mb_device_set_codenames(mCDevice, new StringArray(names)));
+            CWrapper.mb_device_set_codenames(mCDevice, new StringArray(names));
         }
 
         public String getName() {
-            return CWrapper.mb_device_name(mCDevice);
+            Pointer p = CWrapper.mb_device_name(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setName(String name) {
-            handleReturn(CWrapper.mb_device_set_name(mCDevice, name));
+            CWrapper.mb_device_set_name(mCDevice, name);
         }
 
         public String getArchitecture() {
-            return CWrapper.mb_device_architecture(mCDevice);
+            Pointer p = CWrapper.mb_device_architecture(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setArchitecture(String arch) {
-            handleReturn(CWrapper.mb_device_set_architecture(mCDevice, arch));
+            CWrapper.mb_device_set_architecture(mCDevice, arch);
         }
 
-        public long getFlags() {
+        public int getFlags() {
             return CWrapper.mb_device_flags(mCDevice);
         }
 
-        public void setFlags(long flags) {
-            handleReturn(CWrapper.mb_device_set_flags(mCDevice, flags));
+        public void setFlags(int flags) {
+            CWrapper.mb_device_set_flags(mCDevice, flags);
         }
 
         public String[] getBlockDevBaseDirs() {
-            Pointer ptr = CWrapper.mb_device_block_dev_base_dirs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_block_dev_base_dirs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setBlockDevBaseDirs(String[] dirs) {
-            handleReturn(CWrapper.mb_device_set_block_dev_base_dirs(
-                    mCDevice, new StringArray(dirs)));
+            CWrapper.mb_device_set_block_dev_base_dirs(mCDevice, new StringArray(dirs));
         }
 
         public String[] getSystemBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_system_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_system_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setSystemBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_system_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_system_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getCacheBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_cache_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_cache_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setCacheBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_cache_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_cache_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getDataBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_data_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_data_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setDataBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_data_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_data_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getBootBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_boot_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_boot_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setBootBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_boot_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_boot_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getRecoveryBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_recovery_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_recovery_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setRecoveryBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_recovery_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_recovery_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public String[] getExtraBlockDevs() {
-            Pointer ptr = CWrapper.mb_device_extra_block_devs(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_extra_block_devs(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setExtraBlockDevs(String[] blockDevs) {
-            handleReturn(CWrapper.mb_device_set_extra_block_devs(
-                    mCDevice, new StringArray(blockDevs)));
+            CWrapper.mb_device_set_extra_block_devs(mCDevice, new StringArray(blockDevs));
         }
 
         public boolean isTwSupported() {
@@ -440,15 +534,15 @@ public class LibMbDevice {
         }
 
         public void setTwSupported(boolean supported) {
-            handleReturn(CWrapper.mb_device_set_tw_supported(mCDevice, supported));
+            CWrapper.mb_device_set_tw_supported(mCDevice, supported);
         }
 
-        public long getTwFlags() {
+        public int getTwFlags() {
             return CWrapper.mb_device_tw_flags(mCDevice);
         }
 
-        public void setTwFlags(long flags) {
-            handleReturn(CWrapper.mb_device_set_tw_flags(mCDevice, flags));
+        public void setTwFlags(int flags) {
+            CWrapper.mb_device_set_tw_flags(mCDevice, flags);
         }
 
         public int getTwPixelFormat() {
@@ -456,7 +550,7 @@ public class LibMbDevice {
         }
 
         public void setTwPixelFormat(int format) {
-            handleReturn(CWrapper.mb_device_set_tw_pixel_format(mCDevice, format));
+            CWrapper.mb_device_set_tw_pixel_format(mCDevice, format);
         }
 
         public int getTwForcePixelFormat() {
@@ -464,7 +558,7 @@ public class LibMbDevice {
         }
 
         public void setTwForcePixelFormat(int format) {
-            handleReturn(CWrapper.mb_device_set_tw_force_pixel_format(mCDevice, format));
+            CWrapper.mb_device_set_tw_force_pixel_format(mCDevice, format);
         }
 
         public int getTwOverscanPercent() {
@@ -472,7 +566,7 @@ public class LibMbDevice {
         }
 
         public void setTwOverscanPercent(int percent) {
-            handleReturn(CWrapper.mb_device_set_tw_overscan_percent(mCDevice, percent));
+            CWrapper.mb_device_set_tw_overscan_percent(mCDevice, percent);
         }
 
         public int getTwDefaultXOffset() {
@@ -480,7 +574,7 @@ public class LibMbDevice {
         }
 
         public void setTwDefaultXOffset(int offset) {
-            handleReturn(CWrapper.mb_device_set_tw_default_x_offset(mCDevice, offset));
+            CWrapper.mb_device_set_tw_default_x_offset(mCDevice, offset);
         }
 
         public int getTwDefaultYOffset() {
@@ -488,23 +582,25 @@ public class LibMbDevice {
         }
 
         public void setTwDefaultYOffset(int offset) {
-            handleReturn(CWrapper.mb_device_set_tw_default_y_offset(mCDevice, offset));
+            CWrapper.mb_device_set_tw_default_y_offset(mCDevice, offset);
         }
 
         public String getTwBrightnessPath() {
-            return CWrapper.mb_device_tw_brightness_path(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_brightness_path(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwBrightnessPath(String path) {
-            handleReturn(CWrapper.mb_device_set_tw_brightness_path(mCDevice, path));
+            CWrapper.mb_device_set_tw_brightness_path(mCDevice, path);
         }
 
         public String getTwSecondaryBrightnessPath() {
-            return CWrapper.mb_device_tw_secondary_brightness_path(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_secondary_brightness_path(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwSecondaryBrightnessPath(String path) {
-            handleReturn(CWrapper.mb_device_set_tw_secondary_brightness_path(mCDevice, path));
+            CWrapper.mb_device_set_tw_secondary_brightness_path(mCDevice, path);
         }
 
         public int getTwMaxBrightness() {
@@ -512,7 +608,7 @@ public class LibMbDevice {
         }
 
         public void setTwMaxBrightness(int brightness) {
-            handleReturn(CWrapper.mb_device_set_tw_max_brightness(mCDevice, brightness));
+            CWrapper.mb_device_set_tw_max_brightness(mCDevice, brightness);
         }
 
         public int getTwDefaultBrightness() {
@@ -520,57 +616,61 @@ public class LibMbDevice {
         }
 
         public void setTwDefaultBrightness(int brightness) {
-            handleReturn(CWrapper.mb_device_set_tw_default_brightness(mCDevice, brightness));
+            CWrapper.mb_device_set_tw_default_brightness(mCDevice, brightness);
         }
 
         public String getTwBatteryPath() {
-            return CWrapper.mb_device_tw_battery_path(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_battery_path(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwBatteryPath(String path) {
-            handleReturn(CWrapper.mb_device_set_tw_battery_path(mCDevice, path));
+            CWrapper.mb_device_set_tw_battery_path(mCDevice, path);
         }
 
         public String getTwCpuTempPath() {
-            return CWrapper.mb_device_tw_cpu_temp_path(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_cpu_temp_path(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwCpuTempPath(String path) {
-            handleReturn(CWrapper.mb_device_set_tw_cpu_temp_path(mCDevice, path));
+            CWrapper.mb_device_set_tw_cpu_temp_path(mCDevice, path);
         }
 
         public String getTwInputBlacklist() {
-            return CWrapper.mb_device_tw_input_blacklist(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_input_blacklist(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwInputBlacklist(String blacklist) {
-            handleReturn(CWrapper.mb_device_set_tw_input_blacklist(mCDevice, blacklist));
+            CWrapper.mb_device_set_tw_input_blacklist(mCDevice, blacklist);
         }
 
         public String getTwInputWhitelist() {
-            return CWrapper.mb_device_tw_input_whitelist(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_input_whitelist(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwInputWhitelist(String whitelist) {
-            handleReturn(CWrapper.mb_device_set_tw_input_whitelist(mCDevice, whitelist));
+            CWrapper.mb_device_set_tw_input_whitelist(mCDevice, whitelist);
         }
 
         public String[] getTwGraphicsBackends() {
-            Pointer ptr = CWrapper.mb_device_tw_graphics_backends(mCDevice);
-            return ptr == null ? null : ptr.getStringArray(0);
+            Pointer p = CWrapper.mb_device_tw_graphics_backends(mCDevice);
+            return p == null ? null : LibC.getStringArrayAndFree(p);
         }
 
         public void setTwGraphicsBackends(String[] backends) {
-            handleReturn(CWrapper.mb_device_set_tw_graphics_backends(
-                    mCDevice, new StringArray(backends)));
+            CWrapper.mb_device_set_tw_graphics_backends(mCDevice, new StringArray(backends));
         }
 
         public String getTwTheme() {
-            return CWrapper.mb_device_tw_theme(mCDevice);
+            Pointer p = CWrapper.mb_device_tw_theme(mCDevice);
+            return p == null ? null : LibC.getStringAndFree(p);
         }
 
         public void setTwTheme(String theme) {
-            handleReturn(CWrapper.mb_device_set_tw_theme(mCDevice, theme));
+            CWrapper.mb_device_set_tw_theme(mCDevice, theme);
         }
 
         public long validate() {

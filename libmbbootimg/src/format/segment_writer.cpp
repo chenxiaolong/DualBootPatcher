@@ -31,234 +31,234 @@
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
+#include "mbbootimg/format/segment_error_p.h"
 
-int _segment_writer_init(SegmentWriterCtx *ctx)
+namespace mb
 {
-    memset(ctx, 0, sizeof(*ctx));
+namespace bootimg
+{
 
-    ctx->state = SegmentWriterState::BEGIN;
-
-    return MB_BI_OK;
+SegmentWriter::SegmentWriter()
+    : _state(SegmentWriterState::Begin)
+    , _entries()
+    , _entries_len()
+    , _entry()
+    , _entry_size()
+    , _have_pos()
+    , _pos()
+{
 }
 
-int _segment_writer_deinit(SegmentWriterCtx *ctx)
+size_t SegmentWriter::entries_size() const
 {
-    (void) ctx;
-    return MB_BI_OK;
+    return _entries_len;
 }
 
-size_t _segment_writer_entries_size(SegmentWriterCtx *ctx)
+void SegmentWriter::entries_clear()
 {
-    return ctx->entries_len;
+    _entries_len = 0;
+    _entry = nullptr;
 }
 
-void _segment_writer_entries_clear(SegmentWriterCtx *ctx)
+int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
+                               uint64_t align, Writer &writer)
 {
-    ctx->entries_len = 0;
-    ctx->entry = nullptr;
-}
-
-int _segment_writer_entries_add(SegmentWriterCtx *ctx,
-                                int type, uint32_t size, bool size_set,
-                                uint64_t align, MbBiWriter *biw)
-{
-    if (ctx->state != SegmentWriterState::BEGIN) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                               "Adding entry in incorrect state");
-        return MB_BI_FATAL;
+    if (_state != SegmentWriterState::Begin) {
+        writer.set_error(make_error_code(
+                SegmentError::AddEntryInIncorrectState));
+        return RET_FATAL;
     }
 
-    if (ctx->entries_len == sizeof(ctx->entries) / sizeof(ctx->entries[0])) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                               "Too many entries");
-        return MB_BI_FATAL;
+    if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
+        writer.set_error(make_error_code(SegmentError::TooManyEntries));
+        return RET_FATAL;
     }
 
-    SegmentWriterEntry *entry = &ctx->entries[ctx->entries_len];
+    SegmentWriterEntry *entry = &_entries[_entries_len];
     entry->type = type;
     entry->offset = 0;
     entry->size = size;
     entry->size_set = size_set;
     entry->align = align;
 
-    ++ctx->entries_len;
+    ++_entries_len;
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-SegmentWriterEntry * _segment_writer_entries_get(SegmentWriterCtx *ctx,
-                                                 size_t index)
+const SegmentWriterEntry * SegmentWriter::entries_get(size_t index)
 {
-    if (index < ctx->entries_len) {
-        return &ctx->entries[index];
+    if (index < _entries_len) {
+        return &_entries[index];
     } else {
         return nullptr;
     }
 }
 
-SegmentWriterEntry * _segment_writer_entry(SegmentWriterCtx *ctx)
+const SegmentWriterEntry * SegmentWriter::entry() const
 {
-    switch (ctx->state) {
-    case SegmentWriterState::ENTRIES:
-        return ctx->entry;
+    switch (_state) {
+    case SegmentWriterState::Entries:
+        return _entry;
     default:
         return nullptr;
     }
 }
 
-SegmentWriterEntry * _segment_writer_next_entry(SegmentWriterCtx *ctx)
+SegmentWriterEntry * SegmentWriter::next_entry()
 {
-    switch (ctx->state) {
-    case SegmentWriterState::BEGIN:
-        if (ctx->entries_len > 0) {
-            return ctx->entries;
+    switch (_state) {
+    case SegmentWriterState::Begin:
+        if (_entries_len > 0) {
+            return _entries;
         } else {
             return nullptr;
         }
-    case SegmentWriterState::ENTRIES:
-        if (static_cast<size_t>(ctx->entry - ctx->entries + 1)
-                == ctx->entries_len) {
+    case SegmentWriterState::Entries:
+        if (static_cast<size_t>(_entry - _entries + 1) == _entries_len) {
             return nullptr;
         } else {
-            return ctx->entry + 1;
+            return _entry + 1;
         }
     default:
         return nullptr;
     }
 }
 
-void _segment_writer_update_size_if_unset(SegmentWriterCtx *ctx,
-                                          uint32_t size)
+const SegmentWriterEntry * SegmentWriter::next_entry() const
 {
-    if (!ctx->entry->size_set) {
-        ctx->entry->size = size;
-        ctx->entry->size_set = true;
+    switch (_state) {
+    case SegmentWriterState::Begin:
+        if (_entries_len > 0) {
+            return _entries;
+        } else {
+            return nullptr;
+        }
+    case SegmentWriterState::Entries:
+        if (static_cast<size_t>(_entry - _entries + 1) == _entries_len) {
+            return nullptr;
+        } else {
+            return _entry + 1;
+        }
+    default:
+        return nullptr;
     }
 }
 
-int _segment_writer_get_entry(SegmentWriterCtx *ctx, mb::File *file,
-                              MbBiEntry *entry, MbBiWriter *biw)
+void SegmentWriter::update_size_if_unset(uint32_t size)
 {
-    SegmentWriterEntry *swentry;
-    mb::FileStatus file_ret;
-    int ret;
+    if (!_entry->size_set) {
+        _entry->size = size;
+        _entry->size_set = true;
+    }
+}
 
-    if (!ctx->have_pos) {
-        file_ret = file->seek(0, SEEK_CUR, &ctx->pos);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
-                                   "Failed to get current offset: %s",
-                                   file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
+{
+    if (!_have_pos) {
+        if (!file.seek(0, SEEK_CUR, &_pos)) {
+            writer.set_error(file.error(),
+                             "Failed to get current offset: %s",
+                             file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        ctx->have_pos = true;
+        _have_pos = true;
     }
 
     // Get next entry
-    swentry = _segment_writer_next_entry(ctx);
+    auto *swentry = next_entry();
     if (!swentry) {
-        ctx->state = SegmentWriterState::END;
-        ctx->entry = nullptr;
-        return MB_BI_EOF;
+        _state = SegmentWriterState::End;
+        _entry = nullptr;
+        return RET_EOF;
     }
 
     // Update starting offset
-    swentry->offset = ctx->pos;
+    swentry->offset = _pos;
 
-    mb_bi_entry_clear(entry);
+    entry.clear();
+    entry.set_type(swentry->type);
 
-    ret = mb_bi_entry_set_type(entry, swentry->type);
-    if (ret != MB_BI_OK) return ret;
+    _entry_size = 0;
+    _state = SegmentWriterState::Entries;
+    _entry = swentry;
 
-    ctx->entry_size = 0;
-    ctx->state = SegmentWriterState::ENTRIES;
-    ctx->entry = swentry;
-
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-int _segment_writer_write_entry(SegmentWriterCtx *ctx, mb::File *file,
-                                MbBiEntry *entry, MbBiWriter *biw)
+int SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
 {
     (void) file;
 
     // Use entry size if specified
-    if (mb_bi_entry_size_is_set(entry)) {
-        uint64_t size = mb_bi_entry_size(entry);
-
-        if (size > UINT32_MAX) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_INVALID_ARGUMENT,
-                                   "Invalid entry size: %" PRIu64, size);
-            return MB_BI_FAILED;
+    auto size = entry.size();
+    if (size) {
+        if (*size > UINT32_MAX) {
+            writer.set_error(make_error_code(SegmentError::InvalidEntrySize),
+                             "Invalid entry size: %" PRIu64, *size);
+            return RET_FAILED;
         }
 
-        _segment_writer_update_size_if_unset(ctx, size);
+        update_size_if_unset(*size);
     }
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-int _segment_writer_write_data(SegmentWriterCtx *ctx, mb::File *file,
-                               const void *buf, size_t buf_size,
-                               size_t *bytes_written, MbBiWriter *biw)
+int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
+                              size_t &bytes_written, Writer &writer)
 {
-    mb::FileStatus file_ret;
-
     // Check for overflow
-    if (buf_size > UINT32_MAX || ctx->entry_size > UINT32_MAX - buf_size
-            || ctx->pos > UINT64_MAX - buf_size) {
-        mb_bi_writer_set_error(biw, MB_BI_ERROR_INVALID_ARGUMENT,
-                               "Overflow in entry size");
-        return MB_BI_FAILED;
+    if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
+            || _pos > UINT64_MAX - buf_size) {
+        writer.set_error(make_error_code(
+                SegmentError::WriteWouldOverflowInteger));
+        return RET_FAILED;
     }
 
-    file_ret = mb::file_write_fully(*file, buf, buf_size, bytes_written);
-    if (file_ret != mb::FileStatus::OK) {
-        mb_bi_writer_set_error(biw, file->error(),
-                               "Failed to write data: %s",
-                               file->error_string().c_str());
-        return file_ret == mb::FileStatus::FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-    } else if (*bytes_written != buf_size) {
-        mb_bi_writer_set_error(biw, file->error(),
-                               "Write was truncated: %s",
-                               file->error_string().c_str());
+    if (!file_write_fully(file, buf, buf_size, bytes_written)) {
+        writer.set_error(file.error(),
+                         "Failed to write data: %s",
+                         file.error_string().c_str());
+        return file.is_fatal() ? RET_FATAL : RET_FAILED;
+    } else if (bytes_written != buf_size) {
+        writer.set_error(file.error(),
+                         "Write was truncated: %s",
+                         file.error_string().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
-        return MB_BI_FATAL;
+        return RET_FATAL;
     }
 
-    ctx->entry_size += buf_size;
-    ctx->pos += buf_size;
+    _entry_size += buf_size;
+    _pos += buf_size;
 
-    return MB_BI_OK;
+    return RET_OK;
 }
 
-int _segment_writer_finish_entry(SegmentWriterCtx *ctx, mb::File *file,
-                                 MbBiWriter *biw)
+int SegmentWriter::finish_entry(File &file, Writer &writer)
 {
-    mb::FileStatus file_ret;
-
     // Update size with number of bytes written
-    _segment_writer_update_size_if_unset(ctx, ctx->entry_size);
+    update_size_if_unset(_entry_size);
 
     // Finish previous entry by aligning to page
-    if (ctx->entry->align > 0) {
-        uint64_t skip = align_page_size<uint64_t>(ctx->pos, ctx->entry->align);
+    if (_entry->align > 0) {
+        uint64_t skip = align_page_size<uint64_t>(_pos, _entry->align);
         uint64_t new_pos;
 
-        file_ret = file->seek(skip, SEEK_CUR, &new_pos);
-        if (file_ret != mb::FileStatus::OK) {
-            mb_bi_writer_set_error(biw, file->error(),
-                                   "Failed to seek to page boundary: %s",
-                                   file->error_string().c_str());
-            return file_ret == mb::FileStatus::FATAL
-                    ? MB_BI_FATAL : MB_BI_FAILED;
+        if (!file.seek(skip, SEEK_CUR, &new_pos)) {
+            writer.set_error(file.error(),
+                             "Failed to seek to page boundary: %s",
+                             file.error_string().c_str());
+            return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        ctx->pos = new_pos;
+        _pos = new_pos;
     }
 
-    return MB_BI_OK;
+    return RET_OK;
+}
+
+}
 }

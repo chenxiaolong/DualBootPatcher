@@ -21,46 +21,60 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <vector>
+
 #include <openssl/sha.h>
 
-#include "mbbootimg/entry.h"
+#include "mbcommon/optional.h"
+
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
+#include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct LokiWriterCtx
+namespace mb
 {
+namespace bootimg
+{
+namespace loki
+{
+
+class LokiFormatWriter : public FormatWriter
+{
+public:
+    LokiFormatWriter(Writer &writer);
+    virtual ~LokiFormatWriter();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(LokiFormatWriter)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(LokiFormatWriter)
+
+    virtual int type() override;
+    virtual std::string name() override;
+
+    virtual int init() override;
+    virtual int get_header(File &file, Header &header) override;
+    virtual int write_header(File &file, const Header &header) override;
+    virtual int get_entry(File &file, Entry &entry) override;
+    virtual int write_entry(File &file, const Entry &entry) override;
+    virtual int write_data(File &file, const void *buf, size_t buf_size,
+                           size_t &bytes_written) override;
+    virtual int finish_entry(File &file) override;
+    virtual int close(File &file) override;
+
+private:
     // Header values
-    struct AndroidHeader hdr;
+    android::AndroidHeader _hdr;
 
-    bool have_file_size;
-    uint64_t file_size;
+    optional<uint64_t> _file_size;
 
-    unsigned char *aboot;
-    size_t aboot_size;
+    std::vector<unsigned char> _aboot;
 
-    SHA_CTX sha_ctx;
+    SHA_CTX _sha_ctx;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter _seg;
 };
 
-int loki_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                           struct MbBiHeader *header);
-int loki_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                             struct MbBiHeader *header);
-int loki_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                          struct MbBiEntry *entry);
-int loki_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                            struct MbBiEntry *entry);
-int loki_writer_write_data(struct MbBiWriter *biw, void *userdata,
-                           const void *buf, size_t buf_size,
-                           size_t *bytes_written);
-int loki_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int loki_writer_close(struct MbBiWriter *biw, void *userdata);
-int loki_writer_free(struct MbBiWriter *bir, void *userdata);
-
-MB_END_C_DECLS
+}
+}
+}

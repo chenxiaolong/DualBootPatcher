@@ -21,43 +21,55 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include "mbcommon/optional.h"
+
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct MtkReaderCtx
+namespace mb
 {
+namespace bootimg
+{
+namespace mtk
+{
+
+class MtkFormatReader : public FormatReader
+{
+public:
+    MtkFormatReader(Reader &reader);
+    virtual ~MtkFormatReader();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatReader)
+
+    virtual int type() override;
+    virtual std::string name() override;
+
+    virtual int bid(File &file, int best_bid) override;
+    virtual int read_header(File &file, Header &header) override;
+    virtual int read_entry(File &file, Entry &entry) override;
+    virtual int go_to_entry(File &file, Entry &entry, int entry_type) override;
+    virtual int read_data(File &file, void *buf, size_t buf_size,
+                          size_t &bytes_read) override;
+
+private:
     // Header values
-    struct AndroidHeader hdr;
-    struct MtkHeader mtk_kernel_hdr;
-    struct MtkHeader mtk_ramdisk_hdr;
+    android::AndroidHeader _hdr;
+    MtkHeader _mtk_kernel_hdr;
+    MtkHeader _mtk_ramdisk_hdr;
 
     // Offsets
-    bool have_header_offset;
-    uint64_t header_offset;
-    bool have_mtkhdr_offsets;
-    uint64_t mtk_kernel_offset;
-    uint64_t mtk_ramdisk_offset;
+    optional<uint64_t> _header_offset;
+    optional<uint64_t> _mtk_kernel_offset;
+    optional<uint64_t> _mtk_ramdisk_offset;
 
-    struct SegmentReaderCtx segctx;
+    SegmentReader _seg;
 };
 
-int mtk_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int mtk_reader_set_option(struct MbBiReader *bir, void *userdata,
-                          const char *key, const char *value);
-int mtk_reader_read_header(struct MbBiReader *bir, void *userdata,
-                           struct MbBiHeader *header);
-int mtk_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                          struct MbBiEntry *entry);
-int mtk_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                           struct MbBiEntry *entry, int entry_type);
-int mtk_reader_read_data(struct MbBiReader *bir, void *userdata,
-                         void *buf, size_t buf_size,
-                         size_t *bytes_read);
-int mtk_reader_free(struct MbBiReader *bir, void *userdata);
-
-MB_END_C_DECLS
+}
+}
+}

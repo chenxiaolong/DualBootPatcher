@@ -82,7 +82,6 @@
   codenames:
     - titan_umts
     - titan_umtsds
-    - titan_umts
     - titan_udstv
     - xt1063
     - xt1068
@@ -246,7 +245,6 @@
   codenames:
     - otus
     - otus_ds
-    - otus
     - xt1505
     - xt1506
     - xt1511

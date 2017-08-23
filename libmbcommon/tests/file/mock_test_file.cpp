@@ -37,7 +37,7 @@ TestFile::~TestFile()
     close();
 }
 
-mb::FileStatus TestFile::on_open()
+bool TestFile::on_open()
 {
     if (_counters) {
         ++_counters->n_open;
@@ -47,10 +47,11 @@ mb::FileStatus TestFile::on_open()
     for (size_t i = 0; i < INITIAL_BUF_SIZE; ++i) {
         _buf.push_back('a' + (i % 26));
     }
-    return mb::FileStatus::OK;
+
+    return true;
 }
 
-mb::FileStatus TestFile::on_close()
+bool TestFile::on_close()
 {
     if (_counters) {
         ++_counters->n_close;
@@ -60,10 +61,10 @@ mb::FileStatus TestFile::on_close()
     _buf.clear();
     _position = 0;
 
-    return mb::FileStatus::OK;
+    return true;
 }
 
-mb::FileStatus TestFile::on_read(void *buf, size_t size, size_t *bytes_read)
+bool TestFile::on_read(void *buf, size_t size, size_t &bytes_read)
 {
     if (_counters) {
         ++_counters->n_read;
@@ -73,13 +74,12 @@ mb::FileStatus TestFile::on_read(void *buf, size_t size, size_t *bytes_read)
     uint64_t n = std::min<uint64_t>(empty, size);
     memcpy(buf, _buf.data() + _position, n);
     _position += n;
-    *bytes_read = n;
+    bytes_read = n;
 
-    return mb::FileStatus::OK;
+    return true;
 }
 
-mb::FileStatus TestFile::on_write(const void *buf, size_t size,
-                                  size_t *bytes_written)
+bool TestFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 {
     if (_counters) {
         ++_counters->n_write;
@@ -92,13 +92,12 @@ mb::FileStatus TestFile::on_write(const void *buf, size_t size,
 
     memcpy(_buf.data() + _position, buf, size);
     _position += size;
-    *bytes_written = size;
+    bytes_written = size;
 
-    return mb::FileStatus::OK;
+    return true;
 }
 
-mb::FileStatus TestFile::on_seek(int64_t offset, int whence,
-                                 uint64_t *new_offset)
+bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     if (_counters) {
         ++_counters->n_seek;
@@ -107,50 +106,47 @@ mb::FileStatus TestFile::on_seek(int64_t offset, int whence,
     switch (whence) {
     case SEEK_SET:
         if (offset < 0) {
-            set_error(mb::FileError::INVALID_ARGUMENT,
-                        "Invalid SEET_SET offset %" PRId64,
-                        offset);
-            return mb::FileStatus::FAILED;
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
+                      "Invalid SEET_SET offset %" PRId64, offset);
+            return false;
         }
-        *new_offset = _position = offset;
+        new_offset = _position = offset;
         break;
     case SEEK_CUR:
         if (offset < 0 && static_cast<size_t>(-offset) > _position) {
-            set_error(mb::FileError::INVALID_ARGUMENT,
-                        "Invalid SEEK_CUR offset %" PRId64
-                        " for position %" MB_PRIzu,
-                        offset, _position);
-            return mb::FileStatus::FAILED;
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
+                      "Invalid SEEK_CUR offset %" PRId64
+                      " for position %" MB_PRIzu, offset, _position);
+            return false;
         }
-        *new_offset = _position += offset;
+        new_offset = _position += offset;
         break;
     case SEEK_END:
         if (offset < 0 && static_cast<size_t>(-offset) > _buf.size()) {
-            set_error(mb::FileError::INVALID_ARGUMENT,
-                        "Invalid SEEK_END offset %" PRId64
-                        " for file of size %" MB_PRIzu,
-                        offset, _buf.size());
-            return mb::FileStatus::FAILED;
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
+                      "Invalid SEEK_END offset %" PRId64
+                      " for file of size %" MB_PRIzu, offset, _buf.size());
+            return false;
         }
-        *new_offset = _position = _buf.size() + offset;
+        new_offset = _position = _buf.size() + offset;
         break;
     default:
-        set_error(mb::FileError::INVALID_ARGUMENT,
-                    "Invalid whence argument: %d", whence);
-        return mb::FileStatus::FAILED;
+        set_error(mb::make_error_code(mb::FileError::InvalidWhence),
+                  "Invalid whence argument: %d", whence);
+        return false;
     }
 
-    return mb::FileStatus::OK;
+    return true;
 }
 
-mb::FileStatus TestFile::on_truncate(uint64_t size)
+bool TestFile::on_truncate(uint64_t size)
 {
     if (_counters) {
         ++_counters->n_truncate;
     }
 
     _buf.resize(size);
-    return mb::FileStatus::OK;
+    return true;
 }
 
 MockTestFile::MockTestFile() : MockTestFile(nullptr)
@@ -178,35 +174,34 @@ MockTestFile::~MockTestFile()
 {
 }
 
-mb::FileStatus MockTestFile::orig_on_open()
+bool MockTestFile::orig_on_open()
 {
     return TestFile::on_open();
 }
 
-mb::FileStatus MockTestFile::orig_on_close()
+bool MockTestFile::orig_on_close()
 {
     return TestFile::on_close();
 }
 
-mb::FileStatus MockTestFile::orig_on_read(void *buf, size_t size,
-                                          size_t *bytes_read)
+bool MockTestFile::orig_on_read(void *buf, size_t size, size_t &bytes_read)
 {
     return TestFile::on_read(buf, size, bytes_read);
 }
 
-mb::FileStatus MockTestFile::orig_on_write(const void *buf, size_t size,
-                                           size_t *bytes_written)
+bool MockTestFile::orig_on_write(const void *buf, size_t size,
+                                 size_t &bytes_written)
 {
     return TestFile::on_write(buf, size, bytes_written);
 }
 
-mb::FileStatus MockTestFile::orig_on_seek(int64_t offset, int whence,
-                                          uint64_t *new_offset)
+bool MockTestFile::orig_on_seek(int64_t offset, int whence,
+                                uint64_t &new_offset)
 {
     return TestFile::on_seek(offset, whence, new_offset);
 }
 
-mb::FileStatus MockTestFile::orig_on_truncate(uint64_t size)
+bool MockTestFile::orig_on_truncate(uint64_t size)
 {
     return TestFile::on_truncate(size);
 }

@@ -31,10 +31,12 @@
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
+using namespace mb::bootimg;
+
 namespace mb
 {
 
-bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
+bool bi_copy_data_to_fd(Reader &reader, int fd)
 {
     int ret;
     char buf[BUF_SIZE];
@@ -42,8 +44,7 @@ bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
     ssize_t n_written;
     size_t remain;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
+    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
         remain = n_read;
 
         while (remain > 0) {
@@ -57,16 +58,16 @@ bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read boot image entry data: %s",
-             mb_bi_reader_error_string(bir));
+             reader.error_string().c_str());
         return false;
     }
 
     return true;
 }
 
-bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
+bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -83,10 +84,10 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
 
         size_t bytes_written;
 
-        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != MB_BI_OK
+        if (writer.write_data(buf, n, bytes_written) != RET_OK
                 || bytes_written != n) {
             LOGE("Failed to write entry data: %s",
-                 mb_bi_writer_error_string(biw));
+                 writer.error_string().c_str());
             return false;
         }
 
@@ -103,7 +104,7 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
     return true;
 }
 
-bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
+bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -116,8 +117,7 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
     char buf[10240];
     size_t n;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n))
-            == MB_BI_OK) {
+    while ((ret = reader.read_data(buf, sizeof(buf), n)) == RET_OK) {
         if (fwrite(buf, 1, n, fp.get()) != n) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
@@ -125,9 +125,9 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read entry data: %s",
-             mb_bi_reader_error_string(bir));
+             reader.error_string().c_str());
         return false;
     }
 
@@ -140,26 +140,25 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
     return true;
 }
 
-bool bi_copy_data_to_data(MbBiReader *bir, MbBiWriter *biw)
+bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
     int ret;
     char buf[10240];
     size_t n_read;
     size_t n_written;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
-        ret = mb_bi_writer_write_data(biw, buf, n_read, &n_written);
-        if (ret != MB_BI_OK || n_read != n_written) {
+    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
+        ret = writer.write_data(buf, n_read, n_written);
+        if (ret != RET_OK || n_read != n_written) {
             LOGE("Failed to write entry data: %s",
-                 mb_bi_writer_error_string(biw));
+                 writer.error_string().c_str());
             return false;
         }
     }
 
-    if (ret != MB_BI_EOF) {
+    if (ret != RET_EOF) {
         LOGE("Failed to read boot image entry data: %s",
-             mb_bi_reader_error_string(bir));
+             reader.error_string().c_str());
         return false;
     }
 

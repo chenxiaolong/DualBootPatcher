@@ -19,50 +19,31 @@
 
 #include "mbbootimg/format/android_reader_p.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-
 #include "mbbootimg/reader_p.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
+namespace bootimg
+{
 
 /*!
  * \brief Enable support for Bump boot image format
  *
- * \param bir MbBiReader
- *
  * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ *   * #RET_OK if the format is successfully enabled
+ *   * #RET_WARN if the format is already enabled
+ *   * \<= #RET_FAILED if an error occurs
  */
-int mb_bi_reader_enable_format_bump(MbBiReader *bir)
+int Reader::enable_format_bump()
 {
-    AndroidReaderCtx *const ctx = static_cast<AndroidReaderCtx *>(
-            calloc(1, sizeof(AndroidReaderCtx)));
-    if (!ctx) {
-        mb_bi_reader_set_error(bir, -errno,
-                               "Failed to allocate AndroidReaderCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
+    using namespace android;
 
-    _segment_reader_init(&ctx->segctx);
+    MB_PRIVATE(Reader);
 
-    ctx->is_bump = true;
-
-    return _mb_bi_reader_register_format(bir,
-                                         ctx,
-                                         MB_BI_FORMAT_BUMP,
-                                         MB_BI_FORMAT_NAME_BUMP,
-                                         &bump_reader_bid,
-                                         &android_reader_set_option,
-                                         &android_reader_read_header,
-                                         &android_reader_read_entry,
-                                         &android_reader_go_to_entry,
-                                         &android_reader_read_data,
-                                         &android_reader_free);
+    std::unique_ptr<FormatReader> format{new AndroidFormatReader(*this, true)};
+    return priv->register_format(std::move(format));
 }
 
-MB_END_C_DECLS
+
+}
+}

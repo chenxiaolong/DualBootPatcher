@@ -53,11 +53,11 @@ public:
 
 private:
 #if defined(_WIN32)
-    FileStatus open(HANDLE handle, bool owned, bool append) = delete;
+    bool open(HANDLE handle, bool owned, bool append) = delete;
 #elif defined(__ANDROID__)
-    FileStatus open(int fd, bool owned) = delete;
+    bool open(int fd, bool owned) = delete;
 #else
-    FileStatus open(FILE *fp, bool owned) = delete;
+    bool open(FILE *fp, bool owned) = delete;
 #endif
 };
 

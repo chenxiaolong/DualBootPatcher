@@ -56,7 +56,6 @@ target_link_libraries(
     mbdevice-static
     mblog-static
     mbcommon-static
-    ${MBP_JANSSON_LIBRARIES}
     ${MBP_LIBARCHIVE_LIBRARIES}
 )
 

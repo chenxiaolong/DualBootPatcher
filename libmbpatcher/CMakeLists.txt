@@ -2,11 +2,9 @@ set(MBPATCHER_SOURCES
     src/fileinfo.cpp
     src/patcherconfig.cpp
     # C wrapper API
-    src/cwrapper/ccommon.cpp
     src/cwrapper/cfileinfo.cpp
     src/cwrapper/cpatcherconfig.cpp
     src/cwrapper/cpatcherinterface.cpp
-    src/cwrapper/private/util.cpp
     # Edify tokenizer
     src/edify/tokenizer.cpp
     # Private classes

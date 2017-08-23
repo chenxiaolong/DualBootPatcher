@@ -29,7 +29,7 @@ namespace patcher
 class FileInfoPrivate
 {
 public:
-    Device *device;
+    device::Device device;
     std::string input_path;
     std::string output_path;
     std::string rom_id;
@@ -62,7 +62,7 @@ FileInfo::~FileInfo()
  *
  * \return File path
  */
-std::string FileInfo::input_path() const
+const std::string & FileInfo::input_path() const
 {
     MB_PRIVATE(const FileInfo);
     return priv->input_path;
@@ -79,7 +79,7 @@ void FileInfo::set_input_path(std::string path)
     priv->input_path = std::move(path);
 }
 
-std::string FileInfo::output_path() const
+const std::string & FileInfo::output_path() const
 {
     MB_PRIVATE(const FileInfo);
     return priv->output_path;
@@ -96,7 +96,7 @@ void FileInfo::set_output_path(std::string path)
  *
  * \return Device
  */
-Device * FileInfo::device() const
+const device::Device & FileInfo::device() const
 {
     MB_PRIVATE(const FileInfo);
     return priv->device;
@@ -107,13 +107,13 @@ Device * FileInfo::device() const
  *
  * \param device Target device
  */
-void FileInfo::set_device(Device * const device)
+void FileInfo::set_device(device::Device device)
 {
     MB_PRIVATE(FileInfo);
-    priv->device = device;
+    priv->device = std::move(device);
 }
 
-std::string FileInfo::rom_id() const
+const std::string & FileInfo::rom_id() const
 {
     MB_PRIVATE(const FileInfo);
     return priv->rom_id;
