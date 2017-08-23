@@ -56,7 +56,7 @@ zaktualizowany.\n\nNaciśnij, aby spróbować ponownie.</string>
   <!--Default name for the data-slot ROMs-->
   <string name="dataslot">%s (slot na partycji Data)</string>
   <!--Default name for the extsd-slot ROMs-->
-  <string name="extsdslot">%s (slot na Karcie SD)</string>
+  <string name="extsdslot">%s (slot na karcie SD)</string>
   <!--Text shown when a ROM's version could not be detected-->
   <string name="couldnt_determine_version">Nie udało się ustalić wersji ROMu</string>
   <!--Title of progress dialog shown when switching ROMs-->
@@ -99,7 +99,7 @@ nazwa kodowa urządzenia \'%s\' nie jest rozpoznawana</string>
   <!--ROM menu item for setting kernel-->
   <string name="rom_menu_set_kernel">Ustaw kernel</string>
   <!--ROM menu item for backing up the ROM-->
-  <string name="rom_menu_backup_rom">Kopia zapasowa ROMu</string>
+  <string name="rom_menu_backup_rom">Utwórz kopię zapasową ROMu</string>
   <!--ROM menu item for adding an icon to the home screen-->
   <string name="rom_menu_add_to_home_screen">Dodaj do ekranu głównego</string>
   <!--ROM menu item for changing the name-->
@@ -170,7 +170,7 @@ cele nie zostały określone.</string>
   <string name="set_kernel_later">Ustaw później</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
   <string name="set_kernel_mismatched_rom">Aktualnie wybrany ROM to %1$s, ale próbujesz
-        ustawić kernel dla ROMu %2$s. Proszę, potwierdź to co chcesz zrobić.</string>
+        ustawić kernel dla ROMu %2$s. Potwierdź czy chcesz to zrobić.</string>
   <!--In-app flashing output activity title - shown when backing up a single ROM-->
   <string name="in_app_flashing_title_backup_rom">Kopia zapasowa ROMu</string>
   <!--In-app flashing output activity title - shown when restoring a single ROM-->
@@ -196,7 +196,7 @@ cele nie zostały określone.</string>
   <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
   <string name="in_app_flashing_restore_targets">Cele: %s</string>
   <!--Subtitle text in pending action card showing the installation location-->
-  <string name="in_app_flashing_location">ID ROMu: %s</string>
+  <string name="in_app_flashing_location">Identyfikator ROM-u: %s</string>
   <!--Title shown in dialog asking for the installation location of a zip file-->
   <string name="in_app_flashing_dialog_installation_location">Lokalizacja instalacji:</string>
   <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
@@ -223,9 +223,9 @@ cele nie zostały określone.</string>
   <string name="in_app_flashing_change_install_location">Zmień lokalizację</string>
   <!--Message shown in the first-use dialog for zip flashing-->
   <string name="in_app_flashing_dialog_first_use">Wbudowany instalator w aplikacji może instalować zmodyfikowane pliki
-        i kopie DualBootPatcher. Wystarczy dotknąć przycisk plus, aby rozpocząć instalację.\n\nOczekujące
-        działania można przeciągnąć lub przesunąć, aby zmienić kolejność instalacji lub usunąć je z
-        kolejki.\n\nUWAGA: Ta cecha jest nadal eksperymentalna. Przed kontynuacją należy wykonać kopię!</string>
+        i kopie zapasowe DualBootPatcher. Wystarczy dotknąć przycisk plus, aby rozpocząć instalację.\n\n
+        Oczekujące działania mogą być przeciągnięte lub przesunięte, aby zmienić kolejność instalacji lub
+         usunąć je z kolejki.\n\nUWAGA: Ta funkcja jest nadal eksperymentalna. Przed kontynuacją wykonaj kopię zapasową!</string>
   <!--Dialog description when choosing a backup to restore-->
   <string name="in_app_flashing_select_backup_dialog_desc">Wybierz kopię zapasową z listy, aby ją
         przywrócić.</string>
@@ -260,11 +260,11 @@ cele nie zostały określone.</string>
   <!--ROM details item value shown when calculating the directory or image sizes-->
   <string name="rom_details_info_calculating">Obliczanie...</string>
   <!--Backup ROM activity title-->
-  <string name="br_backup_title">Stwórz kopię zapasową ROMu</string>
+  <string name="br_backup_title">Utwórz kopię zapasową ROMu</string>
   <!--Restore ROM activity title-->
   <string name="br_restore_title">Przywróć kopię zapasową ROMu</string>
   <!--Backup targets dialog description-->
-  <string name="br_backup_targets_dialog_desc">Wybierz cele, które powinny dodane do kopii zapasowej.</string>
+  <string name="br_backup_targets_dialog_desc">Wybierz cele, które powinny zostać dodane do kopii zapasowej.</string>
   <!--Restore targets dialog description-->
   <string name="br_restore_targets_dialog_desc">Wybierz cele, które powinny zostać przywrócone.</string>
   <!--Backup/restore target for ROM's /system files-->
@@ -278,21 +278,21 @@ cele nie zostały określone.</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
   <string name="br_target_config">Konfiguracje MultiBoot</string>
   <!--Toast message shown if no backup/restore targets are selected-->
-  <string name="br_no_target_selected">Nie wybrano celów do kopii/przywrócenia.</string>
+  <string name="br_no_target_selected">Nie wybrano celów do kopii zapasowej / przywrócenia.</string>
   <!--Backup name input dialog description-->
-  <string name="br_name_dialog_desc">Wprowadź nazwę dla kopii. Nazwa nie może zawierać
-        ukośnik (\"/\") lub \".\" lub \"..\".</string>
+  <string name="br_name_dialog_desc">Wprowadź nazwę dla kopii zapasowej. Nazwa nie może zawierać
+ukośnik ( \"/\") lub \".\" lub \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
   <string name="br_name_dialog_hint">Wprowadź nazwę kopii zapasowej...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
-  <string name="patcher_background_message">Dotknij pływającego przycisku akcji, aby dodać pliki do poprawienia.</string>
+  <string name="patcher_background_message">Dotknij przycisk plus, aby dodać pliki do poprawienia.</string>
   <!--Label for FAB to add a flashable zip-->
   <string name="patcher_add_flashable_zip">Dodaj instalacyjny zip</string>
   <!--Label for FAB to add an Odin image-->
   <string name="patcher_add_odin_image">Dodaj obraz Odina</string>
   <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
   <string name="patcher_storage_permission_required">Patcher nie może poprawić plików bez dostępu 
-        do odczytu i zapisu na pamięci wewnętrznej. Proszę przyznać uprawnienia \"Pamięć\", aby
+        do odczytu i zapisu na pamięci wewnętrznej. Proszę przyznać uprawnienia pamięci, aby
         poprawić pliki.</string>
   <!--Snackbar message shown if the user tries to patch the same file more than once-->
   <string name="patcher_cannot_add_same_item">Wybrany plik wyjściowy jest już w 
@@ -315,7 +315,7 @@ cele nie zostały określone.</string>
   <!--Subtitle shown in patch file card when patching has been cancelled-->
   <string name="patcher_card_subtitle_cancelled">Anulowano</string>
   <!--Patcher options dialog title-->
-  <string name="patcher_options_dialog_title">Opcje patchera</string>
+  <string name="patcher_options_dialog_title">Opcje poprawiania</string>
   <!--Name for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade">Aktualizacja podstawowego ROMu</string>
   <!--Description for primary ROM upgrade installation location-->
@@ -324,14 +324,14 @@ cele nie zostały określone.</string>
   <!--Description for all other installation locations-->
   <string name="install_location_desc">Instaluje ROM do %s</string>
   <!--Text box hint for specifying the data slot ID-->
-  <string name="install_location_named_slot_id_hint">Podaj ID</string>
+  <string name="install_location_named_slot_id_hint">Podaj identyfikator</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_empty">Podaj ID powyżej</string>
+  <string name="install_location_named_slot_id_empty">Podaj identyfikator powyżej</string>
   <!--Error tooltip shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_error_is_empty">ID slotu nie może być puste.</string>
+  <string name="install_location_named_slot_id_error_is_empty">Identyfikator slotu nie może być pusty.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
-  <string name="install_location_named_slot_id_error_invalid">ID slotu musi zawierać tylko
-         Angielskie małe litery i/lub cyfry.</string>
+  <string name="install_location_named_slot_id_error_invalid">Identyfikator slotu musi składać się tylko z
+         małych liter języka angielskiego i/lub cyfr.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Slot Data</string>
   <!--Name for the extsd-slot installation location-->
@@ -394,10 +394,10 @@ uruchomić ponownie teraz?</string>
   <!--Message telling user that the ramdisk updating succeeded-->
   <string name="update_ramdisk_no_reboot_desc">Ramdysk został pomyślnie zaktualizowany.</string>
   <!--Title when ramdisk failed to update-->
-  <string name="update_ramdisk_failure_title">Nie udało się zaktualizować ramdisku</string>
+  <string name="update_ramdisk_failure_title">Nie udało się zaktualizować ramdysku</string>
   <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
   <string name="update_ramdisk_failure_desc">Nie udało się zaktualizować ramdysku. Log został zapisany w
-MultiBoot/ramdysk-Update.log, w pamięci wewnętrznej.</string>
+MultiBoot/ramdisk-update.log, w pamięci wewnętrznej.</string>
   <!--Toast popup message containing the countdown for forcing a ramdisk update-->
   <plurals name="force_update_ramdisk_countdown">
     <item quantity="one">Jesteś teraz %1$d krok od
@@ -410,7 +410,7 @@ wymuszenia aktualizacji ramdysku.</item>
 wymuszenia aktualizacji ramdysku.</item>
   </plurals>
   <!--Toast popup message shown when the user forces a ramdisk update-->
-  <string name="force_updating_ramdisk">Zawsze aktualizuj ramdysk</string>
+  <string name="force_updating_ramdisk">Wymuś zaktualizowanie ramdysku</string>
   <!--Title for the section in the settings to manage the Boot UI-->
   <string name="rom_settings_boot_ui_title">Boot UI (EKSPERYMENTALNE)</string>
   <!--Title for the preference to install the Boot UI-->
@@ -439,11 +439,11 @@ wymuszenia aktualizacji ramdysku.</item>
   <string name="rom_settings_boot_ui_update_ramdisk_msg">Boot UI został pomyślnie
 zainstalowany.\n\nNależy upewnić się, że ramdysk został zaktualizowany we wszystkich ROMach. W przeciwnym razie, Boot UI nie będzie działał w trakcie rozruchu.</string>
   <!--Title for the section in ROM Settings to change backup/restore settings-->
-  <string name="rom_settings_backup_title">Kopia/Przywróć (EKSPERYMENTALNE)</string>
+  <string name="rom_settings_backup_title">Kopia zapasowa / Przywracanie (EKSPERYMENTALNE)</string>
   <!--Title for the preference to change the backup directory-->
   <string name="rom_settings_backup_change_directory">Zmień folder kopii zapasowej</string>
   <!--Title for the section in ROM Settings to change settings related to the patcher-->
-  <string name="rom_settings_patcher_title">Patcher</string>
+  <string name="rom_settings_patcher_title">Poprawianie</string>
   <!--Title for the preference to show the exit button in the navigation drawer-->
   <string name="rom_settings_show_exit_title">Pokaż przycisk Wyjdź</string>
   <!--Title for the preference to show the reboot button in the navigation drawer-->
@@ -461,11 +461,11 @@ zainstalowany.\n\nNależy upewnić się, że ramdysk został zaktualizowany we w
   <!--Title for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_title">Pokaż okno restartu</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
-  <string name="rom_settings_show_reboot_confirm_desc">Wyświetl okno restartu Android zamiast 
-bezpośrednio restartu. Pozwala to uruchomienie trybu Recovery w ROMach które mają w menu 
+  <string name="rom_settings_show_reboot_confirm_desc">Wyświetl okno restartu Androida zamiast 
+bezpośredniego restartu. Pozwala to uruchomienie trybu Recovery w ROMach które mają w menu 
 zasilania Zaawansowany restart.</string>
   <!--Title for the preference to set the number of parallel patching operations-->
-  <string name="rom_settings_parallel_patching_title">Równoległe operacje poprawania</string>
+  <string name="rom_settings_parallel_patching_title">Równoległe operacje poprawiania</string>
   <!--Description for the preference to set the number of parallel patching operations-->
   <string name="rom_settings_parallel_patching_desc">Gdy wiele plików jest w kolejce do 
        poprawienia, zostaną przetworzone %d na raz.</string>
