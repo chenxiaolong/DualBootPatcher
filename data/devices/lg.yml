@@ -592,7 +592,7 @@
   codenames:
     - LGMS550
     - ph2n
-  architecture: 
+  architecture: armeabi-v7a
   block_devs:
     base_dirs:
       - /dev/block/bootdevice/by-name
