@@ -10,6 +10,7 @@ set(files
     dexp.yml
     elephone.yml
     google.yml
+    gree.yml
     htc.yml
     huawei.yml
     infinix.yml
