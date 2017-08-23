@@ -21,38 +21,48 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <string>
+
 #include <cstdint>
 
-struct MbBiHeader
-{
-    // Bitmap of fields that are supported
-    uint64_t fields_supported;
+#include "mbcommon/optional.h"
 
-    // Bitmap of fields that are set
-    uint64_t fields_set;
+namespace mb
+{
+namespace bootimg
+{
+
+class HeaderPrivate
+{
+public:
+    // Bitmap of fields that are supported
+    HeaderFields fields_supported;
 
     struct {
-        // Used in:                    | Android | Loki | Bump | Mtk | Sony |
-        uint32_t kernel_addr;       // | X       | X    | X    | X   | X    |
-        uint32_t ramdisk_addr;      // | X       | X    | X    | X   | X    |
-        uint32_t second_addr;       // | X       | X    | X    | X   |      |
-        uint32_t tags_addr;         // | X       | X    | X    | X   |      |
-        uint32_t ipl_addr;          // |         |      |      |     | X    |
-        uint32_t rpm_addr;          // |         |      |      |     | X    |
-        uint32_t appsbl_addr;       // |         |      |      |     | X    |
-        uint32_t page_size;         // | X       | X    | X    | X   |      |
-        char *board_name;           // | X       | X    | X    | X   |      |
-        char *cmdline;              // | X       | X    | X    | X   |      |
-        // Raw header values           |---------|------|------|-----|------|
+        // Used in:                             | Android | Loki | Bump | Mtk | Sony |
+        optional<uint32_t> kernel_addr;      // | X       | X    | X    | X   | X    |
+        optional<uint32_t> ramdisk_addr;     // | X       | X    | X    | X   | X    |
+        optional<uint32_t> second_addr;      // | X       | X    | X    | X   |      |
+        optional<uint32_t> tags_addr;        // | X       | X    | X    | X   |      |
+        optional<uint32_t> ipl_addr;         // |         |      |      |     | X    |
+        optional<uint32_t> rpm_addr;         // |         |      |      |     | X    |
+        optional<uint32_t> appsbl_addr;      // |         |      |      |     | X    |
+        optional<uint32_t> page_size;        // | X       | X    | X    | X   |      |
+        optional<std::string> board_name;    // | X       | X    | X    | X   |      |
+        optional<std::string> cmdline;       // | X       | X    | X    | X   |      |
+        // Raw header values                    |---------|------|------|-----|------|
 
         // TODO TODO TODO
-        uint32_t hdr_kernel_size;   // | X       | X    | X    | X   |      |
-        uint32_t hdr_ramdisk_size;  // | X       | X    | X    | X   |      |
-        uint32_t hdr_second_size;   // | X       | X    | X    | X   |      |
-        uint32_t hdr_dt_size;       // | X       | X    | X    | X   |      |
-        uint32_t hdr_unused;        // | X       | X    | X    | X   |      |
-        uint32_t hdr_id[8];         // | X       | X    | X    | X   |      |
-        uint32_t hdr_entrypoint;    // |         |      |      |     | X    |
+        optional<uint32_t> hdr_kernel_size;  // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_ramdisk_size; // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_second_size;  // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_dt_size;      // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_unused;       // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_id[8];        // | X       | X    | X    | X   |      |
+        optional<uint32_t> hdr_entrypoint;   // |         |      |      |     | X    |
         // TODO TODO TODO
     } field;
 };
+
+}
+}

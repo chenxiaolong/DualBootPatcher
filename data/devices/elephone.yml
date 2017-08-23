@@ -46,6 +46,7 @@
   id: p9000
   codenames:
     - p9000
+    - P9000
   architecture: arm64-v8a
 
   block_devs:

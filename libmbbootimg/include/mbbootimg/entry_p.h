@@ -21,23 +21,39 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <string>
+
 #include <cstdint>
 
-#define MB_BI_ENTRY_FIELD_TYPE      (1U << 0)
-#define MB_BI_ENTRY_FIELD_NAME      (1U << 1)
-#define MB_BI_ENTRY_FIELD_SIZE      (1U << 2)
+#include "mbcommon/flags.h"
+#include "mbcommon/optional.h"
 
-struct MbBiEntry
+namespace mb
 {
-    // Bitmap of fields that are set
-    uint64_t fields_set;
+namespace bootimg
+{
 
+enum class EntryField : uint8_t
+{
+    Type = 1 << 0,
+    Name = 1 << 1,
+    Size = 1 << 2,
+};
+MB_DECLARE_FLAGS(EntryFields, EntryField)
+MB_DECLARE_OPERATORS_FOR_FLAGS(EntryFields)
+
+class EntryPrivate
+{
+public:
     struct {
         // Entry type
-        int type;
+        optional<int> type;
         // Entry name
-        char *name;
+        optional<std::string> name;
         // Entry size
-        uint64_t size;
+        optional<uint64_t> size;
     } field;
 };
+
+}
+}

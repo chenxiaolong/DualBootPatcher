@@ -522,7 +522,7 @@ bool OdinPatcherPrivate::process_contents(archive *a, int depth)
             if (!process_file(a, entry, true)) {
                 return false;
             }
-        } else if (ends_with(name, ".tar.md5")) {
+        } else if (ends_with(name, ".tar.md5") || ends_with(name, ".tar")) {
             LOGV("%sHandling nested tarball: %s", indent(depth), name);
 
             NestedCtx ctx(a);

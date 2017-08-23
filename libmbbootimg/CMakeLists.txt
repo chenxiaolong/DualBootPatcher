@@ -3,19 +3,26 @@ set(MBBOOTIMG_SOURCES
     src/entry.cpp
     src/header.cpp
     src/reader.cpp
+    src/reader_error.cpp
     src/writer.cpp
+    src/writer_error.cpp
     # Formats
+    src/format/android_error.cpp
     src/format/android_reader.cpp
     src/format/android_writer.cpp
     src/format/bump_reader.cpp
     src/format/bump_writer.cpp
     src/format/loki.cpp
+    src/format/loki_error.cpp
     src/format/loki_reader.cpp
     src/format/loki_writer.cpp
+    src/format/mtk_error.cpp
     src/format/mtk_reader.cpp
     src/format/mtk_writer.cpp
+    src/format/segment_error.cpp
     src/format/segment_reader.cpp
     src/format/segment_writer.cpp
+    src/format/sony_elf_error.cpp
     src/format/sony_elf_reader.cpp
     src/format/sony_elf_writer.cpp
 )
@@ -26,7 +33,6 @@ set(MBBOOTIMG_TESTS_SOURCES
     # Core
     tests/test_entry.cpp
     tests/test_header.cpp
-    tests/test_reader.cpp
     tests/test_writer.cpp
     # Formats
     tests/format/test_android_reader.cpp

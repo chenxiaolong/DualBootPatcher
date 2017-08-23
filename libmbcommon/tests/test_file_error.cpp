@@ -21,28 +21,37 @@
 
 #include "mbcommon/file_error.h"
 
+#define TEST_EQUALITY(A, B) \
+    do { \
+        ASSERT_EQ((A), (B)); \
+        ASSERT_EQ((B), (A)); \
+    } while (0)
 
 TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
 {
-    std::error_code ec;
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
+                  mb::FileErrorC::InvalidArgument);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::CannotConvertEncoding),
+                  mb::FileErrorC::InvalidArgument);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidMode),
+                  mb::FileErrorC::InvalidArgument);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidWhence),
+                  mb::FileErrorC::InvalidArgument);
 
-    ec = mb::make_error_code(mb::FileError::ArgumentOutOfRange);
-    ASSERT_EQ(ec, mb::FileError::InvalidArgument);
-    ASSERT_EQ(mb::FileError::InvalidArgument, ec);
-    ec = mb::make_error_code(mb::FileError::CannotConvertEncoding);
-    ASSERT_EQ(ec, mb::FileError::InvalidArgument);
-    ASSERT_EQ(mb::FileError::InvalidArgument, ec);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidState),
+                  mb::FileErrorC::InvalidState);
 
-    ec = mb::make_error_code(mb::FileError::UnsupportedRead);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedWrite);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedSeek);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
-    ec = mb::make_error_code(mb::FileError::UnsupportedTruncate);
-    ASSERT_EQ(ec, mb::FileError::Unsupported);
-    ASSERT_EQ(mb::FileError::Unsupported, ec);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedRead),
+                  mb::FileErrorC::Unsupported);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedWrite),
+                  mb::FileErrorC::Unsupported);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedSeek),
+                  mb::FileErrorC::Unsupported);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedTruncate),
+                  mb::FileErrorC::Unsupported);
+
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::IntegerOverflow),
+                  mb::FileErrorC::InternalError);
+    TEST_EQUALITY(mb::make_error_code(mb::FileError::BadFileFormat),
+                  mb::FileErrorC::InternalError);
 }
