@@ -1212,7 +1212,7 @@
       - /dev/block/mmcblk0p19
       # abootbak
       - /dev/block/bootdevice/by-name/abootbak
-      - /dev/block/mmcblk0p19
+      #- /dev/block/mmcblk0p19
       # apdp
       - /dev/block/bootdevice/by-name/apdp
       - /dev/block/mmcblk0p45
