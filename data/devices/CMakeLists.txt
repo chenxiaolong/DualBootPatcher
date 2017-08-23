@@ -20,6 +20,7 @@ set(files
     infocus.yml
     jiayu.yml
     leeco.yml
+    leagoo.yml
     lenovo.yml
     lg.yml
     micromax.yml
