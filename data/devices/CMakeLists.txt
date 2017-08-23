@@ -45,6 +45,7 @@ set(files
     samsung/07_other.yml
     sony.yml
     symphony.yml
+    tecno.yml
     umi.yml
     walton.yml
     wiko.yml
