@@ -10,7 +10,6 @@ If you don't have docker installed, the following packages are needed:
 - Android NDK
 - cmake
 - gtest
-- jansson
 - JDK 1.8
 - OpenSSL
 - yaml-cpp

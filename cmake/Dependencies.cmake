@@ -60,5 +60,6 @@ elseif(${MBP_BUILD_TARGET} STREQUAL hosttools)
 endif()
 
 # Needed for every target
-include(cmake/dependencies/jansson.cmake)
 include(cmake/dependencies/openssl.cmake)
+include(cmake/dependencies/optional.cmake)
+include(cmake/dependencies/rapidjson.cmake)

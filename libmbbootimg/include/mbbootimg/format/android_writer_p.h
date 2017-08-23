@@ -23,43 +23,56 @@
 
 #include <openssl/sha.h>
 
-#include "mbbootimg/entry.h"
+#include "mbcommon/optional.h"
+
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
-#include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
+#include "mbbootimg/writer_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct AndroidWriterCtx
+namespace mb
 {
+namespace bootimg
+{
+namespace android
+{
+
+class AndroidFormatWriter : public FormatWriter
+{
+public:
+    AndroidFormatWriter(Writer &writer, bool is_bump);
+    virtual ~AndroidFormatWriter();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
+
+    virtual int type() override;
+    virtual std::string name() override;
+
+    virtual int init() override;
+    virtual int get_header(File &file, Header &header) override;
+    virtual int write_header(File &file, const Header &header) override;
+    virtual int get_entry(File &file, Entry &entry) override;
+    virtual int write_entry(File &file, const Entry &entry) override;
+    virtual int write_data(File &file, const void *buf, size_t buf_size,
+                           size_t &bytes_written) override;
+    virtual int finish_entry(File &file) override;
+    virtual int close(File &file) override;
+
+private:
     // Header values
-    struct AndroidHeader hdr;
+    AndroidHeader _hdr;
 
-    bool have_file_size;
-    uint64_t file_size;
+    optional<uint64_t> _file_size;
 
-    bool is_bump;
+    bool _is_bump;
 
-    SHA_CTX sha_ctx;
+    SHA_CTX _sha_ctx;
 
-    struct SegmentWriterCtx segctx;
+    SegmentWriter _seg;
 };
 
-int android_writer_get_header(struct MbBiWriter *biw, void *userdata,
-                              struct MbBiHeader *header);
-int android_writer_write_header(struct MbBiWriter *biw, void *userdata,
-                                struct MbBiHeader *header);
-int android_writer_get_entry(struct MbBiWriter *biw, void *userdata,
-                             struct MbBiEntry *entry);
-int android_writer_write_entry(struct MbBiWriter *biw, void *userdata,
-                               struct MbBiEntry *entry);
-int android_writer_write_data(struct MbBiWriter *biw, void *userdata,
-                              const void *buf, size_t buf_size,
-                              size_t &bytes_written);
-int android_writer_finish_entry(struct MbBiWriter *biw, void *userdata);
-int android_writer_close(struct MbBiWriter *biw, void *userdata);
-int android_writer_free(struct MbBiWriter *bir, void *userdata);
-
-MB_END_C_DECLS
+}
+}
+}

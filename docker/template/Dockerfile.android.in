@@ -49,9 +49,3 @@ RUN mkdir -p "${ANDROID_HOME}/licenses" \
         'platforms;android-25' \
         'platform-tools' \
         'tools'
-
-# Gradle uses hardcoded references to JVM internals
-# - https://bugzilla.redhat.com/show_bug.cgi?id=1448802
-# - https://github.com/gradle/gradle/issues/1782
-RUN ln -s /etc/pki/java/cacerts \
-    /usr/lib/jvm/java-1.8.0-openjdk/jre/lib/security/cacerts

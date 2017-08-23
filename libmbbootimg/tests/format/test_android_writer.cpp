@@ -27,21 +27,21 @@
 #include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
 
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
+using namespace mb::bootimg;
 
 struct AndroidWriterSHA1Test : public ::testing::Test
 {
 protected:
-    ScopedWriter _biw;
     void *_buf;
     size_t _buf_size;
     mb::MemoryFile _file;
+    Writer _writer;
 
     AndroidWriterSHA1Test()
-        : _biw(mb_bi_writer_new(), mb_bi_writer_free)
-        , _buf(nullptr)
+        : _buf(nullptr)
         , _buf_size(0)
         , _file(&_buf, &_buf_size)
+        , _writer()
     {
     }
 
@@ -52,12 +52,10 @@ protected:
 
     virtual void SetUp()
     {
-        ASSERT_TRUE(!!_biw);
-
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(mb_bi_writer_set_format_android(_biw.get()), MB_BI_OK);
-        ASSERT_EQ(mb_bi_writer_open(_biw.get(), &_file, false), MB_BI_OK);
+        ASSERT_EQ(_writer.set_format_android(), RET_OK);
+        ASSERT_EQ(_writer.open(&_file), RET_OK);
     }
 
     virtual void TearDown()
@@ -70,30 +68,29 @@ protected:
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         };
 
-        MbBiHeader *header;
-        MbBiEntry *entry;
+        Header header;
+        Entry entry;
         int ret;
         size_t n;
 
         // Write dummy header
-        ASSERT_EQ(mb_bi_writer_get_header(_biw.get(), &header), MB_BI_OK);
-        ASSERT_EQ(mb_bi_header_set_page_size(header, 2048), MB_BI_OK);
-        ASSERT_EQ(mb_bi_writer_write_header(_biw.get(), header), MB_BI_OK);
+        ASSERT_EQ(_writer.get_header(header), RET_OK);
+        ASSERT_TRUE(header.set_page_size(2048));
+        ASSERT_EQ(_writer.write_header(header), RET_OK);
 
         // Write specified dummy entries
-        while ((ret = mb_bi_writer_get_entry(_biw.get(), &entry)) == MB_BI_OK) {
-            ASSERT_EQ(mb_bi_writer_write_entry(_biw.get(), entry), MB_BI_OK);
+        while ((ret = _writer.get_entry(entry)) == RET_OK) {
+            ASSERT_EQ(_writer.write_entry(entry), RET_OK);
 
-            if (mb_bi_entry_type(entry) & types) {
-                ASSERT_EQ(mb_bi_writer_write_data(_biw.get(), "hello", 5, &n),
-                          MB_BI_OK);
+            if (*entry.type() & types) {
+                ASSERT_EQ(_writer.write_data("hello", 5, n), RET_OK);
                 ASSERT_EQ(n, 5u);
             }
         }
-        ASSERT_EQ(ret, MB_BI_EOF);
+        ASSERT_EQ(ret, RET_EOF);
 
         // Close to write header
-        ASSERT_EQ(mb_bi_writer_close(_biw.get()), MB_BI_OK);
+        ASSERT_EQ(_writer.close(), RET_OK);
 
         // Check SHA1
         ASSERT_EQ(memcmp(static_cast<unsigned char *>(_buf) + 576,
@@ -121,7 +118,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernel)
         0xf7, 0x89, 0x8c, 0x5f, 0xea, 0x7f, 0x47, 0xbc, 0x68, 0x69,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
@@ -131,7 +128,7 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdisk)
         0x1e, 0xfb, 0xec, 0x44, 0x65, 0xf9, 0xc1, 0x62, 0x11, 0xfd,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
@@ -141,8 +138,8 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondboot)
         0x42, 0xe1, 0xaf, 0xe5, 0x4d, 0xa7, 0xc3, 0x16, 0x8f, 0x5e,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK
-            | MB_BI_ENTRY_SECONDBOOT);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
+            | ENTRY_TYPE_SECONDBOOT);
 }
 
 TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
@@ -152,6 +149,6 @@ TEST_F(AndroidWriterSHA1Test, HandlesKernelRamdiskSecondbootDT)
         0x09, 0x35, 0x85, 0x26, 0x06, 0x36, 0x17, 0xbb, 0x05, 0x20,
     };
 
-    TestChecksum(expected, MB_BI_ENTRY_KERNEL | MB_BI_ENTRY_RAMDISK
-            | MB_BI_ENTRY_SECONDBOOT | MB_BI_ENTRY_DEVICE_TREE);
+    TestChecksum(expected, ENTRY_TYPE_KERNEL | ENTRY_TYPE_RAMDISK
+            | ENTRY_TYPE_SECONDBOOT | ENTRY_TYPE_DEVICE_TREE);
 }

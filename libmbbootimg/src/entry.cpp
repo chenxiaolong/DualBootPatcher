@@ -23,118 +23,106 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "mbbootimg/defs.h"
 #include "mbbootimg/entry_p.h"
-#include "mbbootimg/macros_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-MbBiEntry * mb_bi_entry_new()
+namespace mb
 {
-    MbBiEntry *entry = static_cast<MbBiEntry *>(calloc(1, sizeof(*entry)));
-    return entry;
+namespace bootimg
+{
+
+Entry::Entry()
+    : _priv_ptr(new EntryPrivate())
+{
 }
 
-void mb_bi_entry_free(MbBiEntry *entry)
+Entry::Entry(const Entry &entry)
+    : _priv_ptr(new EntryPrivate(*entry._priv_ptr))
 {
-    mb_bi_entry_clear(entry);
-    free(entry);
 }
 
-
-void mb_bi_entry_clear(MbBiEntry *entry)
+Entry::Entry(Entry &&entry)
+    : Entry()
 {
-    if (entry) {
-        free(entry->field.name);
-        memset(entry, 0, sizeof(*entry));
-    }
+    _priv_ptr.swap(entry._priv_ptr);
 }
 
-MbBiEntry * mb_bi_entry_clone(MbBiEntry *entry)
+Entry::~Entry()
 {
-    MbBiEntry *dup;
+}
 
-    dup = mb_bi_entry_new();
-    if (!dup) {
-        return nullptr;
-    }
+Entry & Entry::operator=(const Entry &entry)
+{
+    *_priv_ptr = EntryPrivate(*entry._priv_ptr);
+    return *this;
+}
 
-    // Copy global options
-    dup->fields_set = entry->fields_set;
+Entry & Entry::operator=(Entry &&entry)
+{
+    _priv_ptr.swap(entry._priv_ptr);
+    *entry._priv_ptr = EntryPrivate();
+    return *this;
+}
 
-    // Shallow copy trivial field
-    dup->field.type = entry->field.type;
-    dup->field.size = entry->field.size;
+bool Entry::operator==(const Entry &rhs) const
+{
+    auto const &field1 = _priv_ptr->field;
+    auto const &field2 = rhs._priv_ptr->field;
 
-    // Deep copy strings
-    bool deep_copy_error =
-            (entry->field.name
-                    && !(dup->field.name = strdup(entry->field.name)));
+    return field1.type == field2.type
+            && field1.name == field2.name
+            && field1.size == field2.size;
+}
 
-    if (deep_copy_error) {
-        mb_bi_entry_free(dup);
-        return nullptr;
-    }
+bool Entry::operator!=(const Entry &rhs) const
+{
+    return !(*this == rhs);
+}
 
-    return dup;
+void Entry::clear()
+{
+    MB_PRIVATE(Entry);
+    *priv = EntryPrivate();
 }
 
 // Fields
 
-int mb_bi_entry_type_is_set(MbBiEntry *entry)
+optional<int> Entry::type() const
 {
-    return IS_SET(entry, MB_BI_ENTRY_FIELD_TYPE);
+    MB_PRIVATE(const Entry);
+    return priv->field.type;
 }
 
-int mb_bi_entry_type(MbBiEntry *entry)
+void Entry::set_type(optional<int> type)
 {
-    return entry->field.type;
+    MB_PRIVATE(Entry);
+    priv->field.type = std::move(type);
 }
 
-int mb_bi_entry_set_type(MbBiEntry *entry, int type)
+optional<std::string> Entry::name() const
 {
-    SET_FIELD(entry, MB_BI_ENTRY_FIELD_TYPE, type, type);
-    return MB_BI_OK;
+    MB_PRIVATE(const Entry);
+    return priv->field.name;
 }
 
-int mb_bi_entry_unset_type(MbBiEntry *entry)
+void Entry::set_name(optional<std::string> name)
 {
-    UNSET_FIELD(entry, MB_BI_ENTRY_FIELD_TYPE, type, 0);
-    return MB_BI_OK;
+    MB_PRIVATE(Entry);
+    priv->field.name = std::move(name);
 }
 
-const char * mb_bi_entry_name(MbBiEntry *entry)
+optional<uint64_t> Entry::size() const
 {
-    return entry->field.name;
+    MB_PRIVATE(const Entry);
+    return priv->field.size;
 }
 
-int mb_bi_entry_set_name(MbBiEntry *entry, const char *name)
+void Entry::set_size(optional<uint64_t> size)
 {
-    SET_STRING_FIELD(entry, MB_BI_ENTRY_FIELD_NAME, name, name);
-    return MB_BI_OK;
+    MB_PRIVATE(Entry);
+    priv->field.size = std::move(size);
+
 }
 
-int mb_bi_entry_size_is_set(MbBiEntry *entry)
-{
-    return IS_SET(entry, MB_BI_ENTRY_FIELD_SIZE);
 }
-
-uint64_t mb_bi_entry_size(MbBiEntry *entry)
-{
-    return entry->field.size;
 }
-
-int mb_bi_entry_set_size(MbBiEntry *entry, uint64_t size)
-{
-    SET_FIELD(entry, MB_BI_ENTRY_FIELD_SIZE, size, size);
-    return MB_BI_OK;
-}
-
-int mb_bi_entry_unset_size(MbBiEntry *entry)
-{
-    UNSET_FIELD(entry, MB_BI_ENTRY_FIELD_SIZE, size, 0);
-    return MB_BI_OK;
-}
-
-MB_END_C_DECLS

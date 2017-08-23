@@ -213,7 +213,7 @@ bool MemoryFile::on_write(const void *buf, size_t size, size_t &bytes_written)
     MB_PRIVATE(MemoryFile);
 
     if (priv->pos > SIZE_MAX - size) {
-        set_error(make_error_code(FileError::InvalidArgument),
+        set_error(make_error_code(FileError::ArgumentOutOfRange),
                   "Write would overflow size_t");
         return false;
     }
@@ -262,7 +262,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     switch (whence) {
     case SEEK_SET:
         if (offset < 0 || static_cast<uint64_t>(offset) > SIZE_MAX) {
-            set_error(make_error_code(FileError::InvalidArgument),
+            set_error(make_error_code(FileError::ArgumentOutOfRange),
                       "Invalid SEEK_SET offset %" PRId64, offset);
             return false;
         }
@@ -272,7 +272,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->pos)
                 || (offset > 0 && static_cast<uint64_t>(offset)
                         > SIZE_MAX - priv->pos)) {
-            set_error(make_error_code(FileError::InvalidArgument),
+            set_error(make_error_code(FileError::ArgumentOutOfRange),
                       "Invalid SEEK_CUR offset %" PRId64
                       " for position %" MB_PRIzu, offset, priv->pos);
             return false;
@@ -283,7 +283,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         if ((offset < 0 && static_cast<size_t>(-offset) > priv->size)
                 || (offset > 0 && static_cast<uint64_t>(offset)
                         > SIZE_MAX - priv->size)) {
-            set_error(make_error_code(FileError::InvalidArgument),
+            set_error(make_error_code(FileError::ArgumentOutOfRange),
                       "Invalid SEEK_END offset %" PRId64
                       " for file of size %" MB_PRIzu, offset, priv->size);
             return false;
@@ -291,7 +291,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         new_offset = priv->pos = priv->size + offset;
         break;
     default:
-        set_error(make_error_code(FileError::InvalidArgument),
+        set_error(make_error_code(FileError::InvalidWhence),
                   "Invalid whence argument: %d", whence);
         return false;
     }

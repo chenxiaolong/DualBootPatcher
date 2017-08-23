@@ -108,7 +108,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
-            ${MBP_JANSSON_INCLUDES}
             ${MBP_LIBARCHIVE_INCLUDES}
             ${MBP_LIBSEPOL_INCLUDES}
             ${MBP_OPENSSL_INCLUDES}
@@ -202,7 +201,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbbootimg-static
         mbcommon-static
         minizip-static
-        ${MBP_JANSSON_LIBRARIES}
+        rapidjson
         ${MBP_PROCPS_NG_LIBRARIES}
         ${MBP_ZLIB_LIBRARIES}
     )
@@ -217,7 +216,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbbootimg-static
         mbcommon-static
         minizip-static
-        ${MBP_JANSSON_LIBRARIES}
+        rapidjson
         ${MBP_LIBARCHIVE_LIBRARIES}
         ${MBP_LIBLZMA_LIBRARIES}
         ${MBP_LZ4_LIBRARIES}
