@@ -587,11 +587,11 @@
     theme: portrait_hdpi
     
     
-- name: Lg Stylo 2 Plus [MetroPCS LGMS550]
+- name: LG Stylo 2 Plus (MetroPCS)
   id: ph2n
   codenames:
-      - LGMS550
-      - ph2n
+    - LGMS550
+    - ph2n
   architecture: 
   block_devs:
     base_dirs:
@@ -620,7 +620,6 @@
       - /dev/block/mmcblk0p28
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
     extra:
-      - 
       - /dev/block/mmcblk1
       - /dev/block/mmcblk1p1
  
