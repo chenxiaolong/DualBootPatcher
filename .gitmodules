@@ -16,3 +16,9 @@
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://github.com/chenxiaolong/googletest.git
+[submodule "external/rapidjson"]
+	path = external/rapidjson
+	url = https://github.com/miloyip/rapidjson.git
+[submodule "external/Optional"]
+	path = external/Optional
+	url = https://github.com/chenxiaolong/Optional.git

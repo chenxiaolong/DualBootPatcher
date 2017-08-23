@@ -179,21 +179,6 @@ else()
 endif()
 
 ################################################################################
-# jansson for Android
-################################################################################
-
-set(JANSSON_VER "2.10-1")
-
-if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(jansson ${JANSSON_VER} armeabi-v7a SHA512=06408ef2a73268b1955d9613e7779399cbf5cf15dd29461ad9c81728c835ac017a86154e199be020dea65087f91839693a379c40a6259e98f0b520e05c17d8f2)
-    get_prebuilt(jansson ${JANSSON_VER} arm64-v8a   SHA512=994c03b6d4bf4fe5476e26a4c02ae41183f80c8fcd1c04b99457c4ff9a922f07c49edab70b4095128276edadc7aa6dddde3f4ca9b6ef49a05cfe1adad01a1876)
-    get_prebuilt(jansson ${JANSSON_VER} x86         SHA512=72c99186f325232c2351362c3331049e254a7a7151b7e2692d667dfb0c822b934d6a6c32cc9de397bf6d35092aa49fdaeb69de639afc8c29d8cda523d69672e0)
-    get_prebuilt(jansson ${JANSSON_VER} x86_64      SHA512=47c87efbc55fa0bfcd03e1593e7bc026b53d4b2d4020c1bef515c8776b0c84b93160b874978ca64267beb7828815a1467f8995e54984eda4ec44dc0cf7a2cf42)
-else()
-    set(THIRD_PARTY_JANSSON_DIR "${MBP_PREBUILTS_BINARY_DIR}/jansson/${JANSSON_VER}" PARENT_SCOPE)
-endif()
-
-################################################################################
 # libsepol for Android
 ################################################################################
 

@@ -19,7 +19,10 @@
 
 #include "romconfig.h"
 
-#include <jansson.h>
+#include <rapidjson/document.h>
+#include <rapidjson/error/en.h>
+#include <rapidjson/filereadstream.h>
+#include <rapidjson/reader.h>
 
 #include "mblog/logging.h"
 #include "mbutil/finally.h"
@@ -56,108 +59,116 @@ namespace mb {
  */
 bool RomConfig::load_file(const std::string &path)
 {
-    json_t *root;
-    json_error_t error;
+    using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+    using namespace rapidjson;
 
-    root = json_load_file(path.c_str(), 0, &error);
-    if (!root) {
-        LOGE("JSON error on line %d: %s", error.line, error.text);
+    ScopedFILE fp(fopen(path.c_str(), "r"), &fclose);
+    if (!fp) {
+        LOGE("%s: Failed to open for reading: %s",
+             path.c_str(), strerror(errno));
         return false;
     }
 
-    auto free_on_return = util::finally([&]{
-        json_decref(root);
-    });
+    char buf[65536];
+    Reader reader;
+    FileReadStream is(fp.get(), buf, sizeof(buf));
+    Document d;
 
-    if (!json_is_object(root)) {
+    if (d.ParseStream(is).HasParseError()) {
+        fprintf(stderr, "Error at offset %zu: %s\n",
+                reader.GetErrorOffset(),
+                GetParseError_En(reader.GetParseErrorCode()));
+        return false;
+    }
+
+    if (!d.IsObject()) {
         LOGE("[root]: Not an object");
         return false;
     }
 
     // ROM ID
-    json_t *j_id = json_object_get(root, CONFIG_KEY_ID);
-    if (j_id) {
-        if (!json_is_string(j_id)) {
+    auto const j_id = d.FindMember(CONFIG_KEY_ID);
+    if (j_id != d.MemberEnd()) {
+        if (!j_id->value.IsString()) {
             LOGE("[root]->id: Not a string");
             return false;
         }
-        id = json_string_value(j_id);
+        id = j_id->value.GetString();
     }
 
     // ROM name
-    json_t *j_name = json_object_get(root, CONFIG_KEY_NAME);
-    if (j_name) {
-        if (!json_is_string(j_name)) {
+    auto const j_name = d.FindMember(CONFIG_KEY_NAME);
+    if (j_name != d.MemberEnd()) {
+        if (!j_name->value.IsString()) {
             LOGE("[root]->name: Not a string");
             return false;
         }
-        name = json_string_value(j_name);
+        name = j_name->value.GetString();
     }
 
     // App sharing
-    json_t *j_app_sharing = json_object_get(root, CONFIG_KEY_APP_SHARING);
-    if (j_app_sharing) {
-        if (!json_is_object(j_app_sharing)) {
+    auto const j_app_sharing = d.FindMember(CONFIG_KEY_APP_SHARING);
+    if (j_app_sharing != d.MemberEnd()) {
+        if (!j_app_sharing->value.IsObject()) {
             LOGE("[root]->app_sharing: Not an object");
             return false;
         }
 
         // Individual app sharing
-        json_t *j_individual = json_object_get(
-                j_app_sharing, CONFIG_KEY_INDIVIDUAL_APP_SHARING);
-        if (j_individual) {
-            if (!json_is_boolean(j_individual)) {
+        auto const j_individual = j_app_sharing->value.FindMember(
+                CONFIG_KEY_INDIVIDUAL_APP_SHARING);
+        if (j_individual != j_app_sharing->value.MemberEnd()) {
+            if (!j_individual->value.IsBool()) {
                 LOGE("[root]->app_sharing->individual: Not a boolean");
                 return false;
             }
-            indiv_app_sharing = json_is_true(j_individual);
+            indiv_app_sharing = j_individual->value.GetBool();
         }
 
         // Shared packages
-        json_t *j_pkgs = json_object_get(j_app_sharing, CONFIG_KEY_PACKAGES);
-        if (j_pkgs) {
-            if (!json_is_array(j_pkgs)) {
+        auto const j_pkgs = j_app_sharing->value.FindMember(
+                CONFIG_KEY_PACKAGES);
+        if (j_pkgs != j_app_sharing->value.MemberEnd()) {
+            if (!j_pkgs->value.IsArray()) {
                 LOGE("[root]->app_sharing->packages: Not an array");
                 return false;
             }
 
-            for (std::size_t i = 0; i < json_array_size(j_pkgs); ++i) {
-                json_t *j_data = json_array_get(j_pkgs, i);
-                if (j_data) {
-                    if (!json_is_object(j_data)) {
-                        LOGE("[root]->app_sharing->packages[%zu]: Not an object", i);
+            size_t i = 0;
+            for (auto const &j_data : j_pkgs->value.GetArray()) {
+                if (!j_data.IsObject()) {
+                    LOGE("[root]->app_sharing->packages[%zu]: Not an object", i);
+                    return false;
+                }
+
+                SharedPackage shared_pkg;
+
+                // Package ID
+                auto const j_pkg_id = j_data.FindMember(CONFIG_KEY_PACKAGE_ID);
+                if (j_pkg_id != j_data.MemberEnd()) {
+                    if (!j_pkg_id->value.IsString()) {
+                        LOGE("[root]->app_sharing->packages[%zu]->pkg_id: Not a string", i);
                         return false;
                     }
-
-                    SharedPackage shared_pkg;
-
-                    // Package ID
-                    json_t *j_pkg_id = json_object_get(
-                            j_data, CONFIG_KEY_PACKAGE_ID);
-                    if (j_pkg_id) {
-                        if (!json_is_string(j_pkg_id)) {
-                            LOGE("[root]->app_sharing->packages[%zu]->pkg_id: Not a string", i);
-                            return false;
-                        }
-                        shared_pkg.pkg_id = json_string_value(j_pkg_id);
-                    } else {
-                        // Skip empty package names
-                        continue;
-                    }
-
-                    // Shared data
-                    json_t *j_share_data = json_object_get(
-                            j_data, CONFIG_KEY_SHARE_DATA);
-                    if (j_share_data) {
-                        if (!json_is_boolean(j_share_data)) {
-                            LOGE("[root]->app_sharing->packages[%zu]->share_data: Not a boolean", i);
-                            return false;
-                        }
-                        shared_pkg.share_data = json_is_true(j_share_data);
-                    }
-
-                    shared_pkgs.push_back(std::move(shared_pkg));
+                    shared_pkg.pkg_id = j_pkg_id->value.GetString();
+                } else {
+                    // Skip empty package names
+                    continue;
                 }
+
+                // Shared data
+                auto const j_share_data = j_data.FindMember(CONFIG_KEY_SHARE_DATA);
+                if (j_share_data != j_data.MemberEnd()) {
+                    if (!j_share_data->value.IsBool()) {
+                        LOGE("[root]->app_sharing->packages[%zu]->share_data: Not a boolean", i);
+                        return false;
+                    }
+                    shared_pkg.share_data = j_share_data->value.GetBool();
+                }
+
+                shared_pkgs.push_back(std::move(shared_pkg));
+
+                ++i;
             }
         }
     }

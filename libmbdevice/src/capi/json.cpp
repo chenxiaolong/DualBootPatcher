@@ -60,34 +60,34 @@ uint16_t mb_device_json_error_type(const CJsonError *error)
     return static_cast<std::underlying_type<JsonErrorType>::type>(je->type);
 }
 
-int mb_device_json_error_line(const CJsonError *error)
+size_t mb_device_json_error_offset(const CJsonError *error)
 {
     JE_CCAST(error);
-    return je->line;
+    return je->offset;
 }
 
-int mb_device_json_error_column(const CJsonError *error)
+char * mb_device_json_error_message(const CJsonError *error)
 {
     JE_CCAST(error);
-    return je->column;
+    return mb::capi_str_to_cstr(je->message);
 }
 
-char * mb_device_json_error_context(const CJsonError *error)
+char * mb_device_json_error_schema_uri(const CJsonError *error)
 {
     JE_CCAST(error);
-    return capi_str_to_cstr(je->context);
+    return mb::capi_str_to_cstr(je->schema_uri);
 }
 
-char * mb_device_json_error_expected_type(const CJsonError *error)
+char * mb_device_json_error_schema_keyword(const CJsonError *error)
 {
     JE_CCAST(error);
-    return capi_str_to_cstr(je->expected_type);
+    return mb::capi_str_to_cstr(je->schema_keyword);
 }
 
-char * mb_device_json_error_actual_type(const CJsonError *error)
+char * mb_device_json_error_document_uri(const CJsonError *error)
 {
     JE_CCAST(error);
-    return capi_str_to_cstr(je->actual_type);
+    return mb::capi_str_to_cstr(je->document_uri);
 }
 
 CDevice * mb_device_new_from_json(const char *json, CJsonError *error)

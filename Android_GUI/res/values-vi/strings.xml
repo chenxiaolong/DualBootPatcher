@@ -20,7 +20,7 @@
   <!--Licenses link text-->
   <string name="link_licenses">Bản quyền</string>
   <!--Thank you message for contributors and links to relavent URLs-->
-  <string name="credits">Cám tất cả mọi người đã giúp đỡ làm bản Patcher này! Ahihi.</string>
+  <string name="credits">Cám tất cả mọi người đã giúp đỡ làm bản Patcher này! </string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
   <string name="mbtool_connect_fail_title">Không thể kết nối tới mbtool</string>
   <!--Message for the card shown in the switcher when the connection to mbtool failed-->
@@ -28,9 +28,9 @@
 mbtool. Điều này có thể xảy ra nếu quyền root đã bị từ chối hoặc ramdisk chưa được 
 cập nhật.\n\nChạm để thử lại.</string>
   <!--Navigation drawer item for selecting the ROM-->
-  <string name="title_roms">Các bản ROM</string>
+  <string name="title_roms">ROMs</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">Chỉnh sửa tập tin zip </string>
+  <string name="title_patch_zip">Vá tập tin zip </string>
   <!--Navigation drawer item for checking free space-->
   <string name="title_free_space">Bộ nhớ trống</string>
   <!--Navigation drawer item for changing the ROM settings-->
@@ -44,9 +44,9 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--Nagivation drawer item for exiting the app-->
   <string name="title_exit">Thoát</string>
   <!--Accessibility text for opening the app drawer-->
-  <string name="drawer_open">Open navigation drawer</string>
+  <string name="drawer_open">Mở ngăn điều hướng</string>
   <!--Accessibility text for closing the app drawer-->
-  <string name="drawer_close">Close navigation drawer</string>
+  <string name="drawer_close">Thoát ngăn điều hướng</string>
   <!--Default name for the primary ROM-->
   <string name="primary">Primary</string>
   <!--Default name for the secondary ROM-->
@@ -64,9 +64,9 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--Title of progress dialog shown when setting kernel-->
   <string name="setting_kernel">Thiết lập kernel</string>
   <!--Message shown when switching ROMs succeeds-->
-  <string name="choose_rom_success">Chuyển đổi rom thành công</string>
+  <string name="choose_rom_success">Chuyển đổi ROM thành công</string>
   <!--Message shown when switching ROMs failed-->
-  <string name="choose_rom_failure">Chuyển đổi rom thất bại</string>
+  <string name="choose_rom_failure">Chuyển đổi ROM thất bại</string>
   <!--Message shown when switching ROMs and checksums don't match-->
   <string name="choose_rom_checksums_invalid">Kiểm tra Image không chính xác</string>
   <!--Message shown when switching ROMs and checksums are missing-->
@@ -81,9 +81,9 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--Message shown if the boot partition could not be detected because the device codename is
          not recognized-->
   <string name="unknown_boot_partition">Không thể xác định được phân vùng khởi động bởi vì
-        thiết bị\'s tên mã \'%s\' không được hổ trợ.</string>
+        thiết bị \'s tên mã \'%s\' không được hổ trợ.</string>
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
-  <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này\'s boot.img hoặc *.img
+  <string name="checksums_invalid">Kiểm tra SHA512 checksums cho bản rom này \'s boot.img hoặc *.img
         tập tin trong /sdcard/MultiBoot/%s/ không chính xác. Ứng dụng bên thứ ba đã thay
         những images n. Bạn có chắc muốn chuyển đổi rom?</string>
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
@@ -156,7 +156,7 @@ cập nhật.\n\nChạm để thử lại.</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Đổi tên %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
-  <string name="rename_rom_desc">Nhập tên mới cho %s. Để trống để sử dụng
+  <string name="rename_rom_desc">Nhập tên mới cho %s. Để trống sử dụng
         tên mặc định.</string>
   <!--Dialog message shown when the kernel has not been set-->
   <string name="kernel_not_set_desc">Kernel vẫn chưa được thiết lập cho ROM hiện tại.
@@ -452,7 +452,7 @@ có hiệu lực trên ramdisk.</item>
   <string name="rom_settings_allow_intents_title">Cho phép nhận được ý định</string>
   <!--Description for the preference to enable receiving intents from third party applications-->
   <string name="rom_settings_allow_intents_desc">Cho phép các ứng dụng bên thứ ba để gửi các ý định
-         để ứng dụng này cho các hành động thực hiện, chẳng hạn như chuyển đổi ROM và vá tệp tin.</string>
+ để ứng dụng này cho các hành động thực hiện, chẳng hạn như chuyển đổi ROM và vá tệp tin.</string>
   <!--Title for the preference to enable confirmation dialog before rebooting-->
   <string name="rom_settings_show_reboot_confirm_title">Hiển thị tuỳ chọn khởi động lại</string>
   <!--Description for the preference to enable confirmation dialog before rebooting-->
@@ -461,8 +461,8 @@ có hiệu lực trên ramdisk.</item>
   <!--Title for the preference to set the number of parallel patching operations-->
   <string name="rom_settings_parallel_patching_title">Hoạt động vá song song </string>
   <!--Description for the preference to set the number of parallel patching operations-->
-  <string name="rom_settings_parallel_patching_desc">Khi nhiều tập tin nằm trong vá
-         hàng đợi quá trình chúng %d tại một thời điểm.</string>
+  <string name="rom_settings_parallel_patching_desc">Khi nhiều tệp tin nằm trong bản vá 
+       Hàng đợi, xử lý 1%d tệp cùng một lúc.</string>
   <!--Title for the dialog box explaining individual application sharing-->
   <string name="indiv_app_sharing_intro_dialog_title">Chia sẻ ứng dụng cá nhân</string>
   <!--Description for the dialog box explaining individual application sharing-->

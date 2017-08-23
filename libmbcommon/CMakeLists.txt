@@ -128,6 +128,7 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
+        PUBLIC optional
         PRIVATE ${MBP_LIBICONV_LIBRARIES}
     )
 

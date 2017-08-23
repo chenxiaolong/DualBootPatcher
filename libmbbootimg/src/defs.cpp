@@ -26,6 +26,11 @@
  * \brief Boot image reader API
  */
 
+namespace mb
+{
+namespace bootimg
+{
+
 // Formats documentation
 
 /*!
@@ -35,42 +40,42 @@
  */
 
 /*!
- * \def MB_BI_FORMAT_BASE_MASK
+ * \def FORMAT_BASE_MASK
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Mask to get base format code from variant format codes
  */
 
 /*!
- * \def MB_BI_FORMAT_ANDROID
+ * \def FORMAT_ANDROID
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Format code for Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_BUMP
+ * \def FORMAT_BUMP
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Format code for Bump'ed Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_LOKI
+ * \def FORMAT_LOKI
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Format code for Loki'd Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_MTK
+ * \def FORMAT_MTK
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Format code for MTK-style Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_SONY_ELF
+ * \def FORMAT_SONY_ELF
  * \ingroup MB_BI_FORMAT_CODES
  *
  * \brief Format code for Sony ELF boot images
@@ -83,35 +88,35 @@
  */
 
 /*!
- * \def MB_BI_FORMAT_NAME_ANDROID
+ * \def FORMAT_NAME_ANDROID
  * \ingroup MB_BI_FORMAT_NAMES
  *
  * \brief Format name for Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_NAME_BUMP
+ * \def FORMAT_NAME_BUMP
  * \ingroup MB_BI_FORMAT_NAMES
  *
  * \brief Format name for Bump'ed Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_NAME_LOKI
+ * \def FORMAT_NAME_LOKI
  * \ingroup MB_BI_FORMAT_NAMES
  *
  * \brief Format name for Loki'd Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_NAME_MTK
+ * \def FORMAT_NAME_MTK
  * \ingroup MB_BI_FORMAT_NAMES
  *
  * \brief Format name for MTK-style Android boot images
  */
 
 /*!
- * \def MB_BI_FORMAT_NAME_SONY_ELF
+ * \def FORMAT_NAME_SONY_ELF
  * \ingroup MB_BI_FORMAT_NAMES
  *
  * \brief Format name for Sony ELF boot images
@@ -126,7 +131,7 @@
  */
 
 /*!
- * \def MB_BI_EOF
+ * \def RET_EOF
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Reached EOF
@@ -135,7 +140,7 @@
  */
 
 /*!
- * \def MB_BI_OK
+ * \def RET_OK
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Success error code
@@ -144,16 +149,7 @@
  */
 
 /*!
- * \def MB_BI_RETRY
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Reattempt operation
- *
- * The operation should be reattempted.
- */
-
-/*!
- * \def MB_BI_WARN
+ * \def RET_WARN
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Warning
@@ -163,7 +159,7 @@
  */
 
 /*!
- * \def MB_BI_FAILED
+ * \def RET_FAILED
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Non-fatal error
@@ -173,7 +169,7 @@
  */
 
 /*!
- * \def MB_BI_FATAL
+ * \def RET_FATAL
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Fatal error
@@ -183,7 +179,7 @@
  */
 
 /*!
- * \def MB_BI_UNSUPPORTED
+ * \def RET_UNSUPPORTED
  * \ingroup MB_BI_RETURN_VALS
  *
  * \brief Operation not supported
@@ -191,52 +187,5 @@
  * The operation is not supported.
  */
 
-// Error codes documentation
-
-/*!
- * \defgroup MB_BI_ERROR_CODES Error codes
- *
- * \brief Possible error codes
- */
-
-/*!
- * \def MB_BI_ERROR_NONE
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief No error
- */
-
-/*!
- * \def MB_BI_ERROR_INVALID_ARGUMENT
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief An invalid argument was provided
- */
-
-/*!
- * \def MB_BI_ERROR_UNSUPPORTED
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The operation is not supported
- */
-
-/*!
- * \def MB_BI_ERROR_FILE_FORMAT
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The file does not conform to the file format
- */
-
-/*!
- * \def MB_BI_ERROR_PROGRAMMER_ERROR
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief The function were called in an invalid state
- */
-
-/*!
- * \def MB_BI_ERROR_INTERNAL_ERROR
- * \ingroup MB_BI_ERROR_CODES
- *
- * \brief Internal error in the library
- */
+}
+}
