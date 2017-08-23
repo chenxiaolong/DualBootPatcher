@@ -43,6 +43,7 @@ set(files
     samsung/06_galaxy_note_tablet.yml
     samsung/07_other.yml
     sony.yml
+    symphony.yml
     umi.yml
     walton.yml
     wiko.yml
