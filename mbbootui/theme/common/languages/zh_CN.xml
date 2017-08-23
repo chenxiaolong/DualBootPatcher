@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+
+<language>
+    <display>简体中文</display>
+
+    <resources>
+        <!-- Font overrides - only change these if your language requires special characters -->
+        <resource name="font_l" type="fontoverride" filename="DroidSansFallback.ttf" scale="100" />
+        <resource name="font_m" type="fontoverride" filename="DroidSansFallback.ttf" scale="100" />
+        <resource name="font_s" type="fontoverride" filename="DroidSansFallback.ttf" scale="100" />
+        <resource name="fixed" type="fontoverride" filename="DroidSansFallback.ttf" scale="100" />
+
+        <!-- Title shown in action bar on the main page -->
+        <string name="app_name">启动菜单</string>
+
+        <!-- Button on main page for navigating to Switch ROM page -->
+        <string name="title_switch_rom">切换系统</string>
+        <string name="title_decrypt_passwd_test">Dec. PIN/PW Test</string>
+        <string name="title_decrypt_pattern_test">Dec. Pattern Test</string>
+        <string name="title_settings">设置</string>
+        <string name="title_advanced">高级</string>
+        <string name="title_reboot">重启</string>
+
+        <!--
+            Switch ROM pages
+        -->
+
+        <!-- Title of Switch ROM page (primary header) -->
+        <string name="switch_rom_main_title">切换系统</string>
+        <!-- Description of Switch ROM page (secondary header) -->
+        <string name="switch_rom_main_desc">启动到另一个系统</string>
+        <!-- Title of Switching ROM progress page (primary header) -->
+        <string name="switch_rom_switching_title">切换中...</string>
+        <!-- Description of Switching ROM progress page (secondary header) -->
+        <string name="switch_rom_switching_desc">请稍候...</string>
+        <!-- Title above list of ROMs -->
+        <string name="switch_rom_list_title">选择一个系统启动</string>
+        <!-- Error shown when the path to the boot partition could not be found -->
+        <string name="switch_rom_unknown_boot_partition">无法确定启动分区</string>
+        <!-- Status text shown when switching is not needed -->
+        <string name="switch_rom_not_needed">无需切换,当前正处于 {1}</string>
+        <!-- Status text shown when switching to a ROM -->
+        <string name="switch_rom_switching_to">正在切换到 {1}...</string>
+        <!-- Result text when switching to a ROM succeeds. {1} is the ROM ID -->
+        <string name="switch_rom_result_succeeded">成功切换到 {1}</string>
+        <!-- Result text when switching to a ROM fails. {1} is the ROM ID -->
+        <string name="switch_rom_result_failed">无法切换到 {1}</string>
+        <!-- Result text when the checksum for the boot image does not match. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_invalid">{1}的boot镜像校验值无效</string>
+        <!-- Result text when the checksum for the boot image is missing. {1} is the ROM ID -->
+        <string name="switch_rom_result_checksum_not_found">{1}的boot镜像校验值错误</string>
+        <!-- Result text when an unknown error occurs while switching to a ROM. {1} is the ROM ID -->
+        <string name="switch_rom_result_unknown">切换到 {1} 时出现了未知错误</string>
+        <!-- Swipe to switch ROM (slider text) -->
+        <string name="switch_rom_swipe_to_switch">滑动按钮切换系统</string>
+
+        <!--
+            Reboot page
+        -->
+
+        <string name="reboot_system">启动系统</string>
+        <string name="reboot_recovery">重启Recovery</string>
+        <string name="reboot_bootloader">Fastboot模式</string>
+        <string name="reboot_download">Download模式</string>
+        <string name="reboot_poweroff">关机</string>
+
+        <!--
+            Settings pages
+        -->
+
+        <string name="settings_general_title">综合</string>
+        <string name="settings_general_use24clock">使用 24 小时制</string>
+        <string name="settings_general_rev_navbar">反转底部按钮</string>
+        <string name="settings_general_autoboot_timeout">启动等待时间:</string>
+        <string name="settings_general_restore_defaults">重置</string>
+
+        <string name="settings_tz_title">时区设置</string>
+        <string name="settings_tz_select_tz">选择时区:</string>
+        <string name="settings_tz_select_offset">时间偏差 (一般为 0): %tw_time_zone_guioffset%</string>
+        <string name="settings_tz_use_dst">使用夏令时 (DST)</string>
+        <string name="settings_tz_current_tz">当前时区: %tw_time_zone%</string>
+        <string name="settings_tz_set_tz">时区设置</string>
+
+        <string name="settings_tz_offset_none">无</string>
+        <string name="settings_tz_offset_15">15 分钟</string>
+        <string name="settings_tz_offset_30">30 分钟</string>
+        <string name="settings_tz_offset_45">45 分钟</string>
+
+        <string name="settings_tz_utcm11">(UTC -11) 美属萨摩亚，中途岛</string>
+        <string name="settings_tz_utcm10">(UTC -10) 檀香山</string>
+        <string name="settings_tz_utcm9">(UTC -9) 阿拉斯加</string>
+        <string name="settings_tz_utcm8">(UTC -8) 太平洋标准时间</string>
+        <string name="settings_tz_utcm7">(UTC -7) 北美山区标准时间</string>
+        <string name="settings_tz_utcm6">(UTC -6) 北美中部标准时间</string>
+        <string name="settings_tz_utcm5">(UTC -5) 北美东部标准时间</string>
+        <string name="settings_tz_utcm4">(UTC -4) 大西洋标准时间</string>
+        <string name="settings_tz_utcm3">(UTC -3) 巴西，布宜诺斯</string>
+        <string name="settings_tz_utcm2">(UTC -2) 中大西洋</string>
+        <string name="settings_tz_utcm1">(UTC -1) 亚速尔群岛, 佛得角</string>
+        <string name="settings_tz_utc0">(UTC  0) 伦敦, 都柏林, 里斯本</string>
+        <string name="settings_tz_utcp1">(UTC +1) 柏林, 布鲁塞尔, 巴黎</string>
+        <string name="settings_tz_utcp2">(UTC +2) 雅典, 伊斯坦布尔, 南非</string>
+        <string name="settings_tz_utcp3">(UTC +3) 莫斯科, 巴格达</string>
+        <string name="settings_tz_utcp4">(UTC +4) 阿拉扎比酋长国, 第比利斯, 马斯喀特</string>
+        <string name="settings_tz_utcp5">(UTC +5) 叶卡捷琳堡, 伊斯兰堡</string>
+        <string name="settings_tz_utcp6">(UTC +6) 阿拉木图, 达卡, 科伦坡</string>
+        <string name="settings_tz_utcp7">(UTC +7) 曼谷, 河内, 雅加达</string>
+        <string name="settings_tz_utcp8">(UTC +8) 北京, 新加坡, 香港</string>
+        <string name="settings_tz_utcp9">(UTC +9) 东京, 首尔, 雅库茨克</string>
+        <string name="settings_tz_utcp10">(UTC +10) 澳大利亚东部, 关岛</string>
+        <string name="settings_tz_utcp11">(UTC +11) 海参崴, 所罗门群岛</string>
+        <string name="settings_tz_utcp12">(UTC +12) 奥克兰, 惠林顿, 斐济</string>
+
+        <string name="settings_screen_title">屏幕显示</string>
+        <string name="settings_screen_enable_timeout">启用休眠</string>
+        <string name="settings_screen_timeout_slider">无操作休眠时间:</string>
+        <string name="settings_screen_brightness_slider">亮度: %tw_brightness_pct%%</string>
+
+        <string name="settings_vib_title">振动强度</string>
+        <string name="settings_vib_button_slider">点击按钮</string>
+        <string name="settings_vib_keyboard_slider">键盘按键:</string>
+        <string name="settings_vib_action_slider">点击操作:</string>
+
+        <string name="settings_language_title">语言</string>
+        <string name="settings_language_select_language">选择语言:</string>
+        <string name="settings_language_set_language">设置语言</string>
+
+        <!--
+            Advanced page
+        -->
+
+        <string name="advanced_reload_theme">重载主题</string>
+
+        <!--
+            Screen lock overlay page
+        -->
+
+        <string name="swipe_to_unlock">滑动按钮解除锁定</string>
+
+        <!--
+            Decryption pages
+        -->
+
+        <string name="decrypt_title">解密</string>
+        <string name="decrypt_desc">解密 Data</string>
+        <string name="decrypt_attempting_desc">正在尝试解密 Data</string>
+        <string name="decrypt_select_language">选择语言</string>
+        <string name="decrypt_enter_password">输入密码</string>
+        <string name="decrypt_failed_password">密码错误,请重试</string>
+        <string name="decrypt_enter_pattern">Enter patteern.</string>
+        <string name="decrypt_failed_pattern">Pattern failed, please try again!</string>
+
+        <!--
+            Autoboot page
+        -->
+
+        <string name="autoboot_header">自动启动到 %tw_rom_id%</string>
+        <string name="autoboot_welcome">Welcome to {1}</string>
+        <string name="autoboot_version_bootui">引导版本: {1}</string>
+        <string name="autoboot_version_mbtool">mbtool版本: {1} 翻译人员:CloverGit Build 20170806</string>
+        <string name="autoboot_autobooting_to">自动启动到 {1}</string>
+        <string name="autoboot_booting_in">{1} 秒后启动...</string>
+        <string name="autoboot_canceled">停止</string>
+        <string name="autoboot_booting_now">启动中...</string>
+        <string name="autoboot_skip_countdown">立即启动</string>
+
+        <!--
+            Generic strings
+        -->
+
+        <string name="failed">失败</string>
+        <string name="succeeded">成功</string>
+        <string name="cancel">取消</string>
+        <string name="ok">确认</string>
+        <string name="back">返回</string>
+
+        <!--
+            Status bar strings
+        -->
+
+        <string name="status_bar_cpu_temp">CPU: %tw_cpu_temp% &#xB0;C</string>
+        <string name="status_bar_battery_percent">电量: %tw_battery%</string>
+
+        <!--
+            Other miscellaneous strings
+        -->
+
+        <string name="mbtool_connection_error">mbtool 连接错误</string>
+        <string name="reboot_system_button">重启系统m</string>
+        <string name="base_pkg_err">库加载失败</string>
+        <string name="screenshot_saved">截图已保存到 {1}</string>
+        <string name="screenshot_err">截图失败</string>
+        <string name="theme_ver_err">自定义主题不支持该版本的TWRP</string>
+    </resources>
+</language>
