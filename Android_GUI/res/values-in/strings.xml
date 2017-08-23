@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+   *
+   * This program is free software: you can redistribute it and/or modify
+   * it under the terms of the GNU General Public License as published by
+   * the Free Software Foundation, either version 3 of the License, or
+   * (at your option) any later version.
+   *
+   * This program is distributed in the hope that it will be useful,
+   * but WITHOUT ANY WARRANTY; without even the implied warranty of
+   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   * GNU General Public License for more details.
+   *
+   * You should have received a copy of the GNU General Public License
+   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<resources>
+    <!-- Name of the app built in release mode -->
+    <string name="app_name_release">Dual Boot Patcher</string>
+    <!-- Name of the app built in debug mode -->
+    <string name="app_name_debug">Dual Boot Patcher (Debug)</string>
+    <!-- Name of the app built in snapshot mode -->
+    <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
+
+    <!-- Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching) -->
+    <string name="wait_until_finished">Harap Tunggu Hingga Semua Pekerjaan Selesai</string>
+
+    <!-- Indicate the version of the app on the about screen -->
+    <string name="version">Versi %s</string>
+    <!-- GitHub source code web page URL -->
+    <string name="url_source_code" translatable="false">https://github.com/chenxiaolong/DualBootPatcher</string>
+    <!-- GitHub source code link text -->
+    <string name="link_source_code">Source Code</string>
+    <!-- XDA forum thread web page URL -->
+    <string name="url_xda_thread" translatable="false">http://forum.xda-developers.com/showthread.php?t=2447534</string>
+    <!-- XDA forum thread link text -->
+    <string name="link_xda_thread">XDA Thread</string>
+    <!-- Licenses URL -->
+    <string name="url_licenses" translatable="false">https://github.com/chenxiaolong/DualBootPatcher/tree/master/licenses</string>
+    <!-- Licenses link text -->
+    <string name="link_licenses">Licenses</string>
+    <!-- Thank you message for contributors and links to relavent URLs -->
+    <string name="credits">Terima kasih untuk semua orang yang sudah membantu membuat patcher ini berjalan dengan baik!</string>
+
+    <!-- Title for card shown in the switcher when the connection to mbtool failed -->
+    <string name="mbtool_connect_fail_title">Tidak dapat terhubung dengan mbtool</string>
+    <!-- Message for the card shown in the switcher when the connection to mbtool failed -->
+    <string name="mbtool_connect_fail_message">Aplikasi ini tidak dapat terhubung dengan mbtool. Kemungkinan akses root di tolak atau ramdisk dalam versi lama. \n\nSentuh untuk mencoba lagi.</string>
+
+    <!-- Navigation drawer item for selecting the ROM -->
+    <string name="title_roms">ROMs</string>
+    <!-- Navigation drawer item for patching a zip file -->
+    <string name="title_patch_zip">Patch Berkas Zip</string>
+    <!-- Navigation drawer item for checking free space -->
+    <string name="title_free_space">Ruang Terisisa</string>
+    <!-- Navigation drawer item for changing the ROM settings -->
+    <string name="title_rom_settings">Pengaturan</string>
+    <!-- Navigation drawer item for changing the app sharing settings -->
+    <string name="title_app_sharing">Berbagi Aplikasi</string>
+    <!-- Nagivation drawer item for rebooting the device -->
+    <string name="title_reboot">Mulai Ulang</string>
+    <!-- Navigation drawer item for showing the about screen -->
+    <string name="title_about">Tentang</string>
+    <!-- Nagivation drawer item for exiting the app -->
+    <string name="title_exit">Keluar</string>
+
+    <!-- Accessibility text for opening the app drawer -->
+    <string name="drawer_open">Membuka navigation drawer</string>
+    <!-- Accessibility text for closing the app drawer -->
+    <string name="drawer_close">Menutup navigation drawer</string>
+
+    <!-- Default name for the primary ROM -->
+    <string name="primary">Primary</string>
+    <!-- Default name for the secondary ROM -->
+    <string name="secondary">Secondary</string>
+    <!-- Default name for the multi-slot ROMs -->
+    <string name="multislot">Multi Slot %s</string>
+    <!-- Default name for the data-slot ROMs -->
+    <string name="dataslot">%s (Data slot)</string>
+    <!-- Default name for the extsd-slot ROMs -->
+    <string name="extsdslot">%s (Extsd slot)</string>
+    <!-- Text shown when a ROM's version could not be detected -->
+    <string name="couldnt_determine_version">Tidak dapat menentukan versi ROM</string>
+
+    <!-- Title of progress dialog shown when switching ROMs -->
+    <string name="switching_rom">Mengganti ROM</string>
+    <!-- Title of progress dialog shown when setting kernel -->
+    <string name="setting_kernel">Menentukan kernel</string>
+    <!-- Message shown when switching ROMs succeeds -->
+    <string name="choose_rom_success">Sukses mengganti ROM</string>
+    <!-- Message shown when switching ROMs failed -->
+    <string name="choose_rom_failure">Gagal mengganti ROM</string>
+    <!-- Message shown when switching ROMs and checksums don't match -->
+    <string name="choose_rom_checksums_invalid">Image checksums tidak cocok</string>
+    <!-- Message shown when switching ROMs and checksums are missing -->
+    <string name="choose_rom_checksums_missing">Image checksums hilang</string>
+    <!-- Message shown when setting the kernel succeeds -->
+    <string name="set_kernel_success">Sukses menentukan kernel</string>
+    <!-- Message shown when setting the kernel fails -->
+    <string name="set_kernel_failure">Gagal menentukan kernel</string>
+
+    <!-- Message shown when another application tries to switch the ROM via an intent -->
+    <string name="confirm_automated_switch_rom">Aplikasi lain mencoba mengganti ke ROM %s.
+            Lanjutkan?</string>  
+
+    <!-- Message shown if the boot partition could not be detected because the device codename is
+         not recognized -->
+    <string name="unknown_boot_partition">Tidak dapat menentukan partisi boot karena kodenama perangkat \'%s\' tidak di kenali.</string> 
+        
+    <!-- Dialog message shown if the images' checksums don't match with switching ROMs -->
+    <string name="checksums_invalid">Checksums SHA512 untuk ROM\'s boot.img atau file *.img lainnya ini di /sdcard/MultiBoot/%s/ tidak cocok dengan checksums yang dikenali. Kemungkinan aplikasi pihak ketiga mengubah file tersebut. Lanjutkan mengganti ROM?</string>
+    
+    <!-- Dialog message shown if the images' checksums don't exist when switching ROMs -->
+    <string name="checksums_missing">Checksums SHA512 untuk ROM\'s boot.img atau file *.img lainnya ini di /sdcard/MultiBoot/%s/ hilang. Kemungkinan karena memperbarui aplikasi ini dari versi sebelumnya. Lanjutkan mengganti ROM?</string>
+
+    <!-- Version text shown on ROM card if the version could not be detected -->
+    <string name="rom_card_unknown_version">Versi ROM\'s tidak dikenali</string>
+    <!-- Build text shown on ROM card if the build could not be detected -->
+    <string name="rom_card_unknown_build">Build ROM\'s tidak dikenali</string>
+
+    <!-- ROM menu item for updating the ramdisk -->
+    <string name="rom_menu_update_ramdisk">Memperbarui ramdisk</string>
+    <!-- ROM menu item for setting kernel -->
+    <string name="rom_menu_set_kernel">Menentukan kernel</string>
+    <!-- ROM menu item for backing up the ROM -->
+    <string name="rom_menu_backup_rom">Cadangkan ROM</string>
+    <!-- ROM menu item for adding an icon to the home screen -->
+    <string name="rom_menu_add_to_home_screen">Tambah icon di layar utama</string>
+    <!-- ROM menu item for changing the name -->
+    <string name="rom_menu_edit_name">Ubah nama</string>
+    <!-- ROM menu item for changing the image -->
+    <string name="rom_menu_change_image">Ubah gambar</string>
+    <!-- ROM menu item for resetting back to the default image -->
+    <string name="rom_menu_reset_image">Atur ulang gambar</string>
+    <!-- ROM menu item for wiping the ROM -->
+    <string name="rom_menu_wipe_rom">Hapus ROM</string>
+
+    <!-- Snack bar message shown when a launcher is successfully created -->
+    <string name="successfully_created_launcher">Sukses menambahkan %s di layar utama.</string>
+
+    <!-- Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching -->
+    <string name="auto_reboot_after_switching">Apakah anda ingin memulai ulang perangkat setelah mengganti ROM?</string> 
+
+    <!-- Target for wiping ROM's /system -->
+    <string name="wipe_target_system">System</string>
+    <!-- Target for wiping ROM's /cache -->
+    <string name="wipe_target_cache">Cache</string>
+    <!-- Target for wiping ROM's /data -->
+    <string name="wipe_target_data">Data</string>
+    <!-- Target for wiping ROM's dalvik cache -->
+    <string name="wipe_target_dalvik_cache">Dalvik cache</string>
+    <!-- Target for wiping ROM's multiboot files -->
+    <string name="wipe_target_multiboot_files">File MultiBoot</string>
+
+    <!-- Title of dialog box asking for which targets to wipe -->
+    <string name="wipe_rom_dialog_title">Hapus pilihan</string>
+    <!-- Title of progress dialog shown when wiping targets -->
+    <string name="wiping_targets">Menghapus pilihan</string>
+    <!-- Toast message indicating successfully wiped targets -->
+    <string name="wipe_rom_successfully_wiped">Sukses menghapus: %s</string>
+    <!-- Toast message indicating targets that failed to wipe -->
+    <string name="wipe_rom_failed_to_wipe">Gagal menghapus: %s</string>
+    <!-- Toast message indicating that the wipe process failed to start -->
+    <string name="wipe_rom_initiate_fail">Gagal menjalakan proses penghapusan ROM</string> 
+    <!-- Toast message shown if the user did not select any target to wipe -->
+    <string name="wipe_rom_none_selected">Tidak ada proses penghapusan karena tidak ada pilihan yang spesifik.</string> 
+    <!-- Toast message shown if the user attempts to wipe any target for the current ROM -->
+    <string name="wipe_rom_no_wipe_current_rom">ROM yang sedang berjalan tidak dapat di hapus.</string> 
+
+    <!-- Switcher service notification title -->
+    <string name="switcher_service_background_service">Layanan sedang berjalan</string> 
+
+    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot. -->
+    <string name="switcher_storage_permission_required">Icon ROM dan namanya tidak dapat di buka karena perijinan penyimpanan di tolak.</string> 
+
+    <!-- Accessibility text for the ROM logo images -->
+    <string name="switcher_rom_image">ROM logo</string>
+
+    <!-- Title for the confirmation dialog box shown when trying to set the kernel -->
+    <string name="switcher_ask_set_kernel_title">Menentukan kernel?</string>
+    <!-- Message for the confirmation dialog box shown when trying to set the kernel -->
+    <string name="switcher_ask_set_kernel_desc">Kernel yang sedang berjalan sekarang akan di simpan sebagai kernel %s.</string>  
+
+    <!-- Title for the dialog box to rename a ROM -->
+    <string name="rename_rom_title">Ubah nama %s</string>
+    <!-- Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM -->
+    <string name="rename_rom_desc">Masukan nama baru untuk %s. Biarkan kosong untuk menggunakan nama bawaan.</string>  
+
+    <!-- Dialog message shown when the kernel has not been set -->
+    <string name="kernel_not_set_desc">Setting kernel belum ditentukan untuk ROM ini. Apakah anda ingin untuk menentukan kernel sekarang?</string>  
+    <!-- Dialog message shown when the saved kernel is different from the currently running kernel -->
+    <string name="kernel_different_from_saved_desc">Kernel yang ditentukan berbeda dengan kernel yang berjalan sekarang. Apakah anda ingin untuk menentukan kernel ini sekarang?</string> 
+    <!-- Positive dialog button shown for the above two messages -->
+    <string name="set_kernel_now">Tentukan sekarang</string>
+    <!-- Negative dialog button shown for the above two messages -->
+    <string name="set_kernel_later">Tentukan nanti</string>
+
+    <!-- Dialog message shown when the user tries to set the kernel for the incorrect ROM -->
+    <string name="set_kernel_mismatched_rom">ROM yang sekarang dipilih adalah %1$s, tetapi anda ingin menentukan kernel untuk %2$s. Konfirmasi bahwa ini yang anda inginkan.</string> 
+
+    <!-- In-app flashing output activity title - shown when backing up a single ROM -->
+    <string name="in_app_flashing_title_backup_rom">Cadangkan ROM</string>
+    <!-- In-app flashing output activity title - shown when restoring a single ROM -->
+    <string name="in_app_flashing_title_restore_rom">Pulihkan ROM</string>
+    <!-- In-app flashing output activity title - shown when flashing a single file -->
+    <string name="in_app_flashing_title_flash_file">Flash file</string>
+    <!-- In-app flashing output activity title - shown when flashing multiple files/backups -->
+    <string name="in_app_flashing_title_flash_files">Flash beberapa file</string>
+    <!-- In-app flashing activity title -->
+    <string name="in_app_flashing_title">Flashing dalam aplikasi</string>
+    <!-- FAB button text for adding a patched file to flash -->
+    <string name="in_app_flashing_fab_add_patched_file">Tambahkan patched file</string>
+    <!-- FAB button text for adding a backup to flash -->
+    <string name="in_app_flashing_fab_add_backup">Tambahkan cadangan</string>
+    <!-- Title of pending action card for flashing a file -->
+    <string name="in_app_flashing_action_flash_file">Flash file</string>
+    <!-- Title of pending action card for restoring a backup -->
+    <string name="in_app_flashing_action_restore_backup">Memulihkan cadangan</string>
+    <!-- [Flash file] Subtitle text in pending action card showing the selected filename -->
+    <string name="in_app_flashing_filename">Nama file: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the selected backup name -->
+    <string name="in_app_flashing_backup_name">Nama cadangan: %s</string>
+    <!-- [Restore backup] Subtitle text in pending action card showing the restore targets -->
+    <string name="in_app_flashing_restore_targets">Tujuan: %s</string>
+    <!-- Subtitle text in pending action card showing the installation location -->
+    <string name="in_app_flashing_location">ROM ID: %s</string>
+    <!-- Title shown in dialog asking for the installation location of a zip file -->
+    <string name="in_app_flashing_dialog_installation_location">Lokasi instalasi:</string>
+    <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
+    <string name="in_app_flashing_dialog_verifying_zip">Konfirmasi zip</string>
+    <!-- Error message shown when the selected zip file is not found -->
+    <string name="in_app_flashing_error_zip_not_found">Zip yang dipilih tidak ditemukan.</string>
+    <!-- Error message shown when the selected zip file could not be read -->
+    <string name="in_app_flashing_error_zip_read_fail">Tidak dapat membaca zip file yang dipilih.</string>
+    <!-- Error message shown when the selected zip file isn't patched -->
+    <string name="in_app_flashing_error_not_multiboot">Zip file ini sepertinya bukan diperuntukan untuk dualboot. Harap patch file tersebut sebelum mem-flashnya.</string> 
+    <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
+    <string name="in_app_flashing_error_version_too_old">Zip file ini perlu di patch dengan %s atau versi terbaru sebelum menggunakan flash dalam aplikasi.</string> 
+    <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
+    <string name="in_app_flashing_error_no_overwrite_rom">Untuk mencegah sistem ini rusak atau bootloop, flashing didalam ROM ini tidak di ijinkkan.</string>
+    <!-- Dialog message asking if the user wants to change the installation location of the zip -->
+    <string name="in_app_flashing_change_install_location_desc">Zip telah di patch untuk instalasi ke %s. Apakah anda ingin merubah lokasi penginstalan?</string> 
+    <!-- Dialog button for keeping the current installation location -->
+    <string name="in_app_flashing_keep_current_location">Samakan lokasi</string> 
+    <!-- Dialog button for changing the installation location -->
+    <string name="in_app_flashing_change_install_location">Pindahkan lokasi</string> 
+    <!-- Message shown in the first-use dialog for zip flashing -->
+    <string name="in_app_flashing_dialog_first_use">Flasher dalam aplikasi dapat menginstall file yang sudah di patch dan cadangan DualBootPatcher. Cukup dengan menyentuh icon plus untuk memulai penginstallan.\n\nPekerjaan yang belum selesai dapat dipindah atau digeser untuk menentukan antrian pekerjaan atau untuk menghapusnya dalam daftar antrian.\n\nCatatan: Fitur ini masih dalam pengembangan. Harap cadangkan semuanya sebelum melanjutkan!</string> 
+    <!-- Dialog description when choosing a backup to restore -->
+    <string name="in_app_flashing_select_backup_dialog_desc">Pilih cadangan dalam daftar yang akan dipulihkan.</string> 
+    <!-- Toast message shown if there are no backups available -->
+    <string name="in_app_flashing_no_backups_available">Tidak ada cadangan yang dapat dipulihkan.</string> 
+
+    <!-- ROM details item showing which slot the ROM is installed to -->
+    <string name="rom_details_info_slot">Slot</string>
+    <!-- ROM details item showing the version of the ROM -->
+    <string name="rom_details_info_version">Versi</string>
+    <!-- ROM details item showing the build name of the ROM -->
+    <string name="rom_details_info_build">Build</string>
+    <!-- ROM details item showing the mbtool version used to boot the ROM -->
+    <string name="rom_details_info_mbtool_status">Status mbtool</string>
+    <!-- ROM details item showing the number of system apps, updated apps, and user apps -->
+    <string name="rom_details_info_apps_counts">Aplikasi</string>
+    <!-- ROM details value showing the number of system apps, updated apps, and user apps -->
+    <string name="rom_details_info_apps_counts_value">%1$s aplikasi sistem, %2$s aplikasi terbaru, %3$s aplikasi pengguna</string>
+    <!-- ROM details item showing the path to the system directory or image -->
+    <string name="rom_details_info_system_path">System path</string>
+    <!-- ROM details item showing the path to the cache directory or image -->
+    <string name="rom_details_info_cache_path">Lokasi cache</string>
+    <!-- ROM details item showing the path to the data directory or image -->
+    <string name="rom_details_info_data_path">Lokasi data</string>
+    <!-- ROM details item showing the size of the system directory or image -->
+    <string name="rom_details_info_system_size">Kapasitas system</string>
+    <!-- ROM details item showing the size of the cache directory or image -->
+    <string name="rom_details_info_cache_size">Kapasitas cache</string>
+    <!-- ROM details item showing the size of the data directory or image -->
+    <string name="rom_details_info_data_size">Kapasitas Data</string>
+    <!-- ROM details item value shown when calculating the directory or image sizes -->
+    <string name="rom_details_info_calculating">Menghitung...</string>
+
+    <!-- Backup ROM activity title -->
+    <string name="br_backup_title">Cadangkan ROM</string>
+    <!-- Restore ROM activity title -->
+    <string name="br_restore_title">Pulihkan ROM</string>
+
+    <!-- Backup targets dialog description -->
+    <string name="br_backup_targets_dialog_desc">Tentukan pilihan yang akan di cadangkan.</string> 
+    <!-- Restore targets dialog description -->
+    <string name="br_restore_targets_dialog_desc">Tentukan pilihan yang akan di pulihkan.</string>
+
+    <!-- Backup/restore target for ROM's /system files -->
+    <string name="br_target_system">System</string>
+    <!-- Backup/restore target for ROM's /cache files -->
+    <string name="br_target_cache">Cache</string>
+    <!-- Backup/restore target for ROM's /data files -->
+    <string name="br_target_data">Data</string>
+    <!-- Backup/restore target for ROM's boot image -->
+    <string name="br_target_boot">Boot image</string>
+    <!-- Backup/restore target for ROM's multiboot configuration files -->
+    <string name="br_target_config">Pengaturan MultiBoot</string>
+    <!-- Toast message shown if no backup/restore targets are selected -->
+    <string name="br_no_target_selected">Tidak ada cadangan atau pemulihan yang di pilih.</string> 
+
+    <!-- Backup name input dialog description -->
+    <string name="br_name_dialog_desc">Masukan nama untuk pencadangan. Tidak dapat mengandung konten (\"/\") atau mungkin \".\" atau \"..\".</string> 
+    <!-- Backup name input field hint for backup name dialog -->
+    <string name="br_name_dialog_hint">Masukan nama pencadangan...</string>
+
+    <!-- Text shown on blank background when no files have been added for patching yet -->
+    <string name="patcher_background_message">Sentuh menu FAB untuk menambah file yang akan di patch.</string> 
+
+    <!-- Label for FAB to add a flashable zip -->
+    <string name="patcher_add_flashable_zip">Tambahkan flashable zip</string>  
+    <!-- Label for FAB to add an Odin image -->
+    <string name="patcher_add_odin_image">Tambahkan Odin image</string>
+
+    <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
+    <string name="patcher_storage_permission_required">Aplikasi ini tidak dapat mengubah file tanpa memberikan perijinan untuk membaca dan mengubah memori internal. Harap memberikan perijinan agar berjalan dengan baik.</string> 
+
+    <!-- Snackbar message shown if the user tries to patch the same file more than once -->
+    <string name="patcher_cannot_add_same_item">Hasil file yang dipilih sudah tersedia di daftar antrian.</string> 
+
+    <!-- Title of the device selection box in the patcher -->
+    <string name="patcher_device_title">Perangkat:</string>
+    <!-- Title of the partition configuration box in the patcher -->
+    <string name="patcher_partconfig_title">Konfigurasi partisi:</string> 
+    <!-- Title of the partition configuration description in the patcher -->
+    <string name="patcher_partconfig_desc_title">Deskripsi:</string>
+
+    <!-- Subtitle shown in patch file card indicating the target device and ROM ID -->
+    <string name="patcher_card_subtitle_target" translatable="Gagal">%1$s / %2$s</string>
+    <!-- Subtitle shown in patch file card when patching succeeded -->
+    <string name="patcher_card_subtitle_succeeded">Sukses</string>
+    <!-- Subtitle shown in patch file card when patching failed -->
+    <string name="patcher_card_subtitle_failed">Gagal (masalah code %s)</string>
+    <!-- Subtitle shown in patch file card when file is waiting to be patched -->
+    <string name="patcher_card_subtitle_pending">Tertunda</string>
+    <!-- Subtitle shown in patch file card when patching has not yet started (queued) -->
+    <string name="patcher_card_subtitle_queued">Dalam daftar pekerjaan</string>
+    <!-- Subtitle shown in patch file card when patching has been cancelled -->
+    <string name="patcher_card_subtitle_cancelled">Dibatalkan</string>
+
+    <!-- Patcher options dialog title -->
+    <string name="patcher_options_dialog_title">Pengaturan patcher</string>
+
+    <!-- Name for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade">Memperbarui primary ROM</string>
+    <!-- Description for primary ROM upgrade installation location -->
+    <string name="install_location_primary_upgrade_desc">Memperbarui primary ROM tanpa mengganggug ROMS lain</string>
+    <!-- Description for all other installation locations -->
+    <string name="install_location_desc">Installs ROM ke %s</string>
+    <!-- Text box hint for specifying the data slot ID -->
+    <string name="install_location_named_slot_id_hint">Berikan sebuah ID</string>
+    <!-- Description text shown if the data slot ID is empty -->
+    <string name="install_location_named_slot_id_empty">Masukan ID di atas</string>
+    <!-- Error tooltip shown if the data slot ID is empty -->
+    <string name="install_location_named_slot_id_error_is_empty">Kolom ID tidak dapat kosong.</string>
+    <!-- Error tooltip shown if the data slot ID contains invalid characters -->
+    <string name="install_location_named_slot_id_error_invalid">Kolom ID harus menggunakan huruf kecil dan/atau angka.</string>
+    <!-- Name for the data-slot installation location -->
+    <string name="install_location_data_slot">Kolom Data</string>
+    <!-- Name for the extsd-slot installation location -->
+    <string name="install_location_extsd_slot">Kolom Extsd</string>
+
+    <!-- Title for the dialog box indicating that no file manager is installed -->
+    <string name="filemanager_missing_title">File manager tidak ditemukan</string>
+    <!-- Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file -->
+    <string name="filemanager_missing_desc">Tidak ada file manager terpasang. Harap pasang sebuah file manager untuk memilih file untuk di patch.</string> 
+
+    <!-- Text for the details card indicating that the patching is done -->
+    <string name="details_done">Selesai</string>
+
+    <!-- Text for the progress card showing how many files have been added to the new zip -->
+    <string name="overall_progress_files">%1$s/%2$s files</string>
+
+    <!-- Title for total size of partition -->
+    <string name="free_space_total_size">Total kapasitas:</string>
+    <!-- Title for occupied space on partition -->
+    <string name="free_space_occupied_size">Digunakan:</string>
+    <!-- Title for free space on partition -->
+    <string name="free_space_free_size">Bebas:</string>
+    <!-- Format string for exbibytes -->
+    <string name="format_exbibytes" translatable="false">%s EiB</string>
+    <!-- Format string for pebibytes -->
+    <string name="format_pebibytes" translatable="false">%s PiB</string>
+    <!-- Format string for tebibytes -->
+    <string name="format_tebibytes" translatable="false">%s TiB</string>
+    <!-- Format string for gibibytes -->
+    <string name="format_gibibytes" translatable="false">%s GiB</string>
+    <!-- Format string for mebibytes -->
+    <string name="format_mebibytes" translatable="false">%s MiB</string>
+    <!-- Format string for kibibytes -->
+    <string name="format_kibibytes" translatable="false">%s KiB</string>
+    <!-- Format string for bytes -->
+    <string name="format_bytes" translatable="false">%s B</string>
+
+    <!-- Title for the individual application sharing section of the ROM settings -->
+    <string name="a_s_settings_indiv_app_sharing_section_title">Berbagi aplikasi</string>  
+
+    <!-- Title for the preference to share individual applications -->
+    <string name="a_s_settings_indiv_app_sharing_title">Membagi aplikasi</string> 
+    <!-- Description for the preference to share individual applications -->
+    <string name="a_s_settings_indiv_app_sharing_desc">Membagi aplikasi antar ROMs (membutuhkan reboot).</string>
+    <!-- Title for the preference to manage shared apps for individual app sharing -->
+    <string name="a_s_settings_manage_shared_apps_title">Mengatur aplikasi yang sudah dibagi</string> 
+    <!-- Description for the preference to manage shared apps for individual app sharing -->
+    <string name="a_s_settings_manage_shared_apps_desc">Pilih aplikasi yang harus di bagikan untuk berbagi aplikasi.</string> 
+
+    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage. -->
+    <string name="a_s_settings_storage_permission_required">Pengaturan berbagi aplikasi tidak dapat disimpan karena ijin penyimpanan ditolak. Berikan perijinan penyimpanan untuk mengubah pengaturan berbagi aplikasi.</string> 
+
+    <!-- Dialog message shown the the mbtool version is too old and needs to be updated -->
+    <string name="a_s_settings_version_too_old">mbtool harus di perbarui untuk memberikan efek pada fitur berbagi aplikasi. Harap memperbarui ramdisk.</string> 
+
+    <!-- Preference for updating the ramdisk -->
+    <string name="update_ramdisk_title">Memperbarui ramdisk</string>
+
+    <!-- Description for the ramdisk update preference when the ramdisk doesn't contain mbtool -->
+    <string name="update_ramdisk_missing_desc">Saat ini ramdisk tidak mempunyai versi apapun dari mbtool.</string> 
+    <!-- Description for the ramdisk update preference when the ramdisk is outdated -->
+    <string name="update_ramdisk_outdated_desc">ramdisk saat ini menggunakan mbtool versi lama.</string> 
+    <!-- Description for the ramdisk update preference when the ramdisk is already up to date -->
+    <string name="update_ramdisk_up_to_date_desc">ramdisk sudah dalam versi terbaru.</string> 
+    <!-- Title when ramdisk is successfully updated -->
+
+    <string name="update_ramdisk_success_title">Sukses memperbarui ramdisk</string> 
+    <!-- Message asking user to reboot when the ramdisk updating succeeds -->
+    <string name="update_ramdisk_reboot_desc">ramdisk sukses diperbarui. Apakah anda ingin me-reboot sekarang?</string>
+    <!-- Message telling user that the ramdisk updating succeeded -->
+    <string name="update_ramdisk_no_reboot_desc">ramdisk sukses diperbarui</string> 
+    <!-- Title when ramdisk failed to update -->
+    <string name="update_ramdisk_failure_title">Gagal memperbarui ramdisk</string> 
+    <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
+    <string name="update_ramdisk_failure_desc">ramdisk gagal diperbarui. Log tersimpan di MultiBoot/ramdisk-update.log di penyimpanan internal.</string>  
+
+    <!-- Toast popup message containing the countdown for forcing a ramdisk update -->
+    <plurals name="force_update_ramdisk_countdown">
+        <item quantity="one">Anda sekarang %1$d langkah lagi untuk memaksa memperbarui ramdisk.</item> 
+        <item quantity="other">Anda sekarang %1$d langkah lagi untuk memaksa memperbarui ramdisk.</item>
+    </plurals>
+    <!-- Toast popup message shown when the user forces a ramdisk update -->
+    <string name="force_updating_ramdisk">Memaksa memperbarui ramdisk</string> 
+
+    <!-- Title for the section in the settings to manage the Boot UI -->
+    <string name="rom_settings_boot_ui_title">Boot UI (EXPERIMENTAL)</string>
+    <!-- Title for the preference to install the Boot UI -->
+    <string name="rom_settings_boot_ui_install_title">Memasang Boot UI</string>
+    <!-- Title for the preference to update the Boot UI -->
+    <string name="rom_settings_boot_ui_update_title">Memperbarui Boot UI</string>
+    <!-- Title for the preference to uninstall the Boot UI -->
+    <string name="rom_settings_boot_ui_uninstall_title">Melepas Boot UI</string>
+    <!-- Summary for the Update Boot UI preference to indicate that an update is available -->
+    <string name="rom_settings_boot_ui_update_available">Pembaruan tersedia: %s</string>
+    <!-- Summary for the Update Boot UI preference to indicate that the Boot UI is up to date -->
+    <string name="rom_settings_boot_ui_up_to_date">Versi terbaru</string>
+    <!-- Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed -->
+    <string name="rom_settings_boot_ui_not_installed">Tidak terpasang</string>
+    <!-- Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device -->
+    <string name="rom_settings_boot_ui_not_supported">Tidak mendukung perangkat ini</string>
+    <!-- Toast message to indicate that the Boot UI was successfully installed -->
+    <string name="rom_settings_boot_ui_install_success">Sukses memasang Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI failed to install -->
+    <string name="rom_settings_boot_ui_install_failure">Gagal memasang Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI was successfully uninstalled -->
+    <string name="rom_settings_boot_ui_uninstall_success">Sukses melepas Boot UI</string>
+    <!-- Toast message to indicate that the Boot UI failed to uninstall -->
+    <string name="rom_settings_boot_ui_uninstall_failure">Gagal melepas Boot UI</string>
+    <!-- Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated -->
+    <string name="rom_settings_boot_ui_update_ramdisk_msg">Boot UI berhasil di pasang.\n\nPastikan ramdisk telah di perbarui di semua ROM. Jika tidak, maka Boot UI tidak akan berjalan saat proses booting.</string> 
+
+    <!-- Title for the section in ROM Settings to change backup/restore settings -->
+    <string name="rom_settings_backup_title">Cadangan/Pemulihan (EXPERIMENTAL)</string>
+    <!-- Title for the preference to change the backup directory -->
+    <string name="rom_settings_backup_change_directory">Ubah lokasi pencadangan</string> 
+
+    <!-- Title for the section in ROM Settings to change settings related to the patcher -->
+    <string name="rom_settings_patcher_title">Patcher</string>
+    <!-- Title for the preference to show the exit button in the navigation drawer -->
+    <string name="rom_settings_show_exit_title">Tampilkan menu Exit</string> 
+    <!-- Title for the preference to show the reboot button in the navigation drawer -->
+    <string name="rom_settings_show_reboot_title">Tampilkan menu Reboot</string> 
+    <!-- Title for the preference to choose the initial screen to show when opening the app -->
+    <string name="rom_settings_initial_screen_title">Tampilan pertama kali</string> 
+    <!-- Description for the initial screen preference -->
+    <string name="rom_settings_initial_screen_desc">Tampilan pertama saat membuka aplikasi.</string>
+    <!-- Title for the preference to use the dark theme -->
+    <string name="rom_settings_use_dark_theme">Gunakan tema gelap</string> 
+    <!-- Title for the preference to enable receiving intents from third party applications -->
+    <string name="rom_settings_allow_intents_title">Allow receiving intents</string> Perbolehkan menerima pekerjaan
+    <!-- Description for the preference to enable receiving intents from third party applications -->
+    <string name="rom_settings_allow_intents_desc">Memperbolehkan aplikasi pihak ketiga untuk mengirim pekerjaan menuju aplikasi ini untuk melakukan kegiatan seperti, mengganti ROM dan mengubah file.</string>
+    <!-- Title for the preference to enable confirmation dialog before rebooting -->
+    <string name="rom_settings_show_reboot_confirm_title">Tampilkan menu Reboot</string>
+    <!-- Description for the preference to enable confirmation dialog before rebooting -->
+    <string name="rom_settings_show_reboot_confirm_desc">Menampilkan menu Reboot Android daripada Reboot langsung. Memudahkan untuk Reboot ke Recovery di ROM yang memiliki menu Reboot lanjutan.</string> 
+    <!-- Title for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_title">Pengoperasian "Parallel Patching"</string> 
+    <!-- Description for the preference to set the number of parallel patching operations -->
+    <string name="rom_settings_parallel_patching_desc">Saat beberapa file sedang di patch, kerjakan %d pekerjaan bersamaan.</string> 
+
+    <!-- Title for the dialog box explaining individual application sharing -->
+    <string name="indiv_app_sharing_intro_dialog_title">Berbagi Aplikasi</string>
+    <!-- Description for the dialog box explaining individual application sharing -->
+    <string name="indiv_app_sharing_intro_dialog_desc">Berbagi aplikasi memungkinkan data aplikasi disimpan di folder khusus dan dapat digunakan di setiap ROM. Menggunakan data yang di bagikan untuk menyelaraskan data aplikasi antar ROMs (seperti Chrome tab). \n\nCatatan: Reboot harus dilakukan untuk memberikan efeknya.\n\nUntuk menggunakannya, pengaturan berbagi data harus dinyalakan di tiap ROM. Contoh: di Primary ROM, nyalakan setting berbagi untuk aplikasi Chrome. Chrome akan mulai menggunakan data folder khusus untuk dibagikan. Kemudian masuk ke ROM lain dan nyalakan juga setting berbagi untuk aplikasi Chrome. Maka keduanya akan menggunakan data folder yang sama.</string>
+
+    <!-- App label in the individual app sharing screen shown if the app uses shared data -->
+    <string name="indiv_app_sharing_shared_data">Data dibagikan</string> 
+    <!-- App label in the individual app sharing screen shown if the app is not shared -->
+    <string name="indiv_app_sharing_not_shared">Tidak dibagikan</string> 
+
+    <!-- App sharing dialog checkbox text for using shared app data -->
+    <string name="indiv_app_sharing_dialog_share_data">Gunakan data yang di bagikan</string> 
+    <!-- App sharing dialog message shown by default -->
+    <string name="indiv_app_sharing_dialog_default_message">Pilih aplikasi mana yang harus menggunakan folder berbagi data</string>
+    <!-- Message in the app sharing dialog showing the list of ROMs using the shared data -->
+    <string name="indiv_app_sharing_other_roms_using_shared_data">ROMs lain yang menggunakan berbagi data: %s</string> 
+
+    <!-- Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect -->
+    <string name="indiv_app_sharing_reboot_needed_message">Perubahan akan terlihat setelah Reboot selanjutnya.</string>
+
+    <!-- Toast popup message shown when a shared app is uninstalled (and thus becomes unshared) -->
+    <string name="indiv_app_sharing_app_no_longer_shared">Aplikasi \'%s\' tidak lagi di bagikan.</string> 
+
+    <!-- Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled -->
+    <string name="third_party_intents_not_allowed">Menolak pekerjaan dari aplikasi pihak ketiga. Untuk memperbolehkan aplikasi lain mengirimkan pekerjaan, nyalakan opsi di setting DualBootPatcher.</string>
+
+    <!-- Progress dialog message shown when starting mbtool (with root) -->
+    <string name="mbtool_dialog_starting_mbtool">Memulai mbtool…\n(Membutuhkan akses root)</string>
+    <!-- Progress dialog message shown when updating mbtool (with root) -->
+    <string name="mbtool_dialog_updating_mbtool">Memperbarui mbtool…\n(Membutuhkan akses root)</string>
+    <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
+    <string name="mbtool_dialog_signature_check_fail">mbtool menolak koneksi dari app ini. Kemungkinan karena menggunakan versi aplikasi tidak resmi atau karena aplikasi sudah dimodifikasi. Jika ingin dilanjutkan, mbtoll akan di berhentikan dan paket mbtool akan berjalan menggunakan akses root.</string> 
+    <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->
+    <string name="mbtool_dialog_version_too_old">Versi mbtool sekarang terlalu lama. Harus memperbaruinya agar pekerjaan dapat berjalan, seperti mengganti ROMs. Membutuhkan akses root.</string> 
+    <!-- Confirm dialog message shown when updating mbtool failed -->
+    <string name="mbtool_dialog_update_failed">Gagal memperbarui mbtool. Terlalu banyak pekerjaan, mengganti ROM tidak akan berjalan.</string> 
+
+    <!-- Word/phrase for Search (used in action bars) -->
+    <string name="search">Cari</string>
+    <!-- Word/phrase for None (used in eg. a list) -->
+    <string name="none">None</string>
+    <!-- Word/phrase for OK (used in dialog boxes) -->
+    <string name="ok">OK</string>
+    <!-- Word/phrase for Cancel (used in dialog boxes) -->
+    <string name="cancel">Cancel</string>
+    <!-- Word/phrase for Continue (used in dialog boxes) -->
+    <string name="proceed">Lanjutkan</string>
+    <!-- Word/phrase for Yes (used in dialog boxes) -->
+    <string name="yes">Ya</string>
+    <!-- Word/phrase for No (used in dialog boxes) -->
+    <string name="no">Tidak</string>
+    <!-- Word/phrase for try again (used in dialog boxes) -->
+    <string name="try_again">Coba lagi</string>
+    <!-- Reboot now (used in dialog boxes) -->
+    <string name="reboot_now">Reboot sekarang</string>
+    <!-- Reboot later (used in dialog boxes) -->
+    <string name="reboot_later">Reboot nanti</string>
+    <!-- Unknown (used when a value cannot be determined) -->
+    <string name="unknown">Tidak diketahui</string>
+
+    <!-- Text for checkbox in dialogs indicating that the dialog should not be shown again -->
+    <string name="do_not_show_again">Jangan tampilkan ini lagi</string>
+    <!-- Text shown in a progress dialog asking the user to wait -->
+    <string name="please_wait">Tunggu sebentar</string>
+</resources>
