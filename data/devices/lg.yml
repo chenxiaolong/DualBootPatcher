@@ -287,6 +287,38 @@
     max_brightness: 255
     default_brightness: 149
     theme: portrait_hdpi
+    
+    
+    - name: LG G5 (SE)
+id: lgg5
+codenames:
+- h840
+architecture: arm-v7a
+
+block_devs:
+base_dirs:
+- /dev/block/bootdevice/by-name
+- /dev/block/platform/7824900.sdhci/by-name
+system:
+- /dev/block/bootdevice/by-name/system
+- /dev/block/platform/7824900.sdhci/by-name/system
+- /dev/block/mmccblk0p59
+cache:
+- /dev/block/bootdevice/by-name/cache
+- /dev/block/platform/7824900.sdhci/by-name/cache
+- /dev/block/mmccblk0p60
+data:
+- /dev/block/bootdevice/by-name/userdata
+- /dev/block/platform/7824900.sdhci/by-name/userdata
+- /dev/block/mmccblk0p63
+boot:
+- /dev/block/bootdevice/by-name/boot
+- /dev/block/platform/7824900.sdhci/by-name/boot
+- /dev/block/mmccblk0p47
+recovery:
+- /dev/block/bootdevice/by-name/recovery
+- /dev/block/platform/7824900.sdhci/by-name/recovery
+- /dev/block/mmccblk0p48
 
 
 - name: LG V20 (T-Mobile)
