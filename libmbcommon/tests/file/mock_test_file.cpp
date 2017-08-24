@@ -106,7 +106,7 @@ bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     switch (whence) {
     case SEEK_SET:
         if (offset < 0) {
-            set_error(mb::make_error_code(mb::FileError::InvalidArgument),
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
                       "Invalid SEET_SET offset %" PRId64, offset);
             return false;
         }
@@ -114,7 +114,7 @@ bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         break;
     case SEEK_CUR:
         if (offset < 0 && static_cast<size_t>(-offset) > _position) {
-            set_error(mb::make_error_code(mb::FileError::InvalidArgument),
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
                       "Invalid SEEK_CUR offset %" PRId64
                       " for position %" MB_PRIzu, offset, _position);
             return false;
@@ -123,7 +123,7 @@ bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         break;
     case SEEK_END:
         if (offset < 0 && static_cast<size_t>(-offset) > _buf.size()) {
-            set_error(mb::make_error_code(mb::FileError::InvalidArgument),
+            set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
                       "Invalid SEEK_END offset %" PRId64
                       " for file of size %" MB_PRIzu, offset, _buf.size());
             return false;
@@ -131,7 +131,7 @@ bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         new_offset = _position = _buf.size() + offset;
         break;
     default:
-        set_error(mb::make_error_code(mb::FileError::InvalidArgument),
+        set_error(mb::make_error_code(mb::FileError::InvalidWhence),
                   "Invalid whence argument: %d", whence);
         return false;
     }

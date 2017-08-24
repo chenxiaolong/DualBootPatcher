@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.CWrapper.CDevice;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.CWrapper.CJsonError;
+import com.sun.jna.IntegerType;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
@@ -51,6 +52,16 @@ public class LibMbDevice {
         }
 
         public static class CJsonError extends PointerType {}
+
+        public static class SizeT extends IntegerType {
+            public SizeT() {
+                this(0);
+            }
+
+            public SizeT(long value) {
+                super(Native.SIZE_T_SIZE, value, true);
+            }
+        }
 
         // BEGIN: device.h
         static native CDevice mb_device_new();
@@ -159,11 +170,11 @@ public class LibMbDevice {
         static native void mb_device_json_error_free(CJsonError error);
 
         static native /* uint16_t */ short mb_device_json_error_type(CJsonError error);
-        static native int mb_device_json_error_line(CJsonError error);
-        static native int mb_device_json_error_column(CJsonError error);
-        static native /* char * */ Pointer mb_device_json_error_context(CJsonError error);
-        static native /* char * */ Pointer mb_device_json_error_expected_type(CJsonError error);
-        static native /* char * */ Pointer mb_device_json_error_actual_type(CJsonError error);
+        static native /* size_t */ SizeT mb_device_json_error_offset(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_message(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_schema_uri(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_schema_keyword(CJsonError error);
+        static native /* char * */ Pointer mb_device_json_error_document_uri(CJsonError error);
 
         static native CDevice mb_device_new_from_json(String json, CJsonError error);
 
@@ -236,32 +247,36 @@ public class LibMbDevice {
             return CWrapper.mb_device_json_error_type(mCJsonError);
         }
 
-        public int line() {
-            return CWrapper.mb_device_json_error_line(mCJsonError);
+        public long offset() {
+            return CWrapper.mb_device_json_error_offset(mCJsonError).longValue();
         }
 
-        public int column() {
-            return CWrapper.mb_device_json_error_column(mCJsonError);
-        }
-
-        public String context() {
-            Pointer p = CWrapper.mb_device_json_error_context(mCJsonError);
+        public String message() {
+            Pointer p = CWrapper.mb_device_json_error_message(mCJsonError);
             if (p == null) {
                 return null;
             }
             return LibC.getStringAndFree(p);
         }
 
-        public String expectedType() {
-            Pointer p = CWrapper.mb_device_json_error_expected_type(mCJsonError);
+        public String schemaUri() {
+            Pointer p = CWrapper.mb_device_json_error_schema_uri(mCJsonError);
             if (p == null) {
                 return null;
             }
             return LibC.getStringAndFree(p);
         }
 
-        public String actualType() {
-            Pointer p = CWrapper.mb_device_json_error_actual_type(mCJsonError);
+        public String schemaKeyword() {
+            Pointer p = CWrapper.mb_device_json_error_schema_keyword(mCJsonError);
+            if (p == null) {
+                return null;
+            }
+            return LibC.getStringAndFree(p);
+        }
+
+        public String documentUri() {
+            Pointer p = CWrapper.mb_device_json_error_document_uri(mCJsonError);
             if (p == null) {
                 return null;
             }

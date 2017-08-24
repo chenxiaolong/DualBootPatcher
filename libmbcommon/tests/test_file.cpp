@@ -507,10 +507,10 @@ TEST(FileTest, SetError)
     ASSERT_EQ(file._priv_func()->error_code, std::error_code());
     ASSERT_TRUE(file._priv_func()->error_string.empty());
 
-    ASSERT_TRUE(file.set_error(mb::make_error_code(mb::FileError::InvalidArgument),
+    ASSERT_TRUE(file.set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
                                "%s, %s!", "Hello", "world"));
 
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidArgument);
+    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file._priv_func()->error_string.find("Hello, world!"),
               std::string::npos);
     ASSERT_EQ(file.error(), file._priv_func()->error_code);

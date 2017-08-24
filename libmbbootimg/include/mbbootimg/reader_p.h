@@ -21,130 +21,86 @@
 
 #include "mbbootimg/guard_p.h"
 
-#ifdef __cplusplus
-#  include <string>
+#include <string>
+#include <vector>
 
-#  include <cstddef>
-#else
-#  include <stddef.h>
-#endif
+#include <cstddef>
 
 #include "mbcommon/common.h"
 #include "mbcommon/file.h"
 
-#define READER_ENSURE_STATE(INSTANCE, STATES) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_reader_set_error((INSTANCE), \
-                                   MB_BI_ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = ReaderState::FATAL; \
-            return MB_BI_FATAL; \
-        } \
-    } while (0)
+#include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
 
-#define READER_ENSURE_STATE_GOTO(INSTANCE, STATES, RETURN_VAR, LABEL) \
-    do { \
-        if (!((INSTANCE)->state & (STATES))) { \
-            mb_bi_reader_set_error((INSTANCE), \
-                                   MB_BI_ERROR_PROGRAMMER_ERROR, \
-                                   "%s: Invalid state: " \
-                                   "expected 0x%x, actual: 0x%hx", \
-                                   __func__, (STATES), (INSTANCE)->state); \
-            (INSTANCE)->state = ReaderState::FATAL; \
-            (RETURN_VAR) = MB_BI_FATAL; \
-            goto LABEL; \
-        } \
-    } while (0)
-
-#define MAX_FORMATS     10
-
-MB_BEGIN_C_DECLS
-
-struct MbBiReader;
-struct MbBiEntry;
-struct MbBiHeader;
-
-typedef int (*FormatReaderBidder)(struct MbBiReader *bir, void *userdata,
-                                  int best_bid);
-typedef int (*FormatReaderSetOption)(struct MbBiReader *bir, void *userdata,
-                                     const char *key, const char *value);
-typedef int (*FormatReaderReadHeader)(struct MbBiReader *bir, void *userdata,
-                                      struct MbBiHeader *header);
-typedef int (*FormatReaderReadEntry)(struct MbBiReader *bir, void *userdata,
-                                     struct MbBiEntry *entry);
-typedef int (*FormatReaderGoToEntry)(struct MbBiReader *bir, void *userdata,
-                                     struct MbBiEntry *entry, int entry_type);
-typedef int (*FormatReaderReadData)(struct MbBiReader *bir, void *userdata,
-                                    void *buf, size_t buf_size,
-                                    size_t &bytes_read);
-typedef int (*FormatReaderFree)(struct MbBiReader *bir, void *userdata);
-
-struct FormatReader
+namespace mb
 {
-    int type;
-    char *name;
+namespace bootimg
+{
 
-    // Callbacks
-    FormatReaderBidder bidder_cb;
-    FormatReaderSetOption set_option_cb;
-    FormatReaderReadHeader read_header_cb;
-    FormatReaderReadEntry read_entry_cb;
-    FormatReaderGoToEntry go_to_entry_cb;
-    FormatReaderReadData read_data_cb;
-    FormatReaderFree free_cb;
-    void *userdata;
+constexpr size_t MAX_FORMATS = 10;
+
+class FormatReader
+{
+public:
+    FormatReader(Reader &reader);
+    virtual ~FormatReader();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FormatReader)
+
+    virtual int type() = 0;
+    virtual std::string name() = 0;
+
+    virtual int init();
+    virtual int set_option(const char *key, const char *value);
+    virtual int bid(File &file, int best_bid) = 0;
+    virtual int read_header(File &file, Header &header) = 0;
+    virtual int read_entry(File &file, Entry &entry) = 0;
+    virtual int go_to_entry(File &file, Entry &entry, int entry_type);
+    virtual int read_data(File &file, void *buf, size_t buf_size,
+                          size_t &bytes_read) = 0;
+
+protected:
+    Reader &_reader;
 };
 
-enum ReaderState : unsigned short
+enum class ReaderState : uint8_t
 {
-    NEW             = 1U << 1,
-    HEADER          = 1U << 2,
-    ENTRY           = 1U << 3,
-    DATA            = 1U << 4,
-    CLOSED          = 1U << 5,
-    FATAL           = 1U << 6,
-    // Grouped
-    ANY_NONFATAL    = NEW | HEADER | ENTRY | DATA | CLOSED,
-    ANY             = ANY_NONFATAL | FATAL,
+    New     = 1u << 1,
+    Header  = 1u << 2,
+    Entry   = 1u << 3,
+    Data    = 1u << 4,
+    Closed  = 1u << 5,
+    Fatal   = 1u << 6,
 };
+MB_DECLARE_FLAGS(ReaderStates, ReaderState)
+MB_DECLARE_OPERATORS_FOR_FLAGS(ReaderStates)
 
-struct MbBiReader
+class ReaderPrivate
 {
+    MB_DECLARE_PUBLIC(Reader)
+
+public:
+    ReaderPrivate(Reader *reader);
+
+    int register_format(std::unique_ptr<FormatReader> format);
+
+    Reader *_pub_ptr;
+
     // Global state
     ReaderState state;
 
     // File
-    mb::File *file;
-    bool file_owned;
+    std::unique_ptr<File> owned_file;
+    File *file;
 
     // Error
-    int error_code;
+    std::error_code error_code;
     std::string error_string;
 
-    struct FormatReader formats[MAX_FORMATS];
-    size_t formats_len;
-    struct FormatReader *format;
-
-    struct MbBiHeader *header;
-    struct MbBiEntry *entry;
+    std::vector<std::unique_ptr<FormatReader>> formats;
+    FormatReader *format;
 };
 
-int _mb_bi_reader_register_format(struct MbBiReader *bir,
-                                  void *userdata,
-                                  int type,
-                                  const char *name,
-                                  FormatReaderBidder bidder_cb,
-                                  FormatReaderSetOption set_option_cb,
-                                  FormatReaderReadHeader read_header_cb,
-                                  FormatReaderReadEntry read_entry_cb,
-                                  FormatReaderGoToEntry go_to_entry_cb,
-                                  FormatReaderReadData read_data_cb,
-                                  FormatReaderFree free_cb);
-
-int _mb_bi_reader_free_format(struct MbBiReader *bir,
-                              struct FormatReader *format);
-
-MB_END_C_DECLS
+}
+}

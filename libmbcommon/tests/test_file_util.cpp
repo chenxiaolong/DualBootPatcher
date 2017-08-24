@@ -247,7 +247,7 @@ TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
 
     ASSERT_FALSE(mb::file_search(file, 20, 10, 0, "x", 1, -1, &_result_cb,
                                  this));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("offset"), std::string::npos);
 }
 
@@ -280,7 +280,7 @@ TEST_F(FileSearchTest, CheckBufferSize)
     // Too small
     ASSERT_FALSE(mb::file_search(file, -1, -1, 1, "xxx", 3, -1, &_result_cb,
                                  this));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::ArgumentOutOfRange);
     ASSERT_NE(file.error_string().find("Buffer size"), std::string::npos);
 
     // Equal to pattern size

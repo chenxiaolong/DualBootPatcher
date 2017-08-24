@@ -177,7 +177,7 @@ TEST_F(FileFdTest, OpenFilenameMbsInvalidMode)
 {
     TestableFdFile file(&_funcs);
     ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
 }
 
 TEST_F(FileFdTest, OpenFilenameWcsSuccess)
@@ -218,7 +218,7 @@ TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
 {
     TestableFdFile file(&_funcs);
     ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidArgument);
+    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
 }
 
 TEST_F(FileFdTest, OpenFstatFailed)

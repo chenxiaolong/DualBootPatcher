@@ -3,20 +3,29 @@ if(NOT MBP_TOP_LEVEL_BUILD)
 endif()
 
 set(files
+    360.yml
+    alcatel.yml
     ark.yml
     asus.yml
+    cagabi.yml
     cherrymobile.yml
     coolpad.yml
     dexp.yml
+    doogee.yml
     elephone.yml
+    gionee.yml
     google.yml
+    gree.yml
     htc.yml
     huawei.yml
     infinix.yml
+    infocus.yml
     jiayu.yml
     leeco.yml
+    leagoo.yml
     lenovo.yml
     lg.yml
+    micromax.yml
     meizu.yml
     motorola.yml
     nokia.yml
@@ -36,9 +45,18 @@ set(files
     samsung/06_galaxy_note_tablet.yml
     samsung/07_other.yml
     sony.yml
+    symphony.yml
+    tecno.yml
     umi.yml
+    walton.yml
+    wiko.yml
     wileyfox.yml
-    xiaomi.yml
+    xiaomi/00_mi.yml
+    xiaomi/01_mi_note.yml
+    xiaomi/02_mi_max.yml
+    xiaomi/03_redmi.yml
+    xiaomi/04_redmi_note.yml
+    xiaomi/05_other.yml
     yu.yml
     zte.yml
     zuk.yml

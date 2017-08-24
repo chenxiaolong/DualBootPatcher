@@ -24,119 +24,171 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/entry_p.h"
 
-typedef std::unique_ptr<MbBiEntry, decltype(mb_bi_entry_free) *> ScopedEntry;
+using namespace mb::bootimg;
 
 
 TEST(BootImgEntryTest, CheckDefaultValues)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry;
 
-    // Check private fields
-    ASSERT_EQ(entry->fields_set, 0u);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0u);
-
-    // Check public API
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
-    ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
-    ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
+    ASSERT_FALSE(entry.type());
+    ASSERT_FALSE(entry.name());
+    ASSERT_FALSE(entry.size());
 }
 
 TEST(BootImgEntryTest, CheckGettersSetters)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry;
 
     // Type field
 
-    mb_bi_entry_set_type(entry.get(), 1234);
-    ASSERT_TRUE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_TYPE);
-    ASSERT_EQ(entry->field.type, 1234);
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 1234);
+    entry.set_type(1234);
+    auto type = entry.type();
+    ASSERT_TRUE(type);
+    ASSERT_EQ(*type, 1234);
 
-    mb_bi_entry_unset_type(entry.get());
-    ASSERT_FALSE(mb_bi_entry_type_is_set(entry.get()));
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_TYPE);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(mb_bi_entry_type(entry.get()), 0);
+    entry.set_type({});
+    ASSERT_FALSE(entry.type());
 
     // Name field
 
-    mb_bi_entry_set_name(entry.get(), "Hello, world!");
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_NAME);
-    ASSERT_STREQ(entry->field.name, "Hello, world!");
-    ASSERT_STREQ(mb_bi_entry_name(entry.get()), "Hello, world!");
+    entry.set_name({"Hello, world!"});
+    auto name = entry.name();
+    ASSERT_TRUE(name);
+    ASSERT_EQ(*name, "Hello, world!");
 
-    mb_bi_entry_set_name(entry.get(), nullptr);
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_NAME);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(mb_bi_entry_name(entry.get()), nullptr);
+    entry.set_name({});
+    ASSERT_FALSE(entry.name());
 
     // Size field
 
-    mb_bi_entry_set_size(entry.get(), 1234);
-    ASSERT_TRUE(mb_bi_entry_size_is_set(entry.get()));
-    ASSERT_TRUE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 1234u);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 1234u);
+    entry.set_size(1234);
+    auto size = entry.size();
+    ASSERT_TRUE(size);
+    ASSERT_EQ(*size, 1234u);
 
-    mb_bi_entry_unset_size(entry.get());
-    ASSERT_FALSE(mb_bi_entry_size_is_set(entry.get()));
-    ASSERT_FALSE(entry->fields_set & MB_BI_ENTRY_FIELD_SIZE);
-    ASSERT_EQ(entry->field.size, 0u);
-    ASSERT_EQ(mb_bi_entry_size(entry.get()), 0u);
+    entry.set_size({});
+    ASSERT_FALSE(entry.size());
 }
 
-TEST(BootImgEntryTest, CheckClone)
+TEST(BootImgEntryTest, CheckCopyConstructAndAssign)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry;
 
-    // Set fields
-    entry->fields_set =
-            MB_BI_ENTRY_FIELD_TYPE
-            | MB_BI_ENTRY_FIELD_NAME
-            | MB_BI_ENTRY_FIELD_SIZE;
-    entry->field.type = 1;
-    entry->field.name = strdup("test");
-    ASSERT_NE(entry->field.name, nullptr);
-    entry->field.size = 1024;
+    entry.set_type(1);
+    entry.set_name({"test"});
+    entry.set_size(1024);
 
-    ScopedEntry dup(mb_bi_entry_clone(entry.get()), mb_bi_entry_free);
-    ASSERT_TRUE(!!dup);
+    {
+        Entry entry2{entry};
 
-    // Compare values
-    ASSERT_EQ(entry->fields_set, dup->fields_set);
-    ASSERT_EQ(entry->field.type, dup->field.type);
-    ASSERT_NE(entry->field.name, dup->field.name);
-    ASSERT_STREQ(entry->field.name, dup->field.name);
-    ASSERT_EQ(entry->field.size, dup->field.size);
+        auto type = entry2.type();
+        ASSERT_TRUE(type);
+        ASSERT_EQ(*type, 1);
+        auto name = entry2.name();
+        ASSERT_TRUE(name);
+        ASSERT_EQ(*name, "test");
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
+
+    {
+        Entry entry2;
+        entry2 = entry;
+
+        auto type = entry2.type();
+        ASSERT_TRUE(type);
+        ASSERT_EQ(*type, 1);
+        auto name = entry2.name();
+        ASSERT_TRUE(name);
+        ASSERT_EQ(*name, "test");
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+    }
+}
+
+TEST(BootImgEntryTest, CheckMoveConstructAndAssign)
+{
+    Entry entry;
+
+    {
+        entry.set_type(1);
+        entry.set_name({"test"});
+        entry.set_size(1024);
+
+        Entry entry2{std::move(entry)};
+
+        auto type = entry2.type();
+        ASSERT_TRUE(type);
+        ASSERT_EQ(*type, 1);
+        auto name = entry2.name();
+        ASSERT_TRUE(name);
+        ASSERT_EQ(*name, "test");
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+
+        ASSERT_FALSE(entry.type());
+        ASSERT_FALSE(entry.name());
+        ASSERT_FALSE(entry.size());
+    }
+
+    {
+        entry.set_type(1);
+        entry.set_name({"test"});
+        entry.set_size(1024);
+
+        Entry entry2;
+        entry2 = std::move(entry);
+
+        auto type = entry2.type();
+        ASSERT_TRUE(type);
+        ASSERT_EQ(*type, 1);
+        auto name = entry2.name();
+        ASSERT_TRUE(name);
+        ASSERT_EQ(*name, "test");
+        auto size = entry2.size();
+        ASSERT_TRUE(size);
+        ASSERT_EQ(*size, 1024u);
+
+        ASSERT_FALSE(entry.type());
+        ASSERT_FALSE(entry.name());
+        ASSERT_FALSE(entry.size());
+    }
+}
+
+TEST(BootImgEntryTest, CheckEquality)
+{
+    Entry entry;
+
+    entry.set_type(1);
+    entry.set_name({"test"});
+    entry.set_size(1024);
+
+    Entry entry2;
+
+    entry2.set_type(1);
+    entry2.set_name({"test"});
+    entry2.set_size(1024);
+
+    ASSERT_EQ(entry, entry2);
+    entry2.set_type(2);
+    ASSERT_NE(entry, entry2);
 }
 
 TEST(BootImgEntryTest, CheckClear)
 {
-    ScopedEntry entry(mb_bi_entry_new(), mb_bi_entry_free);
-    ASSERT_TRUE(!!entry);
+    Entry entry;
 
-    // Set fields
-    entry->fields_set =
-            MB_BI_ENTRY_FIELD_TYPE
-            | MB_BI_ENTRY_FIELD_NAME
-            | MB_BI_ENTRY_FIELD_SIZE;
-    entry->field.type = 1;
-    entry->field.name = strdup("test");
-    ASSERT_NE(entry->field.name, nullptr);
-    entry->field.size = 1024;
+    entry.set_type(1);
+    entry.set_name({"test"});
+    entry.set_size(1024);
 
-    mb_bi_entry_clear(entry.get());
+    entry.clear();
 
-    ASSERT_EQ(entry->fields_set, 0u);
-    ASSERT_EQ(entry->field.type, 0);
-    ASSERT_EQ(entry->field.name, nullptr);
-    ASSERT_EQ(entry->field.size, 0u);
+    ASSERT_FALSE(entry.type());
+    ASSERT_FALSE(entry.name());
+    ASSERT_FALSE(entry.size());
 }

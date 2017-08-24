@@ -23,63 +23,64 @@
 
 #include <getopt.h>
 
-#include <jansson.h>
+#include <rapidjson/filewritestream.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/writer.h>
 #include <yaml-cpp/yaml.h>
 
 #include "mbdevice/json.h"
+#include "mbdevice/schema.h"
 
 
-using ScopedJsonT = std::unique_ptr<json_t, decltype(json_decref) *>;
-using ScopedCharArray = std::unique_ptr<char, decltype(free) *>;
+using namespace rapidjson;
 
 using namespace mb::device;
 
-static void * xmalloc(size_t size)
-{
-    void *result = malloc(size);
-    if (!result) {
-        abort();
-    }
-    return result;
-}
-
-static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
+template<typename Allocator>
+static Value yaml_node_to_json(const YAML::Node &yaml_node, Allocator &alloc)
 {
     switch (yaml_node.Type()) {
     case YAML::NodeType::Null:
-        return json_object();
+        return Value(kNullType);
 
-    case YAML::NodeType::Scalar:
+    case YAML::NodeType::Scalar: {
+        Value value;
         try {
-            return json_integer(yaml_node.as<json_int_t>());
+            value.SetInt64(yaml_node.as<int64_t>());
+            return value;
         } catch (const YAML::BadConversion &e) {}
         try {
-            return json_real(yaml_node.as<double>());
+            value.SetDouble(yaml_node.as<double>());
+            return value;
         } catch (const YAML::BadConversion &e) {}
         try {
-            return json_boolean(yaml_node.as<bool>());
+            value.SetBool(yaml_node.as<bool>());
+            return value;
         } catch (const YAML::BadConversion &e) {}
         try {
-            return json_string(yaml_node.as<std::string>().c_str());
+            value.SetString(yaml_node.as<std::string>(), alloc);
+            return value;
         } catch (const YAML::BadConversion &e) {}
         throw std::runtime_error("Cannot convert scalar value to known type");
+    }
 
     case YAML::NodeType::Sequence: {
-        json_t *array = json_array();
+        Value array(kArrayType);
 
         for (auto const &item : yaml_node) {
-            json_array_append_new(array, yaml_node_to_json_node(item));
+            array.PushBack(yaml_node_to_json(item, alloc), alloc);
         }
 
         return array;
     }
 
     case YAML::NodeType::Map: {
-        json_t *object = json_object();
+        Value object(kObjectType);
 
         for (auto const &item : yaml_node) {
-            json_object_set_new(object, item.first.as<std::string>().c_str(),
-                                yaml_node_to_json_node(item.second));
+            Value key;
+            key.SetString(item.first.as<std::string>(), alloc);
+            object.AddMember(key, yaml_node_to_json(item.second, alloc), alloc);
         }
 
         return object;
@@ -91,114 +92,76 @@ static json_t * yaml_node_to_json_node(const YAML::Node &yaml_node)
     }
 }
 
-static void print_json_error(const std::string &path, const JsonError &error)
+template<typename Allocator>
+static bool convert_files(int argc, char *argv[], Value &value,
+                          Allocator &alloc)
 {
-    fprintf(stderr, "%s: Error: ", path.c_str());
+    value.SetArray();
 
-    switch (error.type) {
-    case JsonErrorType::ParseError:
-        fprintf(stderr, "Failed to parse generated JSON\n");
-        break;
-    case JsonErrorType::MismatchedType:
-        fprintf(stderr, "Expected %s, but found %s at %s\n",
-                error.expected_type.c_str(), error.actual_type.c_str(),
-                error.context.c_str());
-        break;
-    case JsonErrorType::UnknownKey:
-        fprintf(stderr, "Unknown key at %s\n", error.context.c_str());
-        break;
-    case JsonErrorType::UnknownValue:
-        fprintf(stderr, "Unknown value at %s\n", error.context.c_str());
-        break;
-    default:
-        fprintf(stderr, "Unknown error\n");
-        break;
-    }
-}
+    for (int i = 0; i < argc; ++i) {
+        try {
+            YAML::Node root = YAML::LoadFile(argv[i]);
 
-static void print_validation_error(const std::string &path,
-                                   const std::string &id,
-                                   ValidateFlags flags)
-{
-    fprintf(stderr, "%s: [%s] Error during validation (0x%" PRIx64 "):\n",
-            path.c_str(), id.empty() ? "unknown" : id.c_str(),
-            static_cast<uint64_t>(flags));
-
-    struct {
-        ValidateFlag flag;
-        const char *msg;
-    } mappings[] = {
-        { ValidateFlag::MissingId,                     "Missing device ID" },
-        { ValidateFlag::MissingCodenames,              "Missing device codenames" },
-        { ValidateFlag::MissingName,                   "Missing device name" },
-        { ValidateFlag::MissingArchitecture,           "Missing device architecture" },
-        { ValidateFlag::MissingSystemBlockDevs,        "Missing system block device paths" },
-        { ValidateFlag::MissingCacheBlockDevs,         "Missing cache block device paths" },
-        { ValidateFlag::MissingDataBlockDevs,          "Missing data block device paths" },
-        { ValidateFlag::MissingBootBlockDevs,          "Missing boot block device paths" },
-        { ValidateFlag::MissingRecoveryBlockDevs,      "Missing recovery block device paths" },
-        { ValidateFlag::MissingBootUiTheme,            "Missing Boot UI theme" },
-        { ValidateFlag::MissingBootUiGraphicsBackends, "Missing Boot UI graphics backends" },
-        { ValidateFlag::InvalidArchitecture,           "Invalid device architecture" },
-        { ValidateFlag::InvalidFlags,                  "Invalid device flags" },
-        { ValidateFlag::InvalidBootUiFlags,            "Invalid Boot UI flags" },
-        { static_cast<ValidateFlag>(0),                nullptr },
-    };
-
-    for (auto it = mappings; it->msg; ++it) {
-        if (flags & it->flag) {
-            fprintf(stderr, "- %s\n", it->msg);
-            flags &= ~ValidateFlags(it->flag);
-        }
-    }
-
-    if (flags) {
-        fprintf(stderr, "- Unknown remaining flags (0x%" PRIx64 ")",
-                static_cast<uint64_t>(flags));
-    }
-}
-
-static bool validate(const std::string &path, const std::string &json,
-                     bool is_array)
-{
-    JsonError error;
-
-    if (is_array) {
-        std::vector<Device> devices;
-
-        if (!device_list_from_json(json, devices, error)) {
-            print_json_error(path, error);
-            return false;
-        }
-
-        bool failed = false;
-
-        for (auto const &device : devices) {
-            auto flags = device.validate();
-            if (flags) {
-                print_validation_error(path, device.id(), flags);
-                failed = true;
+            if (root.Type() != YAML::NodeType::Sequence) {
+                fprintf(stderr, "%s: Root is not an array\n", argv[i]);
+                return false;
             }
-        }
 
-        if (failed) {
-            return false;
-        }
-    } else {
-        Device device;
-
-        if (!device_from_json(json, device, error)) {
-            print_json_error(path, error);
-            return false;
-        }
-
-        auto flags = device.validate();
-        if (flags) {
-            print_validation_error(path, device.id(), flags);
+            for (auto const &item : root) {
+                value.PushBack(yaml_node_to_json(item, alloc), alloc);
+            }
+        } catch (const std::exception &e) {
+            fprintf(stderr, "%s: Failed to convert file: %s\n",
+                    argv[i], e.what());
             return false;
         }
     }
 
+    return true;
+}
+
+template<typename Writer>
+static bool validate_and_write(Document &d, const SchemaDocument &sd,
+                               Writer &writer)
+{
+    GenericSchemaValidator<SchemaDocument, Writer> sv(sd, writer);
+    if (!d.Accept(sv)) {
+        if (!sv.IsValid()) {
+            StringBuffer sb;
+            fprintf(stderr, "Schema validation failed:\n");
+            sv.GetInvalidSchemaPointer().StringifyUriFragment(sb);
+            fprintf(stderr, "- Schema URI: %s\n", sb.GetString());
+            sb.Clear();
+            fprintf(stderr, "- Schema keyword: %s\n", sv.GetInvalidSchemaKeyword());
+            sv.GetInvalidDocumentPointer().StringifyUriFragment(sb);
+            fprintf(stderr, "- Document URI: %s\n", sb.GetString());
+
+            // Try to dump parent
+            std::string ref{sb.GetString(), sb.GetSize()};
+            auto pos = ref.rfind("/");
+            if (pos != std::string::npos) {
+                ref.erase(pos);
+            }
+
+            if (Value *value = Pointer(ref).Get(d)) {
+                fprintf(stderr, "Parent of offending JSON value:\n");
+
+                char write_buf[65536];
+                FileWriteStream os(stderr, write_buf, sizeof(write_buf));
+                PrettyWriter<FileWriteStream> writer(os);
+
+                if (!value->Accept(writer)) {
+                    fprintf(stderr, "Failed to write JSON snippet\n");
+                }
+
+                fputc('\n', stderr);
+            }
+        } else {
+            fprintf(stderr, "Failed to write JSON\n");
+        }
+
+        return false;
+    }
     return true;
 }
 
@@ -257,38 +220,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    json_set_alloc_funcs(&xmalloc, &free);
-
-    ScopedJsonT json_root(json_array(), &json_decref);
-
-    for (int i = optind; i < argc; ++i) {
-        try {
-            YAML::Node root = YAML::LoadFile(argv[i]);
-            ScopedJsonT node(yaml_node_to_json_node(root), json_decref);
-            ScopedCharArray output(json_dumps(node.get(), JSON_COMPACT), &free);
-
-            bool valid = validate(argv[i], output.get(), json_is_array(node));
-            if (!valid) {
-                return EXIT_FAILURE;
-            }
-
-            if (json_is_array(node)) {
-                size_t index;
-                json_t *elem;
-
-                json_array_foreach(node.get(), index, elem) {
-                    json_array_append(json_root.get(), elem);
-                }
-            } else {
-                json_array_append_new(json_root.get(), node.release());
-            }
-        } catch (const std::exception &e) {
-            fprintf(stderr, "%s: Failed to convert file: %s\n",
-                    argv[i], e.what());
-            return EXIT_FAILURE;
-        }
-    }
-
     FILE *fp = stdout;
 
     if (output_file) {
@@ -300,16 +231,30 @@ int main(int argc, char *argv[])
         }
     }
 
-    ScopedCharArray output(nullptr, &free);
-    if (styled) {
-        output.reset(json_dumps(json_root.get(),
-                                JSON_INDENT(4) | JSON_SORT_KEYS));
-    } else {
-        output.reset(json_dumps(json_root.get(), JSON_COMPACT));
+    char write_buf[65536];
+    FileWriteStream os(fp, write_buf, sizeof(write_buf));
+    bool ret;
+
+    DeviceSchemaProvider<> sp;
+    const SchemaDocument *sd = sp.GetSchema("device_list.json");
+    if (!sd) {
+        assert(false);
+        return EXIT_FAILURE;
     }
 
-    if (fputs(output.get(), fp) == EOF) {
-        fprintf(stderr, "Failed to write JSON: %s\n", strerror(errno));
+    Document d;
+    auto &alloc = d.GetAllocator();
+
+    if (!convert_files(argc - optind, argv + optind, d, alloc)) {
+        return EXIT_FAILURE;
+    }
+
+    if (styled) {
+        PrettyWriter<FileWriteStream> writer(os);
+        ret = validate_and_write(d, *sd, writer);
+    } else {
+        Writer<FileWriteStream> writer(os);
+        ret = validate_and_write(d, *sd, writer);
     }
 
     if (output_file) {
@@ -320,5 +265,5 @@ int main(int argc, char *argv[])
         }
     }
 
-    return EXIT_SUCCESS;
+    return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
