@@ -20,8 +20,10 @@ if(MBP_TOP_LEVEL_BUILD)
     # devices' ramdisks.
     if(${MBP_SYSTEM_BUILD_TYPE} STREQUAL debug)
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Debug)
+        set(install_target install)
     else()
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Release)
+        set(install_target install/strip)
     endif()
 
     # List of ExternalProject directories to run "make clean" in
@@ -84,7 +86,7 @@ if(MBP_TOP_LEVEL_BUILD)
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
             CMAKE_ARGS ${INTERNAL_ANDROID_SYSTEM_OPTIONS}
             BUILD_ALWAYS 1
-            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${install_target}
             VERBATIM
         )
 
@@ -136,7 +138,7 @@ if(MBP_TOP_LEVEL_BUILD)
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
                 CMAKE_ARGS ${INTERNAL_ANDROID_APP_OPTIONS}
                 BUILD_ALWAYS 1
-                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${install_target}
                 VERBATIM
             )
 
