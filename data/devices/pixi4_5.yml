@@ -1,0 +1,52 @@
+---
+- name: Alcatel Pixi 4(5) 5010
+  id: pixi4_5
+  codenames:
+    - pixi4_5
+    - 5010
+    - 5010G
+    - 5010D
+    - 5010E
+    - 5010S
+    - 5010X
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/boot
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/recovery
+      - /dev/block/mmcblk0p9
+    #extra:
+      #- /dev/block/platform/msm_sdcc.1/by-name/aboot
+
+ #(optional).
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+    pixel_format: DEFAULT
+    force_pixel_format: NONE
+    overscan_percent: 0
+    default_x_offset: 0
+    default_y_offset: 0
+    # TWRP max brightness (optional).
+    max_brightness: 255
+    # TWRP default brightness (optional).
+    default_brightness: 128
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
