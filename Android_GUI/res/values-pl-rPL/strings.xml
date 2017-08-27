@@ -318,7 +318,7 @@ ukośnik ( \"/\") lub \".\" lub \"..\".</string>
   <!--Patcher options dialog title-->
   <string name="patcher_options_dialog_title">Opcje patchera</string>
   <!--Name for primary ROM upgrade installation location-->
-  <string name="install_location_primary_upgrade">Aktualizacja Głównego ROMu</string>
+  <string name="install_location_primary_upgrade">Aktualizacja głównego ROMu</string>
   <!--Description for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade_desc">Zaktualizuj główny ROM bez wpływu na inne
         ROMy</string>
