@@ -197,9 +197,9 @@ std::string path_join(const std::vector<std::string> &components)
  *   piece and the '..' (eg. 'a/b/..' -> 'a')
  *
  * \note This function will not treat '.' pieces specially as they should have
- *       been stripped out by \link util::path_split. If the path pieces are
- *       manually created, take care to not add '.'. Otherwise, the result will
- *       be incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
+ *       been stripped out by path_split(). If the path pieces are manually
+ *       created, take care to not add '.'. Otherwise, the result will be
+ *       incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
  *
  * \param components Pointer to list of path pieces
  */
@@ -331,11 +331,11 @@ int path_compare(const std::string &path1, const std::string &path2)
 
 bool wait_for_path(const char *path, unsigned int timeout_ms)
 {
-    uint64_t until = util::current_time_ms() + timeout_ms;
+    uint64_t until = current_time_ms() + timeout_ms;
     struct stat sb;
     int ret;
 
-    while ((ret = stat(path, &sb)) < 0 && util::current_time_ms() < until) {
+    while ((ret = stat(path, &sb)) < 0 && current_time_ms() < until) {
         usleep(10000);
     }
 

@@ -174,7 +174,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // FOTAKernel partition is listed, it will be used instead of the combined
     // ramdisk from the boot image
     bool combined = _device.flags()
-            & mb::device::DeviceFlag::HasCombinedBootAndRecovery;
+            & device::DeviceFlag::HasCombinedBootAndRecovery;
     if (combined && block_dev.empty()) {
         block_dev = _boot_block_dev;
         using_boot = true;
@@ -321,7 +321,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     {
-        std::string tmpfile = mb::format("%s.XXXXXX", output_dir.c_str());
+        std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
         int tmpfd = mkstemp(&tmpfile[0]);
         if (tmpfd < 0) {
@@ -392,8 +392,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
 
         if (nested) {
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
-                std::string tmpfile = mb::format(
-                        "%s.XXXXXX", output_dir.c_str());
+                std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
                 int tmpfd = mkstemp(&tmpfile[0]);
                 if (tmpfd < 0) {
@@ -415,7 +414,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
         } else {
             if (strcmp(path, "default.prop") == 0) {
                 path = "default.recovery.prop";
-            } else if (!mb::starts_with(path, "sbin/")) {
+            } else if (!starts_with(path, "sbin/")) {
                 continue;
             }
 

@@ -657,12 +657,12 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        if (!mb::file_read_fully(fin, buf, to_read, n) || n != to_read) {
+        if (!file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        if (!mb::file_write_fully(fout, buf, to_read, n) || n != to_read) {
+        if (!file_write_fully(fout, buf, to_read, n) || n != to_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
@@ -680,14 +680,14 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     size_t n_written;
 
     while (true) {
-        if (!mb::file_read_fully(fin, buf, sizeof(buf), n_read)) {
+        if (!file_read_fully(fin, buf, sizeof(buf), n_read)) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        if (!mb::file_write_fully(fout, buf, n_read, n_written)
+        if (!file_write_fully(fout, buf, n_read, n_written)
                 || n_written != n_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;

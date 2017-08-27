@@ -222,10 +222,9 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
             name = config.name;
         }
 
-        rom_menu_items += mb::format("\"%s\", \"\", \"@default\",\n",
-                                     name.c_str());
+        rom_menu_items += format("\"%s\", \"\", \"@default\",\n", name.c_str());
 
-        rom_selection_items += mb::format(
+        rom_selection_items += format(
                 "if prop(\"operations.prop\", \"selected\") == \"%zu\" then\n"
                 "    setvar(\"romid\", \"%s\");\n"
                 "    setvar(\"romname\", \"%s\");\n"
@@ -233,8 +232,8 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
                 i + 2 + 1, rom->id.c_str(), name.c_str());
     }
 
-    std::string first_index = mb::format("%d", 2 + 1);
-    std::string last_index = mb::format("%zu", 2 + roms.roms.size());
+    std::string first_index = format("%d", 2 + 1);
+    std::string last_index = format("%zu", 2 + roms.roms.size());
 
     util::replace_all(&str_data, "\t", "\\t");
     util::replace_all(&str_data, "@MBTOOL_VERSION@", version());

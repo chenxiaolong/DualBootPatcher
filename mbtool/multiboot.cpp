@@ -80,8 +80,8 @@ public:
         // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            mb::format(_error_msg, "%s: Failed to copy directory: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to copy directory: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Skip | Action::FTS_Fail;
         }
@@ -137,8 +137,8 @@ private:
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            mb::format(_error_msg, "%s: Failed to copy file: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to copy file: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
