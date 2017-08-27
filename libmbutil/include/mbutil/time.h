@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -29,79 +29,70 @@ namespace mb
 namespace util
 {
 
-inline void timespec_diff(const struct timespec &start,
-                          const struct timespec &end,
-                          struct timespec *result)
+inline void timespec_diff(const timespec &start, const timespec &end,
+                          timespec &result)
 {
-    result->tv_sec = end.tv_sec - start.tv_sec;
-    result->tv_nsec = end.tv_nsec - start.tv_nsec;
-    if (result->tv_nsec < 0) {
-        --result->tv_sec;
-        result->tv_nsec += 1e9;
+    result.tv_sec = end.tv_sec - start.tv_sec;
+    result.tv_nsec = end.tv_nsec - start.tv_nsec;
+    if (result.tv_nsec < 0) {
+        --result.tv_sec;
+        result.tv_nsec += 1e9;
     }
 }
 
-inline void timeval_diff(const struct timeval &start,
-                         const struct timeval &end,
-                         struct timeval *result)
+inline void timeval_diff(const timeval &start, const timeval &end,
+                         timeval &result)
 {
-    result->tv_sec = end.tv_sec - start.tv_sec;
-    result->tv_usec = end.tv_usec - start.tv_usec;
-    if (result->tv_usec < 0) {
-        --result->tv_sec;
-        result->tv_usec += 1e6;
+    result.tv_sec = end.tv_sec - start.tv_sec;
+    result.tv_usec = end.tv_usec - start.tv_usec;
+    if (result.tv_usec < 0) {
+        --result.tv_sec;
+        result.tv_usec += 1e6;
     }
 }
 
-inline int64_t timespec_diff_s(const struct timespec &start,
-                               const struct timespec &end)
+inline int64_t timespec_diff_s(const timespec &start, const timespec &end)
 {
     return end.tv_sec - start.tv_sec;
 }
 
-inline int64_t timeval_diff_s(const struct timeval &start,
-                              const struct timeval &end)
+inline int64_t timeval_diff_s(const timeval &start, const timeval &end)
 {
     return end.tv_sec - start.tv_sec;
 }
 
-inline int64_t timespec_diff_ms(const struct timespec &start,
-                                const struct timespec &end)
+inline int64_t timespec_diff_ms(const timespec &start, const timespec &end)
 {
-    return ((int64_t) end.tv_sec * 1e3 + end.tv_nsec / 1e6)
-            - ((int64_t) start.tv_sec * 1e3 + start.tv_nsec / 1e6);
+    return (static_cast<int64_t>(end.tv_sec) * 1e3 + end.tv_nsec / 1e6)
+            - (static_cast<int64_t>(start.tv_sec) * 1e3 + start.tv_nsec / 1e6);
 }
 
-inline int64_t timeval_diff_ms(const struct timeval &start,
-                               const struct timeval &end)
+inline int64_t timeval_diff_ms(const timeval &start, const timeval &end)
 {
-    return ((int64_t) end.tv_sec * 1e3 + end.tv_usec / 1e3)
-            - ((int64_t) start.tv_sec * 1e3 + start.tv_usec / 1e3);
+    return (static_cast<int64_t>(end.tv_sec) * 1e3 + end.tv_usec / 1e3)
+            - (static_cast<int64_t>(start.tv_sec) * 1e3 + start.tv_usec / 1e3);
 }
 
-inline int64_t timespec_diff_us(const struct timespec &start,
-                                const struct timespec &end)
+inline int64_t timespec_diff_us(const timespec &start, const timespec &end)
 {
-    return ((int64_t) end.tv_sec * 1e6 + end.tv_nsec / 1e3)
-            - ((int64_t) start.tv_sec * 1e6 + start.tv_nsec / 1e3);
+    return (static_cast<int64_t>(end.tv_sec) * 1e6 + end.tv_nsec / 1e3)
+            - (static_cast<int64_t>(start.tv_sec) * 1e6 + start.tv_nsec / 1e3);
 }
 
-inline int64_t timeval_diff_us(const struct timeval &start,
-                               const struct timeval &end)
+inline int64_t timeval_diff_us(const timeval &start, const timeval &end)
 {
-    return ((int64_t) end.tv_sec * 1e6 + end.tv_usec)
-            - ((int64_t) start.tv_sec * 1e6 + start.tv_usec);
+    return (static_cast<int64_t>(end.tv_sec) * 1e6 + end.tv_usec)
+            - (static_cast<int64_t>(start.tv_sec) * 1e6 + start.tv_usec);
 }
 
-inline int64_t timespec_diff_ns(const struct timespec &start,
-                                const struct timespec &end)
+inline int64_t timespec_diff_ns(const timespec &start, const timespec &end)
 {
-    return ((int64_t) end.tv_sec * 1e9 + end.tv_nsec)
-            - ((int64_t) start.tv_sec * 1e9 + start.tv_nsec);
+    return (static_cast<int64_t>(end.tv_sec) * 1e9 + end.tv_nsec)
+            - (static_cast<int64_t>(start.tv_sec) * 1e9 + start.tv_nsec);
 }
 
 uint64_t current_time_ms();
-bool format_time(const std::string &format, std::string *out);
+bool format_time(const std::string &format, std::string &out);
 std::string format_time(const std::string &format);
 
 }

@@ -184,7 +184,7 @@ bool fix_multiboot_permissions(void)
     }
 
     std::string context;
-    if (util::selinux_lget_context(INTERNAL_STORAGE, &context)
+    if (util::selinux_lget_context(INTERNAL_STORAGE, context)
             && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
         LOGE("%s: Failed to set context to %s: %s",
              MULTIBOOT_DIR, context.c_str(), strerror(errno));
@@ -199,7 +199,7 @@ bool switch_context(const std::string &context)
     std::string current;
 
     if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &current)) {
+            0, util::SELinuxAttr::CURRENT, current)) {
         LOGE("Failed to get current process context: %s", strerror(errno));
         // Don't fail if SELinux is not supported
         return errno == ENOENT;

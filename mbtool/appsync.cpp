@@ -312,13 +312,13 @@ static bool receive_message(int fd, char *buf, std::size_t size,
     if (is_async) {
         assert(async_id != nullptr);
 
-        if (!util::socket_read_int32(fd, async_id)) {
+        if (!util::socket_read_int32(fd, *async_id)) {
             LOGE("Failed to receive async command ID: %s", strerror(errno));
             return false;
         }
     }
 
-    if (!util::socket_read_uint16(fd, &count)) {
+    if (!util::socket_read_uint16(fd, count)) {
         LOGE("Failed to read command size: %s", strerror(errno));
         return false;
     }

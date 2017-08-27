@@ -19,7 +19,10 @@
 
 #include "image.h"
 
-#include <inttypes.h>
+#include <cerrno>
+#include <cinttypes>
+#include <cstring>
+
 #include <sys/stat.h>
 #include <sys/wait.h>
 
@@ -46,8 +49,12 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 {
     // Ensure we have enough space since we're creating a sparse file that may
     // get bigger
-    uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-    if (avail < size) {
+    uint64_t avail;
+    if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
+        LOGE("%s: Failed to get available space: %s", path.c_str(),
+             strerror(errno));
+        return CreateImageResult::FAILED;
+    } else if (avail < size) {
         LOGE("There is not enough space to create %s", path.c_str());
         LOGE("- Needed:    %" PRIu64 " bytes", size);
         LOGE("- Available: %" PRIu64 " bytes", avail);

@@ -314,7 +314,7 @@ static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
     fb::Offset<v3::FileSELinuxGetLabelError> error;
     std::string label;
 
-    bool ret = util::selinux_fget_context(ffd, &label);
+    bool ret = util::selinux_fget_context(ffd, label);
     int saved_errno = errno;
 
     if (!ret) {
@@ -610,7 +610,7 @@ static bool v3_path_readlink(int fd, const v3::Request *msg)
     }
 
     std::string target;
-    bool ret = util::read_link(request->path()->c_str(), &target);
+    bool ret = util::read_link(request->path()->c_str(), target);
     int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
@@ -642,9 +642,9 @@ static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
     std::string label;
     bool ret;
     if (request->follow_symlinks()) {
-        ret = util::selinux_get_context(request->path()->c_str(), &label);
+        ret = util::selinux_get_context(request->path()->c_str(), label);
     } else {
-        ret = util::selinux_lget_context(request->path()->c_str(), &label);
+        ret = util::selinux_lget_context(request->path()->c_str(), label);
     }
     int saved_errno = errno;
 
@@ -1452,7 +1452,7 @@ bool connection_version_3(int fd)
 
     while (1) {
         std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, &data)) {
+        if (!util::socket_read_bytes(fd, data)) {
             return false;
         }
 

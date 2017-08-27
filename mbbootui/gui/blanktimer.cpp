@@ -64,7 +64,7 @@ void blanktimer::checkForTimeout()
         pthread_mutex_lock(&mutex);
         timespec curTime, diff;
         clock_gettime(CLOCK_MONOTONIC, &curTime);
-        mb::util::timespec_diff(btimer, curTime, &diff);
+        mb::util::timespec_diff(btimer, curTime, diff);
         if (sleepTimer > 2 && diff.tv_sec > (sleepTimer - 2) && state == kOn) {
             orig_brightness = getBrightness();
             state = kDim;

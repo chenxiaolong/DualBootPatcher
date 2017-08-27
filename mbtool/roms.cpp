@@ -482,7 +482,7 @@ std::string Roms::get_extsd_partition()
     static constexpr char prefix_storage[] = "/storage/";
 
     // Look for mounted MMC partitions
-    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+    autoclose::file fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
         struct stat sb;
 

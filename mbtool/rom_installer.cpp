@@ -580,7 +580,7 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string context;
     if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &context)
+            0, util::SELinuxAttr::CURRENT, context)
             && context != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);

@@ -649,8 +649,11 @@ bool Installer::create_image(const std::string &path, uint64_t size)
 
     auto result = create_ext4_image(path, size);
     if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
-        uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-        display_msg(std::string());
+        uint64_t avail;
+        if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
+            avail = 0;
+        }
+        display_msg(std::string{});
         display_msg("There is not enough space to create %s", path.c_str());
         display_msg("- Needed:    %" PRIu64 " bytes", size);
         display_msg("- Available: %" PRIu64 " bytes", avail);
@@ -676,7 +679,7 @@ bool Installer::system_image_copy(const std::string &source,
     struct stat sb;
 
     auto done = finally([&] {
-        util::umount(temp_mnt.c_str());
+        util::umount(temp_mnt);
     });
 
     if (stat(source.c_str(), &sb) < 0
@@ -691,7 +694,7 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image.c_str(), temp_mnt.c_str(), "auto", 0, "")) {
+    if (!util::mount(image, temp_mnt, "auto", 0, "")) {
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
@@ -710,7 +713,7 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (!util::umount(temp_mnt.c_str())) {
+    if (!util::umount(temp_mnt)) {
         LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
@@ -794,9 +797,10 @@ bool Installer::change_root(const std::string &path)
     {
         std::vector<std::string> to_unmount;
 
-        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+        autoclose::file fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
+            LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
+                 strerror(errno));
             return false;
         }
 
@@ -1330,7 +1334,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("[Installer] Device verification stage");
 
     std::vector<unsigned char> contents;
-    if (!util::file_read_all(_temp + "/device.json", &contents)) {
+    if (!util::file_read_all(_temp + "/device.json", contents)) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
@@ -1622,7 +1626,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Get desired system image size
     uint64_t system_size;
-    if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+    if (!util::get_blockdev_size(_system_block_dev.c_str(), system_size)) {
         display_msg("Failed to get size of system partition");
         display_msg("Image size will be 4 GiB");
         system_size = DEFAULT_IMAGE_SIZE;
@@ -1788,11 +1792,11 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         }
     }
 
-    if (_rom->cache_is_image && !util::umount(in_chroot("/cache").c_str())) {
+    if (_rom->cache_is_image && !util::umount(in_chroot("/cache"))) {
         display_msg("Failed to unmount %s", in_chroot("/cache").c_str());
     }
 
-    if (_rom->data_is_image && !util::umount(in_chroot("/data").c_str())) {
+    if (_rom->data_is_image && !util::umount(in_chroot("/data"))) {
         display_msg("Failed to unmount %s", in_chroot("/data").c_str());
     }
 
