@@ -305,14 +305,12 @@ static int create_new_socket()
  * \brief Receive a message from a socket
  */
 static bool receive_message(int fd, char *buf, std::size_t size,
-                            bool is_async, int *async_id)
+                            bool is_async, int &async_id)
 {
     unsigned short count;
 
     if (is_async) {
-        assert(async_id != nullptr);
-
-        if (!util::socket_read_int32(fd, *async_id)) {
+        if (!util::socket_read_int32(fd, async_id)) {
             LOGE("Failed to receive async command ID: %s", strerror(errno));
             return false;
         }
@@ -548,7 +546,7 @@ static bool handle_installd_event(int client_fd, int installd_fd,
 
     time_start_installd = util::current_time_ms();
     if (!receive_message(
-            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+            installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
@@ -591,7 +589,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
 
     int async_id;
 
-    if (!receive_message(client_fd, buf, sizeof(buf), is_async, &async_id)) {
+    if (!receive_message(client_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive request from client");
         return false;
     }
@@ -662,7 +660,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         return false;
     }
     if (!receive_message(
-            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+            installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
