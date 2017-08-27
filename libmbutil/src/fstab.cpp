@@ -349,7 +349,7 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
             } else if (strncmp(temp, "flags=", 6) == 0) {
                 // TWRP flags
                 temp += 6;
-                rec.twrp_flags = util::tokenize(temp, ";");
+                rec.twrp_flags = tokenize(temp, ";");
             } else if (strncmp(temp, "null", 4) == 0
                     || strncmp(temp, "NULL", 4) == 0) {
                 // Skip

@@ -112,7 +112,7 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
 
     struct stat sb;
     if (lstat(entry_out.dir.c_str(), &sb) < 0 && errno == ENOENT
-            && mb::ends_with(entry_out.dir, DELETED_SUFFIX)) {
+            && ends_with(entry_out.dir, DELETED_SUFFIX)) {
         entry_out.dir.erase(entry_out.dir.size() - strlen(DELETED_SUFFIX));
     }
 
@@ -152,9 +152,8 @@ bool unmount_all(const std::string &dir)
         }
 
         for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
-            // TODO: Use util::path_compare() instead of dumb string prefix
-            // matching
-            if (mb::starts_with(entry.dir, dir)) {
+            // TODO: Use path_compare() instead of dumb string prefix matching
+            if (starts_with(entry.dir, dir)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }
@@ -225,7 +224,7 @@ bool mount(const char *source, const char *target, const char *fstype,
     }
 
     if (need_loopdev) {
-        std::string loopdev = util::loopdev_find_unused();
+        std::string loopdev = loopdev_find_unused();
         if (loopdev.empty()) {
             LOGE("Failed to find unused loop device: %s", strerror(errno));
             return false;
@@ -233,7 +232,7 @@ bool mount(const char *source, const char *target, const char *fstype,
 
         LOGD("Assigning %s to loop device %s", source, loopdev.c_str());
 
-        if (!util::loopdev_set_up_device(
+        if (!loopdev_set_up_device(
                 loopdev, source, 0, mount_flags & MS_RDONLY)) {
             LOGE("Failed to set up loop device %s: %s",
                  loopdev.c_str(), strerror(errno));
@@ -241,7 +240,7 @@ bool mount(const char *source, const char *target, const char *fstype,
         }
 
         if (::mount(loopdev.c_str(), target, fstype, mount_flags, data) < 0) {
-            util::loopdev_remove_device(loopdev);
+            loopdev_remove_device(loopdev);
             return false;
         }
 

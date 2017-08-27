@@ -105,8 +105,8 @@ static bool load_config_files()
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
         std::string config_path = rom->config_path();
-        std::string packages_path = mb::format(PACKAGES_XML_PATH_FMT,
-                                               rom->full_data_path().c_str());
+        std::string packages_path = format(PACKAGES_XML_PATH_FMT,
+                                           rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;

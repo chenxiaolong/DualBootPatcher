@@ -803,7 +803,7 @@ bool Installer::change_root(const std::string &path)
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             //       matching
-            if (entry.dir != "/" && !mb::starts_with(entry.dir, path)) {
+            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }
@@ -1168,7 +1168,7 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    display_msg(mb::format_v(fmt, ap));
+    display_msg(format_v(fmt, ap));
     va_end(ap);
 }
 
@@ -1252,7 +1252,7 @@ void Installer::on_cleanup(Installer::ProceedState ret)
 
 Installer::ProceedState Installer::install_stage_initialize()
 {
-    LOGD("Installer version: %s (%s)", mb::version(), mb::git_version());
+    LOGD("Installer version: %s (%s)", version(), git_version());
 
     LOGD("[Installer] Initialization stage");
 
