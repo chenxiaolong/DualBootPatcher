@@ -27,10 +27,10 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -206,7 +206,7 @@ void Roms::add_data_roms()
         return;
     }
 
-    auto close_dp = util::finally([&]{
+    auto close_dp = finally([&]{
         closedir(dp);
     });
 
@@ -255,7 +255,7 @@ void Roms::add_extsd_roms()
         return;
     }
 
-    auto close_dp = util::finally([&]{
+    auto close_dp = finally([&]{
         closedir(dp);
     });
 

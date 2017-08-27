@@ -24,10 +24,10 @@
 #include <cerrno>
 #include <cstring>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 
 #define LIBARCHIVE_DISK_WRITER_FLAGS \

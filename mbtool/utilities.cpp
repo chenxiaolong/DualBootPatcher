@@ -39,7 +39,6 @@
 #include "mblog/stdio_logger.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"

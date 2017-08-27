@@ -42,7 +42,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/selinux.h"

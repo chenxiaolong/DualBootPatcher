@@ -25,7 +25,6 @@
 #include <rapidjson/reader.h>
 
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 
 #define CONFIG_KEY_ID                      "id"
 #define CONFIG_KEY_NAME                    "name"

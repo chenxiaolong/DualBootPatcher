@@ -40,6 +40,7 @@
 #include "minizip/ioapi_buf.h"
 #include "minizip/unzip.h"
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
@@ -53,7 +54,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -187,7 +187,7 @@ static bool stop_daemon()
     LOGV("Stopping daemon...");
 
     // Clear pid when returning
-    auto clear_pid = util::finally([]{
+    auto clear_pid = finally([]{
         daemon_pid = -1;
     });
 
@@ -337,7 +337,7 @@ static bool fix_file_contexts(const char *path)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
@@ -454,7 +454,7 @@ static bool add_mbtool_services(bool enable_appsync)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
@@ -589,7 +589,7 @@ static bool strip_manual_mounts()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -787,7 +787,7 @@ static std::string find_fstab()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -938,7 +938,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_zip = util::finally([&]{
+    auto close_zip = finally([&]{
         unzClose(uf);
     });
 
@@ -952,7 +952,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_inner_file = util::finally([&]{
+    auto close_inner_file = finally([&]{
         unzCloseCurrentFile(uf);
     });
 
@@ -1042,7 +1042,7 @@ static bool launch_boot_menu()
         return false;
     }
 
-    auto clean_up = util::finally([]{
+    auto clean_up = finally([]{
         if (!util::delete_recursive(BOOT_UI_PATH)) {
             LOGW("%s: Failed to recursively delete: %s",
                  BOOT_UI_PATH, strerror(errno));

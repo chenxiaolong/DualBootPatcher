@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -35,7 +36,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -845,7 +845,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     target_sig += "/binary.sig";
 
     // Unmount tmpfs when we're done
-    auto unmount_tmpfs = util::finally([&]{
+    auto unmount_tmpfs = finally([&]{
         if (mounted_tmpfs) {
             umount(temp_dir);
         }
@@ -1443,7 +1443,7 @@ bool connection_version_3(int fd)
 {
     std::string command;
 
-    auto close_all_fds = util::finally([&]{
+    auto close_all_fds = finally([&]{
         // Ensure opened fd's are closed if the connection is lost
         for (auto &p : fd_map) {
             close(p.second);

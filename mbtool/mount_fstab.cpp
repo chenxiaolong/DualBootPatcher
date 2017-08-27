@@ -46,7 +46,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"

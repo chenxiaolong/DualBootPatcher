@@ -27,8 +27,8 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 
 #include "external/audit/libaudit.h"
 
@@ -44,7 +44,7 @@ static bool audit_mainloop()
         return false;
     }
 
-    auto close_fd = util::finally([&]{
+    auto close_fd = finally([&]{
         audit_close(fd);
     });
 

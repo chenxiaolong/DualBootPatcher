@@ -28,9 +28,9 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/string.h"

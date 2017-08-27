@@ -33,13 +33,13 @@
 #include <proc/readproc.h>
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -130,7 +130,7 @@ static bool client_connection(int fd)
     LOGD("Client UID: %u", cred.uid);
     LOGD("Client GID: %u", cred.gid);
 
-    auto disconnect_msg = util::finally([&]{
+    auto disconnect_msg = finally([&]{
         LOGD("Disconnecting connection from PID: %u", cred.pid);
     });
 
@@ -190,7 +190,7 @@ static bool run_daemon()
         return false;
     }
 
-    auto close_fd = util::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 

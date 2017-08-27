@@ -23,8 +23,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/socket.h"
 
 // Hackish, but gets the job done
@@ -346,7 +346,7 @@ bool MbtoolConnection::connect()
 
     bool ret = true;
 
-    auto on_return = mb::util::finally([&]{
+    auto on_return = mb::finally([&]{
         if (!ret) {
             close(fd);
         }
