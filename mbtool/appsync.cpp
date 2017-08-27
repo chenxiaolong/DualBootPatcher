@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -938,10 +938,10 @@ int appsync_main(int argc, char *argv[])
     LOGI("=== APPSYNC VERSION %s ===", version());
 
     LOGI("Calling restorecon on /data/media/obb");
-    const char *restorecon[] =
-            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
-    util::run_command(restorecon[0], restorecon, nullptr, nullptr, nullptr,
-                      nullptr);
+    std::vector<std::string> restorecon{
+        "restorecon", "-R", "-F", "/data/media/obb"
+    };
+    util::run_command(restorecon[0], restorecon, {}, {}, nullptr, nullptr);
 
     bool can_appsync = false;
 

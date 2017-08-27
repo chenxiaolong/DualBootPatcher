@@ -267,31 +267,26 @@ static bool mount_exfat_fuse(const char *source, const char *target)
         return false;
     }
 
-    char mount_args[100];
-
-    snprintf(mount_args, sizeof(mount_args),
+    std::string mount_args = format(
              "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
              uid, uid, 0007, 0007, "noexec", "rw");
 
-    const char *fsck_argv[] = {
+    std::vector<std::string> fsck_argv{
         "/sbin/fsck.exfat",
-        source,
-        nullptr
+        source
     };
-    const char *mount_argv[] = {
+    std::vector<std::string> mount_argv{
         "/sbin/mount.exfat",
         "-o", mount_args,
-        source, target,
-        nullptr
+        source, target
     };
 
     // Run filesystem checks
-    util::run_command(fsck_argv[0], fsck_argv, nullptr, nullptr, &dump,
-                      nullptr);
+    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump, nullptr);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command(mount_argv[0], mount_argv, nullptr, nullptr,
-                                &dump, nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump,
+                                nullptr);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -41,8 +41,8 @@ static void output_cb(const char *line, bool error, void *userdata)
 {
     (void) error;
 
-    const char **args = static_cast<const char **>(userdata);
-    LOGV("%s: %s", args[0], line);
+    auto *args = static_cast<std::vector<std::string> *>(userdata);
+    LOGV("%s: %s", (*args)[0].c_str(), line);
 }
 
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
@@ -73,10 +73,11 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
             LOGD("%s: Creating new %s ext4 image", path.c_str(), size_str);
 
             // Create new image
-            const char *argv[] =
-                    { "make_ext4fs", "-l", size_str, path.c_str(), nullptr };
-            int ret = util::run_command(argv[0], argv, nullptr, nullptr,
-                                        &output_cb, argv);
+            std::vector<std::string> argv{
+                "make_ext4fs", "-l", size_str, path
+            };
+            int ret = util::run_command(argv[0], argv, {}, {}, &output_cb,
+                                        &argv);
             if (ret < 0 || WEXITSTATUS(ret) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
                 return CreateImageResult::FAILED;
@@ -91,9 +92,8 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
 
 bool fsck_ext4_image(const std::string &image)
 {
-    const char *argv[] = { "e2fsck", "-f", "-y", image.c_str(), nullptr };
-    int ret = util::run_command(argv[0], argv, nullptr, nullptr,
-                                &output_cb, argv);
+    std::vector<std::string> argv{ "e2fsck", "-f", "-y", image };
+    int ret = util::run_command(argv[0], argv, {}, {}, &output_cb, &argv);
     if (ret < 0 || (WEXITSTATUS(ret) != 0 && WEXITSTATUS(ret) != 1)) {
         LOGE("%s: Failed to e2fsck", image.c_str());
         return false;

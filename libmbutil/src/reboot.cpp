@@ -55,17 +55,15 @@ static void log_output(const char *line, bool error, void *userdata)
 
 bool reboot_via_framework(bool show_confirm_dialog)
 {
-    const char *argv[] = {
+    std::vector<std::string> argv{
         "am", "start",
         //"-W",
         "--ez", "android.intent.extra.KEY_CONFIRM",
             show_confirm_dialog ? "true" : "false",
         "-a", "android.intent.action.REBOOT",
-        nullptr
     };
 
-    int status = run_command(argv[0], argv, nullptr, nullptr, &log_output,
-                             nullptr);
+    int status = run_command(argv[0], argv, {}, {}, &log_output, nullptr);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }

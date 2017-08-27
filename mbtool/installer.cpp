@@ -221,25 +221,25 @@ void Installer::output_cb(const char *line, bool error, void *userdata)
     installer->command_output(line);
 }
 
-int Installer::run_command(const char * const *argv)
+int Installer::run_command(const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
-        nullptr,
+        {},
+        {},
         _passthrough ? nullptr : &output_cb,
         this
     );
 }
 
-int Installer::run_command_chroot(const char *dir,
-                                  const char * const *argv)
+int Installer::run_command_chroot(const std::string &dir,
+                                  const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
+        {},
         dir,
         _passthrough ? nullptr : &output_cb,
         this
@@ -259,14 +259,10 @@ bool Installer::create_chroot()
 {
     // We'll just call the recovery's mount tools directly to avoid having to
     // parse TWRP and CWM's different fstab formats
-    const char *argv_mount_system[] = { "mount", "/system", nullptr };
-    const char *argv_mount_cache[] = { "mount", "/cache", nullptr };
-    const char *argv_mount_data[] = { "mount", "/data", nullptr };
-    const char *argv_mount_efs[] = { "mount", "-o", "ro", "/efs", nullptr };
-    run_command(argv_mount_system);
-    run_command(argv_mount_cache);
-    run_command(argv_mount_data);
-    run_command(argv_mount_efs);
+    run_command({ "mount", "/system" });
+    run_command({ "mount", "/cache" });
+    run_command({ "mount", "/data" });
+    run_command({ "mount", "-o", "ro", "/efs" });
 
     // Remount as writable (needed for in-app flashing)
     log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
@@ -1758,8 +1754,7 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    const char *argv[] = { HELPER_TOOL, "mount", "/system", nullptr };
-    run_command_chroot(_chroot.c_str(), argv);
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     std::string vold_path(in_chroot("/system/bin/vold"));
     _use_fuse_exfat = util::file_find_one_of(vold_path, {
@@ -1777,12 +1772,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     LOGD("[Installer] Filesystem unmounting stage");
 
     // Umount filesystems from inside the chroot
-    const char *argv_unmount_system[] = { HELPER_TOOL, "unmount", "/system", nullptr };
-    const char *argv_unmount_cache[] = { HELPER_TOOL, "unmount", "/cache", nullptr };
-    const char *argv_unmount_data[] = { HELPER_TOOL, "unmount", "/data", nullptr };
-    run_command_chroot(_chroot.c_str(), argv_unmount_system);
-    run_command_chroot(_chroot.c_str(), argv_unmount_cache);
-    run_command_chroot(_chroot.c_str(), argv_unmount_data);
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {
