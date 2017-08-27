@@ -27,9 +27,9 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
-#include <mblog/logging.h>
-#include <mbsign/mbsign.h>
-#include <mbutil/finally.h>
+#include "mbcommon/finally.h"
+#include "mblog/logging.h"
+#include "mbsign/mbsign.h"
 
 #include "validcerts.h"
 
@@ -143,7 +143,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         X509 *cert = nullptr;
         BIO *bio_x509_cert = nullptr;
 
-        auto free_openssl = mb::util::finally([&]{
+        auto free_openssl = finally([&]{
             EVP_PKEY_free(public_key);
             X509_free(cert);
             BIO_free(bio_x509_cert);

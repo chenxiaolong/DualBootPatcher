@@ -39,12 +39,12 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
 
 #include "mbutil/delete.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 
 #include "bootimg_util.h"
@@ -297,7 +297,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 
@@ -390,7 +390,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 std::string ramdisk_out(tmpdir);
                 ramdisk_out += "/ramdisk.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(ramdisk_in.c_str());
                     unlink(ramdisk_out.c_str());
                 });
@@ -412,7 +412,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 std::string kernel_out(tmpdir);
                 kernel_out += "/kernel.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(kernel_in.c_str());
                     unlink(kernel_out.c_str());
                 });
@@ -463,7 +463,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 

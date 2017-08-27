@@ -26,8 +26,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 
 #define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
 
@@ -43,7 +43,7 @@ bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
         LOGW("%s: Failed to open: %s", VIBRATOR_PATH, strerror(errno));
         return false;
     }
-    auto close_fd = util::finally([&]{
+    auto close_fd = finally([&]{
         close(fd);
     });
 

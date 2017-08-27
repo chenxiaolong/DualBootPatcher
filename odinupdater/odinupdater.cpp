@@ -35,6 +35,7 @@
 // libmbcommon
 #include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -45,7 +46,6 @@
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
-#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
@@ -262,7 +262,7 @@ static bool load_block_devs()
             return false;
         }
 
-        auto close_archive = mb::util::finally([&]{
+        auto close_archive = mb::finally([&]{
             archive_read_free(a);
         });
 
@@ -499,7 +499,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
         return ExtractResult::ERROR;
     }
 
-    auto close_fd = mb::util::finally([fd]{
+    auto close_fd = mb::finally([fd]{
         close(fd);
     });
 
@@ -773,7 +773,7 @@ static ExtractResult flash_csc()
         return ExtractResult::ERROR;
     }
 
-    auto unmount_fuse_file = mb::util::finally([]{
+    auto unmount_fuse_file = mb::finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_FILE, 5);
     });
 
@@ -790,7 +790,7 @@ static ExtractResult flash_csc()
         return ExtractResult::ERROR;
     }
 
-    auto unmount_dir = mb::util::finally([]{
+    auto unmount_dir = mb::finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_DIR, 5);
     });
 
@@ -800,7 +800,7 @@ static ExtractResult flash_csc()
         return ExtractResult::ERROR;
     }
 
-    auto unmount_system_dir = mb::util::finally([]{
+    auto unmount_system_dir = mb::finally([]{
         umount_system();
     });
 

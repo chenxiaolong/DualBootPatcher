@@ -32,8 +32,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 
 namespace mb
 {
@@ -151,7 +151,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
         return false;
     }
 
-    auto close_fd = util::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 
@@ -164,7 +164,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
         return false;
     }
 
-    auto unmap_map = util::finally([&] {
+    auto unmap_map = finally([&] {
         munmap(map, sb.st_size);
     });
 

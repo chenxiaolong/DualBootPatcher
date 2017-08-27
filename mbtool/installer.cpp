@@ -41,6 +41,7 @@
 #include "external/legacy_property_service.h"
 
 // libmbcommon
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 
@@ -61,7 +62,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
@@ -675,7 +675,7 @@ bool Installer::system_image_copy(const std::string &source,
 
     struct stat sb;
 
-    auto done = util::finally([&] {
+    auto done = finally([&] {
         util::umount(temp_mnt.c_str());
     });
 
@@ -968,7 +968,7 @@ bool Installer::run_real_updater()
         kill(parent, SIGSTOP);
     }
 
-    auto resume_aroma = util::finally([&]{
+    auto resume_aroma = finally([&]{
         if (aroma) {
             kill(parent, SIGCONT);
         }
@@ -1953,7 +1953,7 @@ bool Installer::start_installation()
 
     ProceedState ret = ProceedState::Fail;
 
-    auto when_finished = util::finally([&] {
+    auto when_finished = finally([&] {
         install_stage_cleanup(ret);
     });
 

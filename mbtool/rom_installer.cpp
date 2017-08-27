@@ -30,6 +30,7 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
@@ -40,7 +41,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -332,7 +332,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
         // We don't need the path
         unlink(tmpfile.c_str());
 
-        auto close_fd = util::finally([&]{
+        auto close_fd = finally([&]{
             close(tmpfd);
         });
 
@@ -405,7 +405,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                 // We don't need the path
                 unlink(tmpfile.c_str());
 
-                auto close_fd = util::finally([&]{
+                auto close_fd = finally([&]{
                     close(tmpfd);
                 });
 

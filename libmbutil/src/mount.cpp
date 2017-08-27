@@ -33,12 +33,12 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
 

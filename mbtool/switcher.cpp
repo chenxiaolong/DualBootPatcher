@@ -29,6 +29,7 @@
 
 #include <openssl/sha.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
@@ -36,7 +37,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -233,7 +233,7 @@ static bool add_extra_images(const std::string &multiboot_dir,
         return false;
     }
 
-    auto close_directory = util::finally([&]{
+    auto close_directory = finally([&]{
         closedir(dir);
     });
 
@@ -337,7 +337,7 @@ SwitchRomResult switch_rom(const std::string &id,
     // step.
 
     std::vector<Flashable> flashables;
-    auto free_flashables = util::finally([&]{
+    auto free_flashables = finally([&]{
         for (Flashable &f : flashables) {
             free(f.data);
         }
@@ -469,7 +469,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
         return false;
     }
 
-    auto free_data = util::finally([&]{
+    auto free_data = finally([&]{
         free(data);
     });
 
