@@ -115,7 +115,7 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
              rec.flags, rec.fs_options.c_str());
 
         // Wait for block device if requested
-        if (rec.fs_mgr_flags & MF_WAIT) {
+        if (rec.fs_mgr_flags & util::MF_WAIT) {
             LOGD("%s: Waiting up to 20 seconds for block device",
                  rec.blk_device.c_str());
             util::wait_for_path(rec.blk_device, 20 * 1000);
