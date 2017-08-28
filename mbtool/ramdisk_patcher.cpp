@@ -98,7 +98,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = mb::format("%s.XXXXXX", path.c_str());
+    tmp_path = format("%s.XXXXXX", path.c_str());
 
     tmp_fd = mkstemp(&tmp_path[0]);
     if (tmp_fd < 0) {
@@ -125,7 +125,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
-        if (mb::starts_with(buf, "ro.patcher.")) {
+        if (starts_with(buf, "ro.patcher.")) {
             continue;
         }
 

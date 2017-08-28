@@ -31,8 +31,8 @@
 
 #include <linux/loop.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
-#include "mbutil/finally.h"
 #include "mbutil/string.h"
 
 
@@ -159,7 +159,7 @@ std::string loopdev_find_unused(void)
         return {};
     }
 
-    return mb::format(LOOP_FMT, n);
+    return format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,

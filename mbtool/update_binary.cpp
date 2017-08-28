@@ -33,7 +33,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"

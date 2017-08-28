@@ -93,8 +93,8 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            mb::format(_error_msg, "%s: Failed to remove: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to remove: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

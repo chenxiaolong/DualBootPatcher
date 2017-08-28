@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,9 +19,11 @@
 
 #pragma once
 
+#include <utility>
+
+#include "mbcommon/common.h"
+
 namespace mb
-{
-namespace util
 {
 
 // Perform action once this goes out of scope, essentially acting as the
@@ -29,14 +31,25 @@ namespace util
 template <typename F>
 class Finally {
 public:
-    Finally(F f) : _f(f)
+    Finally(F f) : _f(std::move(f))
     {
     }
 
-    ~Finally()
+    ~Finally() noexcept
     {
+        // TODO: Uncomment if we're ever able to support exceptions
+        //static_assert(noexcept(_f()), "Finally block must be noexcept");
         _f();
     }
+
+    // These are commented out for usability. Otherwise, the user would need to
+    // do something like:
+    //
+    //   auto &&foobar = finally([]{ printf("foobar\n"); });
+    //
+    // which results in an unused variable warning in gcc and clang.
+    //MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Finally<F>)
+    //MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(Finally<F>)
 
 private:
     F _f;
@@ -45,8 +58,7 @@ private:
 template <typename F>
 Finally<F> finally(F f)
 {
-    return Finally<F>(f);
+    return { std::move(f) };
 }
 
-}
 }

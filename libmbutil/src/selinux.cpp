@@ -30,8 +30,8 @@
 
 #include <sepol/sepol.h>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 
 #define SELINUX_XATTR           "security.selinux"
@@ -418,7 +418,7 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
         return false;
     }
 
-    auto close_fd = util::finally([&]{
+    auto close_fd = finally([&]{
         int saved_errno = errno;
         close(fd);
         errno = saved_errno;
@@ -448,7 +448,7 @@ bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
         return false;
     }
 
-    auto close_fd = util::finally([&]{
+    auto close_fd = finally([&]{
         int saved_errno = errno;
         close(fd);
         errno = saved_errno;

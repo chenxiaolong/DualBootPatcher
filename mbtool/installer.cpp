@@ -41,6 +41,7 @@
 #include "external/legacy_property_service.h"
 
 // libmbcommon
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 
@@ -61,7 +62,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
@@ -675,7 +675,7 @@ bool Installer::system_image_copy(const std::string &source,
 
     struct stat sb;
 
-    auto done = util::finally([&] {
+    auto done = finally([&] {
         util::umount(temp_mnt.c_str());
     });
 
@@ -803,7 +803,7 @@ bool Installer::change_root(const std::string &path)
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             //       matching
-            if (entry.dir != "/" && !mb::starts_with(entry.dir, path)) {
+            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }
@@ -968,7 +968,7 @@ bool Installer::run_real_updater()
         kill(parent, SIGSTOP);
     }
 
-    auto resume_aroma = util::finally([&]{
+    auto resume_aroma = finally([&]{
         if (aroma) {
             kill(parent, SIGCONT);
         }
@@ -1168,7 +1168,7 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    display_msg(mb::format_v(fmt, ap));
+    display_msg(format_v(fmt, ap));
     va_end(ap);
 }
 
@@ -1252,7 +1252,7 @@ void Installer::on_cleanup(Installer::ProceedState ret)
 
 Installer::ProceedState Installer::install_stage_initialize()
 {
-    LOGD("Installer version: %s (%s)", mb::version(), mb::git_version());
+    LOGD("Installer version: %s (%s)", version(), git_version());
 
     LOGD("[Installer] Initialization stage");
 
@@ -1953,7 +1953,7 @@ bool Installer::start_installation()
 
     ProceedState ret = ProceedState::Fail;
 
-    auto when_finished = util::finally([&] {
+    auto when_finished = finally([&] {
         install_stage_cleanup(ret);
     });
 

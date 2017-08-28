@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mbutil/finally.h"
+#include "mbcommon/finally.h"
 
 // NOTE: We don't use libblkid from util-linux because we don't need most of its
 // features and it increases mbtool's binary size more than 200KiB (armeabi-v7a)

@@ -39,9 +39,9 @@
 #undef bool
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
@@ -1128,7 +1128,7 @@ bool patch_sepolicy(const std::string &source,
         return false;
     }
 
-    auto destroy_pdb = util::finally([&]{
+    auto destroy_pdb = finally([&]{
         policydb_destroy(&pdb);
     });
 

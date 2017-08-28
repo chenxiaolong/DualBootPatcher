@@ -38,6 +38,7 @@
 #include <unistd.h>
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -49,7 +50,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
@@ -105,8 +105,8 @@ static bool load_config_files()
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
         std::string config_path = rom->config_path();
-        std::string packages_path = mb::format(PACKAGES_XML_PATH_FMT,
-                                               rom->full_data_path().c_str());
+        std::string packages_path = format(PACKAGES_XML_PATH_FMT,
+                                           rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;
@@ -728,7 +728,7 @@ static bool proxy_process(int fd, bool can_appsync)
             return false;
         }
 
-        auto close_client_fd = util::finally([&]{
+        auto close_client_fd = finally([&]{
             LOGD("Closing client connection");
             close(client_fd);
         });
@@ -741,7 +741,7 @@ static bool proxy_process(int fd, bool can_appsync)
             return false;
         }
 
-        auto close_installd_fd = util::finally([&]{
+        auto close_installd_fd = finally([&]{
             LOGD("Closing installd connection");
             close(installd_fd);
         });
@@ -818,7 +818,7 @@ static bool hijack_socket(bool can_appsync)
         return false;
     }
 
-    auto close_new_fd = util::finally([&]{
+    auto close_new_fd = finally([&]{
         close(new_fd);
     });
 
@@ -834,7 +834,7 @@ static bool hijack_socket(bool can_appsync)
     }
 
     // Kill installd when we exit
-    auto kill_installd = util::finally([&]{
+    auto kill_installd = finally([&]{
         kill(pid, SIGINT);
 
         int status;

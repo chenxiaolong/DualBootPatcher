@@ -29,6 +29,7 @@
 
 #include <openssl/sha.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
@@ -36,7 +37,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -199,7 +199,7 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
 {
     struct stat sb;
 
-    if (mb::starts_with(partition, "mmcblk")) {
+    if (starts_with(partition, "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -233,17 +233,17 @@ static bool add_extra_images(const std::string &multiboot_dir,
         return false;
     }
 
-    auto close_directory = util::finally([&]{
+    auto close_directory = finally([&]{
         closedir(dir);
     });
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !mb::ends_with(name, ".img")) {
+        if (name == ".img" || !ends_with(name, ".img")) {
             // Skip non-images
             continue;
         }
-        if (mb::starts_with(name, "boot.img")) {
+        if (starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }
@@ -337,7 +337,7 @@ SwitchRomResult switch_rom(const std::string &id,
     // step.
 
     std::vector<Flashable> flashables;
-    auto free_flashables = util::finally([&]{
+    auto free_flashables = finally([&]{
         for (Flashable &f : flashables) {
             free(f.data);
         }
@@ -469,7 +469,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
         return false;
     }
 
-    auto free_data = util::finally([&]{
+    auto free_data = finally([&]{
         free(data);
     });
 

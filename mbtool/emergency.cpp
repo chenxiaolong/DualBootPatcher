@@ -28,12 +28,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/mount.h"
 #include "mbutil/time.h"
@@ -103,7 +103,7 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    auto free_buf = util::finally([&]{
+    auto free_buf = finally([&]{
         free(buf);
     });
 

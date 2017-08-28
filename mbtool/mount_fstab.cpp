@@ -46,7 +46,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -223,7 +222,7 @@ static bool path_matches(const char *path, const char *pattern)
     if (strchr(pattern, '*')) {
         return fnmatch(pattern, path, 0) == 0;
     } else {
-        return mb::starts_with(path, pattern);
+        return starts_with(path, pattern);
     }
 }
 
@@ -318,7 +317,7 @@ static bool mount_exfat_fuse(const char *source, const char *target)
 static bool mount_exfat_kernel(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = mb::format(
+    std::string args = format(
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
@@ -343,7 +342,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
 static bool mount_vfat(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = mb::format(
+    std::string args = format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
     int flags = MS_NODEV
