@@ -890,7 +890,7 @@ std::string Reader::error_string()
  */
 int Reader::set_error(std::error_code ec)
 {
-    return set_error(ec, "");
+    return set_error(ec, "%s", "");
 }
 
 /*!

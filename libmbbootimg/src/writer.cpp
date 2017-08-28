@@ -793,7 +793,7 @@ std::string Writer::error_string()
  */
 int Writer::set_error(std::error_code ec)
 {
-    return set_error(ec, "");
+    return set_error(ec, "%s", "");
 }
 
 /*!
