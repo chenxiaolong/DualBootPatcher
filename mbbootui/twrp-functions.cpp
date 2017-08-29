@@ -88,7 +88,7 @@ void TWFunc::Fixup_Time_On_Boot()
         std::string offset_str;
         std::string sepoch = "/sys/class/rtc/rtc0/since_epoch";
 
-        if (mb::util::file_first_line(sepoch, &offset_str)
+        if (mb::util::file_first_line(sepoch, offset_str)
                 && convertToUint64(offset_str.c_str(), &offset)) {
             LOGI("TWFunc::Fixup_Time: Setting time offset from file %s", sepoch.c_str());
 

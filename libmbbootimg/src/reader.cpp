@@ -20,6 +20,7 @@
 #include "mbbootimg/reader.h"
 
 #include <cerrno>
+#include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -45,8 +46,9 @@
         if (!(priv->state & (STATES))) { \
             set_error(make_error_code(ReaderError::InvalidState), \
                       "%s: Invalid state: "\
-                      "expected 0x%hhx, actual: 0x%hhx", \
-                      __func__, static_cast<uint8_t>(STATES), priv->state); \
+                      "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
+                      __func__, static_cast<uint8_t>(STATES), \
+                      static_cast<uint8_t>(priv->state)); \
             return RETVAL; \
         } \
     } while (0)
@@ -261,8 +263,10 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format)
 
     if (state != ReaderState::New) {
         pub->set_error(make_error_code(ReaderError::InvalidState),
-                       "%s: Invalid state: expected 0x%hhx, actual: 0x%hhx",
-                      __func__, ReaderState::New, state);
+                       "%s: Invalid state: expected 0x%" PRIx8
+                       ", actual: 0x%" PRIx8,
+                       __func__, static_cast<uint8_t>(ReaderState::New),
+                       static_cast<uint8_t>(state));
         return RET_FAILED;
     }
 
@@ -886,7 +890,7 @@ std::string Reader::error_string()
  */
 int Reader::set_error(std::error_code ec)
 {
-    return set_error(ec, "");
+    return set_error(ec, "%s", "");
 }
 
 /*!

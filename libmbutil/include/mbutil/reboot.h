@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,8 +27,8 @@ namespace util
 {
 
 bool reboot_via_framework(bool show_confirm_dialog);
-bool reboot_via_init(const char *reboot_arg);
-bool reboot_via_syscall(const char *reboot_arg);
+bool reboot_via_init(const std::string &reboot_arg);
+bool reboot_via_syscall(const std::string &reboot_arg);
 bool shutdown_via_init();
 bool shutdown_via_syscall();
 

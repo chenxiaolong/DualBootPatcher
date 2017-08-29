@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -56,7 +56,7 @@ namespace util
  * \return Loopdev number or -1 if loop-control does not exist or the ioctl
  *         failed
  */
-static int find_loopdev_by_loop_control(void)
+static int find_loopdev_by_loop_control()
 {
     int fd = -1;
 
@@ -187,7 +187,8 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
     });
 
     memset(&loopinfo, 0, sizeof(struct loop_info64));
-    strlcpy((char *) loopinfo.lo_file_name, file.c_str(), LO_NAME_SIZE);
+    strlcpy(reinterpret_cast<char *>(loopinfo.lo_file_name), file.c_str(),
+            LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {

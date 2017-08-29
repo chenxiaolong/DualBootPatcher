@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
 
@@ -40,8 +41,9 @@
         if (!(priv->state & (STATES))) { \
             set_error(make_error_code(FileError::InvalidState), \
                       "%s: Invalid state: "\
-                      "expected 0x%hx, actual: 0x%hx", \
-                      __func__, static_cast<uint16_t>(STATES), priv->state); \
+                      "expected 0x%" PRIx16 ", actual: 0x%" PRIx16, \
+                      __func__, static_cast<uint16_t>(STATES), \
+                      static_cast<uint16_t>(priv->state)); \
             return RETVAL; \
         } \
     } while (0)
