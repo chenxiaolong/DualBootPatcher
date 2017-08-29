@@ -1,9 +1,11 @@
 ---
-- name: Nubia z7 mini
+- name: Nubia z7 (mini&max)
   id: NX507J
   codenames:
     - NX507J
     - nx507j
+    - NX505J
+    - nx505j
   architecture: armeabi-v7a
 
   block_devs:
