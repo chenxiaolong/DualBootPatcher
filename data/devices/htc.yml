@@ -72,7 +72,7 @@
       - /dev/block/mmcblk0p61
 
   boot_ui:
-    supported: true
+    supported: yes
     flags:
       - TW_HAS_DOWNLOAD_MODE
       - TW_QCOM_RTC_FIX
