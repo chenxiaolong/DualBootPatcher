@@ -39,7 +39,7 @@ public:
 };
 
 static bool file_read_all(const std::string &path,
-                          std::vector<unsigned char> *data_out)
+                          std::vector<unsigned char> &data_out)
 {
     FILE *fp = fopen(path.c_str(), "rb");
     if (!fp) {
@@ -56,7 +56,7 @@ static bool file_read_all(const std::string &path,
         return false;
     }
 
-    data_out->swap(data);
+    data_out.swap(data);
 
     fclose(fp);
     return true;
@@ -65,7 +65,7 @@ static bool file_read_all(const std::string &path,
 static bool get_device(const char *path, mb::device::Device &device)
 {
     std::vector<unsigned char> contents;
-    if (!file_read_all(path, &contents)) {
+    if (!file_read_all(path, contents)) {
         fprintf(stderr, "%s: Failed to read file: %s\n", path, strerror(errno));
         return false;
     }

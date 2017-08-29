@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -55,27 +55,23 @@ static void log_output(const char *line, bool error, void *userdata)
 
 bool reboot_via_framework(bool show_confirm_dialog)
 {
-    const char *argv[] = {
+    std::vector<std::string> argv{
         "am", "start",
         //"-W",
         "--ez", "android.intent.extra.KEY_CONFIRM",
             show_confirm_dialog ? "true" : "false",
         "-a", "android.intent.action.REBOOT",
-        nullptr
     };
 
-    int status = run_command(argv[0], argv, nullptr, nullptr, &log_output,
-                             nullptr);
+    int status = run_command(argv[0], argv, {}, {}, &log_output, nullptr);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-bool reboot_via_init(const char *reboot_arg)
+bool reboot_via_init(const std::string &reboot_arg)
 {
     std::string prop_value{"reboot,"};
-    if (reboot_arg) {
-        prop_value += reboot_arg;
-    }
+    prop_value += reboot_arg;
 
     if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
         LOGE("Failed to set property '%s'='%s'",
@@ -86,12 +82,12 @@ bool reboot_via_init(const char *reboot_arg)
     return true;
 }
 
-bool reboot_via_syscall(const char *reboot_arg)
+bool reboot_via_syscall(const std::string &reboot_arg)
 {
-    // Reboot to system if arg is null
-    int reason = reboot_arg ? ANDROID_RB_RESTART2 : ANDROID_RB_RESTART;
+    // Reboot to system if arg is empty
+    int reason = reboot_arg.empty() ? ANDROID_RB_RESTART : ANDROID_RB_RESTART2;
 
-    if (android_reboot(reason, reboot_arg) < 0) {
+    if (android_reboot(reason, reboot_arg.c_str()) < 0) {
         LOGE("Failed to reboot via syscall: %s", strerror(errno));
         return false;
     }

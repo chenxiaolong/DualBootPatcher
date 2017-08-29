@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,7 +19,13 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <cstddef>
+
+#include "mbcommon/optional.h"
 
 namespace mb
 {
@@ -65,13 +71,13 @@ struct CommandCtxPriv;
 struct CommandCtx
 {
     /*! Path to executable */
-    const char *path = nullptr;
+    std::string path;
     /*! Argument list */
-    const char * const *argv = nullptr;
+    std::vector<std::string> argv;
     /*! Environment variable list */
-    const char * const *envp = nullptr;
+    optional<std::vector<std::string>> envp;
     /*! Directory to chroot before execution */
-    const char *chroot_dir = nullptr;
+    std::string chroot_dir;
     /*! Whether to redirect stdio fds */
     bool redirect_stdio = false;
 
@@ -82,22 +88,19 @@ struct CommandCtx
 
     // Private variables
 
-    CommandCtxPriv *_priv = nullptr;
+    std::unique_ptr<CommandCtxPriv> _priv;
 };
 
-bool command_start(struct CommandCtx *ctx);
-int command_wait(struct CommandCtx *ctx);
+bool command_start(CommandCtx &ctx);
+int command_wait(CommandCtx &ctx);
 
-bool command_raw_reader(struct CommandCtx *ctx, CmdRawCb cb, void *userdata);
-bool command_line_reader(struct CommandCtx *ctx, CmdLineCb cb, void *userdata);
+bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata);
+bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata);
 
-void command_line_reader(const char *data, size_t size, bool error,
-                         void *userdata);
-
-int run_command(const char *path,
-                const char * const *argv,
-                const char * const *envp,
-                const char *chroot_dir,
+int run_command(const std::string &path,
+                const std::vector<std::string> &argv,
+                const optional<std::vector<std::string>> &envp,
+                const std::string &chroot_dir,
                 CmdLineCb cb,
                 void *userdata);
 

@@ -469,7 +469,7 @@ bool libarchive_tar_create(const std::string &filename,
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
                 std::string relpath;
-                if (!relative_path(curpath, base_dir, &relpath)) {
+                if (!relative_path(curpath, base_dir, relpath)) {
                     LOGE("Failed to compute relative path of %s starting at %s: %s",
                          curpath, base_dir.c_str(), strerror(errno));
                     archive_entry_free(entry);

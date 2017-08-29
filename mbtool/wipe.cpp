@@ -214,7 +214,7 @@ bool wipe_system(const std::shared_ptr<Rom> &rom)
         // Ensure the image is no longer mounted
         std::string mount_point("/raw/images/");
         mount_point += rom->id;
-        util::umount(mount_point.c_str());
+        util::umount(mount_point);
 
         ret = log_wipe_file(path);
     } else {

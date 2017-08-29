@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -74,8 +74,7 @@ bool create_empty_file(const std::string &path)
  *
  * \return true on success, false on failure and errno set appropriately
  */
-bool file_first_line(const std::string &path,
-                     std::string *line_out)
+bool file_first_line(const std::string &path, std::string &line_out)
 {
     autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
@@ -99,7 +98,7 @@ bool file_first_line(const std::string &path,
         --read;
     }
 
-    *line_out = line;
+    line_out = line;
 
     return true;
 }
@@ -114,7 +113,7 @@ bool file_first_line(const std::string &path,
  * \return true on success, false on failure and errno set appropriately
  */
 bool file_write_data(const std::string &path,
-                     const char *data, size_t size)
+                     const void *data, size_t size)
 {
     FILE *fp = fopen(path.c_str(), "wb");
     if (!fp) {
@@ -129,7 +128,7 @@ bool file_write_data(const std::string &path,
         }
 
         size -= nwritten;
-        data += nwritten;
+        data = static_cast<const char *>(data) + nwritten;
     } while (size > 0);
 
     bool ret = size == 0 || !ferror(fp);
@@ -178,7 +177,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
 }
 
 bool file_read_all(const std::string &path,
-                   std::vector<unsigned char> *data_out)
+                   std::vector<unsigned char> &data_out)
 {
     autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
@@ -194,14 +193,14 @@ bool file_read_all(const std::string &path,
         return false;
     }
 
-    data_out->swap(data);
+    data_out.swap(data);
 
     return true;
 }
 
 bool file_read_all(const std::string &path,
-                   unsigned char **data_out,
-                   std::size_t *size_out)
+                   unsigned char *&data_out,
+                   std::size_t &size_out)
 {
     autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
     if (!fp) {
@@ -222,15 +221,15 @@ bool file_read_all(const std::string &path,
         return false;
     }
 
-    *data_out = data;
-    *size_out = size;
+    data_out = data;
+    size_out = size;
 
     return true;
 }
 
-bool get_blockdev_size(const char *path, uint64_t *size_out)
+bool get_blockdev_size(const std::string &path, uint64_t &size_out)
 {
-    int fd = open(path, O_RDONLY);
+    int fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
         return false;
     }
@@ -244,7 +243,7 @@ bool get_blockdev_size(const char *path, uint64_t *size_out)
         return false;
     }
 
-    *size_out = size;
+    size_out = size;
 
     return true;
 }

@@ -314,7 +314,7 @@ static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
     fb::Offset<v3::FileSELinuxGetLabelError> error;
     std::string label;
 
-    bool ret = util::selinux_fget_context(ffd, &label);
+    bool ret = util::selinux_fget_context(ffd, label);
     int saved_errno = errno;
 
     if (!ret) {
@@ -610,7 +610,7 @@ static bool v3_path_readlink(int fd, const v3::Request *msg)
     }
 
     std::string target;
-    bool ret = util::read_link(request->path()->c_str(), &target);
+    bool ret = util::read_link(request->path()->c_str(), target);
     int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
@@ -642,9 +642,9 @@ static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
     std::string label;
     bool ret;
     if (request->follow_symlinks()) {
-        ret = util::selinux_get_context(request->path()->c_str(), &label);
+        ret = util::selinux_get_context(request->path()->c_str(), label);
     } else {
-        ret = util::selinux_lget_context(request->path()->c_str(), &label);
+        ret = util::selinux_lget_context(request->path()->c_str(), label);
     }
     int saved_errno = errno;
 
@@ -828,8 +828,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
-    size_t nargs;
-    const char **argv;
+    std::vector<std::string> argv;
     int status;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
@@ -925,43 +924,25 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     }
 
     // Build arguments
-    nargs = 2; // argv[0] + NULL-terminator
-    if (request->args()) {
-        nargs += request->args()->size();
-    }
-
-    argv = (const char **) malloc(nargs * sizeof(const char *));
-    if (!argv) {
-        result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "%s", strerror(errno));
-        LOGE("%s", error_msg.c_str());
-        goto done;
-    }
-
     {
-        size_t i = 0;
         if (request->arg0()) {
-            argv[i++] = request->arg0()->c_str();
+            argv.push_back(request->arg0()->str());
         } else {
-            argv[i++] = target_binary.c_str();
+            argv.push_back(target_binary);
         }
         if (request->args()) {
             for (auto const &arg : *request->args()) {
-                argv[i++] = arg->c_str();
+                argv.push_back(arg->str());
             }
         }
-        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
+    status = util::run_command(target_binary, argv, {}, {},
                                &signed_exec_output_cb, &fd);
-
-    free(argv);
-
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -1452,7 +1433,7 @@ bool connection_version_3(int fd)
 
     while (1) {
         std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, &data)) {
+        if (!util::socket_read_bytes(fd, data)) {
             return false;
         }
 

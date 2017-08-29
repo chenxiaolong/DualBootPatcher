@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -68,13 +68,15 @@ bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
 
     for (token = strtok_r(buf, " ", &save_ptr); token;
             token = strtok_r(nullptr, " ", &save_ptr)) {
-        const char *name = token;
-        const char *value = nullptr;
+        std::string name;
+        optional<std::string> value;
 
         char *equals = strchr(token, '=');
         if (equals) {
-            *equals = '\0';
-            value = equals + 1;
+            name = {token, equals};
+            value = {equals + 1};
+        } else {
+            name = token;
         }
 
         CmdlineIterAction action = fn(name, value, userdata);
@@ -94,30 +96,26 @@ bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
 
 struct Ctx
 {
-    const char *option;
-    bool exists;
-    std::string value;
+    std::string option;
+    optional<std::string> value;
 };
 
-static CmdlineIterAction get_option_cb(const char *name, const char *value,
+static CmdlineIterAction get_option_cb(const std::string &name,
+                                       const optional<std::string> &value,
                                        void *userdata)
 {
     Ctx *ctx = static_cast<Ctx *>(userdata);
 
-    if (strcmp(name, ctx->option) == 0) {
-        if (value) {
-            ctx->exists = true;
-            ctx->value = value;
-        } else {
-            ctx->exists = false;
-        }
+    if (name == ctx->option) {
+        ctx->value = value;
         return CmdlineIterAction::Stop;
     }
 
     return CmdlineIterAction::Continue;
 }
 
-bool kernel_cmdline_get_option(const char *option, std::string *out)
+bool kernel_cmdline_get_option(const std::string &option,
+                               optional<std::string> &value)
 {
     Ctx ctx;
     ctx.option = option;
@@ -126,12 +124,8 @@ bool kernel_cmdline_get_option(const char *option, std::string *out)
         return false;
     }
 
-    if (ctx.exists) {
-        out->swap(ctx.value);
-        return true;
-    } else {
-        return false;
-    }
+    value = std::move(ctx.value);
+    return true;
 }
 
 }

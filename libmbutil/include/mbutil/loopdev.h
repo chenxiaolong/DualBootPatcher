@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -26,7 +26,7 @@ namespace mb
 namespace util
 {
 
-std::string loopdev_find_unused(void);
+std::string loopdev_find_unused();
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
                            uint64_t offset, bool ro);
 bool loopdev_remove_device(const std::string &loopdev);
