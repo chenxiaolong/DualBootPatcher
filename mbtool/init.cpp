@@ -40,6 +40,7 @@
 #include "minizip/ioapi_buf.h"
 #include "minizip/unzip.h"
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
@@ -53,7 +54,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -187,7 +187,7 @@ static bool stop_daemon()
     LOGV("Stopping daemon...");
 
     // Clear pid when returning
-    auto clear_pid = util::finally([]{
+    auto clear_pid = finally([]{
         daemon_pid = -1;
     });
 
@@ -196,17 +196,17 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
-static util::CmdlineIterAction set_kernel_properties_cb(const char *name,
-                                                        const char *value,
+static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
+                                                        const optional<std::string> &value,
                                                         void *userdata)
 {
     (void) userdata;
 
-    if (mb::starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
+    if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
         char buf[PROP_NAME_MAX];
-        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name + 12);
+        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
         if (n >= 0 && n < (int) sizeof(buf)) {
-            property_set(buf, value);
+            property_set(buf, *value);
         }
     }
 
@@ -274,8 +274,8 @@ static std::string get_rom_id()
 {
     std::string rom_id;
 
-    if (!util::file_first_line("/romid", &rom_id)) {
-        return std::string();
+    if (!util::file_first_line("/romid", rom_id)) {
+        return {};
     }
 
     return rom_id;
@@ -337,13 +337,12 @@ static bool fix_file_contexts(const char *path)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (mb::starts_with(line, "/data/media(")
-                && !strstr(line, "<<none>>")) {
+        if (starts_with(line, "/data/media(") && !strstr(line, "<<none>>")) {
             fputc('#', fp_new.get());
         }
 
@@ -383,18 +382,18 @@ static bool fix_binary_file_contexts(const char *path)
         return false;
     }
 
-    const char *decompile_argv[] = {
+    std::vector<std::string> decompile_argv{
         "/sbin/file-contexts-tool",  "decompile", "-p", PCRE_PATH,
-        path, tmp_path.c_str(), nullptr
+        path, tmp_path
     };
-    const char *compile_argv[] = {
+    std::vector<std::string> compile_argv{
         "/sbin/file-contexts-tool", "compile", "-p", PCRE_PATH,
-        tmp_path.c_str(), new_path.c_str(), nullptr
+        tmp_path, new_path
     };
 
     // Decompile binary file_contexts to temporary file
     int ret = util::run_command(decompile_argv[0], decompile_argv,
-                                nullptr, nullptr, nullptr, nullptr);
+                                {}, {}, nullptr, nullptr);
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to decompile file_contexts", path);
         return false;
@@ -408,7 +407,7 @@ static bool fix_binary_file_contexts(const char *path)
 
     // Recompile binary file_contexts
     ret = util::run_command(compile_argv[0], compile_argv,
-                            nullptr, nullptr, nullptr, nullptr);
+                            {}, {}, nullptr, nullptr);
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to compile binary file_contexts", tmp_path.c_str());
         unlink(tmp_path.c_str());
@@ -454,7 +453,7 @@ static bool add_mbtool_services(bool enable_appsync)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
@@ -468,7 +467,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
 
         if (enable_appsync) {
-            if (mb::starts_with(line, "service")) {
+            if (starts_with(line, "service")) {
                 inside_service = strstr(line, "installd") != nullptr;
             } else if (inside_service && is_completely_whitespace(line)) {
                 inside_service = false;
@@ -497,7 +496,7 @@ static bool add_mbtool_services(bool enable_appsync)
         // Disable installd. mbtool's appsync will spawn it on demand
         if (enable_appsync
                 && !has_disabled_installd
-                && mb::starts_with(line, "service")
+                && starts_with(line, "service")
                 && strstr(line, "installd")) {
             fputs("    disabled\n", fp_new.get());
         }
@@ -571,7 +570,7 @@ static bool strip_manual_mounts()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb::ends_with(ent->d_name, ".rc")) {
+                || !ends_with(ent->d_name, ".rc")) {
             continue;
         }
 
@@ -589,7 +588,7 @@ static bool strip_manual_mounts()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -770,8 +769,8 @@ static std::string find_fstab()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb::starts_with(ent->d_name, "init")
-                || !mb::ends_with(ent->d_name, ".rc")) {
+                || !starts_with(ent->d_name, "init")
+                || !ends_with(ent->d_name, ".rc")) {
             continue;
         }
 
@@ -787,7 +786,7 @@ static std::string find_fstab()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -820,9 +819,10 @@ static std::string find_fstab()
 
             // Replace ${ro.hardware}
             if (fstab.find("${ro.hardware}") != std::string::npos) {
-                std::string hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
-                util::replace_all(&fstab, "${ro.hardware}", hardware);
+                optional<std::string> hardware;
+                util::kernel_cmdline_get_option("androidboot.hardware", hardware);
+                util::replace_all(fstab, "${ro.hardware}",
+                                  hardware ? *hardware : "");
             }
 
             LOGD("Found fstab during search: %s", fstab.c_str());
@@ -938,7 +938,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_zip = util::finally([&]{
+    auto close_zip = finally([&]{
         unzClose(uf);
     });
 
@@ -952,7 +952,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_inner_file = util::finally([&]{
+    auto close_inner_file = finally([&]{
         unzCloseCurrentFile(uf);
     });
 
@@ -1001,7 +1001,7 @@ static bool launch_boot_menu()
 
     if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
         std::string skip_rom;
-        util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
+        util::file_first_line(BOOT_UI_SKIP_PATH, skip_rom);
 
         std::string rom_id = get_rom_id();
 
@@ -1042,7 +1042,7 @@ static bool launch_boot_menu()
         return false;
     }
 
-    auto clean_up = util::finally([]{
+    auto clean_up = finally([]{
         if (!util::delete_recursive(BOOT_UI_PATH)) {
             LOGW("%s: Failed to recursively delete: %s",
                  BOOT_UI_PATH, strerror(errno));
@@ -1056,9 +1056,8 @@ static bool launch_boot_menu()
 
     start_daemon();
 
-    const char *argv[] = { BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH, nullptr };
-    int ret = util::run_command(argv[0], argv, nullptr, nullptr, nullptr,
-                                nullptr);
+    std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
+    int ret = util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {
@@ -1174,7 +1173,7 @@ int init_main(int argc, char *argv[])
          version(), git_version());
 
     std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    util::file_read_all(DEVICE_JSON_PATH, contents);
     contents.push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
@@ -1247,7 +1246,7 @@ int init_main(int argc, char *argv[])
     // Mount selinuxfs
     selinux_mount();
     // Load pre-boot policy
-    patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE, SELINUX_LOAD_FILE,
+    patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE, util::SELINUX_LOAD_FILE,
                    SELinuxPatch::PRE_BOOT);
 
     // Mount ROM (bind mount directory or mount images, etc.)
@@ -1285,11 +1284,12 @@ int init_main(int argc, char *argv[])
 
     // Patch SELinux policy
     struct stat sb;
-    if (stat(SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
-        if (!patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE,
-                            SELINUX_DEFAULT_POLICY_FILE,
+    if (stat(util::SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
+        if (!patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE,
+                            util::SELINUX_DEFAULT_POLICY_FILE,
                             SELinuxPatch::MAIN)) {
-            LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
+            LOGW("%s: Failed to patch policy",
+                 util::SELINUX_DEFAULT_POLICY_FILE);
             critical_failure();
             return EXIT_FAILURE;
         }

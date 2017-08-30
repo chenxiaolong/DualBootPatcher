@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -45,7 +45,7 @@ uint64_t current_time_ms()
  *
  * \return Whether the date and time was successfully formatted
  */
-bool format_time(const std::string &format, std::string *out)
+bool format_time(const std::string &format, std::string &out)
 {
     struct timespec res;
     struct tm tm;
@@ -61,14 +61,14 @@ bool format_time(const std::string &format, std::string *out)
         return false;
     }
 
-    *out = buf;
+    out = buf;
     return true;
 }
 
 std::string format_time(const std::string &format)
 {
     std::string result;
-    format_time(format, &result);
+    format_time(format, result);
     return result;
 }
 

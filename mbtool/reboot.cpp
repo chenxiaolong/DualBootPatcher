@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -35,7 +35,7 @@ bool reboot_via_framework(bool confirm)
 
 bool reboot_via_init(const std::string &reboot_arg)
 {
-    if (!util::reboot_via_init(reboot_arg.c_str())) {
+    if (!util::reboot_via_init(reboot_arg)) {
         return false;
     }
 
@@ -49,7 +49,7 @@ bool reboot_via_init(const std::string &reboot_arg)
 
 bool reboot_directly(const std::string &reboot_arg)
 {
-    if (!util::reboot_via_syscall(reboot_arg.c_str())) {
+    if (!util::reboot_via_syscall(reboot_arg)) {
         return false;
     }
 

@@ -39,12 +39,12 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
 
 #include "mbutil/delete.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 
 #include "bootimg_util.h"
@@ -234,7 +234,7 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
         const char *curpath = archive_entry_pathname(entry.get());
         if (curpath && !input_dir.empty()) {
             std::string relpath;
-            if (!util::relative_path(curpath, input_dir, &relpath)) {
+            if (!util::relative_path(curpath, input_dir, relpath)) {
                 LOGE("Failed to compute relative path of %s starting at %s: %s",
                      curpath, input_dir.c_str(), strerror(errno));
                 return false;
@@ -297,7 +297,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 
@@ -390,7 +390,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 std::string ramdisk_out(tmpdir);
                 ramdisk_out += "/ramdisk.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(ramdisk_in.c_str());
                     unlink(ramdisk_out.c_str());
                 });
@@ -412,7 +412,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 std::string kernel_out(tmpdir);
                 kernel_out += "/kernel.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(kernel_in.c_str());
                     unlink(kernel_out.c_str());
                 });
@@ -463,7 +463,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 
@@ -657,12 +657,12 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
     while (to_copy > 0) {
         size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
 
-        if (!mb::file_read_fully(fin, buf, to_read, n) || n != to_read) {
+        if (!file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         }
 
-        if (!mb::file_write_fully(fout, buf, to_read, n) || n != to_read) {
+        if (!file_write_fully(fout, buf, to_read, n) || n != to_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;
         }
@@ -680,14 +680,14 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     size_t n_written;
 
     while (true) {
-        if (!mb::file_read_fully(fin, buf, sizeof(buf), n_read)) {
+        if (!file_read_fully(fin, buf, sizeof(buf), n_read)) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
             return false;
         } else if (n_read == 0) {
             break;
         }
 
-        if (!mb::file_write_fully(fout, buf, n_read, n_written)
+        if (!file_write_fully(fout, buf, n_read, n_written)
                 || n_written != n_read) {
             LOGE("Failed to write data: %s", fout.error_string().c_str());
             return false;

@@ -61,7 +61,7 @@ Isto aconteceu porque o acesso ROOT foi negado ou a ramdisk não esta atualizada
   <!--Title of progress dialog shown when switching ROMs-->
   <string name="switching_rom">Trocando de ROM</string>
   <!--Title of progress dialog shown when setting kernel-->
-  <string name="setting_kernel">Definindo o Kernel</string>
+  <string name="setting_kernel">Definindo o kernel</string>
   <!--Message shown when switching ROMs succeeds-->
   <string name="choose_rom_success">ROM trocada com sucesso</string>
   <!--Message shown when switching ROMs failed-->
@@ -73,7 +73,7 @@ Isto aconteceu porque o acesso ROOT foi negado ou a ramdisk não esta atualizada
   <!--Message shown when setting the kernel succeeds-->
   <string name="set_kernel_success">Kernel definido com sucesso</string>
   <!--Message shown when setting the kernel fails-->
-  <string name="set_kernel_failure">Falha ao definir o Kernel</string>
+  <string name="set_kernel_failure">Falha ao definir o kernel</string>
   <!--Message shown when another application tries to switch the ROM via an intent-->
   <string name="confirm_automated_switch_rom">Outra aplicação esta tentando trocar para a ROM %s.
 Continuar?</string>
@@ -82,11 +82,11 @@ Continuar?</string>
   <string name="unknown_boot_partition">Não foi possivel determinar a partição de boot por causa que o codigo do dispositivo \'%s\' não foi reconhecido.</string>
   <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
   <string name="checksums_invalid">Os verificadores SHA512 da boot.img desta ROM e outros arquivos de imagem no /sdcard/MultiBoot/%s/ não correspondem ao verificado.
-Um aplicativo de terceiros talvez tenha alterado maliciosamente estas imagens.
+Um aplicativo de terceiro talvez tenha alterado maliciosamente estas imagens.
 Continuar com a troca de ROM?</string>
   <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
   <string name="checksums_missing">Os verificadores SHA512 da boot.img desta ROM e outros arquivos de imagem no /sdcard/MultiBoot/%s/ estão faltando.
-Talvez isso seja porque você esta atualizando de uma versão antiga deste aplicativo.
+Talvez isso aconteceu porque você esta vindo de uma versão antiga deste aplicativo.
 Continuar com a troca de ROM?</string>
   <!--Version text shown on ROM card if the version could not be detected-->
   <string name="rom_card_unknown_version">Versão desconhecida</string>
@@ -95,7 +95,7 @@ Continuar com a troca de ROM?</string>
   <!--ROM menu item for updating the ramdisk-->
   <string name="rom_menu_update_ramdisk">Atualizar a ramdisk</string>
   <!--ROM menu item for setting kernel-->
-  <string name="rom_menu_set_kernel">Definir o Kernel</string>
+  <string name="rom_menu_set_kernel">Definir o kernel</string>
   <!--ROM menu item for backing up the ROM-->
   <string name="rom_menu_backup_rom">ROM Backup</string>
   <!--ROM menu item for adding an icon to the home screen-->
@@ -112,7 +112,7 @@ Continuar com a troca de ROM?</string>
   <string name="successfully_created_launcher">A ROM %s foi adicionada com sucesso a tela inicial.</string>
   <!--Dialog shown when adding an icon to the home screen asking whether the device should
          automatically reboot after switching-->
-  <string name="auto_reboot_after_switching">Você quer reiniciar o aparelho automaticamente ao trocar de ROM?</string>
+  <string name="auto_reboot_after_switching">Você quer reiniciar o aparelho automaticamente depois de trocar a ROM?</string>
   <!--Target for wiping ROM's /system-->
   <string name="wipe_target_system">System</string>
   <!--Target for wiping ROM's /cache-->
@@ -136,34 +136,34 @@ Continuar com a troca de ROM?</string>
   <!--Toast message shown if the user did not select any target to wipe-->
   <string name="wipe_rom_none_selected">Nenhuma limpeza foi feita por que os alvos não foram especificados.</string>
   <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
-  <string name="wipe_rom_no_wipe_current_rom">A ROM que esta rodando no momento não pode ser limpa.</string>
+  <string name="wipe_rom_no_wipe_current_rom">A ROM que esta em funcionamento no momento não pode ser limpa.</string>
   <!--Switcher service notification title-->
   <string name="switcher_service_background_service">Trabalho em segundo plano</string>
   <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
-  <string name="switcher_storage_permission_required">O nome e a miniatura da ROM não pôde ser carregado por que as permissões de armazenamento foram negadas.</string>
+  <string name="switcher_storage_permission_required">A miniatura e o nome da ROM não podem ser carregados porque as permissões de armazenamento foram negadas.</string>
   <!--Accessibility text for the ROM logo images-->
   <string name="switcher_rom_image">Logo da ROM</string>
   <!--Title for the confirmation dialog box shown when trying to set the kernel-->
-  <string name="switcher_ask_set_kernel_title">Definir o Kernel?</string>
+  <string name="switcher_ask_set_kernel_title">Definir o kernel?</string>
   <!--Message for the confirmation dialog box shown when trying to set the kernel-->
-  <string name="switcher_ask_set_kernel_desc">O Kernel que esta rodando no momento será salvo como o Kernel da ROM %s.</string>
+  <string name="switcher_ask_set_kernel_desc">O kernel que esta rodando no momento será salvo como o kernel da ROM %s.</string>
   <!--Title for the dialog box to rename a ROM-->
   <string name="rename_rom_title">Renomear %s</string>
   <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
   <string name="rename_rom_desc">Coloque um nome para %s.
 Deixe em branco para usar o padrão.</string>
   <!--Dialog message shown when the kernel has not been set-->
-  <string name="kernel_not_set_desc">O Kernel ainda não foi definido para a ROM atual.
-Você gostaria de definir o Kernel agora?</string>
+  <string name="kernel_not_set_desc">O kernel ainda não foi definido para a ROM atual.
+Você gostaria de definir o kernel agora?</string>
   <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
-  <string name="kernel_different_from_saved_desc">O Kernel salvo é diferente do Kernel que esta rodando.
-Gostaria de definir o Kernel agora?</string>
+  <string name="kernel_different_from_saved_desc">O kernel salvo é diferente do kernel que esta rodando.
+Gostaria de definir o kernel agora?</string>
   <!--Positive dialog button shown for the above two messages-->
   <string name="set_kernel_now">Definir agora</string>
   <!--Negative dialog button shown for the above two messages-->
   <string name="set_kernel_later">Definir depois</string>
   <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
-  <string name="set_kernel_mismatched_rom">A ROM selecionada é a %1$s, mas o Kernel que você tentando definir é para %2$s.
+  <string name="set_kernel_mismatched_rom">A ROM selecionada é a %1$s, mas o kernel que você tentando definir é para a ROM%2$s.
 Por favor confirme o que você quer.</string>
   <!--In-app flashing output activity title - shown when backing up a single ROM-->
   <string name="in_app_flashing_title_backup_rom">ROM Backup</string>
@@ -266,9 +266,9 @@ Você gostaria de alterar o local de instalação?</string>
   <!--Toast message shown if no backup/restore targets are selected-->
   <string name="br_no_target_selected">Nenhum alvo para backup/restauração foi selecionado.</string>
   <!--Backup name input dialog description-->
-  <string name="br_name_dialog_desc">Entre um nome para o backup. Ele não pode conter barra (\"/\") ou ser \".\" ou \"..\".</string>
+  <string name="br_name_dialog_desc">Coloque um nome no backup. Ele não pode conter barra (\"/\") ou ter \".\" ou \"..\".</string>
   <!--Backup name input field hint for backup name dialog-->
-  <string name="br_name_dialog_hint">Entre com o nome do backup...</string>
+  <string name="br_name_dialog_hint">Coloque um nome no backup...</string>
   <!--Text shown on blank background when no files have been added for patching yet-->
   <string name="patcher_background_message">Aperte no botão flutuante para adicionar arquivos para modificar.</string>
   <!--Label for FAB to add a flashable zip-->
@@ -304,15 +304,15 @@ Por favor garanta as permissões de armazenamento para poder adaptar os arquivos
   <!--Description for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade_desc">Atualizar a ROM primária sem afetar outras ROMs</string>
   <!--Description for all other installation locations-->
-  <string name="install_location_desc">Instalar na ROM %s</string>
+  <string name="install_location_desc">Instalar ROM em %s</string>
   <!--Text box hint for specifying the data slot ID-->
-  <string name="install_location_named_slot_id_hint">Entre uma ID</string>
+  <string name="install_location_named_slot_id_hint">Entre um ID</string>
   <!--Description text shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_empty">Entre uma ID acima</string>
+  <string name="install_location_named_slot_id_empty">Entre um ID acima</string>
   <!--Error tooltip shown if the data slot ID is empty-->
-  <string name="install_location_named_slot_id_error_is_empty">O slot da ID não pode ficar em branco.</string>
+  <string name="install_location_named_slot_id_error_is_empty">O slot ID não pode ficar em branco.</string>
   <!--Error tooltip shown if the data slot ID contains invalid characters-->
-  <string name="install_location_named_slot_id_error_invalid">O slot do ID só pode ter letras minusculas e/ou numeros.</string>
+  <string name="install_location_named_slot_id_error_invalid">O slot ID só pode ter letras minusculas e/ou números.</string>
   <!--Name for the data-slot installation location-->
   <string name="install_location_data_slot">Data slot</string>
   <!--Name for the extsd-slot installation location-->
@@ -323,7 +323,7 @@ Por favor garanta as permissões de armazenamento para poder adaptar os arquivos
   <string name="filemanager_missing_desc">Não há um gerenciador de arquivos adequado instalado.
 Por favor instale um para poder selecionar arquivos para adaptar.</string>
   <!--Text for the details card indicating that the patching is done-->
-  <string name="details_done">Feito</string>
+  <string name="details_done">Pronto</string>
   <!--Text for the progress card showing how many files have been added to the new zip-->
   <string name="overall_progress_files">%1$s/%2$s arquivos</string>
   <!--Title for total size of partition-->
@@ -460,12 +460,12 @@ Para usar o compartilhamento individual de aplicativos, o compartilhamento de da
   <!--Progress dialog message shown when updating mbtool (with root)-->
   <string name="mbtool_dialog_updating_mbtool">Atualizando mbtool...\n(Será preciso root)</string>
   <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
-  <string name="mbtool_dialog_signature_check_fail">mbtool rejeitou a conexão com este app.
+  <string name="mbtool_dialog_signature_check_fail">O mbtool rejeitou a conexão com este app.
 Isto pode ter acontecido se uma versão não-oficial do app esta sendo usada ou o app foi alterado maliciosamente. Se você quiser continuar, o mbtool será parado e a versão integrada será iniciada usando root.</string>
   <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
-  <string name="mbtool_dialog_version_too_old">A mbtool atual é muito ultrapassada. É preciso atualizar para ter certas funções funcionando, como trocar de ROMs. Vai ser preciso acesso root.</string>
+  <string name="mbtool_dialog_version_too_old">O mbtool atual é muito antigo. É preciso atualizar para ter certas funções funcionando, como trocar de ROMs. Vai ser preciso acesso root.</string>
   <!--Confirm dialog message shown when updating mbtool failed-->
-  <string name="mbtool_dialog_update_failed">Falha ao atualizar a mbtool. Muita operações como trocar de ROMs não funcionarão.</string>
+  <string name="mbtool_dialog_update_failed">Falha ao atualizar a mbtool. Algumas operações, como trocar de ROMs, não funcionarão.</string>
   <!--Path chooser dialog textbox hint for entering a filename-->
   <string name="path_chooser_enter_a_filename">Digite um nome de arquivo</string>
   <!--Path chooser dialog button to select a directory-->

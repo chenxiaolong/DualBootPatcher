@@ -133,7 +133,7 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 bool AppSyncManager::fix_shared_data_permissions()
 {
     std::string context("u:object_r:app_data_file:s0");
-    util::selinux_lget_context("/data/data/com.android.systemui", &context);
+    util::selinux_lget_context("/data/data/com.android.systemui", context);
 
     if (!util::selinux_lset_context_recursive(_as_data_dir, context)) {
         LOGW("%s: Failed to set context recursively to %s: %s",

@@ -39,7 +39,6 @@
 #include "mblog/stdio_logger.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -69,7 +68,7 @@ static bool get_device(const char *path, Device &device)
     LOGD("ro.build.product = %s", prop_build_product.c_str());
 
     std::vector<unsigned char> contents;
-    if (!util::file_read_all(path, &contents)) {
+    if (!util::file_read_all(path, contents)) {
         LOGE("%s: Failed to read file: %s", path, strerror(errno));
         return false;
     }
@@ -223,10 +222,9 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
             name = config.name;
         }
 
-        rom_menu_items += mb::format("\"%s\", \"\", \"@default\",\n",
-                                     name.c_str());
+        rom_menu_items += format("\"%s\", \"\", \"@default\",\n", name.c_str());
 
-        rom_selection_items += mb::format(
+        rom_selection_items += format(
                 "if prop(\"operations.prop\", \"selected\") == \"%zu\" then\n"
                 "    setvar(\"romid\", \"%s\");\n"
                 "    setvar(\"romname\", \"%s\");\n"
@@ -234,20 +232,20 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
                 i + 2 + 1, rom->id.c_str(), name.c_str());
     }
 
-    std::string first_index = mb::format("%d", 2 + 1);
-    std::string last_index = mb::format("%zu", 2 + roms.roms.size());
+    std::string first_index = format("%d", 2 + 1);
+    std::string last_index = format("%zu", 2 + roms.roms.size());
 
-    util::replace_all(&str_data, "\t", "\\t");
-    util::replace_all(&str_data, "@MBTOOL_VERSION@", version());
-    util::replace_all(&str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
-    util::replace_all(&str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
-    util::replace_all(&str_data, "@FIRST_INDEX@", first_index);
-    util::replace_all(&str_data, "@LAST_INDEX@", last_index);
+    util::replace_all(str_data, "\t", "\\t");
+    util::replace_all(str_data, "@MBTOOL_VERSION@", version());
+    util::replace_all(str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
+    util::replace_all(str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
+    util::replace_all(str_data, "@FIRST_INDEX@", first_index);
+    util::replace_all(str_data, "@LAST_INDEX@", last_index);
 
-    util::replace_all(&str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
-    util::replace_all(&str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());
-    util::replace_all(&str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
-    util::replace_all(&str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
+    util::replace_all(str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
+    util::replace_all(str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());
+    util::replace_all(str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
+    util::replace_all(str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
 
     data->assign(str_data.begin(), str_data.end());
 }
@@ -288,7 +286,7 @@ public:
 
         if (name == "META-INF/com/google/android/aroma-config.in") {
             std::vector<unsigned char> data;
-            if (!util::file_read_all(_curr->fts_accpath, &data)) {
+            if (!util::file_read_all(_curr->fts_accpath, data)) {
                 LOGE("Failed to read: %s", _curr->fts_path);
                 return false;
             }

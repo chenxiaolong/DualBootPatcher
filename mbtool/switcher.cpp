@@ -29,6 +29,7 @@
 
 #include <openssl/sha.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
@@ -36,7 +37,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -179,8 +179,7 @@ struct Flashable
     std::string block_dev;
     std::string expected_hash;
     std::string hash;
-    unsigned char *data = nullptr;
-    std::size_t size = 0;
+    std::vector<unsigned char> data;
 };
 
 /*!
@@ -199,7 +198,7 @@ static std::string find_block_dev(const std::vector<std::string> &search_dirs,
 {
     struct stat sb;
 
-    if (mb::starts_with(partition, "mmcblk")) {
+    if (starts_with(partition, "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -233,17 +232,17 @@ static bool add_extra_images(const std::string &multiboot_dir,
         return false;
     }
 
-    auto close_directory = util::finally([&]{
+    auto close_directory = finally([&]{
         closedir(dir);
     });
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !mb::ends_with(name, ".img")) {
+        if (name == ".img" || !ends_with(name, ".img")) {
             // Skip non-images
             continue;
         }
-        if (mb::starts_with(name, "boot.img")) {
+        if (starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }
@@ -337,11 +336,6 @@ SwitchRomResult switch_rom(const std::string &id,
     // step.
 
     std::vector<Flashable> flashables;
-    auto free_flashables = util::finally([&]{
-        for (Flashable &f : flashables) {
-            free(f.data);
-        }
-    });
 
     flashables.emplace_back();
     flashables.back().image = bootimg_path;
@@ -358,7 +352,7 @@ SwitchRomResult switch_rom(const std::string &id,
         // If memory becomes an issue, an alternative method is to create a
         // temporary directory in /data/multiboot/ that's only writable by root
         // and copy the images there.
-        if (!util::file_read_all(f.image, &f.data, &f.size)) {
+        if (!util::file_read_all(f.image, f.data)) {
             LOGE("%s: Failed to read image: %s",
                  f.image.c_str(), strerror(errno));
             return SwitchRomResult::FAILED;
@@ -366,7 +360,7 @@ SwitchRomResult switch_rom(const std::string &id,
 
         // Get actual sha512sum
         unsigned char digest[SHA512_DIGEST_LENGTH];
-        SHA512(f.data, f.size, digest);
+        SHA512(f.data.data(), f.data.size(), digest);
         f.hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
 
         if (force_update_checksums) {
@@ -402,7 +396,7 @@ SwitchRomResult switch_rom(const std::string &id,
     for (Flashable &f : flashables) {
         // Cast is okay. The data is just passed to fwrite (ie. no signed
         // extension issues)
-        if (!util::file_write_data(f.block_dev, (char *) f.data, f.size)) {
+        if (!util::file_write_data(f.block_dev, f.data.data(), f.data.size())) {
             LOGE("%s: Failed to write image: %s",
                  f.block_dev.c_str(), strerror(errno));
             return SwitchRomResult::FAILED;
@@ -460,22 +454,17 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
         return false;
     }
 
-    unsigned char *data;
-    std::size_t size;
+    std::vector<unsigned char> data;
 
-    if (!util::file_read_all(boot_blockdev, &data, &size)) {
+    if (!util::file_read_all(boot_blockdev, data)) {
         LOGE("%s: Failed to read block device: %s",
              boot_blockdev.c_str(), strerror(errno));
         return false;
     }
 
-    auto free_data = util::finally([&]{
-        free(data);
-    });
-
     // Get actual sha512sum
     unsigned char digest[SHA512_DIGEST_LENGTH];
-    SHA512(data, size, digest);
+    SHA512(data.data(), data.size(), digest);
     std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
 
     // Add to checksums.prop
@@ -488,7 +477,7 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 
     // Cast is okay. The data is just passed to fwrite (ie. no signed
     // extension issues)
-    if (!util::file_write_data(bootimg_path, (char *) data, size)) {
+    if (!util::file_write_data(bootimg_path, data.data(), data.size())) {
         LOGE("%s: Failed to write image: %s",
              bootimg_path.c_str(), strerror(errno));
         return false;

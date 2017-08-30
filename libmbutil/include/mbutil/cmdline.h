@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include "mbcommon/optional.h"
+
 namespace mb
 {
 namespace util
@@ -33,11 +35,14 @@ enum class CmdlineIterAction
     Error
 };
 
-typedef CmdlineIterAction (*CmdlineIterFn)(const char *, const char *, void *);
+typedef CmdlineIterAction (*CmdlineIterFn)(const std::string &name,
+                                           const optional<std::string> &value,
+                                           void *userdata);
 
 bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata);
 
-bool kernel_cmdline_get_option(const char *option, std::string *out);
+bool kernel_cmdline_get_option(const std::string &option,
+                               optional<std::string> &value);
 
 }
 }
