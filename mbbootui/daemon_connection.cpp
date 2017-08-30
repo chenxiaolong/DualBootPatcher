@@ -23,8 +23,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/socket.h"
 
 // Hackish, but gets the job done
@@ -63,7 +63,7 @@ public:
     {
     }
 
-    virtual bool get_installed_roms(std::vector<Rom> *result)
+    virtual bool get_installed_roms(std::vector<Rom> &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -75,10 +75,10 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::MbGetInstalledRomsResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetInstalledRomsRequest,
                           v3::ResponseType_MbGetInstalledRomsResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
@@ -108,11 +108,11 @@ public:
             }
         }
 
-        result->swap(roms);
+        result.swap(roms);
         return true;
     }
 
-    virtual bool get_booted_rom_id(std::string *result)
+    virtual bool get_booted_rom_id(std::string &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -122,17 +122,17 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::MbGetBootedRomIdResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetBootedRomIdRequest,
                           v3::ResponseType_MbGetBootedRomIdResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
         if (response->rom_id()) {
-            *result = response->rom_id()->str();
+            result = response->rom_id()->str();
         } else {
-            result->clear();
+            result.clear();
         }
 
         return true;
@@ -142,7 +142,7 @@ public:
                             const std::string &boot_block_dev,
                             const std::vector<std::string> &block_dev_base_dirs,
                             bool force_checksums_update,
-                            SwitchRomResult *result)
+                            SwitchRomResult &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -163,10 +163,10 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::MbSwitchRomResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbSwitchRomRequest,
                           v3::ResponseType_MbSwitchRomResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
@@ -188,11 +188,11 @@ public:
             return false;
         }
 
-        *result = srr;
+        result = srr;
         return true;
     }
 
-    virtual bool reboot(const std::string &arg, bool *result)
+    virtual bool reboot(const std::string &arg, bool &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -204,18 +204,18 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::RebootResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_RebootRequest,
                           v3::ResponseType_RebootResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
-        *result = response->success();
+        result = response->success();
         return true;
     }
 
-    virtual bool shutdown(bool *result)
+    virtual bool shutdown(bool &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -226,18 +226,18 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::ShutdownResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_ShutdownRequest,
                           v3::ResponseType_ShutdownResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
-        *result = response->success();
+        result = response->success();
         return true;
     }
 
-    virtual bool version(std::string *result)
+    virtual bool version(std::string &result)
     {
         fb::FlatBufferBuilder builder;
 
@@ -247,39 +247,40 @@ public:
         // Send request
         std::vector<uint8_t> buf;
         const v3::MbGetVersionResponse *response;
-        if (!send_request(&buf, &builder, request.Union(),
+        if (!send_request(buf, builder, request.Union(),
                           v3::RequestType_MbGetVersionRequest,
                           v3::ResponseType_MbGetVersionResponse,
-                          (const void **) &response)) {
+                          response)) {
             return false;
         }
 
         if (response->version()) {
-            *result = response->version()->str();
+            result = response->version()->str();
         } else {
-            result->clear();
+            result.clear();
         }
 
         return true;
     }
 
 private:
-    bool send_request(std::vector<uint8_t> *buf,
-                      fb::FlatBufferBuilder *builder,
+    template<typename Result>
+    bool send_request(std::vector<uint8_t> &buf,
+                      fb::FlatBufferBuilder &builder,
                       const fb::Offset<void> &fb_request,
                       v3::RequestType request_type,
                       v3::ResponseType expected_type,
-                      const void **result)
+                      Result &result)
     {
         // Build request table
-        v3::RequestBuilder rb(*builder);
+        v3::RequestBuilder rb(builder);
         rb.add_request_type(request_type);
         rb.add_request(fb_request);
-        builder->Finish(rb.Finish());
+        builder.Finish(rb.Finish());
 
         // Send request
         if (!mb::util::socket_write_bytes(
-                _fd, builder->GetBufferPointer(), builder->GetSize())) {
+                _fd, builder.GetBufferPointer(), builder.GetSize())) {
             return false;
         }
 
@@ -289,14 +290,14 @@ private:
         }
 
         // Verify response
-        auto verifier = fb::Verifier(buf->data(), buf->size());
+        auto verifier = fb::Verifier(buf.data(), buf.size());
         if (!v3::VerifyResponseBuffer(verifier)) {
             LOGE("Received invalid buffer");
             return false;
         }
 
         // Verify response type
-        const v3::Response *response = v3::GetResponse(buf->data());
+        const v3::Response *response = v3::GetResponse(buf.data());
         v3::ResponseType type = response->response_type();
 
         if (type == v3::ResponseType_Unsupported) {
@@ -311,7 +312,8 @@ private:
             return false;
         }
 
-        *result = response->response();
+        result = static_cast<typename std::remove_reference<Result>::type>(
+                response->response());
         return true;
     }
 
@@ -346,7 +348,7 @@ bool MbtoolConnection::connect()
 
     bool ret = true;
 
-    auto on_return = mb::util::finally([&]{
+    auto on_return = mb::finally([&]{
         if (!ret) {
             close(fd);
         }
@@ -372,7 +374,7 @@ bool MbtoolConnection::connect()
 
     // Check authorization result
     std::string result;
-    if (!mb::util::socket_read_string(fd, &result)) {
+    if (!mb::util::socket_read_string(fd, result)) {
         LOGE("Failed to receive authorization result: %s", strerror(errno));
         return ret = false;
     } else if (result == HANDSHAKE_RESPONSE_DENY) {
@@ -391,7 +393,7 @@ bool MbtoolConnection::connect()
     }
 
     // Check interface request's response
-    if (!mb::util::socket_read_string(fd, &result)) {
+    if (!mb::util::socket_read_string(fd, result)) {
         LOGE("Failed to receive interface request result: %s", strerror(errno));
         return ret = false;
     } else if (result == HANDSHAKE_RESPONSE_UNSUPPORTED) {

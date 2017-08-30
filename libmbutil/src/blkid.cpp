@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mbutil/finally.h"
+#include "mbcommon/finally.h"
 
 // NOTE: We don't use libblkid from util-linux because we don't need most of its
 // features and it increases mbtool's binary size more than 200KiB (armeabi-v7a)
@@ -133,11 +133,11 @@ static ssize_t read_all(int fd, void *buf, size_t size)
     return total;
 }
 
-bool blkid_get_fs_type(const char *path, const char **type)
+bool blkid_get_fs_type(const std::string &path, optional<std::string> &type)
 {
     std::vector<unsigned char> buf(1024 * 1024);
 
-    int fd = open(path, O_RDONLY | O_CLOEXEC);
+    int fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
         return false;
     }
@@ -155,12 +155,12 @@ bool blkid_get_fs_type(const char *path, const char **type)
 
     for (auto it = probe_funcs; it->name; ++it) {
         if (it->func(buf.data(), n)) {
-            *type = it->name;
+            type = {it->name};
             return true;
         }
     }
 
-    *type = nullptr;
+    type = {};
     return true;
 }
 

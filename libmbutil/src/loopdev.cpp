@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -31,8 +31,8 @@
 
 #include <linux/loop.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
-#include "mbutil/finally.h"
 #include "mbutil/string.h"
 
 
@@ -56,7 +56,7 @@ namespace util
  * \return Loopdev number or -1 if loop-control does not exist or the ioctl
  *         failed
  */
-static int find_loopdev_by_loop_control(void)
+static int find_loopdev_by_loop_control()
 {
     int fd = -1;
 
@@ -159,7 +159,7 @@ std::string loopdev_find_unused(void)
         return {};
     }
 
-    return mb::format(LOOP_FMT, n);
+    return format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
@@ -187,7 +187,8 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
     });
 
     memset(&loopinfo, 0, sizeof(struct loop_info64));
-    strlcpy((char *) loopinfo.lo_file_name, file.c_str(), LO_NAME_SIZE);
+    strlcpy(reinterpret_cast<char *>(loopinfo.lo_file_name), file.c_str(),
+            LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {

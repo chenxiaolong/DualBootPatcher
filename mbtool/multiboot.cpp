@@ -80,8 +80,8 @@ public:
         // COPY_EXCLUDE_TOP_LEVEL flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            mb::format(_error_msg, "%s: Failed to copy directory: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to copy directory: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Skip | Action::FTS_Fail;
         }
@@ -137,8 +137,8 @@ private:
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
-            mb::format(_error_msg, "%s: Failed to copy file: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to copy file: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -184,7 +184,7 @@ bool fix_multiboot_permissions(void)
     }
 
     std::string context;
-    if (util::selinux_lget_context(INTERNAL_STORAGE, &context)
+    if (util::selinux_lget_context(INTERNAL_STORAGE, context)
             && !util::selinux_lset_context_recursive(MULTIBOOT_DIR, context)) {
         LOGE("%s: Failed to set context to %s: %s",
              MULTIBOOT_DIR, context.c_str(), strerror(errno));
@@ -199,7 +199,7 @@ bool switch_context(const std::string &context)
     std::string current;
 
     if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &current)) {
+            0, util::SELinuxAttr::CURRENT, current)) {
         LOGE("Failed to get current process context: %s", strerror(errno));
         // Don't fail if SELinux is not supported
         return errno == ENOENT;

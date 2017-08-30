@@ -849,9 +849,10 @@ void device_init(bool dry_run_)
     dry_run = dry_run_;
 
     bootdevice[0] = '\0';
-    std::string value;
-    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", &value)) {
-        strlcpy(bootdevice, value.c_str(), sizeof(bootdevice));
+    mb::optional<std::string> value;
+    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", value)
+            && value) {
+        strlcpy(bootdevice, value->c_str(), sizeof(bootdevice));
     }
 
     // Is 256K enough? udev uses 16MB!

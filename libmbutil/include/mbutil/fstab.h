@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,27 +22,27 @@
 #include <string>
 #include <vector>
 
-#define MF_WAIT             0x1
-#define MF_CHECK            0x2
-#define MF_CRYPT            0x4
-#define MF_NONREMOVABLE     0x8
-#define MF_VOLDMANAGED      0x10
-#define MF_LENGTH           0x20
-#define MF_RECOVERYONLY     0x40
-#define MF_SWAPPRIO         0x80
-#define MF_ZRAMSIZE         0x100
-#define MF_VERIFY           0x200
-#define MF_FORCECRYPT       0x400
-#define MF_NOEMULATEDSD     0x800
-#define MF_NOTRIM           0x1000
-#define MF_FILEENCRYPTION   0x2000
-#define MF_FORMATTABLE      0x4000
-#define MF_SLOTSELECT       0x8000
-
 namespace mb
 {
 namespace util
 {
+
+constexpr unsigned long MF_WAIT             = 1 << 0;
+constexpr unsigned long MF_CHECK            = 1 << 1;
+constexpr unsigned long MF_CRYPT            = 1 << 2;
+constexpr unsigned long MF_NONREMOVABLE     = 1 << 3;
+constexpr unsigned long MF_VOLDMANAGED      = 1 << 4;
+constexpr unsigned long MF_LENGTH           = 1 << 5;
+constexpr unsigned long MF_RECOVERYONLY     = 1 << 6;
+constexpr unsigned long MF_SWAPPRIO         = 1 << 7;
+constexpr unsigned long MF_ZRAMSIZE         = 1 << 8;
+constexpr unsigned long MF_VERIFY           = 1 << 9;
+constexpr unsigned long MF_FORCECRYPT       = 1 << 10;
+constexpr unsigned long MF_NOEMULATEDSD     = 1 << 11;
+constexpr unsigned long MF_NOTRIM           = 1 << 12;
+constexpr unsigned long MF_FILEENCRYPTION   = 1 << 13;
+constexpr unsigned long MF_FORMATTABLE      = 1 << 14;
+constexpr unsigned long MF_SLOTSELECT       = 1 << 15;
 
 struct fstab_rec
 {

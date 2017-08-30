@@ -22,7 +22,7 @@
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">向本应用的每位贡献者致敬！
 - 开发人员：chenxiaolong
-- 翻译版本：简体中文（zh_CN）Build 20170824
+- 翻译版本：简体中文（zh_CN）Build 20170827
 - 翻译人员：CloverGit、haochen lin、Poon Geen、Risa 等\n\n
 - 翻译说明：1.Ramdisk 指 Android 系统的根文件系统，系统内核在启动时会加载它，包含系统重要的运行环境，可译为“内存”（注意区分）；2.应用中的设置内核即为设置系统默认启动内核；3.mbtool 是本应用使用的核心组件；4.补丁处理即为“打补丁”；5.所有翻译如存在疑问，请以英文为准，同时欢迎参与本地化工作</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
@@ -253,13 +253,13 @@
   <!--Restore targets dialog description-->
   <string name="br_restore_targets_dialog_desc">选择需要还原的对象</string>
   <!--Backup/restore target for ROM's /system files-->
-  <string name="br_target_system">System/系统</string>
+  <string name="br_target_system">System分区</string>
   <!--Backup/restore target for ROM's /cache files-->
-  <string name="br_target_cache">Cache/缓存</string>
+  <string name="br_target_cache">Cache分区</string>
   <!--Backup/restore target for ROM's /data files-->
-  <string name="br_target_data">Data/数据</string>
+  <string name="br_target_data">Data分区</string>
   <!--Backup/restore target for ROM's boot image-->
-  <string name="br_target_boot">Boot/镜像</string>
+  <string name="br_target_boot">Boot分区</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
   <string name="br_target_config">MultiBoot 配置</string>
   <!--Toast message shown if no backup/restore targets are selected-->
@@ -302,7 +302,7 @@
   <!--Description for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade_desc">这个选项仅用于处在分区中的主系统,虽然有所不同,但是本质上打不打补丁是一样的</string>
   <!--Description for all other installation locations-->
-  <string name="install_location_desc">改系统将会安装到 %s</string>
+  <string name="install_location_desc">该系统将会安装到 %s</string>
   <!--Text box hint for specifying the data slot ID-->
   <string name="install_location_named_slot_id_hint">输入系统标识</string>
   <!--Description text shown if the data slot ID is empty-->
@@ -477,7 +477,7 @@
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">没有</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
-  <string name="ok">好</string>
+  <string name="ok">确定</string>
   <!--Word/phrase for Cancel (used in dialog boxes)-->
   <string name="cancel">取消</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->

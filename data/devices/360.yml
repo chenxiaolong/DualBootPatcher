@@ -3,6 +3,7 @@
   id: QK1505_A01
   codenames:
     - QK1505_A01
+    - QK1505-A01
   architecture: arm64-v8a
 
   block_devs:
@@ -70,6 +71,7 @@
 - name: 360N4 Mobile (1503-M02)
   id: QK1503-M02
   codenames:
+    - QK1503_M02
     - QK1503-M02
   architecture: arm64-v8a
 

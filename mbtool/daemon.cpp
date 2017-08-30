@@ -33,13 +33,14 @@
 #include <proc/readproc.h>
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -123,14 +124,14 @@ static bool client_connection(int fd)
         return false;
     }
 
-    util::set_process_title_v(
-            nullptr, "mbtool connection from pid: %u", cred.pid);
+    util::set_process_title(format("mbtool connection from pid: %u", cred.pid),
+                            nullptr);
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
     LOGD("Client GID: %u", cred.gid);
 
-    auto disconnect_msg = util::finally([&]{
+    auto disconnect_msg = finally([&]{
         LOGD("Disconnecting connection from PID: %u", cred.pid);
     });
 
@@ -154,7 +155,7 @@ static bool client_connection(int fd)
     }
 
     int32_t version;
-    if (!util::socket_read_int32(fd, &version)) {
+    if (!util::socket_read_int32(fd, version)) {
         LOGE("Failed to get interface version");
         return false;
     }
@@ -190,7 +191,7 @@ static bool run_daemon()
         return false;
     }
 
-    auto close_fd = util::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 
@@ -262,8 +263,8 @@ static bool run_daemon()
 
             // Change the process name so --replace doesn't kill existing
             // connections
-            if (!util::set_process_title_v(
-                    nullptr, "mbtool connection initializing")) {
+            if (!util::set_process_title(
+                    "mbtool connection initializing", nullptr)) {
                 LOGE("Failed to set process title: %s", strerror(errno));
                 _exit(127);
             }

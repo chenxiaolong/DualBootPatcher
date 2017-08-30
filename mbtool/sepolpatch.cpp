@@ -39,9 +39,9 @@
 #undef bool
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
@@ -370,10 +370,10 @@ static inline role_datum_t * find_role(policydb_t *pdb, const char *name)
 bool selinux_mount()
 {
     // Try /sys/fs/selinux
-    if (mount(SELINUX_FS_TYPE, SELINUX_MOUNT_POINT,
-              SELINUX_FS_TYPE, 0, nullptr) < 0) {
+    if (mount(util::SELINUX_FS_TYPE, util::SELINUX_MOUNT_POINT,
+              util::SELINUX_FS_TYPE, 0, nullptr) < 0) {
         LOGW("Failed to mount %s at %s: %s",
-             SELINUX_FS_TYPE, SELINUX_MOUNT_POINT, strerror(errno));
+             util::SELINUX_FS_TYPE, util::SELINUX_MOUNT_POINT, strerror(errno));
         if (errno == ENODEV || errno == ENOENT) {
             LOGI("Kernel does not support SELinux");
         }
@@ -385,8 +385,9 @@ bool selinux_mount()
 
 bool selinux_unmount()
 {
-    if (umount(SELINUX_MOUNT_POINT) < 0) {
-        LOGE("Failed to unmount %s: %s", SELINUX_MOUNT_POINT, strerror(errno));
+    if (umount(util::SELINUX_MOUNT_POINT) < 0) {
+        LOGE("Failed to unmount %s: %s",
+             util::SELINUX_MOUNT_POINT, strerror(errno));
         return false;
     }
 
@@ -940,10 +941,10 @@ static bool fix_data_media_rules(policydb_t *pdb)
     }
 
     std::string context;
-    if (!util::selinux_lget_context(path, &context)) {
+    if (!util::selinux_lget_context(path, context)) {
         LOGE("%s: Failed to get context: %s", path, strerror(errno));
         path = "/data/media";
-        if (!util::selinux_lget_context(path, &context)) {
+        if (!util::selinux_lget_context(path, context)) {
             LOGE("%s: Failed to get context: %s", path, strerror(errno));
             // Don't fail if /data/media does not exist
             return errno == ENOENT;
@@ -1128,7 +1129,7 @@ bool patch_sepolicy(const std::string &source,
         return false;
     }
 
-    auto destroy_pdb = util::finally([&]{
+    auto destroy_pdb = finally([&]{
         policydb_destroy(&pdb);
     });
 
@@ -1154,7 +1155,7 @@ bool patch_sepolicy(const std::string &source,
 
 bool patch_loaded_sepolicy(SELinuxPatch patch)
 {
-    autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rbe"));
+    autoclose::file fp(autoclose::fopen(util::SELINUX_ENFORCE_FILE, "rbe"));
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't
@@ -1163,12 +1164,13 @@ bool patch_loaded_sepolicy(SELinuxPatch patch)
             return true;
         } else {
             LOGE("%s: Failed to open file: %s",
-                 SELINUX_ENFORCE_FILE, strerror(errno));
+                 util::SELINUX_ENFORCE_FILE, strerror(errno));
             return false;
         }
     }
 
-    return patch_sepolicy(SELINUX_POLICY_FILE, SELINUX_LOAD_FILE, patch);
+    return patch_sepolicy(util::SELINUX_POLICY_FILE, util::SELINUX_LOAD_FILE,
+                          patch);
 }
 
 static void sepolpatch_usage(FILE *stream)
@@ -1313,10 +1315,10 @@ int sepolpatch_main(int argc, char *argv[])
                     ? EXIT_SUCCESS : EXIT_FAILURE;
         } else {
             if (!source_file) {
-                source_file = SELINUX_POLICY_FILE;
+                source_file = util::SELINUX_POLICY_FILE;
             }
             if (!target_file) {
-                target_file = SELINUX_LOAD_FILE;
+                target_file = util::SELINUX_LOAD_FILE;
             }
 
             return patch_sepolicy(source_file, target_file, patch_type)
