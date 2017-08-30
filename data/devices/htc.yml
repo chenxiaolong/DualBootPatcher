@@ -1,7 +1,6 @@
-﻿- name: HTC 10
-  id: pme
+- name: HTC 10
+  id: pmewhl
   codenames:
-    - pme
     - htc_pmewhl
   architecture: arm64-v8a
 
