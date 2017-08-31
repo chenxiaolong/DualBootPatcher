@@ -1,4 +1,5 @@
-- name: HTC 10
+---
+- name: HTC 10 (pmewhl)
   id: pmewhl
   codenames:
     - htc_pmewhl
@@ -39,7 +40,7 @@
       - fbdev
     theme: portrait_hdpi
 
-- name: HTC 10 (another verison)
+- name: HTC 10 (pmeuhl)
   id: pmeuhl
   codenames:
     - htc_pmeuhl
