@@ -113,9 +113,9 @@ private:
     bool _ran;
 
     static void output_cb(const char *line, bool error, void *userdata);
-    int run_command(const char * const *argv);
-    int run_command_chroot(const char *dir,
-                           const char * const *argv);
+    int run_command(const std::vector<std::string> &argv);
+    int run_command_chroot(const std::string &dir,
+                           const std::vector<std::string> &argv);
 
     bool create_chroot();
     bool destroy_chroot() const;

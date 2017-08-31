@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,18 +23,18 @@
 
 #include <sepol/policydb/policydb.h>
 
-#define SELINUX_ENFORCE_FILE            "/sys/fs/selinux/enforce"
-#define SELINUX_POLICY_FILE             "/sys/fs/selinux/policy"
-#define SELINUX_LOAD_FILE               "/sys/fs/selinux/load"
-
-#define SELINUX_MOUNT_POINT             "/sys/fs/selinux"
-#define SELINUX_FS_TYPE                 "selinuxfs"
-#define SELINUX_DEFAULT_POLICY_FILE     "/sepolicy"
-
 namespace mb
 {
 namespace util
 {
+
+constexpr char SELINUX_ENFORCE_FILE[]           = "/sys/fs/selinux/enforce";
+constexpr char SELINUX_POLICY_FILE[]            = "/sys/fs/selinux/policy";
+constexpr char SELINUX_LOAD_FILE[]              = "/sys/fs/selinux/load";
+
+constexpr char SELINUX_MOUNT_POINT[]            = "/sys/fs/selinux";
+constexpr char SELINUX_FS_TYPE[]                = "selinuxfs";
+constexpr char SELINUX_DEFAULT_POLICY_FILE[]    = "/sepolicy";
 
 enum class SELinuxAttr
 {
@@ -48,9 +48,9 @@ enum class SELinuxAttr
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
 bool selinux_write_policy(const std::string &path, policydb_t *pdb);
-bool selinux_get_context(const std::string &path, std::string *context);
-bool selinux_lget_context(const std::string &path, std::string *context);
-bool selinux_fget_context(int fd, std::string *context);
+bool selinux_get_context(const std::string &path, std::string &context);
+bool selinux_lget_context(const std::string &path, std::string &context);
+bool selinux_fget_context(int fd, std::string &context);
 bool selinux_set_context(const std::string &path, const std::string &context);
 bool selinux_lset_context(const std::string &path, const std::string &context);
 bool selinux_fset_context(int fd, const std::string &context);
@@ -58,10 +58,10 @@ bool selinux_set_context_recursive(const std::string &path,
                                    const std::string &context);
 bool selinux_lset_context_recursive(const std::string &path,
                                     const std::string &context);
-bool selinux_get_enforcing(int *value);
+bool selinux_get_enforcing(int &value);
 bool selinux_set_enforcing(int value);
 bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
-                              std::string *context_out);
+                              std::string &context_out);
 bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
                               const std::string &context);
 

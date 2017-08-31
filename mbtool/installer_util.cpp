@@ -234,7 +234,7 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
         const char *curpath = archive_entry_pathname(entry.get());
         if (curpath && !input_dir.empty()) {
             std::string relpath;
-            if (!util::relative_path(curpath, input_dir, &relpath)) {
+            if (!util::relative_path(curpath, input_dir, relpath)) {
                 LOGE("Failed to compute relative path of %s starting at %s: %s",
                      curpath, input_dir.c_str(), strerror(errno));
                 return false;

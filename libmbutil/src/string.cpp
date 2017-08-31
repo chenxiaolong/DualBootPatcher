@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,7 +30,7 @@ namespace mb
 namespace util
 {
 
-static void replace_internal(std::string *source,
+static void replace_internal(std::string &source,
                              const std::string &from, const std::string &to,
                              bool replace_first_only)
 {
@@ -39,8 +39,8 @@ static void replace_internal(std::string *source,
     }
 
     std::size_t pos = 0;
-    while ((pos = source->find(from, pos)) != std::string::npos) {
-        source->replace(pos, from.size(), to);
+    while ((pos = source.find(from, pos)) != std::string::npos) {
+        source.replace(pos, from.size(), to);
         if (replace_first_only) {
             return;
         }
@@ -48,13 +48,13 @@ static void replace_internal(std::string *source,
     }
 }
 
-void replace(std::string *source,
+void replace(std::string &source,
              const std::string &from, const std::string &to)
 {
     replace_internal(source, from, to, true);
 }
 
-void replace_all(std::string *source,
+void replace_all(std::string &source,
                  const std::string &from, const std::string &to)
 {
     replace_internal(source, from, to, false);

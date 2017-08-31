@@ -100,7 +100,7 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 static bool detect_device()
 {
     std::vector<unsigned char> contents;
-    if (!mb::util::file_read_all(DEVICE_JSON_PATH, &contents)) {
+    if (!mb::util::file_read_all(DEVICE_JSON_PATH, contents)) {
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
         return false;
     }
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 
     // Set daemon version
     std::string mbtool_version;
-    mbtool_interface->version(&mbtool_version);
+    mbtool_interface->version(mbtool_version);
     DataManager::SetValue(VAR_TW_MBTOOL_VERSION, mbtool_version);
 
     LOGV("Loading graphics system...");
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
     // "ro.multiboot.romid" property and will do some additional checks to
     // ensure that the value is correct.
     std::string rom_id;
-    mbtool_interface->get_booted_rom_id(&rom_id);
+    mbtool_interface->get_booted_rom_id(rom_id);
     if (rom_id.empty()) {
         LOGW("Could not determine ROM ID");
     }
@@ -501,11 +501,11 @@ int main(int argc, char *argv[])
                 reboot_arg = args[1];
             }
             bool result;
-            mbtool_interface->reboot(reboot_arg, &result);
+            mbtool_interface->reboot(reboot_arg, result);
             wait_forever();
         } else if (args[0] == "shutdown") {
             bool result;
-            mbtool_interface->shutdown(&result);
+            mbtool_interface->shutdown(result);
             wait_forever();
         }
     }

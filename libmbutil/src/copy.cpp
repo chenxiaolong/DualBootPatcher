@@ -269,7 +269,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
     case S_IFLNK:
         if (!(flags & COPY_FOLLOW_SYMLINKS)) {
             std::string symlink_path;
-            if (!read_link(source, &symlink_path)) {
+            if (!read_link(source, symlink_path)) {
                 LOGW("%s: Failed to read symlink path: %s",
                      source.c_str(), strerror(errno));
                 return false;
@@ -489,7 +489,7 @@ public:
 
         // Find current symlink target
         std::string symlink_path;
-        if (!read_link(_curr->fts_accpath, &symlink_path)) {
+        if (!read_link(_curr->fts_accpath, symlink_path)) {
             format(_error_msg, "%s: Failed to read symlink path: %s",
                    _curr->fts_accpath, strerror(errno));
             LOGW("%s", _error_msg.c_str());

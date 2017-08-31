@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -76,7 +76,7 @@ std::string real_path(const std::string &path)
     return std::string(actual_path);
 }
 
-bool read_link(const std::string &path, std::string *out)
+bool read_link(const std::string &path, std::string &out)
 {
     std::vector<char> buf;
     ssize_t len;
@@ -87,7 +87,7 @@ bool read_link(const std::string &path, std::string *out)
         len = readlink(path.c_str(), buf.data(), buf.size() - 1);
         if (len < 0) {
             return false;
-        } else if ((size_t) len == buf.size() - 1) {
+        } else if (static_cast<size_t>(len) == buf.size() - 1) {
             buf.resize(buf.size() << 1);
         } else {
             break;
@@ -95,7 +95,7 @@ bool read_link(const std::string &path, std::string *out)
     }
 
     buf[len] = '\0';
-    out->assign(buf.data());
+    out.assign(buf.data());
     return true;
 }
 
@@ -201,14 +201,14 @@ std::string path_join(const std::vector<std::string> &components)
  *       created, take care to not add '.'. Otherwise, the result will be
  *       incorrect. For example, '/usr/bin/./..' will become '/usr/bin'.
  *
- * \param components Pointer to list of path pieces
+ * \param components Reference to list of path pieces
  */
-void normalize_path(std::vector<std::string> *components)
+void normalize_path(std::vector<std::string> &components)
 {
     std::vector<std::string>::iterator prev_it;
 
-    for (auto it = components->begin(); it != components->end();) {
-        if (it != components->begin()) {
+    for (auto it = components.begin(); it != components.end();) {
+        if (it != components.begin()) {
             prev_it = it - 1;
 
             // After the removal, it will point to the piece after '..'
@@ -217,10 +217,10 @@ void normalize_path(std::vector<std::string> *components)
                 // noop, so just remove the '..'. Otherwise, remove the previous
                 // piece and the '..' piece.
                 if (prev_it->empty()) {
-                    it = components->erase(it);
+                    it = components.erase(it);
                 } else {
-                    it = components->erase(prev_it);
-                    it = components->erase(it);
+                    it = components.erase(prev_it);
+                    it = components.erase(it);
                 }
             } else {
                 ++it;
@@ -258,7 +258,7 @@ void normalize_path(std::vector<std::string> *components)
  *         - an intermediate path could not be computed
  */
 bool relative_path(const std::string &path, const std::string &start,
-                   std::string *out)
+                   std::string &out)
 {
     if (path.empty() || start.empty()
             || (path[0] == '/' && start[0] != '/')
@@ -271,8 +271,8 @@ bool relative_path(const std::string &path, const std::string &start,
     std::vector<std::string> start_pieces(path_split(start));
     std::vector<std::string> result_pieces;
 
-    normalize_path(&path_pieces);
-    normalize_path(&start_pieces);
+    normalize_path(path_pieces);
+    normalize_path(start_pieces);
 
     // Find the number of common path segments
     size_t common;
@@ -295,7 +295,7 @@ bool relative_path(const std::string &path, const std::string &start,
         result_pieces.push_back(path_pieces[i]);
     }
 
-    *out = path_join(result_pieces);
+    out = path_join(result_pieces);
 
     return true;
 }
@@ -323,29 +323,29 @@ int path_compare(const std::string &path1, const std::string &path2)
     std::vector<std::string> path1_pieces(path_split(path1));
     std::vector<std::string> path2_pieces(path_split(path2));
 
-    normalize_path(&path1_pieces);
-    normalize_path(&path2_pieces);
+    normalize_path(path1_pieces);
+    normalize_path(path2_pieces);
 
     return path_join(path1_pieces).compare(path_join(path2_pieces));
 }
 
-bool wait_for_path(const char *path, unsigned int timeout_ms)
+bool wait_for_path(const std::string &path, unsigned int timeout_ms)
 {
     uint64_t until = current_time_ms() + timeout_ms;
     struct stat sb;
     int ret;
 
-    while ((ret = stat(path, &sb)) < 0 && current_time_ms() < until) {
+    while ((ret = stat(path.c_str(), &sb)) < 0 && current_time_ms() < until) {
         usleep(10000);
     }
 
     return ret == 0;
 }
 
-bool path_exists(const char *path, bool follow_symlinks)
+bool path_exists(const std::string &path, bool follow_symlinks)
 {
     struct stat sb;
-    return (follow_symlinks ? stat : lstat)(path, &sb) == 0;
+    return (follow_symlinks ? stat : lstat)(path.c_str(), &sb) == 0;
 }
 
 }

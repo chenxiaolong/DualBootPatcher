@@ -46,16 +46,16 @@ class MbtoolInterface
 public:
     virtual ~MbtoolInterface() {}
 
-    virtual bool get_installed_roms(std::vector<Rom> *result) = 0;
-    virtual bool get_booted_rom_id(std::string *result) = 0;
+    virtual bool get_installed_roms(std::vector<Rom> &result) = 0;
+    virtual bool get_booted_rom_id(std::string &result) = 0;
     virtual bool switch_rom(const std::string &id,
                             const std::string &boot_block_dev,
                             const std::vector<std::string> &block_dev_base_dirs,
                             bool force_checksums_update,
-                            SwitchRomResult *result) = 0;
-    virtual bool reboot(const std::string &arg, bool *result) = 0;
-    virtual bool shutdown(bool *result) = 0;
-    virtual bool version(std::string *result) = 0;
+                            SwitchRomResult &result) = 0;
+    virtual bool reboot(const std::string &arg, bool &result) = 0;
+    virtual bool shutdown(bool &result) = 0;
+    virtual bool version(std::string &result) = 0;
 };
 
 class MbtoolConnection

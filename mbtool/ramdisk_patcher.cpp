@@ -285,12 +285,12 @@ static bool _rp_symlink_init(const std::string &dir)
 
         // Check that /init is a symlink and that /init.real exists
         if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
-                && util::read_link(target, &sony_symlink_target)
+                && util::read_link(target, sony_symlink_target)
                 && lstat(sony_real_init.c_str(), &sb) == 0) {
             std::vector<std::string> haystack{util::path_split(sony_symlink_target)};
             std::vector<std::string> needle{util::path_split("sbin/init_sony")};
 
-            util::normalize_path(&haystack);
+            util::normalize_path(haystack);
 
             // Check that init points to some path with "sbin/init_sony" in it
             auto const it = std::search(haystack.cbegin(), haystack.cend(),
