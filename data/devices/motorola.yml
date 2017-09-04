@@ -535,7 +535,6 @@
     - griffin_cn
     - xt1650-03
     - xt1650-05
-
   architecture: arm64-v8a
 
   block_devs:
