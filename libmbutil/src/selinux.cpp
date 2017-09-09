@@ -30,6 +30,7 @@
 
 #include <sepol/sepol.h>
 
+#include "mbcommon/error.h"
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
@@ -419,9 +420,8 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
     }
 
     auto close_fd = finally([&]{
-        int saved_errno = errno;
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     std::vector<char> buf(sysconf(_SC_PAGE_SIZE));
@@ -449,9 +449,8 @@ bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
     }
 
     auto close_fd = finally([&]{
-        int saved_errno = errno;
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     ssize_t n;
