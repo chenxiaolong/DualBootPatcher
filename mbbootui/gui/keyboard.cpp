@@ -29,6 +29,8 @@
 
 #include "gui/gui.h"
 
+#define LOG_TAG "mbbootui/gui/keyboard"
+
 bool GUIKeyboard::CtrlActive = false;
 
 GUIKeyboard::GUIKeyboard(xml_node<>* node)

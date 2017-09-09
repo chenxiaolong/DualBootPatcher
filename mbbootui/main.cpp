@@ -51,6 +51,8 @@
 
 #include "config/config.hpp"
 
+#define LOG_TAG "mbbootui/main"
+
 #define APPEND_TO_LOG               1
 
 #define MAX_LOG_SIZE                (1024 * 1024) /* 1MiB */
@@ -537,14 +539,7 @@ static int log_bridge(int prio, const char *tag, const char *fmt, va_list ap)
         break;
     }
 
-    char newfmt[512];
-    if (snprintf(newfmt, sizeof(newfmt), "[%s] %s", tag, fmt)
-            >= (int) sizeof(newfmt)) {
-        // Doesn't fit
-        return -1;
-    }
-
-    mb::log::logv(level, newfmt, ap);
+    mb::log::log(level, "[%s] %s", tag, mb::format_v(fmt, ap).c_str());
     return 0;
 }
 

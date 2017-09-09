@@ -63,6 +63,8 @@
 #include "romconfig.h"
 #include "roms.h"
 
+#define LOG_TAG "mbtool/appsync"
+
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
 
@@ -933,7 +935,7 @@ int appsync_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     LOGI("=== APPSYNC VERSION %s ===", version());
 

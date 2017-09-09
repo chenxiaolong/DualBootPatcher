@@ -57,6 +57,8 @@
 // minizip
 #include "minizip/zip.h"
 
+#define LOG_TAG "mbpatcher/patchers/odinpatcher"
+
 class ar;
 
 namespace mb

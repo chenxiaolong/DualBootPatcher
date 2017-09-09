@@ -50,6 +50,7 @@
 #include "installer.h"
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/rom_installer"
 
 #define DEBUG_LEAVE_STDIN_OPEN 0
 #define DEBUG_ENABLE_PASSTHROUGH 0
@@ -606,7 +607,7 @@ int rom_installer_main(int argc, char *argv[])
 #endif
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     // Start installing!
     RomInstaller ri(zip_file, rom_id, fp.get(), flags);

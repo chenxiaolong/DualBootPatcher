@@ -26,6 +26,8 @@
 #include "mblog/logging.h"
 #include "mbsign/mbsign.h"
 
+#define LOG_TAG "test_sign"
+
 static int log_callback(const char *str, size_t len, void *userdata)
 {
     (void) userdata;

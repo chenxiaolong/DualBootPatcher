@@ -60,6 +60,8 @@
 #include "mbutil/external/bionic_lock.h"
 #include "mbutil/external/bionic_macros.h"
 
+#define LOG_TAG "mbutil/external/system_properties"
+
 // NOTE: Not wanted for DualBootPatcher since the properties service
 // initializes before SELinux
 #define MB_ENABLE_SELINUX_OPERATIONS 0

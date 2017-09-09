@@ -50,6 +50,8 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/utilities"
+
 using namespace mb::device;
 
 namespace mb
@@ -463,7 +465,7 @@ int utilities_main(int argc, char *argv[])
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stdout, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stdout));
 
     bool force = false;
 

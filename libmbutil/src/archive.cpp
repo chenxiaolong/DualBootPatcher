@@ -30,6 +30,8 @@
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
 
+#define LOG_TAG "mbutil/archive"
+
 #define LIBARCHIVE_DISK_WRITER_FLAGS \
     ARCHIVE_EXTRACT_TIME \
     | ARCHIVE_EXTRACT_SECURE_SYMLINKS \

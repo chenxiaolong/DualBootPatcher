@@ -47,6 +47,8 @@
 
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/sepolpatch"
+
 
 extern "C" int policydb_index_decls(policydb_t *p);
 

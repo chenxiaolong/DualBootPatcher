@@ -65,6 +65,8 @@
 #include "gui/text.hpp"
 #include "gui/textbox.hpp"
 
+#define LOG_TAG "mbbootui/gui/pages"
+
 #define TW_THEME_VERSION 1
 #define TW_THEME_VER_ERR -2
 

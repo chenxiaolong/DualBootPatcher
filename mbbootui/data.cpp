@@ -42,6 +42,8 @@
 #include "twrp-functions.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/data"
+
 #define DEVID_MAX 64
 #define HWID_MAX 32
 

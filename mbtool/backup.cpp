@@ -54,6 +54,8 @@
 #include "roms.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/backup"
+
 #define BACKUP_MNT_DIR          "/mb_mnt"
 
 namespace mb

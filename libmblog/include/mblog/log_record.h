@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,18 +19,25 @@
 
 #pragma once
 
+#include <chrono>
+#include <string>
+
+#include "mblog/log_level.h"
+
 namespace mb
 {
 namespace log
 {
 
-enum class LogLevel
+struct LogRecord
 {
-    Error,
-    Warning,
-    Info,
-    Debug,
-    Verbose
+    std::chrono::system_clock::time_point time;
+    uint64_t pid;
+    uint64_t tid;
+    LogLevel prio;
+    std::string tag;
+    std::string msg;
+    std::string fmt_msg;
 };
 
 }

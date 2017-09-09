@@ -35,6 +35,8 @@
 #include "mblog/logging.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/command"
+
 #define LOG_COMMANDS 0
 
 namespace mb

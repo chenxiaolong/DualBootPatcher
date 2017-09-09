@@ -37,6 +37,8 @@
 #include "../mbtool/protocol/request_generated.h"
 #include "../mbtool/protocol/response_generated.h"
 
+#define LOG_TAG "mbbootui/daemon_connection"
+
 #define SOCKET_ADDRESS                  "mbtool.daemon"
 #define PROTOCOL_VERSION                3
 

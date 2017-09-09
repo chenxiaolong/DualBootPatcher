@@ -43,6 +43,8 @@
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/mount"
+
 #define MAX_UNMOUNT_TRIES 5
 
 #define DELETED_SUFFIX " (deleted)"

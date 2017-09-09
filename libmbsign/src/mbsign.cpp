@@ -31,6 +31,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG                 "mbsign"
+
 #define BUFSIZE                 1024 * 8
 
 #define MAGIC                   "!MBSIGN!"
@@ -69,7 +71,7 @@ static int password_callback(char *buf, int size, int rwflag, void *userdata)
     (void) rwflag;
 
     if (userdata) {
-        const char *password = (const char *) userdata;
+        const char *password = static_cast<const char *>(userdata);
 
         int res = strlen(password);
         if (res > size) {

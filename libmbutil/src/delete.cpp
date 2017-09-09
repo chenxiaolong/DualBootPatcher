@@ -29,6 +29,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/delete"
+
 namespace mb
 {
 namespace util

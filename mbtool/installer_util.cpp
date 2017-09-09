@@ -50,6 +50,8 @@
 #include "bootimg_util.h"
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/installer_util"
+
 using namespace mb::bootimg;
 
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;

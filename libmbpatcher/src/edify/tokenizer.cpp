@@ -28,6 +28,8 @@
 
 #include "mbpatcher/private/stringutils.h"
 
+#define LOG_TAG "mbpatcher/edify/tokenizer"
+
 namespace mb
 {
 namespace patcher

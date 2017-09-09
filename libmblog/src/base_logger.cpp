@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,21 +17,20 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "mblog/base_logger.h"
 
 namespace mb
 {
 namespace log
 {
 
-enum class LogLevel
+BaseLogger::BaseLogger()
 {
-    Error,
-    Warning,
-    Info,
-    Debug,
-    Verbose
-};
+}
+
+BaseLogger::~BaseLogger()
+{
+}
 
 }
 }

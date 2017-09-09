@@ -26,6 +26,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/romconfig"
+
 #define CONFIG_KEY_ID                      "id"
 #define CONFIG_KEY_NAME                    "name"
 #define CONFIG_KEY_APP_SHARING             "app_sharing"

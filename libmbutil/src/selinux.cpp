@@ -35,6 +35,8 @@
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
 
+#define LOG_TAG "mbutil/selinux"
+
 #define SELINUX_XATTR           "security.selinux"
 
 #define OPEN_ATTEMPTS           5
