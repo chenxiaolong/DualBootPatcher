@@ -274,6 +274,15 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p10
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+
 - name: Lenovo Vibe P1 Turbo
   id: P1a42
   codenames:
