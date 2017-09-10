@@ -66,7 +66,15 @@ elseif(WIN32)
     )
 endif()
 
-add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
+add_definitions(-DMBCOMMON_BUILD)
+
+# _FILE_OFFSET_BITS is now meaningful in NDK r15c. We can't define it unless we
+# target API 24 or newer or else fgetpos() and fsetpos() will be undefined,
+# which prevents <cstdio> from being included.
+# See: https://github.com/android-ndk/ndk/issues/480
+if(NOT ANDROID)
+    add_definitions(-D_FILE_OFFSET_BITS=64)
+endif()
 
 set(variants)
 

@@ -45,13 +45,13 @@ if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
     message(FATAL_ERROR "Invalid system build type: ${MBP_SYSTEM_BUILD_TYPE}")
 endif()
 
-# Require at least Android NDK r14b
+# Require at least Android NDK r15
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
     set(ndk_min_version 150.0)
-    set(ndk_max_version 151.0)
+    set(ndk_max_version 153.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
@@ -59,6 +59,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
     # version.
     set(ndk_version_whitelist
         150.4075724
+        152.4203891
     )
 
     if(DEFINED ndk_version_whitelist
