@@ -31,6 +31,8 @@
 
 #include "external/android_reboot.h"
 
+#define LOG_TAG "mbutil/reboot"
+
 namespace mb
 {
 namespace util

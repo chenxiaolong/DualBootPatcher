@@ -28,6 +28,8 @@
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/stringutils.h"
 
+#define LOG_TAG "mbpatcher/autopatchers/standardpatcher"
+
 #define DUMP_DEBUG 0
 
 

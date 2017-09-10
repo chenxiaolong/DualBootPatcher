@@ -40,6 +40,8 @@
 #include "minizip/unzip.h"
 #include "minizip/zip.h"
 
+#define LOG_TAG "mbpatcher/patchers/zippatcher"
+
 
 namespace mb
 {

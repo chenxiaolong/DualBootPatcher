@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -20,9 +20,9 @@
 #pragma once
 
 #include "mbcommon/common.h"
-#include "mblog/log_level.h"
 
-#include <cstdarg>
+#include "mblog/log_level.h"
+#include "mblog/log_record.h"
 
 namespace mb
 {
@@ -32,7 +32,12 @@ namespace log
 class MB_EXPORT BaseLogger
 {
 public:
-    virtual void log(LogLevel prio, const char *fmt, va_list ap) = 0;
+    BaseLogger();
+    virtual ~BaseLogger();
+
+    virtual void log(const LogRecord &rec) = 0;
+
+    virtual bool formatted() = 0;
 };
 
 }

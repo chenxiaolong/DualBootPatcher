@@ -33,6 +33,8 @@
 
 #include "validcerts.h"
 
+#define LOG_TAG "mbtool/signature"
+
 #define COMPILE_ERROR_STRINGS 0
 
 namespace mb

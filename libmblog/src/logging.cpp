@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,10 +19,31 @@
 
 #include "mblog/logging.h"
 
+#include <chrono>
 #include <string>
 
 #include <cerrno>
+#include <cinttypes>
+#include <cstdarg>
+#include <ctime>
 
+#if defined(_WIN32)
+#  include <windows.h>
+#else
+#  if defined(__APPLE__)
+#    include <pthread.h>
+#  elif defined(__linux__)
+#    include <sys/syscall.h>
+#  endif
+#  include <unistd.h>
+#endif
+
+#include "mbcommon/error.h"
+#include "mbcommon/optional.h"
+#include "mbcommon/string.h"
+#include "mbcommon/type_traits.h"
+
+#include "mblog/log_record.h"
 #include "mblog/stdio_logger.h"
 
 namespace mb
@@ -30,45 +51,226 @@ namespace mb
 namespace log
 {
 
-static std::string log_tag("mblog");
-static std::shared_ptr<BaseLogger> logger;
+#if defined(_WIN32)
+using Pid = ReturnType<decltype(GetCurrentProcessId)>::type;
+using Tid = ReturnType<decltype(GetCurrentThreadId)>::type;
+#elif defined(__APPLE__)
+using Pid = ReturnType<decltype(getpid)>::type;
+using Tid = std::remove_pointer<ArgN<1, decltype(pthread_threadid_np)>::type>::type;
+#elif defined(__linux__)
+using Pid = ReturnType<decltype(getpid)>::type;
+using Tid = pid_t;
+#endif
 
-const char * get_log_tag()
+
+static std::shared_ptr<BaseLogger> g_logger;
+
+static std::string g_time_format{"%Y/%m/%d %H:%M:%S %Z"};
+static std::string g_format{"[%t][%P:%T][%l] %n: %m"};
+
+// %l - Level
+// %m - Message
+// %n - Tag
+// %t - Time
+// %P - Process ID
+// %T - Thread ID
+
+
+static Pid _get_pid()
 {
-    return log_tag.c_str();
+#ifdef _WIN32
+    return GetCurrentProcessId();
+#else
+    return getpid();
+#endif
 }
 
-void set_log_tag(const char *tag)
+static Tid _get_tid()
 {
-    log_tag = tag;
+#if defined(_WIN32)
+    return GetCurrentThreadId();
+#elif defined(__APPLE__)
+    uint64_t tid;
+    if (pthread_threadid_np(nullptr, &tid)) {
+        return tid;
+    } else {
+        return 0;
+    }
+#elif defined(__BIONIC__)
+    return gettid();
+#elif defined(__linux__)
+    return syscall(__NR_gettid);
+#endif
 }
 
-void log_set_logger(std::shared_ptr<BaseLogger> logger_local)
+static std::string _format_time(std::string fmt, const std::tm &tm)
 {
-    logger = std::move(logger_local);
+    // Add a character to allow differentiating empty strings and errors
+    fmt += ' ';
+
+    std::string buf;
+    buf.resize(fmt.size());
+
+    std::size_t len;
+    while ((len = std::strftime(&buf[0], buf.size(), fmt.c_str(), &tm)) == 0) {
+        buf.resize(buf.size() * 2);
+    }
+
+    buf.resize(len - 1);
+    return buf;
 }
 
-void log(LogLevel prio, const char *fmt, ...)
+static std::string _format_time(std::string fmt,
+                                const std::chrono::system_clock::time_point &time)
+{
+    auto t = std::chrono::system_clock::to_time_t(time);
+    std::tm tm;
+
+#if defined(_WIN32)
+    auto ret = localtime_s(&tm, &t);
+#else
+    auto ret = localtime_r(&t, &tm);
+#endif
+    if (!ret) {
+        return {};
+    }
+
+    return _format_time(std::move(fmt), tm);
+}
+
+static std::string _format_prio(LogLevel prio)
+{
+    switch (prio) {
+    case LogLevel::Error:
+        return "error";
+    case LogLevel::Warning:
+        return "warning";
+    case LogLevel::Info:
+        return "info";
+    case LogLevel::Debug:
+        return "debug";
+    case LogLevel::Verbose:
+        return "verbose";
+    default:
+        return {};
+    }
+}
+
+static std::string _format_rec(const LogRecord &rec)
+{
+    std::string buf;
+    optional<std::string> time_buf;
+
+    for (auto it = g_format.begin(); it != g_format.end(); ++it) {
+        if (*it == '%') {
+            if (it + 1 == g_format.end()) {
+                buf += '%';
+                break;
+            }
+
+            ++it;
+
+            switch (*it) {
+            case 'l':
+                buf += _format_prio(rec.prio);
+                break;
+
+            case 'm':
+                buf += rec.msg;
+                break;
+
+            case 'n':
+                buf += rec.tag;
+                break;
+
+            case 't':
+                if (!time_buf) {
+                    time_buf = _format_time(g_time_format, rec.time);
+                }
+                buf += *time_buf;
+                break;
+
+            case 'P':
+                buf += mb::format("%" PRIu64, rec.pid);
+                break;
+
+            case 'T':
+                buf += mb::format("%" PRIu64, rec.tid);
+                break;
+
+            default:
+                buf += *it;
+                break;
+            }
+        } else {
+            buf += *it;
+        }
+    }
+
+    return buf;
+}
+
+std::shared_ptr<BaseLogger> logger()
+{
+    return g_logger;
+}
+
+void set_logger(std::shared_ptr<BaseLogger> logger)
+{
+    g_logger = std::move(logger);
+}
+
+void log(LogLevel prio, const char *tag, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
 
-    logv(prio, fmt, ap);
+    log_v(prio, tag, fmt, ap);
 
     va_end(ap);
 }
 
-void logv(LogLevel prio, const char *fmt, va_list ap)
+void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
 {
-    int saved_errno = errno;
+    ErrorRestorer restorer;
+    LogRecord rec;
 
-    if (!logger) {
-        logger = std::make_shared<StdioLogger>(stdout, false);
+    rec.time = std::chrono::system_clock::now();
+    rec.pid = _get_pid();
+    rec.tid = _get_tid();
+    rec.prio = prio;
+    rec.tag = tag;
+    rec.msg = format_v(fmt, ap);
+
+    if (!g_logger) {
+        g_logger = std::make_shared<StdioLogger>(stdout);
     }
 
-    logger->log(prio, fmt, ap);
+    if (g_logger->formatted()) {
+        rec.fmt_msg = _format_rec(rec);
+    }
 
-    errno = saved_errno;
+    g_logger->log(rec);
+}
+
+std::string time_format()
+{
+    return g_time_format;
+}
+
+void set_time_format(std::string fmt)
+{
+    g_time_format = std::move(fmt);
+}
+
+std::string format()
+{
+    return g_format;
+}
+
+void set_format(std::string fmt)
+{
+    g_format = std::move(fmt);
 }
 
 }

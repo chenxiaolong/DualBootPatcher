@@ -31,6 +31,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/chmod"
+
 namespace mb
 {
 namespace util

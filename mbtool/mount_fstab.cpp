@@ -60,6 +60,8 @@
 #include "signature.h"
 #include "initwrapper/devices.h"
 
+#define LOG_TAG "mbtool/mount_fstab"
+
 #define SYSTEM_MOUNT_POINT          "/raw/system"
 #define CACHE_MOUNT_POINT           "/raw/cache"
 #define DATA_MOUNT_POINT            "/raw/data"

@@ -35,6 +35,8 @@
 #include "mbutil/path.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/copy"
+
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
 

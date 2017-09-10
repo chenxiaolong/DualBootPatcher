@@ -38,6 +38,7 @@
 #include "mblog/android_logger.h"
 #include "mblog/logging.h"
 
+#define LOG_TAG "libmiscstuff-jni/libmiscstuff"
 
 #define CLASS_METHOD(method) \
     Java_com_github_chenxiaolong_dualbootpatcher_nativelib_libmiscstuff_LibMiscStuff_ ## method
@@ -212,8 +213,7 @@ CLASS_METHOD(mblogSetLogcat)(JNIEnv *env, jclass clazz)
     (void) env;
     (void) clazz;
 
-    mb::log::set_log_tag("libmbpatcher");
-    mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
+    mb::log::set_logger(std::make_shared<mb::log::AndroidLogger>());
 }
 
 struct LaBootImgCtx

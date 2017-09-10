@@ -26,6 +26,8 @@
 
 #include "infomanager.hpp"
 
+#define LOG_TAG "mbbootui/infomanager"
+
 InfoManager::InfoManager()
 {
     file_version = 0;

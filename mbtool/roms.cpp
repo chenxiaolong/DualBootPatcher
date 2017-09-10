@@ -37,6 +37,8 @@
 
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/roms"
+
 #define BUILD_PROP "build.prop"
 
 static std::vector<std::string> extsd_mount_points{

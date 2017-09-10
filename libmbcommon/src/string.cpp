@@ -30,6 +30,7 @@
 #  include <windows.h>
 #endif
 
+#include "mbcommon/error.h"
 #include "mbcommon/string_p.h"
 #include "mbcommon/locale.h"
 
@@ -165,8 +166,8 @@ std::string format(const char *fmt, ...)
  *       library. The format string may not be understood the same way by every
  *       platform.
  *
- * \note The value of `errno` and `GetLastError()` (on Win32) are preserved if
- *       this function does not fail.
+ * \note The value of `errno` and `GetLastError()` (on Win32) are always
+ *       preserved.
  *
  * \param[out] out Reference to store output string
  * \param[in] fmt Format string
@@ -178,17 +179,9 @@ bool format_v(std::string &out, const char *fmt, va_list ap)
 {
     static_assert(INT_MAX <= SIZE_MAX, "INT_MAX > SIZE_MAX");
 
-    int saved_errno;
-#ifdef _WIN32
-    int saved_error;
-#endif
+    ErrorRestorer restorer;
     int ret;
     va_list copy;
-
-    saved_errno = errno;
-#ifdef _WIN32
-    saved_error = GetLastError();
-#endif
 
     va_copy(copy, ap);
     ret = vsnprintf(nullptr, 0, fmt, copy);
@@ -213,12 +206,6 @@ bool format_v(std::string &out, const char *fmt, va_list ap)
     }
 
     out.resize(ret);
-
-    // Restore errno and Win32 error on success
-    errno = saved_errno;
-#ifdef _WIN32
-    SetLastError(saved_error);
-#endif
 
     return true;
 }
@@ -261,7 +248,7 @@ std::string format_v(const char *fmt, va_list ap)
  * \return Whether the string starts with the prefix
  */
 bool starts_with_n(const char *string, size_t len_string,
-                      const char *prefix, size_t len_prefix)
+                   const char *prefix, size_t len_prefix)
 {
     return len_string < len_prefix
             ? false

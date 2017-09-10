@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,21 +17,38 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "mbcommon/error.h"
+
+#include <type_traits>
+
+#include <cerrno>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace mb
 {
-namespace log
-{
 
-enum class LogLevel
+ErrorRestorer::ErrorRestorer()
+    : _saved_errno(errno)
+#ifdef _WIN32
+    , _saved_error(GetLastError())
+#endif
 {
-    Error,
-    Warning,
-    Info,
-    Debug,
-    Verbose
-};
-
+#ifdef _WIN32
+    // We don't include windows.h in the header
+    static_assert(std::is_same<const DWORD, decltype(_saved_error)>::value,
+                  "Unexpected type for DWORD");
+#endif
 }
+
+ErrorRestorer::~ErrorRestorer()
+{
+    errno = _saved_errno;
+#ifdef _WIN32
+    SetLastError(_saved_error);
+#endif
+}
+
 }

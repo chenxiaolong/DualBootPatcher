@@ -9,6 +9,7 @@ configure_file(
 
 set(MBCOMMON_SOURCES
     src/capi/util.cpp
+    src/error.cpp
     src/file/callbacks.cpp
     src/file/fd.cpp
     src/file/memory.cpp

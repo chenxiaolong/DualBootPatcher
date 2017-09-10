@@ -42,6 +42,8 @@
 #include "multiboot.h"
 #include "reboot.h"
 
+#define LOG_TAG "mbtool/emergency"
+
 using namespace mb::device;
 
 namespace mb

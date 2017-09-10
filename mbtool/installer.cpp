@@ -78,6 +78,7 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/installer"
 
 // Set to 1 to spawn a shell after installation
 // NOTE: This should ONLY be used through adb. For example:

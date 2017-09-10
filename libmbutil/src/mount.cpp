@@ -33,6 +33,7 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "mbcommon/error.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
@@ -41,6 +42,8 @@
 #include "mbutil/directory.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/mount"
 
 #define MAX_UNMOUNT_TRIES 5
 
@@ -292,7 +295,7 @@ bool umount(const std::string &target)
 
     int ret = ::umount(target.c_str());
 
-    int saved_errno = errno;
+    ErrorRestorer restorer;
 
     if (!source.empty()) {
         struct stat sb;
@@ -307,8 +310,6 @@ bool umount(const std::string &target)
             }
         }
     }
-
-    errno = saved_errno;
 
     return ret == 0;
 }

@@ -23,9 +23,12 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <cstring>
 
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
+
+#define LOG_TAG "mbutil/hash"
 
 namespace mb
 {

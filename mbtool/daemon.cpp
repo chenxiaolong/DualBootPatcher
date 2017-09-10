@@ -52,6 +52,8 @@
 #include "sepolpatch.h"
 #include "validcerts.h"
 
+#define LOG_TAG "mbtool/daemon"
+
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
 #define RESPONSE_OK "OK"                        // Generic accepted response
@@ -343,7 +345,7 @@ static bool daemon_init()
     if (log_to_stdio) {
         // Default; do nothing
     } else if (log_to_kmsg) {
-        log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+        log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
         if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
                 && errno != EEXIST) {
@@ -363,8 +365,7 @@ static bool daemon_init()
         fix_multiboot_permissions();
 
         // mbtool logging
-        log::log_set_logger(
-                std::make_shared<log::StdioLogger>(log_fp.get(), true));
+        log::set_logger(std::make_shared<log::StdioLogger>(log_fp.get()));
     }
 
     LOGD("Initialized daemon");

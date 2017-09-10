@@ -31,6 +31,8 @@
 #include "mbutil/file.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/cmdline"
+
 namespace mb
 {
 namespace util

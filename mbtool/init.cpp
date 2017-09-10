@@ -88,6 +88,8 @@
 #error Unknown PCRE path for architecture
 #endif
 
+#define LOG_TAG "mbtool/init"
+
 using namespace mb::device;
 
 namespace mb
@@ -1164,7 +1166,7 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
 
     // Log to kmsg
-    log::log_set_logger(std::make_shared<log::KmsgLogger>(true));
+    log::set_logger(std::make_shared<log::KmsgLogger>(true));
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }

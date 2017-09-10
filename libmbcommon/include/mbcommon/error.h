@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,19 +19,25 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
-namespace log
-{
 
-enum class LogLevel
+class MB_EXPORT ErrorRestorer final
 {
-    Error,
-    Warning,
-    Info,
-    Debug,
-    Verbose
+public:
+    ErrorRestorer();
+    ~ErrorRestorer();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
+
+private:
+    const int _saved_errno;
+#ifdef _WIN32
+    const unsigned long _saved_error;
+#endif
 };
 
-}
 }

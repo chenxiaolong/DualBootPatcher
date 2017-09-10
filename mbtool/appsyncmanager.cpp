@@ -33,6 +33,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/selinux.h"
 
+#define LOG_TAG "mbtool/appsyncmanager"
+
 #define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
 
 #define USER_DATA_DIR                   "/data/data"

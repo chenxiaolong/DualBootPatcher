@@ -36,6 +36,8 @@
 
 #include "installer_util.h"
 
+#define LOG_TAG "mbtool/ramdisk_patcher"
+
 namespace mb
 {
 

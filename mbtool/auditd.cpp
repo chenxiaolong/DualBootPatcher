@@ -32,6 +32,8 @@
 
 #include "external/audit/libaudit.h"
 
+#define LOG_TAG "mbtool/auditd"
+
 
 namespace mb
 {

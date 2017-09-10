@@ -55,6 +55,8 @@
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
 
+#define LOG_TAG "mbtool/daemon_v3"
+
 namespace mb
 {
 

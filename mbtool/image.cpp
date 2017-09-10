@@ -34,6 +34,8 @@
 #include "mbutil/path.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbtool/image"
+
 namespace mb
 {
 

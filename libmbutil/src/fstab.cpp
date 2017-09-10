@@ -35,6 +35,8 @@
 #include "mbutil/autoclose/file.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/fstab"
+
 
 namespace mb
 {

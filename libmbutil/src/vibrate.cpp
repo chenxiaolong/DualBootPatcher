@@ -29,6 +29,8 @@
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbutil/vibrate"
+
 #define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
 
 namespace mb
