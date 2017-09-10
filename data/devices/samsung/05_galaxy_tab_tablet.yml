@@ -318,13 +318,12 @@
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
       
-      
-      
 - name: Samsung Galaxy Tab Active 8.0 (LTE)
   id: SM-T365
   codenames:
     - rubenslte
     - rubensltexx
+    - SM-T365
   architecture: armeabi-v7a
 
   block_devs:
@@ -345,3 +344,15 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    brightness_path: /sys/devices/fd922800.qcom,mdss_dsi/lcd/panel/panel/brightness
+    max_brightness: 255
+    default_brightness: 190
+    theme: portrait_hdpi
