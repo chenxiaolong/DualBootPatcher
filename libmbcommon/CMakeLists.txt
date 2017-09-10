@@ -105,6 +105,11 @@ foreach(variant ${variants})
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
+    # Don't warn on empty format strings
+    if(NOT MSVC)
+        target_compile_options(${lib_target} PRIVATE -Wno-format-zero-length)
+    endif()
+
     # Win32 DLL export
     if(${variant} STREQUAL shared)
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
@@ -151,6 +156,11 @@ if(variants AND MBP_ENABLE_TESTS)
         mbcommon_tests
         ${MBCOMMON_TESTS_SOURCES}
     )
+
+    # Don't warn on empty format strings
+    if(NOT MSVC)
+        target_compile_options(mbcommon_tests PRIVATE -Wno-format-zero-length)
+    endif()
 
     # Link dependencies
     target_link_libraries(
