@@ -339,7 +339,7 @@ bool PosixFile::open(const std::string &filename, FileOpenMode mode)
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
             set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", mode);
+                      "Invalid mode: %d", static_cast<int>(mode));
             return false;
         }
 
@@ -383,7 +383,7 @@ bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
             set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", mode);
+                      "Invalid mode: %d", static_cast<int>(mode));
             return false;
         }
 
