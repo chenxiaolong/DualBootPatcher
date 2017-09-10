@@ -62,4 +62,12 @@ struct ReturnType<R(As...)>
     using type = R;
 };
 
+#ifdef _WIN32
+template <typename R, typename... As>
+struct ReturnType<__stdcall R(As...)>
+{
+    using type = R;
+};
+#endif
+
 }
