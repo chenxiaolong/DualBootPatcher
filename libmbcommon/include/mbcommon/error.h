@@ -36,7 +36,7 @@ public:
 private:
     const int _saved_errno;
 #ifdef _WIN32
-    const unsigned int _saved_error;
+    const unsigned long _saved_error;
 #endif
 };
 

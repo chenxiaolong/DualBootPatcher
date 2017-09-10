@@ -38,7 +38,7 @@ ErrorRestorer::ErrorRestorer()
 {
 #ifdef _WIN32
     // We don't include windows.h in the header
-    static_assert(std::is_same<DWORD, decltype(_saved_error)>::value,
+    static_assert(std::is_same<const DWORD, decltype(_saved_error)>::value,
                   "Unexpected type for DWORD");
 #endif
 }
