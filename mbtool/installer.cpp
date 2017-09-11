@@ -675,10 +675,6 @@ bool Installer::system_image_copy(const std::string &source,
 
     struct stat sb;
 
-    auto done = finally([&] {
-        util::umount(temp_mnt);
-    });
-
     if (stat(source.c_str(), &sb) < 0
             && !util::mkdir_recursive(source, 0755)) {
         LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
@@ -695,6 +691,10 @@ bool Installer::system_image_copy(const std::string &source,
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
+
+    auto unmount_tmp_dir = finally([&] {
+        util::umount(temp_mnt);
+    });
 
     if (reverse) {
         if (!copy_system(temp_mnt, source)) {
