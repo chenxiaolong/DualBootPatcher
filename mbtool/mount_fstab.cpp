@@ -40,7 +40,6 @@
 #include "mbcommon/string.h"
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"

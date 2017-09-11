@@ -23,12 +23,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <archive.h>
+#include <archive_entry.h>
+
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbpatcher/patcherconfig.h"
-#include "mbutil/autoclose/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
@@ -72,6 +74,8 @@
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
 using namespace mb::device;
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
 
 static mb::patcher::PatcherConfig pc;
 
@@ -127,12 +131,12 @@ static bool detect_device()
 static bool extract_theme(const std::string &path, const std::string &target,
                           const std::string &theme_name)
 {
-    mb::autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
         return false;
     }
-    mb::autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
         return false;

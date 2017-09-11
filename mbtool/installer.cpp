@@ -26,6 +26,7 @@
 #include <cstring>
 
 // Linux/posix
+#include <dirent.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/mount.h>
@@ -52,8 +53,6 @@
 #include "mbdevice/json.h"
 
 // libmbutil
-#include "mbutil/autoclose/dir.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
 #include "mbutil/chown.h"
@@ -103,7 +102,11 @@
 
 using namespace mb::device;
 
-namespace mb {
+namespace mb
+{
+
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 const std::string Installer::CANCELLED = "cancelled";
 
@@ -400,7 +403,7 @@ bool Installer::destroy_chroot() const
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
     std::string dev_block_path(in_chroot("/dev/block"));
-    autoclose::dir dp = autoclose::opendir(dev_block_path.c_str());
+    ScopedDIR dp(opendir(dev_block_path.c_str()), closedir);
     if (dp) {
         std::string path;
         struct dirent *ent;
@@ -794,7 +797,7 @@ bool Installer::change_root(const std::string &path)
     {
         std::vector<std::string> to_unmount;
 
-        autoclose::file fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
+        ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
             LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
                  strerror(errno));
@@ -872,7 +875,10 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         // Read program output in child process (stdout, stderr)
         char buf[1024];
 
-        autoclose::file fp(fdopen(stdio_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(stdio_fd, "rb"), fclose);
+        if (!fp) {
+            _exit(EXIT_FAILURE);
+        }
 
         while (fgets(buf, sizeof(buf), fp.get())) {
             command_output(buf);
@@ -886,7 +892,7 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         char *save_ptr;
 
         // Similar parsing to AOSP recovery
-        autoclose::file fp(fdopen(command_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(command_fd, "rb"), fclose);
 
         while (fgets(buf, sizeof(buf), fp.get())) {
             char *cmd = strtok_r(buf, " \n", &save_ptr);

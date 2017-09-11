@@ -26,7 +26,6 @@
 
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/archive.h"
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
 
@@ -51,6 +50,10 @@ namespace mb
 {
 namespace util
 {
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedLinkResolver = std::unique_ptr<archive_entry_linkresolver,
+        decltype(archive_entry_linkresolver_free) *>;
 
 int libarchive_copy_data(archive *in, archive *out, archive_entry *entry)
 {
@@ -182,17 +185,17 @@ bool libarchive_tar_extract(const std::string &filename,
         return false;
     }
 
-    autoclose::archive matcher(archive_match_new(), archive_match_free);
+    ScopedArchive matcher(archive_match_new(), archive_match_free);
     if (!matcher) {
         LOGE("%s: Out of memory when creating matcher", __FUNCTION__);
         return false;
     }
-    autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
         return false;
     }
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
         return false;
@@ -353,18 +356,18 @@ bool libarchive_tar_create(const std::string &filename,
         return false;
     }
 
-    autoclose::archive in(archive_read_disk_new(), archive_read_free);
+    ScopedArchive in(archive_read_disk_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating disk reader", __FUNCTION__);
         return false;
     }
-    autoclose::archive out(archive_write_new(), archive_write_free);
+    ScopedArchive out(archive_write_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating archive writer", __FUNCTION__);
         return false;
     }
-    autoclose::archive_entry_linkresolver resolver(archive_entry_linkresolver_new(),
-                                                   archive_entry_linkresolver_free);
+    ScopedLinkResolver resolver(archive_entry_linkresolver_new(),
+                                archive_entry_linkresolver_free);
     if (!resolver) {
         LOGE("%s: Out of memory when creating link resolver", __FUNCTION__);
         return false;
@@ -601,8 +604,8 @@ static void set_up_output(archive *out)
 
 bool extract_archive(const std::string &filename, const std::string &target)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -661,8 +664,8 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -732,8 +735,8 @@ bool extract_files2(const std::string &filename,
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -787,7 +790,7 @@ bool archive_exists(const std::string &filename,
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
 
     if (!in) {
         LOGE("Out of memory");

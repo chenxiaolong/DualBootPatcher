@@ -32,7 +32,6 @@
 
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/string.h"
 
 #define LOG_TAG "mbutil/fstab"
@@ -42,6 +41,8 @@ namespace mb
 {
 namespace util
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 struct mount_flag
 {
@@ -145,7 +146,7 @@ static int options_to_flags(struct mount_flag *flags_map, char *args,
 // Much simplified version of fs_mgr's fstab parsing code
 std::vector<fstab_rec> read_fstab(const std::string &path)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
         return std::vector<fstab_rec>();
@@ -280,7 +281,7 @@ static bool convert_to_int(const char *str, int *out)
 
 std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
         return {};

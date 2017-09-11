@@ -34,8 +34,6 @@
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/archive.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chown.h"
 #include "mbutil/command.h"
@@ -59,6 +57,9 @@ using namespace mb::bootimg;
 
 namespace mb
 {
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 class RomInstaller : public Installer
 {
@@ -194,7 +195,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Create fake /etc/fstab file to please installers that read the file
     std::string etc_fstab(in_chroot("/etc/fstab"));
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
-        autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
+        ScopedFILE fp(fopen(etc_fstab.c_str(), "w"), fclose);
         if (fp) {
             auto system_devs = _device.system_block_devs();
             auto cache_devs = _device.cache_block_devs();
@@ -345,8 +346,8 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
 bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                                       bool nested)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     archive_entry *entry;
     int ret;
 
@@ -588,7 +589,7 @@ int rom_installer_main(int argc, char *argv[])
     }
 
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_INSTALLER, "wb"));
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open %s: %s\n",
                 MULTIBOOT_LOG_INSTALLER, strerror(errno));
