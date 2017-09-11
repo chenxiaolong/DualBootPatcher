@@ -83,7 +83,6 @@
 - name: HTC one M8
   id: M8
   codenames:
-    - m8
     - M8
     - m8
     - htc_m8
