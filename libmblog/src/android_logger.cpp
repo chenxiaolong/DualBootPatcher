@@ -21,18 +21,16 @@
 
 #include <android/log.h>
 
-#include "mblog/logging.h"
-
 namespace mb
 {
 namespace log
 {
 
-void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
+void AndroidLogger::log(const LogRecord &rec)
 {
     int logcatprio;
 
-    switch (prio) {
+    switch (rec.prio) {
     case LogLevel::Error:
         logcatprio = ANDROID_LOG_ERROR;
         break;
@@ -52,7 +50,12 @@ void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
         return;
     }
 
-    __android_log_vprint(logcatprio, get_log_tag(), fmt, ap);
+    __android_log_write(logcatprio, rec.tag.c_str(), rec.msg.c_str());
+}
+
+bool AndroidLogger::formatted()
+{
+    return false;
 }
 
 }

@@ -35,6 +35,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/terminal"
+
 #if 0
 #define debug_printf printf
 #else

@@ -41,6 +41,8 @@
 #include "multiboot.h"
 #include "sepolpatch.h"
 
+#define LOG_TAG "mbtool/update_binary"
+
 
 namespace mb
 {
@@ -214,7 +216,7 @@ int update_binary_main(int argc, char *argv[])
     zip_file = argv[3];
 
     // stdout is messed up when it's appended to /tmp/recovery.log
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stderr));
 
     RecoveryInstaller ri(zip_file, interface, output_fd);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;

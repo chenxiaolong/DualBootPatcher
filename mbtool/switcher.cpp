@@ -44,6 +44,8 @@
 #include "multiboot.h"
 #include "roms.h"
 
+#define LOG_TAG "mbtool/switcher"
+
 #define CHECKSUMS_PATH "/data/multiboot/checksums.prop"
 
 namespace mb

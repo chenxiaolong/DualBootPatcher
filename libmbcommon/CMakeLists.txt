@@ -9,6 +9,7 @@ configure_file(
 
 set(MBCOMMON_SOURCES
     src/capi/util.cpp
+    src/error.cpp
     src/file/callbacks.cpp
     src/file/fd.cpp
     src/file/memory.cpp
@@ -65,7 +66,15 @@ elseif(WIN32)
     )
 endif()
 
-add_definitions(-DMBCOMMON_BUILD -D_FILE_OFFSET_BITS=64)
+add_definitions(-DMBCOMMON_BUILD)
+
+# _FILE_OFFSET_BITS is now meaningful in NDK r15c. We can't define it unless we
+# target API 24 or newer or else fgetpos() and fsetpos() will be undefined,
+# which prevents <cstdio> from being included.
+# See: https://github.com/android-ndk/ndk/issues/480
+if(NOT ANDROID)
+    add_definitions(-D_FILE_OFFSET_BITS=64)
+endif()
 
 set(variants)
 
@@ -103,6 +112,11 @@ foreach(variant ${variants})
 
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
+
+    # Don't warn on empty format strings
+    if(NOT MSVC)
+        target_compile_options(${lib_target} PRIVATE -Wno-format-zero-length)
+    endif()
 
     # Win32 DLL export
     if(${variant} STREQUAL shared)
@@ -150,6 +164,11 @@ if(variants AND MBP_ENABLE_TESTS)
         mbcommon_tests
         ${MBCOMMON_TESTS_SOURCES}
     )
+
+    # Don't warn on empty format strings
+    if(NOT MSVC)
+        target_compile_options(mbcommon_tests PRIVATE -Wno-format-zero-length)
+    endif()
 
     # Link dependencies
     target_link_libraries(

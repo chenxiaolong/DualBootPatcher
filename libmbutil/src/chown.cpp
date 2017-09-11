@@ -33,6 +33,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/chown"
+
 namespace mb
 {
 namespace util

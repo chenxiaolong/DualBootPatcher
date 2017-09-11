@@ -8,6 +8,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/slider"
+
 GUISlider::GUISlider(xml_node<>* node) : GUIObject(node)
 {
     xml_node<>* child;

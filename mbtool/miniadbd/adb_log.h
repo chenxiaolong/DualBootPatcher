@@ -18,6 +18,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/miniadbd"
+
 enum AdbComponents : int
 {
     ADB_LLIO    = 0x1u,  // Low-level I/O

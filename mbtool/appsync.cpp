@@ -43,7 +43,6 @@
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
@@ -62,6 +61,8 @@
 #include "packages.h"
 #include "romconfig.h"
 #include "roms.h"
+
+#define LOG_TAG "mbtool/appsync"
 
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
@@ -83,6 +84,8 @@
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static RomConfig config;
 static Packages packages;
@@ -923,7 +926,7 @@ int appsync_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "we"));
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_APPSYNC, "we"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));
@@ -933,7 +936,7 @@ int appsync_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     LOGI("=== APPSYNC VERSION %s ===", version());
 

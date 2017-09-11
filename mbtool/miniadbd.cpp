@@ -39,6 +39,8 @@
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
+#define LOG_TAG "mbtool/miniadbd"
+
 
 namespace mb
 {

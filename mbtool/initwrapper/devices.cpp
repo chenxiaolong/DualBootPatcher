@@ -42,6 +42,8 @@
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
 
+#define LOG_TAG "mbtool/initwrapper/devices"
+
 #define DEVPATH_LEN 96
 
 #define UEVENT_LOGGING 0

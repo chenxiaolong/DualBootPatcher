@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "mbcommon/error.h"
 #include "mbcommon/finally.h"
 
 // NOTE: We don't use libblkid from util-linux because we don't need most of its
@@ -143,9 +144,8 @@ bool blkid_get_fs_type(const std::string &path, optional<std::string> &type)
     }
 
     auto close_fd = finally([&]{
-        int saved_errno = errno;
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     ssize_t n = read_all(fd, buf.data(), buf.size());

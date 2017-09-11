@@ -29,6 +29,8 @@
 
 #include "data.hpp"
 
+#define LOG_TAG "mbbootui/gui/fileselector"
+
 int GUIFileSelector::mSortOrder = 0;
 
 GUIFileSelector::GUIFileSelector(xml_node<>* node) : GUIScrollList(node)

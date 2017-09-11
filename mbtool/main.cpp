@@ -44,7 +44,6 @@
 #endif
 
 #include "mbcommon/version.h"
-#include "mblog/logging.h"
 #include "mbutil/process.h"
 #include "mbutil/string.h"
 

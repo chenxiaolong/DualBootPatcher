@@ -355,7 +355,7 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
             set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", mode);
+                      "Invalid mode: %d", static_cast<int>(mode));
             return false;
         }
 
@@ -396,7 +396,7 @@ bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
             set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", mode);
+                      "Invalid mode: %d", static_cast<int>(mode));
             return false;
         }
 

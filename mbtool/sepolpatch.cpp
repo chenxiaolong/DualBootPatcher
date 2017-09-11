@@ -41,17 +41,20 @@
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
 #include "multiboot.h"
+
+#define LOG_TAG "mbtool/sepolpatch"
 
 
 extern "C" int policydb_index_decls(policydb_t *p);
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 /*!
  * Add or remove rule.
@@ -1155,7 +1158,7 @@ bool patch_sepolicy(const std::string &source,
 
 bool patch_loaded_sepolicy(SELinuxPatch patch)
 {
-    autoclose::file fp(autoclose::fopen(util::SELINUX_ENFORCE_FILE, "rbe"));
+    ScopedFILE fp(fopen(util::SELINUX_ENFORCE_FILE, "rbe"), fclose);
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't

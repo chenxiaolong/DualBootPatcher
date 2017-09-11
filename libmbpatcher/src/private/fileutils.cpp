@@ -35,6 +35,8 @@
 #include <sys/stat.h>
 #endif
 
+#define LOG_TAG "mbpatcher/private/fileutils"
+
 
 namespace mb
 {

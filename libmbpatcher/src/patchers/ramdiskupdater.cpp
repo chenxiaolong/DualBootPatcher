@@ -31,6 +31,8 @@
 #include "mbpatcher/patchers/zippatcher.h"
 #include "mbpatcher/private/miniziputils.h"
 
+#define LOG_TAG "mbpatcher/patchers/ramdiskupdater"
+
 
 namespace mb
 {

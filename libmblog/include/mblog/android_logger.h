@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "mblog/stdio_logger.h"
+#include "mblog/base_logger.h"
 
 namespace mb
 {
@@ -29,7 +29,9 @@ namespace log
 class MB_EXPORT AndroidLogger : public BaseLogger
 {
 public:
-    virtual void log(LogLevel prio, const char *fmt, va_list ap) override;
+    virtual void log(const LogRecord &rec) override;
+
+    virtual bool formatted() override;
 };
 
 }

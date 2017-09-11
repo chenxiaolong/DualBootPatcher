@@ -46,8 +46,6 @@
 #include "mbdevice/json.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/dir.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/command.h"
@@ -88,10 +86,15 @@
 #error Unknown PCRE path for architecture
 #endif
 
+#define LOG_TAG "mbtool/init"
+
 using namespace mb::device;
 
 namespace mb
 {
+
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static pid_t daemon_pid = -1;
 
@@ -315,7 +318,7 @@ static bool fix_file_contexts(const char *path)
     std::string new_path(path);
     new_path += ".new";
 
-    autoclose::file fp_old(autoclose::fopen(path, "rb"));
+    ScopedFILE fp_old(fopen(path, "rb"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -326,7 +329,7 @@ static bool fix_file_contexts(const char *path)
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "wb"));
+    ScopedFILE fp_new(fopen(new_path.c_str(), "wb"), fclose);
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
              new_path.c_str(), strerror(errno));
@@ -432,7 +435,7 @@ static bool is_completely_whitespace(const char *str)
 
 static bool add_mbtool_services(bool enable_appsync)
 {
-    autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
+    ScopedFILE fp_old(fopen("/init.rc", "rb"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -442,7 +445,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen("/init.rc.new", "wb"));
+    ScopedFILE fp_new(fopen("/init.rc.new", "wb"), fclose);
     if (!fp_new) {
         LOGE("Failed to open /init.rc.new for writing: %s",
              strerror(errno));
@@ -507,7 +510,7 @@ static bool add_mbtool_services(bool enable_appsync)
     }
 
     // Create /init.multiboot.rc
-    autoclose::file fp_multiboot(autoclose::fopen("/init.multiboot.rc", "wb"));
+    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wb"), fclose);
     if (!fp_multiboot) {
         LOGE("Failed to open /init.multiboot.rc for writing: %s",
              strerror(errno));
@@ -540,7 +543,7 @@ static bool add_mbtool_services(bool enable_appsync)
 
 static bool write_fstab_hack(const char *fstab)
 {
-    autoclose::file fp_fstab(autoclose::fopen(fstab, "abe"));
+    ScopedFILE fp_fstab(fopen(fstab, "abe"), fclose);
     if (!fp_fstab) {
         LOGE("%s: Failed to open for writing: %s",
              fstab, strerror(errno));
@@ -561,7 +564,7 @@ static bool write_fstab_hack(const char *fstab)
 
 static bool strip_manual_mounts()
 {
-    autoclose::dir dir(autoclose::opendir("/"));
+    ScopedDIR dir(opendir("/"), closedir);
     if (!dir) {
         return true;
     }
@@ -577,7 +580,7 @@ static bool strip_manual_mounts()
         std::string path("/");
         path += ent->d_name;
 
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
         if (!fp) {
             LOGE("Failed to open %s for reading: %s",
                  path.c_str(), strerror(errno));
@@ -624,7 +627,7 @@ static bool strip_manual_mounts()
         std::string new_path(path);
         new_path += ".new";
 
-        autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "w"));
+        ScopedFILE fp_new(fopen(new_path.c_str(), "w"), fclose);
         if (!fp_new) {
             LOGE("Failed to open %s for writing: %s",
                  new_path.c_str(), strerror(errno));
@@ -671,7 +674,7 @@ static std::string encode_list(const std::vector<std::string> &list)
 
 static bool add_props_to_default_prop(const Device &device)
 {
-    autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
+    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
     if (!fp) {
         if (errno == ENOENT) {
             return true;
@@ -758,7 +761,7 @@ static std::string find_fstab()
     }
 
     // Otherwise, try to find it in the /init*.rc files
-    autoclose::dir dir(autoclose::opendir("/"));
+    ScopedDIR dir(opendir("/"), closedir);
     if (!dir) {
         return std::string();
     }
@@ -777,7 +780,7 @@ static std::string find_fstab()
         std::string path("/");
         path += ent->d_name;
 
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
         if (!fp) {
             continue;
         }
@@ -864,7 +867,7 @@ static bool create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
+    ScopedFILE fp(fopen("/data/.layout_version", "wbe"), fclose);
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -1164,7 +1167,7 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
 
     // Log to kmsg
-    log::log_set_logger(std::make_shared<log::KmsgLogger>(true));
+    log::set_logger(std::make_shared<log::KmsgLogger>(true));
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }

@@ -41,6 +41,8 @@
 #include "gui/objects.hpp"
 #include "gui/pages.hpp"
 
+#define LOG_TAG "mbbootui/gui/gui"
+
 // Enable to print render time of each frame to the log file
 //#define PRINT_RENDER_TIME 1
 

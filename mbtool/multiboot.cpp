@@ -33,6 +33,8 @@
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbtool/multiboot"
+
 
 namespace mb
 {

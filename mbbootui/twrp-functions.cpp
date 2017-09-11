@@ -40,6 +40,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/twrp-functions"
+
 std::string TWFunc::get_resource_path(const std::string &res_path)
 {
     std::string result;
