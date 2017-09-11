@@ -39,7 +39,6 @@
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
@@ -63,6 +62,8 @@
 namespace mb
 {
 
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
 static int pipe_fds[2];
 static bool send_ok_to_pipe = false;
 static bool sigstop_when_ready = false;
@@ -71,7 +72,12 @@ static bool log_to_kmsg = false;
 static bool log_to_stdio = false;
 static bool no_unshare = false;
 
-static autoclose::file log_fp(nullptr, std::fclose);
+static ScopedFILE log_fp(nullptr, [](FILE *fp) {
+    if (fp) {
+        return std::fclose(fp);
+    }
+    return 0;
+});
 
 static bool verify_credentials(uid_t uid)
 {
@@ -354,8 +360,7 @@ static bool daemon_init()
             return false;
         }
 
-        log_fp = autoclose::fopen(
-                get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
+        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w"));
         if (!log_fp) {
             LOGE("Failed to open log file %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));

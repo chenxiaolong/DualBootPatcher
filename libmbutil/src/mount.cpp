@@ -37,7 +37,6 @@
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
 #include "mbutil/loopdev.h"
@@ -53,6 +52,8 @@ namespace mb
 {
 namespace util
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static std::string unescape_octals(const std::string &in)
 {
@@ -124,7 +125,7 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
 
 bool is_mounted(const std::string &mountpoint)
 {
-    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+    ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (!fp) {
         LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
         return false;
@@ -148,7 +149,7 @@ bool unmount_all(const std::string &dir)
         failed = 0;
         to_unmount.clear();
 
-        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+        ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
             LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
             return false;
@@ -282,7 +283,7 @@ bool umount(const std::string &target)
     std::string source;
     std::string mnt_dir;
 
-    autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+    ScopedFILE fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
         for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
             if (entry.dir == target) {

@@ -33,12 +33,13 @@
 #include <unistd.h>
 
 #include "mbcommon/finally.h"
-#include "mbutil/autoclose/file.h"
 
 namespace mb
 {
 namespace util
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -76,7 +77,7 @@ bool create_empty_file(const std::string &path)
  */
 bool file_first_line(const std::string &path, std::string &line_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }
@@ -179,7 +180,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
 bool file_read_all(const std::string &path,
                    std::vector<unsigned char> &data_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }
@@ -202,7 +203,7 @@ bool file_read_all(const std::string &path,
                    unsigned char *&data_out,
                    std::size_t &size_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }

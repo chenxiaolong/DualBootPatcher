@@ -1,6 +1,4 @@
 set(MBUTIL_SOURCES
-    src/autoclose/dir.cpp
-    src/autoclose/file.cpp
     src/archive.cpp
     src/blkid.cpp
     src/chmod.cpp

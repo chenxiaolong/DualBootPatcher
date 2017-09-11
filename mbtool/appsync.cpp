@@ -43,7 +43,6 @@
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
@@ -85,6 +84,8 @@
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static RomConfig config;
 static Packages packages;
@@ -925,7 +926,7 @@ int appsync_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "we"));
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_APPSYNC, "we"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));

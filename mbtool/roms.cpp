@@ -30,7 +30,6 @@
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
@@ -55,6 +54,8 @@ static std::vector<std::string> extsd_mount_points{
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 std::string Rom::full_system_path()
 {
@@ -484,7 +485,7 @@ std::string Roms::get_extsd_partition()
     static constexpr char prefix_storage[] = "/storage/";
 
     // Look for mounted MMC partitions
-    autoclose::file fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
+    ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
         struct stat sb;
 
