@@ -31,6 +31,11 @@
 #include <iconv.h>
 #endif
 
+#include "mbcommon/error.h"
+
+namespace mb
+{
+
 #ifdef _WIN32
 
 static wchar_t * win32_convert_to_wcs(UINT code_page,
@@ -73,13 +78,11 @@ static wchar_t * win32_convert_to_wcs(UINT code_page,
     result = out_buf;
 
 done:
-    DWORD saved_error = GetLastError();
+    ErrorRestorer restorer;
 
     if (!result) {
         free(out_buf);
     }
-
-    SetLastError(saved_error);
 
     return result;
 }
@@ -126,13 +129,11 @@ static char * win32_convert_to_mbs(UINT code_page,
     result = out_buf;
 
 done:
-    DWORD saved_error = GetLastError();
+    ErrorRestorer restorer;
 
     if (!result) {
         free(out_buf);
     }
-
-    SetLastError(saved_error);
 
     return result;
 }
@@ -247,7 +248,7 @@ static char * iconv_convert(const char *from_code, const char *to_code,
     result = out_buf;
 
 done:
-    int saved_errno = errno;
+    ErrorRestorer restorer;
 
     if (cd) {
         iconv_close(cd);
@@ -256,15 +257,10 @@ done:
         free(out_buf);
     }
 
-    errno = saved_errno;
-
     return result;
 }
 
 #endif
-
-namespace mb
-{
 
 bool mbs_to_wcs_n(std::wstring &out, const char *str, size_t len)
 {

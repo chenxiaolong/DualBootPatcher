@@ -28,12 +28,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/mount.h"
 #include "mbutil/time.h"
@@ -41,6 +41,8 @@
 
 #include "multiboot.h"
 #include "reboot.h"
+
+#define LOG_TAG "mbtool/emergency"
 
 using namespace mb::device;
 
@@ -103,7 +105,7 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    auto free_buf = util::finally([&]{
+    auto free_buf = finally([&]{
         free(buf);
     });
 
@@ -163,7 +165,7 @@ bool emergency_reboot()
     JsonError error;
 
     std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    util::file_read_all(DEVICE_JSON_PATH, contents);
     contents.push_back('\0');
 
     bool loaded_json = device_from_json(
@@ -233,8 +235,7 @@ bool emergency_reboot()
 
         if (!util::is_mounted(em.mount_point)) {
             for (const std::string &path : em.paths) {
-                if (util::mount(path.c_str(), em.mount_point.c_str(),
-                                "auto", 0, "")) {
+                if (util::mount(path, em.mount_point, "auto", 0, "")) {
                     LOGV("%s: Mounted %s",
                          em.mount_point.c_str(), path.c_str());
                     break;
@@ -262,7 +263,7 @@ bool emergency_reboot()
         dump_kernel_log(log_path.c_str());
         sync();
 
-        util::umount(em.mount_point.c_str());
+        util::umount(em.mount_point);
     }
 
     fix_multiboot_permissions();

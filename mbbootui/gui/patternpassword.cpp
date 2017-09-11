@@ -7,6 +7,8 @@
 
 #include "config/config.hpp"
 
+#define LOG_TAG "mbbootui/gui/patternpassword"
+
 GUIPatternPassword::GUIPatternPassword(xml_node<>* node) : GUIObject(node)
 {
     xml_node<>* child;

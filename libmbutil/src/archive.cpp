@@ -24,11 +24,13 @@
 #include <cerrno>
 #include <cstring>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/archive.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
+
+#define LOG_TAG "mbutil/archive"
 
 #define LIBARCHIVE_DISK_WRITER_FLAGS \
     ARCHIVE_EXTRACT_TIME \
@@ -315,7 +317,7 @@ static bool write_file(archive *in, archive *out, archive_entry *entry)
     }
 
     if (archive_entry_size(entry) > 0) {
-        return util::libarchive_copy_data_disk_to_archive(in, out, entry);
+        return libarchive_copy_data_disk_to_archive(in, out, entry);
     }
 
     return true;
@@ -469,7 +471,7 @@ bool libarchive_tar_create(const std::string &filename,
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
                 std::string relpath;
-                if (!util::relative_path(curpath, base_dir, &relpath)) {
+                if (!relative_path(curpath, base_dir, relpath)) {
                     LOGE("Failed to compute relative path of %s starting at %s: %s",
                          curpath, base_dir.c_str(), strerror(errno));
                     archive_entry_free(entry);

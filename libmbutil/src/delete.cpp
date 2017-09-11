@@ -29,6 +29,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/delete"
+
 namespace mb
 {
 namespace util
@@ -72,8 +74,8 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            mb::format(_error_msg, "%s: Failed to remove: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to remove: %s",
+                   _curr->fts_path, strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }

@@ -41,6 +41,7 @@
 #include "external/legacy_property_service.h"
 
 // libmbcommon
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 
@@ -61,7 +62,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
@@ -78,6 +78,7 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/installer"
 
 // Set to 1 to spawn a shell after installation
 // NOTE: This should ONLY be used through adb. For example:
@@ -221,25 +222,25 @@ void Installer::output_cb(const char *line, bool error, void *userdata)
     installer->command_output(line);
 }
 
-int Installer::run_command(const char * const *argv)
+int Installer::run_command(const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
-        nullptr,
+        {},
+        {},
         _passthrough ? nullptr : &output_cb,
         this
     );
 }
 
-int Installer::run_command_chroot(const char *dir,
-                                  const char * const *argv)
+int Installer::run_command_chroot(const std::string &dir,
+                                  const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
+        {},
         dir,
         _passthrough ? nullptr : &output_cb,
         this
@@ -259,14 +260,10 @@ bool Installer::create_chroot()
 {
     // We'll just call the recovery's mount tools directly to avoid having to
     // parse TWRP and CWM's different fstab formats
-    const char *argv_mount_system[] = { "mount", "/system", nullptr };
-    const char *argv_mount_cache[] = { "mount", "/cache", nullptr };
-    const char *argv_mount_data[] = { "mount", "/data", nullptr };
-    const char *argv_mount_efs[] = { "mount", "-o", "ro", "/efs", nullptr };
-    run_command(argv_mount_system);
-    run_command(argv_mount_cache);
-    run_command(argv_mount_data);
-    run_command(argv_mount_efs);
+    run_command({ "mount", "/system" });
+    run_command({ "mount", "/cache" });
+    run_command({ "mount", "/data" });
+    run_command({ "mount", "-o", "ro", "/efs" });
 
     // Remount as writable (needed for in-app flashing)
     log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
@@ -649,8 +646,11 @@ bool Installer::create_image(const std::string &path, uint64_t size)
 
     auto result = create_ext4_image(path, size);
     if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
-        uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-        display_msg(std::string());
+        uint64_t avail;
+        if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
+            avail = 0;
+        }
+        display_msg(std::string{});
         display_msg("There is not enough space to create %s", path.c_str());
         display_msg("- Needed:    %" PRIu64 " bytes", size);
         display_msg("- Available: %" PRIu64 " bytes", avail);
@@ -675,10 +675,6 @@ bool Installer::system_image_copy(const std::string &source,
 
     struct stat sb;
 
-    auto done = util::finally([&] {
-        util::umount(temp_mnt.c_str());
-    });
-
     if (stat(source.c_str(), &sb) < 0
             && !util::mkdir_recursive(source, 0755)) {
         LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
@@ -691,10 +687,14 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image.c_str(), temp_mnt.c_str(), "auto", 0, "")) {
+    if (!util::mount(image, temp_mnt, "auto", 0, "")) {
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
+
+    auto unmount_tmp_dir = finally([&] {
+        util::umount(temp_mnt);
+    });
 
     if (reverse) {
         if (!copy_system(temp_mnt, source)) {
@@ -710,7 +710,7 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (!util::umount(temp_mnt.c_str())) {
+    if (!util::umount(temp_mnt)) {
         LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
@@ -794,16 +794,17 @@ bool Installer::change_root(const std::string &path)
     {
         std::vector<std::string> to_unmount;
 
-        autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
+        autoclose::file fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
+            LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
+                 strerror(errno));
             return false;
         }
 
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // TODO: Use util::path_compare() instead of dumb string prefix
             //       matching
-            if (entry.dir != "/" && !mb::starts_with(entry.dir, path)) {
+            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }
@@ -968,7 +969,7 @@ bool Installer::run_real_updater()
         kill(parent, SIGSTOP);
     }
 
-    auto resume_aroma = util::finally([&]{
+    auto resume_aroma = finally([&]{
         if (aroma) {
             kill(parent, SIGCONT);
         }
@@ -1168,7 +1169,7 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    display_msg(mb::format_v(fmt, ap));
+    display_msg(format_v(fmt, ap));
     va_end(ap);
 }
 
@@ -1252,7 +1253,7 @@ void Installer::on_cleanup(Installer::ProceedState ret)
 
 Installer::ProceedState Installer::install_stage_initialize()
 {
-    LOGD("Installer version: %s (%s)", mb::version(), mb::git_version());
+    LOGD("Installer version: %s (%s)", version(), git_version());
 
     LOGD("[Installer] Initialization stage");
 
@@ -1330,7 +1331,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("[Installer] Device verification stage");
 
     std::vector<unsigned char> contents;
-    if (!util::file_read_all(_temp + "/device.json", &contents)) {
+    if (!util::file_read_all(_temp + "/device.json", contents)) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
@@ -1622,7 +1623,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Get desired system image size
     uint64_t system_size;
-    if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+    if (!util::get_blockdev_size(_system_block_dev.c_str(), system_size)) {
         display_msg("Failed to get size of system partition");
         display_msg("Image size will be 4 GiB");
         system_size = DEFAULT_IMAGE_SIZE;
@@ -1754,8 +1755,7 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    const char *argv[] = { HELPER_TOOL, "mount", "/system", nullptr };
-    run_command_chroot(_chroot.c_str(), argv);
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     std::string vold_path(in_chroot("/system/bin/vold"));
     _use_fuse_exfat = util::file_find_one_of(vold_path, {
@@ -1773,12 +1773,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     LOGD("[Installer] Filesystem unmounting stage");
 
     // Umount filesystems from inside the chroot
-    const char *argv_unmount_system[] = { HELPER_TOOL, "unmount", "/system", nullptr };
-    const char *argv_unmount_cache[] = { HELPER_TOOL, "unmount", "/cache", nullptr };
-    const char *argv_unmount_data[] = { HELPER_TOOL, "unmount", "/data", nullptr };
-    run_command_chroot(_chroot.c_str(), argv_unmount_system);
-    run_command_chroot(_chroot.c_str(), argv_unmount_cache);
-    run_command_chroot(_chroot.c_str(), argv_unmount_data);
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {
@@ -1788,11 +1785,11 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         }
     }
 
-    if (_rom->cache_is_image && !util::umount(in_chroot("/cache").c_str())) {
+    if (_rom->cache_is_image && !util::umount(in_chroot("/cache"))) {
         display_msg("Failed to unmount %s", in_chroot("/cache").c_str());
     }
 
-    if (_rom->data_is_image && !util::umount(in_chroot("/data").c_str())) {
+    if (_rom->data_is_image && !util::umount(in_chroot("/data"))) {
         display_msg("Failed to unmount %s", in_chroot("/data").c_str());
     }
 
@@ -1953,7 +1950,7 @@ bool Installer::start_installation()
 
     ProceedState ret = ProceedState::Fail;
 
-    auto when_finished = util::finally([&] {
+    auto when_finished = finally([&] {
         install_stage_cleanup(ret);
     });
 

@@ -28,12 +28,14 @@
 #include <sys/xattr.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/copy"
 
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
@@ -269,7 +271,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
     case S_IFLNK:
         if (!(flags & COPY_FOLLOW_SYMLINKS)) {
             std::string symlink_path;
-            if (!read_link(source, &symlink_path)) {
+            if (!read_link(source, symlink_path)) {
                 LOGW("%s: Failed to read symlink path: %s",
                      source.c_str(), strerror(errno));
                 return false;
@@ -340,8 +342,8 @@ public:
         // Create the target directory if it doesn't exist
         if (mkdir(_target.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) < 0
                 && errno != EEXIST) {
-            mb::format(_error_msg, "%s: Failed to create directory: %s",
-                       _target.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create directory: %s",
+                   _target.c_str(), strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -349,15 +351,15 @@ public:
         // Ensure target is a directory
 
         if (stat(_target.c_str(), &sb_target) < 0) {
-            mb::format(_error_msg, "%s: Failed to stat: %s",
-                       _target.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to stat: %s",
+                   _target.c_str(), strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }
 
         if (!S_ISDIR(sb_target.st_mode)) {
-            mb::format(_error_msg, "%s: Target exists but is not a directory",
-                       _target.c_str());
+            format(_error_msg, "%s: Target exists but is not a directory",
+                   _target.c_str());
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -370,8 +372,8 @@ public:
         // Make sure we aren't copying the target on top of itself
         if (sb_target.st_dev == _curr->fts_statp->st_dev
                 && sb_target.st_ino == _curr->fts_statp->st_ino) {
-            mb::format(_error_msg, "%s: Cannot copy on top of itself",
-                       _curr->fts_path);
+            format(_error_msg, "%s: Cannot copy on top of itself",
+                   _curr->fts_path);
             LOGE("%s", _error_msg.c_str());
             return Action::FTS_Fail | Action::FTS_Stop;
         }
@@ -410,8 +412,8 @@ public:
         // Create target directory if it doesn't exist
         if (mkdir(_curtgtpath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) < 0
                 && errno != EEXIST) {
-            mb::format(_error_msg, "%s: Failed to create directory: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create directory: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             success = false;
             skip = true;
@@ -420,8 +422,8 @@ public:
         // Ensure target path is a directory
         if (!skip && stat(_curtgtpath.c_str(), &sb) == 0
                 && !S_ISDIR(sb.st_mode)) {
-            mb::format(_error_msg, "%s: Exists but is not a directory",
-                       _curtgtpath.c_str());
+            format(_error_msg, "%s: Exists but is not a directory",
+                   _curtgtpath.c_str());
             LOGW("%s", _error_msg.c_str());
             success = false;
             skip = true;
@@ -464,8 +466,8 @@ public:
 
         // Copy file contents
         if (!copy_data(_curr->fts_accpath, _curtgtpath)) {
-            mb::format(_error_msg, "%s: Failed to copy data: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to copy data: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -489,17 +491,17 @@ public:
 
         // Find current symlink target
         std::string symlink_path;
-        if (!read_link(_curr->fts_accpath, &symlink_path)) {
-            mb::format(_error_msg, "%s: Failed to read symlink path: %s",
-                       _curr->fts_accpath, strerror(errno));
+        if (!read_link(_curr->fts_accpath, symlink_path)) {
+            format(_error_msg, "%s: Failed to read symlink path: %s",
+                   _curr->fts_accpath, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
 
         // Create new symlink
         if (symlink(symlink_path.c_str(), _curtgtpath.c_str()) < 0) {
-            mb::format(_error_msg, "%s: Failed to create symlink: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create symlink: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -523,8 +525,8 @@ public:
 
         if (mknod(_curtgtpath.c_str(), S_IFBLK | S_IRWXU,
                 _curr->fts_statp->st_rdev) < 0) {
-            mb::format(_error_msg, "%s: Failed to create block device: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create block device: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -548,8 +550,8 @@ public:
 
         if (mknod(_curtgtpath.c_str(), S_IFCHR | S_IRWXU,
                 _curr->fts_statp->st_rdev) < 0) {
-            mb::format(_error_msg, "%s: Failed to create character device: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create character device: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -572,8 +574,8 @@ public:
         }
 
         if (mkfifo(_curtgtpath.c_str(), S_IRWXU) < 0) {
-            mb::format(_error_msg, "%s: Failed to create FIFO pipe: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to create FIFO pipe: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::FTS_Fail;
         }
@@ -605,8 +607,8 @@ private:
     {
         // Remove existing file
         if (unlink(_curtgtpath.c_str()) < 0 && errno != ENOENT) {
-            mb::format(_error_msg, "%s: Failed to remove old path: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to remove old path: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -617,8 +619,8 @@ private:
     {
         if ((_copyflags & COPY_ATTRIBUTES)
                 && !copy_stat(_curr->fts_accpath, _curtgtpath)) {
-            mb::format(_error_msg, "%s: Failed to copy attributes: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to copy attributes: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -629,8 +631,8 @@ private:
     {
         if ((_copyflags & COPY_XATTRS)
                 && !copy_xattrs(_curr->fts_accpath, _curtgtpath)) {
-            mb::format(_error_msg, "%s: Failed to copy xattrs: %s",
-                       _curtgtpath.c_str(), strerror(errno));
+            format(_error_msg, "%s: Failed to copy xattrs: %s",
+                   _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

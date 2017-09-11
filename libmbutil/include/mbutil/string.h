@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -29,9 +29,9 @@ namespace mb
 namespace util
 {
 
-void replace(std::string *source,
+void replace(std::string &source,
              const std::string &from, const std::string &to);
-void replace_all(std::string *source,
+void replace_all(std::string &source,
                  const std::string &from, const std::string &to);
 
 std::vector<std::string> split(const std::string &str,

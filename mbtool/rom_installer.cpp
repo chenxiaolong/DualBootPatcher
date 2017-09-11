@@ -30,6 +30,7 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
@@ -40,7 +41,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -50,6 +50,7 @@
 #include "installer.h"
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/rom_installer"
 
 #define DEBUG_LEAVE_STDIN_OPEN 0
 #define DEBUG_ENABLE_PASSTHROUGH 0
@@ -174,7 +175,7 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // FOTAKernel partition is listed, it will be used instead of the combined
     // ramdisk from the boot image
     bool combined = _device.flags()
-            & mb::device::DeviceFlag::HasCombinedBootAndRecovery;
+            & device::DeviceFlag::HasCombinedBootAndRecovery;
     if (combined && block_dev.empty()) {
         block_dev = _boot_block_dev;
         using_boot = true;
@@ -321,7 +322,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     }
 
     {
-        std::string tmpfile = mb::format("%s.XXXXXX", output_dir.c_str());
+        std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
         int tmpfd = mkstemp(&tmpfile[0]);
         if (tmpfd < 0) {
@@ -332,7 +333,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
         // We don't need the path
         unlink(tmpfile.c_str());
 
-        auto close_fd = util::finally([&]{
+        auto close_fd = finally([&]{
             close(tmpfd);
         });
 
@@ -392,8 +393,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
 
         if (nested) {
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
-                std::string tmpfile = mb::format(
-                        "%s.XXXXXX", output_dir.c_str());
+                std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
                 int tmpfd = mkstemp(&tmpfile[0]);
                 if (tmpfd < 0) {
@@ -405,7 +405,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                 // We don't need the path
                 unlink(tmpfile.c_str());
 
-                auto close_fd = util::finally([&]{
+                auto close_fd = finally([&]{
                     close(tmpfd);
                 });
 
@@ -415,7 +415,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
         } else {
             if (strcmp(path, "default.prop") == 0) {
                 path = "default.recovery.prop";
-            } else if (!mb::starts_with(path, "sbin/")) {
+            } else if (!starts_with(path, "sbin/")) {
                 continue;
             }
 
@@ -581,7 +581,7 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string context;
     if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &context)
+            0, util::SELinuxAttr::CURRENT, context)
             && context != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);
@@ -607,7 +607,7 @@ int rom_installer_main(int argc, char *argv[])
 #endif
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     // Start installing!
     RomInstaller ri(zip_file, rom_id, fp.get(), flags);

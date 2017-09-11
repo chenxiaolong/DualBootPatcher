@@ -65,6 +65,8 @@
 #include "gui/text.hpp"
 #include "gui/textbox.hpp"
 
+#define LOG_TAG "mbbootui/gui/pages"
+
 #define TW_THEME_VERSION 1
 #define TW_THEME_VER_ERR -2
 
@@ -1227,7 +1229,7 @@ char* PageManager::LoadFileToBuffer(const std::string& filename,
 
 void PageManager::LoadLanguageListDir(const std::string& dir)
 {
-    if (!mb::util::path_exists(dir.c_str(), false)) {
+    if (!mb::util::path_exists(dir, false)) {
         LOGE("LoadLanguageListDir '%s' path not found", dir.c_str());
         return;
     }
@@ -1284,7 +1286,7 @@ void PageManager::LoadLanguageListDir(const std::string& dir)
 void PageManager::LoadLanguageList(ZipArchive* package)
 {
     Language_List.clear();
-    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages").c_str(), false)) {
+    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages"), false)) {
         mb::util::delete_recursive(TWFunc::get_resource_path("customlanguages"));
     }
     if (package) {
@@ -1306,7 +1308,7 @@ void PageManager::LoadLanguageList(ZipArchive* package)
 void PageManager::LoadLanguage(const std::string& filename)
 {
     std::string actual_filename;
-    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages/" + filename + ".xml").c_str(), false)) {
+    if (mb::util::path_exists(TWFunc::get_resource_path("customlanguages/" + filename + ".xml"), false)) {
         actual_filename = TWFunc::get_resource_path("customlanguages/" + filename + ".xml");
     } else {
         actual_filename = TWFunc::get_resource_path("languages/" + filename + ".xml");
@@ -1354,7 +1356,7 @@ int PageManager::LoadPackage(const std::string& name,
         LOGI("Loading zip theme");
         tw_x_offset = 0;
         tw_y_offset = 0;
-        if (!mb::util::path_exists(package.c_str(), false)) {
+        if (!mb::util::path_exists(package, false)) {
             return -1;
         }
         if (sysMapFile(package.c_str(), &map) != 0) {

@@ -23,6 +23,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/button"
+
 GUIButton::GUIButton(xml_node<>* node) : GUIObject(node)
 {
     mButtonImg = nullptr;

@@ -41,6 +41,8 @@
 #include "gui/objects.hpp"
 #include "gui/pages.hpp"
 
+#define LOG_TAG "mbbootui/gui/gui"
+
 // Enable to print render time of each frame to the log file
 //#define PRINT_RENDER_TIME 1
 
@@ -379,7 +381,7 @@ static void loopTimer(int input_timeout_ms)
         timespec curTime, diff;
         clock_gettime(CLOCK_MONOTONIC, &curTime);
 
-        mb::util::timespec_diff(lastCall, curTime, &diff);
+        mb::util::timespec_diff(lastCall, curTime, diff);
 
         // This is really 2 or 30 times per second
         // As long as we get events, increase the timeout so we can catch up with input
@@ -650,7 +652,7 @@ extern "C" int gui_loadCustomResources()
 {
 #ifndef TW_OEM_BUILD
     // Check for a custom theme
-    if (mb::util::path_exists(tw_theme_zip_path.c_str(), false)) {
+    if (mb::util::path_exists(tw_theme_zip_path, false)) {
         // There is a custom theme, try to load it
         if (PageManager::ReloadPackage("TWRP", tw_theme_zip_path)) {
             // Custom theme failed to load, try to load stock theme

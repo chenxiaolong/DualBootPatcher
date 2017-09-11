@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,34 +19,25 @@
 
 #pragma once
 
+#include "mbcommon/common.h"
+
 namespace mb
 {
-namespace util
+
+class MB_EXPORT ErrorRestorer final
 {
-
-// Perform action once this goes out of scope, essentially acting as the
-// "finally" part of a try-finally block (in eg. Java)
-template <typename F>
-class Finally {
 public:
-    Finally(F f) : _f(f)
-    {
-    }
+    ErrorRestorer();
+    ~ErrorRestorer();
 
-    ~Finally()
-    {
-        _f();
-    }
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
 
 private:
-    F _f;
+    const int _saved_errno;
+#ifdef _WIN32
+    const unsigned long _saved_error;
+#endif
 };
 
-template <typename F>
-Finally<F> finally(F f)
-{
-    return Finally<F>(f);
-}
-
-}
 }

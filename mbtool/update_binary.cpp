@@ -33,7 +33,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -41,6 +40,8 @@
 #include "installer.h"
 #include "multiboot.h"
 #include "sepolpatch.h"
+
+#define LOG_TAG "mbtool/update_binary"
 
 
 namespace mb
@@ -98,7 +99,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
     if (stat("/sys/fs/selinux", &sb) == 0) {
         if (!patch_loaded_sepolicy(SELinuxPatch::CWM_RECOVERY)) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
-            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
+            int fd = open(util::SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {
                 write(fd, "0", 1);
                 close(fd);
@@ -215,7 +216,7 @@ int update_binary_main(int argc, char *argv[])
     zip_file = argv[3];
 
     // stdout is messed up when it's appended to /tmp/recovery.log
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stderr));
 
     RecoveryInstaller ri(zip_file, interface, output_fd);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;

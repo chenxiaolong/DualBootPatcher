@@ -33,14 +33,17 @@
 #include <sys/vfs.h>
 #include <unistd.h>
 
+#include "mbcommon/error.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/mount"
 
 #define MAX_UNMOUNT_TRIES 5
 
@@ -112,7 +115,7 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out)
 
     struct stat sb;
     if (lstat(entry_out.dir.c_str(), &sb) < 0 && errno == ENOENT
-            && mb::ends_with(entry_out.dir, DELETED_SUFFIX)) {
+            && ends_with(entry_out.dir, DELETED_SUFFIX)) {
         entry_out.dir.erase(entry_out.dir.size() - strlen(DELETED_SUFFIX));
     }
 
@@ -123,7 +126,7 @@ bool is_mounted(const std::string &mountpoint)
 {
     autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
     if (!fp) {
-        LOGE(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
+        LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
         return false;
     }
 
@@ -147,14 +150,13 @@ bool unmount_all(const std::string &dir)
 
         autoclose::file fp(std::fopen(PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
+            LOGE("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
             return false;
         }
 
         for (MountEntry entry; get_mount_entry(fp.get(), entry);) {
-            // TODO: Use util::path_compare() instead of dumb string prefix
-            // matching
-            if (mb::starts_with(entry.dir, dir)) {
+            // TODO: Use path_compare() instead of dumb string prefix matching
+            if (starts_with(entry.dir, dir)) {
                 to_unmount.push_back(std::move(entry.dir));
             }
         }
@@ -163,7 +165,7 @@ bool unmount_all(const std::string &dir)
         for (auto it = to_unmount.rbegin(); it != to_unmount.rend(); ++it) {
             LOGD("Attempting to unmount %s", it->c_str());
 
-            if (!util::umount(it->c_str())) {
+            if (!umount(*it)) {
                 LOGE("%s: Failed to unmount: %s",
                      it->c_str(), strerror(errno));
                 ++failed;
@@ -201,53 +203,60 @@ bool unmount_all(const std::string &dir)
  * \return True if mount(2) is successful. False if mount(2) is unsuccessful
  *         or loopdev could not be created or associated with the source path.
  */
-bool mount(const char *source, const char *target, const char *fstype,
-           unsigned long mount_flags, const void *data)
+bool mount(const std::string &source, const std::string &target,
+           const std::string &fstype, unsigned long mount_flags,
+           const std::string &data)
 {
     bool need_loopdev = false;
     struct stat sb;
+    std::string fstype_real{fstype};
 
     if (!(mount_flags & (MS_REMOUNT | MS_BIND | MS_MOVE))) {
-        if (stat(source, &sb) >= 0) {
+        if (stat(source.c_str(), &sb) >= 0) {
             if (S_ISREG(sb.st_mode)) {
                 need_loopdev = true;
             }
-            if (fstype && strcmp(fstype, "auto") == 0
+            if (fstype == "auto"
                     && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
-                if (!blkid_get_fs_type(source, &fstype) || !fstype) {
+                optional<std::string> detected;
+                if (!blkid_get_fs_type(source, detected) || !detected) {
                     return false;
-                } else if (strcmp(fstype, "ext") == 0) {
+                } else if (*detected == "ext") {
                     // Always assume ext4 instead of ext2, ext3, ext4dev, or jbd
-                    fstype = "ext4";
+                    fstype_real = "ext4";
+                } else {
+                    fstype_real.swap(*detected);
                 }
             }
         }
     }
 
     if (need_loopdev) {
-        std::string loopdev = util::loopdev_find_unused();
+        std::string loopdev = loopdev_find_unused();
         if (loopdev.empty()) {
             LOGE("Failed to find unused loop device: %s", strerror(errno));
             return false;
         }
 
-        LOGD("Assigning %s to loop device %s", source, loopdev.c_str());
+        LOGD("Assigning %s to loop device %s", source.c_str(), loopdev.c_str());
 
-        if (!util::loopdev_set_up_device(
+        if (!loopdev_set_up_device(
                 loopdev, source, 0, mount_flags & MS_RDONLY)) {
             LOGE("Failed to set up loop device %s: %s",
                  loopdev.c_str(), strerror(errno));
             return false;
         }
 
-        if (::mount(loopdev.c_str(), target, fstype, mount_flags, data) < 0) {
-            util::loopdev_remove_device(loopdev);
+        if (::mount(loopdev.c_str(), target.c_str(), fstype_real.c_str(),
+                    mount_flags, data.c_str()) < 0) {
+            loopdev_remove_device(loopdev);
             return false;
         }
 
         return true;
     } else {
-        return ::mount(source, target, fstype, mount_flags, data) == 0;
+        return ::mount(source.c_str(), target.c_str(), fstype_real.c_str(),
+                       mount_flags, data.c_str()) == 0;
     }
 }
 
@@ -268,7 +277,7 @@ bool mount(const char *source, const char *target, const char *fstype,
  *
  * \return True if umount(2) is successful. False if umount(2) is unsuccessful.
  */
-bool umount(const char *target)
+bool umount(const std::string &target)
 {
     std::string source;
     std::string mnt_dir;
@@ -281,12 +290,12 @@ bool umount(const char *target)
             }
         }
     } else {
-        LOGW(PROC_MOUNTS ": Failed to read file: %s", strerror(errno));
+        LOGW("%s: Failed to read file: %s", PROC_MOUNTS, strerror(errno));
     }
 
-    int ret = ::umount(target);
+    int ret = ::umount(target.c_str());
 
-    int saved_errno = errno;
+    ErrorRestorer restorer;
 
     if (!source.empty()) {
         struct stat sb;
@@ -302,31 +311,31 @@ bool umount(const char *target)
         }
     }
 
-    errno = saved_errno;
-
     return ret == 0;
 }
 
-uint64_t mount_get_total_size(const char *path)
+bool mount_get_total_size(const std::string &path, uint64_t &size)
 {
     struct statfs sfs;
 
-    if (statfs(path, &sfs) < 0) {
-        return 0;
+    if (statfs(path.c_str(), &sfs) < 0) {
+        return false;
     }
 
-    return sfs.f_bsize * sfs.f_blocks;
+    size = sfs.f_bsize * sfs.f_blocks;
+    return true;
 }
 
-uint64_t mount_get_avail_size(const char *path)
+bool mount_get_avail_size(const std::string &path, uint64_t &size)
 {
     struct statfs sfs;
 
-    if (statfs(path, &sfs) < 0) {
-        return 0;
+    if (statfs(path.c_str(), &sfs) < 0) {
+        return false;
     }
 
-    return sfs.f_bsize * sfs.f_bavail;
+    size = sfs.f_bsize * sfs.f_bavail;
+    return true;
 }
 
 }

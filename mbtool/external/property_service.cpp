@@ -51,6 +51,8 @@
 
 #include "property_service.h"
 
+#define LOG_TAG "mbtool/external/property_service"
+
 #define ALLOW_LOCAL_PROP_OVERRIDE 1
 
 static int property_set_fd = -1;
@@ -414,7 +416,7 @@ static void load_properties_from_file(const char* filename, const char* filter) 
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
     std::vector<unsigned char> data;
-    if (!mb::util::file_read_all(filename, &data)) {
+    if (!mb::util::file_read_all(filename, data)) {
         LOGW("Couldn't load properties from %s", filename);
         return;
     }

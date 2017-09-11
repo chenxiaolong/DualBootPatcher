@@ -42,6 +42,8 @@
 #include "twrp-functions.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/data"
+
 #define DEVID_MAX 64
 #define HWID_MAX 32
 
@@ -357,7 +359,7 @@ void DataManager::SetDefaultValues()
         } else {
             cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
         }
-        if (mb::util::path_exists(cpu_temp_file.c_str(), true)) {
+        if (mb::util::path_exists(cpu_temp_file, true)) {
             mConst.SetValue(VAR_TW_NO_CPU_TEMP, "0");
         } else {
             LOGI("CPU temperature file '%s' not found, disabling CPU temp.", cpu_temp_file.c_str());
@@ -391,7 +393,7 @@ void DataManager::SetDefaultValues()
     if (!brightness_path.empty()) {
         findbright = brightness_path;
         LOGI("TW_BRIGHTNESS_PATH := %s", findbright.c_str());
-        if (!mb::util::path_exists(findbright.c_str(), true)) {
+        if (!mb::util::path_exists(findbright, true)) {
             LOGI("Specified brightness file '%s' not found.", findbright.c_str());
             findbright = "";
         }
@@ -427,7 +429,7 @@ void DataManager::SetDefaultValues()
         } else {
             // Attempt to locate the max_brightness file
             std::string maxbrightpath = findbright.insert(findbright.rfind('/') + 1, "max_");
-            if (mb::util::path_exists(maxbrightpath.c_str(), true)) {
+            if (mb::util::path_exists(maxbrightpath, true)) {
                 std::ifstream maxVal(maxbrightpath.c_str());
                 if (maxVal >> maxBrightness) {
                     LOGI("Got max brightness %s from '%s'", maxBrightness.c_str(), maxbrightpath.c_str());
@@ -449,7 +451,7 @@ void DataManager::SetDefaultValues()
         auto const &secondary_brightness_path =
                 tw_device.tw_secondary_brightness_path();
         if (!secondary_brightness_path.empty()) {
-            if (mb::util::path_exists(secondary_brightness_path.c_str(), true)) {
+            if (mb::util::path_exists(secondary_brightness_path, true)) {
                 LOGI("Will use a second brightness file at '%s'",
                      secondary_brightness_path.c_str());
                 mConst.SetValue("tw_secondary_brightness_file",
@@ -531,12 +533,12 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
             auto const &cpu_temp_path = tw_device.tw_cpu_temp_path();
             if (!cpu_temp_path.empty()) {
                 cpu_temp_file = cpu_temp_path;
-                if (!mb::util::file_first_line(cpu_temp_file, &results)) {
+                if (!mb::util::file_first_line(cpu_temp_file, results)) {
                     return -1;
                 }
             } else {
                 cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
-                if (!mb::util::file_first_line(cpu_temp_file, &results)) {
+                if (!mb::util::file_first_line(cpu_temp_file, results)) {
                     return -1;
                 }
             }

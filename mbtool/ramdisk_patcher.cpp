@@ -36,6 +36,8 @@
 
 #include "installer_util.h"
 
+#define LOG_TAG "mbtool/ramdisk_patcher"
+
 namespace mb
 {
 
@@ -98,7 +100,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = mb::format("%s.XXXXXX", path.c_str());
+    tmp_path = format("%s.XXXXXX", path.c_str());
 
     tmp_fd = mkstemp(&tmp_path[0]);
     if (tmp_fd < 0) {
@@ -125,7 +127,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
-        if (mb::starts_with(buf, "ro.patcher.")) {
+        if (starts_with(buf, "ro.patcher.")) {
             continue;
         }
 
@@ -285,12 +287,12 @@ static bool _rp_symlink_init(const std::string &dir)
 
         // Check that /init is a symlink and that /init.real exists
         if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
-                && util::read_link(target, &sony_symlink_target)
+                && util::read_link(target, sony_symlink_target)
                 && lstat(sony_real_init.c_str(), &sb) == 0) {
             std::vector<std::string> haystack{util::path_split(sony_symlink_target)};
             std::vector<std::string> needle{util::path_split("sbin/init_sony")};
 
-            util::normalize_path(&haystack);
+            util::normalize_path(haystack);
 
             // Check that init points to some path with "sbin/init_sony" in it
             auto const it = std::search(haystack.cbegin(), haystack.cend(),

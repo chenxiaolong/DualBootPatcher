@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -35,7 +36,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -54,6 +54,8 @@
 // flatbuffers
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
+
+#define LOG_TAG "mbtool/daemon_v3"
 
 namespace mb
 {
@@ -314,7 +316,7 @@ static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
     fb::Offset<v3::FileSELinuxGetLabelError> error;
     std::string label;
 
-    bool ret = util::selinux_fget_context(ffd, &label);
+    bool ret = util::selinux_fget_context(ffd, label);
     int saved_errno = errno;
 
     if (!ret) {
@@ -610,7 +612,7 @@ static bool v3_path_readlink(int fd, const v3::Request *msg)
     }
 
     std::string target;
-    bool ret = util::read_link(request->path()->c_str(), &target);
+    bool ret = util::read_link(request->path()->c_str(), target);
     int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
@@ -642,9 +644,9 @@ static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
     std::string label;
     bool ret;
     if (request->follow_symlinks()) {
-        ret = util::selinux_get_context(request->path()->c_str(), &label);
+        ret = util::selinux_get_context(request->path()->c_str(), label);
     } else {
-        ret = util::selinux_lget_context(request->path()->c_str(), &label);
+        ret = util::selinux_lget_context(request->path()->c_str(), label);
     }
     int saved_errno = errno;
 
@@ -828,8 +830,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
-    size_t nargs;
-    const char **argv;
+    std::vector<std::string> argv;
     int status;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
@@ -845,7 +846,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     target_sig += "/binary.sig";
 
     // Unmount tmpfs when we're done
-    auto unmount_tmpfs = util::finally([&]{
+    auto unmount_tmpfs = finally([&]{
         if (mounted_tmpfs) {
             umount(temp_dir);
         }
@@ -853,7 +854,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "Failed to remount / as rw: %s", strerror(errno));
+        format(error_msg, "Failed to remount / as rw: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -861,8 +862,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if ((mkdir(temp_dir, 0000) < 0 && errno != EEXIST)
             || chmod(temp_dir, 0000) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "Failed to create temp directory: %s",
-                   strerror(errno));
+        format(error_msg, "Failed to create temp directory: %s",
+               strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -873,8 +874,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("tmpfs", temp_dir, "tmpfs", 0, "mode=000,uid=0,gid=0") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "Failed to mount tmpfs at temp directory: %s",
-                   strerror(errno));
+        format(error_msg, "Failed to mount tmpfs at temp directory: %s",
+               strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -883,8 +884,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy binary to tmpfs
     if (!util::copy_file(request->binary_path()->str(), target_binary, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "%s: Failed to copy binary to tmpfs: %s",
-                   request->binary_path()->c_str(), strerror(errno));
+        format(error_msg, "%s: Failed to copy binary to tmpfs: %s",
+               request->binary_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -892,8 +893,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy signature to tmpfs
     if (!util::copy_file(request->signature_path()->str(), target_sig, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "%s: Failed to copy signature to tmpfs: %s",
-                   request->signature_path()->c_str(), strerror(errno));
+        format(error_msg, "%s: Failed to copy signature to tmpfs: %s",
+               request->signature_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -903,12 +904,12 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if (sig_result != SigVerifyResult::VALID) {
         if (sig_result == SigVerifyResult::INVALID) {
             result = v3::SignedExecResult_INVALID_SIGNATURE;
-            mb::format(error_msg, "%s: Invalid signature",
-                       request->binary_path()->c_str());
+            format(error_msg, "%s: Invalid signature",
+                   request->binary_path()->c_str());
         } else {
             result = v3::SignedExecResult_OTHER_ERROR;
-            mb::format(error_msg, "%s: Failed to verify signature",
-                       request->binary_path()->c_str());
+            format(error_msg, "%s: Failed to verify signature",
+                   request->binary_path()->c_str());
         }
 
         LOGE("%s", error_msg.c_str());
@@ -918,50 +919,32 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Make binary executable
     if (chmod(target_binary.c_str(), 0700) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "Failed to chmod binary in tmpfs: %s",
-                   strerror(errno));
+        format(error_msg, "Failed to chmod binary in tmpfs: %s",
+               strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
 
     // Build arguments
-    nargs = 2; // argv[0] + NULL-terminator
-    if (request->args()) {
-        nargs += request->args()->size();
-    }
-
-    argv = (const char **) malloc(nargs * sizeof(const char *));
-    if (!argv) {
-        result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "%s", strerror(errno));
-        LOGE("%s", error_msg.c_str());
-        goto done;
-    }
-
     {
-        size_t i = 0;
         if (request->arg0()) {
-            argv[i++] = request->arg0()->c_str();
+            argv.push_back(request->arg0()->str());
         } else {
-            argv[i++] = target_binary.c_str();
+            argv.push_back(target_binary);
         }
         if (request->args()) {
             for (auto const &arg : *request->args()) {
-                argv[i++] = arg->c_str();
+                argv.push_back(arg->str());
             }
         }
-        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
+    status = util::run_command(target_binary, argv, {}, {},
                                &signed_exec_output_cb, &fd);
-
-    free(argv);
-
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -970,7 +953,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         term_sig = WTERMSIG(status);
     } else {
         result = v3::SignedExecResult_OTHER_ERROR;
-        mb::format(error_msg, "Failed to execute process: %s", strerror(errno));
+        format(error_msg, "Failed to execute process: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
     }
 
@@ -1093,8 +1076,7 @@ static bool v3_mb_get_version(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Get version
-    auto response = v3::CreateMbGetVersionResponseDirect(
-            builder, mb::version());
+    auto response = v3::CreateMbGetVersionResponseDirect(builder, version());
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
@@ -1443,7 +1425,7 @@ bool connection_version_3(int fd)
 {
     std::string command;
 
-    auto close_all_fds = util::finally([&]{
+    auto close_all_fds = finally([&]{
         // Ensure opened fd's are closed if the connection is lost
         for (auto &p : fd_map) {
             close(p.second);
@@ -1453,7 +1435,7 @@ bool connection_version_3(int fd)
 
     while (1) {
         std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, &data)) {
+        if (!util::socket_read_bytes(fd, data)) {
             return false;
         }
 

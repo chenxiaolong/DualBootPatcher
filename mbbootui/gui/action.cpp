@@ -46,6 +46,8 @@
 #include "gui/gui.h"
 #include "gui/hardwarekeyboard.hpp"
 
+#define LOG_TAG "mbbootui/gui/action"
+
 GUIAction::mapFunc GUIAction::mf;
 std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 
@@ -706,7 +708,7 @@ int GUIAction::switch_rom(const std::string& arg)
     operation_start("Switching ROM");
 
     std::string current_rom;
-    mbtool_interface->get_booted_rom_id(&current_rom);
+    mbtool_interface->get_booted_rom_id(current_rom);
 
     if (current_rom == arg) {
         // No need to switch if the user picked the current ROM
@@ -721,7 +723,7 @@ int GUIAction::switch_rom(const std::string& arg)
         auto const &boot_devs = tw_device.boot_block_devs();
         auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
                                [&](const std::string &path) {
-            return mb::util::path_exists(path.c_str(), true);
+            return mb::util::path_exists(path, true);
         });
 
         if (it == boot_devs.end()) {
@@ -731,7 +733,7 @@ int GUIAction::switch_rom(const std::string& arg)
 
         SwitchRomResult result;
         if (ret == 0 && !mbtool_interface->switch_rom(
-                arg, *it, tw_device.block_dev_base_dirs(), false, &result)) {
+                arg, *it, tw_device.block_dev_base_dirs(), false, result)) {
             gui_msg(Msg(msg::kError, "mbtool_connection_error"));
             ret = 1;
         }

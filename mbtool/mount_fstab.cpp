@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -46,7 +46,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -60,6 +59,8 @@
 #include "sepolpatch.h"
 #include "signature.h"
 #include "initwrapper/devices.h"
+
+#define LOG_TAG "mbtool/mount_fstab"
 
 #define SYSTEM_MOUNT_POINT          "/raw/system"
 #define CACHE_MOUNT_POINT           "/raw/cache"
@@ -116,18 +117,15 @@ static bool create_dir_and_mount(const std::vector<util::fstab_rec> &recs,
              rec.flags, rec.fs_options.c_str());
 
         // Wait for block device if requested
-        if (rec.fs_mgr_flags & MF_WAIT) {
+        if (rec.fs_mgr_flags & util::MF_WAIT) {
             LOGD("%s: Waiting up to 20 seconds for block device",
                  rec.blk_device.c_str());
-            util::wait_for_path(rec.blk_device.c_str(), 20 * 1000);
+            util::wait_for_path(rec.blk_device, 20 * 1000);
         }
 
         // Try mounting
-        bool ret = util::mount(rec.blk_device.c_str(),
-                               mount_point,
-                               rec.fs_type.c_str(),
-                               rec.flags,
-                               rec.fs_options.c_str());
+        bool ret = util::mount(rec.blk_device, mount_point, rec.fs_type,
+                               rec.flags, rec.fs_options);
         if (!ret) {
             LOGE("Failed to mount %s (%s) at %s: %s",
                  rec.blk_device.c_str(), rec.fs_type.c_str(),
@@ -223,7 +221,7 @@ static bool path_matches(const char *path, const char *pattern)
     if (strchr(pattern, '*')) {
         return fnmatch(pattern, path, 0) == 0;
     } else {
-        return mb::starts_with(path, pattern);
+        return starts_with(path, pattern);
     }
 }
 
@@ -271,31 +269,26 @@ static bool mount_exfat_fuse(const char *source, const char *target)
         return false;
     }
 
-    char mount_args[100];
-
-    snprintf(mount_args, sizeof(mount_args),
+    std::string mount_args = format(
              "noatime,nodev,nosuid,dirsync,uid=%d,gid=%d,fmask=%o,dmask=%o,%s,%s",
              uid, uid, 0007, 0007, "noexec", "rw");
 
-    const char *fsck_argv[] = {
+    std::vector<std::string> fsck_argv{
         "/sbin/fsck.exfat",
-        source,
-        nullptr
+        source
     };
-    const char *mount_argv[] = {
+    std::vector<std::string> mount_argv{
         "/sbin/mount.exfat",
         "-o", mount_args,
-        source, target,
-        nullptr
+        source, target
     };
 
     // Run filesystem checks
-    util::run_command(fsck_argv[0], fsck_argv, nullptr, nullptr, &dump,
-                      nullptr);
+    util::run_command(fsck_argv[0], fsck_argv, {}, {}, &dump, nullptr);
 
     // Mount exfat, matching vold options as much as possible
-    int ret = util::run_command(mount_argv[0], mount_argv, nullptr, nullptr,
-                                &dump, nullptr);
+    int ret = util::run_command(mount_argv[0], mount_argv, {}, {}, &dump,
+                                nullptr);
 
     if (ret >= 0) {
         LOGD("mount.exfat returned: %d", WEXITSTATUS(ret));
@@ -318,7 +311,7 @@ static bool mount_exfat_fuse(const char *source, const char *target)
 static bool mount_exfat_kernel(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = mb::format(
+    std::string args = format(
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
@@ -343,7 +336,7 @@ static bool mount_exfat_kernel(const char *source, const char *target)
 static bool mount_vfat(const char *source, const char *target)
 {
     uid_t uid = get_media_rw_uid();
-    std::string args = mb::format(
+    std::string args = format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
     int flags = MS_NODEV
@@ -402,30 +395,30 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         }
     }
 
-    const char *fstype;
-    if (!util::blkid_get_fs_type(block_dev, &fstype)) {
+    optional<std::string> fstype;
+    if (!util::blkid_get_fs_type(block_dev, fstype)) {
         LOGE("%s: Failed to detect filesystem type: %s",
              block_dev, strerror(errno));
     } else if (!fstype) {
         LOGE("%s: Unknown filesystem", block_dev);
-    } else if (strcmp(fstype, "exfat") == 0) {
+    } else if (*fstype == "exfat") {
         LOGD("Using fuse-exfat: %d", use_fuse_exfat);
 
         auto func = use_fuse_exfat ? &mount_exfat_fuse : &mount_exfat_kernel;
         if (func(block_dev, mount_point)) {
             return true;
         }
-    } else if (strcmp(fstype, "vfat") == 0) {
+    } else if (*fstype == "vfat") {
         if (mount_vfat(block_dev, mount_point)) {
             return true;
         }
-    } else if (strcmp(fstype, "ext") == 0) {
+    } else if (*fstype == "ext") {
         // Assume ext4
         if (mount_ext4(block_dev, mount_point)) {
             return true;
         }
     } else {
-        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype);
+        LOGE("%s: Cannot handle filesystem: %s", block_dev, fstype->c_str());
     }
 
     return false;
@@ -630,7 +623,7 @@ static bool disable_fsck(const char *fsck_binary)
 
     // Copy SELinux label
     std::string context;
-    if (util::selinux_get_context(fsck_binary, &context)) {
+    if (util::selinux_get_context(fsck_binary, context)) {
         LOGD("%s: SELinux label is: %s", fsck_binary, context.c_str());
         if (!util::selinux_set_context(target.c_str(), context)) {
             LOGW("%s: Failed to set SELinux label: %s",
@@ -672,7 +665,7 @@ static bool copy_mount_exfat()
 
     // Copy SELinux label
     std::string context;
-    if (util::selinux_get_context(system_mount_exfat, &context)) {
+    if (util::selinux_get_context(system_mount_exfat, context)) {
         LOGD("%s: SELinux label is: %s", system_mount_exfat, context.c_str());
         if (!util::selinux_set_context(target, context)) {
             LOGW("%s: Failed to set SELinux label: %s",
@@ -927,7 +920,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         LOGI("Successfully mounted partitions");
     } else if (flags & MOUNT_FLAG_UNMOUNT_ON_FAILURE) {
         for (const std::string &mount_point : successful) {
-            util::umount(mount_point.c_str());
+            util::umount(mount_point);
         }
     }
 

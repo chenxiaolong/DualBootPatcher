@@ -20,8 +20,18 @@ if(MBP_TOP_LEVEL_BUILD)
     # devices' ramdisks.
     if(${MBP_SYSTEM_BUILD_TYPE} STREQUAL debug)
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Debug)
+        set(system_install_target install)
     else()
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Release)
+        set(system_install_target install/strip)
+    endif()
+
+    if(${MBP_BUILD_TARGET} STREQUAL android)
+        if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+            set(app_install_target install)
+        else()
+            set(app_install_target install/strip)
+        endif()
     endif()
 
     # List of ExternalProject directories to run "make clean" in
@@ -36,8 +46,6 @@ if(MBP_TOP_LEVEL_BUILD)
             #-DCMAKE_TOOLCHAIN_FILE=${ndk_path}/build/cmake/android.toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
-            -DANDROID_STL=gnustl_static
-            #-DANDROID_STL=c++_static
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
@@ -61,6 +69,8 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DANDROID_PIE=ON
             -DANDROID_PLATFORM=android-17
+            -DANDROID_STL=gnustl_shared
+            #-DANDROID_STL=c++_shared
             -DMBP_BUILD_TARGET=android-app
         )
 
@@ -69,6 +79,8 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_PIE=OFF
             -DANDROID_PLATFORM=android-21
+            -DANDROID_STL=gnustl_static
+            #-DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
         )
 
@@ -84,7 +96,7 @@ if(MBP_TOP_LEVEL_BUILD)
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
             CMAKE_ARGS ${INTERNAL_ANDROID_SYSTEM_OPTIONS}
             BUILD_ALWAYS 1
-            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${system_install_target}
             VERBATIM
         )
 
@@ -136,7 +148,7 @@ if(MBP_TOP_LEVEL_BUILD)
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
                 CMAKE_ARGS ${INTERNAL_ANDROID_APP_OPTIONS}
                 BUILD_ALWAYS 1
-                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${app_install_target}
                 VERBATIM
             )
 
@@ -236,5 +248,33 @@ if(MBP_TOP_LEVEL_BUILD)
         clean-android
         ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
         VERBATIM
+    )
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    # Install gnustl. We do this in the android-app target because we have
+    # access to the CMAKE_LINKER variable.
+    set(gnustl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/4.9/libs/${ANDROID_ABI}/libgnustl_shared.so")
+    set(gnustl_target "${CMAKE_CURRENT_BINARY_DIR}/libgnustl_shared.stripped.so")
+
+    add_custom_command(
+        OUTPUT "${gnustl_target}"
+        COMMAND "${CMAKE_STRIP}" -s "${gnustl_source}" -o "${gnustl_target}"
+        COMMENT "Strip gnustl_shared library"
+        VERBATIM
+    )
+
+    add_custom_target(
+        strip_gnustl_shared
+        ALL
+        DEPENDS "${gnustl_target}"
+    )
+
+    install(
+        FILES "${gnustl_target}"
+        DESTINATION ${LIB_INSTALL_DIR}
+        RENAME libgnustl_shared.so
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE             GROUP_READ
+                    WORLD_EXECUTE             WORLD_READ
+        COMPONENT Libraries
     )
 endif()

@@ -1,0 +1,110 @@
+---
+- name: 360 N4S MTK (1505-A01)
+  id: QK1505_A01
+  codenames:
+    - QK1505_A01
+    - QK1505-A01
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p30
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p31
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p25
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p1
+    extra:
+      # md1dsp
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1dsp
+      - /dev/block/mmcblk0p14
+      # md1arm7
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1arm7
+      - /dev/block/mmcblk0p15
+      # md1img
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1img
+      - /dev/block/mmcblk0p13
+      # md3img
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md3img
+      - /dev/block/mmcblk0p16
+
+
+- name: 360 N4S Qualcomm (1505-A02)
+  id: QK1505
+  codenames:
+    - QK1505
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p32
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p34
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p51
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p30
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p31
+    extra:
+      - /dev/block/bootdevices/by-name/modem
+      - /dev/block/bootdevices/by-name/modemst1
+
+
+- name: 360 N4 (A/M)
+  id: QK1503
+  codenames:
+    - QK1503_A01
+    - QK1503-A01
+    - QK1503_M02
+    - QK1503-M02
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p30
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p31
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p32
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p25
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p1
+    extra:
+      # md1dsp
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1dsp
+      - /dev/block/mmcblk0p14
+      # md1arm7
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1arm7
+      - /dev/block/mmcblk0p15
+      # md1img
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md1img
+      - /dev/block/mmcblk0p13
+      # md3img
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/md3img
+      - /dev/block/mmcblk0p16

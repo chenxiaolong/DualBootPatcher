@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,9 +30,13 @@
 
 #include <sepol/sepol.h>
 
+#include "mbcommon/error.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
+
+#define LOG_TAG "mbutil/selinux"
 
 #define SELINUX_XATTR           "security.selinux"
 
@@ -195,7 +199,7 @@ bool selinux_write_policy(const std::string &path, policydb_t *pdb)
     return true;
 }
 
-bool selinux_get_context(const std::string &path, std::string *context)
+bool selinux_get_context(const std::string &path, std::string &context)
 {
     ssize_t size;
     std::vector<char> value;
@@ -213,12 +217,12 @@ bool selinux_get_context(const std::string &path, std::string *context)
     }
 
     value.push_back('\0');
-    *context = value.data();
+    context = value.data();
 
     return true;
 }
 
-bool selinux_lget_context(const std::string &path, std::string *context)
+bool selinux_lget_context(const std::string &path, std::string &context)
 {
     ssize_t size;
     std::vector<char> value;
@@ -236,12 +240,12 @@ bool selinux_lget_context(const std::string &path, std::string *context)
     }
 
     value.push_back('\0');
-    *context = value.data();
+    context = value.data();
 
     return true;
 }
 
-bool selinux_fget_context(int fd, std::string *context)
+bool selinux_fget_context(int fd, std::string &context)
 {
     ssize_t size;
     std::vector<char> value;
@@ -259,7 +263,7 @@ bool selinux_fget_context(int fd, std::string *context)
     }
 
     value.push_back('\0');
-    *context = value.data();
+    context = value.data();
 
     return true;
 }
@@ -294,7 +298,7 @@ bool selinux_lset_context_recursive(const std::string &path,
     return RecursiveSetContext(path, context, false).run();
 }
 
-bool selinux_get_enforcing(int *value)
+bool selinux_get_enforcing(int &value)
 {
     int fd = open(SELINUX_ENFORCE_FILE, O_RDONLY);
     if (fd < 0) {
@@ -314,7 +318,7 @@ bool selinux_get_enforcing(int *value)
         return false;
     }
 
-    *value = enforce;
+    value = enforce;
 
     return true;
 }
@@ -373,55 +377,38 @@ static int open_attr(pid_t pid, SELinuxAttr attr, int flags)
         return false;
     }
 
-    int fd;
-    int ret;
-    char *path;
-    pid_t tid;
+    std::string path;
 
     if (pid > 0) {
-        ret = asprintf(&path, "/proc/%d/attr/%s", pid, attr_name);
+        path = format("/proc/%d/attr/%s", pid, attr_name);
     } else if (pid == 0) {
-        ret = asprintf(&path, "/proc/thread-self/attr/%s", attr_name);
-        if (ret < 0) {
-            return -1;
-        }
+        path = format("/proc/thread-self/attr/%s", attr_name);
 
-        fd = open(path, flags | O_CLOEXEC);
+        int fd = open(path.c_str(), flags | O_CLOEXEC);
         if (fd >= 0 || errno != ENOENT) {
-            goto out;
+            return fd;
         }
 
-        free(path);
-        tid = gettid();
-        ret = asprintf(&path, "/proc/self/task/%d/attr/%s", tid, attr_name);
+        path = format("/proc/self/task/%d/attr/%s", gettid(), attr_name);
     } else {
         errno = EINVAL;
         return -1;
     }
 
-    if (ret < 0) {
-        return -1;
-    }
-
-    fd = open(path, flags | O_CLOEXEC);
-
-out:
-    free(path);
-    return fd;
+    return open(path.c_str(), flags | O_CLOEXEC);
 }
 
 bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
-                              std::string *context_out)
+                              std::string &context_out)
 {
     int fd = open_attr(pid, attr, O_RDONLY);
     if (fd < 0) {
         return false;
     }
 
-    auto close_fd = util::finally([&]{
-        int saved_errno = errno;
+    auto close_fd = finally([&]{
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     std::vector<char> buf(sysconf(_SC_PAGE_SIZE));
@@ -436,7 +423,7 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
     }
 
     // buf is guaranteed to be NULL-terminated
-    *context_out = buf.data();
+    context_out = buf.data();
     return true;
 }
 
@@ -448,10 +435,9 @@ bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
         return false;
     }
 
-    auto close_fd = util::finally([&]{
-        int saved_errno = errno;
+    auto close_fd = finally([&]{
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     ssize_t n;

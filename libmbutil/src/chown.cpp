@@ -33,6 +33,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
 
+#define LOG_TAG "mbutil/chown"
+
 namespace mb
 {
 namespace util
@@ -89,8 +91,8 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            mb::format(_error_msg, "%s: Failed to chown: %s",
-                       _curr->fts_path, strerror(errno));
+            format(_error_msg, "%s: Failed to chown: %s",
+                   _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

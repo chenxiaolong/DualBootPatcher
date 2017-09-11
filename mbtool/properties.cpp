@@ -28,8 +28,8 @@
 #include <getopt.h>
 
 #include "mbcommon/string.h"
-#include "mblog/logging.h"
 #include "mbutil/properties.h"
+
 
 namespace mb
 {
@@ -120,7 +120,7 @@ int properties_main(int argc, char *argv[])
         } else {
             prop_info *pi = const_cast<prop_info *>(
                     util::libc_system_property_find(key));
-            if (pi && mb::starts_with(key, "ro.")) {
+            if (pi && starts_with(key, "ro.")) {
                 fprintf(stderr, "Cannot overwrite read-only property '%s'"
                         " without -f/--force\n", key);
                 return EXIT_FAILURE;
@@ -134,7 +134,7 @@ int properties_main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
     } else {
-        LOGE("Unknown action: %s", action);
+        fprintf(stderr, "Unknown action: %s\n", action);
         properties_usage(stderr);
         return EXIT_FAILURE;
     }

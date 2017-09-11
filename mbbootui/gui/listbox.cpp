@@ -204,7 +204,7 @@ void GUIListBox::SetPageFocus(int inFocus)
             mListItems.clear();
 
             std::vector<Rom> roms;
-            mbtool_interface->get_installed_roms(&roms);
+            mbtool_interface->get_installed_roms(roms);
 
             for (Rom rom : roms) {
                 ListItem data;

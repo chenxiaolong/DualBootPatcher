@@ -25,7 +25,8 @@
 #include <rapidjson/reader.h>
 
 #include "mblog/logging.h"
-#include "mbutil/finally.h"
+
+#define LOG_TAG "mbtool/romconfig"
 
 #define CONFIG_KEY_ID                      "id"
 #define CONFIG_KEY_NAME                    "name"

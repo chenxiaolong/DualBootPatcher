@@ -3,7 +3,7 @@
 DualBootPatcher
 ===============
 
-DualBootPatcher is an open-source app that allows multiple ROMs to be installed on a single Android device. It does its best to work with existing code and does not require explicit support from ROMs. There are currently 210 supported devices and their variations.
+DualBootPatcher is an open-source app that allows multiple ROMs to be installed on a single Android device. It does its best to work with existing code and does not require explicit support from ROMs. There are currently more than 250 supported devices and their variations. The list of supported devices can be found [here](https://dbp.noobdev.io/supported_devices.html).
 
 Website: [link](https://dbp.noobdev.io/)
 XDA thread: [link](http://forum.xda-developers.com/showthread.php?t=2447534)

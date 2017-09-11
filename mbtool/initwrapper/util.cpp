@@ -26,6 +26,8 @@
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
 
+#define LOG_TAG "mbtool/initwrapper/util"
+
 /*
  * replaces any unacceptable characters with '_', the
  * length of the resulting string is equal to the input string
@@ -66,7 +68,7 @@ void make_link_init(const char *oldpath, const char *newpath)
 void remove_link(const char *oldpath, const char *newpath)
 {
     std::string path;
-    if (!mb::util::read_link(newpath, &path)) {
+    if (!mb::util::read_link(newpath, path)) {
         return;
     }
     if (path == oldpath) {

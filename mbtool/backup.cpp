@@ -42,7 +42,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
 #include "mbutil/selinux.h"
@@ -54,6 +53,8 @@
 #include "multiboot.h"
 #include "roms.h"
 #include "wipe.h"
+
+#define LOG_TAG "mbtool/backup"
 
 #define BACKUP_MNT_DIR          "/mb_mnt"
 
@@ -227,7 +228,7 @@ static bool backup_image(const std::string &output_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image.c_str(), BACKUP_MNT_DIR, "ext4", MS_RDONLY, "")) {
+    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", MS_RDONLY, "")) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
              strerror(errno));
         return false;
@@ -279,7 +280,7 @@ static bool restore_image(const std::string &input_file,
 
     fsck_ext4_image(image);
 
-    if (!util::mount(image.c_str(), BACKUP_MNT_DIR, "ext4", 0, "")) {
+    if (!util::mount(image, BACKUP_MNT_DIR, "ext4", 0, "")) {
         LOGE("Failed to mount %s at %s: %s", image.c_str(), BACKUP_MNT_DIR,
              strerror(errno));
         return false;
@@ -705,9 +706,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
 
     // Restore system
     if (targets & BACKUP_TARGET_SYSTEM) {
-        uint64_t image_size = util::mount_get_total_size(
-                Roms::get_system_partition().c_str());
-        if (image_size == 0) {
+        uint64_t image_size;
+        if (!util::mount_get_total_size(
+                Roms::get_system_partition(), image_size)) {
             LOGE("Failed to get the size of the system partition");
             return false;
         }
@@ -817,7 +818,7 @@ static void warn_selinux_context()
 
     std::string context;
     if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &context)
+            0, util::SELinuxAttr::CURRENT, context)
             && context != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);
@@ -902,7 +903,7 @@ int backup_main(int argc, char *argv[])
     util::compression_type compression = util::compression_type::LZ4;
     bool force = false;
 
-    if (!util::format_time("%Y.%m.%d-%H.%M.%S", &name)) {
+    if (!util::format_time("%Y.%m.%d-%H.%M.%S", name)) {
         fprintf(stderr, "Failed to format current time\n");
         return EXIT_FAILURE;
     }

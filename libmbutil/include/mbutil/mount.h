@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,12 +23,12 @@
 
 #include <cstdio>
 
-#define PROC_MOUNTS "/proc/mounts"
-
 namespace mb
 {
 namespace util
 {
+
+constexpr char PROC_MOUNTS[] = "/proc/mounts";
 
 struct MountEntry
 {
@@ -44,12 +44,13 @@ bool get_mount_entry(std::FILE *fp, MountEntry &entry_out);
 
 bool is_mounted(const std::string &mountpoint);
 bool unmount_all(const std::string &dir);
-bool mount(const char *source, const char *target, const char *fstype,
-           unsigned long mount_flags, const void *data);
-bool umount(const char *target);
+bool mount(const std::string &source, const std::string &target,
+           const std::string &fstype, unsigned long mount_flags,
+           const std::string &data);
+bool umount(const std::string &target);
 
-uint64_t mount_get_total_size(const char *path);
-uint64_t mount_get_avail_size(const char *path);
+bool mount_get_total_size(const std::string &path, uint64_t &size);
+bool mount_get_avail_size(const std::string &path, uint64_t &size);
 
 }
 }

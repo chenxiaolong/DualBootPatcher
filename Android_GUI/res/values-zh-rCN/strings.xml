@@ -22,7 +22,7 @@
   <!--Thank you message for contributors and links to relavent URLs-->
   <string name="credits">向本应用的每位贡献者致敬！
 - 开发人员：chenxiaolong
-- 翻译版本：简体中文（zh_CN）Build 20170605
+- 翻译版本：简体中文（zh_CN）Build 20170827
 - 翻译人员：CloverGit、haochen lin、Poon Geen、Risa 等\n\n
 - 翻译说明：1.Ramdisk 指 Android 系统的根文件系统，系统内核在启动时会加载它，包含系统重要的运行环境，可译为“内存”（注意区分）；2.应用中的设置内核即为设置系统默认启动内核；3.mbtool 是本应用使用的核心组件；4.补丁处理即为“打补丁”；5.所有翻译如存在疑问，请以英文为准，同时欢迎参与本地化工作</string>
   <!--Title for card shown in the switcher when the connection to mbtool failed-->
@@ -32,9 +32,9 @@
   <!--Navigation drawer item for selecting the ROM-->
   <string name="title_roms">系统管理</string>
   <!--Navigation drawer item for patching a zip file-->
-  <string name="title_patch_zip">处理Zip文件</string>
+  <string name="title_patch_zip">处理文件</string>
   <!--Navigation drawer item for checking free space-->
-  <string name="title_free_space">剩余空间</string>
+  <string name="title_free_space">空间管理</string>
   <!--Navigation drawer item for changing the ROM settings-->
   <string name="title_rom_settings">应用设置</string>
   <!--Navigation drawer item for changing the app sharing settings-->
@@ -153,7 +153,7 @@
   <!--Dialog message shown when the kernel has not been set-->
   <string name="kernel_not_set_desc">当前系统还未设好内核, 现在设置？</string>
   <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
-  <string name="kernel_different_from_saved_desc">当前系统内核对比之前有所改动，是刷过内核了吗？现在重设内核？</string>
+  <string name="kernel_different_from_saved_desc">当前系统内核对比之前有所改动，是刷过内核了吗？现在重新设置内核？</string>
   <!--Positive dialog button shown for the above two messages-->
   <string name="set_kernel_now">立即设置</string>
   <!--Negative dialog button shown for the above two messages-->
@@ -199,9 +199,9 @@
   <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
   <string name="in_app_flashing_error_version_too_old">文件%s处理错误 </string>
   <!--Error message shown when the user tries to flash a zip file to the current ROM-->
-  <string name="in_app_flashing_error_no_overwrite_rom">为防止当前系统崩掉或重启（简单说就是废了）,禁止刷入运行中的系统</string>
+  <string name="in_app_flashing_error_no_overwrite_rom">为防止当前系统崩溃,禁止刷入正在运行中的系统</string>
   <!--Dialog message asking if the user wants to change the installation location of the zip-->
-  <string name="in_app_flashing_change_install_location_desc">这个系统会被安装到 %s
+  <string name="in_app_flashing_change_install_location_desc">该系统将会被安装到 %s
 是否更改目标文件夹？</string>
   <!--Dialog button for keeping the current installation location-->
   <string name="in_app_flashing_keep_current_location">保持这个位置</string>
@@ -253,13 +253,13 @@
   <!--Restore targets dialog description-->
   <string name="br_restore_targets_dialog_desc">选择需要还原的对象</string>
   <!--Backup/restore target for ROM's /system files-->
-  <string name="br_target_system">System/系统</string>
+  <string name="br_target_system">System分区</string>
   <!--Backup/restore target for ROM's /cache files-->
-  <string name="br_target_cache">Cache/缓存</string>
+  <string name="br_target_cache">Cache分区</string>
   <!--Backup/restore target for ROM's /data files-->
-  <string name="br_target_data">Data/数据</string>
+  <string name="br_target_data">Data分区</string>
   <!--Backup/restore target for ROM's boot image-->
-  <string name="br_target_boot">Boot/镜像</string>
+  <string name="br_target_boot">Boot分区</string>
   <!--Backup/restore target for ROM's multiboot configuration files-->
   <string name="br_target_config">MultiBoot 配置</string>
   <!--Toast message shown if no backup/restore targets are selected-->
@@ -302,7 +302,7 @@
   <!--Description for primary ROM upgrade installation location-->
   <string name="install_location_primary_upgrade_desc">这个选项仅用于处在分区中的主系统,虽然有所不同,但是本质上打不打补丁是一样的</string>
   <!--Description for all other installation locations-->
-  <string name="install_location_desc">改系统将会安装到 %s</string>
+  <string name="install_location_desc">该系统将会安装到 %s</string>
   <!--Text box hint for specifying the data slot ID-->
   <string name="install_location_named_slot_id_hint">输入系统标识</string>
   <!--Description text shown if the data slot ID is empty-->
@@ -376,13 +376,13 @@
   <!--Toast popup message shown when the user forces a ramdisk update-->
   <string name="force_updating_ramdisk">强制更新 ramdisk</string>
   <!--Title for the section in the settings to manage the Boot UI-->
-  <string name="rom_settings_boot_ui_title">开机时显示一个图形引导界面(用于切换系统,实验性功能)</string>
+  <string name="rom_settings_boot_ui_title">开机时显示一个图形引导菜单(用于切换系统,实验性功能)</string>
   <!--Title for the preference to install the Boot UI-->
-  <string name="rom_settings_boot_ui_install_title">安装图形引导界面</string>
+  <string name="rom_settings_boot_ui_install_title">安装引导菜单</string>
   <!--Title for the preference to update the Boot UI-->
-  <string name="rom_settings_boot_ui_update_title">更新图形引导</string>
+  <string name="rom_settings_boot_ui_update_title">更新引导菜单</string>
   <!--Title for the preference to uninstall the Boot UI-->
-  <string name="rom_settings_boot_ui_uninstall_title">卸载图形引导</string>
+  <string name="rom_settings_boot_ui_uninstall_title">卸载引导菜单</string>
   <!--Summary for the Update Boot UI preference to indicate that an update is available-->
   <string name="rom_settings_boot_ui_update_available">有可用更新:%s</string>
   <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
@@ -392,15 +392,15 @@
   <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
   <string name="rom_settings_boot_ui_not_supported">尚不支持此设备</string>
   <!--Toast message to indicate that the Boot UI was successfully installed-->
-  <string name="rom_settings_boot_ui_install_success">图形引导安装成功</string>
+  <string name="rom_settings_boot_ui_install_success">引导菜单安装成功</string>
   <!--Toast message to indicate that the Boot UI failed to install-->
-  <string name="rom_settings_boot_ui_install_failure">无法安装图形引导</string>
+  <string name="rom_settings_boot_ui_install_failure">无法安装引导菜单</string>
   <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
-  <string name="rom_settings_boot_ui_uninstall_success">图形引导卸载成功</string>
+  <string name="rom_settings_boot_ui_uninstall_success">引导菜单卸载成功</string>
   <!--Toast message to indicate that the Boot UI failed to uninstall-->
-  <string name="rom_settings_boot_ui_uninstall_failure">无法卸载图形引导</string>
+  <string name="rom_settings_boot_ui_uninstall_failure">无法卸载引导菜单</string>
   <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
-  <string name="rom_settings_boot_ui_update_ramdisk_msg">图形引导界面已成功安装,请确保每个系统的 ramdisk 都已更新,否则无法保证每个系统都能启动此引导</string>
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">图形引导菜单已安装,请确保每个系统的 ramdisk 都已更新,否则无法保证每个系统都能启动此引导</string>
   <!--Title for the section in ROM Settings to change backup/restore settings-->
   <string name="rom_settings_backup_title">备份/还原(实验性功能)</string>
   <!--Title for the preference to change the backup directory-->
@@ -477,7 +477,7 @@
   <!--Word/phrase for None (used in eg. a list)-->
   <string name="none">没有</string>
   <!--Word/phrase for OK (used in dialog boxes)-->
-  <string name="ok">好</string>
+  <string name="ok">确定</string>
   <!--Word/phrase for Cancel (used in dialog boxes)-->
   <string name="cancel">取消</string>
   <!--Word/phrase for Continue (used in dialog boxes)-->

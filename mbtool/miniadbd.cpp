@@ -39,6 +39,8 @@
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
+#define LOG_TAG "mbtool/miniadbd"
+
 
 namespace mb
 {
@@ -70,7 +72,7 @@ static bool initialize_adb()
 {
     bool ret = true;
 
-    const char *version = mb::version();
+    const char *v = version();
     ret = write_file("/sys/class/android_usb/android0/enable", "0", 1) && ret;
     ret = write_file("/sys/class/android_usb/android0/idVendor", "18D1", 4) && ret;
     ret = write_file("/sys/class/android_usb/android0/idProduct", "4EE7", 4) && ret;
@@ -78,7 +80,7 @@ static bool initialize_adb()
     ret = write_file("/sys/class/android_usb/android0/functions", "adb", 3) && ret;
     ret = write_file("/sys/class/android_usb/android0/iManufacturer", "mbtool", 6) && ret;
     ret = write_file("/sys/class/android_usb/android0/iProduct", "miniadbd", 8) && ret;
-    ret = write_file("/sys/class/android_usb/android0/iSerial", version, strlen(version)) && ret;
+    ret = write_file("/sys/class/android_usb/android0/iSerial", v, strlen(v)) && ret;
     ret = write_file("/sys/class/android_usb/android0/enable", "1", 1) && ret;
 
     // Create functionfs paths
