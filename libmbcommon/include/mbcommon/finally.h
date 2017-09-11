@@ -29,30 +29,49 @@ namespace mb
 // Perform action once this goes out of scope, essentially acting as the
 // "finally" part of a try-finally block (in eg. Java)
 template <typename F>
-class Finally {
+class Finally
+{
 public:
-    Finally(F f) : _f(std::move(f))
+    MB_DISABLE_DEFAULT_CONSTRUCTOR(Finally)
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Finally)
+
+    Finally(F f)
+        : _f(std::move(f))
+        , _dismissed(false)
     {
+    }
+
+    Finally(Finally &&other)
+        : _f(std::move(other._f))
+        , _dismissed(other._dismissed)
+    {
+        other.dismiss();
     }
 
     ~Finally() noexcept
     {
         // TODO: Uncomment if we're ever able to support exceptions
         //static_assert(noexcept(_f()), "Finally block must be noexcept");
-        _f();
+        if (!_dismissed) {
+            _f();
+        }
     }
 
-    // These are commented out for usability. Otherwise, the user would need to
-    // do something like:
-    //
-    //   auto &&foobar = finally([]{ printf("foobar\n"); });
-    //
-    // which results in an unused variable warning in gcc and clang.
-    //MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Finally<F>)
-    //MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(Finally<F>)
+    Finally & operator=(Finally &&rhs)
+    {
+        _f = std::move(rhs._f);
+        _dismissed = rhs._dismissed;
+        rhs.dismiss();
+    }
+
+    void dismiss() noexcept
+    {
+        _dismissed = true;
+    }
 
 private:
     F _f;
+    bool _dismissed;
 };
 
 template <typename F>
