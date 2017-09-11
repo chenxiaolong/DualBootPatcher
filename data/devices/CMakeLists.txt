@@ -5,6 +5,7 @@ endif()
 set(files
     360.yml
     alcatel.yml
+    archos.yml
     ark.yml
     asus.yml
     cagabi.yml
