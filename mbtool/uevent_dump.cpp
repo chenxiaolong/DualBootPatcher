@@ -23,7 +23,6 @@
 #include <getopt.h>
 
 #include "mbcommon/version.h"
-#include "mblog/logging.h"
 
 #include "initwrapper/devices.h"
 
@@ -71,7 +70,7 @@ int uevent_dump_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    LOGV("mbtool version %s (%s)", version(), git_version());
+    printf("mbtool version %s (%s)\n", version(), git_version());
 
     // Start probing for devices
     device_init(true);

@@ -37,6 +37,8 @@
 #include "../mbtool/protocol/request_generated.h"
 #include "../mbtool/protocol/response_generated.h"
 
+#define LOG_TAG "mbbootui/daemon_connection"
+
 #define SOCKET_ADDRESS                  "mbtool.daemon"
 #define PROTOCOL_VERSION                3
 
@@ -346,12 +348,8 @@ bool MbtoolConnection::connect()
         return false;
     }
 
-    bool ret = true;
-
-    auto on_return = mb::finally([&]{
-        if (!ret) {
-            close(fd);
-        }
+    auto close_on_return = mb::finally([&]{
+        close(fd);
     });
 
     char abs_name[] = "\0" SOCKET_ADDRESS;
@@ -367,7 +365,7 @@ bool MbtoolConnection::connect()
 
     if (::connect(fd, (struct sockaddr *) &addr, addr_len) < 0) {
         LOGE("Failed to connect to socket: %s", strerror(errno));
-        return ret = false;
+        return false;
     }
 
     LOGD("Connected to daemon. Negotiating authorization...");
@@ -376,39 +374,41 @@ bool MbtoolConnection::connect()
     std::string result;
     if (!mb::util::socket_read_string(fd, result)) {
         LOGE("Failed to receive authorization result: %s", strerror(errno));
-        return ret = false;
+        return false;
     } else if (result == HANDSHAKE_RESPONSE_DENY) {
         LOGE("Daemon denied authorization");
-        return ret = false;
+        return false;
     } else if (result != HANDSHAKE_RESPONSE_ALLOW) {
         LOGE("Invalid authorization result from daemon: %s",
              result.c_str());
-        return ret = false;
+        return false;
     }
 
     // Send requested interface version
     if (!mb::util::socket_write_int32(fd, PROTOCOL_VERSION)) {
         LOGE("Failed to send interface version: %s", strerror(errno));
-        return ret = false;
+        return false;
     }
 
     // Check interface request's response
     if (!mb::util::socket_read_string(fd, result)) {
         LOGE("Failed to receive interface request result: %s", strerror(errno));
-        return ret = false;
+        return false;
     } else if (result == HANDSHAKE_RESPONSE_UNSUPPORTED) {
         LOGE("Daemon does not support interface version %d", PROTOCOL_VERSION);
-        return ret = false;
+        return false;
     } else if (result != HANDSHAKE_RESPONSE_OK) {
         LOGE("Invalid interface request result from daemon: %s",
              result.c_str());
-        return ret = false;
+        return false;
     }
 
     _fd = fd;
     _iface = new MbtoolInterfaceV3(_fd);
 
-    return ret = true;
+    close_on_return.dismiss();
+
+    return true;
 }
 
 bool MbtoolConnection::disconnect()

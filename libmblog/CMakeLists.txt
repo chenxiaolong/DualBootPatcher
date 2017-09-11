@@ -1,4 +1,5 @@
 set(MBLOG_SOURCES
+    src/base_logger.cpp
     src/logging.cpp
     src/stdio_logger.cpp
 )

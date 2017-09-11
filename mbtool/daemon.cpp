@@ -39,7 +39,6 @@
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
@@ -52,6 +51,8 @@
 #include "sepolpatch.h"
 #include "validcerts.h"
 
+#define LOG_TAG "mbtool/daemon"
+
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
 #define RESPONSE_OK "OK"                        // Generic accepted response
@@ -61,6 +62,8 @@
 namespace mb
 {
 
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
 static int pipe_fds[2];
 static bool send_ok_to_pipe = false;
 static bool sigstop_when_ready = false;
@@ -69,7 +72,12 @@ static bool log_to_kmsg = false;
 static bool log_to_stdio = false;
 static bool no_unshare = false;
 
-static autoclose::file log_fp(nullptr, std::fclose);
+static ScopedFILE log_fp(nullptr, [](FILE *fp) {
+    if (fp) {
+        return std::fclose(fp);
+    }
+    return 0;
+});
 
 static bool verify_credentials(uid_t uid)
 {
@@ -343,7 +351,7 @@ static bool daemon_init()
     if (log_to_stdio) {
         // Default; do nothing
     } else if (log_to_kmsg) {
-        log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+        log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
         if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
                 && errno != EEXIST) {
@@ -352,8 +360,7 @@ static bool daemon_init()
             return false;
         }
 
-        log_fp = autoclose::fopen(
-                get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
+        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w"));
         if (!log_fp) {
             LOGE("Failed to open log file %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
@@ -363,8 +370,7 @@ static bool daemon_init()
         fix_multiboot_permissions();
 
         // mbtool logging
-        log::log_set_logger(
-                std::make_shared<log::StdioLogger>(log_fp.get(), true));
+        log::set_logger(std::make_shared<log::StdioLogger>(log_fp.get()));
     }
 
     LOGD("Initialized daemon");

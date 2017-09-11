@@ -29,8 +29,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
     (void) vm;
     (void) reserved;
 
-    mb::log::set_log_tag("libmiscstuff");
-    mb::log::log_set_logger(std::make_shared<mb::log::AndroidLogger>());
+    mb::log::set_logger(std::make_shared<mb::log::AndroidLogger>());
 
     return JNI_VERSION_1_6;
 }

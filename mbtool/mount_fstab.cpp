@@ -40,7 +40,6 @@
 #include "mbcommon/string.h"
 #include "mbdevice/device.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/blkid.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
@@ -59,6 +58,8 @@
 #include "sepolpatch.h"
 #include "signature.h"
 #include "initwrapper/devices.h"
+
+#define LOG_TAG "mbtool/mount_fstab"
 
 #define SYSTEM_MOUNT_POINT          "/raw/system"
 #define CACHE_MOUNT_POINT           "/raw/cache"

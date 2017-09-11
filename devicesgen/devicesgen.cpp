@@ -45,18 +45,20 @@ static Value yaml_node_to_json(const YAML::Node &yaml_node, Allocator &alloc)
 
     case YAML::NodeType::Scalar: {
         Value value;
-        try {
-            value.SetInt64(yaml_node.as<int64_t>());
-            return value;
-        } catch (const YAML::BadConversion &e) {}
-        try {
-            value.SetDouble(yaml_node.as<double>());
-            return value;
-        } catch (const YAML::BadConversion &e) {}
-        try {
-            value.SetBool(yaml_node.as<bool>());
-            return value;
-        } catch (const YAML::BadConversion &e) {}
+        if (yaml_node.Tag() != "!") {
+            try {
+                value.SetInt64(yaml_node.as<int64_t>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+            try {
+                value.SetDouble(yaml_node.as<double>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+            try {
+                value.SetBool(yaml_node.as<bool>());
+                return value;
+            } catch (const YAML::BadConversion &e) {}
+        }
         try {
             value.SetString(yaml_node.as<std::string>(), alloc);
             return value;

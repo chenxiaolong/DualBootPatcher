@@ -28,6 +28,8 @@
 #include "find_file.hpp"
 #include "twrp-functions.hpp"
 
+#define LOG_TAG "mbbootui/find_file"
+
 std::string Find_File::Find(const std::string& file_name, const std::string& start_path)
 {
     return Find_File().Find_Internal(file_name, start_path);

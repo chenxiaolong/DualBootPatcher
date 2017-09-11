@@ -30,9 +30,13 @@
 
 #include <sepol/sepol.h>
 
+#include "mbcommon/error.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
+
+#define LOG_TAG "mbutil/selinux"
 
 #define SELINUX_XATTR           "security.selinux"
 
@@ -373,41 +377,25 @@ static int open_attr(pid_t pid, SELinuxAttr attr, int flags)
         return false;
     }
 
-    int fd;
-    int ret;
-    char *path;
-    pid_t tid;
+    std::string path;
 
     if (pid > 0) {
-        ret = asprintf(&path, "/proc/%d/attr/%s", pid, attr_name);
+        path = format("/proc/%d/attr/%s", pid, attr_name);
     } else if (pid == 0) {
-        ret = asprintf(&path, "/proc/thread-self/attr/%s", attr_name);
-        if (ret < 0) {
-            return -1;
-        }
+        path = format("/proc/thread-self/attr/%s", attr_name);
 
-        fd = open(path, flags | O_CLOEXEC);
+        int fd = open(path.c_str(), flags | O_CLOEXEC);
         if (fd >= 0 || errno != ENOENT) {
-            goto out;
+            return fd;
         }
 
-        free(path);
-        tid = gettid();
-        ret = asprintf(&path, "/proc/self/task/%d/attr/%s", tid, attr_name);
+        path = format("/proc/self/task/%d/attr/%s", gettid(), attr_name);
     } else {
         errno = EINVAL;
         return -1;
     }
 
-    if (ret < 0) {
-        return -1;
-    }
-
-    fd = open(path, flags | O_CLOEXEC);
-
-out:
-    free(path);
-    return fd;
+    return open(path.c_str(), flags | O_CLOEXEC);
 }
 
 bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
@@ -419,9 +407,8 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
     }
 
     auto close_fd = finally([&]{
-        int saved_errno = errno;
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     std::vector<char> buf(sysconf(_SC_PAGE_SIZE));
@@ -449,9 +436,8 @@ bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
     }
 
     auto close_fd = finally([&]{
-        int saved_errno = errno;
+        ErrorRestorer restorer;
         close(fd);
-        errno = saved_errno;
     });
 
     ssize_t n;

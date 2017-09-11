@@ -23,14 +23,18 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <cstring>
 
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
+
+#define LOG_TAG "mbutil/hash"
 
 namespace mb
 {
 namespace util
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 /*!
  * \brief Compute SHA512 hash of a file
@@ -44,7 +48,7 @@ namespace util
 bool sha512_hash(const std::string &path,
                  unsigned char digest[SHA512_DIGEST_LENGTH])
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open: %s", path.c_str(), strerror(errno));
         return false;

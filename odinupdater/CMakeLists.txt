@@ -16,11 +16,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         PRIVATE
         -DSTRICTZIPUNZIP
     )
-    target_compile_definitions(
-        fuse-sparse
-        PRIVATE
-        -D_FILE_OFFSET_BITS=64
-    )
 
     set_target_properties(
         odinupdater

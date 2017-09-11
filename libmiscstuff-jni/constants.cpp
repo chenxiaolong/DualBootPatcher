@@ -31,6 +31,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "libmiscstuff-jni/constants"
+
 #define CLASS_METHOD(method) \
     Java_com_github_chenxiaolong_dualbootpatcher_nativelib_libmiscstuff_Constants_ ## method
 

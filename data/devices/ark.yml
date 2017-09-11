@@ -26,3 +26,40 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p21
+
+- name: ARK Benefit S502 PLUS
+  id: sp7731gea_hdrplus_dt
+  codenames:
+    - Benefit_S502_Plus
+    - sp7731gea_hdrplus_dt
+    - sp7731gea_hdr
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+    system:
+      - /dev/block/platform/sdio_emmc/by-name/system
+      - /dev/block/mmcblk0p17
+    cache:
+      - /dev/block/platform/sdio_emmc/by-name/cache
+      - /dev/block/mmcblk0p18
+    data:
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/sdio_emmc/by-name/boot
+      - /dev/block/mmcblk0p16
+    recovery:
+      - /dev/block/platform/sdio_emmc/by-name/recovery
+      - /dev/block/mmcblk0p19
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    brightness_path: /sys/devices/40038000.adi_bus/sprd_backlight/backlight/sprd_backlight/brightness
+    max_brightness: 255
+    default_brightness: 190
+    theme: portrait_hdpi

@@ -7,6 +7,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/progressbar"
+
 GUIProgressBar::GUIProgressBar(xml_node<>* node) : GUIObject(node)
 {
     xml_node<>* child;

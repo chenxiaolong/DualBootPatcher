@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,17 +17,27 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbutil/autoclose/file.h"
+#pragma once
+
+#include "mbcommon/common.h"
 
 namespace mb
 {
-namespace autoclose
-{
 
-file fopen(const char *path, const char *mode)
+class MB_EXPORT ErrorRestorer final
 {
-    return file(std::fopen(path, mode), std::fclose);
-}
+public:
+    ErrorRestorer();
+    ~ErrorRestorer();
 
-}
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(ErrorRestorer)
+
+private:
+    const int _saved_errno;
+#ifdef _WIN32
+    const unsigned long _saved_error;
+#endif
+};
+
 }

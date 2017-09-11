@@ -26,6 +26,8 @@
 #include "mbutil/directory.h"
 #include "mbutil/path.h"
 
+#define LOG_TAG "mbtool/initwrapper/util"
+
 /*
  * replaces any unacceptable characters with '_', the
  * length of the resulting string is equal to the input string

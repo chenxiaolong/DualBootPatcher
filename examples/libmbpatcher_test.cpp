@@ -22,6 +22,7 @@
 #include <cstring>
 
 #include <mbdevice/json.h>
+#include <mblog/base_logger.h>
 #include <mblog/logging.h>
 #include <mbpatcher/patcherconfig.h>
 #include <mbpatcher/patcherinterface.h>
@@ -30,11 +31,14 @@
 class BasicLogger : public mb::log::BaseLogger
 {
 public:
-    virtual void log(mb::log::LogLevel prio, const char *fmt, va_list ap) override
+    virtual void log(const mb::log::LogRecord &rec) override
     {
-        (void) prio;
-        vprintf(fmt, ap);
-        printf("\n");
+        printf("%s\n", rec.fmt_msg.c_str());
+    }
+
+    virtual bool formatted() override
+    {
+        return true;
     }
 };
 
@@ -106,7 +110,7 @@ int main(int argc, char *argv[]) {
     const char *input_path = argv[4];
     const char *output_path = argv[5];
 
-    mb::log::log_set_logger(std::make_shared<BasicLogger>());
+    mb::log::set_logger(std::make_shared<BasicLogger>());
 
     mb::device::Device device;
 

@@ -58,6 +58,8 @@
 
 #include "mbpatcher/private/fileutils.h"
 
+#define LOG_TAG "mbpatcher/private/miniziputils"
+
 
 namespace mb
 {

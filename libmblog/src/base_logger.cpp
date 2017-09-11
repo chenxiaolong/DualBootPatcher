@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,16 +17,19 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbutil/autoclose/dir.h"
+#include "mblog/base_logger.h"
 
 namespace mb
 {
-namespace autoclose
+namespace log
 {
 
-dir opendir(const char *name)
+BaseLogger::BaseLogger()
 {
-    return dir(::opendir(name), ::closedir);
+}
+
+BaseLogger::~BaseLogger()
+{
 }
 
 }

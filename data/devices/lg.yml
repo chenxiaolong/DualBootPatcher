@@ -585,3 +585,53 @@
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+    
+    
+- name: LG Stylo 2 Plus (MetroPCS)
+  id: ph2n
+  codenames:
+    - LGMS550
+    - ph2n
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p62
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p63
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p65
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p26
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recoverybak
+      - /dev/block/mmcblk0p29
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p28
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
