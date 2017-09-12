@@ -1,0 +1,42 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  # Clone DualBootPatcher Repository
+  - git clone --recursive https://github.com/yshalsager/DualBootPatcher -b master DualBootPatcher/
+  # Pull docker images
+  - docker pull yshalsager/dualbootpatcher:9.2.0-3-base
+  - docker pull yshalsager/dualbootpatcher:9.2.0-3-android
+  - docker pull yshalsager/dualbootpatcher:9.2.0-3-linux
+script:
+  # Make work directories 
+  - mkdir $HOME/.android
+  - mkdir -p DualBootPatcher/builder/ && cd DualBootPatcher/
+  # Build APK
+  - |
+    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.2.0-3-android bash << EOF
+    cd DualBootPatcher/builder && cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug && make -j16 && rm -rf assets && cpack -G TXZ && make apk -j16
+    make android-system_armeabi-v7a -j16 && make -C data/devices -j16
+    exit
+    EOF
+  - |
+    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.2.0-3-linux bash << EOF
+    # Build Utilities Zip
+    cd ~/DualBootPatcher/builder && ./utilities/create.sh
+    # Build Linux
+    cmake .. -DMBP_BUILD_TARGET=desktop -DMBP_PORTABLE=ON && make -j8 && cpack -G TXZ
+    # Check output & md5sum
+    ls -l ~/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+    md5sum ~/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+    ls -l ~/DualBootPatcher/builder/utilities/DualBootUtilities-9.2.0.zip
+    md5sum ~/DualBootPatcher/builder/utilities/DualBootUtilities-9.2.0.zip
+    ls -l ~/DualBootPatcher/builder/DualBootPatcher-9.2.0-Linux.tar.xz
+    md5sum ~/DualBootPatcher/builder/DualBootPatcher-9.2.0-Linux.tar.xz
+    # Upload to transfer.sh
+    cd ~/DualBootPatcher/Android_GUI/build/outputs/apk/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug.apk
+    cd ~/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.2.0.zip https://transfer.sh/DualBootUtilities-9.2.0.zip
+    cd ~/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.2.0-Linux.tar.xz https://transfer.sh/DualBootPatcher-9.2.0-Linux.tar.xz
+    exit
+    EOF
