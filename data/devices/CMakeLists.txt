@@ -22,6 +22,7 @@ set(files
     infinix.yml
     infocus.yml
     jiayu.yml
+    lava.yml
     leeco.yml
     leagoo.yml
     lenovo.yml
