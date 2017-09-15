@@ -75,6 +75,44 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
+- name: Infinix X509
+  id: Infinix_X509
+  codenames:
+    - Zero_2
+    - Infinix_Zero_2
+    - Infinix_X509
+    - X509
+    - x509
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p5
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p6
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p7
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/bootimg
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/recovery
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
 - name: Infinix Hot 3 X554
   id: Infinix_X554
   codenames:
@@ -144,14 +182,15 @@
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p26
 
-- name: Infinix X509
-  id: Infinix_X509
+- name: Infinix Hot 4 X557
+  id: Infinix_X557
   codenames:
-    - Zero_2
-    - Infinix_Zero_2
-    - Infinix_X509
-    - X509
-    - x509
+    - Infinix_X557
+    - Infinix-X557
+    - X557
+    - x557
+    - HOT4
+    - Hot4
   architecture: armeabi-v7a
 
   block_devs:
@@ -159,19 +198,19 @@
       - /dev/block/platform/mtk-msdc.0/by-name
     system:
       - /dev/block/platform/mtk-msdc.0/by-name/system
-      - /dev/block/mmcblk0p5
+      - /dev/block/mmcblk0p18
     cache:
       - /dev/block/platform/mtk-msdc.0/by-name/cache
-      - /dev/block/mmcblk0p6
+      - /dev/block/mmcblk0p19
     data:
       - /dev/block/platform/mtk-msdc.0/by-name/userdata
-      - /dev/block/mmcblk0p7
+      - /dev/block/mmcblk0p20
     boot:
       - /dev/block/platform/mtk-msdc.0/by-name/boot
-      - /dev/bootimg
+      - /dev/block/mmcblk0p7
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
-      - /dev/recovery
+      - /dev/block/mmcblk0p8
 
   boot_ui:
     supported: yes
@@ -181,4 +220,3 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
-
