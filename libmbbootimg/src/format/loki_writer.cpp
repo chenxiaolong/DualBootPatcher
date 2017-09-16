@@ -55,16 +55,11 @@ constexpr size_t MAX_ABOOT_SIZE = 2 * 1024 * 1024;
 LokiFormatWriter::LokiFormatWriter(Writer &writer)
     : FormatWriter(writer)
     , _hdr()
-    , _file_size()
-    , _aboot()
     , _sha_ctx()
-    , _seg()
 {
 }
 
-LokiFormatWriter::~LokiFormatWriter()
-{
-}
+LokiFormatWriter::~LokiFormatWriter() = default;
 
 int LokiFormatWriter::type()
 {
@@ -170,19 +165,19 @@ int LokiFormatWriter::write_header(File &file, const Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_ABOOT,
                            0, true, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
     if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {

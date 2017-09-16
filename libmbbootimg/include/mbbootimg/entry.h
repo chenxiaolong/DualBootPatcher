@@ -51,11 +51,11 @@ class MB_EXPORT Entry
 public:
     Entry();
     Entry(const Entry &entry);
-    Entry(Entry &&entry);
+    Entry(Entry &&entry) noexcept;
     ~Entry();
 
     Entry & operator=(const Entry &entry);
-    Entry & operator=(Entry &&entry);
+    Entry & operator=(Entry &&entry) noexcept;
 
     bool operator==(const Entry &rhs) const;
     bool operator!=(const Entry &rhs) const;

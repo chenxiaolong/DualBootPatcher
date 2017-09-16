@@ -57,14 +57,10 @@ SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
     , _hdr_ipl()
     , _hdr_rpm()
     , _hdr_appsbl()
-    , _cmdline()
-    , _seg()
 {
 }
 
-SonyElfFormatWriter::~SonyElfFormatWriter()
-{
-}
+SonyElfFormatWriter::~SonyElfFormatWriter() = default;
 
 int SonyElfFormatWriter::type()
 {
@@ -185,22 +181,22 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
     _seg.entries_clear();
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL, 0, false, 0, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     // Start writing at offset 4096
     if (!file.seek(4096, SEEK_SET, nullptr)) {
@@ -233,16 +229,16 @@ int SonyElfFormatWriter::get_entry(File &file, Entry &entry)
         entry.set_size(_cmdline.size());
 
         ret = write_entry(file, entry);
-        if (ret != RET_OK) return RET_FATAL;
+        if (ret != RET_OK) { return RET_FATAL; }
 
         ret = write_data(file, _cmdline.data(), _cmdline.size(), n);
-        if (ret != RET_OK) return RET_FATAL;
+        if (ret != RET_OK) { return RET_FATAL; }
 
         ret = finish_entry(file);
-        if (ret != RET_OK) return RET_FATAL;
+        if (ret != RET_OK) { return RET_FATAL; }
 
         ret = get_entry(file, entry);
-        if (ret != RET_OK) return RET_FATAL;
+        if (ret != RET_OK) { return RET_FATAL; }
     }
 
     return RET_OK;

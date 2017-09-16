@@ -52,16 +52,12 @@ namespace android
 AndroidFormatWriter::AndroidFormatWriter(Writer &writer, bool is_bump)
     : FormatWriter(writer)
     , _hdr()
-    , _file_size()
     , _is_bump(is_bump)
     , _sha_ctx()
-    , _seg()
 {
 }
 
-AndroidFormatWriter::~AndroidFormatWriter()
-{
-}
+AndroidFormatWriter::~AndroidFormatWriter() = default;
 
 int AndroidFormatWriter::type()
 {
@@ -172,19 +168,19 @@ int AndroidFormatWriter::write_header(File &file, const Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                            0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
     if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {

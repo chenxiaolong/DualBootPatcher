@@ -171,16 +171,10 @@ MtkFormatReader::MtkFormatReader(Reader &reader)
     , _hdr()
     , _mtk_kernel_hdr()
     , _mtk_ramdisk_hdr()
-    , _header_offset()
-    , _mtk_kernel_offset()
-    , _mtk_ramdisk_offset()
-    , _seg()
 {
 }
 
-MtkFormatReader::~MtkFormatReader()
-{
-}
+MtkFormatReader::~MtkFormatReader() = default;
 
 int MtkFormatReader::type()
 {
@@ -335,32 +329,32 @@ int MtkFormatReader::read_header(File &file, Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
                            kernel_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            *_mtk_kernel_offset, _mtk_kernel_hdr.size, false,
                            _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
                            ramdisk_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            *_mtk_ramdisk_offset, _mtk_ramdisk_hdr.size, false,
                            _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     if (_hdr.second_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     if (_hdr.dt_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                dt_offset, _hdr.dt_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     return RET_OK;

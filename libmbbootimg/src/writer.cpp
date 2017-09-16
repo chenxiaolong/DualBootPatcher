@@ -237,9 +237,7 @@ FormatWriter::FormatWriter(Writer &writer)
 {
 }
 
-FormatWriter::~FormatWriter()
-{
-}
+FormatWriter::~FormatWriter() = default;
 
 int FormatWriter::init()
 {
@@ -270,8 +268,6 @@ WriterPrivate::WriterPrivate(Writer *writer)
     , state(WriterState::New)
     , owned_file()
     , file()
-    , error_code()
-    , error_string()
     , format()
 {
 }
@@ -336,11 +332,12 @@ Writer::~Writer()
     }
 }
 
-Writer::Writer(Writer &&other) : _priv_ptr(std::move(other._priv_ptr))
+Writer::Writer(Writer &&other) noexcept
+    : _priv_ptr(std::move(other._priv_ptr))
 {
 }
 
-Writer & Writer::operator=(Writer &&rhs)
+Writer & Writer::operator=(Writer &&rhs) noexcept
 {
     close();
 

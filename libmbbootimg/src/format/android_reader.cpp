@@ -52,19 +52,13 @@ namespace android
 AndroidFormatReader::AndroidFormatReader(Reader &reader, bool is_bump)
     : FormatReader(reader)
     , _hdr()
-    , _header_offset()
-    , _samsung_offset()
-    , _bump_offset()
     // Allow truncated device tree image by default
     , _allow_truncated_dt(true)
     , _is_bump(is_bump)
-    , _seg()
 {
 }
 
-AndroidFormatReader::~AndroidFormatReader()
-{
-}
+AndroidFormatReader::~AndroidFormatReader() = default;
 
 int AndroidFormatReader::type()
 {
@@ -172,23 +166,23 @@ int AndroidFormatReader::read_header(File &file, Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            kernel_offset, _hdr.kernel_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            ramdisk_offset, _hdr.ramdisk_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     if (_hdr.second_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     if (_hdr.dt_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                dt_offset, _hdr.dt_size, _allow_truncated_dt,
                                _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     return RET_OK;

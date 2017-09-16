@@ -337,8 +337,7 @@ static int _loki_write_shellcode(Writer &writer, File &file,
 int _loki_patch_file(Writer &writer, File &file,
                      const void *aboot, size_t aboot_size)
 {
-    const unsigned char *aboot_ptr =
-            reinterpret_cast<const unsigned char *>(aboot);
+    auto aboot_ptr = reinterpret_cast<const unsigned char *>(aboot);
     unsigned char patch[LOKI_SHELLCODE_SIZE];
     uint32_t target = 0;
     uint32_t aboot_base;
@@ -393,9 +392,9 @@ int _loki_patch_file(Writer &writer, File &file,
         return RET_FAILED;
     }
 
-    for (size_t i = 0; i < (sizeof(targets) / sizeof(targets[0])); ++i) {
-        if (targets[i].check_sigs == target) {
-            tgt = &targets[i];
+    for (auto &t : targets) {
+        if (t.check_sigs == target) {
+            tgt = &t;
             break;
         }
     }

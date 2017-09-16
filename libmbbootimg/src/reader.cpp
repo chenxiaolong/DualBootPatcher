@@ -221,9 +221,7 @@ FormatReader::FormatReader(Reader &reader)
 {
 }
 
-FormatReader::~FormatReader()
-{
-}
+FormatReader::~FormatReader() = default;
 
 int FormatReader::init()
 {
@@ -250,9 +248,6 @@ ReaderPrivate::ReaderPrivate(Reader *reader)
     , state(ReaderState::New)
     , owned_file()
     , file()
-    , error_code()
-    , error_string()
-    , formats()
     , format()
 {
 }
@@ -316,11 +311,12 @@ Reader::~Reader()
     }
 }
 
-Reader::Reader(Reader &&other) : _priv_ptr(std::move(other._priv_ptr))
+Reader::Reader(Reader &&other) noexcept
+    : _priv_ptr(std::move(other._priv_ptr))
 {
 }
 
-Reader & Reader::operator=(Reader &&rhs)
+Reader & Reader::operator=(Reader &&rhs) noexcept
 {
     close();
 

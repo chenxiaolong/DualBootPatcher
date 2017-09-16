@@ -51,13 +51,10 @@ SonyElfFormatReader::SonyElfFormatReader(Reader &reader)
     : FormatReader(reader)
     , _hdr()
     , _have_header()
-    , _seg()
 {
 }
 
-SonyElfFormatReader::~SonyElfFormatReader()
-{
-}
+SonyElfFormatReader::~SonyElfFormatReader() = default;
 
 int SonyElfFormatReader::type()
 {
