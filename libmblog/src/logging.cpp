@@ -99,7 +99,7 @@ static Tid _get_tid()
 #elif defined(__BIONIC__)
     return gettid();
 #elif defined(__linux__)
-    return syscall(__NR_gettid);
+    return static_cast<Tid>(syscall(__NR_gettid));
 #endif
 }
 
@@ -236,8 +236,8 @@ void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
     LogRecord rec;
 
     rec.time = std::chrono::system_clock::now();
-    rec.pid = _get_pid();
-    rec.tid = _get_tid();
+    rec.pid = static_cast<uint64_t>(_get_pid());
+    rec.tid = static_cast<uint64_t>(_get_tid());
     rec.prio = prio;
     rec.tag = tag;
     rec.msg = format_v(fmt, ap);
