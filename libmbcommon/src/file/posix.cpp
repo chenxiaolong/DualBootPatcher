@@ -46,62 +46,60 @@ namespace mb
 /*! \cond INTERNAL */
 struct RealPosixFileFuncs : public PosixFileFuncs
 {
-    virtual int fn_fstat(int fildes, struct stat *buf) override
+    int fn_fstat(int fildes, struct stat *buf) override
     {
         return fstat(fildes, buf);
     }
 
-    virtual int fn_fclose(FILE *stream) override
+    int fn_fclose(FILE *stream) override
     {
         return fclose(stream);
     }
 
-    virtual int fn_ferror(FILE *stream) override
+    int fn_ferror(FILE *stream) override
     {
         return ferror(stream);
     }
 
-    virtual int fn_fileno(FILE *stream) override
+    int fn_fileno(FILE *stream) override
     {
         return fileno(stream);
     }
 
 #ifdef _WIN32
-    virtual FILE * fn_wfopen(const wchar_t *filename,
-                             const wchar_t *mode) override
+    FILE * fn_wfopen(const wchar_t *filename, const wchar_t *mode) override
     {
         return _wfopen(filename, mode);
     }
 #else
-    virtual FILE * fn_fopen(const char *path, const char *mode) override
+    FILE * fn_fopen(const char *path, const char *mode) override
     {
         return fopen(path, mode);
     }
 #endif
 
-    virtual size_t fn_fread(void *ptr, size_t size, size_t nmemb,
-                            FILE *stream) override
+    size_t fn_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) override
     {
         return fread(ptr, size, nmemb, stream);
     }
 
-    virtual int fn_fseeko(FILE *stream, off_t offset, int whence) override
+    int fn_fseeko(FILE *stream, off_t offset, int whence) override
     {
         return fseeko(stream, offset, whence);
     }
 
-    virtual off_t fn_ftello(FILE *stream) override
+    off_t fn_ftello(FILE *stream) override
     {
         return ftello(stream);
     }
 
-    virtual size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
-                             FILE *stream) override
+    size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
+                     FILE *stream) override
     {
         return fwrite(ptr, size, nmemb, stream);
     }
 
-    virtual int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off_t length) override
     {
         return ftruncate64(fd, length);
     }
@@ -123,9 +121,7 @@ PosixFilePrivate::PosixFilePrivate(PosixFileFuncs *funcs)
     clear();
 }
 
-PosixFilePrivate::~PosixFilePrivate()
-{
-}
+PosixFilePrivate::~PosixFilePrivate() = default;
 
 void PosixFilePrivate::clear()
 {

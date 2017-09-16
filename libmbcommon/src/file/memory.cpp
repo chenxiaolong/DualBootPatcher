@@ -45,9 +45,7 @@ MemoryFilePrivate::MemoryFilePrivate()
     clear();
 }
 
-MemoryFilePrivate::~MemoryFilePrivate()
-{
-}
+MemoryFilePrivate::~MemoryFilePrivate() = default;
 
 void MemoryFilePrivate::clear()
 {

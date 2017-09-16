@@ -269,7 +269,7 @@ bool mbs_to_wcs_n(std::wstring &out, const char *str, size_t len)
 #else
     char *c_result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
                                    str, len * sizeof(char));
-    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
+    auto result = reinterpret_cast<wchar_t *>(c_result);
 #endif
 
     if (!result) {
@@ -321,7 +321,7 @@ bool utf8_to_wcs_n(std::wstring &out, const char *str, size_t len)
 #else
     char *c_result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
                                    str, len * sizeof(char));
-    wchar_t *result = reinterpret_cast<wchar_t *>(c_result);
+    auto result = reinterpret_cast<wchar_t *>(c_result);
 #endif
 
     if (!result) {

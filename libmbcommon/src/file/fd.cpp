@@ -47,43 +47,43 @@ namespace mb
 struct RealFdFileFuncs : public FdFileFuncs
 {
 #ifdef _WIN32
-    virtual int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
+    int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
     {
         return _wopen(path, flags, mode);
     }
 #else
-    virtual int fn_open(const char *path, int flags, mode_t mode) override
+    int fn_open(const char *path, int flags, mode_t mode) override
     {
         return open(path, flags, mode);
     }
 #endif
 
-    virtual int fn_fstat(int fildes, struct stat *buf) override
+    int fn_fstat(int fildes, struct stat *buf) override
     {
         return fstat(fildes, buf);
     }
 
-    virtual int fn_close(int fd) override
+    int fn_close(int fd) override
     {
         return close(fd);
     }
 
-    virtual int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off_t length) override
     {
         return ftruncate64(fd, length);
     }
 
-    virtual off64_t fn_lseek64(int fd, off64_t offset, int whence) override
+    off64_t fn_lseek64(int fd, off64_t offset, int whence) override
     {
         return lseek64(fd, offset, whence);
     }
 
-    virtual ssize_t fn_read(int fd, void *buf, size_t count) override
+    ssize_t fn_read(int fd, void *buf, size_t count) override
     {
         return read(fd, buf, count);
     }
 
-    virtual ssize_t fn_write(int fd, const void *buf, size_t count) override
+    ssize_t fn_write(int fd, const void *buf, size_t count) override
     {
         return write(fd, buf, count);
     }

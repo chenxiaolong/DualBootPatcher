@@ -31,8 +31,8 @@
 #endif
 
 #include "mbcommon/error.h"
-#include "mbcommon/string_p.h"
 #include "mbcommon/locale.h"
+#include "mbcommon/string_p.h"
 
 #include "mbcommon/libc/string.h"
 
@@ -713,8 +713,8 @@ int mem_replace(void **mem, size_t *mem_size,
     char *buf = nullptr;
     size_t buf_size = 0;
     void *target_ptr;
-    char *base_ptr = static_cast<char *>(*mem);
-    char *ptr = static_cast<char *>(*mem);
+    auto base_ptr = static_cast<char *>(*mem);
+    auto ptr = static_cast<char *>(*mem);
     size_t ptr_remain = *mem_size;
     size_t matches = 0;
 
