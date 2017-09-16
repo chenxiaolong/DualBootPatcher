@@ -187,14 +187,14 @@ bool format_v(std::string &out, const char *fmt, va_list ap)
     ret = vsnprintf(nullptr, 0, fmt, copy);
     va_end(copy);
 
-    if (ret < 0 || ret == INT_MAX) {
+    if (ret < 0 || static_cast<size_t>(ret) == SIZE_MAX) {
         return false;
     }
 
     // C++11 guarantees that the memory is contiguous, but does not guarantee
     // that the internal buffer is NULL-terminated, so we'll make room for '\0'
     // and then get rid of it.
-    out.resize(ret + 1);
+    out.resize(static_cast<size_t>(ret) + 1);
 
     va_copy(copy, ap);
     // NOTE: Change `&out[0]` to `out.data()` once we target C++17.
@@ -205,7 +205,7 @@ bool format_v(std::string &out, const char *fmt, va_list ap)
         return false;
     }
 
-    out.resize(ret);
+    out.resize(static_cast<size_t>(ret));
 
     return true;
 }
@@ -729,15 +729,17 @@ int mem_replace(void **mem, size_t *mem_size,
     while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
             mb_memmem(ptr, ptr_remain, from, from_size)))) {
         // Resize buffer to accomodate data
-        if (buf_size >= SIZE_MAX - (ptr - base_ptr)
-                || buf_size + (ptr - base_ptr) >= SIZE_MAX - to_size) {
+        if (buf_size >= SIZE_MAX - static_cast<size_t>(ptr - base_ptr)
+                || buf_size + static_cast<size_t>(ptr - base_ptr)
+                        >= SIZE_MAX - to_size) {
             free(buf);
             errno = EOVERFLOW;
             return -1;
         }
 
-        size_t new_buf_size = buf_size + (ptr - base_ptr) + to_size;
-        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        size_t new_buf_size =
+                buf_size + static_cast<size_t>(ptr - base_ptr) + to_size;
+        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
             return -1;
@@ -746,7 +748,8 @@ int mem_replace(void **mem, size_t *mem_size,
         target_ptr = new_buf + buf_size;
 
         // Copy data left of the match
-        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr - base_ptr);
+        target_ptr = _mb_mempcpy(target_ptr, base_ptr,
+                                 static_cast<size_t>(ptr - base_ptr));
 
         // Copy replacement
         target_ptr = _mb_mempcpy(target_ptr, to, to_size);
@@ -755,7 +758,7 @@ int mem_replace(void **mem, size_t *mem_size,
         buf_size = new_buf_size;
 
         ptr += from_size;
-        ptr_remain -= ptr - base_ptr;
+        ptr_remain -= static_cast<size_t>(ptr - base_ptr);
         base_ptr = ptr;
 
         ++matches;
@@ -770,7 +773,7 @@ int mem_replace(void **mem, size_t *mem_size,
         }
 
         size_t new_buf_size = buf_size + ptr_remain;
-        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
             return -1;

@@ -532,7 +532,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         return false;
     }
 
-    new_offset = new_pos;
+    new_offset = static_cast<uint64_t>(new_pos);
     return true;
 }
 
@@ -547,7 +547,7 @@ bool PosixFile::on_truncate(uint64_t size)
         return false;
     }
 
-    if (priv->funcs->fn_ftruncate64(fd, size) < 0) {
+    if (priv->funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
         return false;

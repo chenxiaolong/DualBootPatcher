@@ -437,7 +437,7 @@ bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
         return false;
     }
 
-    bytes_read = n;
+    bytes_read = static_cast<size_t>(n);
     return true;
 }
 
@@ -456,7 +456,7 @@ bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
         return false;
     }
 
-    bytes_written = n;
+    bytes_written = static_cast<size_t>(n);
     return true;
 }
 
@@ -471,7 +471,7 @@ bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         return false;
     }
 
-    new_offset = ret;
+    new_offset = static_cast<uint64_t>(ret);
     return true;
 }
 
@@ -479,7 +479,7 @@ bool FdFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(FdFile);
 
-    if (priv->funcs->fn_ftruncate64(priv->fd, size) < 0) {
+    if (priv->funcs->fn_ftruncate64(priv->fd, static_cast<off64_t>(size)) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
         return false;
