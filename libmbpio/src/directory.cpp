@@ -29,7 +29,7 @@
 #include "mbpio/error.h"
 #include "mbpio/private/common.h"
 
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
 #include "mbpio/win32/error.h"
 #else
 #include <cerrno>
@@ -41,7 +41,7 @@ namespace io
 
 bool createDirectories(const std::string &path)
 {
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
     constexpr char delim[] = "/\\";
     constexpr char pathsep[] = "\\";
 #else
@@ -52,7 +52,7 @@ bool createDirectories(const std::string &path)
     char *save_ptr;
     std::string temp;
     std::string copy = path;
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
     std::wstring wTemp;
 #endif
 
@@ -71,7 +71,7 @@ bool createDirectories(const std::string &path)
         temp += p;
         temp += pathsep;
 
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
         if (!mb::utf8_to_wcs(wTemp, temp)) {
             setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to convert UTF-16 to UTF-8: %s",
