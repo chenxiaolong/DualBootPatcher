@@ -58,7 +58,6 @@ foreach(variant ${variants})
         ${MBP_LIBLZMA_INCLUDES}
         ${MBP_ZLIB_INCLUDES}
         ${CMAKE_SOURCE_DIR}/external
-        ${CMAKE_CURRENT_BINARY_DIR}/include
     )
 
     # Only build static library if needed
