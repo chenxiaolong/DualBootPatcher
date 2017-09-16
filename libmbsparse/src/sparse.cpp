@@ -191,7 +191,8 @@ bool SparseFilePrivate::wseek(int64_t offset)
         return false;
     }
 
-    cur_src_offset += offset;
+    cur_src_offset = static_cast<uint64_t>(
+            static_cast<int64_t>(cur_src_offset) + offset);
     return true;
 }
 
@@ -213,7 +214,7 @@ bool SparseFilePrivate::skip_bytes(uint64_t bytes)
     switch (seekability) {
     case Seekability::CAN_SEEK:
     case Seekability::CAN_SKIP:
-        return wseek(bytes);
+        return wseek(static_cast<int64_t>(bytes));
     case Seekability::CAN_READ:
         uint64_t discarded;
         if (!file_read_discard(*file, bytes, discarded)) {
@@ -942,7 +943,8 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
                     seek_offset = -static_cast<int64_t>(
                             priv->cur_src_offset - raw_src_offset);
                 } else {
-                    seek_offset = raw_src_offset - priv->cur_src_offset;
+                    seek_offset = static_cast<int64_t>(
+                            raw_src_offset - priv->cur_src_offset);
                 }
 
                 if (!priv->wseek(seek_offset)) {
@@ -1031,25 +1033,27 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
                       "Cannot seek to negative offset");
             return false;
         }
-        new_offset = offset;
+        new_offset = static_cast<uint64_t>(offset);
         break;
     case SEEK_CUR:
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->cur_tgt_offset)
-                || (offset > 0 && priv->cur_tgt_offset >= UINT64_MAX - offset)) {
+                || (offset > 0 && priv->cur_tgt_offset
+                        >= UINT64_MAX - static_cast<uint64_t>(offset))) {
             set_error(make_error_code(FileError::IntegerOverflow),
                       "Offset overflows uint64_t");
             return false;
         }
-        new_offset = priv->cur_tgt_offset + offset;
+        new_offset = priv->cur_tgt_offset + static_cast<uint64_t>(offset);
         break;
     case SEEK_END:
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->file_size)
-                || (offset > 0 && priv->file_size >= UINT64_MAX - offset)) {
+                || (offset > 0 && priv->file_size
+                        >= UINT64_MAX - static_cast<uint64_t>(offset))) {
             set_error(make_error_code(FileError::IntegerOverflow),
                       "Offset overflows uint64_t");
             return false;
         }
-        new_offset = priv->file_size + offset;
+        new_offset = priv->file_size + static_cast<uint64_t>(offset);
         break;
     default:
         set_error(make_error_code(FileError::InvalidWhence),
