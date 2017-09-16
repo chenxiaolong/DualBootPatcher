@@ -35,6 +35,8 @@ const char * git_version()
     return GIT_VERSION;
 }
 
+}
+
 extern "C" {
 
 const char * mb_version()
@@ -45,8 +47,6 @@ const char * mb_version()
 const char * mb_git_version()
 {
     return GIT_VERSION;
-}
-
 }
 
 }
