@@ -94,7 +94,8 @@ public:
 
     const SchemaDocumentType * GetSchema(const std::string &uri)
     {
-        return GetRemoteDocument(uri.c_str(), uri.size());
+        return GetRemoteDocument(
+                uri.c_str(), static_cast<rapidjson::SizeType>(uri.size()));
     }
 
 private:
