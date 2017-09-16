@@ -231,7 +231,7 @@ replace_function(std::vector<EdifyToken *> *tokens,
                         replacement_tokens.end());
 
     // Move iterator to the end of the replaced tokens
-    it += replacement_tokens.size();
+    it += static_cast<ptrdiff_t>(replacement_tokens.size());
 
     return it;
 }
