@@ -171,7 +171,7 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
 
 #if defined(MINIZIP_WIN32)
     if (!utf8_to_wcs(ctx->path, path)) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -187,7 +187,7 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
     fill_buffer_filefunc64(&ctx->z_func, &ctx->buf);
     ctx->uf = unzOpen2_64(ctx->path.c_str(), &ctx->z_func);
     if (!ctx->uf) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -203,7 +203,7 @@ MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
 
 #if defined(MINIZIP_WIN32)
     if (!utf8_to_wcs(ctx->path, path)) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -219,7 +219,7 @@ MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
     fill_buffer_filefunc64(&ctx->z_func, &ctx->buf);
     ctx->zf = zipOpen2_64(ctx->path.c_str(), 0, nullptr, &ctx->z_func);
     if (!ctx->zf) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
