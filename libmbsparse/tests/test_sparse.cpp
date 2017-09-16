@@ -53,7 +53,8 @@ protected:
             return false;
         }
 
-        set_error(mb::make_error_code(mb::FileError::UnsupportedSeek), "");
+        set_error(mb::make_error_code(mb::FileError::UnsupportedSeek),
+                  "seek not supported");
         return false;
     }
 

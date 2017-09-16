@@ -36,6 +36,8 @@
 
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/wipe"
+
 namespace mb
 {
 
@@ -159,7 +161,7 @@ static bool log_wipe_file(const std::string &path)
  *       deletion does not follow symlinks.
  *
  * \param mountpoint Mountpoint root to wipe
- * \param wipe_media Whether the first-level "media" path should be deleted
+ * \param exclusions List of first-level paths to exclude
  *
  * \return True if the path was wiped or doesn't exist. False, otherwise
  */

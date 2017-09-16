@@ -24,6 +24,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/archive_util"
+
 #define BUF_SIZE    10240
 
 namespace mb

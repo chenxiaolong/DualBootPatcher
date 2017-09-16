@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,19 +19,26 @@
 
 #pragma once
 
-#include <memory>
+#include <chrono>
+#include <string>
 
-#include <archive.h>
-#include <archive_entry.h>
+#include "mblog/log_level.h"
 
 namespace mb
 {
-namespace autoclose
+namespace log
 {
 
-typedef std::unique_ptr<::archive, int (*)(::archive *)> archive;
-typedef std::unique_ptr<::archive_entry, void (*)(::archive_entry *)> archive_entry;
-typedef std::unique_ptr<::archive_entry_linkresolver, void (*)(::archive_entry_linkresolver *)> archive_entry_linkresolver;
+struct LogRecord
+{
+    std::chrono::system_clock::time_point time;
+    uint64_t pid;
+    uint64_t tid;
+    LogLevel prio;
+    std::string tag;
+    std::string msg;
+    std::string fmt_msg;
+};
 
 }
 }

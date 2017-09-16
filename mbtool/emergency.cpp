@@ -31,7 +31,6 @@
 #include "mbcommon/finally.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/fts.h"
@@ -42,10 +41,14 @@
 #include "multiboot.h"
 #include "reboot.h"
 
+#define LOG_TAG "mbtool/emergency"
+
 using namespace mb::device;
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 class BlockDevFinder : public util::FTSWrapper {
 public:
@@ -113,7 +116,7 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    autoclose::file fp(autoclose::fopen(file, "wb"));
+    ScopedFILE fp(fopen(file, "wb"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
         return false;

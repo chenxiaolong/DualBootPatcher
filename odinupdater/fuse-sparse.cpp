@@ -32,7 +32,17 @@
 #include <unistd.h>
 
 // fuse
+// We have to define _FILE_OFFSET_BITS because <fuse/fuse_common.h> requires it.
+// However, since it's no longer a no-op in NDK r15c and newer, we can't define
+// it globally. Bionic in API <24 doesn't support _FILE_OFFSET_BITS.
+// See: https://github.com/android-ndk/ndk/issues/480
+#ifdef __ANDROID__
+#  define _FILE_OFFSET_BITS 64
+#endif
 #include <fuse/fuse.h>
+#ifdef __ANDROID__
+#  undef _FILE_OFFSET_BITS
+#endif
 
 // libmbcommon
 #include "mbcommon/file.h"

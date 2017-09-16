@@ -46,6 +46,8 @@
 #include "gui/gui.h"
 #include "gui/hardwarekeyboard.hpp"
 
+#define LOG_TAG "mbbootui/gui/action"
+
 GUIAction::mapFunc GUIAction::mf;
 std::unordered_set<std::string> GUIAction::setActionsRunningInCallerThread;
 

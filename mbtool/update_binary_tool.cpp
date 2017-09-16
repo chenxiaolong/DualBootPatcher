@@ -36,6 +36,8 @@
 #include "wipe.h"
 
 
+#define LOG_TAG "mbtool/update_binary_tool"
+
 #define ACTION_MOUNT "mount"
 #define ACTION_UNMOUNT "unmount"
 #define ACTION_FORMAT "format"
@@ -218,7 +220,7 @@ int update_binary_tool_main(int argc, char *argv[])
     }
 
     // Log to stderr, so the output is ordered correctly in /tmp/recovery.log
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stderr));
 
     const char *action = argv[optind];
     const char *mountpoint = argv[optind + 1];

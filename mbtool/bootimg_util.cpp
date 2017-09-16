@@ -27,6 +27,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/bootimg_util"
+
 #define BUF_SIZE    10240
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;

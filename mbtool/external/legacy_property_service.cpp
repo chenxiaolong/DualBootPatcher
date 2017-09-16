@@ -38,6 +38,7 @@
 
 #include "legacy_property_service.h"
 
+#include "mbcommon/error.h"
 #include "mbutil/properties.h"
 
 
@@ -45,11 +46,10 @@
 extern "C" int
 __futex_wake(volatile void *ftx, int count)
 {
-    int saved_errno = errno;
+    mb::ErrorRestorer restorer;
     int result = syscall(__NR_futex, ftx, FUTEX_WAKE, count, NULL);
     if (__builtin_expect(result == -1, 0)) {
         result = -errno;
-        errno = saved_errno;
     }
     return result;
 }

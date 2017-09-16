@@ -14,6 +14,8 @@
 
 #include "gui/gui.h"
 
+#define LOG_TAG "mbbootui/gui/resources"
+
 #define TMP_RESOURCE_NAME   "/tmp/extract.bin"
 
 Resource::Resource(xml_node<>* node, ZipArchive* pZip __unused)

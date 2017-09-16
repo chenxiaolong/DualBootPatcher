@@ -35,8 +35,6 @@
 
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/archive.h"
-#include "mbutil/autoclose/dir.h"
 #include "mbutil/archive.h"
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
@@ -53,6 +51,8 @@
 #include "multiboot.h"
 #include "roms.h"
 #include "wipe.h"
+
+#define LOG_TAG "mbtool/backup"
 
 #define BACKUP_MNT_DIR          "/mb_mnt"
 
@@ -76,6 +76,8 @@ namespace mb
 #define BACKUP_NAME_BOOT_IMAGE          "boot.img"
 #define BACKUP_NAME_CONFIG              "config.json"
 #define BACKUP_NAME_THUMBNAIL           "thumbnail.webp"
+
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 
 enum class Result
 {
@@ -170,7 +172,7 @@ static bool backup_directory(const std::string &output_file,
                              const std::vector<std::string> &exclusions,
                              util::compression_type compression)
 {
-    autoclose::dir dp(autoclose::opendir(directory.c_str()));
+    ScopedDIR dp(opendir(directory.c_str()), closedir);
     if (!dp) {
         LOGE("%s: Failed to open directory: %s",
              directory.c_str(), strerror(errno));

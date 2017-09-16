@@ -51,6 +51,8 @@
 
 #include "property_service.h"
 
+#define LOG_TAG "mbtool/external/property_service"
+
 #define ALLOW_LOCAL_PROP_OVERRIDE 1
 
 static int property_set_fd = -1;

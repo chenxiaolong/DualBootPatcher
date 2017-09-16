@@ -30,6 +30,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/packages"
+
 
 namespace mb
 {

@@ -21,7 +21,6 @@
 
 #include <unistd.h>
 
-#include "mblog/logging.h"
 #include "mbutil/reboot.h"
 
 

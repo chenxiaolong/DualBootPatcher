@@ -30,6 +30,8 @@
 #include "mblog/logging.h"
 #include "mbutil/time.h"
 
+#define LOG_TAG "mbutil/path"
+
 namespace mb
 {
 namespace util
