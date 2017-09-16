@@ -24,10 +24,10 @@
 #include <cstring>
 
 #include "mbcommon/locale.h"
+#include "mbcommon/string.h"
 
 #include "mbpio/error.h"
 #include "mbpio/private/common.h"
-#include "mbpio/private/string.h"
 
 #if IO_PLATFORM_WINDOWS
 #include "mbpio/win32/error.h"
@@ -73,7 +73,7 @@ bool createDirectories(const std::string &path)
 
 #if IO_PLATFORM_WINDOWS
         if (!mb::utf8_to_wcs(wTemp, temp)) {
-            setLastError(Error::PlatformError, priv::format(
+            setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to convert UTF-16 to UTF-8: %s",
                     temp.c_str(), win32::errorToString(GetLastError()).c_str()));
             return false;
@@ -84,14 +84,14 @@ bool createDirectories(const std::string &path)
                 && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
         if (!exists && !CreateDirectoryW(wTemp.c_str(), nullptr)
                 && GetLastError() != ERROR_ALREADY_EXISTS) {
-            setLastError(Error::PlatformError, priv::format(
+            setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to create directory: %s",
                     temp.c_str(), win32::errorToString(GetLastError()).c_str()));
             return false;
         }
 #else
         if (mkdir(temp.c_str(), 0755) < 0 && errno != EEXIST) {
-            setLastError(Error::PlatformError, priv::format(
+            setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to create directory: %s",
                     temp.c_str(), strerror(errno)));
             return false;

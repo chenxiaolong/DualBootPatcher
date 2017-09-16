@@ -3,7 +3,6 @@ set(MBP_IO_SOURCES
     src/directory.cpp
     src/error.cpp
     src/path.cpp
-    src/private/string.cpp
 )
 
 if(WIN32)
