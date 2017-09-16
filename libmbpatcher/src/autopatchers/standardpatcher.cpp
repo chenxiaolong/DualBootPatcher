@@ -265,7 +265,7 @@ replace_edify_mount(std::vector<EdifyToken *> *tokens,
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        auto token = static_cast<EdifyTokenString *>(*it);
         const std::string str = token->string();
 
         bool is_system = str.find("/system") != std::string::npos
@@ -319,7 +319,7 @@ replace_edify_unmount(std::vector<EdifyToken *> *tokens,
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        auto token = static_cast<EdifyTokenString *>(*it);
         const std::string str = token->string();
 
         bool is_system = str.find("/system") != std::string::npos
@@ -380,7 +380,7 @@ replace_edify_run_program(std::vector<EdifyToken *> *tokens,
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        auto token = static_cast<EdifyTokenString *>(*it);
         const std::string unescaped = token->unescaped_string();
 
         if (ends_with(unescaped, "reboot")) {
@@ -479,7 +479,7 @@ replace_edify_delete_recursive(std::vector<EdifyToken *> *tokens,
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        auto token = static_cast<EdifyTokenString *>(*it);
         const std::string unescaped = token->unescaped_string();
 
         if (unescaped == "/system" || unescaped == "/system/") {
@@ -522,7 +522,7 @@ replace_edify_format(std::vector<EdifyToken *> *tokens,
             continue;
         }
 
-        EdifyTokenString *token = (EdifyTokenString *)(*it);
+        auto token = static_cast<EdifyTokenString *>(*it);
         const std::string str = token->string();
 
         bool is_system = str.find("/system") != std::string::npos
@@ -615,7 +615,7 @@ bool StandardPatcher::patch_updater(const std::string &directory)
         }
 
         // Tokens (types are checked by findFunction())
-        EdifyTokenString *t_func_name = (EdifyTokenString *)(*func_name);
+        auto t_func_name = static_cast<EdifyTokenString *>(*func_name);
 
         if (t_func_name->unescaped_string() == "mount") {
             begin = replace_edify_mount(&tokens, func_name, left_paren, right_paren,
