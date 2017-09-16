@@ -59,7 +59,8 @@ static int _mtk_header_update_size(Writer &writer, File &file,
         return RET_FATAL;
     }
 
-    if (!file.seek(offset + offsetof(MtkHeader, size), SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(offset + offsetof(MtkHeader, size)),
+                   SEEK_SET, nullptr)) {
         writer.set_error(file.error(),
                          "Failed to seek to MTK size field: %s",
                          file.error_string().c_str());
@@ -101,7 +102,8 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         auto const *entry = seg.entries_get(i);
         uint64_t remain = entry->size;
 
-        if (!file.seek(entry->offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(entry->offset), SEEK_SET,
+                       nullptr)) {
             writer.set_error(file.error(),
                              "Failed to seek to entry %" MB_PRIzu ": %s",
                              i, file.error_string().c_str());
@@ -354,10 +356,12 @@ int MtkFormatWriter::finish_entry(File &file)
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
-        _hdr.kernel_size = swentry->size + sizeof(MtkHeader);
+        _hdr.kernel_size = static_cast<uint32_t>(
+                swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_RAMDISK:
-        _hdr.ramdisk_size = swentry->size + sizeof(MtkHeader);
+        _hdr.ramdisk_size = static_cast<uint32_t>(
+                swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_SECONDBOOT:
         _hdr.second_size = swentry->size;
@@ -404,14 +408,16 @@ int MtkFormatWriter::close(File &file)
             auto const *entry = _seg.entries_get(i);
             switch (entry->type) {
             case ENTRY_TYPE_MTK_KERNEL_HEADER:
-                ret = _mtk_header_update_size(_writer, file, entry->offset,
-                                              _hdr.kernel_size
-                                              - sizeof(MtkHeader));
+                ret = _mtk_header_update_size(
+                        _writer, file, entry->offset,
+                        static_cast<uint32_t>(
+                                _hdr.kernel_size - sizeof(MtkHeader)));
                 break;
             case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-                ret = _mtk_header_update_size(_writer, file, entry->offset,
-                                              _hdr.ramdisk_size
-                                              - sizeof(MtkHeader));
+                ret = _mtk_header_update_size(
+                        _writer, file, entry->offset,
+                        static_cast<uint32_t>(
+                                _hdr.ramdisk_size - sizeof(MtkHeader)));
                 break;
             default:
                 continue;

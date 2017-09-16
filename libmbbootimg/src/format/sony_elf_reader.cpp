@@ -90,7 +90,7 @@ int SonyElfFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _have_header = true;
-        bid += SONY_EI_NIDENT * 8;
+        bid += static_cast<int>(SONY_EI_NIDENT * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be a Sony ELF boot image.
         return 0;
@@ -140,7 +140,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
         Sony_Elf32_Phdr phdr;
         size_t n;
 
-        if (!file.seek(pos, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
             _reader.set_error(file.error(),
                               "Failed to seek to segment %" PRIu16
                               " at %" PRIu64 ": %s", i, pos,
@@ -203,7 +203,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
             ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                                    phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) return ret;
+            if (ret != RET_OK) { return ret; }
 
             if (!header.set_kernel_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
@@ -212,7 +212,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
             ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                                    phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) return ret;
+            if (ret != RET_OK) { return ret; }
 
             if (!header.set_ramdisk_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
@@ -221,7 +221,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL,
                                    phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) return ret;
+            if (ret != RET_OK) { return ret; }
 
             if (!header.set_sony_ipl_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
@@ -230,7 +230,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM,
                                    phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) return ret;
+            if (ret != RET_OK) { return ret; }
 
             if (!header.set_sony_rpm_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
@@ -239,7 +239,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
             ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL,
                                    phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) return ret;
+            if (ret != RET_OK) { return ret; }
 
             if (!header.set_sony_appsbl_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;

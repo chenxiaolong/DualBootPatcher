@@ -92,7 +92,7 @@ int LokiFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _loki_offset = loki_offset;
-        bid += LOKI_MAGIC_SIZE * 8;
+        bid += static_cast<int>(LOKI_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be a Loki boot image.
         return 0;
@@ -107,7 +107,7 @@ int LokiFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += android::BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -296,7 +296,7 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
         auto result_cb = [](File &file, void *userdata, uint64_t offset)
                 -> FileSearchAction {
             (void) file;
-            uint64_t *offset_ptr = static_cast<uint64_t *>(userdata);
+            auto offset_ptr = static_cast<uint64_t *>(userdata);
             *offset_ptr = offset;
             return FileSearchAction::Continue;
         };
@@ -316,7 +316,7 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
 
         offset += LOKI_SHELLCODE_SIZE - 5;
 
-        if (!file.seek(offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
             reader.set_error(file.error(),
                              "Failed to seek to ramdisk address offset: %s",
                              file.error_string().c_str());
@@ -404,7 +404,7 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     // Find first result with flags == 0x00 and flags == 0x08
     auto result_cb = [](File &file, void *userdata, uint64_t offset)
             -> FileSearchAction {
-        SearchResult *result = static_cast<SearchResult *>(userdata);
+        auto result = static_cast<SearchResult *>(userdata);
         uint64_t orig_offset;
         unsigned char flags;
         size_t n;
@@ -420,7 +420,7 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         }
 
         // Seek to flags byte
-        if (!file.seek(offset + 3, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(offset + 3), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
@@ -441,7 +441,7 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         }
 
         // Restore original position as per contract
-        if (!file.seek(orig_offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(orig_offset), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
@@ -510,7 +510,7 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
     // to store a copy of aboot, so it is put in the last 0x200 bytes of the
     // file.
     if (is_lg_ramdisk_address(hdr.ramdisk_addr)) {
-        aboot_size = hdr.page_size;
+        aboot_size = static_cast<int32_t>(hdr.page_size);
     } else {
         aboot_size = 0x200;
     }
@@ -530,7 +530,7 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
 
     // Ignore zero padding as we might strip away too much
 #if 1
-    ramdisk_size_out = aboot_offset - ramdisk_offset;
+    ramdisk_size_out = static_cast<uint32_t>(aboot_offset - ramdisk_offset);
     return RET_OK;
 #else
     // Search backwards to find non-zero byte
@@ -679,14 +679,16 @@ int LokiFormatReader::read_header_old(Reader &reader, File &file,
     // Look for gzip offset for the ramdisk
     ret = find_gzip_offset_old(
             reader, file, hdr.page_size + kernel_size
-                    + align_page_size<uint64_t>(kernel_size, hdr.page_size),
+                    + align_page_size<uint32_t>(kernel_size, hdr.page_size),
             gzip_offset);
     if (ret != RET_OK) {
         return ret;
     }
 
     // Try to guess ramdisk size
-    ret = find_ramdisk_size_old(reader, file, hdr, gzip_offset, ramdisk_size);
+    ret = find_ramdisk_size_old(reader, file, hdr,
+                                static_cast<uint32_t>(gzip_offset),
+                                ramdisk_size);
     if (ret != RET_OK) {
         return ret;
     }

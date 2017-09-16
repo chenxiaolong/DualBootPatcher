@@ -73,7 +73,7 @@ static int read_mtk_header(Reader &reader, File &file,
     MtkHeader mtkhdr;
     size_t n;
 
-    if (!file.seek(offset, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "Failed to seek to MTK header at %" PRIu64 ": %s",
                          offset, file.error_string().c_str());
@@ -213,7 +213,7 @@ int MtkFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += android::BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -230,7 +230,7 @@ int MtkFormatReader::bid(File &file, int best_bid)
         // Update bid to account for matched bids
         _mtk_kernel_offset = mtk_kernel_offset;
         _mtk_ramdisk_offset = mtk_ramdisk_offset;
-        bid += 2 * MTK_MAGIC_SIZE * 8;
+        bid += static_cast<int>(2 * MTK_MAGIC_SIZE * 8);
     } else {
         return ret;
     }

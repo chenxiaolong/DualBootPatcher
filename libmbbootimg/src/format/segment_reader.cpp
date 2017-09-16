@@ -146,7 +146,8 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
     uint64_t read_cur_offset = read_start_offset;
 
     if (_read_cur_offset != srentry.offset) {
-        if (!file.seek(read_start_offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET,
+                       nullptr)) {
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }

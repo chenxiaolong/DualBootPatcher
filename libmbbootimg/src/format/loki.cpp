@@ -270,7 +270,7 @@ static int _loki_write_aboot(Writer &writer, File &file,
         return RET_FAILED;
     }
 
-    if (!file.seek(aboot_offset, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(aboot_offset), SEEK_SET, nullptr)) {
         writer.set_error(file.error(),
                          "Failed to seek to ramdisk offset: %s",
                          file.error_string().c_str());
@@ -299,7 +299,8 @@ static int _loki_write_shellcode(Writer &writer, File &file,
 {
     size_t n;
 
-    if (!file.seek(aboot_offset + aboot_func_align, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(aboot_offset + aboot_func_align),
+                   SEEK_SET, nullptr)) {
         writer.set_error(file.error(),
                          "Failed to seek to shellcode offset: %s",
                          file.error_string().c_str());
@@ -434,17 +435,18 @@ int _loki_patch_file(Writer &writer, File &file,
 
     // Guarantee 16-byte alignment
     offset = tgt->check_sigs & 0xf;
-    ahdr.ramdisk_addr = tgt->check_sigs - offset;
+    ahdr.ramdisk_addr = tgt->check_sigs - static_cast<uint32_t>(offset);
 
     if (tgt->lg) {
-        fake_size = ahdr.page_size;
+        fake_size = static_cast<int>(ahdr.page_size);
         ahdr.ramdisk_size = ahdr.page_size;
     } else {
         fake_size = 0x200;
         ahdr.ramdisk_size = 0;
     }
 
-    aboot_func_offset = tgt->check_sigs - aboot_base - offset;
+    aboot_func_offset = tgt->check_sigs - aboot_base
+            - static_cast<uint32_t>(offset);
 
     // Write Android header
     ret = _loki_write_android_header(writer, file, ahdr);
@@ -467,21 +469,23 @@ int _loki_patch_file(Writer &writer, File &file,
     // The function calls below are no longer recoverable should an error occur
 
     // Move DT image
-    ret = _loki_move_dt_image(writer, file, aboot_offset, fake_size,
-                              ahdr.dt_size);
+    ret = _loki_move_dt_image(writer, file, aboot_offset,
+                              static_cast<uint32_t>(fake_size), ahdr.dt_size);
     if (ret != RET_OK) {
         return RET_FATAL;
     }
 
     // Write aboot
     ret = _loki_write_aboot(writer, file, aboot_ptr, aboot_size, aboot_offset,
-                            aboot_func_offset, fake_size);
+                            aboot_func_offset,
+                            static_cast<uint32_t>(fake_size));
     if (ret != RET_OK) {
         return RET_FATAL;
     }
 
     // Write shellcode
-    ret = _loki_write_shellcode(writer, file, aboot_offset, offset, patch);
+    ret = _loki_write_shellcode(writer, file, aboot_offset,
+                                static_cast<uint32_t>(offset), patch);
     if (ret != RET_OK) {
         return RET_FATAL;
     }

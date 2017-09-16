@@ -269,7 +269,7 @@ int AndroidFormatWriter::close(File &file)
     size_t n;
 
     if (_file_size) {
-        if (!file.seek(*_file_size, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(*_file_size), SEEK_SET, nullptr)) {
             _writer.set_error(file.error(),
                               "Failed to seek to end of file: %s",
                               file.error_string().c_str());

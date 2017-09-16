@@ -269,7 +269,7 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
         return RET_WARN;
     }
 
-    offset = static_cast<unsigned char *>(ptr) - buf;
+    offset = static_cast<size_t>(static_cast<unsigned char *>(ptr) - buf);
 
     if (n - offset < sizeof(AndroidHeader)) {
         reader.set_error(make_error_code(AndroidError::HeaderOutOfBounds),
@@ -333,7 +333,7 @@ int AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
     pos += hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
-    if (!file.seek(pos, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "SEAndroid magic not found: %s",
                          file.error_string().c_str());
@@ -405,7 +405,7 @@ int AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
     pos += hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
-    if (!file.seek(pos, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "SEAndroid magic not found: %s",
                          file.error_string().c_str());
@@ -487,7 +487,7 @@ int AndroidFormatReader::bid_android(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -501,7 +501,7 @@ int AndroidFormatReader::bid_android(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _samsung_offset = samsung_offset;
-        bid += SAMSUNG_SEANDROID_MAGIC_SIZE * 8;
+        bid += static_cast<int>(SAMSUNG_SEANDROID_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
     } else {
@@ -537,7 +537,7 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -551,7 +551,7 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _bump_offset = bump_offset;
-        bid += bump::BUMP_MAGIC_SIZE * 8;
+        bid += static_cast<int>(bump::BUMP_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
     } else {
