@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -54,69 +54,72 @@
 
 #define LOG_TAG "mbtool/backup"
 
-#define BACKUP_MNT_DIR          "/mb_mnt"
 
 namespace mb
 {
 
-#define BACKUP_TARGET_SYSTEM            0x1
-#define BACKUP_TARGET_CACHE             0x2
-#define BACKUP_TARGET_DATA              0x4
-#define BACKUP_TARGET_BOOT              0x8
-#define BACKUP_TARGET_CONFIG            0x10
-#define BACKUP_TARGET_ALL               (BACKUP_TARGET_SYSTEM \
-                                        | BACKUP_TARGET_CACHE \
-                                        | BACKUP_TARGET_DATA \
-                                        | BACKUP_TARGET_BOOT \
-                                        | BACKUP_TARGET_CONFIG)
+enum class BackupTarget : uint8_t
+{
+    System  = 1 << 0,
+    Cache   = 1 << 1,
+    Data    = 1 << 2,
+    Boot    = 1 << 3,
+    Config  = 1 << 4,
+    All     = (1 << 5) - 1,
+};
+MB_DECLARE_FLAGS(BackupTargets, BackupTarget)
+MB_DECLARE_OPERATORS_FOR_FLAGS(BackupTargets)
 
-#define BACKUP_NAME_PREFIX_SYSTEM       "system"
-#define BACKUP_NAME_PREFIX_CACHE        "cache"
-#define BACKUP_NAME_PREFIX_DATA         "data"
-#define BACKUP_NAME_BOOT_IMAGE          "boot.img"
-#define BACKUP_NAME_CONFIG              "config.json"
-#define BACKUP_NAME_THUMBNAIL           "thumbnail.webp"
+constexpr char BACKUP_MNT_DIR[]            = "/mb_mnt";
+
+constexpr char BACKUP_NAME_PREFIX_SYSTEM[] = "system";
+constexpr char BACKUP_NAME_PREFIX_CACHE[]  = "cache";
+constexpr char BACKUP_NAME_PREFIX_DATA[]   = "data";
+constexpr char BACKUP_NAME_BOOT_IMAGE[]    = "boot.img";
+constexpr char BACKUP_NAME_CONFIG[]        = "config.json";
+constexpr char BACKUP_NAME_THUMBNAIL[]     = "thumbnail.webp";
 
 using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
 
 enum class Result
 {
-    SUCCEEDED,
-    FAILED,
-    FILES_MISSING,
-    BOOT_IMAGE_UNPATCHED
+    Succeeded,
+    Failed,
+    FilesMissing,
+    BootImageUnpatched,
 };
 
-static struct CompressionMap {
-    util::compression_type type;
+static struct CompressionMap
+{
+    util::CompressionType type;
     const char *name;
     const char *extension;
 } g_compression_map[] = {
-    { util::compression_type::NONE, "none",  ".tar" },
-    { util::compression_type::LZ4,  "lz4",   ".tar.lz4" },
-    { util::compression_type::GZIP, "gzip",  ".tar.gz" },
-    { util::compression_type::XZ,   "xz",    ".tar.xz" },
-    { util::compression_type::NONE, nullptr, nullptr }
+    { util::CompressionType::NONE, "none",  ".tar" },
+    { util::CompressionType::LZ4,  "lz4",   ".tar.lz4" },
+    { util::CompressionType::GZIP, "gzip",  ".tar.gz" },
+    { util::CompressionType::XZ,   "xz",    ".tar.xz" },
+    { util::CompressionType::NONE, nullptr, nullptr }
 };
 
-static int parse_targets_string(const std::string &targets)
+static BackupTargets parse_targets_string(const std::string &targets)
 {
     std::vector<std::string> targets_list = util::split(targets, ",");
-    int result = 0;
+    BackupTargets result(0);
 
     for (const std::string &target : targets_list) {
         if (target == "all") {
-            result |= BACKUP_TARGET_ALL;
+            result |= BackupTarget::All;
         } else if (target == "system") {
-            result |= BACKUP_TARGET_SYSTEM;
+            result |= BackupTarget::System;
         } else if (target == "cache") {
-            result |= BACKUP_TARGET_CACHE;
+            result |= BackupTarget::Cache;
         } else if (target == "data") {
-            result |= BACKUP_TARGET_DATA;
+            result |= BackupTarget::Data;
         } else if (target == "boot") {
-            result |= BACKUP_TARGET_BOOT;
+            result |= BackupTarget::Boot;
         } else if (target == "config") {
-            result |= BACKUP_TARGET_CONFIG;
+            result |= BackupTarget::Config;
         } else {
             return 0;
         }
@@ -126,11 +129,11 @@ static int parse_targets_string(const std::string &targets)
 }
 
 static bool parse_compression_type(const char *type,
-                                   util::compression_type *compression)
+                                   util::CompressionType &compression)
 {
     for (auto i = g_compression_map; i->name; ++i) {
         if (strcmp(type, i->name) == 0) {
-            *compression = i->type;
+            compression = i->type;
             return true;
         }
     }
@@ -138,19 +141,19 @@ static bool parse_compression_type(const char *type,
 }
 
 static std::string get_compressed_backup_name(const std::string &name,
-                                              util::compression_type compression)
+                                              util::CompressionType compression)
 {
     for (auto i = g_compression_map; i->name; ++i) {
         if (compression == i->type) {
             return name + i->extension;
         }
     }
-    return std::string();
+    return {};
 }
 
 static std::string find_compressed_backup(const std::string &backup_dir,
                                           const std::string &name,
-                                          util::compression_type *compression)
+                                          util::CompressionType &compression)
 {
     std::string full_path;
     for (auto i = g_compression_map; i->name; ++i) {
@@ -160,17 +163,17 @@ static std::string find_compressed_backup(const std::string &backup_dir,
         full_path += i->extension;
 
         if (access(full_path.c_str(), R_OK) == 0) {
-            *compression = i->type;
+            compression = i->type;
             return name + i->extension;
         }
     }
-    return std::string();
+    return {};
 }
 
 static bool backup_directory(const std::string &output_file,
                              const std::string &directory,
                              const std::vector<std::string> &exclusions,
-                             util::compression_type compression)
+                             util::CompressionType compression)
 {
     ScopedDIR dp(opendir(directory.c_str()), closedir);
     if (!dp) {
@@ -206,7 +209,7 @@ static bool backup_directory(const std::string &output_file,
 static bool restore_directory(const std::string &input_file,
                               const std::string &directory,
                               const std::vector<std::string> &exclusions,
-                              util::compression_type compression)
+                              util::CompressionType compression)
 {
     if (!wipe_directory(directory, exclusions)) {
         return false;
@@ -218,7 +221,7 @@ static bool restore_directory(const std::string &input_file,
 static bool backup_image(const std::string &output_file,
                          const std::string &image,
                          const std::vector<std::string> &exclusions,
-                         util::compression_type compression)
+                         util::CompressionType compression)
 {
     if (!util::mkdir_recursive(BACKUP_MNT_DIR, 0755) && errno != EEXIST) {
         LOGE("%s: Failed to create directory: %s",
@@ -251,7 +254,7 @@ static bool restore_image(const std::string &input_file,
                           const std::string &image,
                           uint64_t size,
                           const std::vector<std::string> &exclusions,
-                          util::compression_type compression)
+                          util::CompressionType compression)
 {
     if (!util::mkdir_parent(image, S_IRWXU)) {
         LOGE("%s: Failed to create parent directory: %s",
@@ -305,9 +308,9 @@ static bool restore_image(const std::string &input_file,
  * \param rom ROM
  * \param backup_dir Backup directory
  *
- * \return Result::SUCCEEDED if the boot image was successfully backed up
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if the boot image doesn't exist
+ * \return Result::Succeeded if the boot image was successfully backed up
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if the boot image doesn't exist
  */
 static Result backup_boot_image(const std::shared_ptr<Rom> &rom,
                                 const std::string &backup_dir)
@@ -321,14 +324,14 @@ static Result backup_boot_image(const std::shared_ptr<Rom> &rom,
     if (stat(boot_image_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", boot_image_path.c_str());
         if (!util::copy_file(boot_image_path, boot_image_backup, 0)) {
-            return Result::FAILED;
+            return Result::Failed;
         }
     } else {
         LOGW("=== %s does not exist ===", boot_image_path.c_str());
-        return Result::FILES_MISSING;
+        return Result::FilesMissing;
     }
 
-    return Result::SUCCEEDED;
+    return Result::Succeeded;
 }
 
 /*!
@@ -337,9 +340,9 @@ static Result backup_boot_image(const std::shared_ptr<Rom> &rom,
  * \param rom ROM
  * \param backup_dir Backup directory
  *
- * \return Result::SUCCEEDED if the boot image was successfully restored
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if the boot image backup doesn't exist
+ * \return Result::Succeeded if the boot image was successfully restored
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if the boot image backup doesn't exist
  */
 static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
                                  const std::string &backup_dir)
@@ -352,7 +355,7 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
     struct stat sb;
     if (stat(boot_image_backup.c_str(), &sb) < 0) {
         LOGW("=== %s does not exist ===", boot_image_backup.c_str());
-        return Result::FILES_MISSING;
+        return Result::FilesMissing;
     }
 
     LOGI("=== Restoring to %s ===", boot_image_path.c_str());
@@ -363,13 +366,13 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
     if (!InstallerUtil::patch_boot_image(
             boot_image_backup, boot_image_path, rps)) {
         LOGE("Failed to patch boot image");
-        return Result::FAILED;
+        return Result::Failed;
     }
 
     // We explicitly don't update the checksums here. The user needs to know the
     // risk of restoring a backup that can be modified by any app.
 
-    return Result::SUCCEEDED;
+    return Result::Succeeded;
 }
 
 /*!
@@ -378,9 +381,9 @@ static Result restore_boot_image(const std::shared_ptr<Rom> &rom,
  * \param rom ROM
  * \param backup_dir Backup directory
  *
- * \return Result::SUCCEEDED if the configs were successfully backed up
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if the configs don't exist
+ * \return Result::Succeeded if the configs were successfully backed up
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if the configs don't exist
  */
 static Result backup_configs(const std::shared_ptr<Rom> &rom,
                              const std::string &backup_dir)
@@ -395,26 +398,26 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
     thumbnail_backup += '/';
     thumbnail_backup += BACKUP_NAME_THUMBNAIL;
 
-    Result ret = Result::SUCCEEDED;
+    Result ret = Result::Succeeded;
 
     struct stat sb;
     if (stat(config_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", config_path.c_str());
         if (!util::copy_file(config_path, config_backup, 0)) {
-            return Result::FAILED;
+            return Result::Failed;
         }
     } else {
         LOGW("=== %s does not exist ===", config_path.c_str());
-        ret = Result::FILES_MISSING;
+        ret = Result::FilesMissing;
     }
     if (stat(thumbnail_path.c_str(), &sb) == 0) {
         LOGI("=== Backing up %s ===", thumbnail_path.c_str());
         if (!util::copy_file(thumbnail_path, thumbnail_backup, 0)) {
-            return Result::FAILED;
+            return Result::Failed;
         }
     } else {
         LOGW("=== %s does not exist ===", thumbnail_path.c_str());
-        ret = Result::FILES_MISSING;
+        ret = Result::FilesMissing;
     }
 
     return ret;
@@ -426,9 +429,9 @@ static Result backup_configs(const std::shared_ptr<Rom> &rom,
  * \param rom ROM
  * \param backup_dir Backup directory
  *
- * \return Result::SUCCEEDED if the configs were successfully restored
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if the backups of the configs don't exist
+ * \return Result::Succeeded if the configs were successfully restored
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if the backups of the configs don't exist
  */
 static Result restore_configs(const std::shared_ptr<Rom> &rom,
                               const std::string &backup_dir)
@@ -443,26 +446,26 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
     thumbnail_backup += '/';
     thumbnail_backup += BACKUP_NAME_THUMBNAIL;
 
-    Result ret = Result::SUCCEEDED;
+    Result ret = Result::Succeeded;
 
     struct stat sb;
     if (stat(config_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", config_path.c_str());
         if (!util::copy_file(config_backup, config_path, 0)) {
-            return Result::FAILED;
+            return Result::Failed;
         }
     } else {
         LOGW("=== %s does not exist ===", config_backup.c_str());
-        ret = Result::FILES_MISSING;
+        ret = Result::FilesMissing;
     }
     if (stat(thumbnail_backup.c_str(), &sb) == 0) {
         LOGI("=== Restoring to %s ===", thumbnail_path.c_str());
         if (!util::copy_file(thumbnail_backup, thumbnail_path, 0)) {
-            return Result::FAILED;
+            return Result::Failed;
         }
     } else {
         LOGW("=== %s does not exist ===", thumbnail_backup.c_str());
-        ret = Result::FILES_MISSING;
+        ret = Result::FilesMissing;
     }
 
     return ret;
@@ -477,16 +480,16 @@ static Result restore_configs(const std::shared_ptr<Rom> &rom,
  * \param is_image Whether \a path is an ext4 image
  * \param exclusions List of top-level directories to exclude from the backup
  *
- * \return Result::SUCCEEDED if the directory/image was successfully backed up
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if \a path does not exist
+ * \return Result::Succeeded if the directory/image was successfully backed up
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if \a path does not exist
  */
 static Result backup_partition(const std::string &path,
                                const std::string &backup_dir,
                                const std::string &archive_name,
                                bool is_image,
                                const std::vector<std::string> &exclusions,
-                               util::compression_type compression)
+                               util::CompressionType compression)
 {
     std::string archive(backup_dir);
     archive += '/';
@@ -504,10 +507,10 @@ static Result backup_partition(const std::string &path,
         }
     } else {
         LOGW("=== %s does not exist ===", path.c_str());
-        return Result::FILES_MISSING;
+        return Result::FilesMissing;
     }
 
-    return ret ? Result::SUCCEEDED : Result::FAILED;
+    return ret ? Result::Succeeded : Result::Failed;
 }
 
 /*!
@@ -520,9 +523,9 @@ static Result backup_partition(const std::string &path,
  * \param exclusions List of top-level directories to exclude from the wipe
  *                   process before restoring
  *
- * \return Result::SUCCEEDED if the directory/image was successfully restored
- *         Result::FAILED if an error occured
- *         Result::FILES_MISSING if \a archive_name does not exist in
+ * \return Result::Succeeded if the directory/image was successfully restored
+ *         Result::Failed if an error occured
+ *         Result::FilesMissing if \a archive_name does not exist in
  *         \a backup_dir
  */
 static Result restore_partition(const std::string &path,
@@ -531,7 +534,7 @@ static Result restore_partition(const std::string &path,
                                 bool is_image,
                                 uint64_t image_size,
                                 const std::vector<std::string> &exclusions,
-                                util::compression_type compression)
+                                util::CompressionType compression)
 {
     std::string archive(backup_dir);
     archive += '/';
@@ -550,15 +553,15 @@ static Result restore_partition(const std::string &path,
         }
     } else {
         LOGW("=== %s does not exist ===", archive.c_str());
-        return Result::FILES_MISSING;
+        return Result::FilesMissing;
     }
 
-    return ret ? Result::SUCCEEDED : Result::FAILED;
+    return ret ? Result::Succeeded : Result::Failed;
 }
 
 static bool backup_rom(const std::shared_ptr<Rom> &rom,
-                       const std::string &output_dir, int targets,
-                       util::compression_type compression)
+                       const std::string &output_dir, BackupTargets targets,
+                       util::CompressionType compression)
 {
     if (!targets) {
         LOGE("No backup targets specified");
@@ -575,19 +578,19 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
     LOGI("Backing up:");
     LOGI("- ROM ID: %s", rom->id.c_str());
     LOGI("- Targets:");
-    if (targets & BACKUP_TARGET_SYSTEM) {
+    if (targets & BackupTarget::System) {
         LOGI("  - System: %s", system_path.c_str());
     }
-    if (targets & BACKUP_TARGET_CACHE) {
+    if (targets & BackupTarget::Cache) {
         LOGI("  - Cache: %s", cache_path.c_str());
     }
-    if (targets & BACKUP_TARGET_DATA) {
+    if (targets & BackupTarget::Data) {
         LOGI("  - Data: %s", data_path.c_str());
     }
-    if (targets & BACKUP_TARGET_BOOT) {
+    if (targets & BackupTarget::Boot) {
         LOGI("  - Boot image: %s", boot_image_path.c_str());
     }
-    if (targets & BACKUP_TARGET_CONFIG) {
+    if (targets & BackupTarget::Config) {
         LOGI("  - Configs: %s", config_path.c_str());
         LOGI("             %s", thumbnail_path.c_str());
     }
@@ -601,43 +604,43 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
             BACKUP_NAME_PREFIX_DATA, compression);
 
     // Backup boot image
-    if (targets & BACKUP_TARGET_BOOT
-            && backup_boot_image(rom, output_dir) == Result::FAILED) {
+    if (targets & BackupTarget::Boot
+            && backup_boot_image(rom, output_dir) == Result::Failed) {
         return false;
     }
 
     // Backup configs
-    if (targets & BACKUP_TARGET_CONFIG
-            && backup_configs(rom, output_dir) == Result::FAILED) {
+    if (targets & BackupTarget::Config
+            && backup_configs(rom, output_dir) == Result::Failed) {
         return false;
     }
 
     // Backup system
-    if (targets & BACKUP_TARGET_SYSTEM) {
+    if (targets & BackupTarget::System) {
         Result ret = backup_partition(
                 system_path, output_dir, output_system,
                 rom->system_is_image, { "multiboot" }, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
 
     // Backup cache
-    if (targets & BACKUP_TARGET_CACHE) {
+    if (targets & BackupTarget::Cache) {
         Result ret = backup_partition(
                 cache_path, output_dir, output_cache,
                 rom->cache_is_image, { "multiboot" }, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
 
     // Backup data
-    if (targets & BACKUP_TARGET_DATA) {
+    if (targets & BackupTarget::Data) {
         Result ret = backup_partition(
                 data_path, output_dir, output_data,
                 rom->data_is_image, { "media", "multiboot" }, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
@@ -646,7 +649,7 @@ static bool backup_rom(const std::shared_ptr<Rom> &rom,
 }
 
 static bool restore_rom(const std::shared_ptr<Rom> &rom,
-                        const std::string &input_dir, int targets)
+                        const std::string &input_dir, BackupTargets targets)
 {
     if (!targets) {
         LOGE("No restore targets specified");
@@ -663,19 +666,19 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     LOGI("Restoring:");
     LOGI("- ROM ID: %s", rom->id.c_str());
     LOGI("- Targets:");
-    if (targets & BACKUP_TARGET_SYSTEM) {
+    if (targets & BackupTarget::System) {
         LOGI("  - System: %s", system_path.c_str());
     }
-    if (targets & BACKUP_TARGET_CACHE) {
+    if (targets & BackupTarget::Cache) {
         LOGI("  - Cache: %s", cache_path.c_str());
     }
-    if (targets & BACKUP_TARGET_DATA) {
+    if (targets & BackupTarget::Data) {
         LOGI("  - Data: %s", data_path.c_str());
     }
-    if (targets & BACKUP_TARGET_BOOT) {
+    if (targets & BackupTarget::Boot) {
         LOGI("  - Boot image: %s", boot_image_path.c_str());
     }
-    if (targets & BACKUP_TARGET_CONFIG) {
+    if (targets & BackupTarget::Config) {
         LOGI("  - Configs: %s", config_path.c_str());
         LOGI("             %s", thumbnail_path.c_str());
     }
@@ -691,21 +694,21 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
     }
 
     // Restore boot image
-    if (targets & BACKUP_TARGET_BOOT
-            && restore_boot_image(rom, input_dir) == Result::FAILED) {
+    if (targets & BackupTarget::Boot
+            && restore_boot_image(rom, input_dir) == Result::Failed) {
         return false;
     }
 
     // Restore configs
-    if (targets & BACKUP_TARGET_CONFIG
-            && restore_configs(rom, input_dir) == Result::FAILED) {
+    if (targets & BackupTarget::Config
+            && restore_configs(rom, input_dir) == Result::Failed) {
         return false;
     }
 
     fix_multiboot_permissions();
 
     // Restore system
-    if (targets & BACKUP_TARGET_SYSTEM) {
+    if (targets & BackupTarget::System) {
         uint64_t image_size;
         if (!util::mount_get_total_size(
                 Roms::get_system_partition(), image_size)) {
@@ -713,9 +716,9 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
             return false;
         }
 
-        util::compression_type compression;
+        util::CompressionType compression;
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_SYSTEM, &compression);
+                input_dir, BACKUP_NAME_PREFIX_SYSTEM, compression);
         if (path.empty()) {
             LOGE("Backup of /system not found");
             return false;
@@ -724,16 +727,16 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
         Result ret = restore_partition(
                 system_path, input_dir, path,
                 rom->system_is_image, image_size, {}, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
 
     // Restore cache
-    if (targets & BACKUP_TARGET_CACHE) {
-        util::compression_type compression;
+    if (targets & BackupTarget::Cache) {
+        util::CompressionType compression;
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_CACHE, &compression);
+                input_dir, BACKUP_NAME_PREFIX_CACHE, compression);
         if (path.empty()) {
             LOGE("Backup of /cache not found");
             return false;
@@ -742,16 +745,16 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
         Result ret = restore_partition(
                 cache_path, input_dir, path,
                 rom->cache_is_image, DEFAULT_IMAGE_SIZE, {}, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
 
     // Restore data
-    if (targets & BACKUP_TARGET_DATA) {
-        util::compression_type compression;
+    if (targets & BackupTarget::Data) {
+        util::CompressionType compression;
         std::string path = find_compressed_backup(
-                input_dir, BACKUP_NAME_PREFIX_DATA, &compression);
+                input_dir, BACKUP_NAME_PREFIX_DATA, compression);
         if (path.empty()) {
             LOGE("Backup of /data not found");
             return false;
@@ -760,7 +763,7 @@ static bool restore_rom(const std::shared_ptr<Rom> &rom,
         Result ret = restore_partition(
                 data_path, input_dir, path,
                 rom->data_is_image, DEFAULT_IMAGE_SIZE, { "media" }, compression);
-        if (ret == Result::FAILED) {
+        if (ret == Result::Failed) {
             return false;
         }
     }
@@ -900,7 +903,7 @@ int backup_main(int argc, char *argv[])
     std::string targets_str("all");
     std::string name;
     std::string backupdir(MULTIBOOT_BACKUP_DIR);
-    util::compression_type compression = util::compression_type::LZ4;
+    util::CompressionType compression = util::CompressionType::LZ4;
     bool force = false;
 
     if (!util::format_time("%Y.%m.%d-%H.%M.%S", name)) {
@@ -921,7 +924,7 @@ int backup_main(int argc, char *argv[])
             name = optarg;
             break;
         case 'c':
-            if (!parse_compression_type(optarg, &compression)) {
+            if (!parse_compression_type(optarg, compression)) {
                 fprintf(stderr, "Invalid compression type: %s\n", optarg);
                 return EXIT_FAILURE;
             }
@@ -952,7 +955,7 @@ int backup_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    int targets = parse_targets_string(targets_str);
+    BackupTargets targets = parse_targets_string(targets_str);
     if (!targets) {
         fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
         return EXIT_FAILURE;
@@ -1066,7 +1069,7 @@ int restore_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    int targets = parse_targets_string(targets_str);
+    BackupTargets targets = parse_targets_string(targets_str);
     if (!targets) {
         fprintf(stderr, "Invalid targets: %s\n", targets_str.c_str());
         return EXIT_FAILURE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -178,7 +178,7 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
                             const std::vector<std::string> &patterns,
-                            compression_type compression)
+                            CompressionType compression)
 {
     if (target.empty()) {
         LOGE("%s: Invalid target path for extraction", target.c_str());
@@ -215,15 +215,15 @@ bool libarchive_tar_extract(const std::string &filename,
     archive_read_support_format_tar(in.get());
 
     switch (compression) {
-    case compression_type::NONE:
+    case CompressionType::NONE:
         break;
-    case compression_type::LZ4:
+    case CompressionType::LZ4:
         archive_read_support_filter_lz4(in.get());
         break;
-    case compression_type::GZIP:
+    case CompressionType::GZIP:
         archive_read_support_filter_gzip(in.get());
         break;
-    case compression_type::XZ:
+    case CompressionType::XZ:
         archive_read_support_filter_xz(in.get());
         break;
     default:
@@ -349,7 +349,7 @@ static int metadata_filter(archive *a, void *data, archive_entry *entry)
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
                            const std::vector<std::string> &paths,
-                           compression_type compression)
+                           CompressionType compression)
 {
     if (base_dir.empty() && paths.empty()) {
         LOGE("%s: No base directory or paths specified", filename.c_str());
@@ -395,15 +395,15 @@ bool libarchive_tar_create(const std::string &filename,
     archive_write_set_bytes_per_block(out.get(), 10240);
 
     switch (compression) {
-    case compression_type::NONE:
+    case CompressionType::NONE:
         break;
-    case compression_type::LZ4:
+    case CompressionType::LZ4:
         archive_write_add_filter_lz4(out.get());
         break;
-    case compression_type::GZIP:
+    case CompressionType::GZIP:
         archive_write_add_filter_gzip(out.get());
         break;
-    case compression_type::XZ:
+    case CompressionType::XZ:
         archive_write_add_filter_xz(out.get());
         break;
     default:
@@ -729,7 +729,7 @@ bool extract_files(const std::string &filename, const std::string &target,
 }
 
 bool extract_files2(const std::string &filename,
-                    const std::vector<extract_info> &files)
+                    const std::vector<ExtractInfo> &files)
 {
     if (files.empty()) {
         return false;
@@ -754,7 +754,7 @@ bool extract_files2(const std::string &filename,
     set_up_output(out.get());
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        for (const extract_info &info : files) {
+        for (const ExtractInfo &info : files) {
             if (info.from == archive_entry_pathname(entry)) {
                 ++count;
 
@@ -784,7 +784,7 @@ bool extract_files2(const std::string &filename,
 }
 
 bool archive_exists(const std::string &filename,
-                    std::vector<exists_info> &files)
+                    std::vector<ExistsInfo> &files)
 {
     if (files.empty()) {
         return false;
@@ -800,7 +800,7 @@ bool archive_exists(const std::string &filename,
     archive_entry *entry;
     int ret;
 
-    for (exists_info &info : files) {
+    for (ExistsInfo &info : files) {
         info.exists = false;
     }
 
@@ -809,7 +809,7 @@ bool archive_exists(const std::string &filename,
     }
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        for (exists_info &info : files) {
+        for (ExistsInfo &info : files) {
             if (info.path == archive_entry_pathname(entry)) {
                 info.exists = true;
             }

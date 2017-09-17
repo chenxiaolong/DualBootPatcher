@@ -533,7 +533,7 @@ bool Installer::mount_efs() const
  */
 bool Installer::extract_multiboot_files()
 {
-    std::vector<util::extract_info> files{
+    std::vector<util::ExtractInfo> files{
         {
             "META-INF/com/google/android/update-binary.orig",
             _temp + "/updater"
@@ -1266,7 +1266,7 @@ Installer::ProceedState Installer::install_stage_initialize()
 
     LOGD("[Installer] Initialization stage");
 
-    std::vector<util::exists_info> info{
+    std::vector<util::ExistsInfo> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
         { "system.img", false },
