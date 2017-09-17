@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,25 +23,29 @@
 
 #include <sys/types.h>
 
+#include "mbcommon/flags.h"
+
 namespace mb
 {
 namespace util
 {
 
-enum ChownFlags : int
+enum class ChownFlag : uint8_t
 {
-    CHOWN_FOLLOW_SYMLINKS = 0x1,
-    CHOWN_RECURSIVE       = 0x2
+    FollowSymlinks  = 1 << 0,
+    Recursive       = 1 << 1,
 };
+MB_DECLARE_FLAGS(ChownFlags, ChownFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(ChownFlags)
 
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
-           int flags);
+           ChownFlags flags);
 bool chown(const std::string &path,
            uid_t user,
            gid_t group,
-           int flags);
+           ChownFlags flags);
 
 }
 }

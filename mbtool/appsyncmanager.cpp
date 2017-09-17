@@ -123,7 +123,7 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
         return false;
     }
 
-    if (!util::chown(data_path, uid, uid, util::CHOWN_RECURSIVE)) {
+    if (!util::chown(data_path, uid, uid, util::ChownFlag::Recursive)) {
         LOGW("[%s] %s: Failed to chown: %s",
              pkg.c_str(), data_path.c_str(), strerror(errno));
         return false;
@@ -158,7 +158,7 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
              pkg.c_str(), target.c_str(), strerror(errno));
         return false;
     }
-    if (!util::chown(target, uid, uid, util::CHOWN_RECURSIVE)) {
+    if (!util::chown(target, uid, uid, util::ChownFlag::Recursive)) {
         LOGW("[%s] %s: Failed to chown: %s",
              pkg.c_str(), target.c_str(), strerror(errno));
         return false;

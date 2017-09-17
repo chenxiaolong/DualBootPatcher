@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -104,7 +104,7 @@ private:
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
-           int flags)
+           ChownFlags flags)
 {
     uid_t uid;
     gid_t gid;
@@ -137,13 +137,13 @@ bool chown(const std::string &path,
 bool chown(const std::string &path,
            uid_t uid,
            gid_t gid,
-           int flags)
+           ChownFlags flags)
 {
-    if (flags & CHOWN_RECURSIVE) {
-        RecursiveChown fts(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
+    if (flags & ChownFlag::Recursive) {
+        RecursiveChown fts(path, uid, gid, flags & ChownFlag::FollowSymlinks);
         return fts.run();
     } else {
-        return chown_internal(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
+        return chown_internal(path, uid, gid, flags & ChownFlag::FollowSymlinks);
     }
 }
 
