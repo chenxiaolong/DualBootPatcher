@@ -499,7 +499,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(PosixFile);
 
-    off64_t old_pos, new_pos;
+    off_t old_pos, new_pos;
 
     if (!priv->can_seek) {
         set_error(make_error_code(FileError::UnsupportedSeek),
@@ -516,7 +516,8 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     }
 
     // Try to seek
-    if (priv->funcs->fn_fseeko(priv->fp, offset, whence) < 0) {
+    if (priv->funcs->fn_fseeko(priv->fp, static_cast<off_t>(offset),
+                               whence) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to seek file");
         return false;

@@ -264,7 +264,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
                       "Invalid SEEK_SET offset %" PRId64, offset);
             return false;
         }
-        new_offset = priv->pos = static_cast<uint64_t>(offset);
+        new_offset = priv->pos = static_cast<size_t>(offset);
         break;
     case SEEK_CUR:
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->pos)
@@ -275,7 +275,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
                       " for position %" MB_PRIzu, offset, priv->pos);
             return false;
         }
-        new_offset = priv->pos += static_cast<uint64_t>(offset);
+        new_offset = priv->pos += static_cast<size_t>(offset);
         break;
     case SEEK_END:
         if ((offset < 0 && static_cast<size_t>(-offset) > priv->size)
@@ -286,7 +286,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
                       " for file of size %" MB_PRIzu, offset, priv->size);
             return false;
         }
-        new_offset = priv->pos = priv->size + static_cast<uint64_t>(offset);
+        new_offset = priv->pos = priv->size + static_cast<size_t>(offset);
         break;
     default:
         set_error(make_error_code(FileError::InvalidWhence),
@@ -306,7 +306,7 @@ bool MemoryFile::on_truncate(uint64_t size)
                   "Cannot truncate fixed buffer");
         return false;
     } else {
-        void *new_data = realloc(priv->data, size);
+        void *new_data = realloc(priv->data, static_cast<size_t>(size));
         if (!new_data) {
             set_error(std::error_code(errno, std::generic_category()),
                       "Failed to resize buffer");
@@ -316,11 +316,11 @@ bool MemoryFile::on_truncate(uint64_t size)
         // Zero-initialize new space
         if (size > priv->size) {
             memset(static_cast<char *>(new_data) + priv->size, 0,
-                   size - priv->size);
+                   static_cast<size_t>(size) - priv->size);
         }
 
         priv->data = new_data;
-        priv->size = size;
+        priv->size = static_cast<size_t>(size);
         if (priv->data_ptr) {
             *priv->data_ptr = priv->data;
         }

@@ -151,7 +151,8 @@ bool file_read_discard(File &file, uint64_t size, uint64_t &bytes_discarded)
     bytes_discarded = 0;
 
     while (bytes_discarded < size) {
-        if (!file.read(buf, std::min<uint64_t>(size, sizeof(buf)), n)) {
+        auto to_read = std::min<uint64_t>(size, sizeof(buf));
+        if (!file.read(buf, static_cast<size_t>(to_read), n)) {
             if (file.error() == std::errc::interrupted) {
                 continue;
             } else {
@@ -429,7 +430,7 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
     if (dest < src) {
         // Copy forwards
         while (size_moved < size) {
-            size_t to_read = std::min<uint64_t>(
+            auto to_read = std::min<uint64_t>(
                     sizeof(buf), size - size_moved);
 
             // Seek to source offset
@@ -439,7 +440,8 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
             }
 
             // Read data from source
-            if (!file_read_fully(file, buf, to_read, n_read)) {
+            if (!file_read_fully(file, buf, static_cast<size_t>(to_read),
+                                 n_read)) {
                 return false;
             } else if (n_read == 0) {
                 break;
@@ -465,8 +467,7 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
     } else {
         // Copy backwards
         while (size_moved < size) {
-            size_t to_read = std::min<uint64_t>(
-                    sizeof(buf), size - size_moved);
+            auto to_read = std::min<uint64_t>(sizeof(buf), size - size_moved);
 
             // Seek to source offset
             if (!file.seek(static_cast<int64_t>(src + size - size_moved - to_read),
@@ -475,7 +476,8 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
             }
 
             // Read data form source
-            if (!file_read_fully(file, buf, to_read, n_read)) {
+            if (!file_read_fully(file, buf, static_cast<size_t>(to_read),
+                                 n_read)) {
                 return false;
             } else if (n_read == 0) {
                 break;
