@@ -87,11 +87,11 @@ enum class Result
     BOOT_IMAGE_UNPATCHED
 };
 
-struct compression_map {
+static struct CompressionMap {
     util::compression_type type;
     const char *name;
     const char *extension;
-} compression_map[] = {
+} g_compression_map[] = {
     { util::compression_type::NONE, "none",  ".tar" },
     { util::compression_type::LZ4,  "lz4",   ".tar.lz4" },
     { util::compression_type::GZIP, "gzip",  ".tar.gz" },
@@ -128,7 +128,7 @@ static int parse_targets_string(const std::string &targets)
 static bool parse_compression_type(const char *type,
                                    util::compression_type *compression)
 {
-    for (auto i = compression_map; i->name; ++i) {
+    for (auto i = g_compression_map; i->name; ++i) {
         if (strcmp(type, i->name) == 0) {
             *compression = i->type;
             return true;
@@ -140,7 +140,7 @@ static bool parse_compression_type(const char *type,
 static std::string get_compressed_backup_name(const std::string &name,
                                               util::compression_type compression)
 {
-    for (auto i = compression_map; i->name; ++i) {
+    for (auto i = g_compression_map; i->name; ++i) {
         if (compression == i->type) {
             return name + i->extension;
         }
@@ -153,7 +153,7 @@ static std::string find_compressed_backup(const std::string &backup_dir,
                                           util::compression_type *compression)
 {
     std::string full_path;
-    for (auto i = compression_map; i->name; ++i) {
+    for (auto i = g_compression_map; i->name; ++i) {
         full_path = backup_dir;
         full_path += "/";
         full_path += name;
