@@ -94,7 +94,7 @@ static std::string system_block_dev;
 static std::string boot_block_dev;
 
 MB_PRINTF(1, 2)
-void ui_print(const char *fmt, ...)
+static void ui_print(const char *fmt, ...)
 {
     va_list ap;
     va_list copy;
@@ -116,13 +116,13 @@ void ui_print(const char *fmt, ...)
     va_end(ap);
 }
 
-void set_progress(double frac)
+static void set_progress(double frac)
 {
     dprintf(output_fd, "set_progress %f\n", frac);
 }
 
 MB_PRINTF(1, 2)
-void error(const char *fmt, ...)
+static void error(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -132,7 +132,7 @@ void error(const char *fmt, ...)
 }
 
 MB_PRINTF(1, 2)
-void info(const char *fmt, ...)
+static void info(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
