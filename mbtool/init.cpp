@@ -1227,11 +1227,12 @@ int init_main(int argc, char *argv[])
     LOGV("ROM ID is: %s", rom_id.c_str());
 
     // Mount system, cache, and external SD from fstab file
-    int flags = MOUNT_FLAG_REWRITE_FSTAB
-            | MOUNT_FLAG_MOUNT_SYSTEM
-            | MOUNT_FLAG_MOUNT_CACHE
-            | MOUNT_FLAG_MOUNT_DATA
-            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
+    MountFlags flags =
+            MountFlag::RewriteFstab
+            | MountFlag::MountSystem
+            | MountFlag::MountCache
+            | MountFlag::MountData
+            | MountFlag::MountExternalSd;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         critical_failure();

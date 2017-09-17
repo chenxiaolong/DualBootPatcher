@@ -735,7 +735,8 @@ struct FstabRecs
 };
 
 static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                          const Device &device, int flags, FstabRecs *recs)
+                          const Device &device, MountFlags flags,
+                          FstabRecs *recs)
 {
     std::vector<util::fstab_rec> fstab;
 
@@ -758,17 +759,17 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         LOGD("fstab: %s", it->orig_line.c_str());
 
         if (util::path_compare(it->mount_point, "/system") == 0
-                && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
+                && (flags & MountFlag::MountSystem)) {
             LOGD("-> /system entry");
             recs->system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
-                && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
+                && (flags & MountFlag::MountCache)) {
             LOGD("-> /cache entry");
             recs->cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
-                && (flags & MOUNT_FLAG_MOUNT_DATA)) {
+                && (flags & MountFlag::MountData)) {
             LOGD("-> /data entry");
             recs->data.push_back(std::move(*it));
             it = fstab.erase(it);
@@ -779,7 +780,7 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                 || it->vold_args.find("voldmanaged=extSdCard") != std::string::npos
                 || it->vold_args.find("voldmanaged=external_SD") != std::string::npos
                 || it->vold_args.find("voldmanaged=MicroSD") != std::string::npos)
-                && (flags & MOUNT_FLAG_MOUNT_EXTERNAL_SD)) {
+                && (flags & MountFlag::MountExternalSd)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
             recs->extsd.push_back(*it);
@@ -796,22 +797,22 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // Some ROMs mount the partitions in one of the init.*.rc files or some
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
-    if (!(flags & MOUNT_FLAG_NO_GENERIC_ENTRIES)) {
-        if (recs->system.empty() && (flags & MOUNT_FLAG_MOUNT_SYSTEM)) {
+    if (!(flags & MountFlag::NoGenericEntries)) {
+        if (recs->system.empty() && (flags & MountFlag::MountSystem)) {
             LOGW("No /system fstab entries found. Adding generic entries");
             auto entries = generic_fstab_system_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && (flags & MOUNT_FLAG_MOUNT_CACHE)) {
+        if (recs->cache.empty() && (flags & MountFlag::MountCache)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
             auto entries = generic_fstab_cache_entries(device);
             for (util::fstab_rec &rec : entries) {
                 recs->cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && (flags & MOUNT_FLAG_MOUNT_DATA)) {
+        if (recs->data.empty() && (flags & MountFlag::MountData)) {
             LOGW("No /data fstab entries found. Adding generic entries");
             auto entries = generic_fstab_data_entries(device);
             for (util::fstab_rec &rec : entries) {
@@ -851,7 +852,7 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
  * \return Whether all of the
  */
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const Device &device, int flags)
+                 const Device &device, MountFlags flags)
 {
     std::vector<std::string> successful;
     FstabRecs recs;
@@ -919,14 +920,14 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
 
     if (ret) {
         LOGI("Successfully mounted partitions");
-    } else if (flags & MOUNT_FLAG_UNMOUNT_ON_FAILURE) {
+    } else if (flags & MountFlag::UnmountOnFailure) {
         for (const std::string &mount_point : successful) {
             util::umount(mount_point);
         }
     }
 
     // Rewrite fstab file
-    if (ret && (flags & MOUNT_FLAG_REWRITE_FSTAB)) {
+    if (ret && (flags & MountFlag::RewriteFstab)) {
         int fd = open(path, O_RDWR | O_TRUNC);
         if (fd < 0) {
             LOGE("%s: Failed to open file: %s", path, strerror(errno));
