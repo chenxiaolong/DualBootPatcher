@@ -879,24 +879,24 @@ static bool unpack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"output",                required_argument, 0, 'o'},
-        {"prefix",                required_argument, 0, 'p'},
-        {"noprefix",              required_argument, 0, 'n'},
-        {"type",                  required_argument, 0, 't'},
+        {"output",                required_argument, nullptr, 'o'},
+        {"prefix",                required_argument, nullptr, 'p'},
+        {"noprefix",              required_argument, nullptr, 'n'},
+        {"type",                  required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"output-header",         required_argument, 0, OPT_OUTPUT_HEADER},
-        {"output-kernel",         required_argument, 0, OPT_OUTPUT_KERNEL},
-        {"output-ramdisk",        required_argument, 0, OPT_OUTPUT_RAMDISK},
-        {"output-second",         required_argument, 0, OPT_OUTPUT_SECOND},
-        {"output-dt",             required_argument, 0, OPT_OUTPUT_DT},
-        {"output-kernel_mtkhdr",  required_argument, 0, OPT_OUTPUT_KERNEL_MTKHDR},
-        {"output-ramdisk_mtkhdr", required_argument, 0, OPT_OUTPUT_RAMDISK_MTKHDR},
-        {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
-        {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
-        {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
+        {"output-header",         required_argument, nullptr, OPT_OUTPUT_HEADER},
+        {"output-kernel",         required_argument, nullptr, OPT_OUTPUT_KERNEL},
+        {"output-ramdisk",        required_argument, nullptr, OPT_OUTPUT_RAMDISK},
+        {"output-second",         required_argument, nullptr, OPT_OUTPUT_SECOND},
+        {"output-dt",             required_argument, nullptr, OPT_OUTPUT_DT},
+        {"output-kernel_mtkhdr",  required_argument, nullptr, OPT_OUTPUT_KERNEL_MTKHDR},
+        {"output-ramdisk_mtkhdr", required_argument, nullptr, OPT_OUTPUT_RAMDISK_MTKHDR},
+        {"output-ipl",            required_argument, nullptr, OPT_OUTPUT_IPL},
+        {"output-rpm",            required_argument, nullptr, OPT_OUTPUT_RPM},
+        {"output-appsbl",         required_argument, nullptr, OPT_OUTPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                  no_argument,       nullptr, 'h'},
+        {nullptr,                 0,                 nullptr, 0},
     };
 
     int long_index = 0;
@@ -1042,25 +1042,25 @@ static bool pack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"input",                required_argument, 0, 'i'},
-        {"prefix",               required_argument, 0, 'p'},
-        {"noprefix",             required_argument, 0, 'n'},
-        {"type",                 required_argument, 0, 't'},
+        {"input",                required_argument, nullptr, 'i'},
+        {"prefix",               required_argument, nullptr, 'p'},
+        {"noprefix",             required_argument, nullptr, 'n'},
+        {"type",                 required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"input-header",         required_argument, 0, OPT_INPUT_HEADER},
-        {"input-kernel",         required_argument, 0, OPT_INPUT_KERNEL},
-        {"input-ramdisk",        required_argument, 0, OPT_INPUT_RAMDISK},
-        {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
-        {"input-dt",             required_argument, 0, OPT_INPUT_DT},
-        {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
-        {"input-kernel_mtkhdr",  required_argument, 0, OPT_INPUT_KERNEL_MTKHDR},
-        {"input-ramdisk_mtkhdr", required_argument, 0, OPT_INPUT_RAMDISK_MTKHDR},
-        {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
-        {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
-        {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
+        {"input-header",         required_argument, nullptr, OPT_INPUT_HEADER},
+        {"input-kernel",         required_argument, nullptr, OPT_INPUT_KERNEL},
+        {"input-ramdisk",        required_argument, nullptr, OPT_INPUT_RAMDISK},
+        {"input-second",         required_argument, nullptr, OPT_INPUT_SECOND},
+        {"input-dt",             required_argument, nullptr, OPT_INPUT_DT},
+        {"input-aboot",          required_argument, nullptr, OPT_INPUT_ABOOT},
+        {"input-kernel_mtkhdr",  required_argument, nullptr, OPT_INPUT_KERNEL_MTKHDR},
+        {"input-ramdisk_mtkhdr", required_argument, nullptr, OPT_INPUT_RAMDISK_MTKHDR},
+        {"input-ipl",            required_argument, nullptr, OPT_INPUT_IPL},
+        {"input-rpm",            required_argument, nullptr, OPT_INPUT_RPM},
+        {"input-appsbl",         required_argument, nullptr, OPT_INPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                 no_argument,       nullptr, 'h'},
+        {nullptr,                0,                 nullptr, 0},
     };
 
     int long_index = 0;
