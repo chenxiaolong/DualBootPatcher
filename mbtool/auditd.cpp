@@ -69,7 +69,7 @@ static bool audit_mainloop()
              reply.nlh.nlmsg_type, reply.nlh.nlmsg_len, reply.data);
     }
 
-    return false;
+    // unreachable
 }
 
 static void auditd_usage(FILE *stream)
