@@ -856,7 +856,7 @@ static std::string find_fstab()
 
 static unsigned long get_api_version()
 {
-    return util::property_file_get_unum<unsigned long>(
+    return util::property_file_get_num<unsigned long>(
             "/system/build.prop", "ro.build.version.sdk", 0);
 }
 

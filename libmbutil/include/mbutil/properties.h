@@ -61,12 +61,12 @@ std::string property_get_string(const std::string &key,
                                 const std::string &default_value);
 bool property_get_bool(const std::string &key, bool default_value);
 
-template<typename SNumType>
-inline SNumType property_get_snum(const std::string &key,
-                                  SNumType default_value)
+template<typename SIntType>
+inline typename std::enable_if<std::is_signed<SIntType>::value, SIntType>::type
+property_get_num(const std::string &key, SIntType default_value)
 {
     std::string value;
-    SNumType result;
+    SIntType result;
 
     if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
@@ -75,12 +75,12 @@ inline SNumType property_get_snum(const std::string &key,
     return default_value;
 }
 
-template<typename UNumType>
-inline UNumType property_get_unum(const std::string &key,
-                                  UNumType default_value)
+template<typename UIntType>
+inline typename std::enable_if<std::is_unsigned<UIntType>::value, UIntType>::type
+property_get_num(const std::string &key, UIntType default_value)
 {
     std::string value;
-    UNumType result;
+    UIntType result;
 
     if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
@@ -106,13 +106,13 @@ std::string property_file_get_string(const std::string &path,
 bool property_file_get_bool(const std::string &path, const std::string &key,
                             bool default_value);
 
-template<typename SNumType>
-inline SNumType property_file_get_snum(const std::string &path,
-                                       const std::string &key,
-                                       SNumType default_value)
+template<typename SIntType>
+inline typename std::enable_if<std::is_signed<SIntType>::value, SIntType>::type
+property_file_get_num(const std::string &path, const std::string &key,
+                      SIntType default_value)
 {
     std::string value;
-    SNumType result;
+    SIntType result;
 
     if (property_file_get(path, key, value)
             && str_to_num(value.c_str(), 10, result)) {
@@ -122,13 +122,13 @@ inline SNumType property_file_get_snum(const std::string &path,
     return default_value;
 }
 
-template<typename UNumType>
-inline UNumType property_file_get_unum(const std::string &path,
-                                       const std::string &key,
-                                       UNumType default_value)
+template<typename UIntType>
+inline typename std::enable_if<std::is_unsigned<UIntType>::value, UIntType>::type
+property_file_get_num(const std::string &path, const std::string &key,
+                      UIntType default_value)
 {
     std::string value;
-    UNumType result;
+    UIntType result;
 
     if (property_file_get(path, key, value)
             && str_to_num(value.c_str(), 10, result)) {
