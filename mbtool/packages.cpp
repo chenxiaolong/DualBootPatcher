@@ -126,14 +126,14 @@ Package::Package() :
 
 uid_t Package::get_uid()
 {
-    return is_shared_user ? shared_user_id : user_id;
+    return static_cast<uid_t>(is_shared_user ? shared_user_id : user_id);
 }
 
 static char * time_to_string(uint64_t time)
 {
     static char buf[50];
 
-    const time_t t = time / 1000;
+    const time_t t = static_cast<time_t>(time / 1000ull);
     strftime(buf, sizeof(buf), "%a %b %d %H:%M:%S %Y", localtime(&t));
 
     return buf;

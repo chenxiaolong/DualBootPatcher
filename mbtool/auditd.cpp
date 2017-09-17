@@ -50,7 +50,7 @@ static bool audit_mainloop()
         audit_close(fd);
     });
 
-    if (audit_setup(fd, getpid()) < 0) {
+    if (audit_setup(fd, static_cast<uint32_t>(getpid())) < 0) {
         return false;
     }
 

@@ -212,7 +212,8 @@ static bool run_daemon()
 
     // Calculate correct length so the trailing junk is not included in the
     // abstract socket name
-    socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
+    socklen_t addr_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path))
+            + static_cast<socklen_t>(abs_name_len);
 
     if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));

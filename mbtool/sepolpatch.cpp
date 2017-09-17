@@ -197,7 +197,8 @@ SELinuxResult selinux_raw_grant_all_perms(policydb_t *pdb,
     for (uint32_t class_val = 1; class_val <= pdb->p_classes.nprim;
             ++class_val) {
         SELinuxResult ret = selinux_raw_grant_all_perms(
-                pdb, source_type_val, target_type_val, class_val);
+                pdb, source_type_val, target_type_val,
+                static_cast<uint16_t>(class_val));
 
         switch (ret) {
         case SELinuxResult::ERROR:
@@ -402,7 +403,8 @@ bool selinux_make_all_permissive(policydb_t *pdb)
     SELinuxResult ret;
 
     for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim; ++type_val) {
-        ret = selinux_raw_set_permissive(pdb, type_val, true);
+        ret = selinux_raw_set_permissive(pdb, static_cast<uint16_t>(type_val),
+                                         true);
         if (ret == SELinuxResult::ERROR) {
             return false;
         }
@@ -420,7 +422,8 @@ bool selinux_make_permissive(policydb_t *pdb,
         return false;
     }
 
-    SELinuxResult result = selinux_raw_set_permissive(pdb, type->s.value, true);
+    SELinuxResult result = selinux_raw_set_permissive(
+            pdb, static_cast<uint16_t>(type->s.value), true);
     switch (result) {
     case SELinuxResult::CHANGED:
     case SELinuxResult::UNCHANGED:
@@ -468,8 +471,10 @@ bool selinux_set_allow_rule(policydb_t *pdb,
     }
 
     SELinuxResult result = selinux_raw_set_avtab_rule(
-            pdb, source->s.value, target->s.value, clazz->s.value,
-            perm->s.value, remove);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value),
+            static_cast<uint16_t>(perm->s.value), remove);
 
     switch (result) {
     case SELinuxResult::CHANGED:
@@ -537,8 +542,10 @@ bool selinux_set_type_trans(policydb_t *pdb,
     }
 
     SELinuxResult result = selinux_raw_set_type_trans(
-            pdb, source->s.value, target->s.value, clazz->s.value,
-            def->s.value);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value),
+            static_cast<uint16_t>(def->s.value));
 
     switch (result) {
     case SELinuxResult::CHANGED:
@@ -573,7 +580,9 @@ bool selinux_grant_all_perms(policydb_t *pdb,
     }
 
     auto ret = selinux_raw_grant_all_perms(
-            pdb, source->s.value, target->s.value, clazz->s.value);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value));
     return ret != SELinuxResult::ERROR;
 }
 
@@ -592,7 +601,8 @@ bool selinux_grant_all_perms(policydb_t *pdb,
     }
 
     auto ret = selinux_raw_grant_all_perms(
-            pdb, source->s.value, target->s.value);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value));
     return ret != SELinuxResult::ERROR;
 }
 
@@ -711,7 +721,9 @@ bool selinux_set_attribute(policydb_t *pdb,
         return false;
     }
 
-    auto ret = selinux_raw_set_attribute(pdb, type->s.value, attr->s.value);
+    auto ret = selinux_raw_set_attribute(
+            pdb, static_cast<uint16_t>(type->s.value),
+            static_cast<uint16_t>(attr->s.value));
     return ret != SELinuxResult::ERROR;
 }
 
@@ -729,7 +741,9 @@ bool selinux_add_to_role(policydb_t *pdb,
         return false;
     }
 
-    auto ret = selinux_raw_add_to_role(pdb, role->s.value, type->s.value);
+    auto ret = selinux_raw_add_to_role(
+            pdb, static_cast<uint16_t>(role->s.value),
+            static_cast<uint16_t>(type->s.value));
     return ret != SELinuxResult::ERROR;
 }
 
@@ -850,7 +864,9 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
             continue;
         }
 
-        auto ret = selinux_raw_grant_all_perms(pdb, kernel->s.value, type_val);
+        auto ret = selinux_raw_grant_all_perms(
+                pdb, static_cast<uint16_t>(kernel->s.value),
+                static_cast<uint16_t>(type_val));
         switch (ret) {
         case SELinuxResult::CHANGED:
         case SELinuxResult::UNCHANGED:
@@ -902,7 +918,7 @@ static bool copy_avtab_rules(policydb_t *pdb,
 
             if (cur->key.target_type == source->s.value) {
                 avtab_key_t copy = cur->key;
-                copy.target_type = target->s.value;
+                copy.target_type = static_cast<uint16_t>(target->s.value);
 
                 to_add.push_back(std::make_pair(std::move(copy), cur->datum));
             }
@@ -1053,7 +1069,8 @@ static bool create_mbtool_types(policydb_t *pdb)
         }
 
         auto ret2 = selinux_raw_grant_all_perms(
-                pdb, mb_exec->s.value, type_val);
+                pdb, static_cast<uint16_t>(mb_exec->s.value),
+                static_cast<uint16_t>(type_val));
         switch (ret2) {
         case SELinuxResult::CHANGED:
         case SELinuxResult::UNCHANGED:

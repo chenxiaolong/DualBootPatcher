@@ -208,7 +208,7 @@ static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
     if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
         char buf[PROP_NAME_MAX];
         int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
-        if (n >= 0 && n < (int) sizeof(buf)) {
+        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
             property_set(buf, *value);
         }
     }
@@ -349,7 +349,8 @@ static bool fix_file_contexts(const char *path)
             fputc('#', fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("%s: Failed to write file: %s",
                  new_path.c_str(), strerror(errno));
             return false;
@@ -491,7 +492,8 @@ static bool add_mbtool_services(bool enable_appsync)
             fputs("import /init.multiboot.rc\n", fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
         }
@@ -975,7 +977,8 @@ static bool extract_zip(const char *source, const char *target)
     int bytes_read;
 
     while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+        size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
+                                      fp);
         if (bytes_written == 0) {
             bool ret = !ferror(fp);
             fclose(fp);

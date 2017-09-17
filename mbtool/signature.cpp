@@ -70,7 +70,7 @@ static inline bool hex2bin(const std::string &source, std::string *out)
         if (!hex2num(source[i], &temp1) || !hex2num(source[i + 1], &temp2)) {
             return false;
         }
-        result += temp1 << 4 | temp2;
+        result += static_cast<char>(temp1 << 4 | temp2);
     }
 
     out->swap(result);
@@ -87,7 +87,7 @@ static int log_callback(const char *str, size_t len, void *userdata)
         LOGE("%s", copy);
         free(copy);
     }
-    return len;
+    return static_cast<int>(len);
 }
 
 static void openssl_log_errors()
@@ -153,7 +153,8 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
 
         // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
         // BIO object
-        bio_x509_cert = BIO_new_mem_buf((void *) der.data(), der.size());
+        bio_x509_cert = BIO_new_mem_buf(
+                der.data(), static_cast<int>(der.size()));
         if (!bio_x509_cert) {
             LOGE("Failed to create BIO for X509 certificate: %s",
                  hex_der.c_str());

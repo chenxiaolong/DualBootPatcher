@@ -314,7 +314,8 @@ static bool mount_exfat_kernel(const char *source, const char *target)
             "uid=%d,gid=%d,fmask=%o,dmask=%o,namecase=0",
             uid, uid, 0007, 0007);
     // For Motorola: utf8
-    int flags = MS_NODEV
+    unsigned long flags =
+            MS_NODEV
             | MS_NOSUID
             | MS_DIRSYNC
             | MS_NOEXEC;
@@ -338,7 +339,8 @@ static bool mount_vfat(const char *source, const char *target)
     std::string args = format(
             "utf8,uid=%d,gid=%d,fmask=%o,dmask=%o,shortname=mixed",
             uid, uid, 0007, 0007);
-    int flags = MS_NODEV
+    unsigned long flags =
+            MS_NODEV
             | MS_NOSUID
             | MS_DIRSYNC
             | MS_NOEXEC
@@ -618,7 +620,7 @@ static bool disable_fsck(const char *fsck_binary)
 
     // Copy permissions
     chown(target.c_str(), sb.st_uid, sb.st_gid);
-    chmod(target.c_str(), sb.st_mode);
+    chmod(target.c_str(), static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
     std::string context;
@@ -660,7 +662,7 @@ static bool copy_mount_exfat()
 
     // Copy permissions
     chown(target, sb.st_uid, sb.st_gid);
-    chmod(target, sb.st_mode);
+    chmod(target, static_cast<mode_t>(sb.st_mode));
 
     // Copy SELinux label
     std::string context;
@@ -822,18 +824,18 @@ bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     if (rom && !rom->system_is_image) {
         if (rom->system_source == Rom::Source::CACHE) {
             for (util::fstab_rec &rec : recs->cache) {
-                rec.flags &= ~MS_NOSUID;
+                rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         } else if (rom->system_source == Rom::Source::DATA) {
             for (util::fstab_rec &rec : recs->data) {
-                rec.flags &= ~MS_NOSUID;
+                rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         }
     }
 
     if (rom && rom->cache_source == Rom::Source::SYSTEM) {
         for (util::fstab_rec &rec : recs->system) {
-            rec.flags &= ~MS_RDONLY;
+            rec.flags &= ~static_cast<unsigned long>(MS_RDONLY);
         }
     }
 

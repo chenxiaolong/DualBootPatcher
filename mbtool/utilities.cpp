@@ -324,7 +324,8 @@ private:
                   const std::vector<unsigned char> &contents)
     {
         // Obviously never true, but we'll keep it here just in case
-        bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+        bool zip64 = static_cast<uint64_t>(contents.size())
+                >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -351,7 +352,8 @@ private:
         }
 
         // Write data to file
-        ret = zipWriteInFileInZip(_zf, contents.data(), contents.size());
+        ret = zipWriteInFileInZip(_zf, contents.data(),
+                                  static_cast<uint32_t>(contents.size()));
         if (ret != ZIP_OK) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
             zipCloseFileInZip(_zf);
@@ -381,12 +383,18 @@ private:
             return false;
         }
 
-        uint64_t size;
+        off64_t size;
         lseek64(fd, 0, SEEK_END);
         size = lseek64(fd, 0, SEEK_CUR);
         lseek64(fd, 0, SEEK_SET);
 
-        bool zip64 = size >= ((1ull << 32) - 1);
+        if (size < 0) {
+            LOGE("%s: Failed to seek: %s",
+                 path.c_str(), strerror(errno));
+            return false;
+        }
+
+        bool zip64 = static_cast<uint64_t>(size) >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -418,7 +426,7 @@ private:
         ssize_t n;
 
         while ((n = read(fd, buf, sizeof(buf))) > 0) {
-            ret = zipWriteInFileInZip(_zf, buf, n);
+            ret = zipWriteInFileInZip(_zf, buf, static_cast<uint32_t>(n));
             if (ret != ZIP_OK) {
                 LOGW("minizip: Failed to write data (error code: %d): %s",
                      ret, path.c_str());

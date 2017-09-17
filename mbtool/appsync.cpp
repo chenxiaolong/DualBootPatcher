@@ -345,7 +345,7 @@ static bool receive_message(int fd, char *buf, std::size_t size,
 static bool send_message(int fd, const char *command,
                          bool is_async, int async_id)
 {
-    unsigned short count = strlen(command);
+    auto count = static_cast<uint16_t>(strlen(command));
 
     if (is_async) {
         if (!util::socket_write_int32(fd, async_id)) {

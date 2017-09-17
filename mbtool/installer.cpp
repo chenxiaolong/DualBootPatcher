@@ -740,7 +740,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
     if (is_image) {
         struct stat sb;
         if (stat(source.c_str(), &sb) < 0) {
-            double mib = (double) image_size / 1024 / 1024;
+            double mib = static_cast<double>(image_size) / 1024 / 1024;
 
             display_msg("Creating image (%.1f MiB) at %s",
                         mib, source.c_str());

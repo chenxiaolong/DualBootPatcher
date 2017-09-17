@@ -131,7 +131,8 @@ static bool _rp_patch_default_prop(const std::string &dir,
             continue;
         }
 
-        if (fwrite(buf, 1, n, fp_out) != static_cast<size_t>(n)) {
+        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out)
+                != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
                  tmp_path.c_str(), strerror(errno));
             goto done;

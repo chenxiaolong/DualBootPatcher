@@ -186,7 +186,7 @@ void Roms::add_builtin()
 {
     roms.push_back(create_rom_primary());
     roms.push_back(create_rom_dual());
-    for (int i = 1; i <= 3; ++i) {
+    for (unsigned int i = 1; i <= 3; ++i) {
         roms.push_back(create_rom_multi_slot(i));
     }
 }

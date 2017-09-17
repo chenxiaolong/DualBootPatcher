@@ -262,7 +262,8 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
         if (archive_entry_size(entry.get()) > 0) {
             while ((n = archive_read_data(ain.get(), buf, sizeof(buf))) > 0) {
-                if (archive_write_data(aout.get(), buf, n) != n) {
+                if (archive_write_data(aout.get(), buf, static_cast<size_t>(n))
+                        != n) {
                     LOGE("Failed to write archive entry data: %s",
                          archive_error_string(aout.get()));
                     return false;
@@ -657,7 +658,8 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
     size_t n;
 
     while (to_copy > 0) {
-        size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
+        size_t to_read = static_cast<size_t>(
+                std::min<uint64_t>(to_copy, sizeof(buf)));
 
         if (!file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());
