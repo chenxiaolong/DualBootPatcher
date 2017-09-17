@@ -72,7 +72,7 @@ MainWindow::MainWindow(mb::patcher::PatcherConfig *pc, QWidget *parent)
             QStringLiteral("last_device"), QString()).toString();
     for (size_t i = 0; i < d->devices.size(); ++i) {
         if (d->devices[i].id() == lastDeviceId.toStdString()) {
-            d->deviceSel->setCurrentIndex(i);
+            d->deviceSel->setCurrentIndex(static_cast<int>(i));
             break;
         }
     }
@@ -117,8 +117,8 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    if (index < d->devices.size()) {
-        d->device = &d->devices[index];
+    if (index < static_cast<int>(d->devices.size())) {
+        d->device = &d->devices[static_cast<size_t>(index)];
     }
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
@@ -158,7 +158,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (!d->devices.empty()) {
         int deviceIndex = d->deviceSel->currentIndex();
-        std::string id = d->devices[deviceIndex].id();
+        std::string id = d->devices[static_cast<size_t>(deviceIndex)].id();
         d->settings.setValue(QStringLiteral("last_device"),
                              QString::fromStdString(id));
     }
@@ -224,7 +224,8 @@ void MainWindow::onProgressUpdated(uint64_t bytes, uint64_t maxBytes)
         value = 0;
         max = 0;
     } else {
-        value = (double) bytes / maxBytes * normalize;
+        value = static_cast<int>(static_cast<double>(bytes)
+                / static_cast<double>(maxBytes * normalize));
         max = normalize;
     }
 
@@ -275,7 +276,8 @@ void MainWindow::updateProgressText()
 
     double percentage = 0.0;
     if (d->maxBytes != 0) {
-        percentage = 100.0 * d->bytes / d->maxBytes;
+        percentage = 100.0 * static_cast<double>(d->bytes)
+                / static_cast<double>(d->maxBytes);
     }
 
     d->progressBar->setFormat(tr("%1% - %2 / %3 files")
