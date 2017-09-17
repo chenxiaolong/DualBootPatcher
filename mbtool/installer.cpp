@@ -1565,7 +1565,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         // Use an empty base dirs list since we don't want to flash any non-boot
         // partitions
         auto result = switch_rom(_rom->id, _boot_block_dev, {}, true);
-        if (result != SwitchRomResult::SUCCEEDED) {
+        if (result != SwitchRomResult::Succeeded) {
             display_msg("Failed to switch to target ROM. Continuing anyway...");
             LOGW("Failed to switch to target ROM: %d",
                  static_cast<int>(result));

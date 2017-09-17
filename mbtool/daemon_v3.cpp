@@ -1146,19 +1146,19 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
                                      block_dev_dirs,
                                      force_update_checksums);
 
-    bool success = ret == SwitchRomResult::SUCCEEDED;
+    bool success = ret == SwitchRomResult::Succeeded;
     v3::MbSwitchRomResult fb_ret = v3::MbSwitchRomResult_FAILED;
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         fb_ret = v3::MbSwitchRomResult_SUCCEEDED;
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         fb_ret = v3::MbSwitchRomResult_FAILED;
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         fb_ret = v3::MbSwitchRomResult_CHECKSUM_NOT_FOUND;
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         fb_ret = v3::MbSwitchRomResult_CHECKSUM_INVALID;
         break;
     }

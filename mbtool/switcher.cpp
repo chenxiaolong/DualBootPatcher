@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -59,9 +59,9 @@ namespace mb
  * \param image Image filename (without directory)
  * \param sha512_out SHA512 hex digest output
  *
- * \return ChecksumsGetResult::FOUND if the hash was successfully retrieved,
- *         ChecksumsGetResult::NOT_FOUND if the hash does not exist in the map,
- *         ChecksumsGetResult::MALFORMED if the property has an invalid format
+ * \return ChecksumsGetResult::Found if the hash was successfully retrieved,
+ *         ChecksumsGetResult::NotFound if the hash does not exist in the map,
+ *         ChecksumsGetResult::Malformed if the property has an invalid format
  */
 ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
                                  const std::string &rom_id,
@@ -75,7 +75,7 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
     key += image;
 
     if (props->find(key) == props->end()) {
-        return ChecksumsGetResult::NOT_FOUND;
+        return ChecksumsGetResult::NotFound;
     }
 
     const std::string &value = (*props)[key];
@@ -87,15 +87,15 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
         if (algo != "sha512") {
             LOGE("%s: Invalid hash algorithm: %s",
                  checksums_path.c_str(), algo.c_str());
-            return ChecksumsGetResult::MALFORMED;
+            return ChecksumsGetResult::Malformed;
         }
 
         *sha512_out = hash;
-        return ChecksumsGetResult::FOUND;
+        return ChecksumsGetResult::Found;
     } else {
         LOGE("%s: Invalid checksum property: %s=%s",
              checksums_path.c_str(), key.c_str(), value.c_str());
-        return ChecksumsGetResult::MALFORMED;
+        return ChecksumsGetResult::Malformed;
     }
 }
 
@@ -287,7 +287,7 @@ static bool add_extra_images(const std::string &multiboot_dir,
  *
  * \note If the checksum is missing for some images to be flashed and invalid
  *       for some other images to be flashed, this function will always return
- *       SwitchRomResult::CHECKSUM_INVALID.
+ *       SwitchRomResult::ChecksumInvalid.
  *
  * \param id ROM ID to switch to
  * \param boot_blockdev Block device path of the boot partition
@@ -295,10 +295,10 @@ static bool add_extra_images(const std::string &multiboot_dir,
  *                           corresponding to extra flashable images in
  *                           /sdcard/MultiBoot/[ROM ID]/ *.img
  *
- * \return SwitchRomResult::SUCCEEDED if the switching succeeded,
- *         SwitchRomResult::FAILED if the switching failed,
- *         SwitchRomResult::CHECKSUM_NOT_FOUND if the checksum for some image is missing,
- *         SwitchRomResult::CHECKSUM_INVALID if the checksum for some image is invalid
+ * \return SwitchRomResult::Succeeded if the switching succeeded,
+ *         SwitchRomResult::Failed if the switching failed,
+ *         SwitchRomResult::ChecksumNotFound if the checksum for some image is missing,
+ *         SwitchRomResult::ChecksumInvalid if the checksum for some image is invalid
  *
  */
 SwitchRomResult switch_rom(const std::string &id,
@@ -324,13 +324,13 @@ SwitchRomResult switch_rom(const std::string &id,
     auto r = roms.find_by_id(id);
     if (!r) {
         LOGE("Invalid ROM ID: %s", id.c_str());
-        return SwitchRomResult::FAILED;
+        return SwitchRomResult::Failed;
     }
 
     if (!util::mkdir_recursive(multiboot_path, 0775)) {
         LOGE("%s: Failed to create directory: %s",
              multiboot_path.c_str(), strerror(errno));
-        return SwitchRomResult::FAILED;
+        return SwitchRomResult::Failed;
     }
 
     // We'll read the files we want to flash into memory so a malicious app
@@ -357,7 +357,7 @@ SwitchRomResult switch_rom(const std::string &id,
         if (!util::file_read_all(f.image, f.data)) {
             LOGE("%s: Failed to read image: %s",
                  f.image.c_str(), strerror(errno));
-            return SwitchRomResult::FAILED;
+            return SwitchRomResult::Failed;
         }
 
         // Get actual sha512sum
@@ -372,15 +372,15 @@ SwitchRomResult switch_rom(const std::string &id,
         // Get expected sha512sum
         ChecksumsGetResult ret = checksums_get(
                 &props, id, util::base_name(f.image), &f.expected_hash);
-        if (ret == ChecksumsGetResult::MALFORMED) {
-            return SwitchRomResult::CHECKSUM_INVALID;
+        if (ret == ChecksumsGetResult::Malformed) {
+            return SwitchRomResult::ChecksumInvalid;
         }
 
         // Verify hashes if we have an expected hash
-        if (ret == ChecksumsGetResult::FOUND && f.expected_hash != f.hash) {
+        if (ret == ChecksumsGetResult::Found && f.expected_hash != f.hash) {
             LOGE("%s: Checksum (%s) does not match expected (%s)",
                  f.image.c_str(), f.hash.c_str(), f.expected_hash.c_str());
-            return SwitchRomResult::CHECKSUM_INVALID;
+            return SwitchRomResult::ChecksumInvalid;
         }
     }
 
@@ -390,7 +390,7 @@ SwitchRomResult switch_rom(const std::string &id,
     for (Flashable &f : flashables) {
         if (f.expected_hash.empty()) {
             LOGE("%s: Checksum does not exist", f.image.c_str());
-            return SwitchRomResult::CHECKSUM_NOT_FOUND;
+            return SwitchRomResult::ChecksumNotFound;
         }
     }
 
@@ -401,7 +401,7 @@ SwitchRomResult switch_rom(const std::string &id,
         if (!util::file_write_data(f.block_dev, f.data.data(), f.data.size())) {
             LOGE("%s: Failed to write image: %s",
                  f.block_dev.c_str(), strerror(errno));
-            return SwitchRomResult::FAILED;
+            return SwitchRomResult::Failed;
         }
     }
 
@@ -411,10 +411,10 @@ SwitchRomResult switch_rom(const std::string &id,
     }
 
     if (!fix_multiboot_permissions()) {
-        //return SwitchRomResult::FAILED;
+        //return SwitchRomResult::Failed;
     }
 
-    return SwitchRomResult::SUCCEEDED;
+    return SwitchRomResult::Succeeded;
 }
 
 /*!

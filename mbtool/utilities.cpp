@@ -136,21 +136,21 @@ static bool utilities_switch_rom(const char *rom_id, bool force)
     SwitchRomResult ret = switch_rom(
             rom_id, *it, device.block_dev_base_dirs(), force);
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         LOGD("SUCCEEDED");
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         LOGD("FAILED");
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         LOGD("CHECKSUM_INVALID");
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         LOGD("CHECKSUM_NOT_FOUND");
         break;
     }
 
-    return ret == SwitchRomResult::SUCCEEDED;
+    return ret == SwitchRomResult::Succeeded;
 }
 
 static bool utilities_wipe_system(const char *rom_id)

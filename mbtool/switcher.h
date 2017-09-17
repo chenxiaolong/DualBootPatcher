@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,9 +28,9 @@ namespace mb
 
 enum class ChecksumsGetResult
 {
-    FOUND,
-    NOT_FOUND,
-    MALFORMED
+    Found,
+    NotFound,
+    Malformed,
 };
 
 ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
@@ -46,10 +46,10 @@ bool checksums_write(const std::unordered_map<std::string, std::string> &props);
 
 enum class SwitchRomResult
 {
-    SUCCEEDED,
-    FAILED,
-    CHECKSUM_NOT_FOUND,
-    CHECKSUM_INVALID
+    Succeeded,
+    Failed,
+    ChecksumNotFound,
+    ChecksumInvalid,
 };
 
 SwitchRomResult switch_rom(const std::string &id,
