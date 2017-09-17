@@ -273,9 +273,9 @@ static bool load_block_devs()
             return false;
         }
 
-        static const size_t max_size = 10240;
+        static constexpr size_t max_size = 10240;
 
-        if (archive_entry_size(entry) >= max_size) {
+        if (archive_entry_size(entry) >= static_cast<int64_t>(max_size)) {
             error("%s is too large", DEVICE_JSON_FILE);
             return false;
         }
@@ -358,12 +358,12 @@ static bool cb_zip_read(mb::File &file, void *userdata,
             break;
         }
 
-        total += n;
-        size -= n;
-        buf = (char *) buf + n;
+        total += static_cast<size_t>(n);
+        size -= static_cast<size_t>(n);
+        buf = static_cast<char *>(buf) + n;
     }
 
-    bytes_read = total;
+    bytes_read = static_cast<size_t>(total);
     return true;
 }
 
@@ -488,7 +488,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
         return result;
     }
 
-    max_bytes = archive_entry_size(entry);
+    max_bytes = static_cast<uint64_t>(archive_entry_size(entry));
 
     fd = open64(out_filename,
                 O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC | O_LARGEFILE, 0600);
@@ -505,8 +505,8 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 
     while ((n = archive_read_data(a.get(), buf, sizeof(buf))) > 0) {
         // Rate limit: update progress only after difference exceeds 0.1%
-        old_ratio = (double) old_bytes / max_bytes;
-        new_ratio = (double) cur_bytes / max_bytes;
+        old_ratio = static_cast<double>(old_bytes) / max_bytes;
+        new_ratio = static_cast<double>(cur_bytes) / max_bytes;
         if (new_ratio - old_ratio >= 0.001) {
             set_progress(new_ratio);
             old_bytes = cur_bytes;
@@ -516,7 +516,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
         ssize_t nwritten;
 
         do {
-            if ((nwritten = write(fd, out_ptr, n)) < 0) {
+            if ((nwritten = write(fd, out_ptr, static_cast<size_t>(n))) < 0) {
                 error("%s: Failed to write: %s",
                       out_filename, strerror(errno));
                 return ExtractResult::ERROR;
