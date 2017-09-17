@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -92,9 +92,9 @@ private:
 };
 
 
-bool chmod(const std::string &path, mode_t perms, int flags)
+bool chmod(const std::string &path, mode_t perms, ChmodFlags flags)
 {
-    if (flags & CHMOD_RECURSIVE) {
+    if (flags & ChmodFlag::Recursive) {
         RecursiveChmod fts(path, perms);
         return fts.run();
     } else {
