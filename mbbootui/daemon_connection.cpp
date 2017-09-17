@@ -87,7 +87,7 @@ public:
         std::vector<Rom> roms;
 
         if (response->roms()) {
-            for (auto const &mb_rom : *response->roms()) {
+            for (auto const *mb_rom : *response->roms()) {
                 roms.emplace_back();
                 if (mb_rom->id()) {
                     roms.back().id = mb_rom->id()->str();
