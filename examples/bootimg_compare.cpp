@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
     static const char short_options[] = "h";
 
     static struct option long_options[] = {
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help", no_argument, nullptr, 'h'},
+        {nullptr, 0, nullptr, 0},
     };
 
     int long_index = 0;

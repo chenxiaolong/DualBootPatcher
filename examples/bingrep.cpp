@@ -229,15 +229,15 @@ int main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"help",         no_argument,       0, 'h'},
-        {"num-matches",  required_argument, 0, 'n'},
-        {"hex",          required_argument, 0, 'p'},
-        {"text",         required_argument, 0, 't'},
+        {"help",         no_argument,       nullptr, 'h'},
+        {"num-matches",  required_argument, nullptr, 'n'},
+        {"hex",          required_argument, nullptr, 'p'},
+        {"text",         required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"start-offset", required_argument, 0, OPT_START_OFFSET},
-        {"end-offset",   required_argument, 0, OPT_END_OFFSET},
-        {"buffer-size",  required_argument, 0, OPT_BUFFER_SIZE},
-        {0, 0, 0, 0}
+        {"start-offset", required_argument, nullptr, OPT_START_OFFSET},
+        {"end-offset",   required_argument, nullptr, OPT_END_OFFSET},
+        {"buffer-size",  required_argument, nullptr, OPT_BUFFER_SIZE},
+        {nullptr,        0,                 nullptr, 0},
     };
 
     int long_index = 0;
