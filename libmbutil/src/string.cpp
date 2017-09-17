@@ -208,7 +208,7 @@ char ** dup_cstring_list(const char * const *list)
     for (items = 0; list[items]; ++items);
     size_t size = (items + 1) * sizeof(list[0]);
 
-    copy = (char **) malloc(size);
+    copy = static_cast<char **>(malloc(size));
     if (!copy) {
         return nullptr;
     }

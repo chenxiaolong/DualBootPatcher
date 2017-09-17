@@ -34,6 +34,7 @@
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 
+
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
 namespace mb
@@ -44,7 +45,7 @@ namespace util
 static bool initialized = false;
 static std::mutex initialized_lock;
 
-void initialize_properties()
+static void initialize_properties()
 {
     std::lock_guard<std::mutex> lock(initialized_lock);
 
@@ -214,13 +215,13 @@ bool property_list(PropertyListCb prop_fn, void *cookie)
     PropListCtx ctx{ prop_fn, cookie };
 
     return libc_system_property_foreach(
-            [](const prop_info *pi, void *cookie) {
-        auto *ctx = static_cast<PropListCtx *>(cookie);
+            [](const prop_info *pi, void *cookie_) {
+        auto *ctx_ = static_cast<PropListCtx *>(cookie_);
         std::string name;
         std::string value;
 
         read_property(pi, name, value);
-        ctx->prop_fn(name, value, ctx->cookie);
+        ctx_->prop_fn(name, value, ctx_->cookie);
     }, &ctx);
 }
 
@@ -228,12 +229,12 @@ bool property_get_all(std::unordered_map<std::string, std::string> &map)
 {
     return libc_system_property_foreach(
             [](const prop_info *pi, void *cookie) {
-        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        auto *map_ = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
         std::string name;
         std::string value;
 
         read_property(pi, name, value);
-        (*map)[name] = value;
+        (*map_)[name] = value;
     }, &map);
 }
 
@@ -304,12 +305,12 @@ bool property_file_get(const std::string &path, const std::string &key,
     Ctx ctx{&key, &value_out, false};
 
     bool ret = iterate_property_file(
-            path, [](const std::string &key, const std::string &value,
-                     void *cookie){
-        auto *ctx = static_cast<Ctx *>(cookie);
-        if (key == *ctx->key) {
-            *ctx->value_out = value;
-            ctx->found = true;
+            path, [](const std::string &key_, const std::string &value,
+                     void *cookie) {
+        auto *ctx_ = static_cast<Ctx *>(cookie);
+        if (key_ == *ctx_->key) {
+            *ctx_->value_out = value;
+            ctx_->found = true;
             return PropIterAction::STOP;
         }
         return PropIterAction::CONTINUE;
@@ -361,9 +362,9 @@ bool property_file_list(const std::string &path, PropertyListCb prop_fn,
 
     return iterate_property_file(
             path, [](const std::string &key, const std::string &value,
-                     void *cookie){
-        auto *ctx = static_cast<Ctx *>(cookie);
-        ctx->prop_fn(key, value, ctx->cookie);
+                     void *cookie_) {
+        auto *ctx_ = static_cast<Ctx *>(cookie_);
+        ctx_->prop_fn(key, value, ctx_->cookie);
         return PropIterAction::CONTINUE;
     }, &ctx);
 }
@@ -373,8 +374,8 @@ bool property_file_get_all(const std::string &path,
 {
     return property_file_list(path,
             [](const std::string &key, const std::string &value, void *cookie) {
-        auto *map = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
-        (*map)[key] = value;
+        auto *map_ = static_cast<std::unordered_map<std::string, std::string> *>(cookie);
+        (*map_)[key] = value;
     }, &map);
 }
 
