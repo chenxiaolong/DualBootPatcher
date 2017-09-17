@@ -22,12 +22,23 @@
 #include <cassert>
 #include <cstring>
 
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wold-style-cast")
+#    pragma GCC diagnostic ignored "-Wold-style-cast"
+#  endif
+#endif
+
 #include <openssl/err.h>
 #ifdef OPENSSL_IS_BORINGSSL
 #include <openssl/mem.h>
 #endif
 #include <openssl/pem.h>
 #include <openssl/pkcs12.h>
+
+#ifdef __clang__
+#  pragma GCC diagnostic pop
+#endif
 
 #include "mblog/logging.h"
 
@@ -389,7 +400,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
         goto error;
     }
 
-    buf = (unsigned char *) OPENSSL_malloc(BUFSIZE);
+    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
@@ -544,7 +555,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
-    buf = (unsigned char *) OPENSSL_malloc(BUFSIZE);
+    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
