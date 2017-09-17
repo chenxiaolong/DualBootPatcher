@@ -52,7 +52,7 @@ struct PosixFileFuncs
                              FILE *stream) = 0;
 
     // unistd.h
-    virtual int fn_ftruncate64(int fd, off_t length) = 0;
+    virtual int fn_ftruncate64(int fd, off64_t length) = 0;
 };
 
 class PosixFilePrivate : public FilePrivate

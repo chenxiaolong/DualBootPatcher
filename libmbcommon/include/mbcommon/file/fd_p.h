@@ -44,7 +44,7 @@ struct FdFileFuncs
 
     // unistd.h
     virtual int fn_close(int fd) = 0;
-    virtual int fn_ftruncate64(int fd, off_t length) = 0;
+    virtual int fn_ftruncate64(int fd, off64_t length) = 0;
     virtual off64_t fn_lseek64(int fd, off64_t offset, int whence) = 0;
     virtual ssize_t fn_read(int fd, void *buf, size_t count) = 0;
     virtual ssize_t fn_write(int fd, const void *buf, size_t count) = 0;

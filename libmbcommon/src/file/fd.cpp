@@ -68,7 +68,7 @@ struct RealFdFileFuncs : public FdFileFuncs
         return close(fd);
     }
 
-    int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off64_t length) override
     {
         return ftruncate64(fd, length);
     }
