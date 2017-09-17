@@ -29,6 +29,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
+#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -383,10 +384,8 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 {
     struct SearchResult
     {
-        bool have_flag0 = false;
-        bool have_flag8 = false;
-        uint64_t flag0_offset;
-        uint64_t flag8_offset;
+        optional<uint64_t> flag0_offset;
+        optional<uint64_t> flag8_offset;
     };
 
     // gzip header:
@@ -410,7 +409,7 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         size_t n;
 
         // Stop early if possible
-        if (result_->have_flag0 && result_->have_flag8) {
+        if (result_->flag0_offset && result_->flag8_offset) {
             return FileSearchAction::Stop;
         }
 
@@ -432,11 +431,9 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
             return FileSearchAction::Stop;
         }
 
-        if (!result_->have_flag0 && flags == 0x00) {
-            result_->have_flag0 = true;
+        if (!result_->flag0_offset && flags == 0x00) {
             result_->flag0_offset = offset;
-        } else if (!result_->have_flag8 && flags == 0x08) {
-            result_->have_flag8 = true;
+        } else if (!result_->flag8_offset && flags == 0x08) {
             result_->flag8_offset = offset;
         }
 
@@ -458,10 +455,10 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 
     // Prefer gzip header with original filename flag since most loki'd boot
     // images will have been compressed manually with the gzip tool
-    if (result.have_flag8) {
-        gzip_offset_out = result.flag8_offset;
-    } else if (result.have_flag0) {
-        gzip_offset_out = result.flag0_offset;
+    if (result.flag8_offset) {
+        gzip_offset_out = *result.flag8_offset;
+    } else if (result.flag0_offset) {
+        gzip_offset_out = *result.flag0_offset;
     } else {
         reader.set_error(make_error_code(LokiError::NoRamdiskGzipHeaderFound));
         return RET_WARN;
