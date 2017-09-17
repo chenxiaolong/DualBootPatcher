@@ -580,10 +580,10 @@ static bool write_header(const std::string &path, const Header &header)
 {
     // Try to use base relative to the default kernel offset
     uint32_t base;
-    uint32_t kernel_offset;
-    uint32_t ramdisk_offset;
-    uint32_t second_offset;
-    uint32_t tags_offset;
+    uint32_t kernel_offset = 0;
+    uint32_t ramdisk_offset = 0;
+    uint32_t second_offset = 0;
+    uint32_t tags_offset = 0;
     auto kernel_address = header.kernel_address();
     auto ramdisk_address = header.ramdisk_address();
     auto secondboot_address = header.secondboot_address();
