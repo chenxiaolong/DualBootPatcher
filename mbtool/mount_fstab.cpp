@@ -734,8 +734,8 @@ struct FstabRecs
     std::vector<util::fstab_rec> extsd;
 };
 
-bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                   const Device &device, int flags, FstabRecs *recs)
+static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
+                          const Device &device, int flags, FstabRecs *recs)
 {
     std::vector<util::fstab_rec> fstab;
 

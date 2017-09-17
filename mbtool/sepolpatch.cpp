@@ -750,7 +750,7 @@ bool selinux_add_to_role(policydb_t *pdb,
     return ret != SELinuxResult::ERROR;
 }
 
-void selinux_strip_no_audit(policydb_t *pdb)
+static void selinux_strip_no_audit(policydb_t *pdb)
 {
 #if 0
     // This implementation works, but is confusing since it won't be printed
