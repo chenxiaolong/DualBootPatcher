@@ -824,10 +824,7 @@ static std::string find_fstab()
 
             // Replace ${ro.hardware}
             if (fstab.find("${ro.hardware}") != std::string::npos) {
-                optional<std::string> hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", hardware);
-                util::replace_all(fstab, "${ro.hardware}",
-                                  hardware ? *hardware : "");
+                util::replace_all(fstab, "${ro.hardware}", hardware);
             }
 
             LOGD("Found fstab during search: %s", fstab.c_str());
