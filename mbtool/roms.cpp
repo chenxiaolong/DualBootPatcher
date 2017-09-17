@@ -487,8 +487,6 @@ std::string Roms::get_extsd_partition()
     // Look for mounted MMC partitions
     ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        struct stat sb;
-
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // Skip useless mounts
             if (!starts_with(entry.dir.c_str(), prefix_mnt)) {
@@ -513,7 +511,7 @@ std::string Roms::get_extsd_partition()
         }
     }
 
-    return std::string();
+    return {};
 }
 
 std::string Roms::get_mountpoint(Rom::Source source)

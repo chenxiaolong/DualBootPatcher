@@ -833,7 +833,6 @@ static std::string find_fstab()
             LOGD("Found fstab during search: %s", fstab.c_str());
 
             // Check if fstab exists
-            struct stat sb;
             if (stat(fstab.c_str(), &sb) < 0) {
                 LOGE("Failed to stat fstab %s: %s",
                      fstab.c_str(), strerror(errno));
