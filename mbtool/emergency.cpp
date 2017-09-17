@@ -100,17 +100,9 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    char *buf = (char *) malloc(len);
-    if (!buf) {
-        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
-        return false;
-    }
+    std::vector<char> buf(static_cast<size_t>(len));
 
-    auto free_buf = finally([&]{
-        free(buf);
-    });
-
-    len = klogctl(KLOG_READ_ALL, buf, len);
+    len = klogctl(KLOG_READ_ALL, buf.data(), static_cast<int>(buf.size()));
     if (len < 0) {
         LOGE("Failed to read kernel log buffer: %s", strerror(errno));
         return false;
@@ -129,11 +121,11 @@ static bool dump_kernel_log(const char *file)
     }
 
     if (len > 0) {
-        if (fwrite(buf, len, 1, fp.get()) != 1) {
+        if (fwrite(buf.data(), static_cast<size_t>(len), 1, fp.get()) != 1) {
             LOGE("%s: Failed to write data: %s", file, strerror(errno));
             return false;
         }
-        if (buf[len - 1] != '\n') {
+        if (buf[static_cast<size_t>(len - 1)] != '\n') {
             if (fputc('\n', fp.get()) == EOF) {
                 LOGE("%s: Failed to write data: %s", file, strerror(errno));
                 return false;
