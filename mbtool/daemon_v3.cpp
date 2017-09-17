@@ -290,7 +290,7 @@ static bool v3_file_seek(int fd, const v3::Request *msg)
 
     // Ahh, posix...
     errno = 0;
-    off_t new_offset = lseek(ffd, offset, whence);
+    off64_t new_offset = lseek64(ffd, offset, whence);
     int saved_errno = errno;
     bool ret = new_offset >= 0 && saved_errno == 0;
 
