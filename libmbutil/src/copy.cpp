@@ -324,11 +324,11 @@ bool copy_file(const std::string &source, const std::string &target,
 }
 
 
-class RecursiveCopier : public FTSWrapper
+class RecursiveCopier : public FtsWrapper
 {
 public:
     RecursiveCopier(std::string path, std::string target, CopyFlags copyflags)
-        : FTSWrapper(path, 0)
+        : FtsWrapper(path, 0)
         , _copyflags(copyflags)
         , _target(std::move(target))
     {
@@ -371,7 +371,7 @@ public:
         return true;
     }
 
-    int on_changed_path() override
+    Actions on_changed_path() override
     {
         // Make sure we aren't copying the target on top of itself
         if (sb_target.st_dev == _curr->fts_statp->st_dev
@@ -379,7 +379,7 @@ public:
             format(_error_msg, "%s: Cannot copy on top of itself",
                    _curr->fts_path);
             LOGE("%s", _error_msg.c_str());
-            return Action::FTS_Fail | Action::FTS_Stop;
+            return Action::Fail | Action::Stop;
         }
 
         // According to fts_read()'s manpage, fts_path includes the path given
@@ -402,10 +402,10 @@ public:
         }
         _curtgtpath += relpath;
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Skip tree?
         bool skip = false;
@@ -445,27 +445,27 @@ public:
             }
         }
 
-        return (skip ? Action::FTS_Skip : 0)
-                | (success ? Action::FTS_OK : Action::FTS_Fail);
+        return (skip ? Actions(Action::Skip) : Actions(0))
+                | (success ? Action::Ok : Action::Fail);
     }
 
-    int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_file() override
+    Actions on_reached_file() override
     {
         if (!remove_existing_file()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         // Copy file contents
@@ -473,24 +473,24 @@ public:
             format(_error_msg, "%s: Failed to copy data: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         if (!remove_existing_file()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         // Find current symlink target
@@ -499,7 +499,7 @@ public:
             format(_error_msg, "%s: Failed to read symlink path: %s",
                    _curr->fts_accpath, strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         // Create new symlink
@@ -507,24 +507,24 @@ public:
             format(_error_msg, "%s: Failed to create symlink: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_block_device() override
+    Actions on_reached_block_device() override
     {
         if (!remove_existing_file()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (mknod(_curtgtpath.c_str(), S_IFBLK | S_IRWXU,
@@ -532,24 +532,24 @@ public:
             format(_error_msg, "%s: Failed to create block device: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_character_device() override
+    Actions on_reached_character_device() override
     {
         if (!remove_existing_file()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (mknod(_curtgtpath.c_str(), S_IFCHR | S_IRWXU,
@@ -557,48 +557,48 @@ public:
             format(_error_msg, "%s: Failed to create character device: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_fifo() override
+    Actions on_reached_fifo() override
     {
         if (!remove_existing_file()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (mkfifo(_curtgtpath.c_str(), S_IRWXU) < 0) {
             format(_error_msg, "%s: Failed to create FIFO pipe: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_attrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
         if (!cp_xattrs()) {
-            return Action::FTS_Fail;
+            return Action::Fail;
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    int on_reached_socket() override
+    Actions on_reached_socket() override
     {
         LOGD("%s: Skipping socket", _curr->fts_accpath);
-        return Action::FTS_Skip;
+        return Action::Skip;
     }
 
 private:

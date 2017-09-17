@@ -48,34 +48,34 @@ namespace mb
 namespace util
 {
 
-class RecursiveSetContext : public FTSWrapper {
+class RecursiveSetContext : public FtsWrapper {
 public:
     RecursiveSetContext(std::string path, std::string context,
                         bool follow_symlinks)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _context(std::move(context)),
-        _follow_symlinks(follow_symlinks)
+        : FtsWrapper(path, FtsFlag::GroupSpecialFiles)
+        , _context(std::move(context))
+        , _follow_symlinks(follow_symlinks)
     {
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+        return set_context() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+        return set_context() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+        return set_context() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return set_context() ? Action::FTS_OK : Action::FTS_Fail;
+        return set_context() ? Action::Ok : Action::Fail;
     }
 
 private:

@@ -39,29 +39,29 @@
 namespace mb
 {
 
-class CopySystem : public util::FTSWrapper {
+class CopySystem : public util::FtsWrapper {
 public:
     CopySystem(std::string path, std::string target)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles),
         _target(std::move(target))
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // We'll set attrs and xattrs after visiting children
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
         // We only care about the first level
         if (_curr->fts_level != 1) {
-            return Action::FTS_Next;
+            return Action::Next;
         }
 
         // Don't copy multiboot directory
         if (strcmp(_curr->fts_name, "multiboot") == 0) {
-            return Action::FTS_Skip;
+            return Action::Skip;
         }
 
         _curtgtpath.clear();
@@ -69,13 +69,13 @@ public:
         _curtgtpath += "/";
         _curtgtpath += _curr->fts_name;
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
         // _target is the correct parameter here (or pathbuf and
@@ -86,50 +86,50 @@ public:
             format(_error_msg, "%s: Failed to copy directory: %s",
                    _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
-            return Action::FTS_Skip | Action::FTS_Fail;
+            return Action::Skip | Action::Fail;
         }
-        return Action::FTS_Skip;
+        return Action::Skip;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
         if (_curr->fts_level == 0) {
             if (!util::copy_stat(_curr->fts_accpath, _target)) {
                 LOGE("%s: Failed to copy attributes: %s",
                      _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
+                return Action::Fail;
             }
             if (!util::copy_xattrs(_curr->fts_accpath, _target)) {
                 LOGE("%s: Failed to copy xattrs: %s",
                      _target.c_str(), strerror(errno));
-                return Action::FTS_Fail;
+                return Action::Fail;
             }
         }
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         if (_curr->fts_level == 0) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
-        return copy_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return copy_path() ? Action::Ok : Action::Fail;
     }
 
 private:

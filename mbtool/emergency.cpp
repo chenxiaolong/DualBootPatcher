@@ -50,15 +50,15 @@ namespace mb
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
-class BlockDevFinder : public util::FTSWrapper {
+class BlockDevFinder : public util::FtsWrapper {
 public:
     BlockDevFinder(std::string path, std::vector<std::string> names)
-        : FTSWrapper(path, 0),
-        _names(std::move(names))
+        : FtsWrapper(path, 0)
+        , _names(std::move(names))
     {
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         struct stat sb;
 
@@ -69,17 +69,17 @@ public:
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_block_device() override
+    Actions on_reached_block_device() override
     {
         if (std::find(_names.begin(), _names.end(), _curr->fts_name)
                 != _names.end()) {
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
     const std::vector<std::string> & results() const

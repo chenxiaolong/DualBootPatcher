@@ -49,29 +49,29 @@ namespace mb
  * Recursively chmod directories to 755 and files to 0644 and chown everything
  * system:system.
  */
-class FixPermissions : public util::FTSWrapper {
+class FixPermissions : public util::FtsWrapper {
 public:
     FixPermissions(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         util::chown(_curr->fts_accpath, "system", "system", 0);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         chmod(_curr->fts_accpath, 0644);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         chmod(_curr->fts_accpath, 0755);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 };
 

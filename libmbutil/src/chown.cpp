@@ -52,35 +52,35 @@ static bool chown_internal(const std::string &path,
     }
 }
 
-class RecursiveChown : public FTSWrapper {
+class RecursiveChown : public FtsWrapper {
 public:
     RecursiveChown(std::string path, uid_t uid, gid_t gid,
                    bool follow_symlinks)
-        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
-        _uid(uid),
-        _gid(gid),
-        _follow_symlinks(follow_symlinks)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
+        , _uid(uid)
+        , _gid(gid)
+        , _follow_symlinks(follow_symlinks)
     {
     }
 
-    int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
 private:

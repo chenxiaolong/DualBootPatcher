@@ -716,29 +716,29 @@ static bool v3_path_selinux_set_label(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-class DirectorySizeGetter : public util::FTSWrapper {
+class DirectorySizeGetter : public util::FtsWrapper {
 public:
     DirectorySizeGetter(std::string path, std::vector<std::string> exclusions)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _exclusions(std::move(exclusions)),
-        _total(0)
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
+        , _exclusions(std::move(exclusions))
+        , _total(0)
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // Exclude first-level directories
         if (_curr->fts_level == 1) {
             if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
                     != _exclusions.end()) {
-                return Action::FTS_Skip;
+                return Action::Skip;
             }
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         dev_t dev = static_cast<dev_t>(_curr->fts_statp->st_dev);
         ino_t ino = static_cast<ino_t>(_curr->fts_statp->st_ino);
@@ -746,13 +746,13 @@ public:
         // If this file has been visited before (hard link), then skip it
         if (_links.find(dev) != _links.end()
                 && _links[dev].find(ino) != _links[dev].end()) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
         _total += static_cast<uint64_t>(_curr->fts_statp->st_size);
         _links[dev].emplace(ino);
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
     uint64_t total() const {

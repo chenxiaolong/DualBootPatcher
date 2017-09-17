@@ -252,16 +252,16 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     data->assign(str_data.begin(), str_data.end());
 }
 
-class AromaGenerator : public util::FTSWrapper
+class AromaGenerator : public util::FtsWrapper
 {
 public:
     AromaGenerator(std::string path, std::string zippath)
-        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
+        : FtsWrapper(std::move(path), util::FtsFlag::GroupSpecialFiles),
         _zippath(std::move(zippath))
     {
     }
 
-    virtual bool on_pre_execute() override
+    bool on_pre_execute() override
     {
         zlib_filefunc64_def zFunc;
         memset(&zFunc, 0, sizeof(zFunc));
@@ -275,13 +275,13 @@ public:
         return true;
     }
 
-    virtual bool on_post_execute(bool success) override
+    bool on_post_execute(bool success) override
     {
         (void) success;
         return zipClose(_zf, nullptr) == ZIP_OK;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         std::string name = std::string(_curr->fts_path).substr(_path.size() + 1);
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
@@ -290,30 +290,30 @@ public:
             std::vector<unsigned char> data;
             if (!util::file_read_all(_curr->fts_accpath, data)) {
                 LOGE("Failed to read: %s", _curr->fts_path);
-                return false;
+                return Action::Fail;
             }
 
             generate_aroma_config(&data);
 
             name = "META-INF/com/google/android/aroma-config";
             bool ret = add_file(name, data);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         } else {
             bool ret = add_file(name, _curr->fts_accpath);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         }
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         LOGW("Ignoring symlink when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         LOGW("Ignoring special file when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
 private:
