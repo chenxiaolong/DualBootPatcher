@@ -202,7 +202,7 @@ static bool log_delete_recursive(const std::string &path)
 }
 
 static bool log_copy_dir(const std::string &source,
-                         const std::string &target, int flags)
+                         const std::string &target, util::CopyFlags flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -337,9 +337,9 @@ bool Installer::create_chroot()
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
     // no matter if it's done from here or from busybox.
     if (!log_copy_dir("/sbin", in_chroot("/sbin"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -376,15 +376,15 @@ bool Installer::create_chroot()
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
     if (!log_copy_dir("/dev/graphics", in_chroot("/dev/graphics"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -620,7 +620,8 @@ bool Installer::set_up_busybox_wrapper()
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
         return false;
@@ -944,7 +945,8 @@ bool Installer::run_real_updater()
     std::string chroot_updater = in_chroot("/mb/updater");
 
     if (!util::copy_file(updater, chroot_updater,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              updater.c_str(), chroot_updater.c_str(), strerror(errno));
         return false;
@@ -952,7 +954,8 @@ bool Installer::run_real_updater()
 
 #if DEBUG_USE_UPDATER_WRAPPER
     if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
              strerror(errno));
@@ -1455,9 +1458,9 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                          | util::COPY_XATTRS
-                                          | util::COPY_FOLLOW_SYMLINKS)) {
+        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
+                                          | util::CopyFlag::CopyXattrs
+                                          | util::CopyFlag::FollowSymlinks)) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1581,16 +1584,19 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 
     // Copy ourself for the real update-binary to use
     util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
     util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }

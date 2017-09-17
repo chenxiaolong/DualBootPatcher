@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -216,7 +216,8 @@ bool copy_contents(const std::string &source, const std::string &target)
     return copy_data_fd(fd_source, fd_target);
 }
 
-bool copy_file(const std::string &source, const std::string &target, int flags)
+bool copy_file(const std::string &source, const std::string &target,
+               CopyFlags flags)
 {
     mode_t old_umask = umask(0);
 
@@ -231,7 +232,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
     }
 
     struct stat sb;
-    if (((flags & COPY_FOLLOW_SYMLINKS)
+    if (((flags & CopyFlag::FollowSymlinks)
             ? stat : lstat)(source.c_str(), &sb) < 0) {
         LOGE("%s: Failed to stat: %s",
              source.c_str(), strerror(errno));
@@ -266,7 +267,7 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         break;
 
     case S_IFLNK:
-        if (!(flags & COPY_FOLLOW_SYMLINKS)) {
+        if (!(flags & CopyFlag::FollowSymlinks)) {
             std::string symlink_path;
             if (!read_link(source, symlink_path)) {
                 LOGW("%s: Failed to read symlink path: %s",
@@ -306,13 +307,13 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         return false;
     }
 
-    if ((flags & COPY_ATTRIBUTES)
+    if ((flags & CopyFlag::CopyAttributes)
             && !copy_stat(source, target)) {
         LOGE("%s: Failed to copy attributes: %s",
              target.c_str(), strerror(errno));
         return false;
     }
-    if ((flags & COPY_XATTRS)
+    if ((flags & CopyFlag::CopyXattrs)
             && !copy_xattrs(source, target)) {
         LOGE("%s: Failed to copy xattrs: %s",
              target.c_str(), strerror(errno));
@@ -323,9 +324,10 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
 }
 
 
-class RecursiveCopier : public FTSWrapper {
+class RecursiveCopier : public FTSWrapper
+{
 public:
-    RecursiveCopier(std::string path, std::string target, int copyflags)
+    RecursiveCopier(std::string path, std::string target, CopyFlags copyflags)
         : FTSWrapper(path, 0)
         , _copyflags(copyflags)
         , _target(std::move(target))
@@ -335,8 +337,8 @@ public:
     bool on_pre_execute() override
     {
         // This is almost *never* useful, so we won't allow it
-        if (_copyflags & COPY_FOLLOW_SYMLINKS) {
-            _error_msg = "COPY_FOLLOW_SYMLINKS not allowed for recursive copies";
+        if (_copyflags & CopyFlag::FollowSymlinks) {
+            _error_msg = "CopyFlag::FollowSymlinks not allowed for recursive copies";
             LOGE("%s", _error_msg.c_str());
             return false;
         }
@@ -388,7 +390,7 @@ public:
         char *relpath = _curr->fts_path + _path.size();
 
         _curtgtpath += _target;
-        if (!(_copyflags & COPY_EXCLUDE_TOP_LEVEL)) {
+        if (!(_copyflags & CopyFlag::ExcludeTopLevel)) {
             if (_curtgtpath.back() != '/') {
                 _curtgtpath += "/";
             }
@@ -600,7 +602,7 @@ public:
     }
 
 private:
-    int _copyflags;
+    CopyFlags _copyflags;
     std::string _target;
     struct stat sb_target;
     std::string _curtgtpath;
@@ -619,7 +621,7 @@ private:
 
     bool cp_attrs()
     {
-        if ((_copyflags & COPY_ATTRIBUTES)
+        if ((_copyflags & CopyFlag::CopyAttributes)
                 && !copy_stat(_curr->fts_accpath, _curtgtpath)) {
             format(_error_msg, "%s: Failed to copy attributes: %s",
                    _curtgtpath.c_str(), strerror(errno));
@@ -631,7 +633,7 @@ private:
 
     bool cp_xattrs()
     {
-        if ((_copyflags & COPY_XATTRS)
+        if ((_copyflags & CopyFlag::CopyXattrs)
                 && !copy_xattrs(_curr->fts_accpath, _curtgtpath)) {
             format(_error_msg, "%s: Failed to copy xattrs: %s",
                    _curtgtpath.c_str(), strerror(errno));
@@ -644,7 +646,8 @@ private:
 
 
 // Copy as much as possible
-bool copy_dir(const std::string &source, const std::string &target, int flags)
+bool copy_dir(const std::string &source, const std::string &target,
+              CopyFlags flags)
 {
     mode_t old_umask = umask(0);
 

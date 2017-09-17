@@ -118,11 +118,13 @@ RecoveryInstaller::ProceedState RecoveryInstaller::on_set_up_chroot()
 {
     // Copy /etc/fstab
     util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy /etc/recovery.fstab
     util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return ProceedState::Continue;
 }

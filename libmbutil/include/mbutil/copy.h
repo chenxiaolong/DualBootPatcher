@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -21,25 +21,29 @@
 
 #include <string>
 
+#include "mbcommon/flags.h"
+
 namespace mb
 {
 namespace util
 {
 
-enum CopyFlags : int
+enum class CopyFlag : uint8_t
 {
-    COPY_ATTRIBUTES          = 0x1,
-    COPY_XATTRS              = 0x2,
-    COPY_EXCLUDE_TOP_LEVEL   = 0x4,
-    COPY_FOLLOW_SYMLINKS     = 0x8
+    CopyAttributes  = 1 << 0,
+    CopyXattrs      = 1 << 1,
+    ExcludeTopLevel = 1 << 2,
+    FollowSymlinks  = 1 << 3,
 };
+MB_DECLARE_FLAGS(CopyFlags, CopyFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(CopyFlags)
 
 bool copy_data_fd(int fd_source, int fd_target);
 bool copy_xattrs(const std::string &source, const std::string &target);
 bool copy_stat(const std::string &source, const std::string &target);
 bool copy_contents(const std::string &source, const std::string &target);
-bool copy_file(const std::string &source, const std::string &target, int flags);
-bool copy_dir(const std::string &source, const std::string &target, int flags);
+bool copy_file(const std::string &source, const std::string &target, CopyFlags flags);
+bool copy_dir(const std::string &source, const std::string &target, CopyFlags flags);
 
 }
 }

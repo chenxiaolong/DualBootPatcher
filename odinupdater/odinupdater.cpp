@@ -557,9 +557,9 @@ static bool copy_dir_if_exists(const char *source_dir,
     }
 
     bool ret = mb::util::copy_dir(source_dir, target_dir,
-                                  mb::util::COPY_ATTRIBUTES
-                                | mb::util::COPY_XATTRS
-                                | mb::util::COPY_EXCLUDE_TOP_LEVEL);
+                                  mb::util::CopyFlag::CopyAttributes
+                                | mb::util::CopyFlag::CopyXattrs
+                                | mb::util::CopyFlag::ExcludeTopLevel);
     if (!ret) {
         error("Failed to copy %s to %s: %s",
               source_dir, target_dir, strerror(errno));

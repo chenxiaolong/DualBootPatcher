@@ -79,9 +79,10 @@ public:
         }
 
         // _target is the correct parameter here (or pathbuf and
-        // COPY_EXCLUDE_TOP_LEVEL flag)
+        // CopyFlag::ExcludeTopLevel flag)
         if (!util::copy_dir(_curr->fts_accpath, _target,
-                            util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                            util::CopyFlag::CopyAttributes
+                          | util::CopyFlag::CopyXattrs)) {
             format(_error_msg, "%s: Failed to copy directory: %s",
                    _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
@@ -138,7 +139,8 @@ private:
     bool copy_path()
     {
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
-                             util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                             util::CopyFlag::CopyAttributes
+                           | util::CopyFlag::CopyXattrs)) {
             format(_error_msg, "%s: Failed to copy file: %s",
                    _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
