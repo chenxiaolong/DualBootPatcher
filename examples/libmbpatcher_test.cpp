@@ -54,8 +54,8 @@ static bool file_read_all(const std::string &path,
     auto size = ftell(fp);
     rewind(fp);
 
-    std::vector<unsigned char> data(size);
-    if (fread(data.data(), size, 1, fp) != 1) {
+    std::vector<unsigned char> data(static_cast<size_t>(size));
+    if (fread(data.data(), data.size(), 1, fp) != 1) {
         fclose(fp);
         return false;
     }
@@ -94,7 +94,8 @@ static bool get_device(const char *path, mb::device::Device &device)
 static void mbp_progress_cb(uint64_t bytes, uint64_t maxBytes, void *userdata)
 {
     (void) userdata;
-    printf("Current bytes percentage: %.1f\n", 100.0 * bytes / maxBytes);
+    printf("Current bytes percentage: %.1f\n",
+           100.0 * static_cast<double>(bytes) / static_cast<double>(maxBytes));
 }
 
 int main(int argc, char *argv[]) {

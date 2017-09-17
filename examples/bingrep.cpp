@@ -137,7 +137,7 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
             return false;
         }
 
-        buf[i / 2] = (hi << 4) | lo;
+        buf[i / 2] = static_cast<unsigned char>((hi << 4) | lo);
     }
 
     *data = buf;
