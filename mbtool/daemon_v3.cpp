@@ -775,7 +775,7 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
 
     std::vector<std::string> exclusions;
     if (request->exclusions()) {
-        for (auto const &exclusion : *request->exclusions()) {
+        for (auto const *exclusion : *request->exclusions()) {
             exclusions.push_back(exclusion->c_str());
         }
     }
@@ -942,7 +942,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
             argv.push_back(target_binary);
         }
         if (request->args()) {
-            for (auto const &arg : *request->args()) {
+            for (auto const *arg : *request->args()) {
                 argv.push_back(arg->str());
             }
         }
@@ -1131,7 +1131,7 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
     std::vector<std::string> block_dev_dirs;
 
     if (request->blockdev_base_dirs()) {
-        for (auto const &base_dir : *request->blockdev_base_dirs()) {
+        for (auto const *base_dir : *request->blockdev_base_dirs()) {
             block_dev_dirs.push_back(base_dir->str());
         }
     }
