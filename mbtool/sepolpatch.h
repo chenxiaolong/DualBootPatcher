@@ -33,10 +33,10 @@ enum class SELinuxResult
     ERROR,
 };
 
-SELinuxResult selinux_raw_set_allow_rule(policydb_t *pdb,
+SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
                                          uint16_t source_type_val,
                                          uint16_t target_type_val,
-                                         uint16_t class_type_val,
+                                         uint16_t class_val,
                                          uint32_t perm_val,
                                          bool remove);
 SELinuxResult selinux_raw_set_type_trans(policydb_t *pdb,
