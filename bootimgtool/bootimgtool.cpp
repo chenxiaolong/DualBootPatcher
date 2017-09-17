@@ -850,7 +850,7 @@ static bool write_entry_to_file(const Paths &paths, Reader &reader,
     return write_data_entry_to_file(path, reader);
 }
 
-bool unpack_main(int argc, char *argv[])
+static bool unpack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
@@ -1011,7 +1011,7 @@ bool unpack_main(int argc, char *argv[])
     return true;
 }
 
-bool pack_main(int argc, char *argv[])
+static bool pack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
