@@ -40,6 +40,7 @@
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -539,8 +540,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     StandardFile fin;
     StandardFile fout;
-    // TODO: Replace with std::optional after switching to C++17
-    std::pair<bool, uint64_t> offset;
+    optional<uint64_t> offset;
 
     // Open input file
     if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
@@ -557,13 +557,11 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     }
 
     // Replace pattern
-    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+    auto result_cb = [](File &file, void *userdata, uint64_t offset_)
             -> FileSearchAction {
         (void) file;
-        std::pair<bool, uint64_t> *ptr =
-                static_cast<std::pair<bool, uint64_t> *>(userdata);
-        ptr->first = true;
-        ptr->second = offset;
+        auto ptr = static_cast<optional<uint64_t> *>(userdata);
+        *ptr = offset_;
         return FileSearchAction::Stop;
     };
 
@@ -581,10 +579,10 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    if (offset.first) {
-        LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
+    if (offset) {
+        LOGD("RKP pattern found at offset: 0x%" PRIx64, *offset);
 
-        if (!copy_file_to_file(fin, fout, offset.second)) {
+        if (!copy_file_to_file(fin, fout, *offset)) {
             return false;
         }
 
