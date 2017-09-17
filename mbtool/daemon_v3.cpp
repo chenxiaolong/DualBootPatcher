@@ -51,9 +51,18 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
 // flatbuffers
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
+
+#pragma GCC diagnostic pop
 
 #define LOG_TAG "mbtool/daemon_v3"
 

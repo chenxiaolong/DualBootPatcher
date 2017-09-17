@@ -165,7 +165,7 @@ SELinuxResult selinux_raw_grant_all_perms(policydb_t *pdb,
         for (uint32_t bucket = 0; bucket < (*table)->size; ++bucket) {
             for (hashtab_ptr_t cur = (*table)->htable[bucket]; cur;
                     cur = cur->next) {
-                perm_datum_t *perm_datum = (perm_datum_t *) cur->datum;
+                auto perm_datum = static_cast<perm_datum_t *>(cur->datum);
 
                 SELinuxResult ret = selinux_raw_set_avtab_rule(
                         pdb, source_type_val, target_type_val, class_val,
@@ -336,8 +336,8 @@ bool selinux_raw_reindex(policydb_t *pdb)
 
 static inline class_datum_t * find_class(policydb_t *pdb, const char *name)
 {
-    return (class_datum_t *) hashtab_search(
-            pdb->p_classes.table, (hashtab_key_t) name);
+    return static_cast<class_datum_t *>(hashtab_search(
+            pdb->p_classes.table, const_cast<hashtab_key_t>(name)));
 }
 
 static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
@@ -345,13 +345,14 @@ static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
     perm_datum_t *perm;
 
     // Find class-specific permissions first
-    perm = (perm_datum_t *) hashtab_search(
-            clazz->permissions.table, (hashtab_key_t) name);
+    perm = static_cast<perm_datum_t *>(hashtab_search(
+            clazz->permissions.table, const_cast<hashtab_key_t>(name)));
 
     // Then try common permissions
     if (!perm && clazz->comdatum) {
-        perm = (perm_datum_t *) hashtab_search(
-                clazz->comdatum->permissions.table, (hashtab_key_t) name);
+        perm = static_cast<perm_datum_t *>(hashtab_search(
+                clazz->comdatum->permissions.table,
+                const_cast<hashtab_key_t>(name)));
     }
 
     return perm;
@@ -359,14 +360,14 @@ static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
 
 static inline type_datum_t * find_type(policydb_t *pdb, const char *name)
 {
-    return (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) name);
+    return static_cast<type_datum_t *>(hashtab_search(
+            pdb->p_types.table, const_cast<hashtab_key_t>(name)));
 }
 
 static inline role_datum_t * find_role(policydb_t *pdb, const char *name)
 {
-    return (role_datum_t *) hashtab_search(
-            pdb->p_roles.table, (hashtab_key_t) name);
+    return static_cast<role_datum_t *>(hashtab_search(
+            pdb->p_roles.table, const_cast<hashtab_key_t>(name)));
 }
 
 // Helper functions
@@ -628,7 +629,7 @@ SELinuxResult selinux_create_type(policydb_t *pdb,
         return SELinuxResult::ERROR;
     }
 
-    type_datum_t *new_type = (type_datum_t *) malloc(sizeof(type_datum_t));
+    auto new_type = static_cast<type_datum_t *>(malloc(sizeof(type_datum_t)));
     if (!new_type) {
         free(name_dup);
         return SELinuxResult::ERROR;
@@ -661,16 +662,16 @@ SELinuxResult selinux_create_type(policydb_t *pdb,
 
     // Reallocate type-attribute maps for the new type
     // (see: policydb_read() in policydb.c)
-    ebitmap_t *new_type_attr_map = (ebitmap_t *) realloc(
-            pdb->type_attr_map, sizeof(ebitmap_t) * pdb->p_types.nprim);
+    auto new_type_attr_map = static_cast<ebitmap_t *>(realloc(
+            pdb->type_attr_map, sizeof(ebitmap_t) * pdb->p_types.nprim));
     if (new_type_attr_map) {
         pdb->type_attr_map = new_type_attr_map;
     } else {
         return SELinuxResult::ERROR;
     }
 
-    ebitmap_t *new_attr_type_map = (ebitmap_t *) realloc(
-            pdb->attr_type_map, sizeof(ebitmap_t) * pdb->p_types.nprim);
+    auto new_attr_type_map = static_cast<ebitmap_t *>(realloc(
+            pdb->attr_type_map, sizeof(ebitmap_t) * pdb->p_types.nprim));
     if (new_attr_type_map) {
         pdb->attr_type_map = new_attr_type_map;
     } else {

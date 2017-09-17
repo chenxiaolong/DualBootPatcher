@@ -24,8 +24,19 @@
 
 #include <getopt.h>
 
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wold-style-cast")
+#    pragma GCC diagnostic ignored "-Wold-style-cast"
+#  endif
+#endif
+
 #include <openssl/err.h>
 #include <openssl/x509.h>
+
+#ifdef __clang__
+#  pragma GCC diagnostic pop
+#endif
 
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"

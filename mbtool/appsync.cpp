@@ -281,7 +281,7 @@ static int create_new_socket()
         return -1;
     }
 
-    if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         unlink(addr.sun_path);
         close(fd);
@@ -394,7 +394,7 @@ static int connect_to_installd()
     int attempt;
     for (attempt = 0; attempt < 5; ++attempt) {
         LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
-        if (connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
             LOGW("Failed: %s", strerror(errno));
             sleep(1);
         } else {

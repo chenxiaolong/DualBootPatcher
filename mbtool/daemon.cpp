@@ -215,7 +215,7 @@ static bool run_daemon()
     socklen_t addr_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path))
             + static_cast<socklen_t>(abs_name_len);
 
-    if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), addr_len) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         LOGE("Is another instance running?");
         return false;
