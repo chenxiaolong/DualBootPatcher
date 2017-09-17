@@ -33,6 +33,7 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
+#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -199,17 +200,13 @@ int update_binary_main(int argc, char *argv[])
     int output_fd;
     const char *zip_file;
 
-    char *ptr;
-
-    interface = strtol(argv[1], &ptr, 10);
-    if (*ptr != '\0' || interface < 0) {
-        fprintf(stderr, "Invalid interface");
+    if (!util::str_to_snum(argv[1], 10, &interface)) {
+        fprintf(stderr, "Invalid interface: '%s'\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    output_fd = strtol(argv[2], &ptr, 10);
-    if (*ptr != '\0' || output_fd < 0) {
-        fprintf(stderr, "Invalid output fd");
+    if (!util::str_to_snum(argv[2], 10, &output_fd)) {
+        fprintf(stderr, "Invalid output fd: '%s'\n", argv[2]);
         return EXIT_FAILURE;
     }
 
