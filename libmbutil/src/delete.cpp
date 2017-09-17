@@ -39,33 +39,33 @@ namespace util
 class RecursiveDeleter : public FTSWrapper {
 public:
     RecursiveDeleter(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
+        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    int on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted in
         // on_reached_directory_post()
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_directory_post() override
+    int on_reached_directory_post() override
     {
         return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_file() override
+    int on_reached_file() override
     {
         return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_symlink() override
+    int on_reached_symlink() override
     {
         return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_special_file() override
+    int on_reached_special_file() override
     {
         return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
     }

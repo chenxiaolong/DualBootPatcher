@@ -144,7 +144,7 @@ bool is_mounted(const std::string &mountpoint)
 bool unmount_all(const std::string &dir)
 {
     std::vector<std::string> to_unmount;
-    int failed;
+    int failed = 0;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;

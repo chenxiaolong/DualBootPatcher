@@ -91,11 +91,7 @@ static bool copy_data(const std::string &source, const std::string &target)
         close(fd_target);
     });
 
-    if (!copy_data_fd(fd_source, fd_target)) {
-        return false;
-    }
-
-    return true;
+    return copy_data_fd(fd_source, fd_target);
 }
 
 bool copy_xattrs(const std::string &source, const std::string &target)
@@ -217,11 +213,7 @@ bool copy_contents(const std::string &source, const std::string &target)
         close(fd_target);
     });
 
-    if (!copy_data_fd(fd_source, fd_target)) {
-        return false;
-    }
-
-    return true;
+    return copy_data_fd(fd_source, fd_target);
 }
 
 bool copy_file(const std::string &source, const std::string &target, int flags)
@@ -292,6 +284,8 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         }
 
         // Treat as file
+        [[gnu::fallthrough]];
+        [[clang::fallthrough]];
 
     case S_IFREG:
         if (!copy_data(source, target)) {
@@ -332,10 +326,13 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
 class RecursiveCopier : public FTSWrapper {
 public:
     RecursiveCopier(std::string path, std::string target, int copyflags)
-        : FTSWrapper(path, 0), _copyflags(copyflags), _target(target) {
+        : FTSWrapper(path, 0)
+        , _copyflags(copyflags)
+        , _target(std::move(target))
+    {
     }
 
-    virtual bool on_pre_execute() override
+    bool on_pre_execute() override
     {
         // This is almost *never* useful, so we won't allow it
         if (_copyflags & COPY_FOLLOW_SYMLINKS) {
@@ -372,7 +369,7 @@ public:
         return true;
     }
 
-    virtual int on_changed_path() override
+    int on_changed_path() override
     {
         // Make sure we aren't copying the target on top of itself
         if (sb_target.st_dev == _curr->fts_statp->st_dev
@@ -406,7 +403,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_directory_pre() override
+    int on_reached_directory_pre() override
     {
         // Skip tree?
         bool skip = false;
@@ -450,7 +447,7 @@ public:
                 | (success ? Action::FTS_OK : Action::FTS_Fail);
     }
 
-    virtual int on_reached_directory_post() override
+    int on_reached_directory_post() override
     {
         if (!cp_attrs()) {
             return Action::FTS_Fail;
@@ -463,7 +460,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_file() override
+    int on_reached_file() override
     {
         if (!remove_existing_file()) {
             return Action::FTS_Fail;
@@ -488,7 +485,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_symlink() override
+    int on_reached_symlink() override
     {
         if (!remove_existing_file()) {
             return Action::FTS_Fail;
@@ -522,7 +519,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_block_device() override
+    int on_reached_block_device() override
     {
         if (!remove_existing_file()) {
             return Action::FTS_Fail;
@@ -547,7 +544,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_character_device() override
+    int on_reached_character_device() override
     {
         if (!remove_existing_file()) {
             return Action::FTS_Fail;
@@ -572,7 +569,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_fifo() override
+    int on_reached_fifo() override
     {
         if (!remove_existing_file()) {
             return Action::FTS_Fail;
@@ -596,7 +593,7 @@ public:
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_socket() override
+    int on_reached_socket() override
     {
         LOGD("%s: Skipping socket", _curr->fts_accpath);
         return Action::FTS_Skip;

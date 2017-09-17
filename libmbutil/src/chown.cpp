@@ -56,29 +56,29 @@ class RecursiveChown : public FTSWrapper {
 public:
     RecursiveChown(std::string path, uid_t uid, gid_t gid,
                    bool follow_symlinks)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
         _uid(uid),
         _gid(gid),
         _follow_symlinks(follow_symlinks)
     {
     }
 
-    virtual int on_reached_directory_post() override
+    int on_reached_directory_post() override
     {
         return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_file() override
+    int on_reached_file() override
     {
         return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_symlink() override
+    int on_reached_symlink() override
     {
         return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_special_file() override
+    int on_reached_special_file() override
     {
         return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
     }

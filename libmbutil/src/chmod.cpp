@@ -41,29 +41,29 @@ namespace util
 class RecursiveChmod : public FTSWrapper {
 public:
     RecursiveChmod(std::string path, mode_t perms)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
+        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
         _perms(perms)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    int on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted in
         // on_reached_directory_post()
         return Action::FTS_OK;
     }
 
-    virtual int on_reached_directory_post() override
+    int on_reached_directory_post() override
     {
         return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_file() override
+    int on_reached_file() override
     {
         return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
 
-    virtual int on_reached_symlink() override
+    int on_reached_symlink() override
     {
         // Avoid security issue
         LOGW("%s: Not setting permissions on symlink",
@@ -71,7 +71,7 @@ public:
         return Action::FTS_Skip;
     }
 
-    virtual int on_reached_special_file() override
+    int on_reached_special_file() override
     {
         return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
     }
