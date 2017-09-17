@@ -77,7 +77,7 @@ std::vector<std::string> split(const std::string &str, const std::string &delim)
     return result;
 }
 
-std::string join(const std::vector<std::string> &list, std::string delim)
+std::string join(const std::vector<std::string> &list, const std::string &delim)
 {
     std::string result;
     bool first = true;
@@ -106,7 +106,7 @@ std::vector<std::string> tokenize(const std::string &str,
 
     token = strtok_r(linebuf.data(), delims.c_str(), &temp);
     while (token != nullptr) {
-        tokens.push_back(token);
+        tokens.emplace_back(token);
 
         token = strtok_r(nullptr, delims.c_str(), &temp);
     }
