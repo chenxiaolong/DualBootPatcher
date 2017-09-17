@@ -358,23 +358,23 @@ static int open_attr(pid_t pid, SELinuxAttr attr, int flags)
     const char *attr_name;
 
     switch (attr) {
-    case SELinuxAttr::CURRENT:
+    case SELinuxAttr::Current:
         attr_name = "current";
         break;
-    case SELinuxAttr::EXEC:
+    case SELinuxAttr::Exec:
         attr_name = "exec";
         break;
-    case SELinuxAttr::FSCREATE:
+    case SELinuxAttr::FsCreate:
         attr_name = "fscreate";
         break;
-    case SELinuxAttr::KEYCREATE:
+    case SELinuxAttr::KeyCreate:
         attr_name = "keycreate";
         break;
-    case SELinuxAttr::PREV:
+    case SELinuxAttr::Prev:
         attr_name = "prev";
         break;
-    case SELinuxAttr::SOCKCREATE:
-        attr_name = "SOCKCREATE";
+    case SELinuxAttr::SockCreate:
+        attr_name = "sockcreate";
         break;
     default:
         errno = EINVAL;

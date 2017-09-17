@@ -203,7 +203,7 @@ bool switch_context(const std::string &context)
     std::string current;
 
     if (!util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, current)) {
+            0, util::SELinuxAttr::Current, current)) {
         LOGE("Failed to get current process context: %s", strerror(errno));
         // Don't fail if SELinux is not supported
         return errno == ENOENT;
@@ -219,7 +219,7 @@ bool switch_context(const std::string &context)
     LOGV("Setting process context: %s", context.c_str());
 
     if (!util::selinux_set_process_attr(
-            0, util::SELinuxAttr::CURRENT, context)) {
+            0, util::SELinuxAttr::Current, context)) {
         LOGE("Failed to set current process context: %s", strerror(errno));
         return false;
     }

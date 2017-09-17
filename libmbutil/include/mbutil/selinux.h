@@ -38,12 +38,12 @@ constexpr char SELINUX_DEFAULT_POLICY_FILE[]    = "/sepolicy";
 
 enum class SELinuxAttr
 {
-    CURRENT,
-    EXEC,
-    FSCREATE,
-    KEYCREATE,
-    PREV,
-    SOCKCREATE,
+    Current,
+    Exec,
+    FsCreate,
+    KeyCreate,
+    Prev,
+    SockCreate,
 };
 
 bool selinux_read_policy(const std::string &path, policydb_t *pdb);
