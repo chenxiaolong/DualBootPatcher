@@ -471,7 +471,7 @@ bool MinizipUtils::read_to_memory(unzFile uf,
     }
 
     std::vector<unsigned char> data;
-    data.reserve(fi.uncompressed_size);
+    data.reserve(static_cast<size_t>(fi.uncompressed_size));
 
     int ret = unzOpenCurrentFile(uf);
     if (ret != UNZ_OK) {

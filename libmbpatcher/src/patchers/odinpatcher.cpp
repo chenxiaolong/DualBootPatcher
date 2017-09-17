@@ -214,7 +214,7 @@ static bool convert_to_int(const char *str, int *out)
             || *str == '\0' || *end != '\0') {
         return false;
     }
-    *out = (int) num;
+    *out = static_cast<int>(num);
     return true;
 }
 #endif

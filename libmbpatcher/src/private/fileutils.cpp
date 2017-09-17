@@ -91,7 +91,7 @@ ErrorCode FileUtils::read_to_memory(const std::string &path,
         return ErrorCode::FileSeekError;
     }
 
-    std::vector<unsigned char> data(size);
+    std::vector<unsigned char> data(static_cast<size_t>(size));
 
     size_t bytes_read;
     if (!file.read(data.data(), data.size(), bytes_read)
@@ -134,7 +134,7 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
     }
 
     std::string data;
-    data.resize(size);
+    data.resize(static_cast<size_t>(size));
 
     size_t bytes_read;
     if (!file.read(&data[0], data.size(), bytes_read)
