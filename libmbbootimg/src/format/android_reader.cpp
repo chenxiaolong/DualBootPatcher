@@ -253,8 +253,8 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, buf,
-                         max_header_offset + sizeof(AndroidHeader), n)) {
+    if (!file_read_fully(file, buf, static_cast<size_t>(max_header_offset)
+                         + sizeof(AndroidHeader), n)) {
         reader.set_error(file.error(),
                          "Failed to read header: %s",
                          file.error_string().c_str());

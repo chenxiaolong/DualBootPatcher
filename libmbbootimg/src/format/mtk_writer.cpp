@@ -112,9 +112,9 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
 
         // Update checksum with data
         while (remain > 0) {
-            size_t to_read = std::min<uint64_t>(remain, sizeof(buf));
+            auto to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            if (!file_read_fully(file, buf, to_read, n)) {
+            if (!file_read_fully(file, buf, static_cast<size_t>(to_read), n)) {
                 writer.set_error(file.error(),
                                  "Failed to read entry %" MB_PRIzu ": %s",
                                  i, file.error_string().c_str());

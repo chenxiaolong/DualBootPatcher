@@ -369,7 +369,8 @@ int _loki_patch_file(Writer &writer, File &file,
                 || memcmp(ptr, PATTERN3, ABOOT_PATTERN_SIZE) == 0
                 || memcmp(ptr, PATTERN4, ABOOT_PATTERN_SIZE) == 0
                 || memcmp(ptr, PATTERN5, ABOOT_PATTERN_SIZE) == 0) {
-            target = static_cast<uint32_t>(ptr - aboot_ptr + aboot_base);
+            target = static_cast<uint32_t>(
+                    static_cast<size_t>(ptr - aboot_ptr) + aboot_base);
             break;
         }
     }
@@ -382,7 +383,8 @@ int _loki_patch_file(Writer &writer, File &file,
         for (const unsigned char *ptr = aboot_ptr;
                 ptr < aboot_ptr + aboot_size - ABOOT_SEARCH_LIMIT; ++ptr) {
             if (memcmp(ptr, PATTERN6, ABOOT_PATTERN_SIZE) == 0) {
-                target = static_cast<uint32_t>(ptr - aboot_ptr + aboot_base);
+                target = static_cast<uint32_t>(
+                        static_cast<size_t>(ptr - aboot_ptr) + aboot_base);
                 break;
             }
         }
