@@ -46,6 +46,7 @@
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
+#include "mbutil/integer.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
@@ -914,17 +915,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    char *ptr;
-
-    interface = strtol(argv[1], &ptr, 10);
-    if (*ptr != '\0' || interface < 0) {
-        error("Invalid interface");
+    if (!mb::util::str_to_snum(argv[1], 10, &interface)) {
+        error("Invalid interface: '%s'", argv[1]);
         return EXIT_FAILURE;
     }
 
-    output_fd = strtol(argv[2], &ptr, 10);
-    if (*ptr != '\0' || output_fd < 0) {
-        error("Invalid output fd");
+    if (!mb::util::str_to_snum(argv[2], 10, &output_fd)) {
+        error("Invalid output fd: '%s'", argv[2]);
         return EXIT_FAILURE;
     }
 
