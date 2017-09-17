@@ -31,6 +31,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wdocumentation")
+#    pragma GCC diagnostic ignored "-Wdocumentation"
+#  endif
+#endif
+
 // fuse
 // We have to define _FILE_OFFSET_BITS because <fuse/fuse_common.h> requires it.
 // However, since it's no longer a no-op in NDK r15c and newer, we can't define
@@ -42,6 +49,10 @@
 #include <fuse/fuse.h>
 #ifdef __ANDROID__
 #  undef _FILE_OFFSET_BITS
+#endif
+
+#ifdef __clang__
+#  pragma GCC diagnostic pop
 #endif
 
 // libmbcommon
