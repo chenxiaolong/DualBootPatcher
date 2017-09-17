@@ -98,7 +98,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 {
     struct stat sb;
     if (stat("/sys/fs/selinux", &sb) == 0) {
-        if (!patch_loaded_sepolicy(SELinuxPatch::CWM_RECOVERY)) {
+        if (!patch_loaded_sepolicy(SELinuxPatch::CwmRecovery)) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
             int fd = open(util::SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {

@@ -562,7 +562,7 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (patch_sepolicy) {
-        patch_loaded_sepolicy(SELinuxPatch::MAIN);
+        patch_loaded_sepolicy(SELinuxPatch::Main);
     }
 
     if (!switch_context(MB_EXEC_CONTEXT)) {

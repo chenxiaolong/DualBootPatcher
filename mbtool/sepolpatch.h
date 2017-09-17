@@ -28,9 +28,9 @@ namespace mb
 
 enum class SELinuxResult
 {
-    CHANGED,
-    UNCHANGED,
-    ERROR,
+    Changed,
+    Unchanged,
+    Error,
 };
 
 SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
@@ -110,11 +110,11 @@ bool selinux_add_to_role(policydb_t *pdb,
 
 enum class SELinuxPatch
 {
-    NONE = 0,
-    PRE_BOOT,
-    MAIN,
-    CWM_RECOVERY,
-    STRIP_NO_AUDIT,
+    None = 0,
+    PreBoot,
+    Main,
+    CwmRecovery,
+    StripNoAudit,
 };
 
 bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch);
