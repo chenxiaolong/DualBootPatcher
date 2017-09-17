@@ -242,8 +242,8 @@ bool property_get_all(std::unordered_map<std::string, std::string> &map)
 
 enum class PropIterAction
 {
-    CONTINUE,
-    STOP,
+    Continue,
+    Stop,
 };
 
 typedef PropIterAction (*PropIterCb)(const std::string &key,
@@ -284,7 +284,7 @@ static bool iterate_property_file(const std::string &path, PropIterCb cb,
             line[read - 1] = '\0';
         }
 
-        if (cb(line, equals + 1, cookie) == PropIterAction::STOP) {
+        if (cb(line, equals + 1, cookie) == PropIterAction::Stop) {
             return true;
         }
     }
@@ -311,9 +311,9 @@ bool property_file_get(const std::string &path, const std::string &key,
         if (key_ == *ctx_->key) {
             *ctx_->value_out = value;
             ctx_->found = true;
-            return PropIterAction::STOP;
+            return PropIterAction::Stop;
         }
-        return PropIterAction::CONTINUE;
+        return PropIterAction::Continue;
     }, &ctx);
 
     if (!ctx.found) {
@@ -365,7 +365,7 @@ bool property_file_list(const std::string &path, PropertyListCb prop_fn,
                      void *cookie_) {
         auto *ctx_ = static_cast<Ctx *>(cookie_);
         ctx_->prop_fn(key, value, ctx_->cookie);
-        return PropIterAction::CONTINUE;
+        return PropIterAction::Continue;
     }, &ctx);
 }
 
