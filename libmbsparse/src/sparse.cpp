@@ -952,7 +952,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
                 }
             }
 
-            if (!priv->wread(buf, to_read)) {
+            if (!priv->wread(buf, static_cast<size_t>(to_read))) {
                 return false;
             }
 
@@ -972,7 +972,8 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
             }
             unsigned char *temp_buf = reinterpret_cast<unsigned char *>(buf);
             while (to_read > 0) {
-                size_t to_write = std::min<size_t>(sizeof(shifted), to_read);
+                size_t to_write = std::min<size_t>(
+                        sizeof(shifted), static_cast<size_t>(to_read));
                 memcpy(temp_buf, &shifted, to_write);
                 n_read += to_write;
                 to_read -= to_write;
@@ -981,7 +982,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
             break;
         }
         case CHUNK_TYPE_DONT_CARE:
-            memset(buf, 0, to_read);
+            memset(buf, 0, static_cast<size_t>(to_read));
             n_read = to_read;
             break;
         default:
@@ -995,7 +996,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
         buf = reinterpret_cast<unsigned char *>(buf) + n_read;
     }
 
-    bytes_read = total_read;
+    bytes_read = static_cast<size_t>(total_read);
     return true;
 }
 
