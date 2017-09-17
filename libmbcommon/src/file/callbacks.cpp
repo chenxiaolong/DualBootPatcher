@@ -123,9 +123,7 @@ CallbackFilePrivate::CallbackFilePrivate()
     clear();
 }
 
-CallbackFilePrivate::~CallbackFilePrivate()
-{
-}
+CallbackFilePrivate::~CallbackFilePrivate() = default;
 
 void CallbackFilePrivate::clear()
 {

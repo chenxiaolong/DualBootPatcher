@@ -110,6 +110,8 @@ static RealPosixFileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
 
+PosixFileFuncs::~PosixFileFuncs() = default;
+
 PosixFilePrivate::PosixFilePrivate()
     : PosixFilePrivate(&g_default_funcs)
 {

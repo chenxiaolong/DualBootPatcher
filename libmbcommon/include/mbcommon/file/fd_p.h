@@ -30,6 +30,8 @@ namespace mb
 
 struct FdFileFuncs
 {
+    virtual ~FdFileFuncs();
+
     // fcntl.h
 #ifdef _WIN32
     virtual int fn_wopen(const wchar_t *path, int flags, mode_t mode) = 0;

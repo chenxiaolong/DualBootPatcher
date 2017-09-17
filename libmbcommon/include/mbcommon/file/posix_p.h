@@ -30,6 +30,8 @@ namespace mb
 
 struct PosixFileFuncs
 {
+    virtual ~PosixFileFuncs();
+
     // sys/stat.h
     virtual int fn_fstat(int fildes, struct stat *buf) = 0;
 

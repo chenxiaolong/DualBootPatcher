@@ -94,6 +94,8 @@ static RealFdFileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
 
+FdFileFuncs::~FdFileFuncs() = default;
+
 FdFilePrivate::FdFilePrivate()
     : FdFilePrivate(&g_default_funcs)
 {
@@ -105,9 +107,7 @@ FdFilePrivate::FdFilePrivate(FdFileFuncs *funcs)
     clear();
 }
 
-FdFilePrivate::~FdFilePrivate()
-{
-}
+FdFilePrivate::~FdFilePrivate() = default;
 
 void FdFilePrivate::clear()
 {
