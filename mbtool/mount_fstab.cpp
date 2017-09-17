@@ -692,7 +692,7 @@ static bool wrap_extsd_binaries()
         return false;
     }
 
-    bool ret;
+    bool ret = true;
 
     // Online fsck is not possible so we'll have to prevent Vold from trying
     // to run fsck_msdos and failing.
