@@ -651,23 +651,23 @@ bool OdinPatcherPrivate::close_output_archive()
     return true;
 }
 
-void OdinPatcherPrivate::update_progress(uint64_t bytes, uint64_t max_bytes)
+void OdinPatcherPrivate::update_progress(uint64_t bytes_, uint64_t max_bytes_)
 {
     if (progress_cb) {
         bool should_call = true;
-        if (max_bytes > 0) {
+        if (max_bytes_ > 0) {
             // Rate limit... call back only if percentage exceeds 0.01%
             double old_ratio = static_cast<double>(old_bytes)
-                    / static_cast<double>(max_bytes);
-            double new_ratio = static_cast<double>(bytes)
-                    / static_cast<double>(max_bytes);
+                    / static_cast<double>(max_bytes_);
+            double new_ratio = static_cast<double>(bytes_)
+                    / static_cast<double>(max_bytes_);
             if (new_ratio - old_ratio < 0.0001) {
                 should_call = false;
             }
         }
         if (should_call) {
-            progress_cb(bytes, max_bytes, userdata);
-            old_bytes = bytes;
+            progress_cb(bytes_, max_bytes_, userdata);
+            old_bytes = bytes_;
         }
     }
 }
