@@ -431,6 +431,8 @@ bool selinux_make_permissive(policydb_t *pdb,
         return true;
     case SELinuxResult::ERROR:
         LOGE("Failed to set type %s to permissive", type_str);
+        [[gnu::fallthrough]];
+        [[clang::fallthrough]];
     default:
         return false;
     }
