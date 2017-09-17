@@ -477,9 +477,9 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::twrp_fstab_rec> recs =
+            std::vector<util::TwrpFstabRec> recs =
                     util::read_twrp_fstab("/etc/recovery.fstab");
-            for (const util::twrp_fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0
                         || util::path_compare(rec.mount_point, "/efs1") == 0) {
                     LOGD("Found /efs fstab entry");
@@ -495,9 +495,9 @@ bool Installer::mount_efs() const
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::fstab_rec> recs =
+            std::vector<util::FstabRec> recs =
                     util::read_fstab("/etc/recovery.fstab");
-            for (const util::fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0) {
                     LOGD("Found /efs fstab entry");
                     efs_dev = rec.blk_device;
