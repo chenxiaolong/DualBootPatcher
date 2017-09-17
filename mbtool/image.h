@@ -21,10 +21,10 @@
 
 #include <string>
 
-#define DEFAULT_IMAGE_SIZE ((uint64_t) 4 * 1024 * 1024 * 1024)
-
 namespace mb
 {
+
+constexpr uint64_t DEFAULT_IMAGE_SIZE = 4ull * 1024ull * 1024ull * 1024ull;
 
 enum class CreateImageResult
 {
