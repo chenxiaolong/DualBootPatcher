@@ -51,7 +51,7 @@ static bool file_read_all(const std::string &path,
     }
 
     fseek(fp, 0, SEEK_END);
-    auto size = ftell(fp);
+    auto size = ftello64(fp);
     rewind(fp);
 
     std::vector<unsigned char> data(static_cast<size_t>(size));
