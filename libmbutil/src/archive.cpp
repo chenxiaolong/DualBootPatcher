@@ -105,10 +105,10 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
             size_t ns;
 
             while (sparse > 0) {
-                if (sparse > (int64_t) sizeof(null_buf)) {
+                if (sparse > static_cast<int64_t>(sizeof(null_buf))) {
                     ns = sizeof(null_buf);
                 } else {
-                    ns = (size_t) sparse;
+                    ns = static_cast<size_t>(sparse);
                 }
 
                 bytes_written = archive_write_data(out, null_buf, ns);
@@ -118,7 +118,7 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
                     return false;
                 }
 
-                if ((size_t) bytes_written < ns) {
+                if (static_cast<size_t>(bytes_written) < ns) {
                     LOGE("%s: Truncated write", archive_entry_pathname(entry));
                     return false;
                 }
@@ -135,7 +135,7 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
             return false;
         }
 
-        if ((size_t) bytes_written < bytes_read) {
+        if (static_cast<size_t>(bytes_written) < bytes_read) {
             LOGE("%s: Truncated write", archive_entry_pathname(entry));
             return false;
         }

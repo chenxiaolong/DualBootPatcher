@@ -87,7 +87,7 @@ bool set_process_title_init(int argc, char *argv[])
 
     argv[1] = nullptr;
     args_mem_start = argv[0];
-    args_mem_size = end - args_mem_start;
+    args_mem_size = static_cast<size_t>(end - args_mem_start);
     environ = environ_copy;
 
     return true;

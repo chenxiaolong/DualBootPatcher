@@ -55,7 +55,8 @@ bool copy_data_fd(int fd_source, int fd_target)
         ssize_t nwritten;
 
         do {
-            if ((nwritten = write(fd_target, out_ptr, nread)) < 0) {
+            if ((nwritten = write(fd_target, out_ptr,
+                                  static_cast<size_t>(nread))) < 0) {
                 return false;
             }
 
@@ -119,15 +120,15 @@ bool copy_xattrs(const std::string &source, const std::string &target)
         }
     }
 
-    names.resize(size + 1);
+    names.resize(static_cast<size_t>(size + 1));
 
-    size = llistxattr(source.c_str(), names.data(), size);
+    size = llistxattr(source.c_str(), names.data(), static_cast<size_t>(size));
     if (size < 0) {
         LOGE("%s: Failed to list xattrs on second try: %s",
              source.c_str(), strerror(errno));
         return false;
     } else {
-        names[size] = '\0';
+        names[static_cast<size_t>(size)] = '\0';
         end_names = names.data() + size;
     }
 
@@ -143,16 +144,18 @@ bool copy_xattrs(const std::string &source, const std::string &target)
             continue;
         }
 
-        value.resize(size);
+        value.resize(static_cast<size_t>(size));
 
-        size = lgetxattr(source.c_str(), name, value.data(), size);
+        size = lgetxattr(source.c_str(), name, value.data(),
+                         static_cast<size_t>(size));
         if (size < 0) {
             LOGW("%s: Failed to get attribute '%s' on second try: %s",
                  source.c_str(), name, strerror(errno));
             continue;
         }
 
-        if (lsetxattr(target.c_str(), name, value.data(), size, 0) < 0) {
+        if (lsetxattr(target.c_str(), name, value.data(),
+                      static_cast<size_t>(size), 0) < 0) {
             if (errno == ENOTSUP) {
                 LOGV("%s: xattrs not supported on target filesystem",
                      target.c_str());
@@ -245,7 +248,8 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
 
     switch (sb.st_mode & S_IFMT) {
     case S_IFBLK:
-        if (mknod(target.c_str(), S_IFBLK | S_IRWXU, sb.st_rdev) < 0) {
+        if (mknod(target.c_str(), S_IFBLK | S_IRWXU,
+                  static_cast<dev_t>(sb.st_rdev)) < 0) {
             LOGW("%s: Failed to create block device: %s",
                  target.c_str(), strerror(errno));
             return false;
@@ -253,7 +257,8 @@ bool copy_file(const std::string &source, const std::string &target, int flags)
         break;
 
     case S_IFCHR:
-        if (mknod(target.c_str(), S_IFCHR | S_IRWXU, sb.st_rdev) < 0) {
+        if (mknod(target.c_str(), S_IFCHR | S_IRWXU,
+                  static_cast<dev_t>(sb.st_rdev)) < 0) {
             LOGW("%s: Failed to create character device: %s",
                  target.c_str(), strerror(errno));
             return false;
@@ -524,7 +529,7 @@ public:
         }
 
         if (mknod(_curtgtpath.c_str(), S_IFBLK | S_IRWXU,
-                _curr->fts_statp->st_rdev) < 0) {
+                  static_cast<dev_t>(_curr->fts_statp->st_rdev)) < 0) {
             format(_error_msg, "%s: Failed to create block device: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());
@@ -549,7 +554,7 @@ public:
         }
 
         if (mknod(_curtgtpath.c_str(), S_IFCHR | S_IRWXU,
-                _curr->fts_statp->st_rdev) < 0) {
+                  static_cast<dev_t>(_curr->fts_statp->st_rdev)) < 0) {
             format(_error_msg, "%s: Failed to create character device: %s",
                    _curtgtpath.c_str(), strerror(errno));
             LOGW("%s", _error_msg.c_str());

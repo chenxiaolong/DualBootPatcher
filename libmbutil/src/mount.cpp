@@ -64,9 +64,10 @@ static std::string unescape_octals(const std::string &in)
                 && *(it + 1) >= '0' && *(it + 1) <= '7'
                 && *(it + 2) >= '0' && *(it + 2) <= '7'
                 && *(it + 3) >= '0' && *(it + 3) <= '7') {
-            result += ((*(it + 1) - '0') << 6)
+            result += static_cast<char>(
+                    ((*(it + 1) - '0') << 6)
                     | ((*(it + 2) - '0') << 3)
-                    | (*(it + 3) - '0');
+                    | (*(it + 3) - '0'));
             it += 4;
         } else {
             result += *it;

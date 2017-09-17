@@ -76,7 +76,8 @@ static int find_loopdev_by_loop_control()
     char loopdev[64];
     sprintf(loopdev, LOOP_FMT, n);
 
-    if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0 && errno != EEXIST) {
+    if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
+            && errno != EEXIST) {
         return -1;
     }
 
@@ -105,7 +106,8 @@ static int find_loopdev_by_scanning(void)
 
         sprintf(loopdev, LOOP_FMT, n);
 
-        if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0) {
+        if (mknod(loopdev, S_IFBLK | 0644,
+                  static_cast<dev_t>(makedev(7, n))) < 0) {
             if (errno != EEXIST) {
                 continue;
             }

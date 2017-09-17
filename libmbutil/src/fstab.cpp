@@ -32,6 +32,7 @@
 
 #include "mbcommon/finally.h"
 #include "mblog/logging.h"
+#include "mbutil/integer.h"
 #include "mbutil/string.h"
 
 #define LOG_TAG "mbutil/fstab"
@@ -126,8 +127,8 @@ static int options_to_flags(struct mount_flag *flags_map, char *args,
 
         if (!flags_map[i].name) {
             if (new_args) {
-                strlcat(new_args, temp, size);
-                strlcat(new_args, ",", size);
+                strlcat(new_args, temp, static_cast<size_t>(size));
+                strlcat(new_args, ",", static_cast<size_t>(size));
             } else {
                 LOGW("Only universal mount options expected, but found %s", temp);
             }
@@ -189,7 +190,7 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
     if (entries == 0) {
         LOGE("fstab contains no entries");
-        return std::vector<fstab_rec>();
+        return {};
     }
 
     std::fseek(fp.get(), 0, SEEK_SET);
@@ -224,28 +225,29 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
         if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
             LOGE("No source path/device found in entry: %s", line);
-            return std::vector<fstab_rec>();
+            return {};
         }
         rec.blk_device = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No mount point found in entry: %s", line);
-            return std::vector<fstab_rec>();
+            return {};
         }
         rec.mount_point = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No filesystem type found in entry: %s", line);
-            return std::vector<fstab_rec>();
+            return {};
         }
         rec.fs_type = temp;
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No mount options found in entry: %s", line);
-            return std::vector<fstab_rec>();
+            return {};
         }
         rec.mount_args = temp;
-        rec.flags = options_to_flags(mount_flags, temp, temp_mount_args, 1024);
+        rec.flags = static_cast<unsigned long>(
+                options_to_flags(mount_flags, temp, temp_mount_args, 1024));
 
         if (temp_mount_args[0]) {
             rec.fs_options = temp_mount_args;
@@ -253,10 +255,11 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
 
         if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
             LOGE("No fs_mgr/vold options found in entry: %s", line);
-            return std::vector<fstab_rec>();
+            return {};
         }
         rec.vold_args = temp;
-        rec.fs_mgr_flags = options_to_flags(fs_mgr_flags, temp, nullptr, 0);
+        rec.fs_mgr_flags = static_cast<unsigned long>(
+                options_to_flags(fs_mgr_flags, temp, nullptr, 0));
 
         fstab.push_back(std::move(rec));
 
@@ -264,19 +267,6 @@ std::vector<fstab_rec> read_fstab(const std::string &path)
     }
 
     return fstab;
-}
-
-static bool convert_to_int(const char *str, int *out)
-{
-    char *end;
-    errno = 0;
-    long num = strtol(str, &end, 10);
-    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
-            || *str == '\0' || *end != '\0') {
-        return false;
-    }
-    *out = (int) num;
-    return true;
 }
 
 std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
@@ -345,7 +335,7 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
             } else if (strncmp(temp, "length=", 7) == 0) {
                 // Length of partition
                 temp += 7;
-                if (!convert_to_int(temp, &rec.length)) {
+                if (!str_to_snum(temp, 10, &rec.length)) {
                     LOGE("Invalid length: %s", temp);
                     return {};
                 }

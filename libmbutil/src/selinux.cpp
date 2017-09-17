@@ -123,20 +123,21 @@ bool selinux_read_policy(const std::string &path, policydb_t *pdb)
         return false;
     }
 
-    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(nullptr, static_cast<size_t>(sb.st_size), PROT_READ, MAP_PRIVATE,
+               fd, 0);
     if (map == MAP_FAILED) {
         LOGE("%s: Failed to mmap sepolicy: %s", path.c_str(), strerror(errno));
         return false;
     }
 
     auto unmap_map = finally([&] {
-        munmap(map, sb.st_size);
+        munmap(map, static_cast<size_t>(sb.st_size));
     });
 
     policy_file_init(&pf);
     pf.type = PF_USE_MEMORY;
-    pf.data = (char *) map;
-    pf.len = sb.st_size;
+    pf.data = static_cast<char *>(map);
+    pf.len = static_cast<size_t>(sb.st_size);
 
     auto destroy_pf = finally([&] {
         sepol_handle_destroy(pf.handle);
@@ -209,9 +210,10 @@ bool selinux_get_context(const std::string &path, std::string &context)
         return false;
     }
 
-    value.resize(size);
+    value.resize(static_cast<size_t>(size));
 
-    size = getxattr(path.c_str(), SELINUX_XATTR, value.data(), size);
+    size = getxattr(path.c_str(), SELINUX_XATTR, value.data(),
+                    static_cast<size_t>(size));
     if (size < 0) {
         return false;
     }
@@ -232,9 +234,10 @@ bool selinux_lget_context(const std::string &path, std::string &context)
         return false;
     }
 
-    value.resize(size);
+    value.resize(static_cast<size_t>(size));
 
-    size = lgetxattr(path.c_str(), SELINUX_XATTR, value.data(), size);
+    size = lgetxattr(path.c_str(), SELINUX_XATTR, value.data(),
+                     static_cast<size_t>(size));
     if (size < 0) {
         return false;
     }
@@ -255,9 +258,10 @@ bool selinux_fget_context(int fd, std::string &context)
         return false;
     }
 
-    value.resize(size);
+    value.resize(static_cast<size_t>(size));
 
-    size = fgetxattr(fd, SELINUX_XATTR, value.data(), size);
+    size = fgetxattr(fd, SELINUX_XATTR, value.data(),
+                     static_cast<size_t>(size));
     if (size < 0) {
         return false;
     }
@@ -307,7 +311,7 @@ bool selinux_get_enforcing(int &value)
 
     char buf[20];
     memset(buf, 0, sizeof(buf));
-    int ret = read(fd, buf, sizeof(buf) - 1);
+    ssize_t ret = read(fd, buf, sizeof(buf) - 1);
     close(fd);
     if (ret < 0) {
         return false;
@@ -332,7 +336,7 @@ bool selinux_set_enforcing(int value)
 
     char buf[20];
     snprintf(buf, sizeof(buf), "%d", value);
-    int ret = write(fd, buf, strlen(buf));
+    ssize_t ret = write(fd, buf, strlen(buf));
     close(fd);
     if (ret < 0) {
         return false;
@@ -411,7 +415,7 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
         close(fd);
     });
 
-    std::vector<char> buf(sysconf(_SC_PAGE_SIZE));
+    std::vector<char> buf(static_cast<size_t>(sysconf(_SC_PAGE_SIZE)));
     ssize_t n;
 
     do {

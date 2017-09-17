@@ -191,10 +191,13 @@ bool property_set_direct(const std::string &key, const std::string &value)
     int ret;
 
     if (pi) {
-        ret = mb__system_property_update(pi, value.c_str(), value.size());
+        ret = mb__system_property_update(pi, value.c_str(),
+                                         static_cast<unsigned int>(value.size()));
     } else {
-        ret = mb__system_property_add(key.c_str(), key.size(), value.c_str(),
-                                      value.size());
+        ret = mb__system_property_add(key.c_str(),
+                                      static_cast<unsigned int>(key.size()),
+                                      value.c_str(),
+                                      static_cast<unsigned int>(value.size()));
     }
 
     return ret == 0;
