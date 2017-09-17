@@ -42,7 +42,7 @@ class Installer
 public:
     Installer(std::string zip_file, std::string chroot_dir,
               std::string temp_dir, int interface, int output_fd, int flags);
-    ~Installer();
+    virtual ~Installer();
 
     bool start_installation();
 
