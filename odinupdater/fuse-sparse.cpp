@@ -157,7 +157,7 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
                 ? -error.value() : -EIO;
     }
 
-    return n;
+    return static_cast<int>(n);
 }
 
 /*!
@@ -182,7 +182,7 @@ static int fuse_getattr(const char *path, struct stat *stbuf)
     (void) path;
 
     stbuf->st_mode = S_IFREG | 0444;
-    stbuf->st_size = sparse_size;
+    stbuf->st_size = static_cast<OFF_T>(sparse_size);
 
     return 0;
 }
