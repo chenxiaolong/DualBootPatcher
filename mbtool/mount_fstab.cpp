@@ -736,15 +736,15 @@ struct FstabRecs
 
 static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                           const Device &device, MountFlags flags,
-                          FstabRecs *recs)
+                          FstabRecs &recs)
 {
     std::vector<util::fstab_rec> fstab;
 
-    recs->gen.clear();
-    recs->system.clear();
-    recs->cache.clear();
-    recs->data.clear();
-    recs->extsd.clear();
+    recs.gen.clear();
+    recs.system.clear();
+    recs.cache.clear();
+    recs.data.clear();
+    recs.extsd.clear();
 
     // Read original fstab file
     fstab = util::read_fstab(path);
@@ -761,17 +761,17 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
         if (util::path_compare(it->mount_point, "/system") == 0
                 && (flags & MountFlag::MountSystem)) {
             LOGD("-> /system entry");
-            recs->system.push_back(std::move(*it));
+            recs.system.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/cache") == 0
                 && (flags & MountFlag::MountCache)) {
             LOGD("-> /cache entry");
-            recs->cache.push_back(std::move(*it));
+            recs.cache.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (util::path_compare(it->mount_point, "/data") == 0
                 && (flags & MountFlag::MountData)) {
             LOGD("-> /data entry");
-            recs->data.push_back(std::move(*it));
+            recs.data.push_back(std::move(*it));
             it = fstab.erase(it);
         } else if (it->vold_args.find("emmc@intsd") == std::string::npos
                 && ((include_sdcard0 && it->vold_args.find("voldmanaged=sdcard0") != std::string::npos)
@@ -783,13 +783,13 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
                 && (flags & MountFlag::MountExternalSd)) {
             LOGD("-> External SD entry");
             // Has to be mounted by us
-            recs->extsd.push_back(*it);
+            recs.extsd.push_back(*it);
             // and also has to be processed by vold
-            recs->gen.push_back(std::move(*it));
+            recs.gen.push_back(std::move(*it));
             it = fstab.erase(it);
         } else {
             // Let vold mount this
-            recs->gen.push_back(std::move(*it));
+            recs.gen.push_back(std::move(*it));
             it = fstab.erase(it);
         }
     }
@@ -798,25 +798,25 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // shell script. If that's the case, we just have to guess for working
     // fstab entries.
     if (!(flags & MountFlag::NoGenericEntries)) {
-        if (recs->system.empty() && (flags & MountFlag::MountSystem)) {
+        if (recs.system.empty() && (flags & MountFlag::MountSystem)) {
             LOGW("No /system fstab entries found. Adding generic entries");
             auto entries = generic_fstab_system_entries(device);
             for (util::fstab_rec &rec : entries) {
-                recs->system.push_back(std::move(rec));
+                recs.system.push_back(std::move(rec));
             }
         }
-        if (recs->cache.empty() && (flags & MountFlag::MountCache)) {
+        if (recs.cache.empty() && (flags & MountFlag::MountCache)) {
             LOGW("No /cache fstab entries found. Adding generic entries");
             auto entries = generic_fstab_cache_entries(device);
             for (util::fstab_rec &rec : entries) {
-                recs->cache.push_back(std::move(rec));
+                recs.cache.push_back(std::move(rec));
             }
         }
-        if (recs->data.empty() && (flags & MountFlag::MountData)) {
+        if (recs.data.empty() && (flags & MountFlag::MountData)) {
             LOGW("No /data fstab entries found. Adding generic entries");
             auto entries = generic_fstab_data_entries(device);
             for (util::fstab_rec &rec : entries) {
-                recs->data.push_back(std::move(rec));
+                recs.data.push_back(std::move(rec));
             }
         }
     }
@@ -824,18 +824,18 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // Remove nosuid flag on the partition that the system directory resides on
     if (rom && !rom->system_is_image) {
         if (rom->system_source == Rom::Source::CACHE) {
-            for (util::fstab_rec &rec : recs->cache) {
+            for (util::fstab_rec &rec : recs.cache) {
                 rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         } else if (rom->system_source == Rom::Source::DATA) {
-            for (util::fstab_rec &rec : recs->data) {
+            for (util::fstab_rec &rec : recs.data) {
                 rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         }
     }
 
     if (rom && rom->cache_source == Rom::Source::SYSTEM) {
-        for (util::fstab_rec &rec : recs->system) {
+        for (util::fstab_rec &rec : recs.system) {
             rec.flags &= ~static_cast<unsigned long>(MS_RDONLY);
         }
     }
@@ -857,7 +857,7 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     std::vector<std::string> successful;
     FstabRecs recs;
 
-    if (!process_fstab(path, rom, device, flags, &recs)) {
+    if (!process_fstab(path, rom, device, flags, recs)) {
         return false;
     }
 
