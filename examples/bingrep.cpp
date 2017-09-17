@@ -33,6 +33,7 @@
 
 #include "mbcommon/file/standard.h"
 #include "mbcommon/file/posix.h"
+#include "mbcommon/integer.h"
 
 static void usage(FILE *stream, const char *prog_name)
 {
@@ -49,54 +50,6 @@ static void usage(FILE *stream, const char *prog_name)
                     "  --end-offset    Ending boundary offset for search\n"
                     "  --buffer-size   Buffer size\n",
                     prog_name);
-}
-
-template<typename SIntType>
-static inline bool str_to_snum(const char *str, int base, SIntType *out)
-{
-    static_assert(std::is_signed<SIntType>::value,
-                  "Integer type is not signed");
-    static_assert(std::numeric_limits<SIntType>::min() >= LLONG_MIN
-                  && std::numeric_limits<SIntType>::max() <= LLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoll(str, &end, base);
-    if (errno == ERANGE
-            || num < std::numeric_limits<SIntType>::min()
-            || num > std::numeric_limits<SIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<SIntType>(num);
-    return true;
-}
-
-template<typename UIntType>
-static inline bool str_to_unum(const char *str, int base, UIntType *out)
-{
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<UIntType>(num);
-    return true;
 }
 
 static int ascii_to_hex(char c)
@@ -246,7 +199,7 @@ int main(int argc, char *argv[])
                               long_options, &long_index)) != -1) {
         switch (opt) {
         case 'n':
-            if (!str_to_snum(optarg, 10, &max_matches)) {
+            if (!mb::str_to_num(optarg, 10, max_matches)) {
                 fprintf(stderr, "Invalid value for -n/--num-matches: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -262,7 +215,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_START_OFFSET:
-            if (!str_to_snum(optarg, 0, &start)) {
+            if (!mb::str_to_num(optarg, 0, start)) {
                 fprintf(stderr, "Invalid value for --start-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -270,7 +223,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_END_OFFSET:
-            if (!str_to_snum(optarg, 0, &end)) {
+            if (!mb::str_to_num(optarg, 0, end)) {
                 fprintf(stderr, "Invalid value for --end-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -278,7 +231,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_BUFFER_SIZE:
-            if (!str_to_unum(optarg, 10, &bsize)) {
+            if (!mb::str_to_num(optarg, 10, bsize)) {
                 fprintf(stderr, "Invalid value for --buffer-size: %s\n",
                         optarg);
                 return EXIT_FAILURE;

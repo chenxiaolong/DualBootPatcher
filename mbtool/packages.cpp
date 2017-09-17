@@ -28,8 +28,8 @@
 
 #include <pugixml.hpp>
 
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
-#include "mbutil/integer.h"
 
 #define LOG_TAG "mbtool/packages"
 
@@ -449,27 +449,27 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
             pkg->cpu_abi_override = value;
         } else if (strcmp(name, ATTR_FLAGS) == 0) {
             uint64_t flags;
-            if (!util::str_to_unum(value, 10, &flags)) {
+            if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid flags: '%s'", value);
                 return false;
             }
             pkg->pkg_flags = static_cast<Package::Flags>(flags);
         } else if (strcmp(name, ATTR_PUBLIC_FLAGS) == 0) {
             uint64_t flags;
-            if (!util::str_to_unum(value, 10, &flags)) {
+            if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid public flags: '%s'", value);
                 return false;
             }
             pkg->pkg_public_flags = static_cast<Package::PublicFlags>(flags);
         } else if (strcmp(name, ATTR_PRIVATE_FLAGS) == 0) {
             uint64_t flags;
-            if (!util::str_to_unum(value, 10, &flags)) {
+            if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid private flags: '%s'", value);
                 return false;
             }
             pkg->pkg_private_flags = static_cast<Package::PrivateFlags>(flags);
         } else if (strcmp(name, ATTR_FT) == 0) {
-            if (!util::str_to_unum(value, 16, &pkg->timestamp)) {
+            if (!str_to_num(value, 16, pkg->timestamp)) {
                 LOGE("Invalid ft timestamp: '%s'", value);
                 return false;
             }
@@ -478,7 +478,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         } else if (strcmp(name, ATTR_INSTALLER) == 0) {
             pkg->installer = value;
         } else if (strcmp(name, ATTR_IT) == 0) {
-            if (!util::str_to_unum(value, 16, &pkg->first_install_time)) {
+            if (!str_to_num(value, 16, pkg->first_install_time)) {
                 LOGE("Invalid first install timestamp: '%s'", value);
                 return false;
             }
@@ -495,7 +495,7 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         } else if (strcmp(name, ATTR_SECONDARY_CPU_ABI) == 0) {
             pkg->secondary_cpu_abi = value;
         } else if (strcmp(name, ATTR_SHARED_USER_ID) == 0) {
-            if (!util::str_to_snum(value, 10, &pkg->shared_user_id)) {
+            if (!str_to_num(value, 10, pkg->shared_user_id)) {
                 LOGE("Invalid shared user ID: '%s'", value);
                 return false;
             }
@@ -503,18 +503,18 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         } else if (strcmp(name, ATTR_UID_ERROR) == 0) {
             pkg->uid_error = value;
         } else if (strcmp(name, ATTR_USER_ID) == 0) {
-            if (!util::str_to_snum(value, 10, &pkg->user_id)) {
+            if (!str_to_num(value, 10, pkg->user_id)) {
                 LOGE("Invalid user ID: '%s'", value);
                 return false;
             }
             pkg->is_shared_user = 0;
         } else if (strcmp(name, ATTR_UT) == 0) {
-            if (!util::str_to_unum(value, 16, &pkg->last_update_time)) {
+            if (!str_to_num(value, 16, pkg->last_update_time)) {
                 LOGE("Invalid last update timestamp: '%s'", value);
                 return false;
             }
         } else if (strcmp(name, ATTR_VERSION) == 0) {
-            if (!util::str_to_snum(value, 10, &pkg->version)) {
+            if (!str_to_num(value, 10, pkg->version)) {
                 LOGE("Invalid version: '%s'", value);
                 return false;
             }

@@ -39,6 +39,7 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -50,7 +51,6 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/fts.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -235,7 +235,7 @@ static int get_socket_from_env(const char *name)
     }
 
     int fd;
-    return util::str_to_snum<int>(value, 10, &fd) ? fd : -1;
+    return str_to_num(value, 10, fd) ? fd : -1;
 }
 
 /*!
@@ -469,7 +469,7 @@ static bool do_remove(const std::vector<std::string> &args)
     const std::string &pkgname = args[0];
     MB_UNUSED
     int userid;
-    util::str_to_snum<int>(args[1].c_str(), 10, &userid);
+    str_to_num(args[1].c_str(), 10, userid);
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end(); ++it) {

@@ -22,7 +22,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "mbutil/integer.h"
+#include "mbcommon/integer.h"
+
 #include "mbutil/external/system_properties.h"
 
 struct timespec;
@@ -67,7 +68,7 @@ inline SNumType property_get_snum(const std::string &key,
     std::string value;
     SNumType result;
 
-    if (property_get(key, value) && str_to_snum(value.c_str(), 10, &result)) {
+    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -81,7 +82,7 @@ inline UNumType property_get_unum(const std::string &key,
     std::string value;
     UNumType result;
 
-    if (property_get(key, value) && str_to_unum(value.c_str(), 10, &result)) {
+    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -114,7 +115,7 @@ inline SNumType property_file_get_snum(const std::string &path,
     SNumType result;
 
     if (property_file_get(path, key, value)
-            && str_to_snum(value.c_str(), 10, &result)) {
+            && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -130,7 +131,7 @@ inline UNumType property_file_get_unum(const std::string &path,
     UNumType result;
 
     if (property_file_get(path, key, value)
-            && str_to_unum(value.c_str(), 10, &result)) {
+            && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 

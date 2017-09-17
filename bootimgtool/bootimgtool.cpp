@@ -34,6 +34,7 @@
 
 // libmbcommon
 #include <mbcommon/common.h>
+#include <mbcommon/integer.h>
 #include <mbcommon/libc/stdio.h>
 
 // libmbbootimg
@@ -247,29 +248,6 @@ template <typename F>
 Finally<F> finally(F f)
 {
     return Finally<F>(f);
-}
-
-template<typename UIntType>
-static inline bool str_to_unum(const char *str, int base, UIntType *out)
-{
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<UIntType>(num);
-    return true;
 }
 
 struct Paths
@@ -494,47 +472,47 @@ static bool read_header(const std::string &path, Header &header)
         } else if (strcmp(key, FIELD_BOARD) == 0) {
             ret = header.set_board_name({value});
         } else if (strcmp(key, FIELD_BASE) == 0) {
-            valid = str_to_unum(value, 16, &base);
+            valid = mb::str_to_num(value, 16, base);
             have_base = true;
         } else if (strcmp(key, FIELD_KERNEL_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &kernel_offset);
+            valid = mb::str_to_num(value, 16, kernel_offset);
             have_kernel_offset = true;
         } else if (strcmp(key, FIELD_RAMDISK_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &ramdisk_offset);
+            valid = mb::str_to_num(value, 16, ramdisk_offset);
             have_ramdisk_offset = true;
         } else if (strcmp(key, FIELD_SECOND_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &second_offset);
+            valid = mb::str_to_num(value, 16, second_offset);
             have_second_offset = true;
         } else if (strcmp(key, FIELD_TAGS_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &tags_offset);
+            valid = mb::str_to_num(value, 16, tags_offset);
             have_tags_offset = true;
         } else if (strcmp(key, FIELD_IPL_ADDRESS) == 0) {
             uint32_t ipl_address;
-            valid = str_to_unum(value, 16, &ipl_address);
+            valid = mb::str_to_num(value, 16, ipl_address);
             if (valid) {
                 ret = header.set_sony_ipl_address(ipl_address);
             }
         } else if (strcmp(key, FIELD_RPM_ADDRESS) == 0) {
             uint32_t rpm_address;
-            valid = str_to_unum(value, 16, &rpm_address);
+            valid = mb::str_to_num(value, 16, rpm_address);
             if (valid) {
                 ret = header.set_sony_rpm_address(rpm_address);
             }
         } else if (strcmp(key, FIELD_APPSBL_ADDRESS) == 0) {
             uint32_t appsbl_address;
-            valid = str_to_unum(value, 16, &appsbl_address);
+            valid = mb::str_to_num(value, 16, appsbl_address);
             if (valid) {
                 ret = header.set_sony_appsbl_address(appsbl_address);
             }
         } else if (strcmp(key, FIELD_ENTRYPOINT) == 0) {
             uint32_t entrypoint;
-            valid = str_to_unum(value, 16, &entrypoint);
+            valid = mb::str_to_num(value, 16, entrypoint);
             if (valid) {
                 ret = header.set_entrypoint_address(entrypoint);
             }
         } else if (strcmp(key, FIELD_PAGE_SIZE) == 0) {
             uint32_t page_size;
-            valid = str_to_unum(value, 10, &page_size);
+            valid = mb::str_to_num(value, 10, page_size);
             if (valid) {
                 ret = header.set_page_size(page_size);
             }

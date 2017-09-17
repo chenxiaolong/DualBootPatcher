@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/archive.h"
@@ -33,7 +34,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -202,12 +202,12 @@ int update_binary_main(int argc, char *argv[])
     int output_fd;
     const char *zip_file;
 
-    if (!util::str_to_snum(argv[1], 10, &interface)) {
+    if (!str_to_num(argv[1], 10, interface)) {
         fprintf(stderr, "Invalid interface: '%s'\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    if (!util::str_to_snum(argv[2], 10, &output_fd)) {
+    if (!str_to_num(argv[2], 10, output_fd)) {
         fprintf(stderr, "Invalid output fd: '%s'\n", argv[2]);
         return EXIT_FAILURE;
     }

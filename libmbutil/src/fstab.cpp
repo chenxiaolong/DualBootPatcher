@@ -31,8 +31,8 @@
 #include <sys/mount.h>
 
 #include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
-#include "mbutil/integer.h"
 #include "mbutil/string.h"
 
 #define LOG_TAG "mbutil/fstab"
@@ -335,7 +335,7 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
             } else if (strncmp(temp, "length=", 7) == 0) {
                 // Length of partition
                 temp += 7;
-                if (!str_to_snum(temp, 10, &rec.length)) {
+                if (!str_to_num(temp, 10, rec.length)) {
                     LOGE("Invalid length: %s", temp);
                     return {};
                 }

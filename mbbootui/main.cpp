@@ -34,7 +34,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
