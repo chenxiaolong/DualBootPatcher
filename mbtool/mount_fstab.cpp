@@ -823,18 +823,18 @@ static bool process_fstab(const char *path, const std::shared_ptr<Rom> &rom,
 
     // Remove nosuid flag on the partition that the system directory resides on
     if (rom && !rom->system_is_image) {
-        if (rom->system_source == Rom::Source::CACHE) {
+        if (rom->system_source == Rom::Source::Cache) {
             for (util::FstabRec &rec : recs.cache) {
                 rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
-        } else if (rom->system_source == Rom::Source::DATA) {
+        } else if (rom->system_source == Rom::Source::Data) {
             for (util::FstabRec &rec : recs.data) {
                 rec.flags &= ~static_cast<unsigned long>(MS_NOSUID);
             }
         }
     }
 
-    if (rom && rom->cache_source == Rom::Source::SYSTEM) {
+    if (rom && rom->cache_source == Rom::Source::System) {
         for (util::FstabRec &rec : recs.system) {
             rec.flags &= ~static_cast<unsigned long>(MS_RDONLY);
         }
@@ -902,9 +902,9 @@ bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
     // Mount external SD only if ROM is installed on the external SD. This is
     // necessary because mount_extsd_fstab_entries() blocks until an SD card is
     // found or a timeout occurs.
-    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
-            || rom->cache_source == Rom::Source::EXTERNAL_SD
-            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    bool require_extsd = rom->system_source == Rom::Source::ExternalSd
+            || rom->cache_source == Rom::Source::ExternalSd
+            || rom->data_source == Rom::Source::ExternalSd;
     if (!require_extsd) {
         LOGV("Skipping extsd mount because ROM is not an extsd-slot");
     }
@@ -980,9 +980,9 @@ bool mount_rom(const std::shared_ptr<Rom> &rom)
 
     mount_all_system_images();
 
-    bool require_extsd = rom->system_source == Rom::Source::EXTERNAL_SD
-            || rom->cache_source == Rom::Source::EXTERNAL_SD
-            || rom->data_source == Rom::Source::EXTERNAL_SD;
+    bool require_extsd = rom->system_source == Rom::Source::ExternalSd
+            || rom->cache_source == Rom::Source::ExternalSd
+            || rom->data_source == Rom::Source::ExternalSd;
     if (require_extsd) {
         wrap_extsd_binaries();
     } else {
