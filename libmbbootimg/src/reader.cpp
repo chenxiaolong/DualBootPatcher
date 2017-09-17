@@ -252,7 +252,7 @@ ReaderPrivate::ReaderPrivate(Reader *reader)
 {
 }
 
-int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format)
+int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format_)
 {
     MB_PUBLIC(Reader);
 
@@ -273,15 +273,15 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format)
 
     for (auto const &f : formats) {
         if ((FORMAT_BASE_MASK & f->type())
-                == (FORMAT_BASE_MASK & format->type())) {
+                == (FORMAT_BASE_MASK & format_->type())) {
             pub->set_error(make_error_code(ReaderError::FormatAlreadyEnabled),
                            "%s format (0x%x) already enabled",
-                           format->name().c_str(), format->type());
+                           format_->name().c_str(), format_->type());
             return RET_WARN;
         }
     }
 
-    formats.push_back(std::move(format));
+    formats.push_back(std::move(format_));
     return RET_OK;
 }
 

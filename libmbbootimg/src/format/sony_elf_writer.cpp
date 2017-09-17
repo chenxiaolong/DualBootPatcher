@@ -109,10 +109,10 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
     _hdr.e_shnum = 0;
     _hdr.e_shstrndx = 0;
 
-    if (auto address = header.entrypoint_address()) {
-        _hdr.e_entry = *address;
-    } else if (auto address = header.kernel_address()) {
-        _hdr.e_entry = *address;
+    if (auto entrypoint_address = header.entrypoint_address()) {
+        _hdr.e_entry = *entrypoint_address;
+    } else if (auto kernel_address = header.kernel_address()) {
+        _hdr.e_entry = *kernel_address;
     }
 
     // Construct kernel program header

@@ -293,11 +293,11 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
     if (loki_hdr.ramdisk_addr != 0) {
         uint64_t offset = 0;
 
-        auto result_cb = [](File &file, void *userdata, uint64_t offset)
+        auto result_cb = [](File &file_, void *userdata, uint64_t offset_)
                 -> FileSearchAction {
-            (void) file;
+            (void) file_;
             auto offset_ptr = static_cast<uint64_t *>(userdata);
-            *offset_ptr = offset;
+            *offset_ptr = offset_;
             return FileSearchAction::Continue;
         };
 
@@ -402,46 +402,46 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     SearchResult result = {};
 
     // Find first result with flags == 0x00 and flags == 0x08
-    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+    auto result_cb = [](File &file_, void *userdata, uint64_t offset)
             -> FileSearchAction {
-        auto result = static_cast<SearchResult *>(userdata);
+        auto result_ = static_cast<SearchResult *>(userdata);
         uint64_t orig_offset;
         unsigned char flags;
         size_t n;
 
         // Stop early if possible
-        if (result->have_flag0 && result->have_flag8) {
+        if (result_->have_flag0 && result_->have_flag8) {
             return FileSearchAction::Stop;
         }
 
         // Save original position
-        if (!file.seek(0, SEEK_CUR, &orig_offset)) {
+        if (!file_.seek(0, SEEK_CUR, &orig_offset)) {
             return FileSearchAction::Fail;
         }
 
         // Seek to flags byte
-        if (!file.seek(static_cast<int64_t>(offset + 3), SEEK_SET, nullptr)) {
+        if (!file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
         // Read next bytes for flags
-        if (!file_read_fully(file, &flags, sizeof(flags), n)) {
+        if (!file_read_fully(file_, &flags, sizeof(flags), n)) {
             return FileSearchAction::Fail;
         } else if (n != sizeof(flags)) {
             // EOF
             return FileSearchAction::Stop;
         }
 
-        if (!result->have_flag0 && flags == 0x00) {
-            result->have_flag0 = true;
-            result->flag0_offset = offset;
-        } else if (!result->have_flag8 && flags == 0x08) {
-            result->have_flag8 = true;
-            result->flag8_offset = offset;
+        if (!result_->have_flag0 && flags == 0x00) {
+            result_->have_flag0 = true;
+            result_->flag0_offset = offset;
+        } else if (!result_->have_flag8 && flags == 0x08) {
+            result_->have_flag8 = true;
+            result_->flag8_offset = offset;
         }
 
         // Restore original position as per contract
-        if (!file.seek(static_cast<int64_t>(orig_offset), SEEK_SET, nullptr)) {
+        if (!file_.seek(static_cast<int64_t>(orig_offset), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
