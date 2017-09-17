@@ -424,7 +424,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, n)) {
+        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
             goto error;
@@ -594,7 +594,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, n)) {
+        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
             goto error;
