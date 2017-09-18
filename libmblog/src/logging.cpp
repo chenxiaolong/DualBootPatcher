@@ -109,7 +109,13 @@ static std::string _format_time(std::string fmt, const std::tm &tm)
     fmt += ' ';
 
     std::string buf;
+#ifdef _WIN32
+    // strftime sometimes crashes if the buffer is too small
+    // https://sourceforge.net/p/mingw-w64/discussion/723798/thread/fac033e3/
+    buf.resize(std::max<size_t>(fmt.size(), 128));
+#else
     buf.resize(fmt.size());
+#endif
 
     std::size_t len;
     while ((len = std::strftime(&buf[0], buf.size(), fmt.c_str(), &tm)) == 0) {
