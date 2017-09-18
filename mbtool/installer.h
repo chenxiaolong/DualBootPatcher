@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "mbcommon/common.h"
+#include "mbcommon/flags.h"
 #include "mbdevice/device.h"
 #include "mbutil/hash.h"
 
@@ -32,16 +33,19 @@
 namespace mb
 {
 
-enum InstallerFlags : int
+enum class InstallerFlag : uint8_t
 {
-    INSTALLER_SKIP_MOUNTING_VOLUMES = 1 << 0,
+    SkipMountingVolumes     = 1 << 0,
 };
+MB_DECLARE_FLAGS(InstallerFlags, InstallerFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(InstallerFlags)
 
 class Installer
 {
 public:
     Installer(std::string zip_file, std::string chroot_dir,
-              std::string temp_dir, int interface, int output_fd, int flags);
+              std::string temp_dir, int interface, int output_fd,
+              InstallerFlags flags);
     virtual ~Installer();
 
     bool start_installation();
@@ -50,7 +54,8 @@ public:
 protected:
     static const std::string CANCELLED;
 
-    enum class ProceedState {
+    enum class ProceedState
+    {
         Continue,
         Fail,
         Cancel
@@ -79,7 +84,7 @@ protected:
     std::string _temp;
     int _interface;
     int _output_fd;
-    int _flags;
+    InstallerFlags _flags;
     bool _passthrough;
 
     device::Device _device;

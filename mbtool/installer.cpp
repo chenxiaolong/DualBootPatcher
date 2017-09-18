@@ -113,7 +113,7 @@ const std::string Installer::CANCELLED = "cancelled";
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
                      std::string temp_dir, int interface, int output_fd,
-                     int flags)
+                     InstallerFlags flags)
     : _zip_file(std::move(zip_file))
     , _chroot(std::move(chroot_dir))
     , _temp(std::move(temp_dir))
@@ -1605,7 +1605,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+    if (_flags & InstallerFlag::SkipMountingVolumes) {
         LOGV("Skipping filesystem mounting stage");
         return ProceedState::Continue;
     }
@@ -1811,7 +1811,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+        if (!(_flags & InstallerFlag::SkipMountingVolumes)
                 && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 

@@ -65,7 +65,7 @@ class RomInstaller : public Installer
 {
 public:
     RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
-                 int flags);
+                 InstallerFlags flags);
 
     virtual void display_msg(const std::string& msg) override;
     virtual void updater_print(const std::string &msg) override;
@@ -94,7 +94,7 @@ private:
 
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
-                           std::FILE *log_fp, int flags) :
+                           std::FILE *log_fp, InstallerFlags flags) :
     Installer(zip_file, "/chroot", "/multiboot", 3,
 #if DEBUG_ENABLE_PASSTHROUGH
               STDOUT_FILENO,
@@ -481,7 +481,7 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string rom_id;
     std::string zip_file;
-    int flags = 0;
+    InstallerFlags flags;
     bool allow_overwrite = false;
 
     int opt;
@@ -515,7 +515,7 @@ int rom_installer_main(int argc, char *argv[])
             return EXIT_SUCCESS;
 
         case OPTION_SKIP_MOUNT:
-            flags |= InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES;
+            flags |= InstallerFlag::SkipMountingVolumes;
             break;
 
         case OPTION_ALLOW_OVERWRITE:
