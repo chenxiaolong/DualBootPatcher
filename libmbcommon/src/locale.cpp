@@ -56,18 +56,21 @@ static wchar_t * win32_convert_to_wcs(UINT code_page,
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, nullptr, 0);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<wchar_t *>(malloc((n + 1) * sizeof(wchar_t)));
+    out_buf = static_cast<wchar_t *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(wchar_t)));
     if (!out_buf) {
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, out_buf, n);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n);
     if (n == 0) {
         goto done;
     }
@@ -105,20 +108,21 @@ static char * win32_convert_to_mbs(UINT code_page,
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, nullptr, 0, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<char *>(malloc((n + 1) * sizeof(char)));
+    out_buf = static_cast<char *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(char)));
     if (!out_buf) {
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, out_buf, n, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
