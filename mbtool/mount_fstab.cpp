@@ -258,12 +258,12 @@ static bool mount_exfat_fuse(const char *source, const char *target)
     // Check signatures
     SigVerifyResult result;
     result = verify_signature("/sbin/fsck.exfat", "/sbin/fsck.exfat.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("Invalid fsck.exfat signature");
         return false;
     }
     result = verify_signature("/sbin/mount.exfat", "/sbin/mount.exfat.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("Invalid mount.exfat signature");
         return false;
     }
@@ -597,7 +597,7 @@ static bool disable_fsck(const char *fsck_binary)
 {
     SigVerifyResult result;
     result = verify_signature(FSCK_WRAPPER, FSCK_WRAPPER_SIG);
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", FSCK_WRAPPER);
         return false;
     }

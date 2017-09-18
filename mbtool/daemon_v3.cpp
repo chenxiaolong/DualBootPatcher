@@ -910,8 +910,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     // Verify signature
     sig_result = verify_signature(target_binary.c_str(), target_sig.c_str());
-    if (sig_result != SigVerifyResult::VALID) {
-        if (sig_result == SigVerifyResult::INVALID) {
+    if (sig_result != SigVerifyResult::Valid) {
+        if (sig_result == SigVerifyResult::Invalid) {
             result = v3::SignedExecResult_INVALID_SIGNATURE;
             format(error_msg, "%s: Invalid signature",
                    request->binary_path()->c_str());

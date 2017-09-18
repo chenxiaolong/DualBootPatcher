@@ -599,7 +599,7 @@ bool Installer::extract_multiboot_files()
     for (auto const &item : sigcheck) {
         SigVerifyResult result =
                 verify_signature(item.c_str(), (item + ".sig").c_str());
-        if (result != SigVerifyResult::VALID) {
+        if (result != SigVerifyResult::Valid) {
             LOGE("%s: Signature verification failed", item.c_str());
             return false;
         }

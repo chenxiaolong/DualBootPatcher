@@ -381,7 +381,7 @@ static bool fix_binary_file_contexts(const char *path)
     SigVerifyResult result;
     result = verify_signature("/sbin/file-contexts-tool",
                               "/sbin/file-contexts-tool.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", "/sbin/file-contexts-tool");
         return false;
     }
@@ -1034,7 +1034,7 @@ static bool launch_boot_menu()
     // Verify boot UI signature
     SigVerifyResult result;
     result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -120,21 +120,21 @@ static SigVerifyResult verify_signature_with_key(const char *path,
     if (!bio_data_in) {
         LOGE("%s: Failed to open input file", path);
         openssl_log_errors();
-        return SigVerifyResult::FAILURE;
+        return SigVerifyResult::Failure;
     }
 
     ScopedBIO bio_sig_in(BIO_new_file(sig_path, "rb"), BIO_free);
     if (!bio_sig_in) {
         LOGE("%s: Failed to open signature file", sig_path);
         openssl_log_errors();
-        return SigVerifyResult::FAILURE;
+        return SigVerifyResult::Failure;
     }
 
     ret = sign::verify_data(bio_data_in.get(), bio_sig_in.get(), public_key,
                             &valid);
 
-    return ret ? (valid ? SigVerifyResult::VALID : SigVerifyResult::INVALID)
-            : SigVerifyResult::FAILURE;
+    return ret ? (valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid)
+            : SigVerifyResult::Failure;
 }
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)
@@ -144,7 +144,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         if (!hex2bin(hex_der, &der)) {
             LOGE("Failed to convert hex-encoded certificate to binary: %s",
                  hex_der.c_str());
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
@@ -155,7 +155,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
             LOGE("Failed to create BIO for X509 certificate: %s",
                  hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         // Load DER-encoded certificate
@@ -163,7 +163,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         if (!cert) {
             LOGE("Failed to load X509 certificate: %s", hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         // Get public key from certificate
@@ -172,12 +172,12 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
             LOGE("Failed to load public key from X509 certificate: %s",
                  hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         SigVerifyResult result =
                 verify_signature_with_key(path, sig_path, public_key.get());
-        if (result == SigVerifyResult::INVALID) {
+        if (result == SigVerifyResult::Invalid) {
             // Keep trying ...
             continue;
         }
@@ -185,7 +185,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         return result;
     }
 
-    return SigVerifyResult::INVALID;
+    return SigVerifyResult::Invalid;
 }
 
 static void sigverify_usage(FILE *stream)
@@ -244,11 +244,11 @@ int sigverify_main(int argc, char *argv[])
     SigVerifyResult result = verify_signature(path, sig_path);
 
     switch (result) {
-    case SigVerifyResult::VALID:
+    case SigVerifyResult::Valid:
         return EXIT_SUCCESS;
-    case SigVerifyResult::INVALID:
+    case SigVerifyResult::Invalid:
         return EXIT_INVALID;
-    case SigVerifyResult::FAILURE:
+    case SigVerifyResult::Failure:
     default:
         return EXIT_FAILURE;
     }
