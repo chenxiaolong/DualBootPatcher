@@ -30,8 +30,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <proc/readproc.h>
-
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -50,6 +48,9 @@
 #include "roms.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
+
+// Needs to come last because it defines HIDDEN, which is used in packages.h
+#include <proc/readproc.h>
 
 #define LOG_TAG "mbtool/daemon"
 

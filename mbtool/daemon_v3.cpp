@@ -1283,10 +1283,10 @@ static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
 
     if (ret) {
         for (std::shared_ptr<Package> pkg : pkgs.pkgs) {
-            bool is_system = (pkg->pkg_flags & Package::FLAG_SYSTEM)
-                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM);
-            bool is_update = (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP);
+            bool is_system = (pkg->pkg_flags & Package::Flag::SYSTEM)
+                    || (pkg->pkg_public_flags & Package::PublicFlag::SYSTEM);
+            bool is_update = (pkg->pkg_flags & Package::Flag::UPDATED_SYSTEM_APP)
+                    || (pkg->pkg_public_flags & Package::PublicFlag::UPDATED_SYSTEM_APP);
 
             if (is_update) {
                 ++update_pkgs;

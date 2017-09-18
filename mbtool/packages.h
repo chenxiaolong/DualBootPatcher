@@ -24,6 +24,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "mbcommon/flags.h"
+
 
 namespace mb
 {
@@ -33,83 +35,100 @@ class Package
 public:
     // From frameworks/base/core/java/android/content/pm/ApplicationInfo.java
     // See https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/content/pm/ApplicationInfo.java
-    enum Flags : uint64_t {
-        FLAG_SYSTEM                    = 1ULL << 0,
-        FLAG_DEBUGGABLE                = 1ULL << 1,
-        FLAG_HAS_CODE                  = 1ULL << 2,
-        FLAG_PERSISTENT                = 1ULL << 3,
-        FLAG_FACTORY_TEST              = 1ULL << 4,
-        FLAG_ALLOW_TASK_REPARENTING    = 1ULL << 5,
-        FLAG_ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
-        FLAG_UPDATED_SYSTEM_APP        = 1ULL << 7,
-        FLAG_TEST_ONLY                 = 1ULL << 8,
-        FLAG_SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
-        FLAG_SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
-        FLAG_SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
-        FLAG_RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
-        FLAG_SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
-        FLAG_VM_SAFE_MODE              = 1ULL << 14,
-        FLAG_ALLOW_BACKUP              = 1ULL << 15,
-        FLAG_KILL_AFTER_RESTORE        = 1ULL << 16,
-        FLAG_RESTORE_ANY_VERSION       = 1ULL << 17,
-        FLAG_EXTERNAL_STORAGE          = 1ULL << 18,
-        FLAG_SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
-        FLAG_LARGE_HEAP                = 1ULL << 20,
-        FLAG_STOPPED                   = 1ULL << 21,
-        FLAG_SUPPORTS_RTL              = 1ULL << 22,
-        FLAG_INSTALLED                 = 1ULL << 23,
-        FLAG_IS_DATA_ONLY              = 1ULL << 24,
-        FLAG_IS_GAME                   = 1ULL << 25,
-        FLAG_FULL_BACKUP_ONLY          = 1ULL << 26,
-        FLAG_HIDDEN                    = 1ULL << 27,
-        FLAG_CANT_SAVE_STATE           = 1ULL << 28,
-        FLAG_FORWARD_LOCK              = 1ULL << 29,
-        FLAG_PRIVILEGED                = 1ULL << 30,
-        FLAG_MULTIARCH                 = 1ULL << 31
+    enum class Flag : uint64_t
+    {
+        SYSTEM                    = 1ULL << 0,
+        DEBUGGABLE                = 1ULL << 1,
+        HAS_CODE                  = 1ULL << 2,
+        PERSISTENT                = 1ULL << 3,
+        FACTORY_TEST              = 1ULL << 4,
+        ALLOW_TASK_REPARENTING    = 1ULL << 5,
+        ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
+        UPDATED_SYSTEM_APP        = 1ULL << 7,
+        TEST_ONLY                 = 1ULL << 8,
+        SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
+        SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
+        SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
+        RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
+        SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
+        VM_SAFE_MODE              = 1ULL << 14,
+        ALLOW_BACKUP              = 1ULL << 15,
+        KILL_AFTER_RESTORE        = 1ULL << 16,
+        RESTORE_ANY_VERSION       = 1ULL << 17,
+        EXTERNAL_STORAGE          = 1ULL << 18,
+        SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
+        LARGE_HEAP                = 1ULL << 20,
+        STOPPED                   = 1ULL << 21,
+        SUPPORTS_RTL              = 1ULL << 22,
+        INSTALLED                 = 1ULL << 23,
+        IS_DATA_ONLY              = 1ULL << 24,
+        IS_GAME                   = 1ULL << 25,
+        FULL_BACKUP_ONLY          = 1ULL << 26,
+        HIDDEN                    = 1ULL << 27,
+        CANT_SAVE_STATE           = 1ULL << 28,
+        FORWARD_LOCK              = 1ULL << 29,
+        PRIVILEGED                = 1ULL << 30,
+        MULTIARCH                 = 1ULL << 31,
     };
+    MB_DECLARE_FLAGS(Flags, Flag)
 
-    enum PublicFlags : uint64_t {
-        PUBLIC_FLAG_SYSTEM                    = 1ULL << 0,
-        PUBLIC_FLAG_DEBUGGABLE                = 1ULL << 1,
-        PUBLIC_FLAG_HAS_CODE                  = 1ULL << 2,
-        PUBLIC_FLAG_PERSISTENT                = 1ULL << 3,
-        PUBLIC_FLAG_FACTORY_TEST              = 1ULL << 4,
-        PUBLIC_FLAG_ALLOW_TASK_REPARENTING    = 1ULL << 5,
-        PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
-        PUBLIC_FLAG_UPDATED_SYSTEM_APP        = 1ULL << 7,
-        PUBLIC_FLAG_TEST_ONLY                 = 1ULL << 8,
-        PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
-        PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
-        PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
-        PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
-        PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
-        PUBLIC_FLAG_VM_SAFE_MODE              = 1ULL << 14,
-        PUBLIC_FLAG_ALLOW_BACKUP              = 1ULL << 15,
-        PUBLIC_FLAG_KILL_AFTER_RESTORE        = 1ULL << 16,
-        PUBLIC_FLAG_RESTORE_ANY_VERSION       = 1ULL << 17,
-        PUBLIC_FLAG_EXTERNAL_STORAGE          = 1ULL << 18,
-        PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
-        PUBLIC_FLAG_LARGE_HEAP                = 1ULL << 20,
-        PUBLIC_FLAG_STOPPED                   = 1ULL << 21,
-        PUBLIC_FLAG_SUPPORTS_RTL              = 1ULL << 22,
-        PUBLIC_FLAG_INSTALLED                 = 1ULL << 23,
-        PUBLIC_FLAG_IS_DATA_ONLY              = 1ULL << 24,
-        PUBLIC_FLAG_IS_GAME                   = 1ULL << 25,
-        PUBLIC_FLAG_FULL_BACKUP_ONLY          = 1ULL << 26,
-        PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC    = 1ULL << 27,
-        PUBLIC_FLAG_EXTRACT_NATIVE_LIBS       = 1ULL << 28,
-        PUBLIC_FLAG_HARDWARE_ACCELERATED      = 1ULL << 29,
-        // No 1ULL << 30
-        PUBLIC_FLAG_MULTIARCH                 = 1ULL << 31
+    enum class PublicFlag : uint64_t
+    {
+        SYSTEM                    = 1ULL << 0,
+        DEBUGGABLE                = 1ULL << 1,
+        HAS_CODE                  = 1ULL << 2,
+        PERSISTENT                = 1ULL << 3,
+        FACTORY_TEST              = 1ULL << 4,
+        ALLOW_TASK_REPARENTING    = 1ULL << 5,
+        ALLOW_CLEAR_USER_DATA     = 1ULL << 6,
+        UPDATED_SYSTEM_APP        = 1ULL << 7,
+        TEST_ONLY                 = 1ULL << 8,
+        SUPPORTS_SMALL_SCREENS    = 1ULL << 9,
+        SUPPORTS_NORMAL_SCREENS   = 1ULL << 10,
+        SUPPORTS_LARGE_SCREENS    = 1ULL << 11,
+        RESIZEABLE_FOR_SCREENS    = 1ULL << 12,
+        SUPPORTS_SCREEN_DENSITIES = 1ULL << 13,
+        VM_SAFE_MODE              = 1ULL << 14,
+        ALLOW_BACKUP              = 1ULL << 15,
+        KILL_AFTER_RESTORE        = 1ULL << 16,
+        RESTORE_ANY_VERSION       = 1ULL << 17,
+        EXTERNAL_STORAGE          = 1ULL << 18,
+        SUPPORTS_XLARGE_SCREENS   = 1ULL << 19,
+        LARGE_HEAP                = 1ULL << 20,
+        STOPPED                   = 1ULL << 21,
+        SUPPORTS_RTL              = 1ULL << 22,
+        INSTALLED                 = 1ULL << 23,
+        IS_DATA_ONLY              = 1ULL << 24,
+        IS_GAME                   = 1ULL << 25,
+        FULL_BACKUP_ONLY          = 1ULL << 26,
+        USES_CLEARTEXT_TRAFFIC    = 1ULL << 27,
+        EXTRACT_NATIVE_LIBS       = 1ULL << 28,
+        HARDWARE_ACCELERATED      = 1ULL << 29,
+        SUSPENDED                 = 1ULL << 30,
+        MULTIARCH                 = 1ULL << 31,
     };
+    MB_DECLARE_FLAGS(PublicFlags, PublicFlag)
 
-    enum PrivateFlags : uint64_t {
-        PRIVATE_FLAG_HIDDEN          = 1ULL << 0,
-        PRIVATE_FLAG_CANT_SAVE_STATE = 1ULL << 1,
-        PRIVATE_FLAG_FORWARD_LOCK    = 1ULL << 2,
-        PRIVATE_FLAG_PRIVILEGED      = 1ULL << 3,
-        PRIVATE_FLAG_HAS_DOMAIN_URLS = 1ULL << 4
+    enum class PrivateFlag : uint64_t
+    {
+        HIDDEN                                            = 1ULL << 0,
+        CANT_SAVE_STATE                                   = 1ULL << 1,
+        FORWARD_LOCK                                      = 1ULL << 2,
+        PRIVILEGED                                        = 1ULL << 3,
+        HAS_DOMAIN_URLS                                   = 1ULL << 4,
+        DEFAULT_TO_DEVICE_PROTECTED_STORAGE               = 1ULL << 5,
+        DIRECT_BOOT_AWARE                                 = 1ULL << 6,
+        INSTANT                                           = 1ULL << 7,
+        PARTIALLY_DIRECT_BOOT_AWARE                       = 1ULL << 8,
+        REQUIRED_FOR_SYSTEM_USER                          = 1ULL << 9,
+        ACTIVITIES_RESIZE_MODE_RESIZEABLE                 = 1ULL << 10,
+        ACTIVITIES_RESIZE_MODE_UNRESIZEABLE               = 1ULL << 11,
+        ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION = 1ULL << 12,
+        BACKUP_IN_FOREGROUND                              = 1ULL << 13,
+        STATIC_SHARED_LIBRARY                             = 1ULL << 14,
+        ISOLATED_SPLIT_LOADING                            = 1ULL << 15,
     };
+    MB_DECLARE_FLAGS(PrivateFlags, PrivateFlag)
 
     std::string name;                   // PackageSetting.name
     std::string real_name;              // PackageSetting.realName
@@ -145,6 +164,10 @@ public:
 
     void dump();
 };
+
+MB_DECLARE_OPERATORS_FOR_FLAGS(Package::Flags)
+MB_DECLARE_OPERATORS_FOR_FLAGS(Package::PublicFlags)
+MB_DECLARE_OPERATORS_FOR_FLAGS(Package::PrivateFlags)
 
 class Packages
 {

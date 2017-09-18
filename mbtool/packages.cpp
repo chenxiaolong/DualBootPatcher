@@ -140,15 +140,41 @@ static char * time_to_string(uint64_t time)
     return buf;
 }
 
-#define DUMP_FLAG(flag) LOGD(fmt_flag, "", #flag, \
-                             static_cast<uint64_t>(Package::flag))
-
 void Package::dump()
 {
     static const char *fmt_string = "- %-22s %s";
     static const char *fmt_int    = "- %-22s %d";
     static const char *fmt_hex    = "- %-22s 0x%x";
     static const char *fmt_flag   = "- %-22s %s (0x%x)";
+
+#define DUMP_FLAG(FLAG) \
+    LOGD(fmt_flag, "", "FLAG_" #FLAG, \
+         static_cast<uint64_t>(Flag::FLAG))
+#define DUMP_PUBLIC_FLAG(FLAG) \
+    LOGD(fmt_flag, "", "PUBLIC_FLAG_" #FLAG, \
+         static_cast<uint64_t>(PublicFlag::FLAG))
+#define DUMP_PRIVATE_FLAG(FLAG) \
+    LOGD(fmt_flag, "", "PRIVATE_FLAG_" #FLAG, \
+         static_cast<uint64_t>(PrivateFlag::FLAG))
+
+#define DUMP_FLAG_IF_SET(FLAGS, FLAG) \
+    do { \
+        if ((FLAGS) & Flag::FLAG) { \
+            DUMP_FLAG(FLAG); \
+        } \
+    } while (0)
+#define DUMP_PUBLIC_FLAG_IF_SET(FLAGS, FLAG) \
+    do { \
+        if ((FLAGS) & PublicFlag::FLAG) { \
+            DUMP_PUBLIC_FLAG(FLAG); \
+        } \
+    } while (0)
+#define DUMP_PRIVATE_FLAG_IF_SET(FLAGS, FLAG) \
+    do { \
+        if ((FLAGS) & PrivateFlag::FLAG) { \
+            DUMP_PRIVATE_FLAG(FLAG); \
+        } \
+    } while (0)
 
     LOGD("Package:");
     if (!name.empty())
@@ -169,146 +195,90 @@ void Package::dump()
         LOGD(fmt_string, "CPU ABI override:", cpu_abi_override.c_str());
 
     LOGD(fmt_hex, "Flags:", static_cast<uint64_t>(pkg_flags));
-    if (pkg_flags & Package::FLAG_SYSTEM)
-        DUMP_FLAG(FLAG_SYSTEM);
-    if (pkg_flags & Package::FLAG_DEBUGGABLE)
-        DUMP_FLAG(FLAG_DEBUGGABLE);
-    if (pkg_flags & Package::FLAG_HAS_CODE)
-        DUMP_FLAG(FLAG_HAS_CODE);
-    if (pkg_flags & Package::FLAG_PERSISTENT)
-        DUMP_FLAG(FLAG_PERSISTENT);
-    if (pkg_flags & Package::FLAG_FACTORY_TEST)
-        DUMP_FLAG(FLAG_FACTORY_TEST);
-    if (pkg_flags & Package::FLAG_ALLOW_TASK_REPARENTING)
-        DUMP_FLAG(FLAG_ALLOW_TASK_REPARENTING);
-    if (pkg_flags & Package::FLAG_ALLOW_CLEAR_USER_DATA)
-        DUMP_FLAG(FLAG_ALLOW_CLEAR_USER_DATA);
-    if (pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-        DUMP_FLAG(FLAG_UPDATED_SYSTEM_APP);
-    if (pkg_flags & Package::FLAG_TEST_ONLY)
-        DUMP_FLAG(FLAG_TEST_ONLY);
-    if (pkg_flags & Package::FLAG_SUPPORTS_SMALL_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_SMALL_SCREENS);
-    if (pkg_flags & Package::FLAG_SUPPORTS_NORMAL_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_NORMAL_SCREENS);
-    if (pkg_flags & Package::FLAG_SUPPORTS_LARGE_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_LARGE_SCREENS);
-    if (pkg_flags & Package::FLAG_RESIZEABLE_FOR_SCREENS)
-        DUMP_FLAG(FLAG_RESIZEABLE_FOR_SCREENS);
-    if (pkg_flags & Package::FLAG_SUPPORTS_SCREEN_DENSITIES)
-        DUMP_FLAG(FLAG_SUPPORTS_SCREEN_DENSITIES);
-    if (pkg_flags & Package::FLAG_VM_SAFE_MODE)
-        DUMP_FLAG(FLAG_VM_SAFE_MODE);
-    if (pkg_flags & Package::FLAG_ALLOW_BACKUP)
-        DUMP_FLAG(FLAG_ALLOW_BACKUP);
-    if (pkg_flags & Package::FLAG_KILL_AFTER_RESTORE)
-        DUMP_FLAG(FLAG_KILL_AFTER_RESTORE);
-    if (pkg_flags & Package::FLAG_RESTORE_ANY_VERSION)
-        DUMP_FLAG(FLAG_RESTORE_ANY_VERSION);
-    if (pkg_flags & Package::FLAG_EXTERNAL_STORAGE)
-        DUMP_FLAG(FLAG_EXTERNAL_STORAGE);
-    if (pkg_flags & Package::FLAG_SUPPORTS_XLARGE_SCREENS)
-        DUMP_FLAG(FLAG_SUPPORTS_XLARGE_SCREENS);
-    if (pkg_flags & Package::FLAG_LARGE_HEAP)
-        DUMP_FLAG(FLAG_LARGE_HEAP);
-    if (pkg_flags & Package::FLAG_STOPPED)
-        DUMP_FLAG(FLAG_STOPPED);
-    if (pkg_flags & Package::FLAG_SUPPORTS_RTL)
-        DUMP_FLAG(FLAG_SUPPORTS_RTL);
-    if (pkg_flags & Package::FLAG_INSTALLED)
-        DUMP_FLAG(FLAG_INSTALLED);
-    if (pkg_flags & Package::FLAG_IS_DATA_ONLY)
-        DUMP_FLAG(FLAG_IS_DATA_ONLY);
-    if (pkg_flags & Package::FLAG_IS_GAME)
-        DUMP_FLAG(FLAG_IS_GAME);
-    if (pkg_flags & Package::FLAG_FULL_BACKUP_ONLY)
-        DUMP_FLAG(FLAG_FULL_BACKUP_ONLY);
-    if (pkg_flags & Package::FLAG_HIDDEN)
-        DUMP_FLAG(FLAG_HIDDEN);
-    if (pkg_flags & Package::FLAG_CANT_SAVE_STATE)
-        DUMP_FLAG(FLAG_CANT_SAVE_STATE);
-    if (pkg_flags & Package::FLAG_FORWARD_LOCK)
-        DUMP_FLAG(FLAG_FORWARD_LOCK);
-    if (pkg_flags & Package::FLAG_PRIVILEGED)
-        DUMP_FLAG(FLAG_PRIVILEGED);
-    if (pkg_flags & Package::FLAG_MULTIARCH)
-        DUMP_FLAG(FLAG_MULTIARCH);
+    DUMP_FLAG_IF_SET(pkg_flags, SYSTEM);
+    DUMP_FLAG_IF_SET(pkg_flags, DEBUGGABLE);
+    DUMP_FLAG_IF_SET(pkg_flags, HAS_CODE);
+    DUMP_FLAG_IF_SET(pkg_flags, PERSISTENT);
+    DUMP_FLAG_IF_SET(pkg_flags, FACTORY_TEST);
+    DUMP_FLAG_IF_SET(pkg_flags, ALLOW_TASK_REPARENTING);
+    DUMP_FLAG_IF_SET(pkg_flags, ALLOW_CLEAR_USER_DATA);
+    DUMP_FLAG_IF_SET(pkg_flags, UPDATED_SYSTEM_APP);
+    DUMP_FLAG_IF_SET(pkg_flags, TEST_ONLY);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_SMALL_SCREENS);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_NORMAL_SCREENS);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_LARGE_SCREENS);
+    DUMP_FLAG_IF_SET(pkg_flags, RESIZEABLE_FOR_SCREENS);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_SCREEN_DENSITIES);
+    DUMP_FLAG_IF_SET(pkg_flags, VM_SAFE_MODE);
+    DUMP_FLAG_IF_SET(pkg_flags, ALLOW_BACKUP);
+    DUMP_FLAG_IF_SET(pkg_flags, KILL_AFTER_RESTORE);
+    DUMP_FLAG_IF_SET(pkg_flags, RESTORE_ANY_VERSION);
+    DUMP_FLAG_IF_SET(pkg_flags, EXTERNAL_STORAGE);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_XLARGE_SCREENS);
+    DUMP_FLAG_IF_SET(pkg_flags, LARGE_HEAP);
+    DUMP_FLAG_IF_SET(pkg_flags, STOPPED);
+    DUMP_FLAG_IF_SET(pkg_flags, SUPPORTS_RTL);
+    DUMP_FLAG_IF_SET(pkg_flags, INSTALLED);
+    DUMP_FLAG_IF_SET(pkg_flags, IS_DATA_ONLY);
+    DUMP_FLAG_IF_SET(pkg_flags, IS_GAME);
+    DUMP_FLAG_IF_SET(pkg_flags, FULL_BACKUP_ONLY);
+    DUMP_FLAG_IF_SET(pkg_flags, HIDDEN);
+    DUMP_FLAG_IF_SET(pkg_flags, CANT_SAVE_STATE);
+    DUMP_FLAG_IF_SET(pkg_flags, FORWARD_LOCK);
+    DUMP_FLAG_IF_SET(pkg_flags, PRIVILEGED);
+    DUMP_FLAG_IF_SET(pkg_flags, MULTIARCH);
 
     LOGD(fmt_hex, "Public flags:", static_cast<uint64_t>(pkg_public_flags));
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM)
-        DUMP_FLAG(PUBLIC_FLAG_SYSTEM);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_DEBUGGABLE)
-        DUMP_FLAG(PUBLIC_FLAG_DEBUGGABLE);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_HAS_CODE)
-        DUMP_FLAG(PUBLIC_FLAG_HAS_CODE);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_PERSISTENT)
-        DUMP_FLAG(PUBLIC_FLAG_PERSISTENT);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_FACTORY_TEST)
-        DUMP_FLAG(PUBLIC_FLAG_FACTORY_TEST);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_TASK_REPARENTING)
-        DUMP_FLAG(PUBLIC_FLAG_ALLOW_TASK_REPARENTING);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA)
-        DUMP_FLAG(PUBLIC_FLAG_ALLOW_CLEAR_USER_DATA);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP)
-        DUMP_FLAG(PUBLIC_FLAG_UPDATED_SYSTEM_APP);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_TEST_ONLY)
-        DUMP_FLAG(PUBLIC_FLAG_TEST_ONLY);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_SMALL_SCREENS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_NORMAL_SCREENS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_LARGE_SCREENS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS)
-        DUMP_FLAG(PUBLIC_FLAG_RESIZEABLE_FOR_SCREENS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_SCREEN_DENSITIES);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_VM_SAFE_MODE)
-        DUMP_FLAG(PUBLIC_FLAG_VM_SAFE_MODE);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_ALLOW_BACKUP)
-        DUMP_FLAG(PUBLIC_FLAG_ALLOW_BACKUP);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_KILL_AFTER_RESTORE)
-        DUMP_FLAG(PUBLIC_FLAG_KILL_AFTER_RESTORE);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_RESTORE_ANY_VERSION)
-        DUMP_FLAG(PUBLIC_FLAG_RESTORE_ANY_VERSION);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_EXTERNAL_STORAGE)
-        DUMP_FLAG(PUBLIC_FLAG_EXTERNAL_STORAGE);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_XLARGE_SCREENS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_LARGE_HEAP)
-        DUMP_FLAG(PUBLIC_FLAG_LARGE_HEAP);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_STOPPED)
-        DUMP_FLAG(PUBLIC_FLAG_STOPPED);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_SUPPORTS_RTL)
-        DUMP_FLAG(PUBLIC_FLAG_SUPPORTS_RTL);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_INSTALLED)
-        DUMP_FLAG(PUBLIC_FLAG_INSTALLED);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_IS_DATA_ONLY)
-        DUMP_FLAG(PUBLIC_FLAG_IS_DATA_ONLY);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_IS_GAME)
-        DUMP_FLAG(PUBLIC_FLAG_IS_GAME);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_FULL_BACKUP_ONLY)
-        DUMP_FLAG(PUBLIC_FLAG_FULL_BACKUP_ONLY);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC)
-        DUMP_FLAG(PUBLIC_FLAG_USES_CLEARTEXT_TRAFFIC);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_EXTRACT_NATIVE_LIBS)
-        DUMP_FLAG(PUBLIC_FLAG_EXTRACT_NATIVE_LIBS);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_HARDWARE_ACCELERATED)
-        DUMP_FLAG(PUBLIC_FLAG_HARDWARE_ACCELERATED);
-    if (pkg_public_flags & Package::PUBLIC_FLAG_MULTIARCH)
-        DUMP_FLAG(PUBLIC_FLAG_MULTIARCH);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SYSTEM);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, DEBUGGABLE);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, HAS_CODE);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, PERSISTENT);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, FACTORY_TEST);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, ALLOW_TASK_REPARENTING);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, ALLOW_CLEAR_USER_DATA);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, UPDATED_SYSTEM_APP);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, TEST_ONLY);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_SMALL_SCREENS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_NORMAL_SCREENS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_LARGE_SCREENS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, RESIZEABLE_FOR_SCREENS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_SCREEN_DENSITIES);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, VM_SAFE_MODE);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, ALLOW_BACKUP);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, KILL_AFTER_RESTORE);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, RESTORE_ANY_VERSION);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, EXTERNAL_STORAGE);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_XLARGE_SCREENS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, LARGE_HEAP);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, STOPPED);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUPPORTS_RTL);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, INSTALLED);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, IS_DATA_ONLY);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, IS_GAME);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, FULL_BACKUP_ONLY);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, USES_CLEARTEXT_TRAFFIC);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, EXTRACT_NATIVE_LIBS);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, HARDWARE_ACCELERATED);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, SUSPENDED);
+    DUMP_PUBLIC_FLAG_IF_SET(pkg_public_flags, MULTIARCH);
 
     LOGD(fmt_hex, "Private flags:", static_cast<uint64_t>(pkg_private_flags));
-    if (pkg_private_flags & Package::PRIVATE_FLAG_HIDDEN)
-        DUMP_FLAG(PRIVATE_FLAG_HIDDEN);
-    if (pkg_private_flags & Package::PRIVATE_FLAG_CANT_SAVE_STATE)
-        DUMP_FLAG(PRIVATE_FLAG_CANT_SAVE_STATE);
-    if (pkg_private_flags & Package::PRIVATE_FLAG_FORWARD_LOCK)
-        DUMP_FLAG(PRIVATE_FLAG_FORWARD_LOCK);
-    if (pkg_private_flags & Package::PRIVATE_FLAG_PRIVILEGED)
-        DUMP_FLAG(PRIVATE_FLAG_PRIVILEGED);
-    if (pkg_private_flags & Package::PRIVATE_FLAG_HAS_DOMAIN_URLS)
-        DUMP_FLAG(PRIVATE_FLAG_HAS_DOMAIN_URLS);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, HIDDEN);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, CANT_SAVE_STATE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, FORWARD_LOCK);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, PRIVILEGED);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, HAS_DOMAIN_URLS);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, DEFAULT_TO_DEVICE_PROTECTED_STORAGE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, DIRECT_BOOT_AWARE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, INSTANT);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, PARTIALLY_DIRECT_BOOT_AWARE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, REQUIRED_FOR_SYSTEM_USER);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, ACTIVITIES_RESIZE_MODE_RESIZEABLE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, ACTIVITIES_RESIZE_MODE_UNRESIZEABLE);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, BACKUP_IN_FOREGROUND);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, STATIC_SHARED_LIBRARY);
+    DUMP_PRIVATE_FLAG_IF_SET(pkg_private_flags, ISOLATED_SPLIT_LOADING);
 
     if (timestamp > 0)
         LOGD(fmt_string, "Timestamp:", time_to_string(timestamp));
@@ -331,6 +301,14 @@ void Package::dump()
         LOGD(fmt_string, "Install status:", install_status.c_str());
     if (!installer.empty())
         LOGD(fmt_string, "Installer:", installer.c_str());
+
+#undef DUMP_FLAG
+#undef DUMP_PUBLIC_FLAG
+#undef DUMP_PRIVATE_FLAG
+
+#undef DUMP_FLAG_IF_SET
+#undef DUMP_PUBLIC_FLAG_IF_SET
+#undef DUMP_PRIVATE_FLAG_IF_SET
 }
 
 bool Packages::load_xml(const std::string &path)
@@ -453,21 +431,21 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
                 LOGE("Invalid flags: '%s'", value);
                 return false;
             }
-            pkg->pkg_flags = static_cast<Package::Flags>(flags);
+            pkg->pkg_flags = static_cast<Package::Flag>(flags);
         } else if (strcmp(name, ATTR_PUBLIC_FLAGS) == 0) {
             uint64_t flags;
             if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid public flags: '%s'", value);
                 return false;
             }
-            pkg->pkg_public_flags = static_cast<Package::PublicFlags>(flags);
+            pkg->pkg_public_flags = static_cast<Package::PublicFlag>(flags);
         } else if (strcmp(name, ATTR_PRIVATE_FLAGS) == 0) {
             uint64_t flags;
             if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid private flags: '%s'", value);
                 return false;
             }
-            pkg->pkg_private_flags = static_cast<Package::PrivateFlags>(flags);
+            pkg->pkg_private_flags = static_cast<Package::PrivateFlag>(flags);
         } else if (strcmp(name, ATTR_FT) == 0) {
             if (!str_to_num(value, 16, pkg->timestamp)) {
                 LOGE("Invalid ft timestamp: '%s'", value);
