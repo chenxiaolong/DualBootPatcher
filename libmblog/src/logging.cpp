@@ -127,13 +127,14 @@ static std::string _format_time(std::string fmt,
     std::tm tm;
 
 #if defined(_WIN32)
-    auto ret = localtime_s(&tm, &t);
-#else
-    auto ret = localtime_r(&t, &tm);
-#endif
-    if (!ret) {
+    if (localtime_s(&tm, &t)) {
         return {};
     }
+#else
+    if (!localtime_r(&t, &tm)) {
+        return {};
+    }
+#endif
 
     return _format_time(std::move(fmt), tm);
 }
