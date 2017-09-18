@@ -607,8 +607,8 @@ static bool get_file_time(const std::string &filename, uint32_t *dostime)
     {
         FileTimeToLocalFileTime(&ff32.ftLastWriteTime, &ft_local);
         FileTimeToDosDateTime(&ft_local,
-                              ((LPWORD) dostime) + 1,
-                              ((LPWORD) dostime) + 0);
+                              reinterpret_cast<LPWORD>(dostime) + 1,
+                              reinterpret_cast<LPWORD>(dostime) + 0);
         FindClose(h_find);
         return true;
     } else {

@@ -301,9 +301,9 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         uint64_t v;
 
         ret = CryptGenRandom(
-            h_prov,     // hProv
-            sizeof(v),  // dwLen
-            (BYTE *) &v // pbBuffer
+            h_prov,                      // hProv
+            sizeof(v),                   // dwLen
+            reinterpret_cast<BYTE *>(&v) // pbBuffer
         );
         if (!ret) {
             LOGE("CryptGenRandom() failed: %s",
