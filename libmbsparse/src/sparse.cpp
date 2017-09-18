@@ -992,7 +992,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
         OPER("Read %" PRIu64 " bytes", n_read);
         total_read += n_read;
         priv->cur_tgt_offset += n_read;
-        size -= n_read;
+        size -= static_cast<size_t>(n_read);
         buf = reinterpret_cast<unsigned char *>(buf) + n_read;
     }
 
