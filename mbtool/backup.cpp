@@ -266,7 +266,7 @@ static bool restore_image(const std::string &input_file,
     if (stat(image.c_str(), &sb) < 0) {
         if (errno == ENOENT) {
             auto result = create_ext4_image(image, size);
-            if (result != CreateImageResult::SUCCEEDED) {
+            if (result != CreateImageResult::Succeeded) {
                 return false;
             }
         } else {

@@ -649,7 +649,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     }
 
     auto result = create_ext4_image(path, size);
-    if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
+    if (result == CreateImageResult::NotEnoughSpace) {
         uint64_t avail;
         if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
             avail = 0;
@@ -660,7 +660,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
         display_msg("- Available: %" PRIu64 " bytes", avail);
     }
 
-    return result == CreateImageResult::SUCCEEDED;
+    return result == CreateImageResult::Succeeded;
 }
 
 /*!

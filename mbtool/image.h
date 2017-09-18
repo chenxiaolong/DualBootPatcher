@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -28,10 +28,10 @@ constexpr uint64_t DEFAULT_IMAGE_SIZE = 4ull * 1024ull * 1024ull * 1024ull;
 
 enum class CreateImageResult
 {
-    SUCCEEDED,
-    NOT_ENOUGH_SPACE,
-    IMAGE_EXISTS,
-    FAILED
+    Succeeded,
+    NotEnoughSpace,
+    ImageExists,
+    Failed,
 };
 
 CreateImageResult create_ext4_image(const std::string &path, uint64_t size);
