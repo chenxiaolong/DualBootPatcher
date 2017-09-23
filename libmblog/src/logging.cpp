@@ -20,6 +20,7 @@
 #include "mblog/logging.h"
 
 #include <chrono>
+#include <mutex>
 #include <string>
 
 #include <cerrno>
@@ -65,6 +66,7 @@ using Tid = pid_t;
 
 
 static std::shared_ptr<BaseLogger> g_logger;
+static std::mutex g_mutex;
 
 static std::string g_format{"[%t][%P:%T][%l] %n: %m"};
 
@@ -289,6 +291,7 @@ void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
 {
     ErrorRestorer restorer;
     LogRecord rec;
+    std::lock_guard<std::mutex> guard(g_mutex);
 
     rec.time = std::chrono::system_clock::now();
     rec.pid = static_cast<uint64_t>(_get_pid());
