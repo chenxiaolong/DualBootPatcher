@@ -25,6 +25,7 @@
 #include <cerrno>
 #include <cinttypes>
 #include <cstdarg>
+#include <cstdlib>
 #include <ctime>
 
 #if defined(_WIN32)
@@ -65,7 +66,6 @@ using Tid = pid_t;
 
 static std::shared_ptr<BaseLogger> g_logger;
 
-static std::string g_time_format{"%Y/%m/%d %H:%M:%S %Z"};
 static std::string g_format{"[%t][%P:%T][%l] %n: %m"};
 
 // %l - Level
@@ -103,46 +103,89 @@ static Tid _get_tid()
 #endif
 }
 
-static std::string _format_time(std::string fmt, const std::tm &tm)
+static bool _local_time(time_t t, std::tm &tm)
 {
-    // Add a character to allow differentiating empty strings and errors
-    fmt += ' ';
+    // Some systems call tzset() in localtime_r() and others don't. We'll
+    // manually call it to ensure the behavior is the same on every platform.
+    tzset();
 
-    std::string buf;
 #ifdef _WIN32
-    // strftime sometimes crashes if the buffer is too small
-    // https://sourceforge.net/p/mingw-w64/discussion/723798/thread/fac033e3/
-    buf.resize(std::max<size_t>(fmt.size(), 128));
+    return localtime_s(&tm, &t) == 0;
 #else
-    buf.resize(fmt.size());
+    return localtime_r(&t, &tm) != nullptr;
 #endif
-
-    std::size_t len;
-    while ((len = std::strftime(&buf[0], buf.size(), fmt.c_str(), &tm)) == 0) {
-        buf.resize(buf.size() * 2);
-    }
-
-    buf.resize(len - 1);
-    return buf;
 }
 
-static std::string _format_time(std::string fmt,
-                                const std::chrono::system_clock::time_point &time)
+static void _local_time_ns(const std::chrono::system_clock::time_point &tp,
+                           std::tm &tm, long &nanos, long &gmtoff)
 {
-    auto t = std::chrono::system_clock::to_time_t(time);
-    std::tm tm;
+    using namespace std::chrono;
 
-#if defined(_WIN32)
-    if (localtime_s(&tm, &t)) {
-        return {};
-    }
+    auto tp_seconds = time_point_cast<seconds>(tp);
+    auto t = system_clock::to_time_t(tp);
+
+    // * Windows
+    // - There will be a race condition if the timezone is changed and
+    //   tzset() is called between _local_time() and accessing _timezone or
+    //   _dstbias.
+    //
+    // * Linux with glibc, musl, or bionic
+    // * macOS
+    // * FreeBSD and OpenBSD
+    // - localtime_r locks the tzset mutex so there's no race condition in
+    //   setting the tm_gmtoff field.
+
+    if (!_local_time(t, tm)) {
+        tm = {};
+        tm.tm_mday = 1;
+        tm.tm_year = 70;
+        tm.tm_wday = 4;
+        tm.tm_isdst = 0;
+        nanos = 0;
+        gmtoff = 0;
+    } else {
+        nanos = static_cast<long>(
+                duration_cast<nanoseconds>(tp - tp_seconds).count());
+
+#ifdef _WIN32
+        long dstbias;
+
+        // The default msvcrt that mingw uses doesn't have the _get_timezone()
+        // and _get_dstbias() functions
+#ifndef __GNUC__
+        if (_get_timezone(&gmtoff) || _get_dstbias(&dstbias)) {
+            return {};
+        }
 #else
-    if (!localtime_r(&t, &tm)) {
-        return {};
-    }
+        gmtoff = _timezone;
+        dstbias = _dstbias;
 #endif
 
-    return _format_time(std::move(fmt), tm);
+        if (tm.tm_isdst) {
+            gmtoff += dstbias;
+        }
+        gmtoff = -gmtoff;
+#else
+        gmtoff = tm.tm_gmtoff;
+#endif
+    }
+}
+
+static std::string _format_iso8601(const std::tm &tm, long nanoseconds,
+                                   long gmtoff)
+{
+    // Sample: 2017-09-17T23:27:00.000000000+00:00
+    return mb::format("%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02ld:%02ld",
+                      tm.tm_year + 1900,
+                      tm.tm_mon + 1,
+                      tm.tm_mday,
+                      tm.tm_hour,
+                      tm.tm_min,
+                      tm.tm_sec,
+                      nanoseconds,
+                      gmtoff >= 0 ? '+' : '-',
+                      std::abs(gmtoff) / 3600,
+                      std::abs(gmtoff / 60) % 60);
 }
 
 static std::string _format_prio(LogLevel prio)
@@ -192,7 +235,12 @@ static std::string _format_rec(const LogRecord &rec)
 
             case 't':
                 if (!time_buf) {
-                    time_buf = _format_time(g_time_format, rec.time);
+                    std::tm tm;
+                    long nanos;
+                    long gmtoff;
+
+                    _local_time_ns(rec.time, tm, nanos, gmtoff);
+                    time_buf = _format_iso8601(tm, nanos, gmtoff);
                 }
                 buf += *time_buf;
                 break;
@@ -258,16 +306,6 @@ void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap)
     }
 
     g_logger->log(rec);
-}
-
-std::string time_format()
-{
-    return g_time_format;
-}
-
-void set_time_format(std::string fmt)
-{
-    g_time_format = std::move(fmt);
 }
 
 std::string format()
