@@ -46,6 +46,11 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
+    # Ignore non-literal format strings
+    if(NOT MSVC)
+        target_compile_options(${lib_target} PRIVATE -Wno-format-nonliteral)
+    endif()
+
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 

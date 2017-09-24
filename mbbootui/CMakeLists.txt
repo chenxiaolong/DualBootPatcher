@@ -13,6 +13,30 @@ if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     return()
 endif()
 
+# Silence warnings instead of fixing them so we don't deviate from upstream too
+# much
+add_compile_options(
+    -Wno-cast-qual
+    -Wno-conditional-uninitialized
+    -Wno-conversion
+    -Wno-documentation
+    -Wno-double-promotion
+    -Wno-float-equal
+    -Wno-format-nonliteral
+    -Wno-header-hygiene
+    -Wno-implicit-fallthrough
+    -Wno-missing-declarations
+    -Wno-missing-prototypes
+    -Wno-missing-noreturn
+    -Wno-missing-variable-declarations
+    -Wno-old-style-cast
+    -Wno-pedantic
+    -Wno-shadow
+    -Wno-shorten-64-to-32
+    -Wno-sign-conversion
+    -Wno-unreachable-code-return
+)
+
 add_subdirectory(config)
 add_subdirectory(minuitwrp)
 add_subdirectory(minzip)

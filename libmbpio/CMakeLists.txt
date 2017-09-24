@@ -34,6 +34,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         external/android-libc/ftw.cpp
     )
 
+    target_compile_options(
+        c_compat
+        PRIVATE
+        -Wno-shorten-64-to-32 -Wno-sign-conversion
+    )
+
     target_include_directories(
         c_compat
         PRIVATE external/android-libc

@@ -25,8 +25,14 @@ foreach(variant ${variants})
         target_compile_definitions(${bin_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Target C++11
     if(NOT MSVC)
+        target_compile_options(
+            ${bin_target}
+            PRIVATE
+            -Wno-format-nonliteral
+        )
+
+        # Target C++11
         set_target_properties(
             ${bin_target}
             PROPERTIES

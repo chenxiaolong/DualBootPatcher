@@ -31,7 +31,15 @@ set(MBUTIL_SOURCES
 set_source_files_properties(
     src/external/system_properties.cpp
     PROPERTIES
-    COMPILE_FLAGS "-Wno-zero-length-array -Wno-gnu-statement-expression -Wno-vla-extension"
+    COMPILE_FLAGS
+    "-Wno-gnu-statement-expression -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-shadow -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-vla-extension -Wno-zero-length-array"
+)
+
+set_source_files_properties(
+    src/external/system_properties_compat.c
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-cast-align -Wno-cast-qual -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-strict-prototypes"
 )
 
 set(variants)

@@ -66,6 +66,12 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     )
 
     if(NOT MSVC)
+        target_compile_options(
+            gui
+            PRIVATE
+            -Wno-zero-as-null-pointer-constant
+        )
+
         set_target_properties(
             gui
             PROPERTIES
