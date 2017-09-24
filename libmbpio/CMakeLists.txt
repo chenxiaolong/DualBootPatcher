@@ -3,7 +3,6 @@ set(MBP_IO_SOURCES
     src/directory.cpp
     src/error.cpp
     src/path.cpp
-    src/private/string.cpp
 )
 
 if(WIN32)
@@ -33,6 +32,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         c_compat
         STATIC
         external/android-libc/ftw.cpp
+    )
+
+    target_compile_options(
+        c_compat
+        PRIVATE
+        -Wno-shorten-64-to-32 -Wno-sign-conversion
     )
 
     target_include_directories(

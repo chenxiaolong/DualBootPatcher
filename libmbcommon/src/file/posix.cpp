@@ -46,62 +46,60 @@ namespace mb
 /*! \cond INTERNAL */
 struct RealPosixFileFuncs : public PosixFileFuncs
 {
-    virtual int fn_fstat(int fildes, struct stat *buf) override
+    int fn_fstat(int fildes, struct stat *buf) override
     {
         return fstat(fildes, buf);
     }
 
-    virtual int fn_fclose(FILE *stream) override
+    int fn_fclose(FILE *stream) override
     {
         return fclose(stream);
     }
 
-    virtual int fn_ferror(FILE *stream) override
+    int fn_ferror(FILE *stream) override
     {
         return ferror(stream);
     }
 
-    virtual int fn_fileno(FILE *stream) override
+    int fn_fileno(FILE *stream) override
     {
         return fileno(stream);
     }
 
 #ifdef _WIN32
-    virtual FILE * fn_wfopen(const wchar_t *filename,
-                             const wchar_t *mode) override
+    FILE * fn_wfopen(const wchar_t *filename, const wchar_t *mode) override
     {
         return _wfopen(filename, mode);
     }
 #else
-    virtual FILE * fn_fopen(const char *path, const char *mode) override
+    FILE * fn_fopen(const char *path, const char *mode) override
     {
         return fopen(path, mode);
     }
 #endif
 
-    virtual size_t fn_fread(void *ptr, size_t size, size_t nmemb,
-                            FILE *stream) override
+    size_t fn_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) override
     {
         return fread(ptr, size, nmemb, stream);
     }
 
-    virtual int fn_fseeko(FILE *stream, off_t offset, int whence) override
+    int fn_fseeko(FILE *stream, off_t offset, int whence) override
     {
         return fseeko(stream, offset, whence);
     }
 
-    virtual off_t fn_ftello(FILE *stream) override
+    off_t fn_ftello(FILE *stream) override
     {
         return ftello(stream);
     }
 
-    virtual size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
-                             FILE *stream) override
+    size_t fn_fwrite(const void *ptr, size_t size, size_t nmemb,
+                     FILE *stream) override
     {
         return fwrite(ptr, size, nmemb, stream);
     }
 
-    virtual int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off64_t length) override
     {
         return ftruncate64(fd, length);
     }
@@ -111,6 +109,8 @@ struct RealPosixFileFuncs : public PosixFileFuncs
 static RealPosixFileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
+
+PosixFileFuncs::~PosixFileFuncs() = default;
 
 PosixFilePrivate::PosixFilePrivate()
     : PosixFilePrivate(&g_default_funcs)
@@ -123,9 +123,7 @@ PosixFilePrivate::PosixFilePrivate(PosixFileFuncs *funcs)
     clear();
 }
 
-PosixFilePrivate::~PosixFilePrivate()
-{
-}
+PosixFilePrivate::~PosixFilePrivate() = default;
 
 void PosixFilePrivate::clear()
 {
@@ -501,7 +499,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 {
     MB_PRIVATE(PosixFile);
 
-    off64_t old_pos, new_pos;
+    off_t old_pos, new_pos;
 
     if (!priv->can_seek) {
         set_error(make_error_code(FileError::UnsupportedSeek),
@@ -518,7 +516,8 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     }
 
     // Try to seek
-    if (priv->funcs->fn_fseeko(priv->fp, offset, whence) < 0) {
+    if (priv->funcs->fn_fseeko(priv->fp, static_cast<off_t>(offset),
+                               whence) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to seek file");
         return false;
@@ -536,7 +535,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         return false;
     }
 
-    new_offset = new_pos;
+    new_offset = static_cast<uint64_t>(new_pos);
     return true;
 }
 
@@ -551,7 +550,7 @@ bool PosixFile::on_truncate(uint64_t size)
         return false;
     }
 
-    if (priv->funcs->fn_ftruncate64(fd, size) < 0) {
+    if (priv->funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
         return false;

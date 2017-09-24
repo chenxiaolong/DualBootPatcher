@@ -14,7 +14,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
     target_compile_options(
         file-contexts-tool
         PRIVATE
+        -Wno-cast-qual
+        -Wno-conversion
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-duplicated-branches>
+        -Wno-implicit-fallthrough
         -Wno-pedantic
+        -Wno-sign-conversion
     )
 
     set_target_properties(

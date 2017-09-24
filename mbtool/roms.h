@@ -33,10 +33,10 @@ public:
 
     enum class Source
     {
-        SYSTEM,
-        CACHE,
-        DATA,
-        EXTERNAL_SD
+        System,
+        Cache,
+        Data,
+        ExternalSd,
     };
 
     std::string id;

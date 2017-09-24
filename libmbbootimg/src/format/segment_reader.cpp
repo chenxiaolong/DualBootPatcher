@@ -146,7 +146,8 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
     uint64_t read_cur_offset = read_start_offset;
 
     if (_read_cur_offset != srentry.offset) {
-        if (!file.seek(read_start_offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET,
+                       nullptr)) {
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
@@ -191,8 +192,8 @@ int SegmentReader::go_to_entry(File &file, Entry &entry, int entry_type,
 int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
                              size_t &bytes_read, Reader &reader)
 {
-    size_t to_copy = std::min<uint64_t>(
-            buf_size, _read_end_offset - _read_cur_offset);
+    auto to_copy = static_cast<size_t>(std::min<uint64_t>(
+            buf_size, _read_end_offset - _read_cur_offset));
 
     if (_read_cur_offset > SIZE_MAX - to_copy) {
         reader.set_error(make_error_code(SegmentError::ReadWouldOverflowInteger),

@@ -42,7 +42,8 @@ ssize_t socket_read(int fd, void *buf, size_t size)
     ssize_t n;
 
     while (bytes_read < static_cast<ssize_t>(size)) {
-        n = read(fd, static_cast<char *>(buf) + bytes_read, size - bytes_read);
+        n = read(fd, static_cast<char *>(buf) + bytes_read,
+                 size - static_cast<size_t>(bytes_read));
         if (n < 0) {
             return n;
         } else if (n == 0) {
@@ -69,7 +70,7 @@ ssize_t socket_write(int fd, const void *buf, size_t size)
 
     while (bytes_written < static_cast<ssize_t>(size)) {
         n = write(fd, static_cast<const char *>(buf) + bytes_written,
-                  size - bytes_written);
+                  size - static_cast<size_t>(bytes_written));
         if (n < 0) {
             return n;
         } else if (n == 0) {
@@ -93,9 +94,10 @@ bool socket_read_bytes(int fd, std::vector<uint8_t> &result)
         return false;
     }
 
-    std::vector<uint8_t> buf(len);
+    std::vector<uint8_t> buf(static_cast<size_t>(len));
 
-    if (socket_read(fd, buf.data(), len) != static_cast<ssize_t>(len)) {
+    if (socket_read(fd, buf.data(), static_cast<size_t>(len))
+            != static_cast<ssize_t>(len)) {
         return false;
     }
 
@@ -105,7 +107,7 @@ bool socket_read_bytes(int fd, std::vector<uint8_t> &result)
 
 bool socket_write_bytes(int fd, const uint8_t *data, size_t len)
 {
-    if (!socket_write_int32(fd, len)) {
+    if (!socket_write_int32(fd, static_cast<int32_t>(len))) {
         return false;
     }
 
@@ -204,9 +206,10 @@ bool socket_read_string(int fd, std::string &result)
         return false;
     }
 
-    std::vector<char> buf(len);
+    std::vector<char> buf(static_cast<size_t>(len));
 
-    if (socket_read(fd, buf.data(), len) != static_cast<ssize_t>(len)) {
+    if (socket_read(fd, buf.data(), static_cast<size_t>(len))
+            != static_cast<ssize_t>(len)) {
         return false;
     }
 
@@ -216,7 +219,7 @@ bool socket_read_string(int fd, std::string &result)
 
 bool socket_write_string(int fd, const std::string &str)
 {
-    if (!socket_write_int32(fd, str.size())) {
+    if (!socket_write_int32(fd, static_cast<int32_t>(str.size()))) {
         return false;
     }
 
@@ -239,9 +242,9 @@ bool socket_read_string_array(int fd, std::vector<std::string> &result)
         return false;
     }
 
-    std::vector<std::string> buf(len);
+    std::vector<std::string> buf(static_cast<size_t>(len));
     for (int32_t i = 0; i < len; ++i) {
-        if (!socket_read_string(fd, buf[i])) {
+        if (!socket_read_string(fd, buf[static_cast<size_t>(i)])) {
             return false;
         }
     }
@@ -252,7 +255,7 @@ bool socket_read_string_array(int fd, std::vector<std::string> &result)
 
 bool socket_write_string_array(int fd, const std::vector<std::string> &list)
 {
-    if (!socket_write_int32(fd, list.size())) {
+    if (!socket_write_int32(fd, static_cast<int32_t>(list.size()))) {
         return false;
     }
 

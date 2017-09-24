@@ -2,7 +2,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
     # Enable warnings
-    add_compile_options(-Wall -Wextra -pedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic -pedantic)
 
     #add_compile_options(-Werror)
 
@@ -22,7 +22,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         add_definitions(-DARCHIVE_ANDROID_LF_H_INCLUDED)
     endif()
 
-    if(NOT WIN32)
+    if(WIN32)
+        # Don't warn for valid msprintf specifiers
+        add_compile_options(-Wno-pedantic-ms-format)
+    else()
         # Visibility
         add_compile_options(-fvisibility=hidden)
 
@@ -34,6 +37,102 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         add_compile_options(-ffunction-sections -fdata-sections)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
+    endif()
+
+    # GCC-specific warnings
+    if(CMAKE_COMPILER_IS_GNUCXX)
+        add_compile_options(
+            -Walloca
+            $<$<COMPILE_LANGUAGE:C>:-Wbad-function-cast>
+            -Wcast-align # TODO Maybe enable =strict
+            -Wcast-qual
+            -Wconversion
+            -Wdate-time
+            -Wdouble-promotion
+            -Wduplicated-branches
+            -Wduplicated-cond
+            -Wenum-compare # C only
+            #-Wextra-semi
+            -Wfloat-equal
+            -Wformat=2
+            -Wformat-overflow=2
+            -Wformat-truncation=2
+            $<$<COMPILE_LANGUAGE:C>:-Wjump-misses-init>
+            -Wlogical-op
+            -Wmissing-declarations
+            -Wmissing-include-dirs
+            $<$<COMPILE_LANGUAGE:C>:-Wmissing-prototypes>
+            $<$<COMPILE_LANGUAGE:C>:-Wnested-externs>
+            -Wnull-dereference
+            $<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast>
+            $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
+            -Wredundant-decls
+            -Wrestrict
+            #-Wshadow # Disabled because this doesn't ignore member initializers
+            -Wsign-conversion
+            -Wtrampolines
+            #-Wundef # Too many libraries to #if for undefined macros
+            #-Wuseless-cast # Disabled because of mb::Flags
+            -Wwrite-strings # C only
+            $<$<COMPILE_LANGUAGE:CXX>:-Wzero-as-null-pointer-constant>
+        )
+    endif()
+
+    # Clang-specific warnings
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        add_compile_options(
+            -Wabstract-vbase-init
+            -Warray-bounds-pointer-arithmetic
+            -Wassign-enum
+            -Wbad-function-cast
+            -Wc++11-extensions
+            -Wc++14-extensions
+            -Wcast-align
+            -Wcast-qual
+            -Wclass-varargs
+            -Wcomma
+            -Wconditional-uninitialized
+            -Wconsumed
+            -Wconversion
+            -Wdate-time
+            -Wdocumentation
+            -Wdocumentation-pedantic
+            -Wdouble-promotion
+            -Wduplicate-enum
+            -Wduplicate-method-arg
+            -Wduplicate-method-match
+            #-Wexit-time-destructors # We have global variables that are classes
+            -Wfloat-equal
+            -Wformat=2
+            -Wheader-hygiene
+            -Widiomatic-parentheses
+            -Wimplicit-fallthrough
+            -Wloop-analysis
+            -Wmethod-signatures
+            -Wmissing-noreturn
+            -Wmissing-prototypes
+            -Wmissing-variable-declarations
+            -Wnon-virtual-dtor
+            -Wold-style-cast
+            -Wover-aligned
+            #-Wreserved-id-macro # Too many libraries have macros with an underscore prefix
+            -Wshadow-all
+            -Wstrict-prototypes
+            -Wstrict-selector-match
+            -Wsuper-class-method-mismatch
+            -Wtautological-compare
+            -Wthread-safety
+            #-Wundef # Too many libraries to #if for undefined macros
+            -Wundefined-func-template
+            -Wundefined-reinterpret-cast
+            -Wunreachable-code-aggressive
+        )
+
+        # Disable warnings
+        add_compile_options(
+            -Wno-documentation-unknown-command # \cond is not understood
+            -Wno-shadow-field-in-constructor
+        )
     endif()
 endif()
 

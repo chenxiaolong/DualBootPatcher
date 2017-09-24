@@ -39,6 +39,7 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -233,13 +234,8 @@ static int get_socket_from_env(const char *name)
         return -1;
     }
 
-    errno = 0;
-    int fd = strtol(value, nullptr, 10);
-    if (errno) {
-        return -1;
-    }
-
-    return fd;
+    int fd;
+    return str_to_num(value, 10, fd) ? fd : -1;
 }
 
 /*!
@@ -281,7 +277,7 @@ static int create_new_socket()
         return -1;
     }
 
-    if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         unlink(addr.sun_path);
         close(fd);
@@ -345,7 +341,7 @@ static bool receive_message(int fd, char *buf, std::size_t size,
 static bool send_message(int fd, const char *command,
                          bool is_async, int async_id)
 {
-    unsigned short count = strlen(command);
+    auto count = static_cast<uint16_t>(strlen(command));
 
     if (is_async) {
         if (!util::socket_write_int32(fd, async_id)) {
@@ -394,7 +390,7 @@ static int connect_to_installd()
     int attempt;
     for (attempt = 0; attempt < 5; ++attempt) {
         LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
-        if (connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
             LOGW("Failed: %s", strerror(errno));
             sleep(1);
         } else {
@@ -472,7 +468,8 @@ static bool do_remove(const std::vector<std::string> &args)
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
     MB_UNUSED
-    const int userid = strtol(args[1].c_str(), nullptr, 10);
+    int userid;
+    str_to_num(args[1].c_str(), 10, userid);
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end(); ++it) {

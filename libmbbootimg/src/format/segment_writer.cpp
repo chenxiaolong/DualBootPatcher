@@ -200,7 +200,7 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
             return RET_FAILED;
         }
 
-        update_size_if_unset(*size);
+        update_size_if_unset(static_cast<uint32_t>(*size));
     }
 
     return RET_OK;
@@ -231,7 +231,7 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
         return RET_FATAL;
     }
 
-    _entry_size += buf_size;
+    _entry_size += static_cast<uint32_t>(buf_size);
     _pos += buf_size;
 
     return RET_OK;
@@ -244,10 +244,10 @@ int SegmentWriter::finish_entry(File &file, Writer &writer)
 
     // Finish previous entry by aligning to page
     if (_entry->align > 0) {
-        uint64_t skip = align_page_size<uint64_t>(_pos, _entry->align);
+        auto skip = align_page_size<uint64_t>(_pos, _entry->align);
         uint64_t new_pos;
 
-        if (!file.seek(skip, SEEK_CUR, &new_pos)) {
+        if (!file.seek(static_cast<int64_t>(skip), SEEK_CUR, &new_pos)) {
             writer.set_error(file.error(),
                              "Failed to seek to page boundary: %s",
                              file.error_string().c_str());

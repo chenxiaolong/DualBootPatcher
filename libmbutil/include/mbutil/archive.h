@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,17 +30,19 @@ namespace mb
 namespace util
 {
 
-struct extract_info {
+struct ExtractInfo
+{
     std::string from;
     std::string to;
 };
 
-struct exists_info {
+struct ExistsInfo
+{
     std::string path;
     bool exists;
 };
 
-enum class compression_type
+enum class CompressionType
 {
     NONE,
     LZ4,
@@ -56,19 +58,19 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
                             const std::vector<std::string> &patterns,
-                            compression_type compression);
+                            CompressionType compression);
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
                            const std::vector<std::string> &paths,
-                           compression_type compression);
+                           CompressionType compression);
 
 bool extract_archive(const std::string &filename, const std::string &target);
 bool extract_files(const std::string &filename, const std::string &target,
                    const std::vector<std::string> &files);
 bool extract_files2(const std::string &filename,
-                    const std::vector<extract_info> &files);
+                    const std::vector<ExtractInfo> &files);
 bool archive_exists(const std::string &filename,
-                    std::vector<exists_info> &files);
+                    std::vector<ExistsInfo> &files);
 
 }
 }

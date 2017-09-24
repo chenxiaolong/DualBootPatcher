@@ -151,7 +151,8 @@ bool file_read_discard(File &file, uint64_t size, uint64_t &bytes_discarded)
     bytes_discarded = 0;
 
     while (bytes_discarded < size) {
-        if (!file.read(buf, std::min<uint64_t>(size, sizeof(buf)), n)) {
+        auto to_read = std::min<uint64_t>(size, sizeof(buf));
+        if (!file.read(buf, static_cast<size_t>(to_read), n)) {
             if (file.error() == std::errc::interrupted) {
                 continue;
             } else {
@@ -280,13 +281,13 @@ bool file_search(File &file, int64_t start, int64_t end,
     }
 
     if (start >= 0) {
-        offset = start;
+        offset = static_cast<uint64_t>(start);
     } else {
         offset = 0;
     }
 
     // Seek to starting point
-    if (!file.seek(offset, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
         if (file.error() == FileErrorC::Unsupported) {
             uint64_t discarded;
             if (!file_read_discard(file, offset, discarded)) {
@@ -312,7 +313,7 @@ bool file_search(File &file, int64_t start, int64_t end,
         }
 
         // Number of available bytes in buf
-        n += ptr - buf.get();
+        n += static_cast<size_t>(ptr - buf.get());
 
         if (n < pattern_size) {
             // Reached EOF
@@ -337,13 +338,14 @@ bool file_search(File &file, int64_t start, int64_t end,
         while ((match = static_cast<char *>(
                 mb_memmem(match, match_remain, pattern, pattern_size)))) {
             // Stop if match falls outside of ending boundary
-            if (end >= 0 && offset + match - buf.get() + pattern_size
-                    > static_cast<uint64_t>(end)) {
+            if (end >= 0 && offset + static_cast<size_t>(match - buf.get())
+                    + pattern_size > static_cast<uint64_t>(end)) {
                 return true;
             }
 
             // Invoke callback
-            auto ret = result_cb(file, userdata, offset + match - buf.get());
+            auto ret = result_cb(file, userdata,
+                                 offset + static_cast<size_t>(match - buf.get()));
             if (ret == FileSearchAction::Stop) {
                 // Stop searching early
                 return true;
@@ -361,7 +363,7 @@ bool file_search(File &file, int64_t start, int64_t end,
             // We don't do overlapping searches
             if (match_remain >= pattern_size) {
                 match += pattern_size;
-                match_remain = n - (match - buf.get());
+                match_remain = n - static_cast<size_t>(match - buf.get());
             } else {
                 break;
             }
@@ -428,23 +430,26 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
     if (dest < src) {
         // Copy forwards
         while (size_moved < size) {
-            size_t to_read = std::min<uint64_t>(
+            auto to_read = std::min<uint64_t>(
                     sizeof(buf), size - size_moved);
 
             // Seek to source offset
-            if (!file.seek(src + size_moved, SEEK_SET, nullptr)) {
+            if (!file.seek(static_cast<int64_t>(src + size_moved),
+                           SEEK_SET, nullptr)) {
                 return false;
             }
 
             // Read data from source
-            if (!file_read_fully(file, buf, to_read, n_read)) {
+            if (!file_read_fully(file, buf, static_cast<size_t>(to_read),
+                                 n_read)) {
                 return false;
             } else if (n_read == 0) {
                 break;
             }
 
             // Seek to destination offset
-            if (!file.seek(dest + size_moved, SEEK_SET, nullptr)) {
+            if (!file.seek(static_cast<int64_t>(dest + size_moved),
+                           SEEK_SET, nullptr)) {
                 return false;
             }
 
@@ -462,25 +467,25 @@ bool file_move(File &file, uint64_t src, uint64_t dest, uint64_t size,
     } else {
         // Copy backwards
         while (size_moved < size) {
-            size_t to_read = std::min<uint64_t>(
-                    sizeof(buf), size - size_moved);
+            auto to_read = std::min<uint64_t>(sizeof(buf), size - size_moved);
 
             // Seek to source offset
-            if (!file.seek(src + size - size_moved - to_read, SEEK_SET,
-                           nullptr)) {
+            if (!file.seek(static_cast<int64_t>(src + size - size_moved - to_read),
+                           SEEK_SET, nullptr)) {
                 return false;
             }
 
             // Read data form source
-            if (!file_read_fully(file, buf, to_read, n_read)) {
+            if (!file_read_fully(file, buf, static_cast<size_t>(to_read),
+                                 n_read)) {
                 return false;
             } else if (n_read == 0) {
                 break;
             }
 
             // Seek to destination offset
-            if (!file.seek(dest + size - size_moved - n_read, SEEK_SET,
-                           nullptr)) {
+            if (!file.seek(static_cast<int64_t>(dest + size - size_moved - n_read),
+                           SEEK_SET, nullptr)) {
                 return false;
             }
 

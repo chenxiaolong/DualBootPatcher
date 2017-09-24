@@ -76,7 +76,6 @@ foreach(variant ${variants})
         PUBLIC
         include
         PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/include
         ${MBP_OPENSSL_INCLUDES}
     )
 

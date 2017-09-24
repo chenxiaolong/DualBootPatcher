@@ -171,7 +171,7 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
 
 #if defined(MINIZIP_WIN32)
     if (!utf8_to_wcs(ctx->path, path)) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -187,7 +187,7 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
     fill_buffer_filefunc64(&ctx->z_func, &ctx->buf);
     ctx->uf = unzOpen2_64(ctx->path.c_str(), &ctx->z_func);
     if (!ctx->uf) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -203,7 +203,7 @@ MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
 
 #if defined(MINIZIP_WIN32)
     if (!utf8_to_wcs(ctx->path, path)) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -219,7 +219,7 @@ MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
     fill_buffer_filefunc64(&ctx->z_func, &ctx->buf);
     ctx->zf = zipOpen2_64(ctx->path.c_str(), 0, nullptr, &ctx->z_func);
     if (!ctx->zf) {
-        free(ctx);
+        delete ctx;
         return nullptr;
     }
 
@@ -320,17 +320,17 @@ bool MinizipUtils::get_info(unzFile uf,
     }
 
     if (filename) {
-        std::vector<char> buf(info.size_filename + 1);
+        std::vector<char> buf(static_cast<size_t>(info.size_filename + 1));
 
         ret = unzGetCurrentFileInfo64(
-            uf,             // file
-            &info,          // pfile_info
-            buf.data(),     // filename
-            buf.size(),     // filename_size
-            nullptr,        // extrafield
-            0,              // extrafield_size
-            nullptr,        // comment
-            0               // comment_size
+            uf,                                 // file
+            &info,                              // pfile_info
+            buf.data(),                         // filename
+            static_cast<uint16_t>(buf.size()),  // filename_size
+            nullptr,                            // extrafield
+            0,                                  // extrafield_size
+            nullptr,                            // comment
+            0                                   // comment_size
         );
 
         if (ret != UNZ_OK) {
@@ -388,18 +388,18 @@ bool MinizipUtils::copy_file_raw(unzFile uf,
 
     // Open raw file in output zip
     ret = zipOpenNewFileInZip2_64(
-        zf,             // file
-        name.c_str(),   // filename
-        &zfi,           // zip_fileinfo
-        nullptr,        // extrafield_local
-        0,              // size_extrafield_local
-        nullptr,        // extrafield_global
-        0,              // size_extrafield_global
-        nullptr,        // comment
-        method,         // method
-        level,          // level
-        1,              // raw
-        zip64           // zip64
+        zf,                             // file
+        name.c_str(),                   // filename
+        &zfi,                           // zip_fileinfo
+        nullptr,                        // extrafield_local
+        0,                              // size_extrafield_local
+        nullptr,                        // extrafield_global
+        0,                              // size_extrafield_global
+        nullptr,                        // comment
+        static_cast<uint16_t>(method),  // method
+        level,                          // level
+        1,                              // raw
+        zip64                           // zip64
     );
     if (ret != ZIP_OK) {
         LOGE("minizip: Failed to open inner file: %s",
@@ -416,15 +416,18 @@ bool MinizipUtils::copy_file_raw(unzFile uf,
     double ratio;
 
     while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        bytes += bytes_read;
+        bytes += static_cast<uint64_t>(bytes_read);
         if (cb) {
             // Scale this to the uncompressed size for the purposes of a
             // progress bar
-            ratio = (double) bytes / ufi.compressed_size;
-            cb(ratio * ufi.uncompressed_size, userData);
+            ratio = static_cast<double>(bytes)
+                    / static_cast<double>(ufi.compressed_size);
+            cb(static_cast<uint64_t>(
+                    ratio * static_cast<double>(ufi.uncompressed_size)),
+               userData);
         }
 
-        ret = zipWriteInFileInZip(zf, buf, bytes_read);
+        ret = zipWriteInFileInZip(zf, buf, static_cast<uint32_t>(bytes_read));
         if (ret != ZIP_OK) {
             LOGE("minizip: Failed to write data to inner file: %s",
                  zip_error_string(ret).c_str());
@@ -468,7 +471,7 @@ bool MinizipUtils::read_to_memory(unzFile uf,
     }
 
     std::vector<unsigned char> data;
-    data.reserve(fi.uncompressed_size);
+    data.reserve(static_cast<size_t>(fi.uncompressed_size));
 
     int ret = unzOpenCurrentFile(uf);
     if (ret != UNZ_OK) {
@@ -482,7 +485,8 @@ bool MinizipUtils::read_to_memory(unzFile uf,
 
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
         if (cb) {
-            cb(data.size() + n, userData);
+            cb(static_cast<uint64_t>(data.size()) + static_cast<uint64_t>(n),
+               userData);
         }
 
         data.insert(data.end(), buf, buf + n);
@@ -553,7 +557,7 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
     size_t bytes_written;
 
     while ((n = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        if (!file.write(buf, n, bytes_written)) {
+        if (!file.write(buf, static_cast<size_t>(n), bytes_written)) {
             LOGE("%s: Failed to write file: %s",
                  full_path.c_str(), file.error_string().c_str());
             unzCloseCurrentFile(uf);
@@ -603,8 +607,8 @@ static bool get_file_time(const std::string &filename, uint32_t *dostime)
     {
         FileTimeToLocalFileTime(&ff32.ftLastWriteTime, &ft_local);
         FileTimeToDosDateTime(&ft_local,
-                              ((LPWORD) dostime) + 1,
-                              ((LPWORD) dostime) + 0);
+                              reinterpret_cast<LPWORD>(dostime) + 1,
+                              reinterpret_cast<LPWORD>(dostime) + 0);
         FindClose(h_find);
         return true;
     } else {
@@ -637,7 +641,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
                                  const std::vector<unsigned char> &contents)
 {
     // Obviously never true, but we'll keep it here just in case
-    bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+    bool zip64 = static_cast<uint64_t>(contents.size()) >= ((1ull << 32) - 1);
 
     zip_fileinfo zi;
     memset(&zi, 0, sizeof(zi));
@@ -665,7 +669,8 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     }
 
     // Write data to file
-    ret = zipWriteInFileInZip(zf, contents.data(), contents.size());
+    ret = zipWriteInFileInZip(zf, contents.data(),
+                              static_cast<uint32_t>(contents.size()));
     if (ret != ZIP_OK) {
         LOGE("minizip: Failed to write inner file data: %s",
              zip_error_string(ret).c_str());
@@ -747,7 +752,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
 
     while ((file_ret = file.read(buf, sizeof(buf), bytes_read))
             && bytes_read > 0) {
-        ret = zipWriteInFileInZip(zf, buf, bytes_read);
+        ret = zipWriteInFileInZip(zf, buf, static_cast<uint32_t>(bytes_read));
         if (ret != ZIP_OK) {
             LOGE("minizip: Failed to write inner file data: %s",
                  zip_error_string(ret).c_str());

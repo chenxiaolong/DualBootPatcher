@@ -34,7 +34,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -236,7 +235,7 @@ static void wait_forever()
 static void load_other_config()
 {
     // Get Android version (needed for pattern input)
-    tw_android_sdk_version = mb::util::property_file_get_snum<int>(
+    tw_android_sdk_version = mb::util::property_file_get_num<int>(
             "/raw/system/build.prop", "ro.build.version.sdk", 0);
 }
 

@@ -24,8 +24,9 @@
 
 #include <ftw.h>
 
+#include "mbcommon/string.h"
+
 #include "mbpio/error.h"
-#include "mbpio/private/string.h"
 
 namespace io
 {
@@ -41,7 +42,7 @@ static int deleteCbNftw(const char *fpath, const struct stat *sb,
 
     int ret = remove(fpath);
     if (ret < 0) {
-        setLastError(Error::PlatformError, priv::format(
+        setLastError(Error::PlatformError, mb::format(
                 "%s: Failed to remove: %s", fpath, strerror(errno)));
     }
     return ret;

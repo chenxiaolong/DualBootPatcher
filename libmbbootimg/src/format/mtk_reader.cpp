@@ -73,7 +73,7 @@ static int read_mtk_header(Reader &reader, File &file,
     MtkHeader mtkhdr;
     size_t n;
 
-    if (!file.seek(offset, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "Failed to seek to MTK header at %" PRIu64 ": %s",
                          offset, file.error_string().c_str());
@@ -171,16 +171,10 @@ MtkFormatReader::MtkFormatReader(Reader &reader)
     , _hdr()
     , _mtk_kernel_hdr()
     , _mtk_ramdisk_hdr()
-    , _header_offset()
-    , _mtk_kernel_offset()
-    , _mtk_ramdisk_offset()
-    , _seg()
 {
 }
 
-MtkFormatReader::~MtkFormatReader()
-{
-}
+MtkFormatReader::~MtkFormatReader() = default;
 
 int MtkFormatReader::type()
 {
@@ -219,7 +213,7 @@ int MtkFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += android::BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -236,7 +230,7 @@ int MtkFormatReader::bid(File &file, int best_bid)
         // Update bid to account for matched bids
         _mtk_kernel_offset = mtk_kernel_offset;
         _mtk_ramdisk_offset = mtk_ramdisk_offset;
-        bid += 2 * MTK_MAGIC_SIZE * 8;
+        bid += static_cast<int>(2 * MTK_MAGIC_SIZE * 8);
     } else {
         return ret;
     }
@@ -335,32 +329,32 @@ int MtkFormatReader::read_header(File &file, Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
                            kernel_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            *_mtk_kernel_offset, _mtk_kernel_hdr.size, false,
                            _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
                            ramdisk_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            *_mtk_ramdisk_offset, _mtk_ramdisk_hdr.size, false,
                            _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     if (_hdr.second_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     if (_hdr.dt_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                dt_offset, _hdr.dt_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     return RET_OK;

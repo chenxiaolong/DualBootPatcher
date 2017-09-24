@@ -28,7 +28,7 @@
 #include <cstddef>
 
 // zu, zd, etc. are not supported until VS2015
-#ifdef _WIN32
+#if defined(_WIN32) && !__USE_MINGW_ANSI_STDIO
 #  define MB_PRIzd "Id"
 #  define MB_PRIzi "Ii"
 #  define MB_PRIzo "Io"

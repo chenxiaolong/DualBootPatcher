@@ -55,7 +55,7 @@ bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
 
     char buf[20];
     int size = snprintf(buf, sizeof(buf), "%u", timeout_ms);
-    if (write(fd, buf, size) < 0) {
+    if (write(fd, buf, static_cast<size_t>(size)) < 0) {
         LOGW("%s: Failed to write: %s", VIBRATOR_PATH, strerror(errno));
         return false;
     }

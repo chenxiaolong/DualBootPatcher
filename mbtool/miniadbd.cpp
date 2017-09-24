@@ -61,7 +61,7 @@ static bool write_file(const char *path, const char *data, std::size_t size)
             return false;
         }
         data += n;
-        size -= n;
+        size -= static_cast<size_t>(n);
     }
 
     close(fd);

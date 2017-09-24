@@ -56,7 +56,7 @@ bool bi_copy_data_to_fd(Reader &reader, int fd)
                 return false;
             }
 
-            remain -= n_written;
+            remain -= static_cast<size_t>(n_written);
         }
     }
 

@@ -42,8 +42,6 @@ bool reboot_via_init(const std::string &reboot_arg)
     while (1) {
         pause();
     }
-
-    return true;
 }
 
 bool reboot_directly(const std::string &reboot_arg)
@@ -56,8 +54,6 @@ bool reboot_directly(const std::string &reboot_arg)
     while (1) {
         pause();
     }
-
-    return true;
 }
 
 bool shutdown_via_init()
@@ -70,8 +66,6 @@ bool shutdown_via_init()
     while (1) {
         pause();
     }
-
-    return true;
 }
 
 bool shutdown_directly()
@@ -84,8 +78,6 @@ bool shutdown_directly()
     while (1) {
         pause();
     }
-
-    return true;
 }
 
 }

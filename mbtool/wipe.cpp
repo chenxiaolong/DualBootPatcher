@@ -41,52 +41,52 @@
 namespace mb
 {
 
-class WipeDirectory : public util::FTSWrapper {
+class WipeDirectory : public util::FtsWrapper {
 public:
     WipeDirectory(std::string path, std::vector<std::string> exclusions)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _exclusions(std::move(exclusions))
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
+        , _exclusions(std::move(exclusions))
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // Exclude first-level directories
         if (_curr->fts_level == 1) {
             if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
                     != _exclusions.end()) {
-                return Action::FTS_Skip;
+                return Action::Skip;
             }
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted
         // in FTS_DP
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
 private:

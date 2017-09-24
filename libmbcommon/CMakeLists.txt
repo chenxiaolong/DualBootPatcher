@@ -76,6 +76,48 @@ if(NOT ANDROID)
     add_definitions(-D_FILE_OFFSET_BITS=64)
 endif()
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    # mb::format() requires non-literal format string
+    set_source_files_properties(
+        src/string.cpp
+        PROPERTIES
+        COMPILE_FLAGS
+        "-Wno-format-nonliteral"
+    )
+
+    set_source_files_properties(
+        src/external/musl/memmem.c
+        PROPERTIES
+        COMPILE_FLAGS
+        "-Wno-cast-qual -Wno-comma -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
+    )
+
+    if(ANDROID)
+        set_source_files_properties(
+            src/external/gnulib/getdelim.c
+            PROPERTIES
+            COMPILE_FLAGS
+            "-Wno-conditional-uninitialized -Wno-conversion -Wno-sign-conversion"
+        )
+    endif()
+endif()
+
+if(WIN32)
+    set_source_files_properties(
+        src/external/musl/memmem.c
+        PROPERTIES
+        COMPILE_FLAGS
+        "-Wno-cast-qual -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
+    )
+
+    set_source_files_properties(
+        src/external/gnulib/getdelim.c
+        PROPERTIES
+        COMPILE_FLAGS
+        "-Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
+    )
+endif()
+
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -113,8 +155,8 @@ foreach(variant ${variants})
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 
-    # Don't warn on empty format strings
     if(NOT MSVC)
+        # Don't warn on empty format strings
         target_compile_options(${lib_target} PRIVATE -Wno-format-zero-length)
     endif()
 

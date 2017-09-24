@@ -208,7 +208,7 @@ static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
     if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
         char buf[PROP_NAME_MAX];
         int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
-        if (n >= 0 && n < (int) sizeof(buf)) {
+        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
             property_set(buf, *value);
         }
     }
@@ -349,7 +349,8 @@ static bool fix_file_contexts(const char *path)
             fputc('#', fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("%s: Failed to write file: %s",
                  new_path.c_str(), strerror(errno));
             return false;
@@ -380,7 +381,7 @@ static bool fix_binary_file_contexts(const char *path)
     SigVerifyResult result;
     result = verify_signature("/sbin/file-contexts-tool",
                               "/sbin/file-contexts-tool.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", "/sbin/file-contexts-tool");
         return false;
     }
@@ -491,7 +492,8 @@ static bool add_mbtool_services(bool enable_appsync)
             fputs("import /init.multiboot.rc\n", fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
         }
@@ -822,16 +824,12 @@ static std::string find_fstab()
 
             // Replace ${ro.hardware}
             if (fstab.find("${ro.hardware}") != std::string::npos) {
-                optional<std::string> hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", hardware);
-                util::replace_all(fstab, "${ro.hardware}",
-                                  hardware ? *hardware : "");
+                util::replace_all(fstab, "${ro.hardware}", hardware);
             }
 
             LOGD("Found fstab during search: %s", fstab.c_str());
 
             // Check if fstab exists
-            struct stat sb;
             if (stat(fstab.c_str(), &sb) < 0) {
                 LOGE("Failed to stat fstab %s: %s",
                      fstab.c_str(), strerror(errno));
@@ -858,7 +856,7 @@ static std::string find_fstab()
 
 static unsigned long get_api_version()
 {
-    return util::property_file_get_unum<unsigned long>(
+    return util::property_file_get_num<unsigned long>(
             "/system/build.prop", "ro.build.version.sdk", 0);
 }
 
@@ -975,7 +973,8 @@ static bool extract_zip(const char *source, const char *target)
     int bytes_read;
 
     while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+        size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
+                                      fp);
         if (bytes_written == 0) {
             bool ret = !ferror(fp);
             fclose(fp);
@@ -1035,7 +1034,7 @@ static bool launch_boot_menu()
     // Verify boot UI signature
     SigVerifyResult result;
     result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
         return false;
     }
@@ -1228,11 +1227,12 @@ int init_main(int argc, char *argv[])
     LOGV("ROM ID is: %s", rom_id.c_str());
 
     // Mount system, cache, and external SD from fstab file
-    int flags = MOUNT_FLAG_REWRITE_FSTAB
-            | MOUNT_FLAG_MOUNT_SYSTEM
-            | MOUNT_FLAG_MOUNT_CACHE
-            | MOUNT_FLAG_MOUNT_DATA
-            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
+    MountFlags flags =
+            MountFlag::RewriteFstab
+            | MountFlag::MountSystem
+            | MountFlag::MountCache
+            | MountFlag::MountData
+            | MountFlag::MountExternalSd;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         critical_failure();
@@ -1250,7 +1250,7 @@ int init_main(int argc, char *argv[])
     selinux_mount();
     // Load pre-boot policy
     patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE, util::SELINUX_LOAD_FILE,
-                   SELinuxPatch::PRE_BOOT);
+                   SELinuxPatch::PreBoot);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1290,7 +1290,7 @@ int init_main(int argc, char *argv[])
     if (stat(util::SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
         if (!patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE,
                             util::SELINUX_DEFAULT_POLICY_FILE,
-                            SELinuxPatch::MAIN)) {
+                            SELinuxPatch::Main)) {
             LOGW("%s: Failed to patch policy",
                  util::SELINUX_DEFAULT_POLICY_FILE);
             critical_failure();

@@ -7,6 +7,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
 
     add_library(miscstuff-jni SHARED ${MISCSTUFF_JNI_SOURCES})
 
+    target_compile_options(
+        miscstuff-jni
+        PRIVATE
+        -Wno-missing-prototypes
+    )
+
     target_include_directories(
         miscstuff-jni
         PRIVATE

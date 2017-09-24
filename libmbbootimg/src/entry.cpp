@@ -41,15 +41,13 @@ Entry::Entry(const Entry &entry)
 {
 }
 
-Entry::Entry(Entry &&entry)
+Entry::Entry(Entry &&entry) noexcept
     : Entry()
 {
     _priv_ptr.swap(entry._priv_ptr);
 }
 
-Entry::~Entry()
-{
-}
+Entry::~Entry() = default;
 
 Entry & Entry::operator=(const Entry &entry)
 {
@@ -57,7 +55,7 @@ Entry & Entry::operator=(const Entry &entry)
     return *this;
 }
 
-Entry & Entry::operator=(Entry &&entry)
+Entry & Entry::operator=(Entry &&entry) noexcept
 {
     _priv_ptr.swap(entry._priv_ptr);
     *entry._priv_ptr = EntryPrivate();

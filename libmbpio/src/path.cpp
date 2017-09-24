@@ -24,7 +24,7 @@
 namespace io
 {
 
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
 static const char *delims = "/\\";
 static const char *pathsep = "\\";
 #else

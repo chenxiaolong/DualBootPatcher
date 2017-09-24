@@ -61,23 +61,72 @@ set(MBTOOL_RECOVERY_SOURCES
 set_source_files_properties(
     daemon_v3.cpp
     PROPERTIES
-    COMPILE_FLAGS "-Wno-missing-declarations"
+    COMPILE_FLAGS
+    "-Wno-missing-declarations"
+)
+
+set_source_files_properties(
+    packages.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-format-nonliteral"
 )
 
 set_source_files_properties(
     sepolpatch.cpp
     PROPERTIES
-    COMPILE_FLAGS "-Wno-keyword-macro"
+    COMPILE_FLAGS
+    "-Wno-keyword-macro"
 )
 
 set_source_files_properties(
     auditd.cpp
     miniadbd.cpp
-    external/audit/libaudit.h
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-gnu-statement-expression -Wno-zero-length-array"
+)
+
+set_source_files_properties(
     external/audit/libaudit.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-cast-align -Wno-conversion -Wno-gnu-statement-expression -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    external/legacy_property_service.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-cast-align -Wno-missing-prototypes -Wno-missing-variable-declarations -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
     external/property_service.cpp
     PROPERTIES
-    COMPILE_FLAGS "-Wno-gnu-statement-expression -Wno-zero-length-array"
+    COMPILE_FLAGS
+    "-Wno-gnu-statement-expression -Wno-missing-prototypes -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    initwrapper/cutils/uevent.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-cast-align -Wno-old-style-cast -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    initwrapper/devices.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-missing-prototypes -Wno-shorten-64-to-32 -Wno-sign-conversion"
+)
+
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
+    PROPERTIES
+    COMPILE_FLAGS
+    "-Wno-double-promotion -Wno-sign-conversion"
 )
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -152,8 +201,20 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     target_compile_options(
         miniadbd-static
         PRIVATE
-        -Wno-missing-field-initializers -Wno-pedantic -Wno-unused-parameter
+        -Wno-conditional-uninitialized
+        -Wno-conversion
         -Wno-gnu-statement-expression
+        -Wno-missing-field-initializers
+        -Wno-missing-noreturn
+        -Wno-missing-prototypes
+        -Wno-missing-variable-declarations
+        -Wno-old-style-cast
+        -Wno-pedantic
+        -Wno-shadow
+        -Wno-shorten-64-to-32
+        -Wno-sign-conversion
+        -Wno-unreachable-code-return
+        -Wno-unused-parameter
     )
 
     set_target_properties(
