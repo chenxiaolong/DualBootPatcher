@@ -105,31 +105,123 @@ static Tid _get_tid()
 #endif
 }
 
-static bool _local_time(time_t t, std::tm &tm)
+static std::tm _tm_epoch()
 {
-    // Some systems call tzset() in localtime_r() and others don't. We'll
-    // manually call it to ensure the behavior is the same on every platform.
-    tzset();
-
-#ifdef _WIN32
-    return localtime_s(&tm, &t) == 0;
-#else
-    return localtime_r(&t, &tm) != nullptr;
-#endif
+    std::tm tm = {};
+    tm.tm_mday = 1;
+    tm.tm_year = 70;
+    tm.tm_wday = 4;
+    tm.tm_isdst = 0;
+    return tm;
 }
 
-static void _local_time_ns(const std::chrono::system_clock::time_point &tp,
+// Based on wine's msvcrt code and mingw's winpthread code
+#ifdef _WIN32
+// Number of 100ns-seconds between the beginning of the Windows epoch
+// (Jan. 1, 1601) and the Unix epoch (Jan. 1, 1970)
+static constexpr int64_t DELTA_EPOCH_IN_100NS = INT64_C(116444736000000000);
+static constexpr uint32_t POW10_7 = 10000000;
+
+union FileTimeU64
+{
+    uint64_t u64;
+    FILETIME ft;
+};
+
+static constexpr int g_month_lengths[2][12] = {
+    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+    { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+};
+
+static inline bool _is_leap_year(int year)
+{
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+}
+
+static bool _is_dst(const TIME_ZONE_INFORMATION &tzi, const SYSTEMTIME &st)
+{
+    // No DST if timezone doesn't have daylight savings rules
+    if (!tzi.DaylightDate.wMonth) {
+        return false;
+    }
+
+    // Remove UTC bias and standard bias, leaving only the daylight savings bias
+    // so that when converting to local time, the SYSTEMTIME structure only
+    // changes if daylight savings is in effect.
+    // Add bias only for daylight time
+    TIME_ZONE_INFORMATION tmp = tzi;
+    tmp.Bias = 0;
+    tmp.StandardBias = 0;
+
+    SYSTEMTIME out;
+
+    if (!SystemTimeToTzSpecificLocalTime(&tmp, &st, &out)) {
+        return false;
+    }
+
+    return memcmp(&st, &out, sizeof(SYSTEMTIME));
+  }
+
+static void _time_point_to_file_time(const std::chrono::system_clock::time_point &tp,
+                                     FILETIME &ft)
+{
+    using namespace std::chrono;
+
+    FileTimeU64 ftu64;
+
+    auto t = system_clock::to_time_t(tp);
+    auto nanos = duration_cast<nanoseconds>(
+            tp - time_point_cast<seconds>(tp)).count();
+
+    ftu64.u64 = static_cast<uint64_t>(t) * POW10_7 + DELTA_EPOCH_IN_100NS
+            + static_cast<uint64_t>(nanos) / 100;
+
+    ft = ftu64.ft;
+}
+
+static bool _file_time_to_ns(const FILETIME &ft,
+                             const TIME_ZONE_INFORMATION &tzi,
+                             std::tm &tm, long &nanos)
+{
+    SYSTEMTIME st;
+
+    if (!FileTimeToSystemTime(&ft, &st)) {
+        return false;
+    }
+
+    tm.tm_sec = st.wSecond;
+    tm.tm_min = st.wMinute;
+    tm.tm_hour = st.wHour;
+    tm.tm_mday = st.wDay;
+    tm.tm_year = st.wYear - 1900;
+    tm.tm_mon = st.wMonth - 1;
+    tm.tm_wday = st.wDayOfWeek;
+    for (auto i = tm.tm_yday = 0; i < st.wMonth - 1; i++) {
+        tm.tm_yday += g_month_lengths[_is_leap_year(st.wYear)][i];
+    }
+    tm.tm_yday += st.wDay - 1;
+    tm.tm_isdst = _is_dst(tzi, st);
+
+    FileTimeU64 ftu64;
+    ftu64.ft = ft;
+
+    nanos = static_cast<long>(
+            (ftu64.u64 - DELTA_EPOCH_IN_100NS) % POW10_7 * 100);
+
+    return true;
+}
+#endif
+
+static bool _local_time_ns(const std::chrono::system_clock::time_point &tp,
                            std::tm &tm, long &nanos, long &gmtoff)
 {
     using namespace std::chrono;
 
-    auto tp_seconds = time_point_cast<seconds>(tp);
-    auto t = system_clock::to_time_t(tp);
-
     // * Windows
-    // - There will be a race condition if the timezone is changed and
-    //   tzset() is called between _local_time() and accessing _timezone or
-    //   _dstbias.
+    // - If localtime_s() is used, there will be a race condition if the
+    //   timezone is changed and tzset() is called between localtime_s() and
+    //   accessing _timezone or _dstbias. Instead, we'll get the timezone
+    //   beforehand, and convert to local time manually.
     //
     // * Linux with glibc, musl, or bionic
     // * macOS
@@ -137,40 +229,49 @@ static void _local_time_ns(const std::chrono::system_clock::time_point &tp,
     // - localtime_r locks the tzset mutex so there's no race condition in
     //   setting the tm_gmtoff field.
 
-    if (!_local_time(t, tm)) {
-        tm = {};
-        tm.tm_mday = 1;
-        tm.tm_year = 70;
-        tm.tm_wday = 4;
-        tm.tm_isdst = 0;
-        nanos = 0;
-        gmtoff = 0;
-    } else {
-        nanos = static_cast<long>(
-                duration_cast<nanoseconds>(tp - tp_seconds).count());
-
 #ifdef _WIN32
-        long dstbias;
+    TIME_ZONE_INFORMATION tzi;
+    FILETIME ft_utc;
+    FILETIME ft_local;
 
-        // The default msvcrt that mingw uses doesn't have the _get_timezone()
-        // and _get_dstbias() functions
-#ifndef __GNUC__
-        if (_get_timezone(&gmtoff) || _get_dstbias(&dstbias)) {
-            return {};
-        }
-#else
-        gmtoff = _timezone;
-        dstbias = _dstbias;
-#endif
-
-        if (tm.tm_isdst) {
-            gmtoff += dstbias;
-        }
-        gmtoff = -gmtoff;
-#else
-        gmtoff = tm.tm_gmtoff;
-#endif
+    if (GetTimeZoneInformation(&tzi) == TIME_ZONE_ID_INVALID) {
+        return false;
     }
+
+    _time_point_to_file_time(tp, ft_utc);
+
+    if (!FileTimeToLocalFileTime(&ft_utc, &ft_local)) {
+        return false;
+    }
+
+    if (!_file_time_to_ns(ft_local, tzi, tm, nanos)) {
+        return false;
+    }
+
+    gmtoff = -tzi.Bias * 60;
+
+    if (tzi.DaylightDate.wMonth && tm.tm_isdst) {
+        gmtoff -= tzi.DaylightBias * 60;
+    } else if (tzi.StandardDate.wMonth) {
+        gmtoff -= tzi.StandardBias * 60;
+    }
+#else
+    auto t = system_clock::to_time_t(tp);
+
+    // Some systems call tzset() in localtime_r() and others don't. We'll
+    // manually call it to ensure the behavior is the same on every platform.
+    tzset();
+
+    if (!localtime_r(&t, &tm)) {
+        return false;
+    }
+
+    nanos = static_cast<long>(duration_cast<nanoseconds>(
+            tp - time_point_cast<seconds>(tp)).count());
+    gmtoff = tm.tm_gmtoff;
+#endif
+
+    return true;
 }
 
 static std::string _format_iso8601(const std::tm &tm, long nanoseconds,
@@ -241,7 +342,12 @@ static std::string _format_rec(const LogRecord &rec)
                     long nanos;
                     long gmtoff;
 
-                    _local_time_ns(rec.time, tm, nanos, gmtoff);
+                    if (!_local_time_ns(rec.time, tm, nanos, gmtoff)) {
+                        tm = _tm_epoch();
+                        nanos = 0;
+                        gmtoff = 0;
+                    }
+
                     time_buf = _format_iso8601(tm, nanos, gmtoff);
                 }
                 buf += *time_buf;
