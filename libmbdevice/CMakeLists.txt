@@ -103,9 +103,6 @@ foreach(variant ${variants})
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
     # Target C99
     if(NOT MSVC)
         set_target_properties(
@@ -175,12 +172,6 @@ endif()
 # Build schemas2cpp
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(schemas2cpp schemas2cpp.cpp)
-
-    set_target_properties(
-        schemas2cpp
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
 
     if(NOT MSVC)
         set_target_properties(

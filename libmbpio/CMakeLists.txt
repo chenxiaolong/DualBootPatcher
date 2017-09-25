@@ -50,7 +50,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
     )
 endif()
 
@@ -69,12 +68,6 @@ if(MBP_TARGET_HAS_BUILDS)
         mbpio-static
         PRIVATE
         -DMB_LIBRARY
-    )
-
-    set_target_properties(
-        mbpio-static
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
     )
 
     if(NOT MSVC)

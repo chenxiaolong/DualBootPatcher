@@ -63,7 +63,6 @@ if(ENABLE_OVERLAY_MSM_OLD_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
     )
 
     target_compile_definitions(
@@ -103,7 +102,6 @@ if(ENABLE_ADF_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
     )
 
     list(APPEND MINUI_BACKEND_OBJECTS $<TARGET_OBJECTS:minui-backend-adf>)
@@ -129,7 +127,6 @@ if(ENABLE_DRM_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
     )
 
     target_include_directories(
@@ -163,7 +160,6 @@ if(ENABLE_FBDEV_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
     )
 
     list(APPEND MINUI_BACKEND_OBJECTS $<TARGET_OBJECTS:minui-backend-fbdev>)
@@ -193,7 +189,6 @@ set_target_properties(
     PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
 )
 
 target_link_libraries(

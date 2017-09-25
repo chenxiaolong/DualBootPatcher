@@ -11,7 +11,6 @@ set_target_properties(
     PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
 )
 
 target_link_libraries(

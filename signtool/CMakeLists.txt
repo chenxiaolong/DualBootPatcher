@@ -7,12 +7,6 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
         ${MBP_OPENSSL_INCLUDES}
     )
 
-    set_target_properties(
-        signtool
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
     if(NOT MSVC)
         set_target_properties(
             signtool

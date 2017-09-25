@@ -26,7 +26,6 @@ set_target_properties(
     PROPERTIES
     C_STANDARD 11
     C_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
 )
 
 target_compile_options(
