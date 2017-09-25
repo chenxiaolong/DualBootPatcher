@@ -144,3 +144,16 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p43
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
