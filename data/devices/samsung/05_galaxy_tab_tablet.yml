@@ -36,6 +36,16 @@
       - /dev/block/platform/omap/omap_hsmmc.1/by-name/RECOVERY
       - /dev/block/mmcblk0p6
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab 3 8.0 (Wifi)
   id: lt01wifi
@@ -63,6 +73,16 @@
       - /dev/block/platform/dw_mmc/by-name/RECOVERY
       - /dev/block/mmcblk0p10
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab 3 10.1
   id: santos
@@ -99,6 +119,16 @@
     extra:
       - '/dev/block/pci/pci0000:00/0000:00:01.0/by-name/RADIO'
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab 4 10.1 (Wifi)
   id: matissewifi
@@ -125,6 +155,19 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: landscape_hdpi
 
 
 - name: Samsung Galaxy Tab Pro 8.4 (Wifi)
@@ -153,6 +196,19 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: landscape_hdpi
 
 
 - name: Samsung Galaxy Tab Pro 10.1 (Wifi)
@@ -184,6 +240,17 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/i2c-gpio.24/i2c-24/24-002c/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab Pro 10.1 (LTE)
   id: picassolte
@@ -211,6 +278,16 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab Pro 12.2 (Wifi)
   id: v2wifi
@@ -240,6 +317,16 @@
       - /dev/block/platform/dw_mmc.0/by-name/RECOVERY
       - /dev/block/mmcblk0p10
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: landscape_hdpi
 
 - name: Samsung Galaxy Tab S 8.4/10.5
   id: tab_s
@@ -280,6 +367,17 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/s5p-mipi-dsim.1/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Tab S2 8.0/9.7
   id: tab_s2
@@ -318,6 +416,18 @@
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
       
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13800000.decon_fb/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
 - name: Samsung Galaxy Tab Active 8.0 (LTE)
   id: SM-T365
   codenames:
