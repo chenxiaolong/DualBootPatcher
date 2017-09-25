@@ -18,3 +18,15 @@
       - /dev/block/bootdevice/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 153
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
