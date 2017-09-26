@@ -9,7 +9,4 @@ if(ANDROID)
         ${THIRD_PARTY_BORINGSSL_DIR}/${ANDROID_ABI}/lib/libssl.a)
 endif()
 
-# The version checks in CMake <3.7 do not work with the BoringSSL headers
-if(NOT ANDROID OR NOT CMAKE_VERSION VERSION_LESS 3.7)
-    find_package(OpenSSL REQUIRED)
-endif()
+find_package(OpenSSL REQUIRED)
