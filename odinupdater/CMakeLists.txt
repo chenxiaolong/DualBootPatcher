@@ -11,12 +11,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         )
     endforeach()
 
-    target_compile_definitions(
-        odinupdater
-        PRIVATE
-        -DSTRICTZIPUNZIP
-    )
-
     if(NOT MSVC)
         set_target_properties(
             odinupdater

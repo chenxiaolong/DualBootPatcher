@@ -24,4 +24,11 @@ foreach(_target minizip-shared minizip-static)
             )
         endif()
     endif()
+
+    # Always enable STRICTZIPUNZIP
+    target_compile_definitions(
+        ${_target}
+        INTERFACE
+        -DSTRICTZIPUNZIP
+    )
 endforeach()

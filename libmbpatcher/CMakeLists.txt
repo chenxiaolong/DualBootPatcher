@@ -65,9 +65,6 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # minizip type safety
-    target_compile_definitions(${lib_target} PRIVATE -DSTRICTZIPUNZIP)
-
     # Export symbols
     target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
 

@@ -167,13 +167,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
         )
 
-        # minizip type safety
-        target_compile_definitions(
-            ${target}
-            PRIVATE
-            -DSTRICTZIPUNZIP
-        )
-
         # Disable some pugixml features
         target_compile_definitions(
             ${target}
