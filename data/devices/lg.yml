@@ -32,6 +32,18 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/wled:backlight/brightness
+    max_brightness: 4095
+    default_brightness: 2067
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 
 - name: LG G2 (d802)
   id: lgg2_d802
@@ -63,6 +75,17 @@
       - /dev/block/platform/msm_sdcc.1/by-name/aboot
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/wled:backlight/brightness
+    max_brightness: 4095
+    default_brightness: 2067
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G3
   id: lgg3
@@ -132,6 +155,18 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 
 - name: LG G4
   id: lgg4
@@ -164,6 +199,16 @@
       - /dev/block/platform/f9824900.sdhci/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 
 - name: LG G4 (T-Mobile)
@@ -198,6 +243,15 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG G5
   id: lgg5
@@ -321,6 +375,19 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+
 - name: LG V20 (Unlocked)
   id: elsa_omni
   codenames:
@@ -353,6 +420,17 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: LG Optimus L5
   id: m4
