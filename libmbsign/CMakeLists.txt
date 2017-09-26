@@ -33,7 +33,6 @@ foreach(variant ${variants})
     target_include_directories(
         ${lib_target}
         PUBLIC include
-        PRIVATE ${MBP_OPENSSL_INCLUDES}
     )
 
     # Only build static library if needed
@@ -68,7 +67,7 @@ foreach(variant ${variants})
         PUBLIC
         mbcommon-${variant}
         mblog-${variant}
-        ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        OpenSSL::Crypto
     )
 
     # Install shared library

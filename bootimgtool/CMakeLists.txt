@@ -44,15 +44,15 @@ foreach(variant ${variants})
     # Set binary name
     set_target_properties(${bin_target} PROPERTIES OUTPUT_NAME bootimgtool)
 
+    target_link_libraries(
+        ${bin_target}
+        mbbootimg-${variant}
+        mbpio-static
+        mbcommon-${variant}
+    )
+
     # Link dependencies
     if(${variant} STREQUAL shared)
-        target_link_libraries(
-            ${bin_target}
-            mbbootimg-${variant}
-            mbpio-static
-            mbcommon-${variant}
-        )
-
         # Set rpath for portable build
         if (${MBP_PORTABLE})
             set_target_properties(
@@ -63,14 +63,6 @@ foreach(variant ${variants})
             )
         endif()
     elseif(${variant} STREQUAL static)
-        target_link_libraries(
-            ${bin_target}
-            mbbootimg-${variant}
-            mbpio-${variant}
-            mbcommon-${variant}
-            ${MBP_OPENSSL_CRYPTO_LIBRARY}
-        )
-
         set_target_properties(
             ${bin_target}
             PROPERTIES

@@ -35,7 +35,6 @@ target_include_directories(
     mbbootui-gui
     PRIVATE
     ..
-    ${MBP_LIBPIXELFLINGER_INCLUDES}
     ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
@@ -80,7 +79,5 @@ target_link_libraries(
     mbdevice-static
     mblog-static
     mbutil-static
-    ${MBP_LIBPIXELFLINGER_LIBRARIES}
-    ${MBP_LIBUTILS_LIBRARIES}
-    ${MBP_LIBCUTILS_LIBRARIES}
+    AndroidSystemCore::Cutils
 )

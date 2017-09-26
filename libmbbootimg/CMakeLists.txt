@@ -71,13 +71,7 @@ foreach(variant ${variants})
     endif()
 
     # Includes
-    target_include_directories(
-        ${lib_target}
-        PUBLIC
-        include
-        PRIVATE
-        ${MBP_OPENSSL_INCLUDES}
-    )
+    target_include_directories(${lib_target} PUBLIC include)
 
     # Only build static library if needed
     if(${variant} STREQUAL static)
@@ -112,7 +106,7 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC mbcommon-${variant}
-        PRIVATE ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        PRIVATE OpenSSL::Crypto
     )
 
     # Install shared library
@@ -146,7 +140,6 @@ if(variants AND MBP_ENABLE_TESTS)
         mbbootimg_tests
         mbbootimg-static
         mbcommon-static
-        ${MBP_OPENSSL_CRYPTO_LIBRARY}
         gtest
         gtest_main
     )

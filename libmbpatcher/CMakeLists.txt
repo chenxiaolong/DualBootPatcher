@@ -28,7 +28,8 @@ endif()
 
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
+if(MBP_TARGET_HAS_BUILDS
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants static)
 endif()
 if(${MBP_BUILD_TARGET} STREQUAL android-app
@@ -54,9 +55,6 @@ foreach(variant ${variants})
         include
         PRIVATE
         .
-        ${MBP_LIBARCHIVE_INCLUDES}
-        ${MBP_LIBLZMA_INCLUDES}
-        ${MBP_ZLIB_INCLUDES}
         ${CMAKE_SOURCE_DIR}/external
     )
 
@@ -96,9 +94,7 @@ foreach(variant ${variants})
         mbpio-static
         mblog-${variant}
         minizip-${variant}
-        ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        LibArchive::LibArchive
     )
 
     if(${MBP_BUILD_TARGET} STREQUAL android-app)

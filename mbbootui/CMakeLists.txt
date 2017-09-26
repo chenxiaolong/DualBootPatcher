@@ -56,8 +56,6 @@ target_include_directories(
     mbbootui
     PRIVATE
     .
-    ${MBP_LIBARCHIVE_INCLUDES}
-    ${MBP_LIBCUTILS_INCLUDES}
     ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
@@ -79,7 +77,8 @@ target_link_libraries(
     mbdevice-static
     mblog-static
     mbcommon-static
-    ${MBP_LIBARCHIVE_LIBRARIES}
+    AndroidSystemCore::Cutils
+    LibArchive::LibArchive
 )
 
 install(

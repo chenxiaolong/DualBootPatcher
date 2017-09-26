@@ -44,7 +44,7 @@ set_source_files_properties(
 
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
     list(APPEND variants static)
 endif()
 # No shared version
@@ -63,13 +63,8 @@ foreach(variant ${variants})
     # Includes
     target_include_directories(
         ${lib_target}
-        PUBLIC
-        include
-        PRIVATE
-        .
-        ${MBP_LIBARCHIVE_INCLUDES}
-        ${MBP_LIBSEPOL_INCLUDES}
-        ${MBP_OPENSSL_INCLUDES}
+        PUBLIC include
+        PRIVATE .
     )
 
     # Only build static library if needed
@@ -101,10 +96,12 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
+        PUBLIC
+        LibSepol::LibSepol
         PRIVATE
         mblog-${variant}
-        ${MBP_LIBSEPOL_LIBRARIES}
-        ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        LibArchive::LibArchive
+        OpenSSL::Crypto
     )
 
     # Install shared library

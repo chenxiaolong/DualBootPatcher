@@ -8,12 +8,6 @@ set(include_dirs
     ${mbcommon_include}
     ${mbdevice_include}
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    ${MBP_FREETYPE2_INCLUDES}
-    ${MBP_LIBPNG_INCLUDES}
-    ${MBP_ZLIB_INCLUDES}
-    ${MBP_LIBCUTILS_INCLUDES}
-    ${MBP_LIBLOG_INCLUDES}
-    ${MBP_LIBPIXELFLINGER_INCLUDES}
 )
 
 # Uncomment to enable event logging
@@ -63,6 +57,7 @@ if(ENABLE_OVERLAY_MSM_OLD_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
+        LINK_LIBRARIES AndroidSystemCore::PixelFlinger
     )
 
     target_compile_definitions(
@@ -102,6 +97,7 @@ if(ENABLE_ADF_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
+        LINK_LIBRARIES AndroidSystemCore::PixelFlinger
     )
 
     list(APPEND MINUI_BACKEND_OBJECTS $<TARGET_OBJECTS:minui-backend-adf>)
@@ -127,18 +123,10 @@ if(ENABLE_DRM_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
-    )
-
-    target_include_directories(
-        minui-backend-drm
-        BEFORE
-        PRIVATE
-        ${MBP_LIBDRM_INCLUDES}
-        ${MBP_LIBDRM_INCLUDES}/drm
+        LINK_LIBRARIES "AndroidSystemCore::PixelFlinger;LibDrm::LibDrm"
     )
 
     list(APPEND MINUI_BACKEND_OBJECTS $<TARGET_OBJECTS:minui-backend-drm>)
-    list(APPEND MINUI_BACKEND_LIBRARIES ${MBP_LIBDRM_LIBRARIES})
 endif()
 
 # FBDEV backend
@@ -160,6 +148,7 @@ if(ENABLE_FBDEV_BACKEND)
         PROPERTIES
         CXX_STANDARD 11
         CXX_STANDARD_REQUIRED 1
+        LINK_LIBRARIES AndroidSystemCore::PixelFlinger
     )
 
     list(APPEND MINUI_BACKEND_OBJECTS $<TARGET_OBJECTS:minui-backend-fbdev>)
@@ -195,10 +184,9 @@ target_link_libraries(
     mbbootui-minui
     PRIVATE
     ${MINUI_BACKEND_LIBRARIES}
-    ${MBP_FREETYPE2_LIBRARIES}
-    ${MBP_LIBPNG_LIBRARIES}
-    ${MBP_ZLIB_LIBRARIES}
-    ${MBP_LIBLOG_LIBRARIES}
-    ${MBP_LIBPIXELFLINGER_LIBRARIES}
-    ${MBP_LIBCUTILS_LIBRARIES}
+    AndroidSystemCore::Cutils
+    AndroidSystemCore::PixelFlinger
+    Freetype::Freetype
+    LibDrm::LibDrm # TODO: If DRM is enabled
+    PNG::PNG
 )

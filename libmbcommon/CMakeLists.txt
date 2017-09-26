@@ -144,7 +144,6 @@ foreach(variant ${variants})
     target_include_directories(
         ${lib_target}
         PUBLIC include
-        PRIVATE ${MBP_LIBICONV_INCLUDES}
     )
 
     # Only build static library if needed
@@ -182,8 +181,14 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC optional
-        PRIVATE ${MBP_LIBICONV_LIBRARIES}
     )
+
+    if(TARGET Iconv::Iconv)
+        target_link_libraries(
+            ${lib_target}
+            PRIVATE Iconv::Iconv
+        )
+    endif()
 
     # Install shared library
     if(${variant} STREQUAL shared)

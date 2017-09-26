@@ -157,10 +157,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
-            ${MBP_LIBARCHIVE_INCLUDES}
-            ${MBP_LIBSEPOL_INCLUDES}
-            ${MBP_OPENSSL_INCLUDES}
-            ${MBP_PROCPS_NG_INCLUDES}
             ${CMAKE_SOURCE_DIR}/external
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
@@ -248,8 +244,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbcommon-static
         minizip-static
         rapidjson
-        ${MBP_PROCPS_NG_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        Procps::Procps
     )
     target_link_libraries(
         mbtool_recovery
@@ -263,10 +258,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbcommon-static
         minizip-static
         rapidjson
-        ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_LZ4_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        LibArchive::LibArchive
+        Procps::Procps # TODO
     )
 
     install(

@@ -1,12 +1,6 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(devicesgen devicesgen.cpp)
 
-    target_include_directories(
-        devicesgen
-        PRIVATE
-        ${MBP_YAML_CPP_INCLUDES}
-    )
-
     if(NOT MSVC)
         set_target_properties(
             devicesgen
@@ -19,7 +13,7 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     target_link_libraries(
         devicesgen
         mbdevice-shared
-        ${MBP_YAML_CPP_LIBRARIES}
+        YamlCpp::YamlCpp
         rapidjson
     )
 

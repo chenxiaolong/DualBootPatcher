@@ -8,13 +8,6 @@ add_library(
     Zip.c
 )
 
-target_include_directories(
-    mbbootui-minzip
-    PRIVATE
-    ${MBP_SAFE_IOP_INCLUDES}
-    ${MBP_ZLIB_INCLUDES}
-)
-
 target_compile_definitions(
     mbbootui-minzip
     PRIVATE
@@ -40,6 +33,6 @@ target_compile_options(
 
 target_link_libraries(
     mbbootui-minzip
-    ${MBP_SAFE_IOP_LIBRARIES}
-    ${MBP_ZLIB_LIBRARIES}
+    SafeIop::SafeIop
+    ZLIB::ZLIB
 )

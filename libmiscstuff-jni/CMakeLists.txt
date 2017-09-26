@@ -13,12 +13,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         -Wno-missing-prototypes
     )
 
-    target_include_directories(
-        miscstuff-jni
-        PRIVATE
-        ${MBP_LIBARCHIVE_INCLUDES}
-    )
-
     target_compile_definitions(
         miscstuff-jni
         PRIVATE
@@ -39,10 +33,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         miscstuff-jni
         mbbootimg-shared
         mblog-shared
-        ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_LZ4_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        LibArchive::LibArchive
     )
 
     install(
