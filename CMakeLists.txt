@@ -171,6 +171,9 @@ include(cmake/ConfigSigning.cmake)
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
 
+# Implicit system include directories
+include(cmake/ImplicitIncludeDirs.cmake)
+
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
 
