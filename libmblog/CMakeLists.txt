@@ -59,9 +59,6 @@ foreach(variant ${variants})
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
     # Target C++11
     if(NOT MSVC)
         set_target_properties(

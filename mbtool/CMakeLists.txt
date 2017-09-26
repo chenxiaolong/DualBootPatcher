@@ -217,14 +217,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -Wno-unused-parameter
     )
 
-    set_target_properties(
-        miniadbd-static
-        mbtool
-        mbtool_recovery
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
     if(NOT MSVC)
         set_target_properties(
             miniadbd-static

@@ -17,13 +17,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -DSTRICTZIPUNZIP
     )
 
-    set_target_properties(
-        odinupdater
-        fuse-sparse
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
     if(NOT MSVC)
         set_target_properties(
             odinupdater

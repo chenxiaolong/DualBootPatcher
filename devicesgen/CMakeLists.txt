@@ -7,12 +7,6 @@ if(${MBP_BUILD_TARGET} STREQUAL hosttools)
         ${MBP_YAML_CPP_INCLUDES}
     )
 
-    set_target_properties(
-        devicesgen
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
     if(NOT MSVC)
         set_target_properties(
             devicesgen

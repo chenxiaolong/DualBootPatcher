@@ -19,12 +19,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         ${MBP_LIBARCHIVE_INCLUDES}
     )
 
-    set_target_properties(
-        miscstuff-jni
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
     target_compile_definitions(
         miscstuff-jni
         PRIVATE

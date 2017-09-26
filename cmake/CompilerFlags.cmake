@@ -9,6 +9,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # Except for "/*" within comment errors (present in doxygen blocks)
     add_compile_options(-Wno-error=comment)
 
+    # Enable PIC
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
+    # Enable stack-protector
+    add_compile_options(-fstack-protector-strong --param ssp-buffer-size=4)
+
+    # Enable _FORTIFY_SOURCE for release builds
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D_FORTIFY_SOURCE=2")
+
     if(ANDROID)
         add_compile_options(-fno-exceptions -fno-rtti)
 
@@ -25,12 +34,38 @@ if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     if(WIN32)
         # Don't warn for valid msprintf specifiers
         add_compile_options(-Wno-pedantic-ms-format)
+
+        # Enable ASLR
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--dynamicbase")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--dynamicbase")
+
+        # Enable DEP
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--nxcompat")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--nxcompat")
+
+        # libssp is required if stack-protector is enabled
+        set(CMAKE_C_CREATE_SHARED_LIBRARY "${CMAKE_C_CREATE_SHARED_LIBRARY} -lssp")
+        set(CMAKE_CXX_CREATE_SHARED_LIBRARY "${CMAKE_CXX_CREATE_SHARED_LIBRARY} -lssp")
+        SET(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -lssp")
+        SET(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -lssp")
     else()
         # Visibility
         add_compile_options(-fvisibility=hidden)
 
         # Use DT_RPATH instead of DT_RUNPATH because the latter is not transitive
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--disable-new-dtags")
+
+        # Enable PIE
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIE -pie")
+
+        # Disable executable stack
+        add_compile_options(-Wa,--noexecstack)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,noexecstack")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,noexecstack")
+
+        # Enable full relro
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,relro -Wl,-z,now")
 
         # Does not work on Windows:
         # https://sourceware.org/bugzilla/show_bug.cgi?id=11539

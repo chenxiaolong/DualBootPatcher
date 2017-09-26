@@ -80,7 +80,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-
         PRIVATE
         mbbootimg-shared
     )
-    set_target_properties(bootimg_compare PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
     if(NOT MSVC)
         set_target_properties(
