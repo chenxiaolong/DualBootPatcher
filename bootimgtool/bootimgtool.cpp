@@ -121,7 +121,7 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "  unpack         Unpack a boot image\n" \
     "  pack           Assemble boot image from unpacked files\n" \
     "\n" \
-    "Pass -h/--help as a argument to a command to see it's available options.\n"
+    "Pass -h/--help as a argument to a command to see its available options.\n"
 
 #define HELP_UNPACK_USAGE \
     "Usage: bootimgtool unpack <input file> [<option>...]\n" \
