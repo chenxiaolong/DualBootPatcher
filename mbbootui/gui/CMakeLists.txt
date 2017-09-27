@@ -38,13 +38,6 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
-set_target_properties(
-    mbbootui-gui
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-)
-
 target_compile_options(
     mbbootui-gui
     PRIVATE
@@ -74,6 +67,7 @@ set_source_files_properties(
 target_link_libraries(
     mbbootui-gui
     PRIVATE
+    interface.global.CXXVersion
     mbbootui-minui
     mbbootui-minzip
     mbdevice-static

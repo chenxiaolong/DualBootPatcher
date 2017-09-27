@@ -8,20 +8,12 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         libmbpatcher_test
         PRIVATE
+        interface.global.CXXVersion
         mbpatcher-shared
         mbpio-static
         mbdevice-shared
         mblog-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            libmbpatcher_test
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # desparse tool
 
@@ -32,19 +24,11 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         desparse
         PRIVATE
+        interface.global.CXXVersion
         mbsparse-shared
         mblog-shared
         mbcommon-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            desparse
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # binary grep tool
 
@@ -55,17 +39,9 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         bingrep
         PRIVATE
+        interface.global.CXXVersion
         mbcommon-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            bingrep
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 endif()
 
 if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-app)
@@ -78,15 +54,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop OR ${MBP_BUILD_TARGET} STREQUAL android-
     target_link_libraries(
         bootimg_compare
         PRIVATE
+        interface.global.CXXVersion
         mbbootimg-shared
     )
-
-    if(NOT MSVC)
-        set_target_properties(
-            bootimg_compare
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 endif()

@@ -80,16 +80,6 @@ foreach(variant ${variants})
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbutil)
 
@@ -99,6 +89,7 @@ foreach(variant ${variants})
         PUBLIC
         LibSepol::LibSepol
         PRIVATE
+        interface.global.CXXVersion
         mblog-${variant}
         LibArchive::LibArchive
         OpenSSL::Crypto

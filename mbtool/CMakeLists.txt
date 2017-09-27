@@ -206,19 +206,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -Wno-unused-parameter
     )
 
-    if(NOT MSVC)
-        set_target_properties(
-            miniadbd-static
-            mbtool
-            mbtool_recovery
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
-    endif()
-
     set_target_properties(
         mbtool mbtool_recovery
         PROPERTIES
@@ -229,12 +216,14 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     target_link_libraries(
         miniadbd-static
         PRIVATE
+        interface.global.CXXVersion
         mblog-static
         mbutil-static
     )
     target_link_libraries(
         mbtool
         PRIVATE
+        interface.global.CXXVersion
         miniadbd-static
         mbutil-static
         mbsign-static
@@ -249,6 +238,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     target_link_libraries(
         mbtool_recovery
         PRIVATE
+        interface.global.CXXVersion
         miniadbd-static
         mbutil-static
         mbsign-static

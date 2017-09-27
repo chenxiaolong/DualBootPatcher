@@ -1,18 +1,10 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(signtool signtool.cpp)
 
-    if(NOT MSVC)
-        set_target_properties(
-            signtool
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     target_link_libraries(
         signtool
         PRIVATE
+        interface.global.CXXVersion
         mbsign-shared
     )
 

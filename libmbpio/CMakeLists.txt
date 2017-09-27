@@ -45,11 +45,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         PRIVATE external/android-libc
     )
 
-    set_target_properties(
+    target_link_libraries(
         c_compat
-        PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED 1
+        PRIVATE
+        interface.global.CXXVersion
     )
 endif()
 
@@ -70,20 +69,13 @@ if(MBP_TARGET_HAS_BUILDS)
         -DMB_LIBRARY
     )
 
-    if(NOT MSVC)
-        set_target_properties(
-            mbpio-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     target_link_libraries(
         mbpio-static
+        PRIVATE
+        interface.global.CXXVersion
         # Private dependency to pull in the libmbcommon headers. We can't make
         # this public because libmbpio is a bad legacy library that gets
         # included in both shared and static versions of libmbpio.
-        PRIVATE mbcommon-static
+        mbcommon-static
     )
 endif()

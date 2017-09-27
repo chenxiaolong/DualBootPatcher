@@ -48,16 +48,6 @@ foreach(variant ${variants})
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbsign)
 
@@ -68,6 +58,8 @@ foreach(variant ${variants})
         mbcommon-${variant}
         mblog-${variant}
         OpenSSL::Crypto
+        PRIVATE
+        interface.global.CXXVersion
     )
 
     # Install shared library
@@ -92,20 +84,11 @@ if(variants AND MBP_ENABLE_TESTS)
     # Link dependencies
     target_link_libraries(
         mbsign_tests
+        interface.global.CXXVersion
         mbsign-static
         gtest
         gtest_main
     )
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            mbsign_tests
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # Add to ctest
     add_test(

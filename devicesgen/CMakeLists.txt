@@ -1,17 +1,9 @@
 if(${MBP_BUILD_TARGET} STREQUAL hosttools)
     add_executable(devicesgen devicesgen.cpp)
 
-    if(NOT MSVC)
-        set_target_properties(
-            devicesgen
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     target_link_libraries(
         devicesgen
+        interface.global.CXXVersion
         mbdevice-shared
         YamlCpp::YamlCpp
         rapidjson

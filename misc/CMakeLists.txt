@@ -22,11 +22,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
         -Wno-sign-conversion
     )
 
-    set_target_properties(
+    target_link_libraries(
         file-contexts-tool
-        PROPERTIES
-        C_STANDARD 11
-        C_STANDARD_REQUIRED 1
+        PRIVATE
+        interface.global.CVersion
     )
 
     if (${MBP_BUILD_TARGET} STREQUAL hosttools)

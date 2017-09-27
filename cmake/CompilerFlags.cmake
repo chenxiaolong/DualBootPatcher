@@ -175,3 +175,22 @@ endif()
 if(ANDROID AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-Wno-gnu-anonymous-struct -Wno-nested-anon-types)
 endif()
+
+add_library(interface.global.CVersion INTERFACE)
+add_library(interface.global.CXXVersion INTERFACE)
+
+if(NOT MSVC)
+    # Target C11
+    target_compile_features(
+        interface.global.CVersion
+        INTERFACE
+        c_std_11
+    )
+
+    # Target C++11
+    target_compile_features(
+        interface.global.CXXVersion
+        INTERFACE
+        cxx_std_11
+    )
+endif()

@@ -31,14 +31,6 @@ foreach(variant ${variants})
             PRIVATE
             -Wno-format-nonliteral
         )
-
-        # Target C++11
-        set_target_properties(
-            ${bin_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
     endif()
 
     # Set binary name
@@ -46,6 +38,7 @@ foreach(variant ${variants})
 
     target_link_libraries(
         ${bin_target}
+        interface.global.CXXVersion
         mbbootimg-${variant}
         mbpio-static
         mbcommon-${variant}

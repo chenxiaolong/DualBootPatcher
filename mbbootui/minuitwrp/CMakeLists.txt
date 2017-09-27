@@ -44,16 +44,10 @@ target_compile_options(
     -Wno-sign-compare
 )
 
-set_target_properties(
-    mbbootui-minui
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-)
-
 target_link_libraries(
     mbbootui-minui
     PRIVATE
+    interface.global.CXXVersion
     mbbootui-config
     AndroidSystemCore::Cutils
     Freetype::Freetype

@@ -14,13 +14,6 @@ target_compile_definitions(
     -DPLATFORM_SDK_VERSION=${ANDROID_NATIVE_API_LEVEL}
 )
 
-set_target_properties(
-    mbbootui-minzip
-    PROPERTIES
-    C_STANDARD 11
-    C_STANDARD_REQUIRED 1
-)
-
 target_compile_options(
     mbbootui-minzip
     PRIVATE
@@ -33,6 +26,7 @@ target_compile_options(
 
 target_link_libraries(
     mbbootui-minzip
+    interface.global.CVersion
     SafeIop::SafeIop
     ZLIB::ZLIB
 )

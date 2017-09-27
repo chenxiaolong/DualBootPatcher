@@ -164,16 +164,6 @@ foreach(variant ${variants})
         target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbcommon)
 
@@ -181,6 +171,7 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC optional
+        PRIVATE interface.global.CXXVersion
     )
 
     if(TARGET Iconv::Iconv)
@@ -217,20 +208,11 @@ if(variants AND MBP_ENABLE_TESTS)
     # Link dependencies
     target_link_libraries(
         mbcommon_tests
+        interface.global.CXXVersion
         mbcommon-static
         gmock
         gmock_main
     )
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            mbcommon_tests
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # Add to ctest
     add_test(

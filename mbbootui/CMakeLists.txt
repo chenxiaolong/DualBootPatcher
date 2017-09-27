@@ -62,14 +62,13 @@ target_include_directories(
 set_target_properties(
     mbbootui
     PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
     LINK_FLAGS "-static"
     LINK_SEARCH_START_STATIC ON
 )
 
 target_link_libraries(
     mbbootui
+    interface.global.CXXVersion
     mbbootui-gui
     mbbootui-config
     mbutil-static

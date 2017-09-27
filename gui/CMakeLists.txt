@@ -38,6 +38,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         gui
         PRIVATE
+        interface.global.CXXVersion
         Qt5::Core
         Qt5::Widgets
         mbpatcher-shared
@@ -70,13 +71,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
             gui
             PRIVATE
             -Wno-zero-as-null-pointer-constant
-        )
-
-        set_target_properties(
-            gui
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
         )
     endif()
 
