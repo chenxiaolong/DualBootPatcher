@@ -20,11 +20,6 @@ foreach(variant ${variants})
     # Build binary
     add_executable(${bin_target} ${BOOTIMGTOOL_SOURCES})
 
-    # Win32 DLL import
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${bin_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
     if(NOT MSVC)
         target_compile_options(
             ${bin_target}
@@ -39,6 +34,7 @@ foreach(variant ${variants})
     target_link_libraries(
         ${bin_target}
         interface.global.CXXVersion
+        interface.mbcommon.dynamic-link
         mbbootimg-${variant}
         mbpio-static
         mbcommon-${variant}

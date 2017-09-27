@@ -39,6 +39,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         gui
         PRIVATE
         interface.global.CXXVersion
+        interface.mbcommon.dynamic-link
         Qt5::Core
         Qt5::Widgets
         mbpatcher-shared
@@ -63,7 +64,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         -DQT_NO_CAST_FROM_ASCII
         -DQT_NO_CAST_TO_ASCII
         -DQT_NO_CAST_FROM_BYTEARRAY
-        -DMB_DYNAMIC_LINK
     )
 
     if(NOT MSVC)

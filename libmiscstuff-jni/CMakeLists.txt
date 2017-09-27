@@ -13,16 +13,11 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         -Wno-missing-prototypes
     )
 
-    target_compile_definitions(
-        miscstuff-jni
-        PRIVATE
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
-    )
-
     target_link_libraries(
         miscstuff-jni
         interface.global.CXXVersion
+        interface.mbcommon.library
+        interface.mbcommon.dynamic-link
         mbbootimg-shared
         mblog-shared
         LibArchive::LibArchive

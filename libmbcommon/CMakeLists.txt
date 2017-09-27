@@ -151,17 +151,9 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
     if(NOT MSVC)
         # Don't warn on empty format strings
         target_compile_options(${lib_target} PRIVATE -Wno-format-zero-length)
-    endif()
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
     endif()
 
     # Set library name
@@ -170,8 +162,12 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PUBLIC optional
-        PRIVATE interface.global.CXXVersion
+        PUBLIC
+        optional
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
 
     if(TARGET Iconv::Iconv)
@@ -220,3 +216,21 @@ if(variants AND MBP_ENABLE_TESTS)
         COMMAND mbcommon_tests
     )
 endif()
+
+# Interfaces
+
+add_library(interface.mbcommon.library INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.library
+    INTERFACE
+    -DMB_LIBRARY
+)
+
+add_library(interface.mbcommon.dynamic-link INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.dynamic-link
+    INTERFACE
+    -DMB_DYNAMIC_LINK
+)

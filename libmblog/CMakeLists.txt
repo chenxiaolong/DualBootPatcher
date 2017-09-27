@@ -51,22 +51,18 @@ foreach(variant ${variants})
         target_compile_options(${lib_target} PRIVATE -Wno-format-nonliteral)
     endif()
 
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mblog)
 
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PUBLIC mbcommon-${variant}
-        PRIVATE interface.global.CXXVersion
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
 
     if(ANDROID AND ${variant} STREQUAL shared)

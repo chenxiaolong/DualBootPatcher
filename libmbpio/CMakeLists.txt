@@ -63,16 +63,11 @@ if(MBP_TARGET_HAS_BUILDS)
         PUBLIC include
     )
 
-    target_compile_definitions(
-        mbpio-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
     target_link_libraries(
         mbpio-static
         PRIVATE
         interface.global.CXXVersion
+        interface.mbcommon.library
         # Private dependency to pull in the libmbcommon headers. We can't make
         # this public because libmbpio is a bad legacy library that gets
         # included in both shared and static versions of libmbpio.
