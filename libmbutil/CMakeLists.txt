@@ -1,33 +1,3 @@
-set(MBUTIL_SOURCES
-    src/archive.cpp
-    src/blkid.cpp
-    src/chmod.cpp
-    src/chown.cpp
-    src/cmdline.cpp
-    src/command.cpp
-    src/copy.cpp
-    src/delete.cpp
-    src/directory.cpp
-    src/file.cpp
-    src/fstab.cpp
-    src/fts.cpp
-    src/hash.cpp
-    src/loopdev.cpp
-    src/mount.cpp
-    src/path.cpp
-    src/process.cpp
-    src/properties.cpp
-    src/reboot.cpp
-    src/selinux.cpp
-    src/socket.cpp
-    src/string.cpp
-    src/time.cpp
-    src/vibrate.cpp
-    src/external/system_properties.cpp
-    src/external/system_properties_compat.c
-    external/android_reboot.c
-)
-
 set_source_files_properties(
     src/external/system_properties.cpp
     PROPERTIES
@@ -52,13 +22,40 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbutil-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBUTIL_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBUTIL_SOURCES})
-    endif()
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/archive.cpp
+        src/blkid.cpp
+        src/chmod.cpp
+        src/chown.cpp
+        src/cmdline.cpp
+        src/command.cpp
+        src/copy.cpp
+        src/delete.cpp
+        src/directory.cpp
+        src/file.cpp
+        src/fstab.cpp
+        src/fts.cpp
+        src/hash.cpp
+        src/loopdev.cpp
+        src/mount.cpp
+        src/path.cpp
+        src/process.cpp
+        src/properties.cpp
+        src/reboot.cpp
+        src/selinux.cpp
+        src/socket.cpp
+        src/string.cpp
+        src/time.cpp
+        src/vibrate.cpp
+        src/external/system_properties.cpp
+        src/external/system_properties_compat.c
+        external/android_reboot.c
+    )
 
     # Includes
     target_include_directories(

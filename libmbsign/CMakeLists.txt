@@ -1,14 +1,3 @@
-set(MBSIGN_SOURCES
-    src/mbsign.cpp
-)
-
-set(MBSIGN_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    # Tests
-    tests/test_sign.cpp
-)
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -21,13 +10,10 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbsign-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBSIGN_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBSIGN_SOURCES})
-    endif()
+    add_library(${lib_target} ${uvariant} src/mbsign.cpp)
 
     # Includes
     target_include_directories(
@@ -72,7 +58,10 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbsign_tests
-        ${MBSIGN_TESTS_SOURCES}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_sign.cpp
     )
 
     # Link dependencies

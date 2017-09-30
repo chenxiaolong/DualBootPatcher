@@ -1,18 +1,3 @@
-set(MBLOG_SOURCES
-    src/base_logger.cpp
-    src/logging.cpp
-    src/stdio_logger.cpp
-)
-
-if(ANDROID)
-    list(
-        APPEND
-        MBLOG_SOURCES
-        src/android_logger.cpp
-        src/kmsg_logger.cpp
-    )
-endif()
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS)
@@ -27,12 +12,24 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mblog-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBLOG_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBLOG_SOURCES})
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/base_logger.cpp
+        src/logging.cpp
+        src/stdio_logger.cpp
+    )
+
+    if(ANDROID)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/android_logger.cpp
+            src/kmsg_logger.cpp
+        )
     endif()
 
     # Includes

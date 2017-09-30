@@ -1,14 +1,3 @@
-set(MBSPARSE_SOURCES
-    src/sparse.cpp
-)
-
-set(MBSPARSE_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    # Tests
-    tests/test_sparse.cpp
-)
-
 add_definitions(-DMBSPARSE_BUILD)
 
 set(variants)
@@ -23,13 +12,10 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbsparse-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBSPARSE_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBSPARSE_SOURCES})
-    endif()
+    add_library(${lib_target} ${uvariant} src/sparse.cpp)
 
     # Includes
     target_include_directories(
@@ -73,7 +59,10 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbsparse_tests
-        ${MBSPARSE_TESTS_SOURCES}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_sparse.cpp
     )
 
     # Link dependencies

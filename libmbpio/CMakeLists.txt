@@ -1,31 +1,3 @@
-set(MBP_IO_SOURCES
-    src/delete.cpp
-    src/directory.cpp
-    src/error.cpp
-    src/path.cpp
-)
-
-if(WIN32)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/win32/delete.cpp
-        src/win32/error.cpp
-    )
-elseif(ANDROID)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-else()
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-endif()
-
 # Compatibility library for nftw()/ftw() on API 17
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
     add_library(
@@ -53,7 +25,29 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
 endif()
 
 if(MBP_TARGET_HAS_BUILDS)
-    add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+    add_library(
+        mbpio-static
+        STATIC
+        src/delete.cpp
+        src/directory.cpp
+        src/error.cpp
+        src/path.cpp
+    )
+
+    if(WIN32)
+        target_sources(
+            mbpio-static
+            PRIVATE
+            src/win32/delete.cpp
+            src/win32/error.cpp
+        )
+    else()
+        target_sources(
+            mbpio-static
+            PRIVATE
+            src/posix/delete.cpp
+        )
+    endif()
 
     # Only build library if needed
     set_target_properties(mbpio-static PROPERTIES EXCLUDE_FROM_ALL 1)

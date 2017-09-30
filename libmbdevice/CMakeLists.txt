@@ -1,23 +1,5 @@
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-set(MBDEVICE_SOURCES
-    src/device.cpp
-    src/json.cpp
-    src/schema.cpp
-    src/capi/device.cpp
-    src/capi/json.cpp
-    ${generated_dir}/schemas_gen.cpp
-)
-
-set(MBDEVICE_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    # Tests
-    tests/test_device.cpp
-    tests/test_flags.cpp
-    tests/test_json.cpp
-)
-
 set(MBDEVICE_SCHEMAS
     schemas/device.json
     schemas/device_list.json
@@ -73,13 +55,19 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbdevice-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBDEVICE_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBDEVICE_SOURCES})
-    endif()
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/device.cpp
+        src/json.cpp
+        src/schema.cpp
+        src/capi/device.cpp
+        src/capi/json.cpp
+        ${generated_dir}/schemas_gen.cpp
+    )
 
     # Includes
     target_include_directories(
@@ -126,7 +114,12 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbdevice_tests
-        ${MBDEVICE_TESTS_SOURCES}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_device.cpp
+        tests/test_flags.cpp
+        tests/test_json.cpp
     )
 
     # Link dependencies

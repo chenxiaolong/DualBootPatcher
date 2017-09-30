@@ -1,11 +1,11 @@
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
-    set(MISCSTUFF_JNI_SOURCES
+    add_library(
+        miscstuff-jni
+        SHARED
         constants.cpp
         jni_load.cpp
         libmiscstuff.cpp
     )
-
-    add_library(miscstuff-jni SHARED ${MISCSTUFF_JNI_SOURCES})
 
     target_compile_options(
         miscstuff-jni

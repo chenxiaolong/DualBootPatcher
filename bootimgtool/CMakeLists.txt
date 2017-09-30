@@ -1,11 +1,3 @@
-set(BOOTIMGTOOL_SOURCES
-    bootimgtool.cpp
-)
-
-if(WIN32)
-    list(APPEND BOOTIMGTOOL_SOURCES bootimgtool.rc)
-endif()
-
 set(variants)
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -18,7 +10,11 @@ foreach(variant ${variants})
     set(bin_target bootimgtool-${variant})
 
     # Build binary
-    add_executable(${bin_target} ${BOOTIMGTOOL_SOURCES})
+    add_executable(${bin_target} bootimgtool.cpp)
+
+    if(WIN32)
+        target_sources(${bin_target} PRIVATE bootimgtool.rc)
+    endif()
 
     if(NOT MSVC)
         target_compile_options(

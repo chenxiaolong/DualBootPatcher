@@ -1,31 +1,3 @@
-set(MBPATCHER_SOURCES
-    src/fileinfo.cpp
-    src/patcherconfig.cpp
-    # C wrapper API
-    src/cwrapper/cfileinfo.cpp
-    src/cwrapper/cpatcherconfig.cpp
-    src/cwrapper/cpatcherinterface.cpp
-    # Edify tokenizer
-    src/edify/tokenizer.cpp
-    # Private classes
-    src/private/fileutils.cpp
-    src/private/miniziputils.cpp
-    src/private/stringutils.cpp
-    # Autopatchers
-    src/autopatchers/standardpatcher.cpp
-    src/autopatchers/mountcmdpatcher.cpp
-    # Patchers
-    src/patchers/odinpatcher.cpp
-    src/patchers/ramdiskupdater.cpp
-    src/patchers/zippatcher.cpp
-)
-
-if(WIN32)
-    list(APPEND MBPATCHER_SOURCES
-        src/private/win32.cpp
-    )
-endif()
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS
@@ -40,12 +12,35 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbpatcher-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBPATCHER_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBPATCHER_SOURCES})
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/fileinfo.cpp
+        src/patcherconfig.cpp
+        # C wrapper API
+        src/cwrapper/cfileinfo.cpp
+        src/cwrapper/cpatcherconfig.cpp
+        src/cwrapper/cpatcherinterface.cpp
+        # Edify tokenizer
+        src/edify/tokenizer.cpp
+        # Private classes
+        src/private/fileutils.cpp
+        src/private/miniziputils.cpp
+        src/private/stringutils.cpp
+        # Autopatchers
+        src/autopatchers/standardpatcher.cpp
+        src/autopatchers/mountcmdpatcher.cpp
+        # Patchers
+        src/patchers/odinpatcher.cpp
+        src/patchers/ramdiskupdater.cpp
+        src/patchers/zippatcher.cpp
+    )
+
+    if(WIN32)
+        target_sources(${lib_target} PRIVATE src/private/win32.cpp)
     endif()
 
     # Includes
