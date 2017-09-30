@@ -1,63 +1,3 @@
-set(MINIADBD_SOURCES
-    miniadbd/adb.cpp
-    miniadbd/adb_io.cpp
-    miniadbd/adb_log.cpp
-    miniadbd/adb_utils.cpp
-    miniadbd/fdevent.cpp
-    miniadbd/file_sync_service.cpp
-    miniadbd/services.cpp
-    miniadbd/sockets.cpp
-    miniadbd/transport.cpp
-    miniadbd/transport_usb.cpp
-    miniadbd/usb_linux_client.cpp
-)
-
-set(MBTOOL_BASE_SOURCES
-    appsync.cpp
-    appsyncmanager.cpp
-    auditd.cpp
-    daemon.cpp
-    daemon_v3.cpp
-    emergency.cpp
-    init.cpp
-    main.cpp
-    miniadbd.cpp
-    mount_fstab.cpp
-    multiboot.cpp
-    packages.cpp
-    properties.cpp
-    reboot.cpp
-    romconfig.cpp
-    roms.cpp
-    sepolpatch.cpp
-    signature.cpp
-    switcher.cpp
-    uevent_dump.cpp
-    wipe.cpp
-    external/legacy_property_service.cpp
-    external/audit/libaudit.cpp
-    external/property_service.cpp
-    initwrapper/cutils/uevent.cpp
-    initwrapper/devices.cpp
-    initwrapper/util.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
-    ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
-)
-
-set(MBTOOL_RECOVERY_SOURCES
-    archive_util.cpp
-    backup.cpp
-    bootimg_util.cpp
-    image.cpp
-    installer.cpp
-    installer_util.cpp
-    ramdisk_patcher.cpp
-    rom_installer.cpp
-    update_binary.cpp
-    update_binary_tool.cpp
-    utilities.cpp
-)
-
 set_source_files_properties(
     daemon_v3.cpp
     PROPERTIES
@@ -139,16 +79,73 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     add_library(
         miniadbd-static
         STATIC
-        ${MINIADBD_SOURCES}
+        miniadbd/adb.cpp
+        miniadbd/adb_io.cpp
+        miniadbd/adb_log.cpp
+        miniadbd/adb_utils.cpp
+        miniadbd/fdevent.cpp
+        miniadbd/file_sync_service.cpp
+        miniadbd/services.cpp
+        miniadbd/sockets.cpp
+        miniadbd/transport.cpp
+        miniadbd/transport_usb.cpp
+        miniadbd/usb_linux_client.cpp
     )
     add_executable(
         mbtool
-        ${MBTOOL_BASE_SOURCES}
+        appsync.cpp
+        appsyncmanager.cpp
+        auditd.cpp
+        daemon.cpp
+        daemon_v3.cpp
+        emergency.cpp
+        init.cpp
+        main.cpp
+        miniadbd.cpp
+        mount_fstab.cpp
+        multiboot.cpp
+        packages.cpp
+        properties.cpp
+        reboot.cpp
+        romconfig.cpp
+        roms.cpp
+        sepolpatch.cpp
+        signature.cpp
+        switcher.cpp
+        uevent_dump.cpp
+        wipe.cpp
+        external/legacy_property_service.cpp
+        external/audit/libaudit.cpp
+        external/property_service.cpp
+        initwrapper/cutils/uevent.cpp
+        initwrapper/devices.cpp
+        initwrapper/util.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
+        ${CMAKE_SOURCE_DIR}/external/pugixml/src/pugixml.cpp
     )
     add_executable(
         mbtool_recovery
-        ${MBTOOL_BASE_SOURCES}
-        ${MBTOOL_RECOVERY_SOURCES}
+        archive_util.cpp
+        backup.cpp
+        bootimg_util.cpp
+        image.cpp
+        installer.cpp
+        installer_util.cpp
+        main.cpp
+        multiboot.cpp
+        ramdisk_patcher.cpp
+        rom_installer.cpp
+        romconfig.cpp
+        roms.cpp
+        sepolpatch.cpp
+        signature.cpp
+        switcher.cpp
+        update_binary.cpp
+        update_binary_tool.cpp
+        utilities.cpp
+        wipe.cpp
+        external/legacy_property_service.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/gen/validcerts.cpp
     )
 
     foreach(target mbtool mbtool_recovery)
@@ -157,21 +154,10 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
-            ${MBP_LIBARCHIVE_INCLUDES}
-            ${MBP_LIBSEPOL_INCLUDES}
-            ${MBP_OPENSSL_INCLUDES}
-            ${MBP_PROCPS_NG_INCLUDES}
             ${CMAKE_SOURCE_DIR}/external
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
             ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
-        )
-
-        # minizip type safety
-        target_compile_definitions(
-            ${target}
-            PRIVATE
-            -DSTRICTZIPUNZIP
         )
 
         # Disable some pugixml features
@@ -217,19 +203,6 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         -Wno-unused-parameter
     )
 
-    if(NOT MSVC)
-        set_target_properties(
-            miniadbd-static
-            mbtool
-            mbtool_recovery
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
-    endif()
-
     set_target_properties(
         mbtool mbtool_recovery
         PROPERTIES
@@ -240,12 +213,14 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
     target_link_libraries(
         miniadbd-static
         PRIVATE
+        interface.global.CXXVersion
         mblog-static
         mbutil-static
     )
     target_link_libraries(
         mbtool
         PRIVATE
+        interface.global.CXXVersion
         miniadbd-static
         mbutil-static
         mbsign-static
@@ -255,12 +230,12 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbcommon-static
         minizip-static
         rapidjson
-        ${MBP_PROCPS_NG_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        Procps::Procps
     )
     target_link_libraries(
         mbtool_recovery
         PRIVATE
+        interface.global.CXXVersion
         miniadbd-static
         mbutil-static
         mbsign-static
@@ -270,10 +245,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbcommon-static
         minizip-static
         rapidjson
-        ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_LZ4_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        LibArchive::LibArchive
+        Procps::Procps # TODO
     )
 
     install(

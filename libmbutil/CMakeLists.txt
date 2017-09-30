@@ -1,33 +1,3 @@
-set(MBUTIL_SOURCES
-    src/archive.cpp
-    src/blkid.cpp
-    src/chmod.cpp
-    src/chown.cpp
-    src/cmdline.cpp
-    src/command.cpp
-    src/copy.cpp
-    src/delete.cpp
-    src/directory.cpp
-    src/file.cpp
-    src/fstab.cpp
-    src/fts.cpp
-    src/hash.cpp
-    src/loopdev.cpp
-    src/mount.cpp
-    src/path.cpp
-    src/process.cpp
-    src/properties.cpp
-    src/reboot.cpp
-    src/selinux.cpp
-    src/socket.cpp
-    src/string.cpp
-    src/time.cpp
-    src/vibrate.cpp
-    src/external/system_properties.cpp
-    src/external/system_properties_compat.c
-    external/android_reboot.c
-)
-
 set_source_files_properties(
     src/external/system_properties.cpp
     PROPERTIES
@@ -44,7 +14,7 @@ set_source_files_properties(
 
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
+if(${MBP_BUILD_TARGET} STREQUAL android-system)
     list(APPEND variants static)
 endif()
 # No shared version
@@ -52,47 +22,51 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbutil-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBUTIL_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBUTIL_SOURCES})
-    endif()
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/archive.cpp
+        src/blkid.cpp
+        src/chmod.cpp
+        src/chown.cpp
+        src/cmdline.cpp
+        src/command.cpp
+        src/copy.cpp
+        src/delete.cpp
+        src/directory.cpp
+        src/file.cpp
+        src/fstab.cpp
+        src/fts.cpp
+        src/hash.cpp
+        src/loopdev.cpp
+        src/mount.cpp
+        src/path.cpp
+        src/process.cpp
+        src/properties.cpp
+        src/reboot.cpp
+        src/selinux.cpp
+        src/socket.cpp
+        src/string.cpp
+        src/time.cpp
+        src/vibrate.cpp
+        src/external/system_properties.cpp
+        src/external/system_properties_compat.c
+        external/android_reboot.c
+    )
 
     # Includes
     target_include_directories(
         ${lib_target}
-        PUBLIC
-        include
-        PRIVATE
-        .
-        ${MBP_LIBARCHIVE_INCLUDES}
-        ${MBP_LIBSEPOL_INCLUDES}
-        ${MBP_OPENSSL_INCLUDES}
+        PUBLIC include
+        PRIVATE .
     )
 
     # Only build static library if needed
     if(${variant} STREQUAL static)
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
-    endif()
-
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
     endif()
 
     # Set library name
@@ -101,10 +75,15 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
+        PUBLIC
+        LibSepol::LibSepol
         PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mblog-${variant}
-        ${MBP_LIBSEPOL_LIBRARIES}
-        ${MBP_OPENSSL_CRYPTO_LIBRARY}
+        LibArchive::LibArchive
+        OpenSSL::Crypto
     )
 
     # Install shared library

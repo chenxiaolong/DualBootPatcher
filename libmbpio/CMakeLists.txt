@@ -1,31 +1,3 @@
-set(MBP_IO_SOURCES
-    src/delete.cpp
-    src/directory.cpp
-    src/error.cpp
-    src/path.cpp
-)
-
-if(WIN32)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/win32/delete.cpp
-        src/win32/error.cpp
-    )
-elseif(ANDROID)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-else()
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-endif()
-
 # Compatibility library for nftw()/ftw() on API 17
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
     add_library(
@@ -45,16 +17,37 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         PRIVATE external/android-libc
     )
 
-    set_target_properties(
+    target_link_libraries(
         c_compat
-        PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED 1
+        PRIVATE
+        interface.global.CXXVersion
     )
 endif()
 
 if(MBP_TARGET_HAS_BUILDS)
-    add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+    add_library(
+        mbpio-static
+        STATIC
+        src/delete.cpp
+        src/directory.cpp
+        src/error.cpp
+        src/path.cpp
+    )
+
+    if(WIN32)
+        target_sources(
+            mbpio-static
+            PRIVATE
+            src/win32/delete.cpp
+            src/win32/error.cpp
+        )
+    else()
+        target_sources(
+            mbpio-static
+            PRIVATE
+            src/posix/delete.cpp
+        )
+    endif()
 
     # Only build library if needed
     set_target_properties(mbpio-static PROPERTIES EXCLUDE_FROM_ALL 1)
@@ -64,26 +57,14 @@ if(MBP_TARGET_HAS_BUILDS)
         PUBLIC include
     )
 
-    target_compile_definitions(
-        mbpio-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbpio-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-
     target_link_libraries(
         mbpio-static
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
         # Private dependency to pull in the libmbcommon headers. We can't make
         # this public because libmbpio is a bad legacy library that gets
         # included in both shared and static versions of libmbpio.
-        PRIVATE mbcommon-static
+        mbcommon-static
     )
 endif()

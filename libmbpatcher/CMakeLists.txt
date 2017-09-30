@@ -1,34 +1,7 @@
-set(MBPATCHER_SOURCES
-    src/fileinfo.cpp
-    src/patcherconfig.cpp
-    # C wrapper API
-    src/cwrapper/cfileinfo.cpp
-    src/cwrapper/cpatcherconfig.cpp
-    src/cwrapper/cpatcherinterface.cpp
-    # Edify tokenizer
-    src/edify/tokenizer.cpp
-    # Private classes
-    src/private/fileutils.cpp
-    src/private/miniziputils.cpp
-    src/private/stringutils.cpp
-    # Autopatchers
-    src/autopatchers/standardpatcher.cpp
-    src/autopatchers/mountcmdpatcher.cpp
-    # Patchers
-    src/patchers/odinpatcher.cpp
-    src/patchers/ramdiskupdater.cpp
-    src/patchers/zippatcher.cpp
-)
-
-if(WIN32)
-    list(APPEND MBPATCHER_SOURCES
-        src/private/win32.cpp
-    )
-endif()
-
 set(variants)
 
-if(MBP_TARGET_HAS_BUILDS)
+if(MBP_TARGET_HAS_BUILDS
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
     list(APPEND variants static)
 endif()
 if(${MBP_BUILD_TARGET} STREQUAL android-app
@@ -39,12 +12,35 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbpatcher-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBPATCHER_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBPATCHER_SOURCES})
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/fileinfo.cpp
+        src/patcherconfig.cpp
+        # C wrapper API
+        src/cwrapper/cfileinfo.cpp
+        src/cwrapper/cpatcherconfig.cpp
+        src/cwrapper/cpatcherinterface.cpp
+        # Edify tokenizer
+        src/edify/tokenizer.cpp
+        # Private classes
+        src/private/fileutils.cpp
+        src/private/miniziputils.cpp
+        src/private/stringutils.cpp
+        # Autopatchers
+        src/autopatchers/standardpatcher.cpp
+        src/autopatchers/mountcmdpatcher.cpp
+        # Patchers
+        src/patchers/odinpatcher.cpp
+        src/patchers/ramdiskupdater.cpp
+        src/patchers/zippatcher.cpp
+    )
+
+    if(WIN32)
+        target_sources(${lib_target} PRIVATE src/private/win32.cpp)
     endif()
 
     # Includes
@@ -54,36 +50,12 @@ foreach(variant ${variants})
         include
         PRIVATE
         .
-        ${MBP_LIBARCHIVE_INCLUDES}
-        ${MBP_LIBLZMA_INCLUDES}
-        ${MBP_ZLIB_INCLUDES}
         ${CMAKE_SOURCE_DIR}/external
     )
 
     # Only build static library if needed
     if(${variant} STREQUAL static)
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
-    endif()
-
-    # minizip type safety
-    target_compile_definitions(${lib_target} PRIVATE -DSTRICTZIPUNZIP)
-
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
     endif()
 
     # Set library name
@@ -96,12 +68,13 @@ foreach(variant ${variants})
         mbcommon-${variant}
         mbdevice-${variant}
         PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mbpio-static
         mblog-${variant}
         minizip-${variant}
-        ${MBP_LIBARCHIVE_LIBRARIES}
-        ${MBP_LIBLZMA_LIBRARIES}
-        ${MBP_ZLIB_LIBRARIES}
+        LibArchive::LibArchive
     )
 
     if(${MBP_BUILD_TARGET} STREQUAL android-app)

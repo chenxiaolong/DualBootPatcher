@@ -1,11 +1,3 @@
-set(BOOTIMGTOOL_SOURCES
-    bootimgtool.cpp
-)
-
-if(WIN32)
-    list(APPEND BOOTIMGTOOL_SOURCES bootimgtool.rc)
-endif()
-
 set(variants)
 
 if(${MBP_BUILD_TARGET} STREQUAL android-system)
@@ -18,11 +10,10 @@ foreach(variant ${variants})
     set(bin_target bootimgtool-${variant})
 
     # Build binary
-    add_executable(${bin_target} ${BOOTIMGTOOL_SOURCES})
+    add_executable(${bin_target} bootimgtool.cpp)
 
-    # Win32 DLL import
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${bin_target} PRIVATE -DMB_DYNAMIC_LINK)
+    if(WIN32)
+        target_sources(${bin_target} PRIVATE bootimgtool.rc)
     endif()
 
     if(NOT MSVC)
@@ -31,28 +22,22 @@ foreach(variant ${variants})
             PRIVATE
             -Wno-format-nonliteral
         )
-
-        # Target C++11
-        set_target_properties(
-            ${bin_target}
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
     endif()
 
     # Set binary name
     set_target_properties(${bin_target} PROPERTIES OUTPUT_NAME bootimgtool)
 
+    target_link_libraries(
+        ${bin_target}
+        interface.global.CXXVersion
+        interface.mbcommon.dynamic-link
+        mbbootimg-${variant}
+        mbpio-static
+        mbcommon-${variant}
+    )
+
     # Link dependencies
     if(${variant} STREQUAL shared)
-        target_link_libraries(
-            ${bin_target}
-            mbbootimg-${variant}
-            mbpio-static
-            mbcommon-${variant}
-        )
-
         # Set rpath for portable build
         if (${MBP_PORTABLE})
             set_target_properties(
@@ -63,14 +48,6 @@ foreach(variant ${variants})
             )
         endif()
     elseif(${variant} STREQUAL static)
-        target_link_libraries(
-            ${bin_target}
-            mbbootimg-${variant}
-            mbpio-${variant}
-            mbcommon-${variant}
-            ${MBP_OPENSSL_CRYPTO_LIBRARY}
-        )
-
         set_target_properties(
             ${bin_target}
             PROPERTIES

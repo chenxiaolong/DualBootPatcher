@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(LIBDRM_FOUND)
     set(LIBDRM_LIBRARIES ${LIBDRM_LIBRARY})
+
+    add_library(LibDrm::LibDrm UNKNOWN IMPORTED)
+    set_target_properties(
+        LibDrm::LibDrm
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${LIBDRM_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LIBDRM_INCLUDE_DIR};${LIBDRM_INCLUDE_DIR}/drm"
+    )
 endif()
 
 mark_as_advanced(LIBDRM_INCLUDE_DIR LIBDRM_LIBRARY)

@@ -1,33 +1,17 @@
 if(${MBP_BUILD_TARGET} STREQUAL desktop)
-    set(CMAKE_AUTOMOC ON)
+    qt5_add_resources(gui_resources_rcc resources.qrc)
 
-    set(GUI_SOURCES
+    add_executable(
+        gui
+        WIN32
         main.cpp
         mainwindow.cpp
+        ${gui_resources_rcc}
     )
 
     if(WIN32)
-        set(GUI_SOURCES
-            ${GUI_SOURCES}
-            main.rc
-        )
+        target_sources(gui PRIVATE main.rc)
     endif()
-
-    set(GUI_PRIVATE_HEADERS
-        mainwindow_p.h
-    )
-
-    set(GUI_HEADERS
-        mainwindow.h
-    )
-
-    set(GUI_RESOURCES
-        resources.qrc
-    )
-
-    qt5_add_resources(GUI_RESOURCES_RCC ${GUI_RESOURCES})
-
-    add_executable(gui WIN32 ${GUI_SOURCES} ${GUI_RESOURCES_RCC})
 
     target_include_directories(
         gui
@@ -38,6 +22,8 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
     target_link_libraries(
         gui
         PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.dynamic-link
         Qt5::Core
         Qt5::Widgets
         mbpatcher-shared
@@ -62,7 +48,6 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         -DQT_NO_CAST_FROM_ASCII
         -DQT_NO_CAST_TO_ASCII
         -DQT_NO_CAST_FROM_BYTEARRAY
-        -DMB_DYNAMIC_LINK
     )
 
     if(NOT MSVC)
@@ -71,23 +56,19 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
             PRIVATE
             -Wno-zero-as-null-pointer-constant
         )
-
-        set_target_properties(
-            gui
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
     endif()
 
-    set_target_properties(gui
+    set_target_properties(
+        gui
         PROPERTIES
+        AUTOMOC ON
         OUTPUT_NAME DualBootPatcher
     )
 
     # Set rpath for portable build
     if(${MBP_PORTABLE})
-        set_target_properties(gui
+        set_target_properties(
+            gui
             PROPERTIES
             BUILD_WITH_INSTALL_RPATH OFF
             INSTALL_RPATH "\$ORIGIN/lib"

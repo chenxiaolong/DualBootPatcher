@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.7)
 
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
@@ -170,6 +170,9 @@ include(cmake/ConfigSigning.cmake)
 
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
+
+# Implicit system include directories
+include(cmake/ImplicitIncludeDirs.cmake)
 
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
