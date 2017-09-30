@@ -54,9 +54,6 @@ foreach(variant ${variants})
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
-    # Allow using private headers
-    target_compile_definitions(${lib_target} PRIVATE -DMBBOOTIMG_BUILD)
-
     # Set library name
     set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbbootimg)
 
@@ -68,6 +65,7 @@ foreach(variant ${variants})
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
+        interface.mbbootimg.private-headers
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         OpenSSL::Crypto
     )
@@ -108,17 +106,11 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/format/test_sony_elf_writer.cpp
     )
 
-    # Allow using private headers
-    target_compile_definitions(
-        mbbootimg_tests
-        PRIVATE
-        -DMBBOOTIMG_BUILD
-    )
-
     # Link dependencies
     target_link_libraries(
         mbbootimg_tests
         interface.global.CXXVersion
+        interface.mbbootimg.private-headers
         mbbootimg-static
         mbcommon-static
         gtest
@@ -131,3 +123,13 @@ if(variants AND MBP_ENABLE_TESTS)
         COMMAND mbbootimg_tests
     )
 endif()
+
+# Interfaces
+
+add_library(interface.mbbootimg.private-headers INTERFACE)
+
+target_compile_definitions(
+    interface.mbbootimg.private-headers
+    INTERFACE
+    -DMBBOOTIMG_BUILD
+)

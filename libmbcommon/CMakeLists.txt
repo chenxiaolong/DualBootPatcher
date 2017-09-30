@@ -7,8 +7,6 @@ configure_file(
     @ONLY
 )
 
-add_definitions(-DMBCOMMON_BUILD)
-
 # _FILE_OFFSET_BITS is now meaningful in NDK r15c. We can't define it unless we
 # target API 24 or newer or else fgetpos() and fsetpos() will be undefined,
 # which prevents <cstdio> from being included.
@@ -146,6 +144,7 @@ foreach(variant ${variants})
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
+        interface.mbcommon.private-headers
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
 
@@ -205,6 +204,7 @@ if(variants AND MBP_ENABLE_TESTS)
     target_link_libraries(
         mbcommon_tests
         interface.global.CXXVersion
+        interface.mbcommon.private-headers
         mbcommon-static
         gmock
         gmock_main
@@ -233,4 +233,12 @@ target_compile_definitions(
     interface.mbcommon.dynamic-link
     INTERFACE
     -DMB_DYNAMIC_LINK
+)
+
+add_library(interface.mbcommon.private-headers INTERFACE)
+
+target_compile_definitions(
+    interface.mbcommon.private-headers
+    INTERFACE
+    -DMBCOMMON_BUILD
 )
