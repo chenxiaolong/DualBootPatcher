@@ -1,0 +1,55 @@
+
+language: android
+jdk: oraclejdk8
+
+android:
+  components:
+  - platform-tools
+  - tools
+  - build-tools-25.0.2
+  - android-25
+
+before_install:
+  - sudo apt install ccache expect libboost-dev libjansson-dev libssl-dev libyaml-cpp-dev openssl python-minimal
+  - cd --
+  - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && export PATH=${PATH}:/usr/local/ssl && cd --
+  - wget -q https://cmake.org/files/v3.9/cmake-3.9.0.tar.gz && tar xzf cmake-3.9.0.tar.gz && mv cmake-3.9.0 cmake && cd cmake && sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' bootstrap && ./bootstrap && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
+  - wget -q https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip && unzip -qq android-ndk-r15-linux-x86_64.zip && mv android-ndk-r15 android-ndk
+  - export ANDROID_NDK_HOME=~/android-ndk
+  - export ANDROID_NDK=~/android-ndk
+  - cd --
+  - mkdir -p android-sdk && cd android-sdk
+  - wget -q https://dl.google.com/android/repository/platform-tools_r25.0.2-linux.zip && unzip -qq platform-tools_r25.0.2-linux.zip
+  - wget -q https://dl.google.com/android/repository/build-tools_r25.0.2-linux.zip && unzip -qq build-tools_r25.0.2-linux.zip
+  - wget -q https://dl.google.com/android/repository/tools_r25.2.3-linux.zip && unzip -qq tools_r25.2.3-linux.zip
+  - export PATH=${PATH}:${ANDROID_HOME}/tools
+  - export ANDROID_HOME=~/android-sdk
+  - echo -e "y" | ./tools/android update sdk -u -a -t platform
+  - echo -e "y" | ./tools/android update sdk -u -a -t platform-tools
+  - echo -e "y" | ./tools/android update sdk -u -a -t 5
+  - echo -e "y" | ./tools/android update sdk -u -a -t source
+  - echo -e "y" | ./tools/android update sdk -u -a -t extra
+  - echo -e "y" | ./tools/android update sdk -u -a -t 128
+
+script:
+  - travis_wait 30
+  - cd --
+  - git clone https://github.com/Mysteryagr/DualBootPatcher Mysteryagr/DualBootPatcher/
+  - cd $PWD/Mysteryagr/DualBootPatcher/
+  - git submodule update --init --recursive
+  - mkdir build
+  - cd build/
+  - cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
+  - make
+  - rm -rf assets && cpack -G TXZ
+  - make apk
+  - cd --
+
+deploy:
+  provider: releases
+  api_key: "$GIT_OAUTH_TOKEN_RAHMYAPK"
+  file: "$PWD/Mysteryagr/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true

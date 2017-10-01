@@ -1,3 +1,23 @@
+MT6580 Devices project maintained by Mysteryagr @ XDA-Developers
+
+XDA Thread: https://forum.xda-developers.com/android/apps-games/app-dual-boot-patcher-cagabi-one-mt6580-t3652536
+
+I mainly support Cagabi one - MT6580A
+
+For other devices pm on XDA or write on my thread
+
+Needed info:
+
+1- Your Device name
+
+2- Your device codenames
+
+4- Your device mount points
+
+5- Your stock build.prop
+
+Note: if you are using a custom rom make sure it has the right device code name of your mobile.
+
 [![Build Status](https://jenkins.noobdev.io/job/DualBootPatcher_Master/badge/icon)](https://jenkins.noobdev.io/job/DualBootPatcher_Master/)
 
 DualBootPatcher

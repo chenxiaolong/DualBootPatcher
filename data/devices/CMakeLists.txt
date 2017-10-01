@@ -5,6 +5,7 @@ endif()
 set(files
     360.yml
     alcatel.yml
+    archos.yml
     ark.yml
     asus.yml
     cagabi.yml
@@ -21,6 +22,7 @@ set(files
     infinix.yml
     infocus.yml
     jiayu.yml
+    lava.yml
     leeco.yml
     leagoo.yml
     lenovo.yml
