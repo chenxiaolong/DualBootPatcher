@@ -322,7 +322,7 @@ bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata)
                     // Potential EOF (n == 0) here on some non-Linux systems,
                     // which is fine since it's not possible to reach both the
                     // POLLHUP block and this block
-                    cb(buf, n, is_stderr, userdata);
+                    cb(buf, static_cast<size_t>(n), is_stderr, userdata);
                 }
             }
         }
@@ -394,7 +394,7 @@ static void command_line_reader_cb(const char *data, size_t size, bool error,
         }
 
         // ptr now points to the character after the last newline
-        size_t consumed = ptr - buf;
+        size_t consumed = static_cast<size_t>(ptr - buf);
         if (consumed == 0 && used == cap) {
             // If nothing was consumed and the buffer is full, then the line is
             // too long.

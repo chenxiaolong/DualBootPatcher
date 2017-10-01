@@ -35,10 +35,10 @@ public:
 
 enum class SwitchRomResult
 {
-    SUCCEEDED,
-    FAILED,
-    CHECKSUM_INVALID,
-    CHECKSUM_NOT_FOUND
+    Succeeded,
+    Failed,
+    ChecksumInvalid,
+    ChecksumNotFound,
 };
 
 class MbtoolInterface

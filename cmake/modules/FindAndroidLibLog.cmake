@@ -5,7 +5,7 @@
 # ANDROID_LIBLOG_FOUND       - True if liblog found
 
 # Find include directory
-find_path(ANDORID_LIBLOG_INCLUDE_DIR NAMES log/log.h)
+find_path(ANDROID_LIBLOG_INCLUDE_DIR NAMES log/log.h)
 
 # Find library
 find_library(ANDROID_LIBLOG_LIBRARY NAMES log liblog)
@@ -20,6 +20,15 @@ find_package_handle_standard_args(
 
 if(ANDROID_LIBLOG_FOUND)
     set(ANDROID_LIBLOG_LIBRARIES ${ANDROID_LIBLOG_LIBRARY})
+
+    add_library(AndroidSystemCore::Log UNKNOWN IMPORTED)
+    set_target_properties(
+        AndroidSystemCore::Log
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+        IMPORTED_LOCATION "${ANDROID_LIBLOG_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ANDROID_LIBLOG_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(ANDROID_LIBLOG_INCLUDE_DIR ANDROID_LIBLOG_LIBRARY)

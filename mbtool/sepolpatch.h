@@ -28,15 +28,15 @@ namespace mb
 
 enum class SELinuxResult
 {
-    CHANGED,
-    UNCHANGED,
-    ERROR,
+    Changed,
+    Unchanged,
+    Error,
 };
 
-SELinuxResult selinux_raw_set_allow_rule(policydb_t *pdb,
+SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
                                          uint16_t source_type_val,
                                          uint16_t target_type_val,
-                                         uint16_t class_type_val,
+                                         uint16_t class_val,
                                          uint32_t perm_val,
                                          bool remove);
 SELinuxResult selinux_raw_set_type_trans(policydb_t *pdb,
@@ -110,11 +110,11 @@ bool selinux_add_to_role(policydb_t *pdb,
 
 enum class SELinuxPatch
 {
-    NONE = 0,
-    PRE_BOOT,
-    MAIN,
-    CWM_RECOVERY,
-    STRIP_NO_AUDIT,
+    None = 0,
+    PreBoot,
+    Main,
+    CwmRecovery,
+    StripNoAudit,
 };
 
 bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch);

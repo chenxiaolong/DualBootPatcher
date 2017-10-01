@@ -87,7 +87,7 @@ public:
         std::vector<Rom> roms;
 
         if (response->roms()) {
-            for (auto const &mb_rom : *response->roms()) {
+            for (auto const *mb_rom : *response->roms()) {
                 roms.emplace_back();
                 if (mb_rom->id()) {
                     roms.back().id = mb_rom->id()->str();
@@ -175,16 +175,16 @@ public:
         SwitchRomResult srr;
         switch (response->result()) {
         case v3::MbSwitchRomResult_SUCCEEDED:
-            srr = SwitchRomResult::SUCCEEDED;
+            srr = SwitchRomResult::Succeeded;
             break;
         case v3::MbSwitchRomResult_FAILED:
-            srr = SwitchRomResult::FAILED;
+            srr = SwitchRomResult::Failed;
             break;
         case v3::MbSwitchRomResult_CHECKSUM_INVALID:
-            srr = SwitchRomResult::CHECKSUM_INVALID;
+            srr = SwitchRomResult::ChecksumInvalid;
             break;
         case v3::MbSwitchRomResult_CHECKSUM_NOT_FOUND:
-            srr = SwitchRomResult::CHECKSUM_NOT_FOUND;
+            srr = SwitchRomResult::ChecksumNotFound;
             break;
         default:
             return false;

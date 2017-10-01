@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,11 +22,11 @@
 namespace mb
 {
 
-enum SigVerifyResult
+enum class SigVerifyResult
 {
-    VALID,
-    INVALID,
-    FAILURE
+    Valid,
+    Invalid,
+    Failure,
 };
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path);

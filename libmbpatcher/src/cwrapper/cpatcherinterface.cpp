@@ -61,7 +61,8 @@ struct CallbackWrapper
     void *userdata;
 };
 
-void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes, void *userdata)
+static void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes,
+                                void *userdata)
 {
     CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
     if (wrapper->progress_cb != nullptr) {
@@ -69,7 +70,7 @@ void progress_cb_wrapper(uint64_t bytes, uint64_t max_bytes, void *userdata)
     }
 }
 
-void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
+static void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
 {
     CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
     if (wrapper->files_cb) {
@@ -77,7 +78,7 @@ void files_cb_wrapper(uint64_t files, uint64_t max_files, void *userdata)
     }
 }
 
-void details_cb_wrapper(const std::string &text, void *userdata)
+static void details_cb_wrapper(const std::string &text, void *userdata)
 {
     CallbackWrapper *wrapper = reinterpret_cast<CallbackWrapper *>(userdata);
     if (wrapper->details_cb) {

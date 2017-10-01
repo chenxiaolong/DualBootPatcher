@@ -315,8 +315,10 @@ int main(int argc, char *argv[])
         fprintf(fp.get(),
                 "#include <array>\n"
                 "#include <utility>\n"
+                // Make -Wshadow happy
+                "extern std::array<std::pair<const char *, const char *>, %zu> g_schemas;\n"
                 "std::array<std::pair<const char *, const char *>, %zu> g_schemas{{\n",
-                results.size());
+                results.size(), results.size());
 
         for (auto const &r : results) {
             fprintf(fp.get(), "    { \"");

@@ -87,7 +87,8 @@ bool reboot_via_init(const std::string &reboot_arg)
 bool reboot_via_syscall(const std::string &reboot_arg)
 {
     // Reboot to system if arg is empty
-    int reason = reboot_arg.empty() ? ANDROID_RB_RESTART : ANDROID_RB_RESTART2;
+    unsigned int reason = reboot_arg.empty()
+            ? ANDROID_RB_RESTART : ANDROID_RB_RESTART2;
 
     if (android_reboot(reason, reboot_arg.c_str()) < 0) {
         LOGE("Failed to reboot via syscall: %s", strerror(errno));

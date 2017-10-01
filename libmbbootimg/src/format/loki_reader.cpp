@@ -29,6 +29,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
+#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -51,15 +52,10 @@ LokiFormatReader::LokiFormatReader(Reader &reader)
     : FormatReader(reader)
     , _hdr()
     , _loki_hdr()
-    , _header_offset()
-    , _loki_offset()
-    , _seg()
 {
 }
 
-LokiFormatReader::~LokiFormatReader()
-{
-}
+LokiFormatReader::~LokiFormatReader() = default;
 
 int LokiFormatReader::type()
 {
@@ -97,7 +93,7 @@ int LokiFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _loki_offset = loki_offset;
-        bid += LOKI_MAGIC_SIZE * 8;
+        bid += static_cast<int>(LOKI_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be a Loki boot image.
         return 0;
@@ -112,7 +108,7 @@ int LokiFormatReader::bid(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += android::BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -175,16 +171,16 @@ int LokiFormatReader::read_header(File &file, Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            kernel_offset, kernel_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            ramdisk_offset, ramdisk_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     if (_hdr.dt_size > 0 && dt_offset != 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                dt_offset, _hdr.dt_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     return RET_OK;
@@ -298,11 +294,11 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
     if (loki_hdr.ramdisk_addr != 0) {
         uint64_t offset = 0;
 
-        auto result_cb = [](File &file, void *userdata, uint64_t offset)
+        auto result_cb = [](File &file_, void *userdata, uint64_t offset_)
                 -> FileSearchAction {
-            (void) file;
-            uint64_t *offset_ptr = static_cast<uint64_t *>(userdata);
-            *offset_ptr = offset;
+            (void) file_;
+            auto offset_ptr = static_cast<uint64_t *>(userdata);
+            *offset_ptr = offset_;
             return FileSearchAction::Continue;
         };
 
@@ -321,7 +317,7 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
 
         offset += LOKI_SHELLCODE_SIZE - 5;
 
-        if (!file.seek(offset, SEEK_SET, nullptr)) {
+        if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
             reader.set_error(file.error(),
                              "Failed to seek to ramdisk address offset: %s",
                              file.error_string().c_str());
@@ -388,10 +384,8 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 {
     struct SearchResult
     {
-        bool have_flag0 = false;
-        bool have_flag8 = false;
-        uint64_t flag0_offset;
-        uint64_t flag8_offset;
+        optional<uint64_t> flag0_offset;
+        optional<uint64_t> flag8_offset;
     };
 
     // gzip header:
@@ -407,46 +401,44 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     SearchResult result = {};
 
     // Find first result with flags == 0x00 and flags == 0x08
-    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+    auto result_cb = [](File &file_, void *userdata, uint64_t offset)
             -> FileSearchAction {
-        SearchResult *result = static_cast<SearchResult *>(userdata);
+        auto result_ = static_cast<SearchResult *>(userdata);
         uint64_t orig_offset;
         unsigned char flags;
         size_t n;
 
         // Stop early if possible
-        if (result->have_flag0 && result->have_flag8) {
+        if (result_->flag0_offset && result_->flag8_offset) {
             return FileSearchAction::Stop;
         }
 
         // Save original position
-        if (!file.seek(0, SEEK_CUR, &orig_offset)) {
+        if (!file_.seek(0, SEEK_CUR, &orig_offset)) {
             return FileSearchAction::Fail;
         }
 
         // Seek to flags byte
-        if (!file.seek(offset + 3, SEEK_SET, nullptr)) {
+        if (!file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
         // Read next bytes for flags
-        if (!file_read_fully(file, &flags, sizeof(flags), n)) {
+        if (!file_read_fully(file_, &flags, sizeof(flags), n)) {
             return FileSearchAction::Fail;
         } else if (n != sizeof(flags)) {
             // EOF
             return FileSearchAction::Stop;
         }
 
-        if (!result->have_flag0 && flags == 0x00) {
-            result->have_flag0 = true;
-            result->flag0_offset = offset;
-        } else if (!result->have_flag8 && flags == 0x08) {
-            result->have_flag8 = true;
-            result->flag8_offset = offset;
+        if (!result_->flag0_offset && flags == 0x00) {
+            result_->flag0_offset = offset;
+        } else if (!result_->flag8_offset && flags == 0x08) {
+            result_->flag8_offset = offset;
         }
 
         // Restore original position as per contract
-        if (!file.seek(orig_offset, SEEK_SET, nullptr)) {
+        if (!file_.seek(static_cast<int64_t>(orig_offset), SEEK_SET, nullptr)) {
             return FileSearchAction::Fail;
         }
 
@@ -463,10 +455,10 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 
     // Prefer gzip header with original filename flag since most loki'd boot
     // images will have been compressed manually with the gzip tool
-    if (result.have_flag8) {
-        gzip_offset_out = result.flag8_offset;
-    } else if (result.have_flag0) {
-        gzip_offset_out = result.flag0_offset;
+    if (result.flag8_offset) {
+        gzip_offset_out = *result.flag8_offset;
+    } else if (result.flag0_offset) {
+        gzip_offset_out = *result.flag0_offset;
     } else {
         reader.set_error(make_error_code(LokiError::NoRamdiskGzipHeaderFound));
         return RET_WARN;
@@ -515,7 +507,7 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
     // to store a copy of aboot, so it is put in the last 0x200 bytes of the
     // file.
     if (is_lg_ramdisk_address(hdr.ramdisk_addr)) {
-        aboot_size = hdr.page_size;
+        aboot_size = static_cast<int32_t>(hdr.page_size);
     } else {
         aboot_size = 0x200;
     }
@@ -535,7 +527,7 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
 
     // Ignore zero padding as we might strip away too much
 #if 1
-    ramdisk_size_out = aboot_offset - ramdisk_offset;
+    ramdisk_size_out = static_cast<uint32_t>(aboot_offset - ramdisk_offset);
     return RET_OK;
 #else
     // Search backwards to find non-zero byte
@@ -684,14 +676,16 @@ int LokiFormatReader::read_header_old(Reader &reader, File &file,
     // Look for gzip offset for the ramdisk
     ret = find_gzip_offset_old(
             reader, file, hdr.page_size + kernel_size
-                    + align_page_size<uint64_t>(kernel_size, hdr.page_size),
+                    + align_page_size<uint32_t>(kernel_size, hdr.page_size),
             gzip_offset);
     if (ret != RET_OK) {
         return ret;
     }
 
     // Try to guess ramdisk size
-    ret = find_ramdisk_size_old(reader, file, hdr, gzip_offset, ramdisk_size);
+    ret = find_ramdisk_size_old(reader, file, hdr,
+                                static_cast<uint32_t>(gzip_offset),
+                                ramdisk_size);
     if (ret != RET_OK) {
         return ret;
     }

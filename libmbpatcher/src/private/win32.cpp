@@ -37,7 +37,7 @@ std::string win32_error_to_string(DWORD win32_error)
         nullptr,                                        // lpSource
         win32_error,                                    // dwMessageId
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
-        (LPWSTR) &message_buffer,                       // lpBuffer
+        reinterpret_cast<LPWSTR>(&message_buffer),      // lpBuffer
         0,                                              // nSize
         nullptr                                         // Arguments
     );

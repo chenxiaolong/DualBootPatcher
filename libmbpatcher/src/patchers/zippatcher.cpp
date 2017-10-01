@@ -425,7 +425,7 @@ bool ZipPatcherPrivate::pass1(const std::string &temporary_dir,
  *   resulting files to the output zip
  */
 bool ZipPatcherPrivate::pass2(const std::string &temporary_dir,
-                              const std::unordered_set<std::string> &files)
+                              const std::unordered_set<std::string> &files_)
 {
     zipFile zf = MinizipUtils::ctx_get_zip_file(z_output);
 
@@ -439,7 +439,7 @@ bool ZipPatcherPrivate::pass2(const std::string &temporary_dir,
 
     // TODO Headers are being discarded
 
-    for (auto const &file : files) {
+    for (auto const &file : files_) {
         if (cancelled) return false;
 
         ErrorCode ret;
@@ -525,17 +525,17 @@ void ZipPatcherPrivate::close_output_archive()
     z_output = nullptr;
 }
 
-void ZipPatcherPrivate::update_progress(uint64_t bytes, uint64_t max_bytes)
+void ZipPatcherPrivate::update_progress(uint64_t bytes_, uint64_t max_bytes_)
 {
     if (progress_cb) {
-        progress_cb(bytes, max_bytes, userdata);
+        progress_cb(bytes_, max_bytes_, userdata);
     }
 }
 
-void ZipPatcherPrivate::update_files(uint64_t files, uint64_t max_files)
+void ZipPatcherPrivate::update_files(uint64_t files_, uint64_t max_files_)
 {
     if (files_cb) {
-        files_cb(files, max_files, userdata);
+        files_cb(files_, max_files_, userdata);
     }
 }
 

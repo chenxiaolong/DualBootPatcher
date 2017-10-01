@@ -22,6 +22,7 @@ RUN dnf -y install dnf-plugins-core \
         mingw32-gtest \
         mingw32-libarchive \
         mingw32-qt5-qtbase \
+        p7zip-plugins \
         upx \
         wine \
     && dnf clean all

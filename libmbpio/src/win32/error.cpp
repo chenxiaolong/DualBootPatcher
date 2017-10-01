@@ -36,7 +36,7 @@ std::wstring errorToWString(DWORD win32Error)
         nullptr,                                        // lpSource
         win32Error,                                     // dwMessageId
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
-        (LPWSTR) &messageBuffer,                        // lpBuffer
+        reinterpret_cast<LPWSTR>(&messageBuffer),       // lpBuffer
         0,                                              // nSize
         nullptr                                         // Arguments
     );

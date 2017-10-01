@@ -113,7 +113,7 @@ const std::string Installer::CANCELLED = "cancelled";
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
                      std::string temp_dir, int interface, int output_fd,
-                     int flags)
+                     InstallerFlags flags)
     : _zip_file(std::move(zip_file))
     , _chroot(std::move(chroot_dir))
     , _temp(std::move(temp_dir))
@@ -202,7 +202,7 @@ static bool log_delete_recursive(const std::string &path)
 }
 
 static bool log_copy_dir(const std::string &source,
-                         const std::string &target, int flags)
+                         const std::string &target, util::CopyFlags flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -337,9 +337,9 @@ bool Installer::create_chroot()
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
     // no matter if it's done from here or from busybox.
     if (!log_copy_dir("/sbin", in_chroot("/sbin"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -376,15 +376,15 @@ bool Installer::create_chroot()
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
     if (!log_copy_dir("/dev/graphics", in_chroot("/dev/graphics"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -477,9 +477,9 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::twrp_fstab_rec> recs =
+            std::vector<util::TwrpFstabRec> recs =
                     util::read_twrp_fstab("/etc/recovery.fstab");
-            for (const util::twrp_fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0
                         || util::path_compare(rec.mount_point, "/efs1") == 0) {
                     LOGD("Found /efs fstab entry");
@@ -495,9 +495,9 @@ bool Installer::mount_efs() const
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::fstab_rec> recs =
+            std::vector<util::FstabRec> recs =
                     util::read_fstab("/etc/recovery.fstab");
-            for (const util::fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0) {
                     LOGD("Found /efs fstab entry");
                     efs_dev = rec.blk_device;
@@ -533,7 +533,7 @@ bool Installer::mount_efs() const
  */
 bool Installer::extract_multiboot_files()
 {
-    std::vector<util::extract_info> files{
+    std::vector<util::ExtractInfo> files{
         {
             "META-INF/com/google/android/update-binary.orig",
             _temp + "/updater"
@@ -599,7 +599,7 @@ bool Installer::extract_multiboot_files()
     for (auto const &item : sigcheck) {
         SigVerifyResult result =
                 verify_signature(item.c_str(), (item + ".sig").c_str());
-        if (result != SigVerifyResult::VALID) {
+        if (result != SigVerifyResult::Valid) {
             LOGE("%s: Signature verification failed", item.c_str());
             return false;
         }
@@ -620,7 +620,8 @@ bool Installer::set_up_busybox_wrapper()
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
         return false;
@@ -648,7 +649,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     }
 
     auto result = create_ext4_image(path, size);
-    if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
+    if (result == CreateImageResult::NotEnoughSpace) {
         uint64_t avail;
         if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
             avail = 0;
@@ -659,7 +660,7 @@ bool Installer::create_image(const std::string &path, uint64_t size)
         display_msg("- Available: %" PRIu64 " bytes", avail);
     }
 
-    return result == CreateImageResult::SUCCEEDED;
+    return result == CreateImageResult::Succeeded;
 }
 
 /*!
@@ -740,7 +741,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
     if (is_image) {
         struct stat sb;
         if (stat(source.c_str(), &sb) < 0) {
-            double mib = (double) image_size / 1024 / 1024;
+            double mib = static_cast<double>(image_size) / 1024 / 1024;
 
             display_msg("Creating image (%.1f MiB) at %s",
                         mib, source.c_str());
@@ -944,7 +945,8 @@ bool Installer::run_real_updater()
     std::string chroot_updater = in_chroot("/mb/updater");
 
     if (!util::copy_file(updater, chroot_updater,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              updater.c_str(), chroot_updater.c_str(), strerror(errno));
         return false;
@@ -952,7 +954,8 @@ bool Installer::run_real_updater()
 
 #if DEBUG_USE_UPDATER_WRAPPER
     if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
              strerror(errno));
@@ -1263,7 +1266,7 @@ Installer::ProceedState Installer::install_stage_initialize()
 
     LOGD("[Installer] Initialization stage");
 
-    std::vector<util::exists_info> info{
+    std::vector<util::ExistsInfo> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
         { "system.img", false },
@@ -1455,9 +1458,9 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                          | util::COPY_XATTRS
-                                          | util::COPY_FOLLOW_SYMLINKS)) {
+        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
+                                          | util::CopyFlag::CopyXattrs
+                                          | util::CopyFlag::FollowSymlinks)) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1562,7 +1565,7 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
         // Use an empty base dirs list since we don't want to flash any non-boot
         // partitions
         auto result = switch_rom(_rom->id, _boot_block_dev, {}, true);
-        if (result != SwitchRomResult::SUCCEEDED) {
+        if (result != SwitchRomResult::Succeeded) {
             display_msg("Failed to switch to target ROM. Continuing anyway...");
             LOGW("Failed to switch to target ROM: %d",
                  static_cast<int>(result));
@@ -1581,16 +1584,19 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 
     // Copy ourself for the real update-binary to use
     util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
     util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }
@@ -1599,7 +1605,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+    if (_flags & InstallerFlag::SkipMountingVolumes) {
         LOGV("Skipping filesystem mounting stage");
         return ProceedState::Continue;
     }
@@ -1805,7 +1811,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+        if (!(_flags & InstallerFlag::SkipMountingVolumes)
                 && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 

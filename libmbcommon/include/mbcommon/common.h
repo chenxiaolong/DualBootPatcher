@@ -56,10 +56,17 @@
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
+#  if _WIN32
+#    define MB_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
+#    define MB_SCANF_FORMAT __MINGW_SCANF_FORMAT
+#  else
+#    define MB_PRINTF_FORMAT printf
+#    define MB_SCANF_FORMAT scanf
+#  endif
 #  define MB_PRINTF(fmt_arg, var_arg) \
-    __attribute__((format(printf, fmt_arg, var_arg)))
+    __attribute__((format(MB_PRINTF_FORMAT, fmt_arg, var_arg)))
 #  define MB_SCANF(fmt_arg, var_arg) \
-    __attribute__((format(scanf, fmt_arg, var_arg)))
+    __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
 #  define MB_UNUSED __attribute__((unused))
 #  define MB_NO_RETURN __attribute__((noreturn))
 #else

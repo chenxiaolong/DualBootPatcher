@@ -46,7 +46,7 @@ std::string capi_cstr_to_str(const char *cstr)
 char ** capi_vector_to_cstr_array(const std::vector<std::string> &array)
 {
     if (!array.empty()) {
-        char **c_array = static_cast<char **>(std::malloc(
+        auto c_array = static_cast<char **>(std::malloc(
                 sizeof(char *) * (array.size() + 1)));
         if (!c_array) {
             return nullptr;
@@ -75,7 +75,7 @@ std::vector<std::string> capi_cstr_array_to_vector(const char * const *array)
     if (array) {
         std::vector<std::string> list;
         for (; *array != nullptr; ++array) {
-            list.push_back(*array);
+            list.emplace_back(*array);
         }
         return list;
     } else {

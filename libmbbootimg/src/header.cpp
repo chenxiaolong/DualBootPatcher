@@ -53,15 +53,13 @@ Header::Header(const Header &header)
 {
 }
 
-Header::Header(Header &&header)
+Header::Header(Header &&header) noexcept
     : Header()
 {
     _priv_ptr.swap(header._priv_ptr);
 }
 
-Header::~Header()
-{
-}
+Header::~Header() = default;
 
 Header & Header::operator=(const Header &header)
 {
@@ -69,7 +67,7 @@ Header & Header::operator=(const Header &header)
     return *this;
 }
 
-Header & Header::operator=(Header &&header)
+Header & Header::operator=(Header &&header) noexcept
 {
     _priv_ptr.swap(header._priv_ptr);
     *header._priv_ptr = HeaderPrivate();

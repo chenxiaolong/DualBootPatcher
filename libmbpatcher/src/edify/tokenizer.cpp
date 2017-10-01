@@ -336,7 +336,7 @@ bool EdifyTokenString::unescape(const std::string &str, std::string *out)
                     return false;
                 }
 
-                char val = (digit1 << 4) & digit2;
+                char val = static_cast<char>((digit1 << 4) & digit2);
                 output += val;
 
                 new_i += 2;

@@ -25,9 +25,9 @@
 #include <type_traits>
 
 #include "mbcommon/locale.h"
+#include "mbcommon/string.h"
 
 #include "mbpio/error.h"
-#include "mbpio/private/string.h"
 #include "mbpio/win32/error.h"
 
 namespace io
@@ -56,7 +56,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
     if (_searchHandle == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         if (error != ERROR_FILE_NOT_FOUND) {
-            setLastError(Error::PlatformError, priv::format(
+            setLastError(Error::PlatformError, mb::format(
                     "FindFirstFileExW() failed: %s",
                     errorToString(error).c_str()));
             return false;
@@ -80,7 +80,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
                 } else {
                     if (!DeleteFileW(childPath.c_str())) {
                         DWORD error = GetLastError();
-                        setLastError(Error::PlatformError, priv::format(
+                        setLastError(Error::PlatformError, mb::format(
                                 "DeleteFileW() failed: %s",
                                 errorToString(error).c_str()));
                         return false;
@@ -92,7 +92,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
             if (!FindNextFileW(searchHandle.get(), &findData)) {
                 DWORD error = GetLastError();
                 if (error != ERROR_NO_MORE_FILES) {
-                    setLastError(Error::PlatformError, priv::format(
+                    setLastError(Error::PlatformError, mb::format(
                             "FindNextFileW() failed: %s",
                             errorToString(error).c_str()));
                     return false;
@@ -104,7 +104,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
 
     if (!RemoveDirectoryW(path.c_str())) {
         DWORD error = GetLastError();
-        setLastError(Error::PlatformError, priv::format(
+        setLastError(Error::PlatformError, mb::format(
                 "RemoveDirectoryW() failed: %s",
                 errorToString(error).c_str()));
         return false;

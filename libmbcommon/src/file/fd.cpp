@@ -47,43 +47,43 @@ namespace mb
 struct RealFdFileFuncs : public FdFileFuncs
 {
 #ifdef _WIN32
-    virtual int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
+    int fn_wopen(const wchar_t *path, int flags, mode_t mode) override
     {
         return _wopen(path, flags, mode);
     }
 #else
-    virtual int fn_open(const char *path, int flags, mode_t mode) override
+    int fn_open(const char *path, int flags, mode_t mode) override
     {
         return open(path, flags, mode);
     }
 #endif
 
-    virtual int fn_fstat(int fildes, struct stat *buf) override
+    int fn_fstat(int fildes, struct stat *buf) override
     {
         return fstat(fildes, buf);
     }
 
-    virtual int fn_close(int fd) override
+    int fn_close(int fd) override
     {
         return close(fd);
     }
 
-    virtual int fn_ftruncate64(int fd, off_t length) override
+    int fn_ftruncate64(int fd, off64_t length) override
     {
         return ftruncate64(fd, length);
     }
 
-    virtual off64_t fn_lseek64(int fd, off64_t offset, int whence) override
+    off64_t fn_lseek64(int fd, off64_t offset, int whence) override
     {
         return lseek64(fd, offset, whence);
     }
 
-    virtual ssize_t fn_read(int fd, void *buf, size_t count) override
+    ssize_t fn_read(int fd, void *buf, size_t count) override
     {
         return read(fd, buf, count);
     }
 
-    virtual ssize_t fn_write(int fd, const void *buf, size_t count) override
+    ssize_t fn_write(int fd, const void *buf, size_t count) override
     {
         return write(fd, buf, count);
     }
@@ -93,6 +93,8 @@ struct RealFdFileFuncs : public FdFileFuncs
 static RealFdFileFuncs g_default_funcs;
 
 /*! \cond INTERNAL */
+
+FdFileFuncs::~FdFileFuncs() = default;
 
 FdFilePrivate::FdFilePrivate()
     : FdFilePrivate(&g_default_funcs)
@@ -105,9 +107,7 @@ FdFilePrivate::FdFilePrivate(FdFileFuncs *funcs)
     clear();
 }
 
-FdFilePrivate::~FdFilePrivate()
-{
-}
+FdFilePrivate::~FdFilePrivate() = default;
 
 void FdFilePrivate::clear()
 {
@@ -437,7 +437,7 @@ bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
         return false;
     }
 
-    bytes_read = n;
+    bytes_read = static_cast<size_t>(n);
     return true;
 }
 
@@ -456,7 +456,7 @@ bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
         return false;
     }
 
-    bytes_written = n;
+    bytes_written = static_cast<size_t>(n);
     return true;
 }
 
@@ -471,7 +471,7 @@ bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         return false;
     }
 
-    new_offset = ret;
+    new_offset = static_cast<uint64_t>(ret);
     return true;
 }
 
@@ -479,7 +479,7 @@ bool FdFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(FdFile);
 
-    if (priv->funcs->fn_ftruncate64(priv->fd, size) < 0) {
+    if (priv->funcs->fn_ftruncate64(priv->fd, static_cast<off64_t>(size)) < 0) {
         set_error(std::error_code(errno, std::generic_category()),
                   "Failed to truncate file");
         return false;

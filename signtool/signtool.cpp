@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,6 +17,8 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <memory>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -25,6 +27,9 @@
 
 // libmbsign
 #include "mbsign/mbsign.h"
+
+using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
+using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
 
 static void openssl_log_errors()
 {
@@ -41,15 +46,6 @@ static void usage(FILE *stream)
 
 int main(int argc, char *argv[])
 {
-    const char *file_pkcs12;
-    const char *file_input;
-    const char *file_output;
-    EVP_PKEY *private_key = nullptr;
-    const char *pass;
-    BIO *bio_data_in = nullptr;
-    BIO *bio_sig_out = nullptr;
-    bool ret;
-
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 
@@ -58,56 +54,50 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    file_pkcs12 = argv[1];
-    file_input = argv[2];
-    file_output = argv[3];
+    const char *file_pkcs12 = argv[1];
+    const char *file_input = argv[2];
+    const char *file_output = argv[3];
 
-    pass = getenv("MBSIGN_PASSPHRASE");
+    const char *pass = getenv("MBSIGN_PASSPHRASE");
     if (!pass) {
         fprintf(stderr,
                 "The MBSIGN_PASSPHRASE environment variable is not set\n");
-        goto error;
+        return EXIT_FAILURE;
     }
 
-    private_key = mb::sign::load_private_key_from_file(
-            file_pkcs12, mb::sign::KEY_FORMAT_PKCS12, pass);
+    ScopedEVP_PKEY private_key(mb::sign::load_private_key_from_file(
+            file_pkcs12, mb::sign::KEY_FORMAT_PKCS12, pass), EVP_PKEY_free);
     if (!private_key) {
-        goto error;
+        return EXIT_FAILURE;
     }
 
-    bio_data_in = BIO_new_file(file_input, "rb");
+    ScopedBIO bio_data_in(BIO_new_file(file_input, "rb"), BIO_free);
     if (!bio_data_in) {
         fprintf(stderr, "%s: Failed to open input file\n", file_input);
         openssl_log_errors();
-        goto error;
+        return EXIT_FAILURE;
     }
-    bio_sig_out = BIO_new_file(file_output, "wb");
+    ScopedBIO bio_sig_out(BIO_new_file(file_output, "wb"), BIO_free);
     if (!bio_sig_out) {
         fprintf(stderr, "%s: Failed to open output file\n", file_output);
         openssl_log_errors();
-        goto error;
+        return EXIT_FAILURE;
     }
 
-    ret = mb::sign::sign_data(bio_data_in, bio_sig_out, private_key);
+    bool ret = mb::sign::sign_data(bio_data_in.get(), bio_sig_out.get(),
+                                   private_key.get());
 
-    EVP_PKEY_free(private_key);
-
-    if (!BIO_free(bio_data_in)) {
+    if (!BIO_free(bio_data_in.release())) {
         fprintf(stderr, "%s: Failed to close input file\n", file_input);
         openssl_log_errors();
         ret = false;
     }
-    if (!BIO_free(bio_sig_out)) {
+
+    if (!BIO_free(bio_sig_out.release())) {
         fprintf(stderr, "%s: Failed to close output file\n", file_output);
         openssl_log_errors();
         ret = false;
     }
 
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
-
-error:
-    EVP_PKEY_free(private_key);
-    BIO_free(bio_data_in);
-    BIO_free(bio_sig_out);
-    return EXIT_FAILURE;
 }

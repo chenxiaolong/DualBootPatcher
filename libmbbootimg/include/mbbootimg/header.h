@@ -85,11 +85,11 @@ class MB_EXPORT Header
 public:
     Header();
     Header(const Header &header);
-    Header(Header &&header);
+    Header(Header &&header) noexcept;
     ~Header();
 
     Header & operator=(const Header &header);
-    Header & operator=(Header &&header);
+    Header & operator=(Header &&header) noexcept;
 
     bool operator==(const Header &rhs) const;
     bool operator!=(const Header &rhs) const;
