@@ -24,12 +24,6 @@
 
 #include <cstdio>
 
-#if defined(__cpp_constexpr) && __cpp_constexpr-0 >= 201304
-#  define MB_DECL_RELAXED_CONSTEXPR constexpr
-#else
-#  define MB_DECL_RELAXED_CONSTEXPR
-#endif
-
 // Based on the QFlags code from Qt5
 
 /*! \cond INTERNAL */
@@ -59,37 +53,37 @@ public:
     {
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator&=(Flags f) noexcept
+    constexpr inline Flags & operator&=(Flags f) noexcept
     {
         _value &= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator&=(Enum f) noexcept
+    constexpr inline Flags & operator&=(Enum f) noexcept
     {
         _value &= static_cast<Underlying>(f);
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator|=(Flags f) noexcept
+    constexpr inline Flags & operator|=(Flags f) noexcept
     {
         _value |= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator|=(Enum f) noexcept
+    constexpr inline Flags & operator|=(Enum f) noexcept
     {
         _value |= static_cast<Underlying>(f);
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator^=(Flags f) noexcept
+    constexpr inline Flags & operator^=(Flags f) noexcept
     {
         _value ^= f._value;
         return *this;
     }
 
-    MB_DECL_RELAXED_CONSTEXPR inline Flags & operator^=(Enum f) noexcept
+    constexpr inline Flags & operator^=(Enum f) noexcept
     {
         _value ^= static_cast<Underlying>(f);
         return *this;
@@ -147,8 +141,7 @@ public:
                         || _value == static_cast<Underlying>(f));
     }
 
-    MB_DECL_RELAXED_CONSTEXPR
-    inline Flags & set_flag(Enum f, bool on = true) noexcept
+    constexpr inline Flags & set_flag(Enum f, bool on = true) noexcept
     {
         return on ? (*this |= f)
                 : (*this &= static_cast<Enum>(~static_cast<Underlying>(f)));
