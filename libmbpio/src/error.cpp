@@ -37,7 +37,7 @@ thread_local std::string gErrorString;
 #endif
 
 #ifdef __ANDROID__
-void destroyError(void *st)
+static void destroyError(void *st)
 {
     Error *ptr = static_cast<Error *>(st);
     if (ptr) {
@@ -45,7 +45,7 @@ void destroyError(void *st)
     }
 }
 
-void destroyErrorString(void *st)
+static void destroyErrorString(void *st)
 {
     std::string *ptr = static_cast<std::string *>(st);
     if (ptr) {
@@ -53,7 +53,7 @@ void destroyErrorString(void *st)
     }
 }
 
-void initTLSKeys() {
+static void initTLSKeys() {
     pthread_key_create(&gTLSKeyError, destroyError);
     pthread_key_create(&gTLSKeyErrorString, destroyErrorString);
     pthread_setspecific(gTLSKeyError, new int());

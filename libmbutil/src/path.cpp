@@ -96,7 +96,7 @@ bool read_link(const std::string &path, std::string &out)
         }
     }
 
-    buf[len] = '\0';
+    buf[static_cast<size_t>(len)] = '\0';
     out.assign(buf.data());
     return true;
 }

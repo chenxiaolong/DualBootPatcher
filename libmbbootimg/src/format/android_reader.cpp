@@ -52,19 +52,13 @@ namespace android
 AndroidFormatReader::AndroidFormatReader(Reader &reader, bool is_bump)
     : FormatReader(reader)
     , _hdr()
-    , _header_offset()
-    , _samsung_offset()
-    , _bump_offset()
     // Allow truncated device tree image by default
     , _allow_truncated_dt(true)
     , _is_bump(is_bump)
-    , _seg()
 {
 }
 
-AndroidFormatReader::~AndroidFormatReader()
-{
-}
+AndroidFormatReader::~AndroidFormatReader() = default;
 
 int AndroidFormatReader::type()
 {
@@ -172,23 +166,23 @@ int AndroidFormatReader::read_header(File &file, Header &header)
 
     ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
                            kernel_offset, _hdr.kernel_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
                            ramdisk_offset, _hdr.ramdisk_size, false, _reader);
-    if (ret != RET_OK) return ret;
+    if (ret != RET_OK) { return ret; }
 
     if (_hdr.second_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
                                second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     if (_hdr.dt_size > 0) {
         ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
                                dt_offset, _hdr.dt_size, _allow_truncated_dt,
                                _reader);
-        if (ret != RET_OK) return ret;
+        if (ret != RET_OK) { return ret; }
     }
 
     return RET_OK;
@@ -259,8 +253,8 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, buf,
-                         max_header_offset + sizeof(AndroidHeader), n)) {
+    if (!file_read_fully(file, buf, static_cast<size_t>(max_header_offset)
+                         + sizeof(AndroidHeader), n)) {
         reader.set_error(file.error(),
                          "Failed to read header: %s",
                          file.error_string().c_str());
@@ -275,7 +269,7 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
         return RET_WARN;
     }
 
-    offset = static_cast<unsigned char *>(ptr) - buf;
+    offset = static_cast<size_t>(static_cast<unsigned char *>(ptr) - buf);
 
     if (n - offset < sizeof(AndroidHeader)) {
         reader.set_error(make_error_code(AndroidError::HeaderOutOfBounds),
@@ -339,7 +333,7 @@ int AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
     pos += hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
-    if (!file.seek(pos, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "SEAndroid magic not found: %s",
                          file.error_string().c_str());
@@ -411,7 +405,7 @@ int AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
     pos += hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
-    if (!file.seek(pos, SEEK_SET, nullptr)) {
+    if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
         reader.set_error(file.error(),
                          "SEAndroid magic not found: %s",
                          file.error_string().c_str());
@@ -493,7 +487,7 @@ int AndroidFormatReader::bid_android(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -507,7 +501,7 @@ int AndroidFormatReader::bid_android(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _samsung_offset = samsung_offset;
-        bid += SAMSUNG_SEANDROID_MAGIC_SIZE * 8;
+        bid += static_cast<int>(SAMSUNG_SEANDROID_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
     } else {
@@ -543,7 +537,7 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
-        bid += BOOT_MAGIC_SIZE * 8;
+        bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Header not found. This can't be an Android boot image.
         return 0;
@@ -557,7 +551,7 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
     if (ret == RET_OK) {
         // Update bid to account for matched bits
         _bump_offset = bump_offset;
-        bid += bump::BUMP_MAGIC_SIZE * 8;
+        bid += static_cast<int>(bump::BUMP_MAGIC_SIZE * 8);
     } else if (ret == RET_WARN) {
         // Nothing found. Don't change bid
     } else {

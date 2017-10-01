@@ -136,21 +136,21 @@ static bool utilities_switch_rom(const char *rom_id, bool force)
     SwitchRomResult ret = switch_rom(
             rom_id, *it, device.block_dev_base_dirs(), force);
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         LOGD("SUCCEEDED");
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         LOGD("FAILED");
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         LOGD("CHECKSUM_INVALID");
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         LOGD("CHECKSUM_NOT_FOUND");
         break;
     }
 
-    return ret == SwitchRomResult::SUCCEEDED;
+    return ret == SwitchRomResult::Succeeded;
 }
 
 static bool utilities_wipe_system(const char *rom_id)
@@ -252,16 +252,16 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
     data->assign(str_data.begin(), str_data.end());
 }
 
-class AromaGenerator : public util::FTSWrapper
+class AromaGenerator : public util::FtsWrapper
 {
 public:
     AromaGenerator(std::string path, std::string zippath)
-        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
+        : FtsWrapper(std::move(path), util::FtsFlag::GroupSpecialFiles),
         _zippath(std::move(zippath))
     {
     }
 
-    virtual bool on_pre_execute() override
+    bool on_pre_execute() override
     {
         zlib_filefunc64_def zFunc;
         memset(&zFunc, 0, sizeof(zFunc));
@@ -275,13 +275,13 @@ public:
         return true;
     }
 
-    virtual bool on_post_execute(bool success) override
+    bool on_post_execute(bool success) override
     {
         (void) success;
         return zipClose(_zf, nullptr) == ZIP_OK;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         std::string name = std::string(_curr->fts_path).substr(_path.size() + 1);
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
@@ -290,30 +290,30 @@ public:
             std::vector<unsigned char> data;
             if (!util::file_read_all(_curr->fts_accpath, data)) {
                 LOGE("Failed to read: %s", _curr->fts_path);
-                return false;
+                return Action::Fail;
             }
 
             generate_aroma_config(&data);
 
             name = "META-INF/com/google/android/aroma-config";
             bool ret = add_file(name, data);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         } else {
             bool ret = add_file(name, _curr->fts_accpath);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         }
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         LOGW("Ignoring symlink when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         LOGW("Ignoring special file when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
 private:
@@ -324,7 +324,8 @@ private:
                   const std::vector<unsigned char> &contents)
     {
         // Obviously never true, but we'll keep it here just in case
-        bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+        bool zip64 = static_cast<uint64_t>(contents.size())
+                >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -351,7 +352,8 @@ private:
         }
 
         // Write data to file
-        ret = zipWriteInFileInZip(_zf, contents.data(), contents.size());
+        ret = zipWriteInFileInZip(_zf, contents.data(),
+                                  static_cast<uint32_t>(contents.size()));
         if (ret != ZIP_OK) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
             zipCloseFileInZip(_zf);
@@ -381,12 +383,18 @@ private:
             return false;
         }
 
-        uint64_t size;
+        off64_t size;
         lseek64(fd, 0, SEEK_END);
         size = lseek64(fd, 0, SEEK_CUR);
         lseek64(fd, 0, SEEK_SET);
 
-        bool zip64 = size >= ((1ull << 32) - 1);
+        if (size < 0) {
+            LOGE("%s: Failed to seek: %s",
+                 path.c_str(), strerror(errno));
+            return false;
+        }
+
+        bool zip64 = static_cast<uint64_t>(size) >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -418,7 +426,7 @@ private:
         ssize_t n;
 
         while ((n = read(fd, buf, sizeof(buf))) > 0) {
-            ret = zipWriteInFileInZip(_zf, buf, n);
+            ret = zipWriteInFileInZip(_zf, buf, static_cast<uint32_t>(n));
             if (ret != ZIP_OK) {
                 LOGW("minizip: Failed to write data (error code: %d): %s",
                      ret, path.c_str());

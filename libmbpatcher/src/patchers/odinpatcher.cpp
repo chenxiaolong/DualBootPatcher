@@ -103,7 +103,7 @@ public:
     bool patch_tar();
 
     bool process_file(archive *a, archive_entry *entry, bool sparse);
-    bool process_contents(archive *a, int depth);
+    bool process_contents(archive *a, unsigned int depth);
     bool open_input_archive();
     bool close_input_archive();
     bool open_output_archive();
@@ -214,7 +214,7 @@ static bool convert_to_int(const char *str, int *out)
             || *str == '\0' || *end != '\0') {
         return false;
     }
-    *out = (int) num;
+    *out = static_cast<int>(num);
     return true;
 }
 #endif
@@ -257,7 +257,8 @@ bool OdinPatcherPrivate::patch_tar()
     uint64_t current_pos;
     if (!la_file.seek(0, SEEK_CUR, &current_pos)
             || !la_file.seek(0, SEEK_END, &max_bytes)
-            || !la_file.seek(current_pos, SEEK_SET, nullptr)) {
+            || !la_file.seek(static_cast<int64_t>(current_pos), SEEK_SET,
+                             nullptr)) {
         LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
              la_file.error_string().c_str());
         error = ErrorCode::FileSeekError;
@@ -419,7 +420,7 @@ bool OdinPatcherPrivate::process_file(archive *a, archive_entry *entry,
     while ((n_read = archive_read_data(a, buf, sizeof(buf))) > 0) {
         if (cancelled) return false;
 
-        mz_ret = zipWriteInFileInZip(zf, buf, n_read);
+        mz_ret = zipWriteInFileInZip(zf, buf, static_cast<uint32_t>(n_read));
         if (mz_ret != ZIP_OK) {
             LOGE("minizip: Failed to write %s in output zip: %s",
                  zip_name.c_str(),
@@ -482,7 +483,7 @@ struct NestedCtx
     }
 };
 
-bool OdinPatcherPrivate::process_contents(archive *a, int depth)
+bool OdinPatcherPrivate::process_contents(archive *a, unsigned int depth)
 {
     if (depth > 1) {
         LOGW("Not traversing nested archive: depth > 1");
@@ -650,21 +651,23 @@ bool OdinPatcherPrivate::close_output_archive()
     return true;
 }
 
-void OdinPatcherPrivate::update_progress(uint64_t bytes, uint64_t max_bytes)
+void OdinPatcherPrivate::update_progress(uint64_t bytes_, uint64_t max_bytes_)
 {
     if (progress_cb) {
         bool should_call = true;
-        if (max_bytes > 0) {
+        if (max_bytes_ > 0) {
             // Rate limit... call back only if percentage exceeds 0.01%
-            double old_ratio = (double) old_bytes / max_bytes;
-            double new_ratio = (double) bytes / max_bytes;
+            double old_ratio = static_cast<double>(old_bytes)
+                    / static_cast<double>(max_bytes_);
+            double new_ratio = static_cast<double>(bytes_)
+                    / static_cast<double>(max_bytes_);
             if (new_ratio - old_ratio < 0.0001) {
                 should_call = false;
             }
         }
         if (should_call) {
-            progress_cb(bytes, max_bytes, userdata);
-            old_bytes = bytes;
+            progress_cb(bytes_, max_bytes_, userdata);
+            old_bytes = bytes_;
         }
     }
 }
@@ -721,7 +724,8 @@ la_int64_t OdinPatcherPrivate::la_skip_cb(archive *a, void *userdata,
         return -1;
     }
 
-    priv->bytes += request;
+    priv->bytes = static_cast<uint64_t>(
+            static_cast<int64_t>(priv->bytes) + request);
     priv->update_progress(priv->bytes, priv->max_bytes);
     return request;
 }

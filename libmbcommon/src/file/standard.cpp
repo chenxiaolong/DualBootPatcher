@@ -52,10 +52,7 @@ namespace mb
  * The File handle will not be bound to any file. One of the open functions will
  * need to be called to open a file.
  */
-StandardFile::StandardFile()
-    : Base()
-{
-}
+StandardFile::StandardFile() = default;
 
 /*!
  * \brief Open File handle from a multi-byte filename.
@@ -89,8 +86,6 @@ StandardFile::StandardFile(const std::wstring &filename, FileOpenMode mode)
 {
 }
 
-StandardFile::~StandardFile()
-{
-}
+StandardFile::~StandardFile() = default;
 
 }

@@ -49,7 +49,7 @@ struct MockPosixFileFuncs : public mb::PosixFileFuncs
                                    FILE *stream));
 
     // unistd.h
-    MOCK_METHOD2(fn_ftruncate64, int(int fd, off_t length));
+    MOCK_METHOD2(fn_ftruncate64, int(int fd, off64_t length));
 
     bool stream_error = false;
 

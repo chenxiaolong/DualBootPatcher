@@ -21,7 +21,7 @@
 
 #include "mbpio/private/common.h"
 
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
 #include "mbpio/win32/delete.h"
 #else
 #include "mbpio/posix/delete.h"
@@ -32,7 +32,7 @@ namespace io
 
 bool deleteRecursively(const std::string &path)
 {
-#if IO_PLATFORM_WINDOWS
+#ifdef IO_PLATFORM_WINDOWS
     return win32::deleteRecursively(path);
 #else
     return posix::deleteRecursively(path);

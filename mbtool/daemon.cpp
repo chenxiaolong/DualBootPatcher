@@ -30,8 +30,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <proc/readproc.h>
-
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/string.h"
@@ -50,6 +48,9 @@
 #include "roms.h"
 #include "sepolpatch.h"
 #include "validcerts.h"
+
+// Needs to come last because it defines HIDDEN, which is used in packages.h
+#include <proc/readproc.h>
 
 #define LOG_TAG "mbtool/daemon"
 
@@ -212,9 +213,10 @@ static bool run_daemon()
 
     // Calculate correct length so the trailing junk is not included in the
     // abstract socket name
-    socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
+    socklen_t addr_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path))
+            + static_cast<socklen_t>(abs_name_len);
 
-    if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), addr_len) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         LOGE("Is another instance running?");
         return false;
@@ -239,13 +241,15 @@ static bool run_daemon()
 
     // Eat zombies!
     // SIG_IGN reaps zombie processes (it's not just a dummy function)
-    struct sigaction sa;
-    sa.sa_handler = SIG_IGN;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    if (sigaction(SIGCHLD, &sa, 0) < 0) {
-        LOGE("Failed to set SIGCHLD handler: %s", strerror(errno));
-        return false;
+    {
+        struct sigaction sa;
+        sa.sa_handler = SIG_IGN;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        if (sigaction(SIGCHLD, &sa, 0) < 0) {
+            LOGE("Failed to set SIGCHLD handler: %s", strerror(errno));
+            return false;
+        }
     }
 
     LOGD("Socket ready, waiting for connections");
@@ -559,7 +563,7 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (patch_sepolicy) {
-        patch_loaded_sepolicy(SELinuxPatch::MAIN);
+        patch_loaded_sepolicy(SELinuxPatch::Main);
     }
 
     if (!switch_context(MB_EXEC_CONTEXT)) {

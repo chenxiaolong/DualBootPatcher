@@ -64,9 +64,10 @@ static std::string unescape_octals(const std::string &in)
                 && *(it + 1) >= '0' && *(it + 1) <= '7'
                 && *(it + 2) >= '0' && *(it + 2) <= '7'
                 && *(it + 3) >= '0' && *(it + 3) <= '7') {
-            result += ((*(it + 1) - '0') << 6)
+            result += static_cast<char>(
+                    ((*(it + 1) - '0') << 6)
                     | ((*(it + 2) - '0') << 3)
-                    | (*(it + 3) - '0');
+                    | (*(it + 3) - '0'));
             it += 4;
         } else {
             result += *it;
@@ -143,7 +144,7 @@ bool is_mounted(const std::string &mountpoint)
 bool unmount_all(const std::string &dir)
 {
     std::vector<std::string> to_unmount;
-    int failed;
+    int failed = 0;
 
     for (int tries = 0; tries < MAX_UNMOUNT_TRIES; ++tries) {
         failed = 0;

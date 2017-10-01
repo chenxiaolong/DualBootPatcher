@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -23,20 +23,16 @@
 #include <type_traits>
 
 #include <cerrno>
-#include <cinttypes>
 #include <climits>
 #include <cstdlib>
 
 namespace mb
 {
-namespace util
-{
 
 template<typename SIntType>
-inline bool str_to_snum(const char *str, int base, SIntType *out)
+inline typename std::enable_if<std::is_signed<SIntType>::value, bool>::type
+str_to_num(const char *str, int base, SIntType &out)
 {
-    static_assert(std::is_signed<SIntType>::value,
-                  "Integer type is not signed");
     static_assert(std::numeric_limits<SIntType>::min() >= LLONG_MIN
                   && std::numeric_limits<SIntType>::max() <= LLONG_MAX,
                   "Integer type to too large to handle");
@@ -53,15 +49,14 @@ inline bool str_to_snum(const char *str, int base, SIntType *out)
         errno = EINVAL;
         return false;
     }
-    *out = static_cast<SIntType>(num);
+    out = static_cast<SIntType>(num);
     return true;
 }
 
 template<typename UIntType>
-inline bool str_to_unum(const char *str, int base, UIntType *out)
+inline typename std::enable_if<std::is_unsigned<UIntType>::value, bool>::type
+str_to_num(const char *str, int base, UIntType &out)
 {
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
     static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
                   "Integer type to too large to handle");
 
@@ -76,9 +71,8 @@ inline bool str_to_unum(const char *str, int base, UIntType *out)
         errno = EINVAL;
         return false;
     }
-    *out = static_cast<UIntType>(num);
+    out = static_cast<UIntType>(num);
     return true;
 }
 
-}
 }

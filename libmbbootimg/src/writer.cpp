@@ -237,9 +237,7 @@ FormatWriter::FormatWriter(Writer &writer)
 {
 }
 
-FormatWriter::~FormatWriter()
-{
-}
+FormatWriter::~FormatWriter() = default;
 
 int FormatWriter::init()
 {
@@ -270,8 +268,6 @@ WriterPrivate::WriterPrivate(Writer *writer)
     , state(WriterState::New)
     , owned_file()
     , file()
-    , error_code()
-    , error_string()
     , format()
 {
 }
@@ -282,13 +278,13 @@ WriterPrivate::WriterPrivate(Writer *writer)
  * Register a format writer with a Writer. The Writer will take ownership of
  * \p format.
  *
- * \param format FormatWriter to register
+ * \param format_ FormatWriter to register
  *
  * \return
  *   * #RET_OK if the format is successfully registered
  *   * \<= #RET_FAILED if an error occurs
  */
-int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format)
+int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format_)
 {
     MB_PUBLIC(Writer);
 
@@ -301,12 +297,12 @@ int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format)
         return RET_FAILED;
     }
 
-    int ret = format->init();
+    int ret = format_->init();
     if (ret != RET_OK) {
         return ret;
     }
 
-    this->format = std::move(format);
+    format = std::move(format_);
     return RET_OK;
 }
 
@@ -336,11 +332,12 @@ Writer::~Writer()
     }
 }
 
-Writer::Writer(Writer &&other) : _priv_ptr(std::move(other._priv_ptr))
+Writer::Writer(Writer &&other) noexcept
+    : _priv_ptr(std::move(other._priv_ptr))
 {
 }
 
-Writer & Writer::operator=(Writer &&rhs)
+Writer & Writer::operator=(Writer &&rhs) noexcept
 {
     close();
 

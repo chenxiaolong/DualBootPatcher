@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.7)
 
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
 project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
-set(MBP_VERSION_MINOR 2)
+set(MBP_VERSION_MINOR 3)
 set(MBP_VERSION_PATCH 0)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
@@ -170,6 +170,9 @@ include(cmake/ConfigSigning.cmake)
 
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
+
+# Implicit system include directories
+include(cmake/ImplicitIncludeDirs.cmake)
 
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)

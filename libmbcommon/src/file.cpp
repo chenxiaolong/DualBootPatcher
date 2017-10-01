@@ -59,13 +59,9 @@ namespace mb
 {
 
 /*! \cond INTERNAL */
-FilePrivate::FilePrivate()
-{
-}
+FilePrivate::FilePrivate() = default;
 
-FilePrivate::~FilePrivate()
-{
-}
+FilePrivate::~FilePrivate() = default;
 /*! \endcond */
 
 /*!
@@ -130,7 +126,7 @@ File::~File()
  * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
  * \endcode
  */
-File::File(File &&other) : _priv_ptr(std::move(other._priv_ptr))
+File::File(File &&other) noexcept : _priv_ptr(std::move(other._priv_ptr))
 {
 }
 
@@ -150,7 +146,7 @@ File::File(File &&other) : _priv_ptr(std::move(other._priv_ptr))
  * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
  * \endcode
  */
-File & File::operator=(File &&rhs)
+File & File::operator=(File &&rhs) noexcept
 {
     close();
 

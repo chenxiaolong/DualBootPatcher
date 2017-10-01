@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "mbcommon/flags.h"
 #include "mbdevice/device.h"
 
 #include "roms.h"
@@ -26,30 +27,32 @@
 namespace mb
 {
 
-enum MountFlags : unsigned int
+enum class MountFlag : uint32_t
 {
     // Rewrite fstab file to remove mounted entries
-    MOUNT_FLAG_REWRITE_FSTAB            = 1u << 1,
+    RewriteFstab        = 1u << 1,
     // Prevent the use of generic fstab entries for fstab files that are missing
     // entries for /system, /cache, or /data
-    MOUNT_FLAG_NO_GENERIC_ENTRIES       = 1u << 2,
+    NoGenericEntries    = 1u << 2,
     // Unmount mount points that were successfully mounted if a later entry in
     // the fstab file fails to mount (affects only the mount points mounted in
     // the current invocation of the function)
-    MOUNT_FLAG_UNMOUNT_ON_FAILURE       = 1u << 3,
+    UnmountOnFailure    = 1u << 3,
 
     // Mount /system
-    MOUNT_FLAG_MOUNT_SYSTEM             = 1u << 10,
+    MountSystem         = 1u << 10,
     // Mount /cache
-    MOUNT_FLAG_MOUNT_CACHE              = 1u << 11,
+    MountCache          = 1u << 11,
     // Mount /data
-    MOUNT_FLAG_MOUNT_DATA               = 1u << 12,
+    MountData           = 1u << 12,
     // Mount external SD
-    MOUNT_FLAG_MOUNT_EXTERNAL_SD        = 1u << 13,
+    MountExternalSd     = 1u << 13,
 };
+MB_DECLARE_FLAGS(MountFlags, MountFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(MountFlags)
 
 bool mount_fstab(const char *path, const std::shared_ptr<Rom> &rom,
-                 const device::Device &device, int flags);
+                 const device::Device &device, MountFlags flags);
 bool mount_rom(const std::shared_ptr<Rom> &rom);
 
 }

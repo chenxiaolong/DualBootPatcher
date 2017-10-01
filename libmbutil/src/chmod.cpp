@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -38,42 +38,42 @@ namespace mb
 namespace util
 {
 
-class RecursiveChmod : public FTSWrapper {
+class RecursiveChmod : public FtsWrapper {
 public:
     RecursiveChmod(std::string path, mode_t perms)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _perms(perms)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
+        , _perms(perms)
     {
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted in
         // on_reached_directory_post()
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         // Avoid security issue
         LOGW("%s: Not setting permissions on symlink",
              _curr->fts_path);
-        return Action::FTS_Skip;
+        return Action::Skip;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return chmod_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chmod_path() ? Action::Ok : Action::Fail;
     }
 
 private:
@@ -92,9 +92,9 @@ private:
 };
 
 
-bool chmod(const std::string &path, mode_t perms, int flags)
+bool chmod(const std::string &path, mode_t perms, ChmodFlags flags)
 {
-    if (flags & CHMOD_RECURSIVE) {
+    if (flags & ChmodFlag::Recursive) {
         RecursiveChmod fts(path, perms);
         return fts.run();
     } else {

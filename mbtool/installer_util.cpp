@@ -40,6 +40,7 @@
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -262,7 +263,8 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
         if (archive_entry_size(entry.get()) > 0) {
             while ((n = archive_read_data(ain.get(), buf, sizeof(buf))) > 0) {
-                if (archive_write_data(aout.get(), buf, n) != n) {
+                if (archive_write_data(aout.get(), buf, static_cast<size_t>(n))
+                        != n) {
                     LOGE("Failed to write archive entry data: %s",
                          archive_error_string(aout.get()));
                     return false;
@@ -538,8 +540,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     StandardFile fin;
     StandardFile fout;
-    // TODO: Replace with std::optional after switching to C++17
-    std::pair<bool, uint64_t> offset;
+    optional<uint64_t> offset;
 
     // Open input file
     if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
@@ -556,13 +557,11 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     }
 
     // Replace pattern
-    auto result_cb = [](File &file, void *userdata, uint64_t offset)
+    auto result_cb = [](File &file, void *userdata, uint64_t offset_)
             -> FileSearchAction {
         (void) file;
-        std::pair<bool, uint64_t> *ptr =
-                static_cast<std::pair<bool, uint64_t> *>(userdata);
-        ptr->first = true;
-        ptr->second = offset;
+        auto ptr = static_cast<optional<uint64_t> *>(userdata);
+        *ptr = offset_;
         return FileSearchAction::Stop;
     };
 
@@ -580,10 +579,10 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return false;
     }
 
-    if (offset.first) {
-        LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
+    if (offset) {
+        LOGD("RKP pattern found at offset: 0x%" PRIx64, *offset);
 
-        if (!copy_file_to_file(fin, fout, offset.second)) {
+        if (!copy_file_to_file(fin, fout, *offset)) {
             return false;
         }
 
@@ -657,7 +656,8 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
     size_t n;
 
     while (to_copy > 0) {
-        size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
+        size_t to_read = static_cast<size_t>(
+                std::min<uint64_t>(to_copy, sizeof(buf)));
 
         if (!file_read_fully(fin, buf, to_read, n) || n != to_read) {
             LOGE("Failed to read data: %s", fin.error_string().c_str());

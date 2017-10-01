@@ -75,9 +75,6 @@ MB_PRINTF(3, 4)
 MB_EXPORT void log(LogLevel prio, const char *tag, const char *fmt, ...);
 MB_EXPORT void log_v(LogLevel prio, const char *tag, const char *fmt, va_list ap);
 
-MB_EXPORT std::string time_format();
-MB_EXPORT void set_time_format(std::string fmt);
-
 MB_EXPORT std::string format();
 MB_EXPORT void set_format(std::string fmt);
 

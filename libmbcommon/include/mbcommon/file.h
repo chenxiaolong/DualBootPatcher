@@ -44,8 +44,8 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(File)
 
-    File(File &&other);
-    File & operator=(File &&rhs);
+    File(File &&other) noexcept;
+    File & operator=(File &&rhs) noexcept;
 
     // File close
     bool close();

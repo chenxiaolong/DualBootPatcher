@@ -6,6 +6,3 @@ if(ANDROID)
 endif()
 
 find_package(Fuse REQUIRED)
-
-set(MBP_FUSE_INCLUDES ${FUSE_INCLUDE_DIR})
-set(MBP_FUSE_LIBRARIES ${FUSE_LIBRARIES})

@@ -34,6 +34,7 @@
 
 // libmbcommon
 #include <mbcommon/common.h>
+#include <mbcommon/integer.h>
 #include <mbcommon/libc/stdio.h>
 
 // libmbbootimg
@@ -120,7 +121,7 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "  unpack         Unpack a boot image\n" \
     "  pack           Assemble boot image from unpacked files\n" \
     "\n" \
-    "Pass -h/--help as a argument to a command to see it's available options.\n"
+    "Pass -h/--help as a argument to a command to see its available options.\n"
 
 #define HELP_UNPACK_USAGE \
     "Usage: bootimgtool unpack <input file> [<option>...]\n" \
@@ -247,29 +248,6 @@ template <typename F>
 Finally<F> finally(F f)
 {
     return Finally<F>(f);
-}
-
-template<typename UIntType>
-static inline bool str_to_unum(const char *str, int base, UIntType *out)
-{
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<UIntType>(num);
-    return true;
 }
 
 struct Paths
@@ -494,47 +472,47 @@ static bool read_header(const std::string &path, Header &header)
         } else if (strcmp(key, FIELD_BOARD) == 0) {
             ret = header.set_board_name({value});
         } else if (strcmp(key, FIELD_BASE) == 0) {
-            valid = str_to_unum(value, 16, &base);
+            valid = mb::str_to_num(value, 16, base);
             have_base = true;
         } else if (strcmp(key, FIELD_KERNEL_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &kernel_offset);
+            valid = mb::str_to_num(value, 16, kernel_offset);
             have_kernel_offset = true;
         } else if (strcmp(key, FIELD_RAMDISK_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &ramdisk_offset);
+            valid = mb::str_to_num(value, 16, ramdisk_offset);
             have_ramdisk_offset = true;
         } else if (strcmp(key, FIELD_SECOND_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &second_offset);
+            valid = mb::str_to_num(value, 16, second_offset);
             have_second_offset = true;
         } else if (strcmp(key, FIELD_TAGS_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &tags_offset);
+            valid = mb::str_to_num(value, 16, tags_offset);
             have_tags_offset = true;
         } else if (strcmp(key, FIELD_IPL_ADDRESS) == 0) {
             uint32_t ipl_address;
-            valid = str_to_unum(value, 16, &ipl_address);
+            valid = mb::str_to_num(value, 16, ipl_address);
             if (valid) {
                 ret = header.set_sony_ipl_address(ipl_address);
             }
         } else if (strcmp(key, FIELD_RPM_ADDRESS) == 0) {
             uint32_t rpm_address;
-            valid = str_to_unum(value, 16, &rpm_address);
+            valid = mb::str_to_num(value, 16, rpm_address);
             if (valid) {
                 ret = header.set_sony_rpm_address(rpm_address);
             }
         } else if (strcmp(key, FIELD_APPSBL_ADDRESS) == 0) {
             uint32_t appsbl_address;
-            valid = str_to_unum(value, 16, &appsbl_address);
+            valid = mb::str_to_num(value, 16, appsbl_address);
             if (valid) {
                 ret = header.set_sony_appsbl_address(appsbl_address);
             }
         } else if (strcmp(key, FIELD_ENTRYPOINT) == 0) {
             uint32_t entrypoint;
-            valid = str_to_unum(value, 16, &entrypoint);
+            valid = mb::str_to_num(value, 16, entrypoint);
             if (valid) {
                 ret = header.set_entrypoint_address(entrypoint);
             }
         } else if (strcmp(key, FIELD_PAGE_SIZE) == 0) {
             uint32_t page_size;
-            valid = str_to_unum(value, 10, &page_size);
+            valid = mb::str_to_num(value, 10, page_size);
             if (valid) {
                 ret = header.set_page_size(page_size);
             }
@@ -580,10 +558,10 @@ static bool write_header(const std::string &path, const Header &header)
 {
     // Try to use base relative to the default kernel offset
     uint32_t base;
-    uint32_t kernel_offset;
-    uint32_t ramdisk_offset;
-    uint32_t second_offset;
-    uint32_t tags_offset;
+    uint32_t kernel_offset = 0;
+    uint32_t ramdisk_offset = 0;
+    uint32_t second_offset = 0;
+    uint32_t tags_offset = 0;
     auto kernel_address = header.kernel_address();
     auto ramdisk_address = header.ramdisk_address();
     auto secondboot_address = header.secondboot_address();
@@ -850,7 +828,7 @@ static bool write_entry_to_file(const Paths &paths, Reader &reader,
     return write_data_entry_to_file(path, reader);
 }
 
-bool unpack_main(int argc, char *argv[])
+static bool unpack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
@@ -879,24 +857,24 @@ bool unpack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"output",                required_argument, 0, 'o'},
-        {"prefix",                required_argument, 0, 'p'},
-        {"noprefix",              required_argument, 0, 'n'},
-        {"type",                  required_argument, 0, 't'},
+        {"output",                required_argument, nullptr, 'o'},
+        {"prefix",                required_argument, nullptr, 'p'},
+        {"noprefix",              required_argument, nullptr, 'n'},
+        {"type",                  required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"output-header",         required_argument, 0, OPT_OUTPUT_HEADER},
-        {"output-kernel",         required_argument, 0, OPT_OUTPUT_KERNEL},
-        {"output-ramdisk",        required_argument, 0, OPT_OUTPUT_RAMDISK},
-        {"output-second",         required_argument, 0, OPT_OUTPUT_SECOND},
-        {"output-dt",             required_argument, 0, OPT_OUTPUT_DT},
-        {"output-kernel_mtkhdr",  required_argument, 0, OPT_OUTPUT_KERNEL_MTKHDR},
-        {"output-ramdisk_mtkhdr", required_argument, 0, OPT_OUTPUT_RAMDISK_MTKHDR},
-        {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
-        {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
-        {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
+        {"output-header",         required_argument, nullptr, OPT_OUTPUT_HEADER},
+        {"output-kernel",         required_argument, nullptr, OPT_OUTPUT_KERNEL},
+        {"output-ramdisk",        required_argument, nullptr, OPT_OUTPUT_RAMDISK},
+        {"output-second",         required_argument, nullptr, OPT_OUTPUT_SECOND},
+        {"output-dt",             required_argument, nullptr, OPT_OUTPUT_DT},
+        {"output-kernel_mtkhdr",  required_argument, nullptr, OPT_OUTPUT_KERNEL_MTKHDR},
+        {"output-ramdisk_mtkhdr", required_argument, nullptr, OPT_OUTPUT_RAMDISK_MTKHDR},
+        {"output-ipl",            required_argument, nullptr, OPT_OUTPUT_IPL},
+        {"output-rpm",            required_argument, nullptr, OPT_OUTPUT_RPM},
+        {"output-appsbl",         required_argument, nullptr, OPT_OUTPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                  no_argument,       nullptr, 'h'},
+        {nullptr,                 0,                 nullptr, 0},
     };
 
     int long_index = 0;
@@ -1011,7 +989,7 @@ bool unpack_main(int argc, char *argv[])
     return true;
 }
 
-bool pack_main(int argc, char *argv[])
+static bool pack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
@@ -1042,25 +1020,25 @@ bool pack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"input",                required_argument, 0, 'i'},
-        {"prefix",               required_argument, 0, 'p'},
-        {"noprefix",             required_argument, 0, 'n'},
-        {"type",                 required_argument, 0, 't'},
+        {"input",                required_argument, nullptr, 'i'},
+        {"prefix",               required_argument, nullptr, 'p'},
+        {"noprefix",             required_argument, nullptr, 'n'},
+        {"type",                 required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"input-header",         required_argument, 0, OPT_INPUT_HEADER},
-        {"input-kernel",         required_argument, 0, OPT_INPUT_KERNEL},
-        {"input-ramdisk",        required_argument, 0, OPT_INPUT_RAMDISK},
-        {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
-        {"input-dt",             required_argument, 0, OPT_INPUT_DT},
-        {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
-        {"input-kernel_mtkhdr",  required_argument, 0, OPT_INPUT_KERNEL_MTKHDR},
-        {"input-ramdisk_mtkhdr", required_argument, 0, OPT_INPUT_RAMDISK_MTKHDR},
-        {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
-        {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
-        {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
+        {"input-header",         required_argument, nullptr, OPT_INPUT_HEADER},
+        {"input-kernel",         required_argument, nullptr, OPT_INPUT_KERNEL},
+        {"input-ramdisk",        required_argument, nullptr, OPT_INPUT_RAMDISK},
+        {"input-second",         required_argument, nullptr, OPT_INPUT_SECOND},
+        {"input-dt",             required_argument, nullptr, OPT_INPUT_DT},
+        {"input-aboot",          required_argument, nullptr, OPT_INPUT_ABOOT},
+        {"input-kernel_mtkhdr",  required_argument, nullptr, OPT_INPUT_KERNEL_MTKHDR},
+        {"input-ramdisk_mtkhdr", required_argument, nullptr, OPT_INPUT_RAMDISK_MTKHDR},
+        {"input-ipl",            required_argument, nullptr, OPT_INPUT_IPL},
+        {"input-rpm",            required_argument, nullptr, OPT_INPUT_RPM},
+        {"input-appsbl",         required_argument, nullptr, OPT_INPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                 no_argument,       nullptr, 'h'},
+        {nullptr,                0,                 nullptr, 0},
     };
 
     int long_index = 0;

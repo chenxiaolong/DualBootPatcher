@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,6 +19,8 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -27,6 +29,11 @@
 #include "mbsign/mbsign.h"
 
 #define LOG_TAG "test_sign"
+
+using ScopedBIGNUM = std::unique_ptr<BIGNUM, decltype(BN_free) *>;
+using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
+using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
+using ScopedRSA = std::unique_ptr<RSA, decltype(RSA_free) *>;
 
 static int log_callback(const char *str, size_t len, void *userdata)
 {
@@ -46,194 +53,176 @@ static void openssl_log_errors()
     ERR_print_errors_cb(&log_callback, nullptr);
 }
 
-static bool generate_keys(EVP_PKEY **private_key_out, EVP_PKEY **public_key_out)
+static bool generate_keys(ScopedEVP_PKEY &private_key_out,
+                          ScopedEVP_PKEY &public_key_out)
 {
-    assert(private_key_out && public_key_out);
+    ScopedEVP_PKEY private_key(EVP_PKEY_new(), EVP_PKEY_free);
+    ScopedEVP_PKEY public_key(EVP_PKEY_new(), EVP_PKEY_free);
+    ScopedRSA rsa(RSA_new(), RSA_free);
+    ScopedBIGNUM e(BN_new(), BN_free);
 
-    EVP_PKEY *private_key = nullptr;
-    EVP_PKEY *public_key = nullptr;
-    RSA *rsa = nullptr;
-
-    private_key = EVP_PKEY_new();
     if (!private_key) {
-        LOGE("EVP_PKEY_new() failed for private key");
+        LOGE("Failed to allocate private key");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    public_key = EVP_PKEY_new();
     if (!public_key) {
-        LOGE("EVP_PKEY_new() failed for public key");
+        LOGE("Failed to allocate public key");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
     if (!rsa) {
-        LOGE("RSA_generate_key() failed");
+        LOGE("Failed to allocate RSA");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (!EVP_PKEY_assign_RSA(private_key, RSAPrivateKey_dup(rsa))) {
+    if (!e) {
+        LOGE("Failed to allocate BIGNUM");
+        openssl_log_errors();
+        return false;
+    }
+
+    BN_set_word(e.get(), RSA_F4);
+
+    if (RSA_generate_key_ex(rsa.get(), 2048, e.get(), nullptr) < 0) {
+        LOGE("RSA_generate_key_ex() failed");
+        openssl_log_errors();
+        return false;
+    }
+
+    if (!EVP_PKEY_assign_RSA(private_key.get(), RSAPrivateKey_dup(rsa.get()))) {
         LOGE("EVP_PKEY_assign_RSA() failed for private key");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (!EVP_PKEY_assign_RSA(public_key, RSAPublicKey_dup(rsa))) {
+    if (!EVP_PKEY_assign_RSA(public_key.get(), RSAPublicKey_dup(rsa.get()))) {
         LOGE("EVP_PKEY_assign_RSA() failed for public key");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    *private_key_out = private_key;
-    *public_key_out = public_key;
-    RSA_free(rsa);
+    private_key_out = std::move(private_key);
+    public_key_out = std::move(public_key);
     return true;
-
-error:
-    EVP_PKEY_free(private_key);
-    EVP_PKEY_free(public_key);
-    RSA_free(rsa);
-    return false;
 }
 
 TEST(SignTest, TestLoadInvalidPemKeys)
 {
-    BIO *bio_private_key;
-    BIO *bio_public_key;
-    EVP_PKEY *pkey;
-
-    bio_private_key = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_private_key, nullptr);
-    bio_public_key = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_public_key, nullptr);
+    ScopedBIO bio_private_key(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_private_key);
+    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_public_key);
 
     // Fill with garbage
-    ASSERT_EQ(BIO_write(bio_private_key, "abcdefghijklmnopqrstuvwxyz", 26), 26);
-    ASSERT_EQ(BIO_write(bio_public_key, "zyxwvutsrqponmlkjihgfedcba", 26), 26);
+    ASSERT_EQ(BIO_write(bio_private_key.get(),
+                        "abcdefghijklmnopqrstuvwxyz", 26), 26);
+    ASSERT_EQ(BIO_write(bio_public_key.get(),
+                        "zyxwvutsrqponmlkjihgfedcba", 26), 26);
 
-    pkey = mb::sign::load_private_key(
-            bio_private_key, mb::sign::KEY_FORMAT_PEM, nullptr);
-    ASSERT_EQ(pkey, nullptr);
-    pkey = mb::sign::load_public_key(
-            bio_public_key, mb::sign::KEY_FORMAT_PEM, nullptr);
-    ASSERT_EQ(pkey, nullptr);
+    ScopedEVP_PKEY private_key(mb::sign::load_private_key(
+            bio_private_key.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            EVP_PKEY_free);
+    ASSERT_FALSE(private_key);
 
-    BIO_free(bio_private_key);
-    BIO_free(bio_public_key);
+    ScopedEVP_PKEY public_key(mb::sign::load_public_key(
+            bio_public_key.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            EVP_PKEY_free);
+    ASSERT_FALSE(public_key);
 }
 
 TEST(SignTest, TestLoadInvalidPkcs12PrivateKey)
 {
-    BIO *bio_private_key;
-    BIO *bio_public_key;
-    EVP_PKEY *pkey;
-
-    bio_private_key = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_private_key, nullptr);
-    bio_public_key = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_public_key, nullptr);
+    ScopedBIO bio_private_key(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_private_key);
+    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_public_key);
 
     // Fill with garbage
-    ASSERT_EQ(BIO_write(bio_private_key, "abcdefghijklmnopqrstuvwxyz", 26), 26);
-    ASSERT_EQ(BIO_write(bio_public_key, "zyxwvutsrqponmlkjihgfedcba", 26), 26);
+    ASSERT_EQ(BIO_write(bio_private_key.get(),
+                        "abcdefghijklmnopqrstuvwxyz", 26), 26);
+    ASSERT_EQ(BIO_write(bio_public_key.get(),
+                        "zyxwvutsrqponmlkjihgfedcba", 26), 26);
 
-    pkey = mb::sign::load_private_key(
-            bio_private_key, mb::sign::KEY_FORMAT_PKCS12, nullptr);
-    ASSERT_EQ(pkey, nullptr);
-    pkey = mb::sign::load_public_key(
-            bio_public_key, mb::sign::KEY_FORMAT_PKCS12, nullptr);
-    ASSERT_EQ(pkey, nullptr);
+    ScopedEVP_PKEY private_key(mb::sign::load_private_key(
+            bio_private_key.get(), mb::sign::KEY_FORMAT_PKCS12, nullptr),
+            EVP_PKEY_free);
+    ASSERT_FALSE(private_key);
 
-    BIO_free(bio_private_key);
-    BIO_free(bio_public_key);
+    ScopedEVP_PKEY public_key(mb::sign::load_public_key(
+            bio_public_key.get(), mb::sign::KEY_FORMAT_PKCS12, nullptr),
+            EVP_PKEY_free);
+    ASSERT_FALSE(public_key);
 }
 
 TEST(SignTest, TestLoadValidPemKeys)
 {
-    EVP_PKEY *private_key;
-    EVP_PKEY *public_key;
-    EVP_PKEY *private_key_enc_read;
-    EVP_PKEY *private_key_noenc_read;
-    EVP_PKEY *public_key_read;
-    BIO *bio_private_key_enc;
-    BIO *bio_private_key_noenc;
-    BIO *bio_public_key;
+    ScopedEVP_PKEY private_key(nullptr, EVP_PKEY_free);
+    ScopedEVP_PKEY public_key(nullptr, EVP_PKEY_free);
+
+    ScopedBIO bio_private_key_enc(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_private_key_enc);
+    ScopedBIO bio_private_key_noenc(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_private_key_noenc);
+    ScopedBIO bio_public_key(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio_public_key);
 
     // Generate keys
-    ASSERT_TRUE(generate_keys(&private_key, &public_key));
-
-    // Create memory buffers
-    bio_private_key_enc = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_private_key_enc, nullptr);
-    bio_private_key_noenc = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_private_key_noenc, nullptr);
-    bio_public_key = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio_public_key, nullptr);
+    ASSERT_TRUE(generate_keys(private_key, public_key));
 
     // Write keys
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_enc, private_key,
-                                         EVP_des_ede3_cbc(), nullptr, 0,
-                                         nullptr, (void *) "testing"));
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_noenc, private_key,
-                                         nullptr, nullptr, 0, nullptr,
-                                         nullptr));
-    ASSERT_TRUE(PEM_write_bio_PUBKEY(bio_public_key, public_key));
+    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_enc.get(),
+                                         private_key.get(), EVP_des_ede3_cbc(),
+                                         nullptr, 0, nullptr,
+                                         const_cast<char *>("testing")));
+    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio_private_key_noenc.get(),
+                                         private_key.get(), nullptr, nullptr, 0,
+                                         nullptr, nullptr));
+    ASSERT_TRUE(PEM_write_bio_PUBKEY(bio_public_key.get(), public_key.get()));
 
     // Read back the keys
-    private_key_enc_read = mb::sign::load_private_key(
-            bio_private_key_enc, mb::sign::KEY_FORMAT_PEM, "testing");
-    ASSERT_NE(private_key_enc_read, nullptr);
-    private_key_noenc_read = mb::sign::load_private_key(
-            bio_private_key_noenc, mb::sign::KEY_FORMAT_PEM, nullptr);
-    ASSERT_NE(private_key_noenc_read, nullptr);
-    public_key_read = mb::sign::load_public_key(
-            bio_public_key, mb::sign::KEY_FORMAT_PEM, "testing");
-    ASSERT_NE(public_key_read, nullptr);
+    ScopedEVP_PKEY private_key_enc_read(mb::sign::load_private_key(
+            bio_private_key_enc.get(), mb::sign::KEY_FORMAT_PEM, "testing"),
+            EVP_PKEY_free);
+    ASSERT_TRUE(!!private_key_enc_read);
+    ScopedEVP_PKEY private_key_noenc_read(mb::sign::load_private_key(
+            bio_private_key_noenc.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            EVP_PKEY_free);
+    ASSERT_TRUE(!!private_key_noenc_read);
+    ScopedEVP_PKEY public_key_read(mb::sign::load_public_key(
+            bio_public_key.get(), mb::sign::KEY_FORMAT_PEM, "testing"),
+            EVP_PKEY_free);
+    ASSERT_TRUE(!!public_key_read);
 
     // Compare keys
-    ASSERT_EQ(EVP_PKEY_cmp(private_key, private_key_enc_read), 1);
-    ASSERT_EQ(EVP_PKEY_cmp(private_key, private_key_noenc_read), 1);
-    ASSERT_EQ(EVP_PKEY_cmp(public_key, public_key_read), 1);
-
-    EVP_PKEY_free(private_key);
-    EVP_PKEY_free(public_key);
-    EVP_PKEY_free(private_key_enc_read);
-    EVP_PKEY_free(private_key_noenc_read);
-    EVP_PKEY_free(public_key_read);
-    BIO_free(bio_private_key_enc);
-    BIO_free(bio_private_key_noenc);
-    BIO_free(bio_public_key);
+    ASSERT_EQ(EVP_PKEY_cmp(private_key.get(), private_key_enc_read.get()), 1);
+    ASSERT_EQ(EVP_PKEY_cmp(private_key.get(), private_key_noenc_read.get()), 1);
+    ASSERT_EQ(EVP_PKEY_cmp(public_key.get(), public_key_read.get()), 1);
 }
 
 TEST(SignTest, TestLoadValidPemKeysWithInvalidPassphrase)
 {
-    EVP_PKEY *private_key;
-    EVP_PKEY *public_key;
-    EVP_PKEY *private_key_read;
-    BIO *bio;
+    ScopedEVP_PKEY private_key(nullptr, EVP_PKEY_free);
+    ScopedEVP_PKEY public_key(nullptr, EVP_PKEY_free);
+
+    ScopedBIO bio(BIO_new(BIO_s_mem()), BIO_free);
+    ASSERT_TRUE(!!bio);
 
     // Generate keys
-    ASSERT_TRUE(generate_keys(&private_key, &public_key));
-
-    // Create memory buffers
-    bio = BIO_new(BIO_s_mem());
-    ASSERT_NE(bio, nullptr);
+    ASSERT_TRUE(generate_keys(private_key, public_key));
 
     // Write key
-    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio, private_key, EVP_des_ede3_cbc(),
-                                         nullptr, 0, nullptr,
-                                         (void *) "testing"));
+    ASSERT_TRUE(PEM_write_bio_PrivateKey(bio.get(), private_key.get(),
+                                         EVP_des_ede3_cbc(), nullptr, 0,
+                                         nullptr,
+                                         const_cast<char *>("testing")));
 
     // Read back the key using invalid password
-    private_key_read = mb::sign::load_private_key(
-            bio, mb::sign::KEY_FORMAT_PEM, "gnitset");
-    ASSERT_EQ(private_key_read, nullptr);
-
-    EVP_PKEY_free(private_key);
-    EVP_PKEY_free(public_key);
-    EVP_PKEY_free(private_key_read);
-    BIO_free(bio);
+    ScopedEVP_PKEY private_key_read(mb::sign::load_private_key(
+            bio.get(), mb::sign::KEY_FORMAT_PEM, "gnitset"),
+            EVP_PKEY_free);
+    ASSERT_FALSE(private_key_read);
 }

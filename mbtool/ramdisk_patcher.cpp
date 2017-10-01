@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/copy.h"
@@ -88,42 +89,58 @@ static bool _rp_patch_default_prop(const std::string &dir,
                                    const std::string &device_id,
                                    bool use_fuse_exfat)
 {
-    std::string tmp_path;
-    int tmp_fd = -1;
-    FILE *fp_in = nullptr;
-    FILE *fp_out = nullptr;
-    char *buf = nullptr;
-    size_t buf_size = 0;
-    ssize_t n;
-    bool ret = false;
-
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = format("%s.XXXXXX", path.c_str());
+    std::string tmp_path = format("%s.XXXXXX", path.c_str());
 
-    tmp_fd = mkstemp(&tmp_path[0]);
+    const int tmp_fd = mkstemp(&tmp_path[0]);
     if (tmp_fd < 0) {
         LOGE("%s: Failed to create temporary file: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_in = fopen(path.c_str(), "rb");
+    auto unlink_tmp_path = finally([&tmp_path] {
+        unlink(tmp_path.c_str());
+    });
+
+    auto close_tmp_fd = finally([&tmp_fd] {
+        close(tmp_fd);
+    });
+
+    FILE *fp_in = fopen(path.c_str(), "rb");
     if (!fp_in) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_out = fdopen(tmp_fd, "wb");
+    auto close_fp_in = finally([&fp_in] {
+        fclose(fp_in);
+    });
+
+    FILE *fp_out = fdopen(tmp_fd, "wb");
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    tmp_fd = -1;
+    // fp_out will automatically close the fd
+    close_tmp_fd.dismiss();
+
+    auto close_fp_out = finally([&fp_out] {
+        fclose(fp_out);
+    });
+
+    char *buf = nullptr;
+    size_t buf_size = 0;
+    ssize_t n;
+
+    auto free_buf = finally([&buf] {
+        free(buf);
+    });
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
@@ -131,10 +148,11 @@ static bool _rp_patch_default_prop(const std::string &dir,
             continue;
         }
 
-        if (fwrite(buf, 1, n, fp_out) != static_cast<size_t>(n)) {
+        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out)
+                != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
                  tmp_path.c_str(), strerror(errno));
-            goto done;
+            return false;
         }
     }
 
@@ -145,39 +163,23 @@ static bool _rp_patch_default_prop(const std::string &dir,
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
+
+    // Manually close file to ensure we catch write errors
+    close_fp_out.dismiss();
 
     if (fclose(fp_out) < 0) {
         LOGE("%s: Failed to close file: %s",
              tmp_path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
-
-    fp_out = nullptr;
 
     if (!InstallerUtil::replace_file(path.c_str(), tmp_path)) {
-        goto done;
+        return false;
     }
 
-    ret = true;
-
-done:
-    if (tmp_fd >= 0) {
-        close(tmp_fd);
-    }
-    if (fp_in) {
-        fclose(fp_in);
-    }
-    if (fp_out) {
-        fclose(fp_out);
-    }
-
-    unlink(tmp_path.c_str());
-
-    free(buf);
-
-    return ret;
+    return true;
 }
 
 std::function<RamdiskPatcherFn>
