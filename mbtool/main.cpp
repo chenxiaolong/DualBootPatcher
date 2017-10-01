@@ -48,19 +48,16 @@
 #include "mbutil/string.h"
 
 
-int main_multicall(int argc, char *argv[]);
-int main_normal(int argc, char *argv[]);
 static int mbtool_main(int argc, char *argv[]);
 
 
-#define TOOL(name) { #name, mb::name##_main }
-
-struct tool {
+struct Tool
+{
     const char *name;
     int (*func)(int, char **);
 };
 
-struct tool tools[] = {
+static Tool g_tools[] = {
     { "mbtool", mbtool_main },
     { "mbtool_recovery", mbtool_main },
     // Tools
@@ -84,14 +81,11 @@ struct tool tools[] = {
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
 #endif
-    { nullptr, nullptr }
 };
 
 
-static void mbtool_usage(int error)
+static void mbtool_usage(FILE *stream)
 {
-    FILE *stream = error ? stderr : stdout;
-
     fprintf(stream,
             "Version: %s\n"
             "Git version: %s\n\n"
@@ -104,36 +98,26 @@ static void mbtool_usage(int error)
             "Available tools:\n",
             mb::version(),
             mb::git_version());
-    for (int i = 0; tools[i].name; ++i) {
-        if (strcmp(tools[i].name, "mbtool") != 0
-                && strcmp(tools[i].name, "mbtool_recovery") != 0) {
-            fprintf(stream, "  %s\n", tools[i].name);
+    for (auto const &tool : g_tools) {
+        if (strcmp(tool.name, "mbtool") != 0
+                && strcmp(tool.name, "mbtool_recovery") != 0) {
+            fprintf(stream, "  %s\n", tool.name);
         }
     }
 }
 
-static int mbtool_main(int argc, char *argv[])
+static const Tool * find_tool(const char *name)
 {
-    if (argc > 1) {
-        return main_multicall(argc - 1, argv + 1);
-    } else {
-        mbtool_usage(1);
-        return EXIT_FAILURE;
-    }
-}
-
-struct tool * find_tool(const char *name)
-{
-    for (int i = 0; tools[i].name; ++i) {
-        if (strcmp(tools[i].name, name) == 0) {
-            return &tools[i];
+    for (auto const &tool : g_tools) {
+        if (strcmp(tool.name, name) == 0) {
+            return &tool;
         }
     }
 
     return nullptr;
 }
 
-int main_multicall(int argc, char *argv[])
+static int main_multicall(int argc, char *argv[])
 {
     char *name;
     char *prog;
@@ -145,7 +129,7 @@ int main_multicall(int argc, char *argv[])
         name = argv[0];
     }
 
-    struct tool *tool = find_tool(name);
+    const Tool *tool = find_tool(name);
     if (tool) {
         return tool->func(argc, argv);
     } else {
@@ -154,19 +138,29 @@ int main_multicall(int argc, char *argv[])
     }
 }
 
-int main_normal(int argc, char *argv[])
+static int main_normal(int argc, char *argv[])
 {
     if (argc < 2) {
-        mbtool_usage(1);
+        mbtool_usage(stderr);
         return EXIT_FAILURE;
     }
 
     char *name = argv[1];
-    struct tool *tool = find_tool(name);
+    const Tool *tool = find_tool(name);
     if (tool) {
         return tool->func(argc - 1, argv + 1);
     } else {
         fprintf(stderr, "%s: tool not found\n", name);
+        return EXIT_FAILURE;
+    }
+}
+
+static int mbtool_main(int argc, char *argv[])
+{
+    if (argc > 1) {
+        return main_multicall(argc - 1, argv + 1);
+    } else {
+        mbtool_usage(stderr);
         return EXIT_FAILURE;
     }
 }

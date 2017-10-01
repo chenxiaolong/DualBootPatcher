@@ -41,7 +41,7 @@ struct MockFdFileFuncs : public mb::FdFileFuncs
 
     // unistd.h
     MOCK_METHOD1(fn_close, int(int fd));
-    MOCK_METHOD2(fn_ftruncate64, int(int fd, off_t length));
+    MOCK_METHOD2(fn_ftruncate64, int(int fd, off64_t length));
     MOCK_METHOD3(fn_lseek64, off64_t(int fd, off64_t offset, int whence));
     MOCK_METHOD3(fn_read, ssize_t(int fd, void *buf, size_t count));
     MOCK_METHOD3(fn_write, ssize_t(int fd, const void *buf, size_t count));

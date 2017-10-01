@@ -30,6 +30,11 @@
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
+#define GET_LAST_ERROR() \
+    static_cast<int>(GetLastError())
+#define WIN32_ERROR_CODE() \
+    std::error_code(GET_LAST_ERROR(), std::system_category())
+
 /*!
  * \file mbcommon/file/win32.h
  * \brief Open file with Win32 `HANDLE` API
@@ -422,8 +427,7 @@ bool Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(std::error_code(GetLastError(), std::system_category()),
-                      "Failed to open file");
+            set_error(WIN32_ERROR_CODE(), "Failed to open file");
             return false;
         }
     }
@@ -439,8 +443,7 @@ bool Win32File::on_close()
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to close file");
+        set_error(WIN32_ERROR_CODE(), "Failed to close file");
         ret = false;
     }
 
@@ -469,8 +472,7 @@ bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to read file");
+        set_error(WIN32_ERROR_CODE(), "Failed to read file");
         return false;
     }
 
@@ -506,8 +508,7 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to write file");
+        set_error(WIN32_ERROR_CODE(), "Failed to write file");
         return false;
     }
 
@@ -549,12 +550,11 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     );
 
     if (!ret) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to seek file");
+        set_error(WIN32_ERROR_CODE(), "Failed to seek file");
         return false;
     }
 
-    new_offset = new_pos.QuadPart;
+    new_offset = static_cast<uint64_t>(new_pos.QuadPart);
     return true;
 }
 
@@ -572,19 +572,18 @@ bool Win32File::on_truncate(uint64_t size)
     }
 
     // Move to new position
-    if (!on_seek(size, SEEK_SET, temp)) {
+    if (!on_seek(static_cast<int64_t>(size), SEEK_SET, temp)) {
         return false;
     }
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(std::error_code(GetLastError(), std::system_category()),
-                  "Failed to set EOF position");
+        set_error(WIN32_ERROR_CODE(), "Failed to set EOF position");
         ret = false;
     }
 
     // Move back to initial position
-    if (!on_seek(current_pos, SEEK_SET, temp)) {
+    if (!on_seek(static_cast<int64_t>(current_pos), SEEK_SET, temp)) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
         set_fatal(true);

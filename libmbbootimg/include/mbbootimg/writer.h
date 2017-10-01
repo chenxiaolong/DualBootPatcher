@@ -51,8 +51,8 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Writer)
 
-    Writer(Writer &&other);
-    Writer & operator=(Writer &&rhs);
+    Writer(Writer &&other) noexcept;
+    Writer & operator=(Writer &&rhs) noexcept;
 
     // Open/close
     int open_filename(const std::string &filename);

@@ -42,7 +42,8 @@ bool la_copy_data_to_fd(archive *a, int fd)
         remain = n_read;
 
         while (remain > 0) {
-            n_written = write(fd, buf + (n_read - remain), remain);
+            n_written = write(fd, buf + (n_read - remain),
+                              static_cast<size_t>(remain));
             if (n_written <= 0) {
                 LOGE("Failed to write data: %s", strerror(errno));
                 return false;

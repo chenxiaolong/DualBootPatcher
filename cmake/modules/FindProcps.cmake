@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(PROCPS_FOUND)
     set(PROCPS_LIBRARIES ${PROCPS_LIBRARY})
+
+    add_library(Procps::Procps UNKNOWN IMPORTED)
+    set_target_properties(
+        Procps::Procps
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${PROCPS_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PROCPS_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(PROCPS_INCLUDE_DIR PROCPS_LIBRARY)

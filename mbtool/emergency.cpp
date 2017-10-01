@@ -50,15 +50,15 @@ namespace mb
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
-class BlockDevFinder : public util::FTSWrapper {
+class BlockDevFinder : public util::FtsWrapper {
 public:
     BlockDevFinder(std::string path, std::vector<std::string> names)
-        : FTSWrapper(path, 0),
-        _names(std::move(names))
+        : FtsWrapper(path, 0)
+        , _names(std::move(names))
     {
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         struct stat sb;
 
@@ -69,17 +69,17 @@ public:
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_block_device() override
+    Actions on_reached_block_device() override
     {
         if (std::find(_names.begin(), _names.end(), _curr->fts_name)
                 != _names.end()) {
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
     const std::vector<std::string> & results() const
@@ -100,17 +100,9 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    char *buf = (char *) malloc(len);
-    if (!buf) {
-        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
-        return false;
-    }
+    std::vector<char> buf(static_cast<size_t>(len));
 
-    auto free_buf = finally([&]{
-        free(buf);
-    });
-
-    len = klogctl(KLOG_READ_ALL, buf, len);
+    len = klogctl(KLOG_READ_ALL, buf.data(), static_cast<int>(buf.size()));
     if (len < 0) {
         LOGE("Failed to read kernel log buffer: %s", strerror(errno));
         return false;
@@ -129,11 +121,11 @@ static bool dump_kernel_log(const char *file)
     }
 
     if (len > 0) {
-        if (fwrite(buf, len, 1, fp.get()) != 1) {
+        if (fwrite(buf.data(), static_cast<size_t>(len), 1, fp.get()) != 1) {
             LOGE("%s: Failed to write data: %s", file, strerror(errno));
             return false;
         }
-        if (buf[len - 1] != '\n') {
+        if (buf[static_cast<size_t>(len - 1)] != '\n') {
             if (fputc('\n', fp.get()) == EOF) {
                 LOGE("%s: Failed to write data: %s", file, strerror(errno));
                 return false;

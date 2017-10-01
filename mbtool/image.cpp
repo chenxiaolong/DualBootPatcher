@@ -55,19 +55,19 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
     if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
         LOGE("%s: Failed to get available space: %s", path.c_str(),
              strerror(errno));
-        return CreateImageResult::FAILED;
+        return CreateImageResult::Failed;
     } else if (avail < size) {
         LOGE("There is not enough space to create %s", path.c_str());
         LOGE("- Needed:    %" PRIu64 " bytes", size);
         LOGE("- Available: %" PRIu64 " bytes", avail);
-        return CreateImageResult::NOT_ENOUGH_SPACE;
+        return CreateImageResult::NotEnoughSpace;
     }
 
     struct stat sb;
     if (stat(path.c_str(), &sb) < 0) {
         if (errno != ENOENT) {
             LOGE("%s: Failed to stat: %s", path.c_str(), strerror(errno));
-            return CreateImageResult::FAILED;
+            return CreateImageResult::Failed;
         } else {
             char size_str[64];
             snprintf(size_str, sizeof(size_str), "%" PRIu64, size);
@@ -82,14 +82,14 @@ CreateImageResult create_ext4_image(const std::string &path, uint64_t size)
                                         &argv);
             if (ret < 0 || WEXITSTATUS(ret) != 0) {
                 LOGE("%s: Failed to create image", path.c_str());
-                return CreateImageResult::FAILED;
+                return CreateImageResult::Failed;
             }
-            return CreateImageResult::SUCCEEDED;
+            return CreateImageResult::Succeeded;
         }
     }
 
     LOGE("%s: File already exists", path.c_str());
-    return CreateImageResult::IMAGE_EXISTS;
+    return CreateImageResult::ImageExists;
 }
 
 bool fsck_ext4_image(const std::string &image)

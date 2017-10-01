@@ -6,6 +6,3 @@ if(ANDROID)
 endif()
 
 find_package(LZ4 REQUIRED)
-
-set(MBP_LZ4_INCLUDES ${LZ4_INCLUDE_DIR})
-set(MBP_LZ4_LIBRARIES ${LZ4_LIBRARIES})

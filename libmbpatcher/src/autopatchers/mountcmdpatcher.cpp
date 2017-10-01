@@ -107,7 +107,7 @@ static bool patch_file(const std::string &path)
 
         if ((strncmp(ptr, "mount", 5) == 0 && space_or_end(ptr + 5))
                 || (strncmp(ptr, "umount", 6) == 0 && space_or_end(ptr + 6))) {
-            line.insert(ptr - line.data(), "/sbin/");
+            line.insert(static_cast<size_t>(ptr - line.data()), "/sbin/");
         }
     }
 

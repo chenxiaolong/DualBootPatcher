@@ -14,16 +14,18 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
     target_compile_options(
         file-contexts-tool
         PRIVATE
+        -Wno-cast-qual
+        -Wno-conversion
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-duplicated-branches>
+        -Wno-implicit-fallthrough
         -Wno-pedantic
+        -Wno-sign-conversion
     )
 
-    set_target_properties(
+    target_link_libraries(
         file-contexts-tool
-        PROPERTIES
-        LINK_FLAGS "-pie"
-        C_STANDARD 11
-        C_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
+        PRIVATE
+        interface.global.CVersion
     )
 
     if (${MBP_BUILD_TARGET} STREQUAL hosttools)

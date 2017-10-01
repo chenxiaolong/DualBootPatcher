@@ -740,18 +740,18 @@ int GUIAction::switch_rom(const std::string& arg)
 
         if (ret == 0) {
             switch (result) {
-            case SwitchRomResult::SUCCEEDED:
+            case SwitchRomResult::Succeeded:
                 gui_msg(Msg("switch_rom_result_succeeded")(arg));
                 break;
-            case SwitchRomResult::FAILED:
+            case SwitchRomResult::Failed:
                 gui_msg(Msg(msg::kError, "switch_rom_result_failed")(arg));
                 ret = 1;
                 break;
-            case SwitchRomResult::CHECKSUM_INVALID:
+            case SwitchRomResult::ChecksumInvalid:
                 gui_msg(Msg(msg::kError, "switch_rom_result_checksum_invalid")(arg));
                 ret = 1;
                 break;
-            case SwitchRomResult::CHECKSUM_NOT_FOUND:
+            case SwitchRomResult::ChecksumNotFound:
                 gui_msg(Msg(msg::kError, "switch_rom_result_checksum_not_found")(arg));
                 ret = 1;
                 break;

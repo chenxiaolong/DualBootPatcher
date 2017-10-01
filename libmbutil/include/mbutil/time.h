@@ -63,32 +63,32 @@ inline int64_t timeval_diff_s(const timeval &start, const timeval &end)
 
 inline int64_t timespec_diff_ms(const timespec &start, const timespec &end)
 {
-    return (static_cast<int64_t>(end.tv_sec) * 1e3 + end.tv_nsec / 1e6)
-            - (static_cast<int64_t>(start.tv_sec) * 1e3 + start.tv_nsec / 1e6);
+    return (static_cast<int64_t>(end.tv_sec) * 1000 + end.tv_nsec / 1000000)
+            - (static_cast<int64_t>(start.tv_sec) * 1000 + start.tv_nsec / 1000000);
 }
 
 inline int64_t timeval_diff_ms(const timeval &start, const timeval &end)
 {
-    return (static_cast<int64_t>(end.tv_sec) * 1e3 + end.tv_usec / 1e3)
-            - (static_cast<int64_t>(start.tv_sec) * 1e3 + start.tv_usec / 1e3);
+    return (static_cast<int64_t>(end.tv_sec) * 1000 + end.tv_usec / 1000)
+            - (static_cast<int64_t>(start.tv_sec) * 1000 + start.tv_usec / 1000);
 }
 
 inline int64_t timespec_diff_us(const timespec &start, const timespec &end)
 {
-    return (static_cast<int64_t>(end.tv_sec) * 1e6 + end.tv_nsec / 1e3)
-            - (static_cast<int64_t>(start.tv_sec) * 1e6 + start.tv_nsec / 1e3);
+    return (static_cast<int64_t>(end.tv_sec) * 1000000 + end.tv_nsec / 1000)
+            - (static_cast<int64_t>(start.tv_sec) * 1000000 + start.tv_nsec / 1000);
 }
 
 inline int64_t timeval_diff_us(const timeval &start, const timeval &end)
 {
-    return (static_cast<int64_t>(end.tv_sec) * 1e6 + end.tv_usec)
-            - (static_cast<int64_t>(start.tv_sec) * 1e6 + start.tv_usec);
+    return (static_cast<int64_t>(end.tv_sec) * 1000000 + end.tv_usec)
+            - (static_cast<int64_t>(start.tv_sec) * 1000000 + start.tv_usec);
 }
 
 inline int64_t timespec_diff_ns(const timespec &start, const timespec &end)
 {
-    return (static_cast<int64_t>(end.tv_sec) * 1e9 + end.tv_nsec)
-            - (static_cast<int64_t>(start.tv_sec) * 1e9 + start.tv_nsec);
+    return (static_cast<int64_t>(end.tv_sec) * 1000000000 + end.tv_nsec)
+            - (static_cast<int64_t>(start.tv_sec) * 1000000000 + start.tv_nsec);
 }
 
 uint64_t current_time_ms();

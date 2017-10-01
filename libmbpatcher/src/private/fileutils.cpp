@@ -91,7 +91,7 @@ ErrorCode FileUtils::read_to_memory(const std::string &path,
         return ErrorCode::FileSeekError;
     }
 
-    std::vector<unsigned char> data(size);
+    std::vector<unsigned char> data(static_cast<size_t>(size));
 
     size_t bytes_read;
     if (!file.read(data.data(), data.size(), bytes_read)
@@ -134,7 +134,7 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
     }
 
     std::string data;
-    data.resize(size);
+    data.resize(static_cast<size_t>(size));
 
     size_t bytes_read;
     if (!file.read(&data[0], data.size(), bytes_read)
@@ -301,9 +301,9 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         uint64_t v;
 
         ret = CryptGenRandom(
-            h_prov,     // hProv
-            sizeof(v),  // dwLen
-            (BYTE *) &v // pbBuffer
+            h_prov,                      // hProv
+            sizeof(v),                   // dwLen
+            reinterpret_cast<BYTE *>(&v) // pbBuffer
         );
         if (!ret) {
             LOGE("CryptGenRandom() failed: %s",

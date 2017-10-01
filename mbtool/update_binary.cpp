@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/archive.h"
@@ -97,7 +98,7 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 {
     struct stat sb;
     if (stat("/sys/fs/selinux", &sb) == 0) {
-        if (!patch_loaded_sepolicy(SELinuxPatch::CWM_RECOVERY)) {
+        if (!patch_loaded_sepolicy(SELinuxPatch::CwmRecovery)) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
             int fd = open(util::SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {
@@ -117,11 +118,13 @@ RecoveryInstaller::ProceedState RecoveryInstaller::on_set_up_chroot()
 {
     // Copy /etc/fstab
     util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy /etc/recovery.fstab
     util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return ProceedState::Continue;
 }
@@ -199,17 +202,13 @@ int update_binary_main(int argc, char *argv[])
     int output_fd;
     const char *zip_file;
 
-    char *ptr;
-
-    interface = strtol(argv[1], &ptr, 10);
-    if (*ptr != '\0' || interface < 0) {
-        fprintf(stderr, "Invalid interface");
+    if (!str_to_num(argv[1], 10, interface)) {
+        fprintf(stderr, "Invalid interface: '%s'\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    output_fd = strtol(argv[2], &ptr, 10);
-    if (*ptr != '\0' || output_fd < 0) {
-        fprintf(stderr, "Invalid output fd");
+    if (!str_to_num(argv[2], 10, output_fd)) {
+        fprintf(stderr, "Invalid output fd: '%s'\n", argv[2]);
         return EXIT_FAILURE;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,17 +22,21 @@
 #include <string>
 #include <sys/types.h>
 
+#include "mbcommon/flags.h"
+
 namespace mb
 {
 namespace util
 {
 
-enum ChmodFlags : int
+enum class ChmodFlag : uint8_t
 {
-    CHMOD_RECURSIVE       = 0x1
+    Recursive   = 1 << 0,
 };
+MB_DECLARE_FLAGS(ChmodFlags, ChmodFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(ChmodFlags)
 
-bool chmod(const std::string &path, mode_t perms, int flags);
+bool chmod(const std::string &path, mode_t perms, ChmodFlags flags);
 
 }
 }

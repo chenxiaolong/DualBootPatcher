@@ -103,9 +103,9 @@ std::shared_ptr<Rom> Roms::create_rom_primary()
 {
     std::shared_ptr<Rom> rom(new Rom());
     rom->id = "primary";
-    rom->system_source = Rom::Source::SYSTEM;
-    rom->cache_source = Rom::Source::CACHE;
-    rom->data_source = Rom::Source::DATA;
+    rom->system_source = Rom::Source::System;
+    rom->cache_source = Rom::Source::Cache;
+    rom->data_source = Rom::Source::Data;
     rom->system_path = std::string();
     rom->cache_path = std::string();
     rom->data_path = std::string();
@@ -119,9 +119,9 @@ std::shared_ptr<Rom> Roms::create_rom_dual()
 {
     std::shared_ptr<Rom> rom(new Rom());
     rom->id = "dual";
-    rom->system_source = Rom::Source::SYSTEM;
-    rom->cache_source = Rom::Source::CACHE;
-    rom->data_source = Rom::Source::DATA;
+    rom->system_source = Rom::Source::System;
+    rom->cache_source = Rom::Source::Cache;
+    rom->data_source = Rom::Source::Data;
     rom->system_path = "/multiboot/dual/system";
     rom->cache_path = "/multiboot/dual/cache";
     rom->data_path = "/multiboot/dual/data";
@@ -138,9 +138,9 @@ std::shared_ptr<Rom> Roms::create_rom_multi_slot(unsigned int num)
 
     std::shared_ptr<Rom> rom(new Rom());
     rom->id = id;
-    rom->system_source = Rom::Source::CACHE;
-    rom->cache_source = Rom::Source::SYSTEM;
-    rom->data_source = Rom::Source::DATA;
+    rom->system_source = Rom::Source::Cache;
+    rom->cache_source = Rom::Source::System;
+    rom->data_source = Rom::Source::Data;
     rom->system_path.append("/multiboot/").append(rom->id).append("/system");
     rom->cache_path.append("/multiboot/").append(rom->id).append("/cache");
     rom->data_path.append("/multiboot/").append(rom->id).append("/data");
@@ -154,9 +154,9 @@ std::shared_ptr<Rom> Roms::create_rom_data_slot(const std::string &id)
 {
     std::shared_ptr<Rom> rom(new Rom());
     rom->id.append("data-slot-").append(id);
-    rom->system_source = Rom::Source::DATA;
-    rom->cache_source = Rom::Source::CACHE;
-    rom->data_source = Rom::Source::DATA;
+    rom->system_source = Rom::Source::Data;
+    rom->cache_source = Rom::Source::Cache;
+    rom->data_source = Rom::Source::Data;
     rom->system_path.append("/multiboot/").append(rom->id).append("/system");
     rom->cache_path.append("/multiboot/").append(rom->id).append("/cache");
     rom->data_path.append("/multiboot/").append(rom->id).append("/data");
@@ -170,9 +170,9 @@ std::shared_ptr<Rom> Roms::create_rom_extsd_slot(const std::string &id)
 {
     std::shared_ptr<Rom> rom(new Rom());
     rom->id.append("extsd-slot-").append(id);
-    rom->system_source = Rom::Source::EXTERNAL_SD;
-    rom->cache_source = Rom::Source::CACHE;
-    rom->data_source = Rom::Source::DATA;
+    rom->system_source = Rom::Source::ExternalSd;
+    rom->cache_source = Rom::Source::Cache;
+    rom->data_source = Rom::Source::Data;
     rom->system_path.append("/multiboot/").append(rom->id).append("/system.img");
     rom->cache_path.append("/multiboot/").append(rom->id).append("/cache");
     rom->data_path.append("/multiboot/").append(rom->id).append("/data");
@@ -186,7 +186,7 @@ void Roms::add_builtin()
 {
     roms.push_back(create_rom_primary());
     roms.push_back(create_rom_dual());
-    for (int i = 1; i <= 3; ++i) {
+    for (unsigned int i = 1; i <= 3; ++i) {
         roms.push_back(create_rom_multi_slot(i));
     }
 }
@@ -487,8 +487,6 @@ std::string Roms::get_extsd_partition()
     // Look for mounted MMC partitions
     ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
     if (fp) {
-        struct stat sb;
-
         for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
             // Skip useless mounts
             if (!starts_with(entry.dir.c_str(), prefix_mnt)) {
@@ -513,19 +511,19 @@ std::string Roms::get_extsd_partition()
         }
     }
 
-    return std::string();
+    return {};
 }
 
 std::string Roms::get_mountpoint(Rom::Source source)
 {
     switch (source) {
-    case Rom::Source::SYSTEM:
+    case Rom::Source::System:
         return get_system_partition();
-    case Rom::Source::CACHE:
+    case Rom::Source::Cache:
         return get_cache_partition();
-    case Rom::Source::DATA:
+    case Rom::Source::Data:
         return get_data_partition();
-    case Rom::Source::EXTERNAL_SD:
+    case Rom::Source::ExternalSd:
         return get_extsd_partition();
     default:
         return std::string();

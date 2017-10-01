@@ -51,8 +51,8 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Reader)
 
-    Reader(Reader &&other);
-    Reader & operator=(Reader &&rhs);
+    Reader(Reader &&other) noexcept;
+    Reader & operator=(Reader &&rhs) noexcept;
 
     // Open/close
     int open_filename(const std::string &filename);

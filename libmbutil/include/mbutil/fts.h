@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,74 +24,84 @@
 
 #include <fts.h>
 
+#include "mbcommon/flags.h"
+
 namespace mb
 {
 namespace util
 {
 
-class FTSWrapper {
-public:
-    enum Flags : int {
-        // Follow symlinks while traversing (WARNING: dangerous!)
-        FTS_FollowSymlinks              = 0x1,
-        // If tree contains a mountpoint, traverse its contents
-        FTS_CrossMountPointBoundaries   = 0x2,
-        // Call on_reached_special_file() instead of separate functions
-        FTS_GroupSpecialFiles           = 0x4
-    };
+enum class FtsFlag : uint8_t
+{
+    // Follow symlinks while traversing (WARNING: dangerous!)
+    FollowSymlinks              = 1 << 0,
+    // If tree contains a mountpoint, traverse its contents
+    CrossMountPointBoundaries   = 1 << 1,
+    // Call on_reached_special_file() instead of separate functions
+    GroupSpecialFiles           = 1 << 2,
+};
+MB_DECLARE_FLAGS(FtsFlags, FtsFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(FtsFlags)
 
-    enum Action : int {
+class FtsWrapper
+{
+public:
+    enum class Action : uint8_t
+    {
         // Hook succeeded
-        FTS_OK                          = 0x0,
+        Ok      = 1 << 0,
         // Hook failed (run() will return false)
-        FTS_Fail                        = 0x1,
+        Fail    = 1 << 1,
         // Skip current file or tree (in case of directory)
-        FTS_Skip                        = 0x2,
-        // Stop traversal (if specified with FTS_Skip, behavior is undefined)
-        FTS_Stop                        = 0x4,
+        Skip    = 1 << 2,
+        // Stop traversal (if specified with Skip, behavior is undefined)
+        Stop    = 1 << 3,
         // Go to next entry (only useful for on_changed_path(). If this is
         // returned, then the on_reached_*() functions will not be called)
-        FTS_Next                        = 0x8
+        Next    = 1 << 4,
     };
+    MB_DECLARE_FLAGS(Actions, Action)
 
-    FTSWrapper(std::string path, int flags);
-    virtual ~FTSWrapper();
+    FtsWrapper(std::string path, FtsFlags flags);
+    virtual ~FtsWrapper();
 
     bool run();
     std::string error();
 
     virtual bool on_pre_execute();
     virtual bool on_post_execute(bool success);
-    virtual int on_changed_path();
-    virtual int on_reached_directory_pre();
-    virtual int on_reached_directory_post();
-    virtual int on_reached_file();
-    virtual int on_reached_symlink();
-    virtual int on_reached_special_file();
+    virtual Actions on_changed_path();
+    virtual Actions on_reached_directory_pre();
+    virtual Actions on_reached_directory_post();
+    virtual Actions on_reached_file();
+    virtual Actions on_reached_symlink();
+    virtual Actions on_reached_special_file();
 
     // Special files
-    virtual int on_reached_block_device();
-    virtual int on_reached_character_device();
-    virtual int on_reached_fifo();
-    virtual int on_reached_socket();
+    virtual Actions on_reached_block_device();
+    virtual Actions on_reached_character_device();
+    virtual Actions on_reached_fifo();
+    virtual Actions on_reached_socket();
 
 protected:
     // Input path
     std::string _path;
     // Input flags
-    int _flags = 0;
+    FtsFlags _flags;
     // fts pointer
-    FTS *_ftsp = nullptr;
+    FTS *_ftsp;
     // Current fts entry
-    FTSENT *_curr = nullptr;
+    FTSENT *_curr;
     // Root (level 0) fts entry
-    FTSENT *_root = nullptr;
+    FTSENT *_root;
     // Error message (valid only if run() returned false)
     std::string _error_msg;
 
 private:
-    bool _ran = false;
+    bool _ran;
 };
+
+MB_DECLARE_OPERATORS_FOR_FLAGS(FtsWrapper::Actions)
 
 }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -24,10 +24,20 @@
 
 #include <getopt.h>
 
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wold-style-cast")
+#    pragma GCC diagnostic ignored "-Wold-style-cast"
+#  endif
+#endif
+
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
-#include "mbcommon/finally.h"
+#ifdef __clang__
+#  pragma GCC diagnostic pop
+#endif
+
 #include "mblog/logging.h"
 #include "mbsign/mbsign.h"
 
@@ -36,6 +46,10 @@
 #define LOG_TAG "mbtool/signature"
 
 #define COMPILE_ERROR_STRINGS 0
+
+using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
+using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
+using ScopedX509 = std::unique_ptr<X509, decltype(X509_free) *>;
 
 namespace mb
 {
@@ -70,7 +84,7 @@ static inline bool hex2bin(const std::string &source, std::string *out)
         if (!hex2num(source[i], &temp1) || !hex2num(source[i + 1], &temp2)) {
             return false;
         }
-        result += temp1 << 4 | temp2;
+        result += static_cast<char>(temp1 << 4 | temp2);
     }
 
     out->swap(result);
@@ -87,7 +101,7 @@ static int log_callback(const char *str, size_t len, void *userdata)
         LOGE("%s", copy);
         free(copy);
     }
-    return len;
+    return static_cast<int>(len);
 }
 
 static void openssl_log_errors()
@@ -101,34 +115,26 @@ static SigVerifyResult verify_signature_with_key(const char *path,
 {
     bool ret = false;
     bool valid;
-    BIO *bio_data_in = nullptr;
-    BIO *bio_sig_in = nullptr;
 
-    bio_data_in = BIO_new_file(path, "rb");
+    ScopedBIO bio_data_in(BIO_new_file(path, "rb"), BIO_free);
     if (!bio_data_in) {
         LOGE("%s: Failed to open input file", path);
         openssl_log_errors();
-        goto error;
+        return SigVerifyResult::Failure;
     }
-    bio_sig_in = BIO_new_file(sig_path, "rb");
+
+    ScopedBIO bio_sig_in(BIO_new_file(sig_path, "rb"), BIO_free);
     if (!bio_sig_in) {
         LOGE("%s: Failed to open signature file", sig_path);
         openssl_log_errors();
-        goto error;
+        return SigVerifyResult::Failure;
     }
 
-    ret = sign::verify_data(bio_data_in, bio_sig_in, public_key, &valid);
+    ret = sign::verify_data(bio_data_in.get(), bio_sig_in.get(), public_key,
+                            &valid);
 
-    BIO_free(bio_data_in);
-    BIO_free(bio_sig_in);
-
-    return ret ? (valid ? SigVerifyResult::VALID : SigVerifyResult::INVALID)
-            : SigVerifyResult::FAILURE;
-
-error:
-    BIO_free(bio_data_in);
-    BIO_free(bio_sig_in);
-    return SigVerifyResult::FAILURE;
+    return ret ? (valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid)
+            : SigVerifyResult::Failure;
 }
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)
@@ -138,49 +144,40 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         if (!hex2bin(hex_der, &der)) {
             LOGE("Failed to convert hex-encoded certificate to binary: %s",
                  hex_der.c_str());
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
-
-        EVP_PKEY *public_key = nullptr;
-        X509 *cert = nullptr;
-        BIO *bio_x509_cert = nullptr;
-
-        auto free_openssl = finally([&]{
-            EVP_PKEY_free(public_key);
-            X509_free(cert);
-            BIO_free(bio_x509_cert);
-        });
 
         // Cast to (void *) is okay since BIO_new_mem_buf() creates a read-only
         // BIO object
-        bio_x509_cert = BIO_new_mem_buf((void *) der.data(), der.size());
+        ScopedBIO bio_x509_cert(BIO_new_mem_buf(
+                der.data(), static_cast<int>(der.size())), BIO_free);
         if (!bio_x509_cert) {
             LOGE("Failed to create BIO for X509 certificate: %s",
                  hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         // Load DER-encoded certificate
-        cert = d2i_X509_bio(bio_x509_cert, nullptr);
+        ScopedX509 cert(d2i_X509_bio(bio_x509_cert.get(), nullptr), X509_free);
         if (!cert) {
             LOGE("Failed to load X509 certificate: %s", hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         // Get public key from certificate
-        public_key = X509_get_pubkey(cert);
+        ScopedEVP_PKEY public_key(X509_get_pubkey(cert.get()), EVP_PKEY_free);
         if (!public_key) {
             LOGE("Failed to load public key from X509 certificate: %s",
                  hex_der.c_str());
             openssl_log_errors();
-            return SigVerifyResult::FAILURE;
+            return SigVerifyResult::Failure;
         }
 
         SigVerifyResult result =
-                verify_signature_with_key(path, sig_path, public_key);
-        if (result == SigVerifyResult::INVALID) {
+                verify_signature_with_key(path, sig_path, public_key.get());
+        if (result == SigVerifyResult::Invalid) {
             // Keep trying ...
             continue;
         }
@@ -188,7 +185,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         return result;
     }
 
-    return SigVerifyResult::INVALID;
+    return SigVerifyResult::Invalid;
 }
 
 static void sigverify_usage(FILE *stream)
@@ -247,11 +244,11 @@ int sigverify_main(int argc, char *argv[])
     SigVerifyResult result = verify_signature(path, sig_path);
 
     switch (result) {
-    case SigVerifyResult::VALID:
+    case SigVerifyResult::Valid:
         return EXIT_SUCCESS;
-    case SigVerifyResult::INVALID:
+    case SigVerifyResult::Invalid:
         return EXIT_INVALID;
-    case SigVerifyResult::FAILURE:
+    case SigVerifyResult::Failure:
     default:
         return EXIT_FAILURE;
     }

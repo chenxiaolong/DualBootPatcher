@@ -159,17 +159,19 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
         return false;
     }
 
-    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(nullptr, static_cast<size_t>(sb.st_size), PROT_READ, MAP_PRIVATE,
+               fd, 0);
     if (map == MAP_FAILED) {
         return false;
     }
 
     auto unmap_map = finally([&] {
-        munmap(map, sb.st_size);
+        munmap(map, static_cast<size_t>(sb.st_size));
     });
 
     for (auto const &item : items) {
-        if (memmem(map, sb.st_size, item.data(), item.size())) {
+        if (memmem(map, static_cast<size_t>(sb.st_size),
+                   item.data(), item.size())) {
             return true;
         }
     }
@@ -186,11 +188,11 @@ bool file_read_all(const std::string &path,
     }
 
     fseek(fp.get(), 0, SEEK_END);
-    auto size = ftell(fp.get());
+    auto size = ftello(fp.get());
     rewind(fp.get());
 
-    std::vector<unsigned char> data(size);
-    if (fread(data.data(), size, 1, fp.get()) != 1) {
+    std::vector<unsigned char> data(static_cast<size_t>(size));
+    if (fread(data.data(), static_cast<size_t>(size), 1, fp.get()) != 1) {
         return false;
     }
 
@@ -209,21 +211,22 @@ bool file_read_all(const std::string &path,
     }
 
     fseek(fp.get(), 0, SEEK_END);
-    auto size = ftell(fp.get());
+    auto size = ftello(fp.get());
     rewind(fp.get());
 
-    unsigned char *data = static_cast<unsigned char *>(std::malloc(size));
+    auto data = static_cast<unsigned char *>(
+            std::malloc(static_cast<size_t>(size)));
     if (!data) {
         return false;
     }
 
-    if (fread(data, size, 1, fp.get()) != 1) {
+    if (fread(data, static_cast<size_t>(size), 1, fp.get()) != 1) {
         free(data);
         return false;
     }
 
     data_out = data;
-    size_out = size;
+    size_out = static_cast<size_t>(size);
 
     return true;
 }
@@ -239,10 +242,15 @@ bool get_blockdev_size(const std::string &path, uint64_t &size_out)
         close(fd);
     });
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
     uint64_t size;
     if (ioctl(fd, BLKGETSIZE64, &size) < 0) {
         return false;
     }
+
+#pragma GCC diagnostic pop
 
     size_out = size;
 
