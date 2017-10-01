@@ -35,8 +35,8 @@ script:
     ls -l ~/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
     md5sum ~/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
     # Upload to transfer.sh
-    cd ~/DualBootPatcher/Android_GUI/build/outputs/apk/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug.apk
-    cd ~/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0.zip
-    cd ~/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.tar.xz https://transfer.sh/DualBootPatcher-9.3.0-Linux.tar.xz
+    cd ~/DualBootPatcher/Android_GUI/build/outputs/apk/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug.apk && sleep 5
+    cd ~/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0.zip && sleep 5
+    cd ~/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.tar.xz https://transfer.sh/DualBootPatcher-9.3.0-Linux.tar.xz && sleep 5
     exit
     EOF
