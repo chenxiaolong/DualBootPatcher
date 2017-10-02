@@ -283,7 +283,7 @@ boot_ui:
     max_brightness: 255
     default_brightness: 162
     battery_path: /sys/devices/battery.5/power_supply/Battery
-    theme: portrait_mdpi
+    theme: portrait_hdpi
 
 
 - name: Huawei P8 Lite
@@ -476,7 +476,7 @@ boot_ui:
     brightness_path: /sys/class/backlight/panel/brightness
     max_brightness: 255
     default_brightness: 162
-    theme: portrait_mdpi
+    theme: portrait_hdpi
 
 - name: Huawei Honor 8
   id: FRD
