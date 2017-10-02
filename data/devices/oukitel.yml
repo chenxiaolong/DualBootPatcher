@@ -42,4 +42,4 @@
     default_brightness: 162
     pixel_format: RGBA_8888
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
-    theme: portrait_mdpi
+    theme: portrait_hdpi
