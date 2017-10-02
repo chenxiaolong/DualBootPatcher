@@ -523,3 +523,46 @@ boot_ui:
     brightness_path: /sys/class/backlight/panel/brightness
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+
+- name: Lenovo Vibe K6
+  id: karate
+  codenames:
+    - karate
+    - K33b36
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p52
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p50
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p54
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p34
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p35
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBX_8888
+    default_brightness: 79
+    theme: portrait_hdpi

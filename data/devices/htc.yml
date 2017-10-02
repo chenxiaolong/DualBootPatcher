@@ -1,8 +1,9 @@
 ---
-- name: HTC 10 (pmewhl)
+- name: HTC 10 (pmewhl&pmewl)
   id: pmewhl
   codenames:
     - htc_pmewhl
+    - htc_pmewl
   architecture: arm64-v8a
 
   block_devs:

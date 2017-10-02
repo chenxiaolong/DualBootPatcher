@@ -43,6 +43,7 @@ boot_ui:
     - HM2014811
     - HM2014817
     - HM2014813
+    - HM2014819
     - wt86047
   architecture: armeabi-v7a
 

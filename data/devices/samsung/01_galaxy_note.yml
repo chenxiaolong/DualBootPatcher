@@ -477,3 +477,45 @@
     default_brightness: 162
     pixel_format: ABGR_8888
     theme: portrait_hdpi
+
+- name: Samsung Galaxy Note 8 (Exynos)
+  id: greatlte
+  codenames:
+    - greatlte
+    - greatltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/11120000.ufs/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/11120000.ufs/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/11120000.ufs/by-name/USERDATA
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/11120000.ufs/by-name/BOOT
+    recovery:
+      - /dev/block/bootdevice/by-name/RECOVERY
+      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
+    extra:
+      - /dev/block/bootdevice/by-name/RADIO
+      - /dev/block/platform/11120000.ufs/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
