@@ -65,16 +65,6 @@ boot_ui:
       - /dev/block/bootdevice/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
 
-  boot_ui:
-    supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    graphics_backends:
-      - fbdev
-    pixel_format: RGBX_8888
-    theme: portrait_hdpi
-
-
 - name: Sony Xperia Z1
   id: honami
   codenames:
