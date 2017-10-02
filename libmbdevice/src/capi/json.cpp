@@ -57,7 +57,7 @@ void mb_device_json_error_free(CJsonError *error)
 uint16_t mb_device_json_error_type(const CJsonError *error)
 {
     JE_CCAST(error);
-    return static_cast<std::underlying_type<JsonErrorType>::type>(je->type);
+    return static_cast<std::underlying_type_t<JsonErrorType>>(je->type);
 }
 
 size_t mb_device_json_error_offset(const CJsonError *error)

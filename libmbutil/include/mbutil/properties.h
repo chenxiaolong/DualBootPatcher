@@ -62,7 +62,7 @@ std::string property_get_string(const std::string &key,
 bool property_get_bool(const std::string &key, bool default_value);
 
 template<typename SIntType>
-inline typename std::enable_if<std::is_signed<SIntType>::value, SIntType>::type
+inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
 property_get_num(const std::string &key, SIntType default_value)
 {
     std::string value;
@@ -76,7 +76,7 @@ property_get_num(const std::string &key, SIntType default_value)
 }
 
 template<typename UIntType>
-inline typename std::enable_if<std::is_unsigned<UIntType>::value, UIntType>::type
+inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
 property_get_num(const std::string &key, UIntType default_value)
 {
     std::string value;
@@ -107,7 +107,7 @@ bool property_file_get_bool(const std::string &path, const std::string &key,
                             bool default_value);
 
 template<typename SIntType>
-inline typename std::enable_if<std::is_signed<SIntType>::value, SIntType>::type
+inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
 property_file_get_num(const std::string &path, const std::string &key,
                       SIntType default_value)
 {
@@ -123,7 +123,7 @@ property_file_get_num(const std::string &path, const std::string &key,
 }
 
 template<typename UIntType>
-inline typename std::enable_if<std::is_unsigned<UIntType>::value, UIntType>::type
+inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
 property_file_get_num(const std::string &path, const std::string &key,
                       UIntType default_value)
 {

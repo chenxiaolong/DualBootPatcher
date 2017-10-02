@@ -38,7 +38,7 @@ class Flags
 
     struct Private;
     using Zero = int(Private::*);
-    using Underlying = typename std::underlying_type<Enum>::type;
+    using Underlying = std::underlying_type_t<Enum>;
 
 public:
     using enum_type = Enum;

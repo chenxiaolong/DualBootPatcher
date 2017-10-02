@@ -35,7 +35,7 @@ namespace io
 namespace win32
 {
 
-typedef std::unique_ptr<std::remove_pointer<HANDLE>::type, decltype(FindClose) *> ScopedFindHandle;
+using ScopedFindHandle = std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(FindClose) *>;
 
 static bool win32RecursiveDelete(const std::wstring &path)
 {
