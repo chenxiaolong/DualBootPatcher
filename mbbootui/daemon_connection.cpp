@@ -314,7 +314,7 @@ private:
             return false;
         }
 
-        result = static_cast<typename std::remove_reference<Result>::type>(
+        result = static_cast<std::remove_reference_t<Result>>(
                 response->response());
         return true;
     }

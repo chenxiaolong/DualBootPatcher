@@ -24,7 +24,7 @@
 #include "mbdevice/capi/json.h"
 
 #define TO_U(TYPE, VALUE) \
-    static_cast<std::underlying_type<TYPE>::type>(TYPE::VALUE)
+    static_cast<std::underlying_type_t<TYPE>>(TYPE::VALUE)
 
 using namespace mb::device;
 

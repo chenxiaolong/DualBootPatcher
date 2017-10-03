@@ -58,7 +58,7 @@ using Pid = ReturnType<decltype(GetCurrentProcessId)>::type;
 using Tid = ReturnType<decltype(GetCurrentThreadId)>::type;
 #elif defined(__APPLE__)
 using Pid = ReturnType<decltype(getpid)>::type;
-using Tid = std::remove_pointer<ArgN<1, decltype(pthread_threadid_np)>::type>::type;
+using Tid = std::remove_pointer_t<ArgN<1, decltype(pthread_threadid_np)>::type>;
 #elif defined(__linux__)
 using Pid = ReturnType<decltype(getpid)>::type;
 using Tid = pid_t;
