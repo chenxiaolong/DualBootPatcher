@@ -24,6 +24,16 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p18
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/k3_fb.1/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGB_8888
+    battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
+    theme: portrait_hdpi
 
 - name: Huawei Ascend Mate 2
   id: mt2l03
@@ -57,6 +67,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p19
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Huawei P9 Plus
   id: VIE
@@ -85,6 +104,16 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
+    theme: portrait_hdpi
 
 - name: Huawei P9
   id: EVA
@@ -113,6 +142,16 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
+    theme: portrait_hdpi
 
 - name: Huawei Y6
   id: scale
@@ -159,6 +198,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p20
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
 
 - name: Huawei Mate 8
   id: NXT
@@ -187,6 +238,16 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/battery.5/power_supply/Battery
+    theme: portrait_hdpi
+
 - name: Huawei Honor 6X
   id: BLN
   codenames:
@@ -213,6 +274,16 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
+
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/battery.5/power_supply/Battery
+    theme: portrait_hdpi
 
 
 - name: Huawei P8 Lite
@@ -252,6 +323,19 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/balong_fb.1/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    battery_path: /sys/devices/battery.0/power_supply/Battery
+    theme: portrait_hdpi
+
 
 - name: Huawei P8 Lite (hi6210sft variant)
   id: hi6210sft
@@ -290,6 +374,15 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/class/power_supply/Battery
+    theme: portrait_hdpi
 
 - name: Huawei P8 Lite (Alice variant)
   id: alice
@@ -328,6 +421,16 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/k3_fb.1/leds/lcd_backlight0/brightness
+    max_brightness: 255
+    default_brightness: 162
+    battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
+    pixel_format: RGB_8888
+    theme: portrait_hdpi
 
 - name: Huawei Y635
   id: hwY635
@@ -364,6 +467,16 @@
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p19
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
 
 - name: Huawei Honor 8
   id: FRD
@@ -392,6 +505,13 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd_backlight0/brightness
+    battery_path: /sys/class/power_supply/Battery
+    theme: portrait_hdpi
 
 - name: Huawei P9 Lite
   id: VNS
@@ -420,3 +540,12 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
+
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/hisi_fb.1048577/leds/lcd_backlight0/brightness
+    battery_path: /sys/devices/battery.5/power_supply/Battery
+    theme: portrait_hdpi
+

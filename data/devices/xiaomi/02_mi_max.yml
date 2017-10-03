@@ -135,3 +135,15 @@
       - /dev/block/platform/7824900.sdhci/by-name/cust
       - /dev/block/bootdevice/by-name/cust
       - /dev/block/mmcblk0p64
+
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 4095
+    default_brightness: 2047
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi

@@ -31,6 +31,13 @@
       - /dev/block/by-name/recovery
       - /dev/block/mmcblk0p2
 
+boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
 - name: ASUS Zenfone 2 Laser - ZE601KL
   id: Z00T
   codenames:

@@ -223,6 +223,16 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p16
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    pixel_format: RGB_565
+    theme: portrait_hdpi
+
 - name: OnePlus 5
   id: OnePlus5
   codenames:

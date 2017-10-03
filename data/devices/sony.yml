@@ -19,6 +19,13 @@
     boot:
       - /dev/block/mmcblk0p9
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Sony Xperia E1
   id: falconss
@@ -57,16 +64,6 @@
       - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
       - /dev/block/bootdevice/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    graphics_backends:
-      - fbdev
-    pixel_format: RGBX_8888
-    theme: portrait_hdpi
-
 
 - name: Sony Xperia Z1
   id: honami
@@ -204,6 +201,19 @@
       - /dev/block/platform/msm_sdcc.1/by-name/TA
       - /dev/block/platform/msm_sdcc.1/by-name/TZ
 
+boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/i2c-10/10-0040/leds/lcd-backlight1/brightness
+    secondary_brightness_path: /sys/devices/i2c-10/10-0040/leds/lcd-backlight2/brightness
+    max_brightness: 255
+    default_brightness: 51
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Sony Xperia XZ
   id: kagura
