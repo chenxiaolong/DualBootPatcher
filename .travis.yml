@@ -5,7 +5,7 @@ services:
 
 before_install:
   # Clone DualBootPatcher Repository
-  - git clone --recursive https://github.com/yshalsager/DualBootPatcher -b beta DualBootPatcher/
+  - git clone --recursive https://github.com/yshalsager/DualBootPatcher -b master DualBootPatcher/
   # Pull docker images
   - docker pull yshalsager/dualbootpatcher:9.3.0-2-base
   - docker pull yshalsager/dualbootpatcher:9.3.0-2-android
@@ -36,7 +36,7 @@ script:
     md5sum ~/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
     # Upload to transfer.sh
     cd ~/DualBootPatcher/Android_GUI/build/outputs/apk/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug.apk && sleep 5
-    cd ~/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0.zip && sleep 5
-    cd ~/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.tar.xz https://transfer.sh/DualBootPatcher-9.3.0-Linux.tar.xz && sleep 5
+    cd ~/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0.zip
+    cd ~/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.tar.xz https://transfer.sh/DualBootPatcher-9.3.0-Linux.tar.xz
     exit
     EOF
