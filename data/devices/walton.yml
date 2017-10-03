@@ -112,7 +112,7 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-- name: Primo RX5
+- name: Walton Primo RX5
   id: Primo_RX5
   codenames:
     - Primo_RX5
