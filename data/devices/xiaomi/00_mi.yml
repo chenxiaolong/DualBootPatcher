@@ -24,7 +24,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p18
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -79,7 +79,6 @@ boot_ui:
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi4C
   id: libra
   codenames:
@@ -116,7 +115,6 @@ boot_ui:
     max_brightness: 255
     default_brightness: 162
     theme: portrait_hdpi
-
 
 - name: Xiaomi Mi4i
   id: ferrari
@@ -155,7 +153,6 @@ boot_ui:
     max_brightness: 255
     default_brightness: 162
     theme: portrait_hdpi
-
 
 - name: Xiaomi Mi4S
   id: aqua
@@ -200,7 +197,6 @@ boot_ui:
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi 5
   id: gemini
   codenames:
@@ -232,7 +228,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde37
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -286,7 +282,7 @@ boot_ui:
       - /dev/block/platform/soc/624000.ufshc/sda13
       - /dev/block/platform/soc/624000.ufshc/by-num/p13
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -329,7 +325,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sda13
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -376,6 +372,7 @@ boot_ui:
       - /dev/block/sda15
       - /dev/block/platform/soc/1da4000.ufshc/by-num/p15
       - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+
   boot_ui:
     supported: yes
     graphics_backends:

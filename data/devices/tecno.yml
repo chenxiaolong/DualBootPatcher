@@ -95,7 +95,6 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-
 - name: Tecno L8 Lite
   id: l8_lite
   codenames:

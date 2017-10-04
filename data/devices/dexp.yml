@@ -24,7 +24,6 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p24
 
-
 - name: DEXP M LTE 5
   id: mlte5
   codenames:
@@ -50,7 +49,7 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p24
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX

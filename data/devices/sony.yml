@@ -19,7 +19,7 @@
     boot:
       - /dev/block/mmcblk0p9
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -116,7 +116,6 @@ boot_ui:
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: Sony Xperia T2 Ultra
   id: tianchi
   codenames:
@@ -167,7 +166,6 @@ boot_ui:
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: Sony Xperia SP
   id: huashan
   codenames:
@@ -201,7 +199,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/TA
       - /dev/block/platform/msm_sdcc.1/by-name/TZ
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_BLANK

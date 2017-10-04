@@ -66,7 +66,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: Coolpad Note 3
   id: CP8676_I02
   codenames:
@@ -131,7 +130,6 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-
 
 - name: Coolpad Note 3 Plus
   id: CP8676_I03

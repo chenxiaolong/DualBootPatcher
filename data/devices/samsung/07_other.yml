@@ -25,7 +25,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
@@ -52,7 +52,7 @@ boot_ui:
     recovery:
       - /dev/block/mmcblk0p6
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
@@ -97,7 +97,7 @@ boot_ui:
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
@@ -136,7 +136,7 @@ boot_ui:
       - /dev/block/platform/sdio_emmc/by-name/RECOVERY
       - /dev/block/mmcblk0p21
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE

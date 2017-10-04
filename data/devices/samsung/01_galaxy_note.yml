@@ -131,7 +131,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Samsung Galaxy Note 3 (Exynos)
   id: ha3g
   codenames:
@@ -209,7 +208,6 @@
     max_brightness: 255
     default_brightness: 162
     theme: portrait_hdpi
-
 
 - name: Samsung Galaxy Note 3 Neo
   id: hllte

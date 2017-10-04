@@ -32,7 +32,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -43,7 +43,6 @@ boot_ui:
     default_brightness: 2067
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG G2 (d802)
   id: lgg2_d802
@@ -75,7 +74,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/aboot
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -129,7 +128,6 @@ boot_ui:
       - fbdev
     theme: portrait_hdpi
 
-
 - name: LG G3 S
   id: lgg3s
   codenames:
@@ -155,7 +153,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -166,7 +164,6 @@ boot_ui:
     default_brightness: 162
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG G4
   id: lgg4
@@ -200,7 +197,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -209,7 +206,6 @@ boot_ui:
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG G4 (T-Mobile)
   id: lgg4_tmo
@@ -243,7 +239,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p39
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -297,7 +293,6 @@ boot_ui:
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: LG G5 (T-Mobile)
   id: lgg5_tmo
   codenames:
@@ -342,7 +337,6 @@ boot_ui:
     default_brightness: 149
     theme: portrait_hdpi
 
-
 - name: LG V20 (T-Mobile)
   id: elsa_tmo
   codenames:
@@ -375,7 +369,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -386,7 +380,6 @@ boot_ui:
     default_brightness: 149
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG V20 (Unlocked)
   id: elsa_omni
@@ -420,7 +413,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde2
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -475,7 +468,6 @@ boot_ui:
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: LG Optimus L7
   id: u0
   codenames:
@@ -518,7 +510,6 @@ boot_ui:
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG Optimus L1 II
   id: v1
@@ -566,7 +557,6 @@ boot_ui:
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: LG Optimus L3 II
   id: vee3
   codenames:
@@ -612,7 +602,6 @@ boot_ui:
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: LG Optimus L7 II
   id: vee7
@@ -663,8 +652,7 @@ boot_ui:
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-    
-    
+
 - name: LG Stylo 2 Plus (MetroPCS)
   id: ph2n
   codenames:

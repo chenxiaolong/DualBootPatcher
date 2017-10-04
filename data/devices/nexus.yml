@@ -24,7 +24,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p7
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -69,7 +69,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/sdi
       - /dev/block/platform/msm_sdcc.1/by-name/tz
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -112,7 +112,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p38
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_TIMEOUT
@@ -150,7 +150,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p35
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_TIMEOUT
@@ -160,7 +160,7 @@ boot_ui:
     brightness_path: /sys/class/backlight/panel/brightness
     max_brightness: 215
     default_brightness: 80
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: Google/Huawei Nexus 6P
@@ -193,7 +193,7 @@ boot_ui:
       - /dev/block/platform/soc.0/f9824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p35
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -228,7 +228,7 @@ boot_ui:
       - /dev/block/platform/sdhci-tegra.3/by-name/SOS
       - /dev/block/mmcblk0p1
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -262,7 +262,7 @@ boot_ui:
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_BLANK

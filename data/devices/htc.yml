@@ -146,7 +146,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p43
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_BLANK
