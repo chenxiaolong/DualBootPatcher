@@ -538,6 +538,33 @@ boot_ui:
     pixel_format: RGB_565
     theme: portrait_hdpi
 
+- name: Motorola Moto X Pro
+  id: shamu_t
+  codenames:
+    - shamu_t
+    - shamu_cn
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p40
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p39
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p41
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p36
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p37
+
+
 - name: Motorola Moto G4 & G4 Plus Edition
   id: athene
   codenames:
