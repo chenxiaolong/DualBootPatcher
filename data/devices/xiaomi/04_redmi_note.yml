@@ -51,7 +51,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: Xiaomi Redmi Note 3 (MTK)
   id: hennessy
   codenames:
@@ -134,7 +133,7 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
 
-boot_ui:
+  boot_ui:
     supported: yes
     graphics_backends:
       - fbdev
@@ -177,7 +176,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
 
-boot_ui:
+  boot_ui:
     supported: yes
     graphics_backends:
       - fbdev
@@ -271,7 +270,6 @@ boot_ui:
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
 
-
 - name: Xiaomi Redmi Note 4 (MTK)
   id: nikel
   codenames:
@@ -330,7 +328,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p25
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -382,7 +380,6 @@ boot_ui:
     max_brightness: 160
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
-
 
 - name: Xiaomi Redmi Note 4G TD/W (Dual SIM)
   id: gucci

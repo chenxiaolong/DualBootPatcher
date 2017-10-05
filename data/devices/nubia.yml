@@ -35,7 +35,7 @@
     extra:
       - /dev/block/bootdevice/by-name/modem
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -85,7 +85,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
       
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -133,7 +133,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -188,7 +188,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/bootdevice/by-name/tz
       
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -237,7 +237,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery2
       - /dev/block/bootdevice/by-name/tz
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -272,7 +272,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p22
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX

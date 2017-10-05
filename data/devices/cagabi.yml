@@ -35,5 +35,5 @@
       - fbdev
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     max_brightness: 255
-    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi

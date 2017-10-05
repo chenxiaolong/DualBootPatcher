@@ -1,5 +1,5 @@
 ---
-- name: Samsung Galaxy S 3 Neo (Qcom)
+- name: Samsung Galaxy S3 Neo (Qcom)
   id: s3ve3g
   codenames:
     - s3ve3g
@@ -40,7 +40,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 (Qcom)
+- name: Samsung Galaxy S3 (Qcom)
   id: d2
   codenames:
     - d2
@@ -95,7 +95,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 (i9300)
+- name: Samsung Galaxy S3 (i9300)
   id: m0
   codenames:
     - m0
@@ -137,7 +137,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 (i9305)
+- name: Samsung Galaxy S3 (i9305)
   id: m3
   codenames:
     - m3
@@ -179,7 +179,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 Mini
+- name: Samsung Galaxy S3 Mini
   id: golden
   codenames:
     - golden
@@ -209,7 +209,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 (Qcom)
+- name: Samsung Galaxy S4 (Qcom)
   id: jflte
   codenames:
     # Regular variant
@@ -266,8 +266,7 @@
       - fbdev
     theme: portrait_hdpi
 
-
-- name: Samsung Galaxy S 4 (Exynos)
+- name: Samsung Galaxy S4 (Exynos)
   id: i9500
   codenames:
     # i9500
@@ -314,7 +313,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 LTE-A
+- name: Samsung Galaxy S4 LTE-A
   id: ks01lte
   codenames:
     - ks01lte
@@ -354,7 +353,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 Active (SKT Variant)
+- name: Samsung Galaxy S4 Active (SKT Variant)
   id: jactivelteskt
   codenames:
     - jactivelteskt
@@ -392,7 +391,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 Mini
+- name: Samsung Galaxy S4 Mini
   id: serrano
   codenames:
     # Regular variant
@@ -437,7 +436,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 (Qcom)
+- name: Samsung Galaxy S5 (Qcom)
   id: klte
   codenames:
     - klte
@@ -484,7 +483,7 @@
     default_brightness: 162
 
 
-- name: Samsung Galaxy S 5 Mini (Qcom)
+- name: Samsung Galaxy S5 Mini (Qcom)
   id: kmini3g
   codenames:
     - kmini3g
@@ -522,7 +521,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 (Exynos)
+- name: Samsung Galaxy S5 (Exynos)
   id: k3g
   codenames:
     - k3g
@@ -563,7 +562,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 Mini LTE (Exynos)
+- name: Samsung Galaxy S5 Mini LTE (Exynos)
   id: kminilte
   codenames:
     - kminilte
@@ -604,7 +603,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 Broadband LTE-A
+- name: Samsung Galaxy S5 Broadband LTE-A
   id: lentislte
   codenames:
     - lentislte
@@ -644,7 +643,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 4G+
+- name: Samsung Galaxy S5 4G+
   id: kccat6
   codenames:
     - kccat6
@@ -683,7 +682,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Flat/Edge
+- name: Samsung Galaxy S6 Flat/Edge
   id: zerolte
   codenames:
     # Regular variant
@@ -731,7 +730,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Flat/Edge (CN/JP Variant)
+- name: Samsung Galaxy S6 Flat/Edge (CN/JP Variant)
   id: zeroltechn
   codenames:
     # Flat china variant
@@ -785,7 +784,7 @@
     theme: portrait_hdpi
 
 
-- name: Samsung Galaxy S 6 Flat/Edge (Sprint)
+- name: Samsung Galaxy S6 Flat/Edge (Sprint)
   id: zeroltespr
   codenames:
     # Regular variant
@@ -827,7 +826,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Edge+
+- name: Samsung Galaxy S6 Edge+
   id: zenlte
   codenames:
     - zenlte
@@ -867,7 +866,7 @@
     pixel_format: ABGR_8888
     theme: portrait_hdpi
 
-- name: Samsung Galaxy S 7 Flat/Edge (Exynos)
+- name: Samsung Galaxy S7 Flat/Edge (Exynos)
   id: herolte
   codenames:
     # Regular variant

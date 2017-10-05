@@ -24,8 +24,17 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
-      
-      
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
 - name: OPPO find7/7a
   id: find7
   codenames:
@@ -58,8 +67,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p17
 
-
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX

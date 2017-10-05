@@ -36,7 +36,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Wileyfox Storm
   id: kipper
   codenames:
@@ -62,7 +61,7 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p21
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -73,7 +72,6 @@ boot_ui:
     default_brightness: 162
     pixel_format: RGBX_8888
     theme: portrait_hdpi
-
 
 - name: Wileyfox Swift2
   id: marmite

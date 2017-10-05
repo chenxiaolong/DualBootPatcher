@@ -31,7 +31,7 @@
       - /dev/block/by-name/recovery
       - /dev/block/mmcblk0p2
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev

@@ -114,6 +114,15 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Motorola Moto G (2014 LTE)
   id: thea
   codenames:
@@ -147,7 +156,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p33
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -181,14 +190,14 @@ boot_ui:
       - /dev/block/platform/soc.0/by-name/recovery
       - /dev/block/mmcblk0p32
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
       - TW_QCOM_RTC_FIX
     graphics_backends:
       - fbdev
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: Motorola Moto G4 Play
@@ -227,14 +236,14 @@ boot_ui:
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p32
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
       - TW_QCOM_RTC_FIX
     graphics_backends:
       - fbdev
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: Motorola Moto E (1st gen)
@@ -267,7 +276,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p32
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -306,7 +315,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p33
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -352,7 +361,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p34
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -401,7 +410,7 @@ boot_ui:
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -437,6 +446,7 @@ boot_ui:
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p34
+
   boot_ui:
     supported: true
     flags:
@@ -488,7 +498,7 @@ boot_ui:
       - /dev/block/platform/soc.0/f9824900.sdhci/by-name/modem
       - /dev/block/mmcblk0p1
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -528,14 +538,14 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p37
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
       - TW_QCOM_RTC_FIX
     graphics_backends:
       - fbdev
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: Motorola Moto X Pro
@@ -564,6 +574,16 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p37
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    default_brightness: 80
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
 
 - name: Motorola Moto G4 & G4 Plus Edition
   id: athene
@@ -607,7 +627,7 @@ boot_ui:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -651,7 +671,7 @@ boot_ui:
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -697,7 +717,7 @@ boot_ui:
       - /dev/block/platform/624000.ufshc/by-name/recovery
       - /dev/block/sda14
       
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -740,7 +760,7 @@ boot_ui:
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -750,7 +770,7 @@ boot_ui:
     brightness_path: /sys/class/backlight/panel/brightness
     max_brightness: 255
     default_brightness: 162
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: Motorola Moto C (4G)

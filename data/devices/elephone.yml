@@ -40,11 +40,11 @@
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/recovery
       - /dev/block/mmcblk0p8
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
-    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness/
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
     max_brightness: 255
     default_brightness: 162
     pixel_format: RGBX_8888
@@ -77,7 +77,7 @@ boot_ui:
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
       - /dev/block/mmcblk0p1
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_BLANK
@@ -113,7 +113,7 @@ boot_ui:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev

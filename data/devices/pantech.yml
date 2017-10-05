@@ -41,7 +41,6 @@
     default_brightness: 175
     theme: portrait_hdpi
 
-
 - name: Pantech Vega Iron
   id: A870
   codenames:

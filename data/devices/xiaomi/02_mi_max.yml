@@ -52,7 +52,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi Max Pro
   id: helium
   codenames:
@@ -100,7 +99,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
 
-
 - name: Xiaomi Mi Max 2
   id: oxygen
   codenames:
@@ -136,7 +134,7 @@
       - /dev/block/bootdevice/by-name/cust
       - /dev/block/mmcblk0p64
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX

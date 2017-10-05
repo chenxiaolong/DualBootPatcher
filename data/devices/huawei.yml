@@ -24,14 +24,13 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p18
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
     brightness_path: /sys/devices/platform/k3_fb.1/leds/lcd_backlight0/brightness
     max_brightness: 255
     default_brightness: 162
-    pixel_format: RGB_8888
     battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
     theme: portrait_hdpi
 
@@ -67,7 +66,7 @@ boot_ui:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p19
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -104,7 +103,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -142,7 +141,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -198,7 +197,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p20
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_NO_SCREEN_TIMEOUT
@@ -238,7 +237,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -275,7 +274,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -323,7 +322,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -374,7 +373,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -421,7 +420,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p28
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -429,7 +428,6 @@ boot_ui:
     max_brightness: 255
     default_brightness: 162
     battery_path: /sys/devices/platform/bq_bci_battery.1/power_supply/Battery
-    pixel_format: RGB_8888
     theme: portrait_hdpi
 
 - name: Huawei Y635
@@ -467,7 +465,7 @@ boot_ui:
       - /dev/block/platform/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p19
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -505,7 +503,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev
@@ -541,7 +539,7 @@ boot_ui:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
-boot_ui:
+  boot_ui:
     supported: true
     graphics_backends:
       - fbdev

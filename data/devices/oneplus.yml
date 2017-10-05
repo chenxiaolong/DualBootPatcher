@@ -51,7 +51,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: OnePlus 2
   id: OnePlus2
   codenames:
@@ -104,7 +103,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
 
-
 - name: OnePlus 3
   id: OnePlus3
   codenames:
@@ -145,7 +143,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
-
 
 - name: OnePlus 3T
   id: OnePlus3T
@@ -189,7 +186,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
 
-
 - name: OnePlus X
   id: onyx
   codenames:
@@ -223,14 +219,14 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p16
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
       - TW_QCOM_RTC_FIX
     graphics_backends:
       - fbdev
-    pixel_format: RGB_565
+    force_pixel_format: RGB_565
     theme: portrait_hdpi
 
 - name: OnePlus 5

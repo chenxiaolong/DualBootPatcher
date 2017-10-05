@@ -64,7 +64,6 @@
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-
 - name: Jiayu S3plus
   id: n560a
   codenames:

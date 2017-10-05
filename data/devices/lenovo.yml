@@ -240,7 +240,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: Lenovo ZUK Z1
   id: Z1
   codenames:
@@ -282,7 +281,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: Lenovo Vibe P1 Turbo
   id: P1a42
   codenames:
@@ -304,6 +302,7 @@
       - /dev/block/bootdevice/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
+
   boot_ui:
     supported: true
     flags:
@@ -316,7 +315,6 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-
 
 - name: Lenovo Vibe P1
   id: P1a41
@@ -339,6 +337,7 @@
       - /dev/block/bootdevice/by-name/boot
     recovery:
       - /dev/block/bootdevice/by-name/recovery
+
   boot_ui:
     supported: true
     flags:
@@ -351,7 +350,6 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-
 
 - name: Lenovo Vibe P2
   id: P2a42
@@ -378,7 +376,7 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_SCREEN_BLANK_ON_BOOT
@@ -417,7 +415,7 @@ boot_ui:
     recovery:
       - /dev/block/bootdevice/by-name/recovery
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -514,7 +512,7 @@ boot_ui:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p34
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
@@ -556,7 +554,7 @@ boot_ui:
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p35
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_QCOM_RTC_FIX
