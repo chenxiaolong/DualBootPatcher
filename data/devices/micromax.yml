@@ -56,19 +56,14 @@
       - /dev/block/platform/mtk-msdc.0/by-name
     system:
       - /dev/block/platform/mtk-msdc.0/by-name/system
-      - /emmc@android
     cache:
       - /dev/block/platform/mtk-msdc.0/by-name/cache
-      - /emmc@cache
     data:
       - /dev/block/platform/mtk-msdc.0/by-name/userdata
-      - /emmc@usrdata
     boot:
       - /dev/block/platform/mtk-msdc.0/by-name/boot
-      - /dev/bootimg
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
-      - /dev/recovery
 
   boot_ui:
     supported: yes
