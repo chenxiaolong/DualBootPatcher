@@ -10,6 +10,7 @@ set(files
     asus.yml
     cagabi.yml
     cherrymobile.yml
+    chinamobile.yml
     coolpad.yml
     dexp.yml
     doogee.yml
