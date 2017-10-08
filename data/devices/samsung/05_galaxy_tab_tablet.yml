@@ -514,3 +514,80 @@ boot_ui:
     max_brightness: 255
     default_brightness: 190
     theme: portrait_hdpi
+
+- name: samsung SM-T285
+  id: gtexslte
+  codenames:
+      - SM-T285
+      - gtexslte
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-num
+      - /dev/block/bootdevice/by-num
+    system:
+      - /dev/block/bootdevice/by-num/system
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-num/cache
+      - /dev/block/mmcblk0p24
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-num/userdata
+      - /dev/block/mmcblk0p27
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-num/boot
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+    recovery:
+      - /dev/block/bootdevice/by-num/recovery
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+    extra:
+      - /dev/block/mmcblk0p17
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/sdio_emmc/by-name/HIDDEN
+      - /dev/block/platform/sdio_emmc/by-num/p1
+      - /dev/block/platform/sdio_emmc/by-num/p10
+      - /dev/block/platform/sdio_emmc/by-num/p11
+      - /dev/block/platform/sdio_emmc/by-num/p12
+      - /dev/block/platform/sdio_emmc/by-num/p13
+      - /dev/block/platform/sdio_emmc/by-num/p14
+      - /dev/block/platform/sdio_emmc/by-num/p15
+      - /dev/block/platform/sdio_emmc/by-num/p16
+      - /dev/block/platform/sdio_emmc/by-num/p17
+      - /dev/block/platform/sdio_emmc/by-num/p18
+      - /dev/block/platform/sdio_emmc/by-num/p19
+      - /dev/block/platform/sdio_emmc/by-num/p2
+      - /dev/block/platform/sdio_emmc/by-num/p20
+      - /dev/block/platform/sdio_emmc/by-num/p21
+      - /dev/block/platform/sdio_emmc/by-num/p22
+      - /dev/block/platform/sdio_emmc/by-num/p23
+      - /dev/block/platform/sdio_emmc/by-num/p24
+      - /dev/block/platform/sdio_emmc/by-num/p25
+      - /dev/block/platform/sdio_emmc/by-num/p26
+      - /dev/block/platform/sdio_emmc/by-num/p27
+      - /dev/block/platform/sdio_emmc/by-num/p3
+      - /dev/block/platform/sdio_emmc/by-num/p4
+      - /dev/block/platform/sdio_emmc/by-num/p5
+      - /dev/block/platform/sdio_emmc/by-num/p6
+      - /dev/block/platform/sdio_emmc/by-num/p7
+      - /dev/block/platform/sdio_emmc/by-num/p8
+      - /dev/block/platform/sdio_emmc/by-num/p9
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: 
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
