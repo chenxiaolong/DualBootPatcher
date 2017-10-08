@@ -183,12 +183,15 @@ TEST_F(FilePosixTest, OpenFilenameMbsFailure)
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FilePosixTest, OpenFilenameMbsInvalidMode)
 {
-    TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestablePosixFile file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
 {
@@ -221,12 +224,15 @@ TEST_F(FilePosixTest, OpenFilenameWcsFailure)
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FilePosixTest, OpenFilenameWcsInvalidMode)
 {
-    TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestablePosixFile file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FilePosixTest, OpenFstatFailed)
 {

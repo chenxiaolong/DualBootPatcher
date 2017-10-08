@@ -33,10 +33,6 @@ TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
                   mb::FileErrorC::InvalidArgument);
     TEST_EQUALITY(mb::make_error_code(mb::FileError::CannotConvertEncoding),
                   mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidMode),
-                  mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidWhence),
-                  mb::FileErrorC::InvalidArgument);
 
     TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidState),
                   mb::FileErrorC::InvalidState);

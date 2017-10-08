@@ -54,10 +54,6 @@ std::string FileErrorCategory::message(int ev) const
         return "argument out of range";
     case FileError::CannotConvertEncoding:
         return "cannot convert string encoding";
-    case FileError::InvalidMode:
-        return "invalid mode";
-    case FileError::InvalidWhence:
-        return "invalid whence";
     case FileError::InvalidState:
         return "invalid state";
     case FileError::UnsupportedRead:
@@ -83,8 +79,6 @@ FileErrorCategory::default_error_condition(int code) const noexcept
     switch (static_cast<FileError>(code)) {
     case FileError::ArgumentOutOfRange:
     case FileError::CannotConvertEncoding:
-    case FileError::InvalidMode:
-    case FileError::InvalidWhence:
         return FileErrorC::InvalidArgument;
     case FileError::InvalidState:
         return FileErrorC::InvalidState;

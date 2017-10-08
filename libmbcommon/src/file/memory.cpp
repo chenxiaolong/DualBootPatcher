@@ -289,9 +289,7 @@ bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         new_offset = priv->pos = priv->size + static_cast<size_t>(offset);
         break;
     default:
-        set_error(make_error_code(FileError::InvalidWhence),
-                  "Invalid whence argument: %d", whence);
-        return false;
+        MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
 
     return true;

@@ -312,9 +312,7 @@ bool FdFile::open(const std::string &filename, FileOpenMode mode)
         // Convert mode to flags
         int flags = priv->convert_mode(mode);
         if (flags < 0) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->fd = -1;
@@ -356,9 +354,7 @@ bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
         // Convert mode to flags
         int flags = priv->convert_mode(mode);
         if (flags < 0) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->fd = -1;
