@@ -80,6 +80,11 @@ foreach(variant ${variants})
         src/capi/util.cpp
         src/common.cpp
         src/error.cpp
+        src/error/error.cpp
+        src/error/error_info_base.cpp
+        src/error/error_list.cpp
+        src/error/type/ec_error.cpp
+        src/error/type/string_error.cpp
         src/file/callbacks.cpp
         src/file/fd.cpp
         src/file/memory.cpp
@@ -176,6 +181,14 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/main.cpp
         tests/file/mock_test_file.cpp
         # Tests
+        tests/error/test_error.cpp
+        tests/error/test_error_handler.cpp
+        tests/error/test_error_list.cpp
+        tests/error/test_expected.cpp
+        tests/error/test_expected_handler.cpp
+        tests/error/type/custom_error.cpp
+        tests/error/type/test_ec_error.cpp
+        tests/error/type/test_string_error.cpp
         tests/file/test_callbacks.cpp
         tests/file/test_fd.cpp
         tests/file/test_memory.cpp
