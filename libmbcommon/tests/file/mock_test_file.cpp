@@ -131,9 +131,7 @@ bool TestFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         new_offset = _position = _buf.size() + offset;
         break;
     default:
-        set_error(mb::make_error_code(mb::FileError::InvalidWhence),
-                  "Invalid whence argument: %d", whence);
-        return false;
+        MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
 
     return true;

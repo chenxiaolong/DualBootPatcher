@@ -359,9 +359,7 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->handle = INVALID_HANDLE_VALUE;
@@ -400,9 +398,7 @@ bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
 
         if (!priv->convert_mode(mode, access, sharing, sa, creation, attrib,
                                 append)) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->handle = INVALID_HANDLE_VALUE;
@@ -535,9 +531,7 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         move_method = FILE_END;
         break;
     default:
-        set_error(make_error_code(FileError::InvalidWhence),
-                  "Invalid whence argument: %d", whence);
-        return false;
+        MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
 
     pos.QuadPart = offset;

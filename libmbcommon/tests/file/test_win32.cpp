@@ -190,12 +190,15 @@ TEST_F(FileWin32Test, OpenFilenameMbsFailure)
     ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
+#ifndef NDEBUG
 TEST_F(FileWin32Test, OpenFilenameMbsInvalidMode)
 {
-    TestableWin32File file(&_funcs);
-    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableWin32File file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
 {
@@ -221,12 +224,15 @@ TEST_F(FileWin32Test, OpenFilenameWcsFailure)
     ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
+#ifndef NDEBUG
 TEST_F(FileWin32Test, OpenFilenameWcsInvalidMode)
 {
-    TestableWin32File file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableWin32File file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileWin32Test, CloseUnownedFile)
 {

@@ -30,8 +30,6 @@ enum class FileError
 {
     ArgumentOutOfRange      = 10,
     CannotConvertEncoding   = 11,
-    InvalidMode             = 12,
-    InvalidWhence           = 13,
 
     InvalidState            = 20,
 

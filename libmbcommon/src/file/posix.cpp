@@ -336,9 +336,7 @@ bool PosixFile::open(const std::string &filename, FileOpenMode mode)
         // Convert mode to fopen-compatible mode string
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->fp = nullptr;
@@ -380,9 +378,7 @@ bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
         // Convert mode to fopen-compatible mode string
         auto mode_str = priv->convert_mode(mode);
         if (!mode_str) {
-            set_error(make_error_code(FileError::InvalidMode),
-                      "Invalid mode: %d", static_cast<int>(mode));
-            return false;
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
         priv->fp = nullptr;
