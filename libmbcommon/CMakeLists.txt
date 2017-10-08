@@ -78,6 +78,7 @@ foreach(variant ${variants})
         ${lib_target}
         ${uvariant}
         src/capi/util.cpp
+        src/common.cpp
         src/error.cpp
         src/file/callbacks.cpp
         src/file/fd.cpp
