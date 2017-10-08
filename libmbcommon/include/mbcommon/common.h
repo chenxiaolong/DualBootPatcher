@@ -55,6 +55,10 @@
 #  define MB_END_C_DECLS
 #endif
 
+#ifdef __cplusplus
+#  define MB_NO_RETURN [[noreturn]]
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
 #  if _WIN32
 #    define MB_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
@@ -68,13 +72,74 @@
 #  define MB_SCANF(fmt_arg, var_arg) \
     __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
 #  define MB_UNUSED __attribute__((unused))
-#  define MB_NO_RETURN __attribute__((noreturn))
-#else
+#  ifndef MB_NO_RETURN
+#    define MB_NO_RETURN __attribute__((noreturn))
+#  endif
+#  if __cplusplus > 201402L
+#    error Remove MB_NO_DISCARD after switching to C++17
+#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
+#  elif defined(__clang__)
+#    define MB_NO_DISCARD [[clang::warn_unused_result]]
+#    define MB_NO_DISCARD_FUNC [[clang::warn_unused_result]]
+#  elif defined(__GNUC__)
+     // GCC does not support warn_unused_result on types
+#    define MB_NO_DISCARD
+#    define MB_NO_DISCARD_FUNC [[gnu::warn_unused_result]]
+#  endif
+#elif defined(_MSC_VER)
+#  ifndef MB_NO_RETURN
+#    define MB_NO_RETURN __declspec(noreturn)
+#  endif
+#  if __cplusplus > 201402L
+#    error Remove MB_NO_DISCARD after switching to C++17
+#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
+#  else
+#    define MB_NO_DISCARD _Check_return_
+#    define MB_NO_DISCARD_FUNC _Check_return_
+#  endif
+#endif
+
+#ifndef MB_PRINTF
 #  define MB_PRINTF(fmtarg, firstvararg)
+#endif
+#ifndef MB_SCANF
 #  define MB_SCANF(fmtarg, firstvararg)
+#endif
+#ifndef MB_UNUSED
 #  define MB_UNUSED
+#endif
+#ifndef MB_NO_RETURN
 #  define MB_NO_RETURN
 #endif
+
+#if defined(__GNUC__)
+#  define MB_BUILTIN_UNREACHABLE __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define MB_BUILTIN_UNREACHABLE __assume(false)
+#endif
+
+#ifndef NDEBUG
+#  define MB_UNREACHABLE(FMT, ...) \
+       ::mb_unreachable(__FILE__, __LINE__, __func__, FMT, __VA_ARGS__)
+#elif defined(MB_BUILTIN_UNREACHABLE)
+#  define MB_UNREACHABLE(FMT, ...) MB_BUILTIN_UNREACHABLE
+#else
+#  define MB_UNREACHABLE(FMT, ...) ::mb_unreachable(NULL, 0, NULL, NULL)
+#endif
+
+/*!
+ * This function calls abort(), and prints the optional message to stderr.
+ * Use the MB_UNREACHABLE macro (that adds location info), instead of
+ * calling this function directly.
+ */
+MB_NO_RETURN MB_EXPORT
+// stdio.h might not have been included yet, which would make
+// __MINGW_PRINTF_FORMAT undefined on mingw
+#if !defined(_WIN32) || defined(__MINGW_PRINTF_FORMAT)
+MB_PRINTF(4, 5)
+#endif
+void mb_unreachable(const char *file, unsigned long line,
+                    const char *func, const char *fmt, ...);
 
 // C++-only macros and functions
 #ifdef __cplusplus
