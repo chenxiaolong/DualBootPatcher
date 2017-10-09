@@ -570,8 +570,6 @@
   codenames:
       - A6000
       - a6000
-      - wt86518
-      - Lenovo A6000
       - Kraft-A6000
   architecture: 
   block_devs:
