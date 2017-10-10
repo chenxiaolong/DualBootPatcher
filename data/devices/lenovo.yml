@@ -571,7 +571,7 @@
       - A6000
       - a6000
       - Kraft-A6000
-  architecture: 
+  architecture: armeabi-v7a 
   block_devs:
     base_dirs:
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
