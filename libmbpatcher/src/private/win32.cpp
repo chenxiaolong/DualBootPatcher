@@ -45,7 +45,8 @@ std::string win32_error_to_string(DWORD win32_error)
     std::wstring message(message_buffer, size);
     LocalFree(message_buffer);
 
-    return wcs_to_utf8(message);
+    auto result = wcs_to_utf8(message);
+    return result ? *result : std::string{};
 }
 
 }

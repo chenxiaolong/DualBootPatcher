@@ -323,12 +323,13 @@ bool PosixFile::open(const std::string &filename, FileOpenMode mode)
     if (priv) {
         // Convert filename to platform-native encoding
 #ifdef _WIN32
-        std::wstring native_filename;
-        if (!mbs_to_wcs(native_filename, filename)) {
+        auto converted = mbs_to_wcs(filename);
+        if (!converted) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
             return false;
         }
+        auto native_filename = *converted;
 #else
         auto native_filename = filename;
 #endif
@@ -367,12 +368,13 @@ bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 #ifdef _WIN32
         auto native_filename = filename;
 #else
-        std::string native_filename;
-        if (!wcs_to_mbs(native_filename, filename)) {
+        auto converted = wcs_to_mbs(filename);
+        if (!converted) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert WCS filename to MBS");
             return false;
         }
+        auto native_filename = *converted;
 #endif
 
         // Convert mode to fopen-compatible mode string

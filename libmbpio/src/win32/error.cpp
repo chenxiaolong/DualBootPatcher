@@ -49,7 +49,8 @@ std::wstring errorToWString(DWORD win32Error)
 
 std::string errorToString(DWORD win32Error)
 {
-    return mb::wcs_to_utf8(errorToWString(win32Error));
+    auto result = mb::wcs_to_utf8(errorToWString(win32Error));
+    return result ? *result : std::string{};
 }
 
 }

@@ -115,13 +115,13 @@ static bool win32RecursiveDelete(const std::wstring &path)
 
 bool deleteRecursively(const std::string &path)
 {
-    std::wstring wPath;
+    auto wPath = mb::utf8_to_wcs(path);
 
-    if (!mb::utf8_to_wcs(wPath, path)) {
+    if (!wPath) {
         return false;
     }
 
-    return win32RecursiveDelete(wPath);
+    return win32RecursiveDelete(*wPath);
 }
 
 }
