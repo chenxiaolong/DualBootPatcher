@@ -527,6 +527,8 @@
   codenames:
     - karate
     - K33b36
+    - K33
+    - K33a42
   architecture: arm64-v8a
 
   block_devs:
