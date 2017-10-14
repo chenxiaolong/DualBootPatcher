@@ -28,6 +28,7 @@
 // Linux/posix
 #include <dirent.h>
 #include <fcntl.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>

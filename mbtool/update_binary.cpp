@@ -21,6 +21,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>

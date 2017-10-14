@@ -19,6 +19,8 @@
 
 #include "mbbootimg/format/sony_elf_error.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg

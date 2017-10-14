@@ -19,6 +19,8 @@
 
 #include "mbbootimg/writer_error.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg

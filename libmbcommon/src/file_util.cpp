@@ -378,8 +378,6 @@ bool file_search(File &file, int64_t start, int64_t end,
         ptr_remain = buf_size - to_move;
         offset += n - to_move;
     }
-
-    return true;
 }
 
 /*!

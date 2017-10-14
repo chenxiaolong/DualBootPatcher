@@ -54,6 +54,8 @@ foreach(variant ${variants})
             LINK_FLAGS "-static"
             LINK_SEARCH_START_STATIC ON
         )
+
+        android_link_allow_multiple_definitions(${bin_target})
     endif()
 
     # Install binary

@@ -19,6 +19,8 @@
 
 #include "mbbootimg/format/loki_error.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg

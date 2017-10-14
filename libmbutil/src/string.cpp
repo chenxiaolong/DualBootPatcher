@@ -20,6 +20,7 @@
 #include "mbutil/string.h"
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 
 #include <cstdarg>
