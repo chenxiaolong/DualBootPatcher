@@ -431,9 +431,11 @@ bool File::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 
     priv->error_code = ec;
 
-    if (!format_v(priv->error_string, fmt, ap)) {
+    auto result = format_v_safe(fmt, ap);
+    if (!result) {
         return false;
     }
+    priv->error_string = std::move(*result);
 
     priv->error_string += ": ";
     priv->error_string += ec.message();

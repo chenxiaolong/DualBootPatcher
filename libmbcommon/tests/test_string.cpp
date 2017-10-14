@@ -19,6 +19,8 @@
 
 #include <gtest/gtest.h>
 
+#include "mbcommon/error/error_handler.h"
+#include "mbcommon/error/type/ec_error.h"
 #include "mbcommon/string.h"
 
 TEST(StringTest, FormatString)
@@ -183,8 +185,8 @@ TEST(StringTest, InsertMemory)
         ASSERT_NE(buf, nullptr);
         memcpy(buf, it->source, buf_size);
 
-        ASSERT_EQ(mb::mem_insert(&buf, &buf_size, it->pos,
-                                 it->data, it->data_size), 0);
+        ASSERT_TRUE(!!mb::mem_insert(&buf, &buf_size, it->pos,
+                                     it->data, it->data_size));
 
         // Ensure target string matches
         ASSERT_EQ(buf_size, it->target_size);
@@ -199,7 +201,15 @@ TEST(StringTest, InsertMemoryOutOfRange)
     void *buf = nullptr;
     size_t buf_size = 0;
 
-    ASSERT_LT(mb::mem_insert(&buf, &buf_size, 1, "", 0), 0);
+    auto result = mb::mem_insert(&buf, &buf_size, 1, "", 0);
+    ASSERT_FALSE(result);
+
+    ASSERT_FALSE(mb::handle_errors(
+        result.take_error(),
+        [](const mb::ECError &err) {
+            ASSERT_EQ(err.error_code(), std::errc::invalid_argument);
+        }
+    ));
 }
 
 TEST(StringTest, InsertString)
@@ -230,7 +240,7 @@ TEST(StringTest, InsertString)
         char *buf = strdup(it->source);
         ASSERT_NE(buf, nullptr);
 
-        ASSERT_EQ(mb::str_insert(&buf, it->pos, it->data), 0);
+        ASSERT_TRUE(!!mb::str_insert(&buf, it->pos, it->data));
 
         // Ensure target string matches
         ASSERT_STREQ(buf, it->target);
@@ -284,8 +294,8 @@ TEST(StringTest, ReplaceMemory)
         memcpy(buf, it->source, buf_size);
 
         size_t matches;
-        ASSERT_EQ(mb::mem_replace(&buf, &buf_size, it->from, it->from_size,
-                                  it->to, it->to_size, it->n, &matches), 0);
+        ASSERT_TRUE(!!mb::mem_replace(&buf, &buf_size, it->from, it->from_size,
+                                      it->to, it->to_size, it->n, &matches));
 
         // Ensure target string matches
         ASSERT_EQ(buf_size, it->target_size);
@@ -337,7 +347,7 @@ TEST(StringTest, ReplaceString)
         ASSERT_NE(buf, nullptr);
 
         size_t matches;
-        ASSERT_EQ(mb::str_replace(&buf, it->from, it->to, it->n, &matches), 0);
+        ASSERT_TRUE(!!mb::str_replace(&buf, it->from, it->to, it->n, &matches));
 
         // Ensure target string matches
         ASSERT_STREQ(buf, it->target);

@@ -83,8 +83,8 @@ public:
         if (!util::copy_dir(_curr->fts_accpath, _target,
                             util::CopyFlag::CopyAttributes
                           | util::CopyFlag::CopyXattrs)) {
-            format(_error_msg, "%s: Failed to copy directory: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to copy directory: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return Action::Skip | Action::Fail;
         }
@@ -141,8 +141,8 @@ private:
         if (!util::copy_file(_curr->fts_accpath, _curtgtpath,
                              util::CopyFlag::CopyAttributes
                            | util::CopyFlag::CopyXattrs)) {
-            format(_error_msg, "%s: Failed to copy file: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to copy file: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }

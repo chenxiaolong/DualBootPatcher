@@ -27,6 +27,8 @@
 #include <cstdbool>
 #include <cstddef>
 
+#include "mbcommon/error/expected.h"
+
 // zu, zd, etc. are not supported until VS2015
 #if defined(_WIN32) && !__USE_MINGW_ANSI_STDIO
 #  define MB_PRIzd "Id"
@@ -48,11 +50,11 @@ namespace mb
 {
 
 // String formatting
-MB_PRINTF(2, 3)
-MB_EXPORT bool format(std::string &out, const char *fmt, ...);
+MB_PRINTF(1, 2)
+MB_EXPORT Expected<std::string> format_safe(const char *fmt, ...);
 MB_PRINTF(1, 2)
 MB_EXPORT std::string format(const char *fmt, ...);
-MB_EXPORT bool format_v(std::string &out, const char *fmt, va_list ap);
+MB_EXPORT Expected<std::string> format_v_safe(const char *fmt, va_list ap);
 MB_EXPORT std::string format_v(const char *fmt, va_list ap);
 
 // String starts with
@@ -84,16 +86,16 @@ MB_EXPORT bool ends_with_icase(const char *string, const std::string &suffix);
 MB_EXPORT bool ends_with_icase(const std::string &string, const std::string &suffix);
 
 // String insert
-MB_EXPORT int mem_insert(void **mem, size_t *mem_size, size_t pos,
-                         const void *data, size_t data_size);
-MB_EXPORT int str_insert(char **str, size_t pos, const char *s);
+MB_EXPORT Expected<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
+                                    const void *data, size_t data_size);
+MB_EXPORT Expected<void> str_insert(char **str, size_t pos, const char *s);
 
 // String replace
-MB_EXPORT int mem_replace(void **mem, size_t *mem_size,
-                          const void *from, size_t from_size,
-                          const void *to, size_t to_size,
-                          size_t n, size_t *n_replaced);
-MB_EXPORT int str_replace(char **str, const char *from, const char *to,
-                          size_t n, size_t *n_replaced);
+MB_EXPORT Expected<void> mem_replace(void **mem, size_t *mem_size,
+                                     const void *from, size_t from_size,
+                                     const void *to, size_t to_size,
+                                     size_t n, size_t *n_replaced);
+MB_EXPORT Expected<void> str_replace(char **str, const char *from, const char *to,
+                                     size_t n, size_t *n_replaced);
 
 }

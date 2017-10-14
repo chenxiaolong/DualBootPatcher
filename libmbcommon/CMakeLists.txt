@@ -15,7 +15,7 @@ if(NOT ANDROID)
     add_definitions(-D_FILE_OFFSET_BITS=64)
 endif()
 
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if(NOT MSVC)
     # mb::format() requires non-literal format string
     set_source_files_properties(
         src/string.cpp
@@ -23,7 +23,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         COMPILE_FLAGS
         "-Wno-format-nonliteral"
     )
+endif()
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set_source_files_properties(
         src/external/musl/memmem.c
         PROPERTIES
