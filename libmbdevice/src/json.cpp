@@ -19,6 +19,8 @@
 
 #include "mbdevice/json.h"
 
+#include <array>
+
 #include <cassert>
 #include <cstring>
 

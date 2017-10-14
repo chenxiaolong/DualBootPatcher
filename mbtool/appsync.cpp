@@ -781,9 +781,6 @@ static bool proxy_process(int fd, bool can_appsync)
             }
         }
     }
-
-    // Not reached
-    return true;
 }
 
 /*!

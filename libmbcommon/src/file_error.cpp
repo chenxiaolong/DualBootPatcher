@@ -19,6 +19,8 @@
 
 #include "mbcommon/file_error.h"
 
+#include <string>
+
 namespace mb
 {
 
@@ -30,13 +32,6 @@ struct FileErrorCategory : std::error_category
 
     std::error_condition
     default_error_condition(int code) const noexcept override;
-
-    //bool
-    //equivalent(int code,
-    //           const std::error_condition &condition) const noexcept override;
-    //bool
-    //equivalent(const std::error_code &code,
-    //           int condition) const noexcept override;
 };
 
 struct FileErrorCCategory : std::error_category

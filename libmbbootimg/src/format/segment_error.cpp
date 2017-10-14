@@ -19,6 +19,8 @@
 
 #include "mbbootimg/format/segment_error_p.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg

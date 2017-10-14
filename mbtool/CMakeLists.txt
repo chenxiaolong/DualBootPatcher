@@ -210,6 +210,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         LINK_SEARCH_START_STATIC ON
     )
 
+    android_link_allow_multiple_definitions(mbtool mbtool_recovery)
+
     target_link_libraries(
         miniadbd-static
         PRIVATE

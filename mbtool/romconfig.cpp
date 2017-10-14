@@ -19,6 +19,8 @@
 
 #include "romconfig.h"
 
+#include <cerrno>
+
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/filereadstream.h>

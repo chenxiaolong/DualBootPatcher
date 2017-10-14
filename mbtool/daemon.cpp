@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -185,8 +186,6 @@ static bool client_connection(int fd)
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
     }
-
-    return true;
 }
 
 static bool run_daemon()

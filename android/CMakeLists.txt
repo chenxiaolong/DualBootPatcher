@@ -69,8 +69,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DANDROID_PIE=ON
             -DANDROID_PLATFORM=android-17
-            -DANDROID_STL=gnustl_shared
-            #-DANDROID_STL=c++_shared
+            -DANDROID_STL=c++_shared
             -DMBP_BUILD_TARGET=android-app
         )
 
@@ -79,8 +78,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_PIE=OFF
             -DANDROID_PLATFORM=android-21
-            -DANDROID_STL=gnustl_static
-            #-DANDROID_STL=c++_static
+            -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
         )
 
@@ -250,28 +248,28 @@ if(MBP_TOP_LEVEL_BUILD)
         VERBATIM
     )
 elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
-    # Install gnustl. We do this in the android-app target because we have
+    # Install libc++. We do this in the android-app target because we have
     # access to the CMAKE_LINKER variable.
-    set(gnustl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/4.9/libs/${ANDROID_ABI}/libgnustl_shared.so")
-    set(gnustl_target "${CMAKE_CURRENT_BINARY_DIR}/libgnustl_shared.stripped.so")
+    set(stl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_shared.so")
+    set(stl_target "${CMAKE_CURRENT_BINARY_DIR}/libc++_shared.stripped.so")
 
     add_custom_command(
-        OUTPUT "${gnustl_target}"
-        COMMAND "${CMAKE_STRIP}" -s "${gnustl_source}" -o "${gnustl_target}"
-        COMMENT "Strip gnustl_shared library"
+        OUTPUT "${stl_target}"
+        COMMAND "${CMAKE_STRIP}" -s "${stl_source}" -o "${stl_target}"
+        COMMENT "Strip libc++_shared library"
         VERBATIM
     )
 
     add_custom_target(
-        strip_gnustl_shared
+        strip_stl_shared
         ALL
-        DEPENDS "${gnustl_target}"
+        DEPENDS "${stl_target}"
     )
 
     install(
-        FILES "${gnustl_target}"
+        FILES "${stl_target}"
         DESTINATION ${LIB_INSTALL_DIR}
-        RENAME libgnustl_shared.so
+        RENAME libc++_shared.so
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                     GROUP_EXECUTE             GROUP_READ
                     WORLD_EXECUTE             WORLD_READ

@@ -1480,8 +1480,6 @@ bool connection_version_3(int fd)
             return false;
         }
     }
-
-    return true;
 }
 
 }

@@ -19,6 +19,8 @@
 
 #include "mbbootimg/format/android_error.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg

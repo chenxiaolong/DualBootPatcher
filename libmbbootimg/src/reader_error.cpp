@@ -19,6 +19,8 @@
 
 #include "mbbootimg/reader_error.h"
 
+#include <string>
+
 namespace mb
 {
 namespace bootimg
