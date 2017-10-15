@@ -7,6 +7,10 @@
 
 #include <system_error>
 
+#ifdef _WIN32
+#  include <windef.h>
+#endif
+
 #include "mbcommon/error/error_info.h"
 
 namespace mb
@@ -29,6 +33,11 @@ public:
     std::error_code error_code() const;
 
     std::string message() const override;
+
+    static ECError from_errno(int error);
+#ifdef _WIN32
+    static ECError from_win32_error(DWORD error);
+#endif
 
 protected:
     std::error_code _ec;
