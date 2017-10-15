@@ -626,7 +626,6 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/tz
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/tzbak
       - /dev/block/mmcblk1
-      - /dev/block/mmcblk1p1
  
   boot_ui:
     supported: true
