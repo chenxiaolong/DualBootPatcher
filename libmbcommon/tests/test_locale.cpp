@@ -153,5 +153,5 @@ TEST(LocaleTest, ConvertInvalidUtf8String)
     constexpr char utf8_str[] = "\xe4\xbd\xa0\xe5\xa5";
     auto result = mb::utf8_to_wcs(utf8_str);
 
-    ASSERT_FALSE(!!result);
+    ASSERT_FALSE(result);
 }

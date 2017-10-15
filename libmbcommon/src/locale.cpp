@@ -144,9 +144,9 @@ done:
     return result;
 }
 
-static inline std::error_code get_system_error_code()
+static inline Error get_system_error()
 {
-    return {static_cast<int>(GetLastError()), std::system_category()};
+    return make_error<ECError>(ECError::from_win32_error(GetLastError()));
 }
 
 #else
@@ -271,17 +271,12 @@ done:
     return result;
 }
 
-static inline std::error_code get_system_error_code()
+static inline Error get_system_error()
 {
-    return {errno, std::system_category()};
+    return make_error<ECError>(ECError::from_errno(errno));
 }
 
 #endif
-
-static inline Error get_system_error()
-{
-    return make_error<ECError>(get_system_error_code());
-}
 
 Expected<std::wstring> mbs_to_wcs_n(const char *str, size_t len)
 {
