@@ -17,7 +17,7 @@ namespace
 TEST(ErrorTest, CheckSuccessState)
 {
     Error e = Error::success();
-    ASSERT_FALSE(!!e);
+    ASSERT_FALSE(e);
 }
 
 TEST(ErrorTest, CheckErrorState)

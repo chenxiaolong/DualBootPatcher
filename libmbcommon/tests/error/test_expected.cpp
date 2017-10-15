@@ -22,7 +22,7 @@ TEST(ExpectedTest, CheckExpectedInSuccessState)
 TEST(ExpectedTest, CheckExpectedInErrorState)
 {
     Expected<int> a = make_error<CustomError>(7);
-    ASSERT_FALSE(!!a);
+    ASSERT_FALSE(a);
     auto error = a.take_error();
     ASSERT_TRUE(!!error);
 
@@ -52,7 +52,7 @@ TEST(ExpectedTest, CheckStoringVoidType)
 TEST(ExpectedTest, CheckStoringVoidTypeWithError)
 {
     Expected<void> a = make_error<CustomError>(7);
-    ASSERT_FALSE(!!a);
+    ASSERT_FALSE(a);
     auto error = a.take_error();
     ASSERT_TRUE(!!error);
 

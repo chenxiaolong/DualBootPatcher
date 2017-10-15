@@ -47,7 +47,7 @@ TEST(ExpectedHandlerTest, HandleExpectedUnhandledError)
         }
     );
 
-    ASSERT_FALSE(!!val_or_err);
+    ASSERT_FALSE(val_or_err);
     auto err = val_or_err.take_error();
     ASSERT_TRUE(err.is_a<CustomError>());
 }
