@@ -118,6 +118,7 @@ foreach(variant ${variants})
         target_sources(
             ${lib_target}
             PRIVATE
+            src/error/win32_error.cpp
             src/file/win32.cpp
             src/external/gnulib/getdelim.c
             src/external/gnulib/getline.c
