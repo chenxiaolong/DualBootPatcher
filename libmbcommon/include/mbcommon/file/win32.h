@@ -43,9 +43,9 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32File)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Win32File)
 
-    bool open(HANDLE handle, bool owned, bool append);
-    bool open(const std::string &filename, FileOpenMode mode);
-    bool open(const std::wstring &filename, FileOpenMode mode);
+    Expected<void> open(HANDLE handle, bool owned, bool append);
+    Expected<void> open(const std::string &filename, FileOpenMode mode);
+    Expected<void> open(const std::wstring &filename, FileOpenMode mode);
 
 protected:
     /*! \cond INTERNAL */
@@ -58,15 +58,12 @@ protected:
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+    Expected<void> on_open() override;
+    Expected<void> on_close() override;
+    Expected<size_t> on_read(void *buf, size_t size) override;
+    Expected<size_t> on_write(const void *buf, size_t size) override;
+    Expected<uint64_t> on_seek(int64_t offset, int whence) override;
+    Expected<void> on_truncate(uint64_t size) override;
 };
 
 }

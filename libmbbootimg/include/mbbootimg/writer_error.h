@@ -37,6 +37,9 @@ enum class WriterError
     InvalidFormatName       = 21,
     NoFormatSelected        = 22,
     NoFormatRegistered      = 23,
+
+    // Temporary error until we switch to Expected<T>
+    FileError               = 30,
 };
 
 MB_EXPORT std::error_code make_error_code(WriterError e);

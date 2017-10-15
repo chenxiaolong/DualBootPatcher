@@ -40,51 +40,58 @@ int main(int argc, char *argv[])
     mb::StandardFile output_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (!input_file.open(input_path, mb::FileOpenMode::READ_ONLY)) {
+    auto open_ret = input_file.open(input_path, mb::FileOpenMode::READ_ONLY);
+    if (!open_ret) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_path, input_file.error_string().c_str());
+                input_path, mb::to_string(open_ret.take_error()).c_str());
         return EXIT_FAILURE;
     }
 
-    if (!sparse_file.open(&input_file)) {
+    open_ret = sparse_file.open(&input_file);
+    if (!open_ret) {
         fprintf(stderr, "%s: %s\n",
-                input_path, sparse_file.error_string().c_str());
+                input_path, mb::to_string(open_ret.take_error()).c_str());
         return EXIT_FAILURE;
     }
 
-    if (!output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY)) {
+    open_ret = output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY);
+    if (!open_ret) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_path, output_file.error_string().c_str());
+                output_path, mb::to_string(open_ret.take_error()).c_str());
         return EXIT_FAILURE;
     }
 
-    size_t n_read;
     char buf[10240];
-    bool ret;
-    while ((ret = sparse_file.read(buf, sizeof(buf), n_read)) && n_read > 0) {
-        char *ptr = buf;
-        size_t n_written;
 
-        while (n_read > 0) {
-            if (!output_file.write(buf, n_read, n_written)) {
+    while (true) {
+        auto n_read = sparse_file.read(buf, sizeof(buf));
+        if (!n_read) {
+            fprintf(stderr, "%s: Failed to read file: %s\n",
+                    input_path, mb::to_string(n_read.take_error()).c_str());
+            return EXIT_FAILURE;
+        } else if (*n_read == 0) {
+            break;
+        }
+
+        char *ptr = buf;
+
+        while (*n_read > 0) {
+            auto n_written = output_file.write(buf, *n_read);
+            if (!n_written) {
                 fprintf(stderr, "%s: Failed to write file: %s\n",
-                        output_path, output_file.error_string().c_str());
+                        output_path, mb::to_string(n_written.take_error()).c_str());
                 return EXIT_FAILURE;
             }
-            n_read -= n_written;
-            ptr += n_written;
+
+            *n_read -= *n_written;
+            ptr += *n_written;
         }
     }
 
-    if (!ret) {
-        fprintf(stderr, "%s: Failed to read file: %s\n",
-                input_path, sparse_file.error_string().c_str());
-        return EXIT_FAILURE;
-    }
-
-    if (!output_file.close()) {
+    auto close_ret = output_file.close();
+    if (!close_ret) {
         fprintf(stderr, "%s: Failed to close file: %s\n",
-                output_path, output_file.error_string().c_str());
+                output_path, mb::to_string(close_ret.take_error()).c_str());
         return EXIT_FAILURE;
     }
 

@@ -41,6 +41,9 @@ enum class ReaderError
     FormatAlreadyEnabled    = 25,
     NoFormatsRegistered     = 26,
     UnknownFileFormat       = 27,
+
+    // Temporary error until we switch to Expected<T>
+    FileError               = 30,
 };
 
 MB_EXPORT std::error_code make_error_code(ReaderError e);

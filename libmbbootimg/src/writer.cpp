@@ -360,14 +360,14 @@ int Writer::open_filename(const std::string &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC));
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::READ_WRITE_TRUNC);
 
     // Open in read/write mode since some formats need to reread the file
-    if (!file->is_open()) {
-        set_error(file->error(),
+    if (!ret) {
+        set_error(WriterError::FileError,
                   "Failed to open for writing: %s",
-                  file->error_string().c_str());
+                  to_string(ret.take_error()).c_str());
         return RET_FAILED;
     }
 
@@ -388,14 +388,14 @@ int Writer::open_filename_w(const std::wstring &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::READ_WRITE_TRUNC));
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::READ_WRITE_TRUNC);
 
     // Open in read/write mode since some formats need to reread the file
-    if (!file->is_open()) {
-        set_error(file->error(),
+    if (!ret) {
+        set_error(WriterError::FileError,
                   "Failed to open for writing: %s",
-                  file->error_string().c_str());
+                  to_string(ret.take_error()).c_str());
         return RET_FAILED;
     }
 

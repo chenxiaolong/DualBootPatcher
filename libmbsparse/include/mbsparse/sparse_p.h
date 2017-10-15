@@ -94,7 +94,7 @@ struct ChunkInfo
     uint32_t fill_val;
 };
 
-enum class Seekability
+enum class Seekability : uint8_t
 {
     CAN_SEEK,
     CAN_SKIP,
@@ -113,24 +113,25 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFilePrivate)
 
-    bool wread(void *buf, size_t size);
-    bool wseek(int64_t offset);
-    bool skip_bytes(uint64_t bytes);
+    Expected<void> wread(void *buf, size_t size);
+    Expected<void> wseek(int64_t offset);
+    Expected<void> skip_bytes(uint64_t bytes);
 
-    bool process_sparse_header(const void *preread_data, size_t preread_size);
+    Expected<void> process_sparse_header(const void *preread_data,
+                                         size_t preread_size);
 
-    bool process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                           ChunkInfo &chunk_out);
-    bool process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                             ChunkInfo &chunk_out);
-    bool process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                       ChunkInfo &chunk_out);
+    Expected<ChunkInfo>
+    process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    Expected<ChunkInfo>
+    process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    Expected<ChunkInfo>
+    process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    Expected<ChunkInfo>
+    process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    Expected<ChunkInfo>
+    process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
 
-    bool move_to_chunk(uint64_t offset);
+    Expected<void> move_to_chunk(uint64_t offset);
 
     File *file;
     Seekability seekability;

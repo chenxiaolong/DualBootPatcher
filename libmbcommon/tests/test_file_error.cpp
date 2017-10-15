@@ -19,35 +19,36 @@
 
 #include <gmock/gmock.h>
 
+#include "mbcommon/error/error.h"
+#include "mbcommon/error/error_handler.h"
 #include "mbcommon/file_error.h"
 
-#define TEST_EQUALITY(A, B) \
-    do { \
-        ASSERT_EQ((A), (B)); \
-        ASSERT_EQ((B), (A)); \
-    } while (0)
 
-TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
+using namespace mb;
+
+TEST(FileErrorTest, CheckRoundTrip)
 {
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
-                  mb::FileErrorC::InvalidArgument);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::CannotConvertEncoding),
-                  mb::FileErrorC::InvalidArgument);
+    auto error = make_error<FileError>(FileErrorType::InvalidState);
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::InvalidState),
-                  mb::FileErrorC::InvalidState);
+    ASSERT_FALSE(handle_errors(
+        std::move(error),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_EQ(err.message(), "invalid state");
+        }
+    ));
+}
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedRead),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedWrite),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedSeek),
-                  mb::FileErrorC::Unsupported);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::UnsupportedTruncate),
-                  mb::FileErrorC::Unsupported);
+TEST(FileErrorTest, CheckRoundTripWithDetails)
+{
+    auto error = make_error<FileError>(FileErrorType::InvalidState, "foo bar");
 
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::IntegerOverflow),
-                  mb::FileErrorC::InternalError);
-    TEST_EQUALITY(mb::make_error_code(mb::FileError::BadFileFormat),
-                  mb::FileErrorC::InternalError);
+    ASSERT_FALSE(handle_errors(
+        std::move(error),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_EQ(err.details(), "foo bar");
+            ASSERT_EQ(err.message(), "invalid state: foo bar");
+        }
+    ));
 }

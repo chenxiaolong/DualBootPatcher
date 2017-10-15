@@ -56,6 +56,8 @@
 #endif
 
 // libmbcommon
+#include "mbcommon/error/error_handler.h"
+#include "mbcommon/error/type/ec_error.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
 
@@ -78,6 +80,21 @@ struct context
     std::mutex mutex;
 };
 
+static mb::Error extract_errno(mb::Error error, int &errno_value)
+{
+    return mb::handle_errors(
+        std::move(error),
+        [&errno_value](std::unique_ptr<mb::ECError> err) -> mb::Error {
+            auto ec = err->error_code();
+            if (ec.category() == std::generic_category()
+                    || ec.category() == std::system_category()) {
+                errno_value = ec.value();
+            }
+            return {std::move(err)};
+        }
+    );
+}
+
 /*!
  * \brief Open callback for fuse
  */
@@ -94,24 +111,31 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    if (!ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
-        fprintf(stderr, "%s: Failed to open file: %s\n",
-                source_fd_path, ctx->source_file.error_string().c_str());
-        auto error = ctx->source_file.error();
+    auto ret = ctx->source_file.open(source_fd_path,
+                                     mb::FileOpenMode::READ_ONLY);
+    if (!ret) {
         delete ctx;
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+
+        int fuse_ret = EIO;
+        auto error = extract_errno(ret.take_error(), fuse_ret);
+
+        fprintf(stderr, "%s: Failed to open file: %s\n",
+                source_fd_path, mb::to_string(std::move(error)).c_str());
+
+        return -fuse_ret;
     }
 
-    if (!ctx->sparse_file.open(&ctx->source_file)) {
-        fprintf(stderr, "%s: Failed to open sparse file: %s\n",
-                source_fd_path, ctx->sparse_file.error_string().c_str());
-        auto error = ctx->sparse_file.error();
+    ret = ctx->sparse_file.open(&ctx->source_file);
+    if (!ret) {
         delete ctx;
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+
+        int fuse_ret = EIO;
+        auto error = extract_errno(ret.take_error(), fuse_ret);
+
+        fprintf(stderr, "%s: Failed to open sparse file: %s\n",
+                source_fd_path, mb::to_string(std::move(error)).c_str());
+
+        return -fuse_ret;
     }
 
     fi->fh = reinterpret_cast<uint64_t>(ctx);
@@ -142,22 +166,21 @@ static int fuse_read_locked(context *ctx, char *buf, size_t size,
                             OFF_T offset)
 {
     // Seek to position
-    if (!ctx->sparse_file.seek(offset, SEEK_SET, nullptr)) {
-        auto error = ctx->sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+    auto seek_ret = ctx->sparse_file.seek(offset, SEEK_SET);
+    if (!seek_ret) {
+        int fuse_ret = EIO;
+        auto error = extract_errno(seek_ret.take_error(), fuse_ret);
+        return -fuse_ret;
     }
 
-    size_t n;
-    if (!ctx->sparse_file.read(buf, size, n)) {
-        auto error = ctx->sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+    auto n = ctx->sparse_file.read(buf, size);
+    if (!n) {
+        int fuse_ret = EIO;
+        auto error = extract_errno(n.take_error(), fuse_ret);
+        return -fuse_ret;
     }
 
-    return static_cast<int>(n);
+    return static_cast<int>(*n);
 }
 
 /*!
@@ -195,22 +218,26 @@ static int get_sparse_file_size()
     mb::StandardFile source_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (!source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
+    auto ret = source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY);
+    if (!ret) {
+        int fuse_ret = EIO;
+        auto error = extract_errno(ret.take_error(), fuse_ret);
+
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                source_fd_path, source_file.error_string().c_str());
-        auto error = source_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+                source_fd_path, mb::to_string(std::move(error)).c_str());
+
+        return -fuse_ret;
     }
 
-    if (!sparse_file.open(&source_file)) {
+    ret = sparse_file.open(&source_file);
+    if (!ret) {
+        int fuse_ret = EIO;
+        auto error = extract_errno(ret.take_error(), fuse_ret);
+
         fprintf(stderr, "%s: Failed to open sparse file: %s\n",
-                source_fd_path, sparse_file.error_string().c_str());
-        auto error = sparse_file.error();
-        return (error.category() == std::generic_category()
-                || error.category() == std::system_category())
-                ? -error.value() : -EIO;
+                source_fd_path, mb::to_string(std::move(error)).c_str());
+
+        return -fuse_ret;
     }
 
     sparse_size = sparse_file.size();

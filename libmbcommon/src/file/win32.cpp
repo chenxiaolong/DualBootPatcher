@@ -24,16 +24,15 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error/error.h"
+#include "mbcommon/error/error_list.h"
+#include "mbcommon/error/type/ec_error.h"
+#include "mbcommon/file/win32_p.h"
+#include "mbcommon/file_error.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
 
-#include "mbcommon/file/win32_p.h"
-
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
-
-#define GET_LAST_ERROR() \
-    static_cast<int>(GetLastError())
-#define WIN32_ERROR_CODE() \
-    std::error_code(GET_LAST_ERROR(), std::system_category())
 
 /*!
  * \file mbcommon/file/win32.h
@@ -277,28 +276,28 @@ Win32File::Win32File(Win32FilePrivate *priv,
                      HANDLE handle, bool owned, bool append)
     : File(priv)
 {
-    open(handle, owned, append);
+    (void) open(handle, owned, append);
 }
 
 Win32File::Win32File(Win32FilePrivate *priv,
                      const std::string &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 Win32File::Win32File(Win32FilePrivate *priv,
                      const std::wstring &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 Win32File::~Win32File()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -315,9 +314,9 @@ Win32File::~Win32File()
  * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
  * \param append Whether append mode should be enabled
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool Win32File::open(HANDLE handle, bool owned, bool append)
+Expected<void> Win32File::open(HANDLE handle, bool owned, bool append)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -336,18 +335,19 @@ bool Win32File::open(HANDLE handle, bool owned, bool append)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool Win32File::open(const std::string &filename, FileOpenMode mode)
+Expected<void> Win32File::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
         // Convert filename to platform-native encoding
         auto converted = mbs_to_wcs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
+            return join_errors(make_error<FileError>(
+                    FileErrorType::CannotConvertEncoding,
+                    "Failed to convert MBS filename to WCS"),
+                    converted.take_error());
         }
         auto native_filename = *converted;
 
@@ -384,9 +384,9 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
+Expected<void> Win32File::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -415,7 +415,7 @@ bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-bool Win32File::on_open()
+Expected<void> Win32File::on_open()
 {
     MB_PRIVATE(Win32File);
 
@@ -424,33 +424,32 @@ bool Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(WIN32_ERROR_CODE(), "Failed to open file");
-            return false;
+            return make_error<ECError>(
+                    ECError::from_win32_error(GetLastError()));
         }
     }
 
-    return true;
+    return {};
 }
 
-bool Win32File::on_close()
+Expected<void> Win32File::on_close()
 {
     MB_PRIVATE(Win32File);
 
-    bool ret = true;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        priv->clear();
+    });
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(WIN32_ERROR_CODE(), "Failed to close file");
-        ret = false;
+        return make_error<ECError>(ECError::from_win32_error(GetLastError()));
     }
 
-    // Reset to allow opening another file
-    priv->clear();
-
-    return ret;
+    return {};
 }
 
-bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
+Expected<size_t> Win32File::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(Win32File);
 
@@ -469,15 +468,13 @@ bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to read file");
-        return false;
+        return make_error<ECError>(ECError::from_win32_error(GetLastError()));
     }
 
-    bytes_read = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
+Expected<size_t> Win32File::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(Win32File);
 
@@ -486,9 +483,9 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     // We have to seek manually in append mode because the Win32 API has no
     // native append mode.
     if (priv->append) {
-        uint64_t pos;
-        if (!on_seek(0, SEEK_END, pos)) {
-            return false;
+        auto pos = on_seek(0, SEEK_END);
+        if (!pos) {
+            return pos.take_error();
         }
     }
 
@@ -505,15 +502,13 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to write file");
-        return false;
+        return make_error<ECError>(ECError::from_win32_error(GetLastError()));
     }
 
-    bytes_written = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+Expected<uint64_t> Win32File::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(Win32File);
 
@@ -545,47 +540,51 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to seek file");
-        return false;
+        return make_error<ECError>(ECError::from_win32_error(GetLastError()));
     }
 
-    new_offset = static_cast<uint64_t>(new_pos.QuadPart);
-    return true;
+    return static_cast<uint64_t>(new_pos.QuadPart);
 }
 
-bool Win32File::on_truncate(uint64_t size)
+Expected<void> Win32File::on_truncate(uint64_t size)
 {
     MB_PRIVATE(Win32File);
 
-    bool ret = true;
-    uint64_t current_pos;
-    uint64_t temp;
-
     // Get current position
-    if (!on_seek(0, SEEK_CUR, current_pos)) {
-        return false;
+    auto current_pos = on_seek(0, SEEK_CUR);
+    if (!current_pos) {
+        return current_pos.take_error();
     }
 
     // Move to new position
-    if (!on_seek(static_cast<int64_t>(size), SEEK_SET, temp)) {
-        return false;
+    auto temp = on_seek(static_cast<int64_t>(size), SEEK_SET);
+    if (!temp) {
+        return temp.take_error();
     }
+
+    Error error = Error::success();
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(WIN32_ERROR_CODE(), "Failed to set EOF position");
-        ret = false;
+        error = make_error<ECError>(ECError::from_win32_error(GetLastError()));
     }
 
     // Move back to initial position
-    if (!on_seek(static_cast<int64_t>(current_pos), SEEK_SET, temp)) {
+    temp = on_seek(static_cast<int64_t>(*current_pos), SEEK_SET);
+    if (!temp) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
         set_fatal(true);
-        ret = false;
+        if (!error) {
+            error = temp.take_error();
+        }
     }
 
-    return ret;
+    if (error) {
+        return error;
+    }
+
+    return {};
 }
 
 }

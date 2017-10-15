@@ -46,10 +46,6 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
 
     FileState state;
-
-    // Error
-    std::error_code error_code;
-    std::string error_string;
 };
 
 }

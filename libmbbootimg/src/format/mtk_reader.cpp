@@ -71,23 +71,24 @@ static int read_mtk_header(Reader &reader, File &file,
                            uint64_t offset, MtkHeader &mtkhdr_out)
 {
     MtkHeader mtkhdr;
-    size_t n;
 
-    if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
-        reader.set_error(file.error(),
+    auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
+    if (!seek_ret) {
+        reader.set_error(ReaderError::FileError,
                          "Failed to seek to MTK header at %" PRIu64 ": %s",
-                         offset, file.error_string().c_str());
+                         offset, to_string(seek_ret.take_error()).c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, &mtkhdr, sizeof(mtkhdr), n)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, &mtkhdr, sizeof(mtkhdr));
+    if (!n) {
+        reader.set_error(ReaderError::FileError,
                          "Failed to read MTK header: %s",
-                         file.error_string().c_str());
+                         to_string(n.take_error()).c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (n != sizeof(MtkHeader)
+    if (*n != sizeof(MtkHeader)
             || memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
         reader.set_error(make_error_code(MtkError::MtkHeaderNotFound),
                          "MTK header not found at %" PRIu64, offset);

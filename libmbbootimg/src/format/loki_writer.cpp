@@ -180,10 +180,11 @@ int LokiFormatWriter::write_header(File &file, const Header &header)
     if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
-    if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {
-        _writer.set_error(file.error(),
+    auto seek_ret = file.seek(_hdr.page_size, SEEK_SET);
+    if (!seek_ret) {
+        _writer.set_error(WriterError::FileError,
                           "Failed to seek to first page: %s",
-                          file.error_string().c_str());
+                          to_string(seek_ret.take_error()).c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
@@ -287,26 +288,24 @@ int LokiFormatWriter::finish_entry(File &file)
 
 int LokiFormatWriter::close(File &file)
 {
-    int ret;
-    size_t n;
-
     if (_file_size) {
-        if (!file.seek(static_cast<int64_t>(*_file_size), SEEK_SET, nullptr)) {
-            _writer.set_error(file.error(),
+        auto seek_ret = file.seek(static_cast<int64_t>(*_file_size), SEEK_SET);
+        if (!seek_ret) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to seek to end of file: %s",
-                              file.error_string().c_str());
+                              to_string(seek_ret.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     } else {
-        uint64_t file_size;
-        if (!file.seek(0, SEEK_CUR, &file_size)) {
-            _writer.set_error(file.error(),
+        auto file_size = file.seek(0, SEEK_CUR);
+        if (!file_size) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to get file offset: %s",
-                              file.error_string().c_str());
+                              to_string(file_size.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        _file_size = file_size;
+        _file_size = *file_size;
     }
 
     auto const *swentry = _seg.entry();
@@ -314,10 +313,11 @@ int LokiFormatWriter::close(File &file)
     // If successful, finish up the boot image
     if (!swentry) {
         // Truncate to set size
-        if (!file.truncate(*_file_size)) {
-            _writer.set_error(file.error(),
+        auto truncate_ret = file.truncate(*_file_size);
+        if (!truncate_ret) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to truncate file: %s",
-                              file.error_string().c_str());
+                              to_string(truncate_ret.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
@@ -335,23 +335,25 @@ int LokiFormatWriter::close(File &file)
         android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
-        if (!file.seek(0, SEEK_SET, nullptr)) {
-            _writer.set_error(file.error(),
+        auto seek_ret = file.seek(0, SEEK_SET);
+        if (!seek_ret) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to seek to beginning: %s",
-                              file.error_string().c_str());
+                              to_string(seek_ret.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
-        if (!file_write_fully(file, &hdr, sizeof(hdr), n) || n != sizeof(hdr)) {
-            _writer.set_error(file.error(),
+        auto n = file_write_fully(file, &hdr, sizeof(hdr));
+        if (!n || *n != sizeof(hdr)) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to write header: %s",
-                              file.error_string().c_str());
+                              to_string(n.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Patch with Loki
-        ret = _loki_patch_file(_writer, file, _aboot.data(), _aboot.size());
+        int ret = _loki_patch_file(_writer, file, _aboot.data(), _aboot.size());
         if (ret != RET_OK) {
             return ret;
         }

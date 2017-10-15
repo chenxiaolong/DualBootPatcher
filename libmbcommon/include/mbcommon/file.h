@@ -28,7 +28,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "mbcommon/file_error.h"
+#include "mbcommon/error/expected.h"
 
 namespace mb
 {
@@ -48,25 +48,18 @@ public:
     File & operator=(File &&rhs) noexcept;
 
     // File close
-    bool close();
+    Expected<void> close();
 
     // File operations
-    bool read(void *buf, size_t size, size_t &bytes_read);
-    bool write(const void *buf, size_t size, size_t &bytes_written);
-    bool seek(int64_t offset, int whence, uint64_t *new_offset);
-    bool truncate(uint64_t size);
+    Expected<size_t> read(void *buf, size_t size);
+    Expected<size_t> write(const void *buf, size_t size);
+    Expected<uint64_t> seek(int64_t offset, int whence);
+    Expected<void> truncate(uint64_t size);
 
     // File state
     bool is_open();
     bool is_fatal();
     bool set_fatal(bool fatal);
-
-    // Error handling functions
-    std::error_code error();
-    std::string error_string();
-    MB_PRINTF(3, 4)
-    bool set_error(std::error_code ec, const char *fmt, ...);
-    bool set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 protected:
     /*! \cond INTERNAL */
@@ -74,14 +67,14 @@ protected:
     /*! \endcond */
 
     // File open
-    bool open();
+    Expected<void> open();
 
-    virtual bool on_open();
-    virtual bool on_close();
-    virtual bool on_read(void *buf, size_t size, size_t &bytes_read);
-    virtual bool on_write(const void *buf, size_t size, size_t &bytes_written);
-    virtual bool on_seek(int64_t offset, int whence, uint64_t &new_offset);
-    virtual bool on_truncate(uint64_t size);
+    virtual Expected<void> on_open();
+    virtual Expected<void> on_close();
+    virtual Expected<size_t> on_read(void *buf, size_t size);
+    virtual Expected<size_t> on_write(const void *buf, size_t size);
+    virtual Expected<uint64_t> on_seek(int64_t offset, int whence);
+    virtual Expected<void> on_truncate(uint64_t size);
 
     std::unique_ptr<FilePrivate> _priv_ptr;
 };

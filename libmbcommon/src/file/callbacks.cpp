@@ -20,6 +20,7 @@
 #include "mbcommon/file/callbacks.h"
 
 #include "mbcommon/file/callbacks_p.h"
+#include "mbcommon/finally.h"
 
 /*!
  * \file mbcommon/file/callbacks.h
@@ -36,12 +37,13 @@ namespace mb
  *
  * \brief File open callback
  *
- * \note If a failure error code is returned. The #CallbackFile::CloseCb
- *       callback, if registered, will be called to clean up the resources.
+ * \note If an error is returned. The #CallbackFile::CloseCb callback, if
+ *       registered, will be called to clean up the resources.
  *
  * \param file File handle
  *
- * \return Return whether the file was successfully opened
+ * \return Return nothing if the file was successfully opened. Otherwise, return
+ *         an error.
  */
 
 /*!
@@ -60,7 +62,8 @@ namespace mb
  *
  * \param file File handle
  *
- * \return Return whether the file was successfully closed
+ * \return Return nothing if the file was successfully closed. Otherwise, return
+ *         an error.
  */
 
 /*!
@@ -71,10 +74,9 @@ namespace mb
  * \param[in] file File handle
  * \param[out] buf Buffer to read into
  * \param[in] size Buffer size
- * \param[out] bytes_read Output number of bytes that were read. 0 indicates end
- *                        of file.
  *
- * \return Return whether some bytes were read or EOF was reached
+ * \return Return the number of bytes read if some were successfully read or EOF
+ *         was reached. Otherwise, return an error.
  */
 
 /*!
@@ -82,12 +84,12 @@ namespace mb
  *
  * \brief File write callback
  *
- * \param[in] file File handle
- * \param[in] buf Buffer to write from
- * \param[in] size Buffer size
- * \param[out] bytes_written Output number of bytes that were written.
+ * \param file File handle
+ * \param buf Buffer to write from
+ * \param size Buffer size
  *
- * \return Return whether some bytes were successfully written
+ * \return Return the number of bytes written if some were successfully written.
+ *         Otherwise, return an error.
  */
 
 /*!
@@ -95,12 +97,12 @@ namespace mb
  *
  * \brief File seek callback
  *
- * \param[in] file File handle
- * \param[in] offset File position offset
- * \param[in] whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
- * \param[out] new_offset Output new file offset
+ * \param file File handle
+ * \param offset File position offset
+ * \param whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
  *
- * \return Return whether the file position was successfully set
+ * \return Return the new file offset if the file position was successfully set.
+ *         Otherwise, return an error.
  */
 
 /*!
@@ -113,7 +115,8 @@ namespace mb
  * \param file File handle
  * \param size New size of file
  *
- * \return Return whether the file size was successfully changed
+ * \return Return nothing if file size was successfully changed. Otherwise,
+ *         return an error.
  */
 
 /*! \cond INTERNAL */
@@ -201,14 +204,15 @@ CallbackFile::CallbackFile(CallbackFilePrivate *priv,
                            void *userdata)
     : File(priv)
 {
-    open(open_cb, close_cb, read_cb, write_cb, seek_cb, truncate_cb, userdata);
+    (void) open(open_cb, close_cb, read_cb, write_cb, seek_cb, truncate_cb,
+                userdata);
 }
 
 /*! \endcond */
 
 CallbackFile::~CallbackFile()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -225,13 +229,13 @@ CallbackFile::~CallbackFile()
  * \param truncate_cb File truncate callback
  * \param userdata Data pointer to pass to callbacks
  */
-bool CallbackFile::open(OpenCb open_cb,
-                        CloseCb close_cb,
-                        ReadCb read_cb,
-                        WriteCb write_cb,
-                        SeekCb seek_cb,
-                        TruncateCb truncate_cb,
-                        void *userdata)
+Expected<void> CallbackFile::open(OpenCb open_cb,
+                                  CloseCb close_cb,
+                                  ReadCb read_cb,
+                                  WriteCb write_cb,
+                                  SeekCb seek_cb,
+                                  TruncateCb truncate_cb,
+                                  void *userdata)
 {
     MB_PRIVATE(CallbackFile);
 
@@ -250,7 +254,7 @@ bool CallbackFile::open(OpenCb open_cb,
     return File::open();
 }
 
-bool CallbackFile::on_open()
+Expected<void> CallbackFile::on_open()
 {
     MB_PRIVATE(CallbackFile);
 
@@ -261,58 +265,56 @@ bool CallbackFile::on_open()
     }
 }
 
-bool CallbackFile::on_close()
+Expected<void> CallbackFile::on_close()
 {
     MB_PRIVATE(CallbackFile);
 
-    bool ret;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        priv->clear();
+    });
 
     if (priv->close_cb) {
-        ret = priv->close_cb(*this, priv->userdata);
+        return priv->close_cb(*this, priv->userdata);
     } else {
-        ret = File::on_close();
+        return File::on_close();
     }
-
-    // Reset to allow opening another file
-    priv->clear();
-
-    return ret;
 }
 
-bool CallbackFile::on_read(void *buf, size_t size, size_t &bytes_read)
+Expected<size_t> CallbackFile::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(CallbackFile);
 
     if (priv->read_cb) {
-        return priv->read_cb(*this, priv->userdata, buf, size, bytes_read);
+        return priv->read_cb(*this, priv->userdata, buf, size);
     } else {
-        return File::on_read(buf, size, bytes_read);
+        return File::on_read(buf, size);
     }
 }
 
-bool CallbackFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+Expected<size_t> CallbackFile::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(CallbackFile);
 
     if (priv->write_cb) {
-        return priv->write_cb(*this, priv->userdata, buf, size, bytes_written);
+        return priv->write_cb(*this, priv->userdata, buf, size);
     } else {
-        return File::on_write(buf, size, bytes_written);
+        return File::on_write(buf, size);
     }
 }
 
-bool CallbackFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+Expected<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(CallbackFile);
 
     if (priv->seek_cb) {
-        return priv->seek_cb(*this, priv->userdata, offset, whence, new_offset);
+        return priv->seek_cb(*this, priv->userdata, offset, whence);
     } else {
-        return File::on_seek(offset, whence, new_offset);
+        return File::on_seek(offset, whence);
     }
 }
 
-bool CallbackFile::on_truncate(uint64_t size)
+Expected<void> CallbackFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(CallbackFile);
 

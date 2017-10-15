@@ -13,7 +13,12 @@ foreach(variant ${variants})
     string(TOUPPER ${variant} uvariant)
 
     # Build library
-    add_library(${lib_target} ${uvariant} src/sparse.cpp)
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/sparse.cpp
+        src/sparse_error.cpp
+    )
 
     # Includes
     target_include_directories(

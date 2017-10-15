@@ -24,116 +24,71 @@
 namespace mb
 {
 
-struct FileErrorCategory : std::error_category
+char FileError::ID = 0;
+
+FileError::FileError(FileErrorType type)
+    : _type(type)
 {
-    const char * name() const noexcept override;
-
-    std::string message(int ev) const override;
-
-    std::error_condition
-    default_error_condition(int code) const noexcept override;
-};
-
-struct FileErrorCCategory : std::error_category
-{
-    const char * name() const noexcept override;
-
-    std::string message(int ev) const override;
-};
-
-
-const char * FileErrorCategory::name() const noexcept
-{
-    return "file_error";
 }
 
-std::string FileErrorCategory::message(int ev) const
+FileError::FileError(FileErrorType type, std::string details)
+    : _type(type), _details(std::move(details))
 {
-    switch (static_cast<FileError>(ev)) {
-    case FileError::ArgumentOutOfRange:
-        return "argument out of range";
-    case FileError::CannotConvertEncoding:
-        return "cannot convert string encoding";
-    case FileError::InvalidState:
-        return "invalid state";
-    case FileError::UnsupportedRead:
-        return "read not supported";
-    case FileError::UnsupportedWrite:
-        return "write not supported";
-    case FileError::UnsupportedSeek:
-        return "seek not supported";
-    case FileError::UnsupportedTruncate:
-        return "truncate not supported";
-    case FileError::IntegerOverflow:
-        return "integer overflowed";
-    case FileError::BadFileFormat:
-        return "bad file format";
+}
+
+std::string FileError::message() const
+{
+    std::string result;
+
+    switch (_type) {
+    case FileErrorType::ArgumentOutOfRange:
+        result = "argument out of range";
+        break;
+    case FileErrorType::CannotConvertEncoding:
+        result = "cannot convert string encoding";
+        break;
+    case FileErrorType::InvalidState:
+        result = "invalid state";
+        break;
+    case FileErrorType::ObjectMoved:
+        result = "object was moved";
+        break;
+    case FileErrorType::UnsupportedRead:
+        result = "read not supported";
+        break;
+    case FileErrorType::UnsupportedWrite:
+        result = "write not supported";
+        break;
+    case FileErrorType::UnsupportedSeek:
+        result = "seek not supported";
+        break;
+    case FileErrorType::UnsupportedTruncate:
+        result = "truncate not supported";
+        break;
+    case FileErrorType::IntegerOverflow:
+        result = "integer overflowed";
+        break;
     default:
-        return "(unknown file error)";
+        result = "(unknown file error)";
+        break;
     }
-}
 
-std::error_condition
-FileErrorCategory::default_error_condition(int code) const noexcept
-{
-    switch (static_cast<FileError>(code)) {
-    case FileError::ArgumentOutOfRange:
-    case FileError::CannotConvertEncoding:
-        return FileErrorC::InvalidArgument;
-    case FileError::InvalidState:
-        return FileErrorC::InvalidState;
-    case FileError::UnsupportedRead:
-    case FileError::UnsupportedWrite:
-    case FileError::UnsupportedSeek:
-    case FileError::UnsupportedTruncate:
-        return FileErrorC::Unsupported;
-    default:
-        return FileErrorC::InternalError;
+    if (!_details.empty()) {
+        result += ": ";
+        result += _details;
     }
+
+    return result;
 }
 
-
-const char * FileErrorCCategory::name() const noexcept
+FileErrorType FileError::type() const
 {
-    return "file_errorc";
+    return _type;
 }
 
-std::string FileErrorCCategory::message(int ev) const
+std::string FileError::details() const
 {
-    switch (static_cast<FileErrorC>(ev)) {
-    case FileErrorC::InvalidArgument:
-        return "invalid argument";
-    case FileErrorC::InvalidState:
-        return "invalid state";
-    case FileErrorC::Unsupported:
-        return "unsupported operation";
-    case FileErrorC::InternalError:
-        return "internal error";
-    default:
-        return "(unknown file error condition)";
-    }
-}
-
-const std::error_category & file_error_category()
-{
-    static FileErrorCategory c;
-    return c;
-}
-
-const std::error_category & file_errorc_category()
-{
-    static FileErrorCCategory c;
-    return c;
-}
-
-std::error_code make_error_code(FileError e)
-{
-    return {static_cast<int>(e), file_error_category()};
-}
-
-std::error_condition make_error_condition(FileErrorC ec)
-{
-    return {static_cast<int>(ec), file_errorc_category()};
+    return _details;
 }
 
 }

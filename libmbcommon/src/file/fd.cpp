@@ -28,9 +28,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mbcommon/locale.h"
-
+#include "mbcommon/error/error.h"
+#include "mbcommon/error/error_list.h"
+#include "mbcommon/error/type/ec_error.h"
 #include "mbcommon/file/fd_p.h"
+#include "mbcommon/file_error.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/locale.h"
 
 #define DEFAULT_MODE \
     (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
@@ -235,28 +239,28 @@ FdFile::FdFile(FdFilePrivate *priv,
                int fd, bool owned)
     : File(priv)
 {
-    open(fd, owned);
+    (void) open(fd, owned);
 }
 
 FdFile::FdFile(FdFilePrivate *priv,
                const std::string &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 FdFile::FdFile(FdFilePrivate *priv,
                const std::wstring &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 FdFile::~FdFile()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -269,9 +273,9 @@ FdFile::~FdFile()
  * \param fd File descriptor
  * \param owned Whether the file descriptor should be owned by the File handle
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool FdFile::open(int fd, bool owned)
+Expected<void> FdFile::open(int fd, bool owned)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -291,9 +295,9 @@ bool FdFile::open(int fd, bool owned)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool FdFile::open(const std::string &filename, FileOpenMode mode)
+Expected<void> FdFile::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -301,9 +305,10 @@ bool FdFile::open(const std::string &filename, FileOpenMode mode)
 #ifdef _WIN32
         auto converted = mbs_to_wcs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
+            return join_errors(make_error<FileError>(
+                    FileErrorType::CannotConvertEncoding,
+                    "Failed to convert MBS filename to WCS"),
+                    converted.take_error());
         }
         auto native_filename = *converted;
 #else
@@ -334,9 +339,9 @@ bool FdFile::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
+Expected<void> FdFile::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(FdFile);
     if (priv) {
@@ -346,9 +351,10 @@ bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
 #else
         auto converted = wcs_to_mbs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert WCS filename to MBS");
-            return false;
+            return join_errors(make_error<FileError>(
+                    FileErrorType::CannotConvertEncoding,
+                    "Failed to convert WCS filename to MBS"),
+                    converted.take_error());
         }
         auto native_filename = *converted;
 #endif
@@ -367,7 +373,7 @@ bool FdFile::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-bool FdFile::on_open()
+Expected<void> FdFile::on_open()
 {
     MB_PRIVATE(FdFile);
 
@@ -379,48 +385,41 @@ bool FdFile::on_open()
 #endif
                 priv->filename.c_str(), priv->flags, DEFAULT_MODE);
         if (priv->fd < 0) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to open file");
-            return false;
+            return make_error<ECError>(ECError::from_errno(errno));
         }
     }
 
     struct stat sb;
 
     if (priv->funcs->fn_fstat(priv->fd, &sb) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to stat file");
-        return false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
     if (S_ISDIR(sb.st_mode)) {
-        set_error(std::make_error_code(std::errc::is_a_directory),
-                  "Failed to open file");
-        return false;
+        return make_error<ECError>(
+                std::make_error_code(std::errc::is_a_directory));
     }
 
-    return true;
+    return {};
 }
 
-bool FdFile::on_close()
+Expected<void> FdFile::on_close()
 {
     MB_PRIVATE(FdFile);
 
-    bool ret = true;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        priv->clear();
+    });
 
     if (priv->owned && priv->fd >= 0 && priv->funcs->fn_close(priv->fd) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to close file");
-        ret = false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
-    // Reset to allow opening another file
-    priv->clear();
-
-    return ret;
+    return {};
 }
 
-bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
+Expected<size_t> FdFile::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(FdFile);
 
@@ -430,16 +429,13 @@ bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
 
     ssize_t n = priv->funcs->fn_read(priv->fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to read file");
-        return false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
-    bytes_read = static_cast<size_t>(n);
-    return true;
+    return static_cast<size_t>(n);
 }
 
-bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+Expected<size_t> FdFile::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(FdFile);
 
@@ -449,41 +445,33 @@ bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 
     ssize_t n = priv->funcs->fn_write(priv->fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to write file");
-        return false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
-    bytes_written = static_cast<size_t>(n);
-    return true;
+    return static_cast<size_t>(n);
 }
 
-bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+Expected<uint64_t> FdFile::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(FdFile);
 
     off64_t ret = priv->funcs->fn_lseek64(priv->fd, offset, whence);
     if (ret < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to seek file");
-        return false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
-    new_offset = static_cast<uint64_t>(ret);
-    return true;
+    return static_cast<uint64_t>(ret);
 }
 
-bool FdFile::on_truncate(uint64_t size)
+Expected<void> FdFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(FdFile);
 
     if (priv->funcs->fn_ftruncate64(priv->fd, static_cast<off64_t>(size)) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to truncate file");
-        return false;
+        return make_error<ECError>(ECError::from_errno(errno));
     }
 
-    return true;
+    return {};
 }
 
 }

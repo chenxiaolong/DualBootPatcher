@@ -254,13 +254,27 @@ bool OdinPatcherPrivate::patch_tar()
     if (cancelled) return false;
 
     // Get file size and seek back to original location
-    uint64_t current_pos;
-    if (!la_file.seek(0, SEEK_CUR, &current_pos)
-            || !la_file.seek(0, SEEK_END, &max_bytes)
-            || !la_file.seek(static_cast<int64_t>(current_pos), SEEK_SET,
-                             nullptr)) {
+    auto current_pos = la_file.seek(0, SEEK_CUR);
+    if (!current_pos) {
         LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
-             la_file.error_string().c_str());
+             to_string(current_pos.take_error()).c_str());
+        error = ErrorCode::FileSeekError;
+        return false;
+    }
+
+    auto seek_ret = la_file.seek(0, SEEK_END);
+    if (!seek_ret) {
+        LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
+             to_string(seek_ret.take_error()).c_str());
+        error = ErrorCode::FileSeekError;
+        return false;
+    }
+    max_bytes = *seek_ret;
+
+    seek_ret = la_file.seek(static_cast<int64_t>(*current_pos), SEEK_SET);
+    if (!seek_ret) {
+        LOGE("%s: Failed to seek: %s", info->input_path().c_str(),
+             to_string(seek_ret.take_error()).c_str());
         error = ErrorCode::FileSeekError;
         return false;
     }
@@ -697,18 +711,18 @@ la_ssize_t OdinPatcherPrivate::la_read_cb(archive *a, void *userdata,
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
     *buffer = priv->la_buf;
-    size_t bytes_read;
 
-    if (!priv->la_file.read(priv->la_buf, sizeof(priv->la_buf), bytes_read)) {
+    auto bytes_read = priv->la_file.read(priv->la_buf, sizeof(priv->la_buf));
+    if (!bytes_read) {
         LOGE("%s: Failed to read: %s", priv->info->input_path().c_str(),
-             priv->la_file.error_string().c_str());
+             to_string(bytes_read.take_error()).c_str());
         priv->error = ErrorCode::FileReadError;
         return -1;
     }
 
-    priv->bytes += bytes_read;
+    priv->bytes += *bytes_read;
     priv->update_progress(priv->bytes, priv->max_bytes);
-    return static_cast<la_ssize_t>(bytes_read);
+    return static_cast<la_ssize_t>(*bytes_read);
 }
 
 la_int64_t OdinPatcherPrivate::la_skip_cb(archive *a, void *userdata,
@@ -717,9 +731,10 @@ la_int64_t OdinPatcherPrivate::la_skip_cb(archive *a, void *userdata,
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    if (!priv->la_file.seek(request, SEEK_CUR, nullptr)) {
+    auto seek_ret = priv->la_file.seek(request, SEEK_CUR);
+    if (!seek_ret) {
         LOGE("%s: Failed to seek: %s", priv->info->input_path().c_str(),
-             priv->la_file.error_string().c_str());
+             to_string(seek_ret.take_error()).c_str());
         priv->error = ErrorCode::FileSeekError;
         return -1;
     }
@@ -734,7 +749,7 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
 {
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
-    bool ret;
+    Expected<void> ret;
 
 #ifdef _WIN32
     auto w_filename = utf8_to_wcs(priv->info->input_path());
@@ -757,7 +772,7 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
 
     if (!ret) {
         LOGE("%s: Failed to open: %s", priv->info->input_path().c_str(),
-             priv->la_file.error_string().c_str());
+             to_string(ret.take_error()).c_str());
         priv->error = ErrorCode::FileOpenError;
         return -1;
     }
@@ -770,9 +785,10 @@ int OdinPatcherPrivate::la_close_cb(archive *a, void *userdata)
     (void) a;
     auto *priv = static_cast<OdinPatcherPrivate *>(userdata);
 
-    if (!priv->la_file.close()) {
+    auto ret = priv->la_file.close();
+    if (!ret) {
         LOGE("%s: Failed to close: %s", priv->info->input_path().c_str(),
-             priv->la_file.error_string().c_str());
+             to_string(ret.take_error()).c_str());
         priv->error = ErrorCode::FileCloseError;
         return -1;
     }

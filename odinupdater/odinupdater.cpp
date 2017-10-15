@@ -33,6 +33,7 @@
 #include <sys/wait.h>
 
 // libmbcommon
+#include "mbcommon/error/type/string_error.h"
 #include "mbcommon/file/callbacks.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
@@ -341,8 +342,8 @@ static bool load_block_devs()
     return true;
 }
 
-static bool cb_zip_read(mb::File &file, void *userdata,
-                        void *buf, size_t size, size_t &bytes_read)
+static mb::Expected<size_t> cb_zip_read(mb::File &file, void *userdata,
+                                        void *buf, size_t size)
 {
     (void) file;
 
@@ -354,7 +355,7 @@ static bool cb_zip_read(mb::File &file, void *userdata,
         if (n < 0) {
             error("libarchive: Failed to read data: %s",
                   archive_error_string(a));
-            return false;
+            return mb::make_error<mb::StringError>(archive_error_string(a));
         } else if (n == 0) {
             break;
         }
@@ -364,8 +365,7 @@ static bool cb_zip_read(mb::File &file, void *userdata,
         buf = static_cast<char *>(buf) + n;
     }
 
-    bytes_read = static_cast<size_t>(total);
-    return true;
+    return static_cast<size_t>(total);
 }
 
 #if DEBUG_SKIP_FLASH_SYSTEM
@@ -394,35 +394,45 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return result;
     }
 
-    if (!file.open(nullptr, nullptr, &cb_zip_read, nullptr, nullptr, nullptr,
-                   a.get())) {
+    auto open_ret = file.open(nullptr, nullptr, &cb_zip_read, nullptr, nullptr,
+                              nullptr, a.get());
+    if (!open_ret) {
         error("Failed to open sparse file in zip: %s",
-              file.error_string().c_str());
+              mb::to_string(open_ret.take_error()).c_str());
         return ExtractResult::ERROR;
     }
 
-    if (!sparse_file.open(&file)) {
+    open_ret = sparse_file.open(&file);
+    if (!open_ret) {
         error("Failed to open sparse file: %s",
-              sparse_file.error_string().c_str());
+              mb::to_string(open_ret.take_error()).c_str());
         return ExtractResult::ERROR;
     }
 
-    if (!out_file.open(out_filename, mb::FileOpenMode::WRITE_ONLY)) {
+    open_ret = out_file.open(out_filename, mb::FileOpenMode::WRITE_ONLY);
+    if (!open_ret) {
         error("%s: Failed to open for writing: %s",
-              out_filename, out_file.error_string().c_str());
+              out_filename, mb::to_string(open_ret.take_error()).c_str());
         return ExtractResult::ERROR;
     }
 
     char buf[10240];
-    size_t n;
-    bool ret;
     uint64_t cur_bytes = 0;
     uint64_t max_bytes = sparse_file.size();
     uint64_t old_bytes = 0;
 
     set_progress(0);
 
-    while ((ret = sparse_file.read(buf, sizeof(buf), n)) && n > 0) {
+    while (true) {
+        auto n = sparse_file.read(buf, sizeof(buf));
+        if (!n) {
+            error("Failed to read sparse file %s: %s",
+                  zip_filename, mb::to_string(n.take_error()).c_str());
+            return ExtractResult::ERROR;
+        } else if (*n == 0) {
+            break;
+        }
+
         // Rate limit: update progress only after difference exceeds 0.1%
         double old_ratio = static_cast<double>(old_bytes) / max_bytes;
         double new_ratio = static_cast<double>(cur_bytes) / max_bytes;
@@ -432,29 +442,25 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         }
 
         char *out_ptr = buf;
-        size_t nwritten;
 
-        while (n > 0) {
-            if (!out_file.write(buf, n, nwritten)) {
-                error("%s: Failed to write file: %s",
-                      out_filename, out_file.error_string().c_str());
+        while (*n > 0) {
+            auto n_written = out_file.write(buf, *n);
+            if (!n_written) {
+                error("%s: Failed to write file: %s", out_filename,
+                      mb::to_string(n_written.take_error()).c_str());
                 return ExtractResult::ERROR;
             }
 
-            n -= nwritten;
-            out_ptr += nwritten;
-            cur_bytes += nwritten;
+            *n -= *n_written;
+            out_ptr += *n_written;
+            cur_bytes += *n_written;
         }
     }
-    if (!ret) {
-        error("Failed to read sparse file %s: %s",
-              zip_filename, sparse_file.error_string().c_str());
-        return ExtractResult::ERROR;
-    }
 
-    if (!out_file.close()) {
+    auto close_ret = out_file.close();
+    if (!close_ret) {
         error("%s: Failed to close file: %s",
-              out_filename, out_file.error_string().c_str());
+              out_filename, mb::to_string(close_ret.take_error()).c_str());
         return ExtractResult::ERROR;
     }
 

@@ -26,37 +26,45 @@
 namespace mb
 {
 
-enum class FileErrorType
+enum class SparseFileErrorType
 {
-    ArgumentOutOfRange      = 10,
-    CannotConvertEncoding   = 11,
+    UnexpectedEndOfFile         = 10,
+    ReadError                   = 11,
+    SeekError                   = 12,
 
-    InvalidState            = 20,
-    ObjectMoved             = 21,
+    // Sparse header errors
+    InvalidSparseMagic          = 20,
+    InvalidSparseMajorVersion   = 21,
+    InvalidSparseHeaderSize     = 22,
+    InvalidChunkHeaderSize      = 23,
 
-    UnsupportedRead         = 30,
-    UnsupportedWrite        = 31,
-    UnsupportedSeek         = 32,
-    UnsupportedTruncate     = 33,
+    // Chunk errors
+    InvalidChunkSize            = 30,
+    InvalidChunkType            = 31,
+    InvalidChunkBounds          = 32,
+    InvalidRawChunk             = 33,
+    InvalidFillChunk            = 34,
+    InvalidSkipChunk            = 35,
+    InvalidCrc32Chunk           = 36,
 
-    IntegerOverflow         = 40,
+    InternalError               = 40,
 };
 
-class MB_EXPORT FileError : public ErrorInfo<FileError>
+class MB_EXPORT SparseFileError : public ErrorInfo<SparseFileError>
 {
 public:
     static char ID;
 
-    FileError(FileErrorType type);
-    FileError(FileErrorType type, std::string details);
+    SparseFileError(SparseFileErrorType type);
+    SparseFileError(SparseFileErrorType type, std::string details);
 
     std::string message() const override;
 
-    FileErrorType type() const;
+    SparseFileErrorType type() const;
     std::string details() const;
 
 private:
-    FileErrorType _type;
+    SparseFileErrorType _type;
     std::string _details;
 };
 

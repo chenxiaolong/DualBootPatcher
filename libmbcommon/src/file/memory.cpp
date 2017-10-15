@@ -27,7 +27,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error/error.h"
+#include "mbcommon/error/type/ec_error.h"
 #include "mbcommon/file/memory_p.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/string.h"
 
 /*!
@@ -119,21 +122,21 @@ MemoryFile::MemoryFile(MemoryFilePrivate *priv,
                        const void *buf, size_t size)
     : File(priv)
 {
-    open(buf, size);
+    (void) open(buf, size);
 }
 
 MemoryFile::MemoryFile(MemoryFilePrivate *priv,
                        void **buf_ptr, size_t *size_ptr)
     : File(priv)
 {
-    open(buf_ptr, size_ptr);
+    (void) open(buf_ptr, size_ptr);
 }
 
 /*! \endcond */
 
 MemoryFile::~MemoryFile()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -142,9 +145,9 @@ MemoryFile::~MemoryFile()
  * \param buf Data buffer
  * \param size Size of data buffer
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool MemoryFile::open(const void *buf, size_t size)
+Expected<void> MemoryFile::open(const void *buf, size_t size)
 {
     MB_PRIVATE(MemoryFile);
     if (priv) {
@@ -164,9 +167,9 @@ bool MemoryFile::open(const void *buf, size_t size)
  * \param[in,out] buf_ptr Pointer to data buffer
  * \param[in,out] size_ptr Pointer to size of data buffer
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error.
  */
-bool MemoryFile::open(void **buf_ptr, size_t *size_ptr)
+Expected<void> MemoryFile::open(void **buf_ptr, size_t *size_ptr)
 {
     MB_PRIVATE(MemoryFile);
     if (priv) {
@@ -180,17 +183,17 @@ bool MemoryFile::open(void **buf_ptr, size_t *size_ptr)
     return File::open();
 }
 
-bool MemoryFile::on_close()
+Expected<void> MemoryFile::on_close()
 {
     MB_PRIVATE(MemoryFile);
 
     // Reset to allow opening another file
     priv->clear();
 
-    return true;
+    return {};
 }
 
-bool MemoryFile::on_read(void *buf, size_t size, size_t &bytes_read)
+Expected<size_t> MemoryFile::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(MemoryFile);
 
@@ -202,18 +205,16 @@ bool MemoryFile::on_read(void *buf, size_t size, size_t &bytes_read)
     memcpy(buf, static_cast<char *>(priv->data) + priv->pos, to_read);
     priv->pos += to_read;
 
-    bytes_read = to_read;
-    return true;
+    return to_read;
 }
 
-bool MemoryFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+Expected<size_t> MemoryFile::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(MemoryFile);
 
     if (priv->pos > SIZE_MAX - size) {
-        set_error(make_error_code(FileError::ArgumentOutOfRange),
-                  "Write would overflow size_t");
-        return false;
+        return make_error<FileError>(FileErrorType::ArgumentOutOfRange,
+                                     "Write would overflow size_t");
     }
 
     size_t desired_size = priv->pos + size;
@@ -226,9 +227,7 @@ bool MemoryFile::on_write(const void *buf, size_t size, size_t &bytes_written)
             // Enlarge buffer
             void *new_data = realloc(priv->data, desired_size);
             if (!new_data) {
-                set_error(std::error_code(errno, std::generic_category()),
-                          "Failed to enlarge buffer");
-                return false;
+                return make_error<ECError>(ECError::from_errno(errno));
             }
 
             // Zero-initialize new space
@@ -249,66 +248,57 @@ bool MemoryFile::on_write(const void *buf, size_t size, size_t &bytes_written)
     memcpy(static_cast<char *>(priv->data) + priv->pos, buf, to_write);
     priv->pos += to_write;
 
-    bytes_written = to_write;
-    return true;
+    return to_write;
 }
 
-bool MemoryFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+Expected<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(MemoryFile);
 
     switch (whence) {
     case SEEK_SET:
         if (offset < 0 || static_cast<uint64_t>(offset) > SIZE_MAX) {
-            set_error(make_error_code(FileError::ArgumentOutOfRange),
-                      "Invalid SEEK_SET offset %" PRId64, offset);
-            return false;
+            return make_error<FileError>(
+                    FileErrorType::ArgumentOutOfRange,
+                    format("Invalid SEEK_SET offset %" PRId64, offset));
         }
-        new_offset = priv->pos = static_cast<size_t>(offset);
-        break;
+        return priv->pos = static_cast<size_t>(offset);
     case SEEK_CUR:
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->pos)
                 || (offset > 0 && static_cast<uint64_t>(offset)
                         > SIZE_MAX - priv->pos)) {
-            set_error(make_error_code(FileError::ArgumentOutOfRange),
-                      "Invalid SEEK_CUR offset %" PRId64
-                      " for position %" MB_PRIzu, offset, priv->pos);
-            return false;
+            return make_error<FileError>(
+                    FileErrorType::ArgumentOutOfRange,
+                    format("Invalid SEEK_CUR offset %" PRId64
+                           " for position %" MB_PRIzu, offset, priv->pos));
         }
-        new_offset = priv->pos += static_cast<size_t>(offset);
-        break;
+        return priv->pos += static_cast<size_t>(offset);
     case SEEK_END:
         if ((offset < 0 && static_cast<size_t>(-offset) > priv->size)
                 || (offset > 0 && static_cast<uint64_t>(offset)
                         > SIZE_MAX - priv->size)) {
-            set_error(make_error_code(FileError::ArgumentOutOfRange),
-                      "Invalid SEEK_END offset %" PRId64
-                      " for file of size %" MB_PRIzu, offset, priv->size);
-            return false;
+            return make_error<FileError>(
+                    FileErrorType::ArgumentOutOfRange,
+                    format("Invalid SEEK_END offset %" PRId64
+                           " for file of size %" MB_PRIzu, offset, priv->size));
         }
-        new_offset = priv->pos = priv->size + static_cast<size_t>(offset);
-        break;
+        return priv->pos = priv->size + static_cast<size_t>(offset);
     default:
         MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
-
-    return true;
 }
 
-bool MemoryFile::on_truncate(uint64_t size)
+Expected<void> MemoryFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(MemoryFile);
 
     if (priv->fixed_size) {
-        set_error(make_error_code(FileError::UnsupportedTruncate),
-                  "Cannot truncate fixed buffer");
-        return false;
+        // Cannot truncate fixed buffer
+        return make_error<FileError>(FileErrorType::UnsupportedTruncate);
     } else {
         void *new_data = realloc(priv->data, static_cast<size_t>(size));
         if (!new_data) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to resize buffer");
-            return false;
+            return make_error<ECError>(ECError::from_errno(errno));
         }
 
         // Zero-initialize new space
@@ -327,7 +317,7 @@ bool MemoryFile::on_truncate(uint64_t size)
         }
     }
 
-    return true;
+    return {};
 }
 
 }

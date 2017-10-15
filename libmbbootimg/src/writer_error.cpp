@@ -62,6 +62,8 @@ std::string WriterErrorCategory::message(int ev) const
         return "no format selected";
     case WriterError::NoFormatRegistered:
         return "no format registered";
+    case WriterError::FileError:
+        return "(some file error)";
     default:
         return "(unknown writer error)";
     }

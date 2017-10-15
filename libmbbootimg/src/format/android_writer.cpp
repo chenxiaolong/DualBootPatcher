@@ -183,10 +183,11 @@ int AndroidFormatWriter::write_header(File &file, const Header &header)
     if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
-    if (!file.seek(_hdr.page_size, SEEK_SET, nullptr)) {
-        _writer.set_error(file.error(),
+    auto seek_ret = file.seek(_hdr.page_size, SEEK_SET);
+    if (!seek_ret) {
+        _writer.set_error(WriterError::FileError,
                           "Failed to seek to first page: %s",
-                          file.error_string().c_str());
+                          to_string(seek_ret.take_error()).c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
@@ -266,25 +267,24 @@ int AndroidFormatWriter::finish_entry(File &file)
 
 int AndroidFormatWriter::close(File &file)
 {
-    size_t n;
-
     if (_file_size) {
-        if (!file.seek(static_cast<int64_t>(*_file_size), SEEK_SET, nullptr)) {
-            _writer.set_error(file.error(),
+        auto seek_ret = file.seek(static_cast<int64_t>(*_file_size), SEEK_SET);
+        if (!seek_ret) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to seek to end of file: %s",
-                              file.error_string().c_str());
+                              to_string(seek_ret.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     } else {
-        uint64_t file_size;
-        if (!file.seek(0, SEEK_CUR, &file_size)) {
-            _writer.set_error(file.error(),
+        auto file_size = file.seek(0, SEEK_CUR);
+        if (!file_size) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to get file offset: %s",
-                              file.error_string().c_str());
+                              to_string(file_size.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        _file_size = file_size;
+        _file_size = *file_size;
     }
 
     auto const *swentry = _seg.entry();
@@ -294,21 +294,21 @@ int AndroidFormatWriter::close(File &file)
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (_is_bump) {
-            if (!file_write_fully(file, bump::BUMP_MAGIC,
-                                  bump::BUMP_MAGIC_SIZE, n)
-                    || n != bump::BUMP_MAGIC_SIZE) {
-                _writer.set_error(file.error(),
+            auto n = file_write_fully(file, bump::BUMP_MAGIC,
+                                      bump::BUMP_MAGIC_SIZE);
+            if (!n || *n != bump::BUMP_MAGIC_SIZE) {
+                _writer.set_error(WriterError::FileError,
                                   "Failed to write Bump magic: %s",
-                                  file.error_string().c_str());
+                                  to_string(n.take_error()).c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
         } else {
-            if (!file_write_fully(file, SAMSUNG_SEANDROID_MAGIC,
-                                  SAMSUNG_SEANDROID_MAGIC_SIZE, n)
-                    || n != SAMSUNG_SEANDROID_MAGIC_SIZE) {
-                _writer.set_error(file.error(),
+            auto n = file_write_fully(file, SAMSUNG_SEANDROID_MAGIC,
+                                      SAMSUNG_SEANDROID_MAGIC_SIZE);
+            if (!n || *n != SAMSUNG_SEANDROID_MAGIC_SIZE) {
+                _writer.set_error(WriterError::FileError,
                                   "Failed to write SEAndroid magic: %s",
-                                  file.error_string().c_str());
+                                  to_string(n.take_error()).c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
         }
@@ -326,18 +326,20 @@ int AndroidFormatWriter::close(File &file)
         android_fix_header_byte_order(hdr);
 
         // Seek back to beginning to write header
-        if (!file.seek(0, SEEK_SET, nullptr)) {
-            _writer.set_error(file.error(),
+        auto seek_ret = file.seek(0, SEEK_SET);
+        if (!seek_ret) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to seek to beginning: %s",
-                              file.error_string().c_str());
+                              to_string(seek_ret.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         // Write header
-        if (!file_write_fully(file, &hdr, sizeof(hdr), n) || n != sizeof(hdr)) {
-            _writer.set_error(file.error(),
+        auto n = file_write_fully(file, &hdr, sizeof(hdr));
+        if (!n || *n != sizeof(hdr)) {
+            _writer.set_error(WriterError::FileError,
                               "Failed to write header: %s",
-                              file.error_string().c_str());
+                              to_string(n.take_error()).c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }

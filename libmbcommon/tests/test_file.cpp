@@ -21,20 +21,24 @@
 
 #include <cinttypes>
 
+#include "mbcommon/error/error.h"
+#include "mbcommon/error/error_handler.h"
+#include "mbcommon/error/type/ec_error.h"
 #include "mbcommon/file.h"
+#include "mbcommon/file_error.h"
 #include "mbcommon/file_p.h"
 #include "mbcommon/string.h"
 
 #include "file/mock_test_file.h"
 
 
+using namespace mb;
+
 TEST(FileTest, CheckInitialValues)
 {
     testing::NiceMock<MockTestFile> file;
 
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
-    ASSERT_EQ(file._priv_func()->error_code, std::error_code());
-    ASSERT_TRUE(file._priv_func()->error_string.empty());
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, CheckStatesNormal)
@@ -47,12 +51,12 @@ TEST(FileTest, CheckStatesNormal)
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_TRUE(!!file.open());
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 
     // Close file
-    ASSERT_TRUE(file.close());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_TRUE(!!file.close());
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, CheckMoveConstructor)
@@ -61,17 +65,16 @@ TEST(FileTest, CheckMoveConstructor)
     TestFile file1;
 
     // Open the file
-    ASSERT_TRUE(file1.open());
+    ASSERT_TRUE(!!file1.open());
 
     // Write some data to the file
-    size_t n;
-    ASSERT_TRUE(file1.write("foobar", 6, n));
+    ASSERT_TRUE(!!file1.write("foobar", 6));
 
     // Construct another file from file1
     TestFile file2(std::move(file1));
 
     // file2 should become what file1 was
-    ASSERT_EQ(file2._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_EQ(file2._priv_func()->state, FileState::OPENED);
     ASSERT_EQ(file2._position, 6u);
 
     // file1 should be left in an unspecified (but valid) state where the pimpl
@@ -80,17 +83,16 @@ TEST(FileTest, CheckMoveConstructor)
 
     // Everything should fail for file1
     ASSERT_FALSE(file1.open());
-    ASSERT_FALSE(file1.read(nullptr, 0, n));
-    ASSERT_FALSE(file1.write(nullptr, 0, n));
-    ASSERT_FALSE(file1.seek(0, SEEK_SET, nullptr));
+    ASSERT_FALSE(file1.read(nullptr, 0));
+    ASSERT_FALSE(file1.write(nullptr, 0));
+    ASSERT_FALSE(file1.seek(0, SEEK_SET));
     ASSERT_FALSE(file1.truncate(0));
     ASSERT_FALSE(file1.close());
-    ASSERT_FALSE(file1.set_error({}, ""));
 
     // Bring File1 back to life
     file1 = TestFile();
     ASSERT_NE(file1._priv_func(), nullptr);
-    ASSERT_EQ(file1._priv_func()->state, mb::FileState::NEW);
+    ASSERT_EQ(file1._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, CheckMoveAssignment)
@@ -103,13 +105,12 @@ TEST(FileTest, CheckMoveAssignment)
     TestFile file2(&counters2);
 
     // Open both files
-    ASSERT_TRUE(file1.open());
-    ASSERT_TRUE(file2.open());
+    ASSERT_TRUE(!!file1.open());
+    ASSERT_TRUE(!!file2.open());
 
     // Differentiate the two files
-    size_t n;
-    ASSERT_TRUE(file1.write("foobar", 6, n));
-    ASSERT_TRUE(file2.write("hello", 5, n));
+    ASSERT_TRUE(!!file1.write("foobar", 6));
+    ASSERT_TRUE(!!file2.write("hello", 5));
 
     // Move file1 to file2
     file2 = std::move(file1);
@@ -118,7 +119,7 @@ TEST(FileTest, CheckMoveAssignment)
     ASSERT_EQ(counters2.n_close, 1u);
 
     // file2 should become what file1 was
-    ASSERT_EQ(file2._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_EQ(file2._priv_func()->state, FileState::OPENED);
     ASSERT_EQ(file2._position, 6u);
 
     // file1 should be left in an unspecified (but valid) state where the pimpl
@@ -127,17 +128,16 @@ TEST(FileTest, CheckMoveAssignment)
 
     // Everything should fail for file1
     ASSERT_FALSE(file1.open());
-    ASSERT_FALSE(file1.read(nullptr, 0, n));
-    ASSERT_FALSE(file1.write(nullptr, 0, n));
-    ASSERT_FALSE(file1.seek(0, SEEK_SET, nullptr));
+    ASSERT_FALSE(file1.read(nullptr, 0));
+    ASSERT_FALSE(file1.write(nullptr, 0));
+    ASSERT_FALSE(file1.seek(0, SEEK_SET));
     ASSERT_FALSE(file1.truncate(0));
     ASSERT_FALSE(file1.close());
-    ASSERT_FALSE(file1.set_error({}, ""));
 
     // Bring File1 back to life
     file1 = TestFile();
     ASSERT_NE(file1._priv_func(), nullptr);
-    ASSERT_EQ(file1._priv_func()->state, mb::FileState::NEW);
+    ASSERT_EQ(file1._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, FreeNewFile)
@@ -159,7 +159,7 @@ TEST(FileTest, FreeOpenedFile)
     {
         testing::NiceMock<MockTestFile> file(&counters);
 
-        ASSERT_TRUE(file.open());
+        ASSERT_TRUE(!!file.open());
     }
 
     // Ensure that the close callback was called
@@ -177,11 +177,11 @@ TEST(FileTest, FreeClosedFile)
                 .Times(1);
 
         // Open file
-        ASSERT_TRUE(file.open());
+        ASSERT_TRUE(!!file.open());
 
         // Close file
-        ASSERT_TRUE(file.close());
-        ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+        ASSERT_TRUE(!!file.close());
+        ASSERT_EQ(file._priv_func()->state, FileState::NEW);
     }
 
     // Ensure that the close callback was not called again
@@ -196,9 +196,9 @@ TEST(FileTest, FreeFatalFile)
         testing::NiceMock<MockTestFile> file(&counters);
 
         // Open file
-        ASSERT_TRUE(file.open());
+        ASSERT_TRUE(!!file.open());
 
-        file._priv_func()->state = mb::FileState::FATAL;
+        file._priv_func()->state = FileState::FATAL;
     }
 
     // Ensure that the close callback was called
@@ -212,18 +212,19 @@ TEST(FileTest, OpenReturnFailure)
     // Set open callback
     EXPECT_CALL(file, on_open())
             .Times(2)
-            .WillOnce(testing::Return(false))
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))))
             .WillOnce(Invoke(&file, &MockTestFile::orig_on_open));
     EXPECT_CALL(file, on_close())
             .Times(1);
 
     // Open file
     ASSERT_FALSE(file.open());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 
     // Reopen file
-    ASSERT_TRUE(file.open());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_TRUE(!!file.open());
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 
     // The close callback should have been called to clean up resources
 }
@@ -236,14 +237,19 @@ TEST(FileTest, OpenFileTwice)
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_TRUE(!!file.open());
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 
     // Open again
-    ASSERT_FALSE(file.open());
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidState);
-    ASSERT_NE(file._priv_func()->error_string.find("open"), std::string::npos);
-    ASSERT_NE(file._priv_func()->error_string.find("Invalid state"), std::string::npos);
+    auto result = file.open();
+    ASSERT_FALSE(result);
+    ASSERT_FALSE(handle_errors(
+        result.take_error(),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_NE(err.details().find("open"), std::string::npos);
+        }
+    ));
 }
 
 TEST(FileTest, CloseNewFile)
@@ -253,8 +259,8 @@ TEST(FileTest, CloseNewFile)
     EXPECT_CALL(file, on_close())
             .Times(0);
 
-    ASSERT_TRUE(file.close());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_TRUE(!!file.close());
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, CloseFileTwice)
@@ -265,15 +271,15 @@ TEST(FileTest, CloseFileTwice)
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Close file
-    ASSERT_TRUE(file.close());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_TRUE(!!file.close());
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 
     // Close file again
-    ASSERT_TRUE(file.close());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_TRUE(!!file.close());
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, CloseReturnFailure)
@@ -282,31 +288,32 @@ TEST(FileTest, CloseReturnFailure)
 
     EXPECT_CALL(file, on_close())
             .Times(1)
-            .WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))));
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Close file
     ASSERT_FALSE(file.close());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
 }
 
 TEST(FileTest, ReadCallbackCalled)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_read(testing::_, testing::_))
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Read from file
     char buf[10];
-    size_t n;
-    ASSERT_TRUE(file.read(buf, sizeof(buf), n));
-    ASSERT_EQ(n, sizeof(buf));
+    auto n = file.read(buf, sizeof(buf));
+    ASSERT_TRUE(!!n);
+    ASSERT_EQ(*n, sizeof(buf));
     ASSERT_EQ(memcmp(buf, file._buf.data(), sizeof(buf)), 0);
 }
 
@@ -314,17 +321,21 @@ TEST(FileTest, ReadInWrongState)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_read(testing::_, testing::_))
             .Times(0);
 
     // Read from file
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidState);
-    ASSERT_NE(file._priv_func()->error_string.find("read"), std::string::npos);
-    ASSERT_NE(file._priv_func()->error_string.find("Invalid state"), std::string::npos);
+    auto result = file.read(&c, 1);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
+    ASSERT_FALSE(handle_errors(
+        result.take_error(),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_NE(err.details().find("read"), std::string::npos);
+        }
+    ));
 }
 
 TEST(FileTest, ReadReturnFailure)
@@ -332,36 +343,36 @@ TEST(FileTest, ReadReturnFailure)
     testing::NiceMock<MockTestFile> file;
 
     // Set read callback
-    EXPECT_CALL(file, on_read(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_read(testing::_, testing::_))
             .Times(1)
-            .WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))));
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Read from file
     char c;
-    size_t n;
-    ASSERT_FALSE(file.read(&c, 1, n));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_FALSE(file.read(&c, 1));
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 }
 
 TEST(FileTest, WriteCallbackCalled)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_write(testing::_, testing::_))
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Write to file
     char buf[] = "Hello, world!";
     size_t size = strlen(buf);
-    size_t n;
-    ASSERT_TRUE(file.write(buf, size, n));
-    ASSERT_EQ(n, size);
+    auto n = file.write(buf, size);
+    ASSERT_TRUE(!!n);
+    ASSERT_EQ(*n, size);
     ASSERT_EQ(memcmp(buf, file._buf.data(), size), 0);
 }
 
@@ -369,17 +380,21 @@ TEST(FileTest, WriteInWrongState)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_write(testing::_, testing::_))
             .Times(0);
 
     // Write to file
     char c;
-    size_t n;
-    ASSERT_FALSE(file.write(&c, 1, n));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidState);
-    ASSERT_NE(file._priv_func()->error_string.find("write"), std::string::npos);
-    ASSERT_NE(file._priv_func()->error_string.find("Invalid state"), std::string::npos);
+    auto result = file.write(&c, 1);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
+    ASSERT_FALSE(handle_errors(
+        result.take_error(),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_NE(err.details().find("write"), std::string::npos);
+        }
+    ));
 }
 
 TEST(FileTest, WriteReturnFailure)
@@ -387,37 +402,37 @@ TEST(FileTest, WriteReturnFailure)
     testing::NiceMock<MockTestFile> file;
 
     // Set write callback
-    EXPECT_CALL(file, on_write(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_write(testing::_, testing::_))
             .Times(1)
-            .WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))));
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Write to file
-    size_t n;
-    ASSERT_FALSE(file.write("x", 1, n));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_FALSE(file.write("x", 1));
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 }
 
 TEST(FileTest, SeekCallbackCalled)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_seek(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(testing::_, testing::_))
             .Times(2);
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Seek file
-    uint64_t pos;
-    ASSERT_TRUE(file.seek(0, SEEK_END, &pos));
-    ASSERT_EQ(pos, file._buf.size());
-    ASSERT_EQ(pos, file._position);
+    auto pos = file.seek(0, SEEK_END);
+    ASSERT_TRUE(!!pos);
+    ASSERT_EQ(*pos, file._buf.size());
+    ASSERT_EQ(*pos, file._position);
 
     // Seek again with NULL offset output parameter
-    ASSERT_TRUE(file.seek(-10, SEEK_END, nullptr));
+    ASSERT_TRUE(!!file.seek(-10, SEEK_END));
     ASSERT_EQ(file._position, file._buf.size() - 10);
 }
 
@@ -425,15 +440,20 @@ TEST(FileTest, SeekInWrongState)
 {
     testing::NiceMock<MockTestFile> file;
 
-    EXPECT_CALL(file, on_seek(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(testing::_, testing::_))
             .Times(0);
 
     // Seek file
-    ASSERT_FALSE(file.seek(0, SEEK_END, nullptr));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidState);
-    ASSERT_NE(file._priv_func()->error_string.find("seek"), std::string::npos);
-    ASSERT_NE(file._priv_func()->error_string.find("Invalid state"), std::string::npos);
+    auto result = file.seek(0, SEEK_END);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
+    ASSERT_FALSE(handle_errors(
+        result.take_error(),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_NE(err.details().find("seek"), std::string::npos);
+        }
+    ));
 }
 
 TEST(FileTest, SeekReturnFailure)
@@ -441,16 +461,17 @@ TEST(FileTest, SeekReturnFailure)
     testing::NiceMock<MockTestFile> file;
 
     // Set seek callback
-    EXPECT_CALL(file, on_seek(testing::_, testing::_, testing::_))
+    EXPECT_CALL(file, on_seek(testing::_, testing::_))
             .Times(1)
-            .WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))));
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Seek file
-    ASSERT_FALSE(file.seek(0, SEEK_END, nullptr));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
+    ASSERT_FALSE(file.seek(0, SEEK_END));
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 }
 
 TEST(FileTest, TruncateCallbackCalled)
@@ -461,10 +482,10 @@ TEST(FileTest, TruncateCallbackCalled)
             .Times(1);
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Truncate file
-    ASSERT_TRUE(file.truncate(INITIAL_BUF_SIZE / 2));
+    ASSERT_TRUE(!!file.truncate(INITIAL_BUF_SIZE / 2));
 }
 
 TEST(FileTest, TruncateInWrongState)
@@ -475,11 +496,16 @@ TEST(FileTest, TruncateInWrongState)
             .Times(0);
 
     // Truncate file
-    ASSERT_FALSE(file.truncate(INITIAL_BUF_SIZE + 1));
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::NEW);
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::InvalidState);
-    ASSERT_NE(file._priv_func()->error_string.find("truncate"), std::string::npos);
-    ASSERT_NE(file._priv_func()->error_string.find("Invalid state"), std::string::npos);
+    auto result = file.truncate(INITIAL_BUF_SIZE + 1);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(file._priv_func()->state, FileState::NEW);
+    ASSERT_FALSE(handle_errors(
+        result.take_error(),
+        [](const FileError &err) {
+            ASSERT_EQ(err.type(), FileErrorType::InvalidState);
+            ASSERT_NE(err.details().find("truncate"), std::string::npos);
+        }
+    ));
 }
 
 TEST(FileTest, TruncateReturnFailure)
@@ -489,30 +515,14 @@ TEST(FileTest, TruncateReturnFailure)
     // Set truncate callback
     EXPECT_CALL(file, on_truncate(testing::_))
             .Times(1)
-            .WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(testing::ByMove(
+                    make_error<ECError>(std::error_code{}))));
 
     // Open file
-    ASSERT_TRUE(file.open());
+    ASSERT_TRUE(!!file.open());
 
     // Truncate file
     ASSERT_FALSE(file.truncate(INITIAL_BUF_SIZE + 1));
     ASSERT_FALSE(file.is_fatal());
-    ASSERT_EQ(file._priv_func()->state, mb::FileState::OPENED);
-}
-
-TEST(FileTest, SetError)
-{
-    testing::NiceMock<MockTestFile> file;
-
-    ASSERT_EQ(file._priv_func()->error_code, std::error_code());
-    ASSERT_TRUE(file._priv_func()->error_string.empty());
-
-    ASSERT_TRUE(file.set_error(mb::make_error_code(mb::FileError::ArgumentOutOfRange),
-                               "%s, %s!", "Hello", "world"));
-
-    ASSERT_EQ(file._priv_func()->error_code, mb::FileError::ArgumentOutOfRange);
-    ASSERT_NE(file._priv_func()->error_string.find("Hello, world!"),
-              std::string::npos);
-    ASSERT_EQ(file.error(), file._priv_func()->error_code);
-    ASSERT_EQ(file.error_string(), file._priv_func()->error_string);
+    ASSERT_EQ(file._priv_func()->state, FileState::OPENED);
 }
