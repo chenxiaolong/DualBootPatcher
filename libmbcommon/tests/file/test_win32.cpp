@@ -175,7 +175,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsSuccess)
             .WillOnce(testing::Return(reinterpret_cast<HANDLE>(1)));
 
     TestableWin32File file(&_funcs);
-    ASSERT_TRUE(!!file.open("x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileWin32Test, OpenFilenameMbsFailure)
@@ -186,7 +186,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    auto result = file.open("x", FileOpenMode::READ_ONLY);
+    auto result = file.open("x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),
@@ -215,7 +215,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
             .WillOnce(testing::Return(reinterpret_cast<HANDLE>(1)));
 
     TestableWin32File file(&_funcs);
-    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileWin32Test, OpenFilenameWcsFailure)
@@ -226,7 +226,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    auto result = file.open(L"x", FileOpenMode::READ_ONLY);
+    auto result = file.open(L"x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),

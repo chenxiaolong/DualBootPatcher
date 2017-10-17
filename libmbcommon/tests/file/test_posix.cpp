@@ -171,7 +171,7 @@ TEST_F(FilePosixTest, OpenFilenameMbsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(!!file.open("x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameMbsFailure)
@@ -185,7 +185,7 @@ TEST_F(FilePosixTest, OpenFilenameMbsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    auto result = file.open("x", FileOpenMode::READ_ONLY);
+    auto result = file.open("x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),
@@ -218,7 +218,7 @@ TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameWcsFailure)
@@ -232,7 +232,7 @@ TEST_F(FilePosixTest, OpenFilenameWcsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    auto result = file.open(L"x", FileOpenMode::READ_ONLY);
+    auto result = file.open(L"x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),

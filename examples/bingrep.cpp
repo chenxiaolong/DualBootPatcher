@@ -147,7 +147,7 @@ static bool search_file(const char *path, int64_t start, int64_t end,
 {
     mb::StandardFile file;
 
-    auto ret = file.open(path, mb::FileOpenMode::READ_ONLY);
+    auto ret = file.open(path, mb::FileOpenMode::ReadOnly);
     if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 path, mb::to_string(ret.take_error()).c_str());

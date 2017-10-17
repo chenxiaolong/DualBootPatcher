@@ -132,22 +132,22 @@ int FdFilePrivate::convert_mode(FileOpenMode mode)
 #endif
 
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         ret |= O_RDONLY;
         break;
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         ret |= O_RDWR;
         break;
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         ret |= O_WRONLY | O_CREAT | O_TRUNC;
         break;
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         ret |= O_RDWR | O_CREAT | O_TRUNC;
         break;
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         ret |= O_WRONLY | O_CREAT | O_APPEND;
         break;
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         ret |= O_RDWR | O_CREAT | O_APPEND;
         break;
     default:

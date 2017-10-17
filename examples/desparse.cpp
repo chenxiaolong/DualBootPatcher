@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     mb::StandardFile output_file;
     mb::sparse::SparseFile sparse_file;
 
-    auto open_ret = input_file.open(input_path, mb::FileOpenMode::READ_ONLY);
+    auto open_ret = input_file.open(input_path, mb::FileOpenMode::ReadOnly);
     if (!open_ret) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
                 input_path, mb::to_string(open_ret.take_error()).c_str());
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    open_ret = output_file.open(output_path, mb::FileOpenMode::WRITE_ONLY);
+    open_ret = output_file.open(output_path, mb::FileOpenMode::WriteOnly);
     if (!open_ret) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
                 output_path, mb::to_string(open_ret.take_error()).c_str());

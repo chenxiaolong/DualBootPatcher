@@ -142,17 +142,17 @@ void PosixFilePrivate::clear()
 const wchar_t * PosixFilePrivate::convert_mode(FileOpenMode mode)
 {
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         return L"rbN";
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         return L"r+bN";
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         return L"wbN";
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         return L"w+bN";
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         return L"abN";
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         return L"a+bN";
     default:
         return nullptr;
@@ -162,17 +162,17 @@ const wchar_t * PosixFilePrivate::convert_mode(FileOpenMode mode)
 const char * PosixFilePrivate::convert_mode(FileOpenMode mode)
 {
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         return "rbe";
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         return "r+be";
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         return "wbe";
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         return "w+be";
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         return "abe";
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         return "a+be";
     default:
         return nullptr;

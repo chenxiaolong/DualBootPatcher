@@ -409,7 +409,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return ExtractResult::ERROR;
     }
 
-    open_ret = out_file.open(out_filename, mb::FileOpenMode::WRITE_ONLY);
+    open_ret = out_file.open(out_filename, mb::FileOpenMode::WriteOnly);
     if (!open_ret) {
         error("%s: Failed to open for writing: %s",
               out_filename, mb::to_string(open_ret.take_error()).c_str());

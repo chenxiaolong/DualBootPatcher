@@ -340,7 +340,7 @@ int Reader::open_filename(const std::string &filename)
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::READ_ONLY);
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
 
     if (!ret) {
         set_error(ReaderError::FileError,
@@ -367,7 +367,7 @@ int Reader::open_filename_w(const std::wstring &filename)
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::READ_ONLY);
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
 
     if (!ret) {
         set_error(ReaderError::FileError,

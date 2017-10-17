@@ -361,7 +361,7 @@ int Writer::open_filename(const std::string &filename)
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::READ_WRITE_TRUNC);
+    auto ret = file->open(filename, FileOpenMode::ReadWriteTrunc);
 
     // Open in read/write mode since some formats need to reread the file
     if (!ret) {
@@ -389,7 +389,7 @@ int Writer::open_filename_w(const std::wstring &filename)
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::READ_WRITE_TRUNC);
+    auto ret = file->open(filename, FileOpenMode::ReadWriteTrunc);
 
     // Open in read/write mode since some formats need to reread the file
     if (!ret) {

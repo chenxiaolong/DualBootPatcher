@@ -112,7 +112,7 @@ static int fuse_open(const char *path, fuse_file_info *fi)
     }
 
     auto ret = ctx->source_file.open(source_fd_path,
-                                     mb::FileOpenMode::READ_ONLY);
+                                     mb::FileOpenMode::ReadOnly);
     if (!ret) {
         delete ctx;
 
@@ -218,7 +218,7 @@ static int get_sparse_file_size()
     mb::StandardFile source_file;
     mb::sparse::SparseFile sparse_file;
 
-    auto ret = source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY);
+    auto ret = source_file.open(source_fd_path, mb::FileOpenMode::ReadOnly);
     if (!ret) {
         int fuse_ret = EIO;
         auto error = extract_errno(ret.take_error(), fuse_ret);

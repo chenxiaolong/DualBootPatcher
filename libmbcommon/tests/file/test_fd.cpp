@@ -158,7 +158,7 @@ TEST_F(FileFdTest, OpenFilenameMbsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(!!file.open("x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameMbsFailure)
@@ -174,7 +174,7 @@ TEST_F(FileFdTest, OpenFilenameMbsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    auto result = file.open("x", FileOpenMode::READ_ONLY);
+    auto result = file.open("x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),
@@ -208,7 +208,7 @@ TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(!!file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameWcsFailure)
@@ -224,7 +224,7 @@ TEST_F(FileFdTest, OpenFilenameWcsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    auto result = file.open(L"x", FileOpenMode::READ_ONLY);
+    auto result = file.open(L"x", FileOpenMode::ReadOnly);
     ASSERT_FALSE(result);
     ASSERT_FALSE(handle_errors(
         result.take_error(),
