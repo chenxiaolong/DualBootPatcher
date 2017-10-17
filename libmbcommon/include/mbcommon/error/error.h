@@ -189,4 +189,16 @@ MB_EXPORT Error make_error(ArgTs &&... args)
     return {std::make_unique<ErrT>(std::forward<ArgTs>(args)...)};
 }
 
+/*!
+ * Write all error messages (if any) in \p e to a string. "`; `" is used to
+ * separate error messages.
+ */
+MB_EXPORT std::string to_string(Error e);
+
+/*!
+ * Write all error messages (if any) in \p e to a string. \p delimiter is used
+ * to separate error messages.
+ */
+MB_EXPORT std::string to_string(Error e, const std::string &delimiter);
+
 }

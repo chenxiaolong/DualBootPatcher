@@ -14,11 +14,18 @@ char ErrorList::ID = 0;
 
 std::string ErrorList::message() const
 {
-    std::string buf("Multiple errors:\n");
+    std::string buf;
+    bool first = true;
+
     for (auto &payload : _payloads) {
+        if (first) {
+            first = false;
+        } else {
+            buf += "; ";
+        }
         buf += payload->message();
-        buf += '\n';
     }
+
     return buf;
 }
 
