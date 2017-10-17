@@ -184,7 +184,7 @@ inline ErrorSuccess Error::success()
  * Make an Error instance representing failure using the given error info type.
  */
 template <typename ErrT, typename... ArgTs>
-MB_EXPORT Error make_error(ArgTs &&... args)
+Error make_error(ArgTs &&... args)
 {
     return {std::make_unique<ErrT>(std::forward<ArgTs>(args)...)};
 }

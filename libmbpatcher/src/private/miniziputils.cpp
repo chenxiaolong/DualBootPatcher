@@ -36,7 +36,6 @@
 #include "mblog/logging.h"
 
 #include "mbpio/directory.h"
-#include "mbpio/error.h"
 #include "mbpio/path.h"
 
 #include "minizip/ioapi_buf.h"
@@ -532,10 +531,11 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
 #endif
     full_path += filename;
 
-    std::string parent_path = io::dirName(full_path);
-    if (!io::createDirectories(parent_path)) {
+    std::string parent_path = io::dir_name(full_path);
+    auto mkdir_ret = io::create_directories(parent_path);
+    if (!mkdir_ret) {
         LOGW("%s: Failed to create directory: %s",
-             parent_path.c_str(), io::lastErrorString().c_str());
+             parent_path.c_str(), to_string(mkdir_ret.take_error()).c_str());
     }
 
     StandardFile file;

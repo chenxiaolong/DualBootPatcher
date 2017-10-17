@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -22,12 +22,17 @@
 #include <string>
 #include <vector>
 
+#include "mbcommon/common.h"
+
+namespace mb
+{
 namespace io
 {
 
-std::string baseName(const std::string &path);
-std::string dirName(const std::string &path);
+MB_EXPORT std::string base_name(const std::string &path);
+MB_EXPORT std::string dir_name(const std::string &path);
 
-std::string pathJoin(const std::vector<std::string> &components);
+MB_EXPORT std::string path_join(const std::vector<std::string> &components);
 
+}
 }

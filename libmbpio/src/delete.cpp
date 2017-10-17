@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,24 +19,25 @@
 
 #include "mbpio/delete.h"
 
-#include "mbpio/private/common.h"
-
-#ifdef IO_PLATFORM_WINDOWS
+#ifdef _WIN32
 #include "mbpio/win32/delete.h"
 #else
 #include "mbpio/posix/delete.h"
 #endif
 
+namespace mb
+{
 namespace io
 {
 
-bool deleteRecursively(const std::string &path)
+Expected<void> delete_recursively(const std::string &path)
 {
-#ifdef IO_PLATFORM_WINDOWS
-    return win32::deleteRecursively(path);
+#ifdef _WIN32
+    return win32::delete_recursively(path);
 #else
-    return posix::deleteRecursively(path);
+    return posix::delete_recursively(path);
 #endif
 }
 
+}
 }
