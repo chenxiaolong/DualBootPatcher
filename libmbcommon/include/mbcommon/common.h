@@ -119,12 +119,12 @@
 #endif
 
 #ifndef NDEBUG
-#  define MB_UNREACHABLE(FMT, ...) \
-       ::mb_unreachable(__FILE__, __LINE__, __func__, FMT, __VA_ARGS__)
+#  define MB_UNREACHABLE(...) \
+       ::mb_unreachable(__FILE__, __LINE__, __func__, __VA_ARGS__)
 #elif defined(MB_BUILTIN_UNREACHABLE)
-#  define MB_UNREACHABLE(FMT, ...) MB_BUILTIN_UNREACHABLE
+#  define MB_UNREACHABLE(...) MB_BUILTIN_UNREACHABLE
 #else
-#  define MB_UNREACHABLE(FMT, ...) ::mb_unreachable(NULL, 0, NULL, NULL)
+#  define MB_UNREACHABLE(...) ::mb_unreachable(NULL, 0, NULL, NULL)
 #endif
 
 /*!
