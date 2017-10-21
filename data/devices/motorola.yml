@@ -594,3 +594,75 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
       - /dev/block/mmcblk0p38
+
+
+- name: Motorola Moto E4
+  id: woods
+  codenames:
+    - woods
+    - woods_f
+    - woods_retail
+    - XT1762
+    - XT1760
+    - e4
+    - E4
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      - /dev/block/mmcblk0p5
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/lk
+      - /dev/block/mmcblk0p9
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/logo
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/para
+      - /dev/block/mmcblk0p15
+      - /dev/block/platform/mtk-msdc.0/by-name/tee1
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee1
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/mtk-msdc.0/by-name/tee2
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/tee2
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/mtk-msdc.0/by-name/efuse
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/efuse
+      - /dev/block/mmcblk0p28
+      - /dev/block/platform/mtk-msdc.0/by-name/otp
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/otp
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH 
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 160
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+theme: portrait_hdpi
