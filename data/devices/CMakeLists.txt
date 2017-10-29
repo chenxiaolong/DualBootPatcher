@@ -51,6 +51,7 @@ set(files
     symphony.yml
     tecno.yml
     umi.yml
+    vodafone.yml
     walton.yml
     wiko.yml
     wileyfox.yml
