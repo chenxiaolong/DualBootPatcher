@@ -83,7 +83,7 @@ File::File() : _priv_ptr(new FilePrivate())
 {
     MB_PRIVATE(File);
 
-    priv->state = FileState::NEW;
+    priv->state = FileState::New;
 }
 
 /*! \cond INTERNAL */
@@ -91,7 +91,7 @@ File::File(FilePrivate *priv_) : _priv_ptr(priv_)
 {
     MB_PRIVATE(File);
 
-    priv->state = FileState::NEW;
+    priv->state = FileState::New;
 }
 /*! \endcond */
 
@@ -109,7 +109,7 @@ File::~File()
     // We can't call a virtual function (on_close()) from the destructor, so we
     // must ensure that subclasses will call close().
     if (priv) {
-        assert(priv->state == FileState::NEW);
+        assert(priv->state == FileState::New);
     }
 }
 
@@ -170,12 +170,12 @@ File & File::operator=(File &&rhs) noexcept
 bool File::open()
 {
     GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::NEW, false);
+    ENSURE_STATE_OR_RETURN(FileState::New, false);
 
     auto ret = on_open();
 
     if (ret) {
-        priv->state = FileState::OPENED;
+        priv->state = FileState::Opened;
     } else {
         // If the file was not successfully opened, then close it
         on_close();
@@ -202,11 +202,11 @@ bool File::close()
     auto ret = true;
 
     // Avoid double-closing or closing nothing
-    if (priv->state != FileState::NEW) {
+    if (priv->state != FileState::New) {
         ret = on_close();
     }
 
-    priv->state = FileState::NEW;
+    priv->state = FileState::New;
 
     return ret;
 }
@@ -240,7 +240,7 @@ bool File::close()
 bool File::read(void *buf, size_t size, size_t &bytes_read)
 {
     GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN(FileState::Opened, false);
 
     return on_read(buf, size, bytes_read);
 }
@@ -267,7 +267,7 @@ bool File::read(void *buf, size_t size, size_t &bytes_read)
 bool File::write(const void *buf, size_t size, size_t &bytes_written)
 {
     GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN(FileState::Opened, false);
 
     return on_write(buf, size, bytes_written);
 }
@@ -284,7 +284,7 @@ bool File::write(const void *buf, size_t size, size_t &bytes_written)
 bool File::seek(int64_t offset, int whence, uint64_t *new_offset)
 {
     GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN(FileState::Opened, false);
 
     uint64_t new_offset_temp;
 
@@ -313,7 +313,7 @@ bool File::seek(int64_t offset, int whence, uint64_t *new_offset)
 bool File::truncate(uint64_t size)
 {
     GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED, false);
+    ENSURE_STATE_OR_RETURN(FileState::Opened, false);
 
     return on_truncate(size);
 }
@@ -326,7 +326,7 @@ bool File::truncate(uint64_t size)
 bool File::is_open()
 {
     GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::OPENED;
+    return priv->state == FileState::Opened;
 }
 
 /*!
@@ -340,7 +340,7 @@ bool File::is_open()
 bool File::is_fatal()
 {
     GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::FATAL;
+    return priv->state == FileState::Fatal;
 }
 
 /*!
@@ -355,8 +355,8 @@ void File::set_fatal()
 {
     GET_PIMPL_OR_RETURN();
 
-    if (priv->state == FileState::OPENED) {
-        priv->state = FileState::FATAL;
+    if (priv->state == FileState::Opened) {
+        priv->state = FileState::Fatal;
     }
 }
 
