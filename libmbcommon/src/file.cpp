@@ -346,20 +346,18 @@ bool File::is_fatal()
 /*!
  * \brief Set whether file is fatal state
  *
- * This function can only be called if the file is opened.
+ * This function only has an effect if the file is opened.
  *
  * If the file is in the fatal state, the only valid operation is to call
  * close().
- *
- * \return Whether the fatal state was successfully set
  */
-bool File::set_fatal(bool fatal)
+void File::set_fatal()
 {
-    GET_PIMPL_OR_RETURN(false);
-    ENSURE_STATE_OR_RETURN(FileState::OPENED | FileState::FATAL, false);
+    GET_PIMPL_OR_RETURN();
 
-    priv->state = fatal ? FileState::FATAL : FileState::OPENED;
-    return true;
+    if (priv->state == FileState::OPENED) {
+        priv->state = FileState::FATAL;
+    }
 }
 
 /*!

@@ -576,7 +576,7 @@ bool Win32File::on_truncate(uint64_t size)
     if (!on_seek(static_cast<int64_t>(current_pos), SEEK_SET, temp)) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
-        set_fatal(true);
+        set_fatal();
         ret = false;
     }
 

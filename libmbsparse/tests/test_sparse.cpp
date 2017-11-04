@@ -49,7 +49,7 @@ protected:
         case mb::sparse::Seekability::CAN_READ:
             break;
         default:
-            set_fatal(true);
+            set_fatal();
             return false;
         }
 

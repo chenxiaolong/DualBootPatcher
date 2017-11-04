@@ -295,7 +295,7 @@ bool file_search(File &file, int64_t start, int64_t end,
             } else if (discarded != offset) {
                 file.set_error(make_error_code(FileError::ArgumentOutOfRange),
                                "Reached EOF before starting offset");
-                file.set_fatal(true);
+                file.set_fatal();
                 return false;
             }
         } else {

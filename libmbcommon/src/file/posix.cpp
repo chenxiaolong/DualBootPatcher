@@ -519,7 +519,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
         // Try to restore old position
         set_error(ec_from_errno(), "Failed to get file position");
         if (priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) != 0) {
-            set_fatal(true);
+            set_fatal();
         }
         return false;
     }

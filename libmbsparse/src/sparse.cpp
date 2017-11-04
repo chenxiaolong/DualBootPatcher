@@ -173,7 +173,7 @@ bool SparseFilePrivate::wread(void *buf, size_t size)
         pub->set_error(file->error(), "Requested %" MB_PRIzu
                        " bytes, but only read %" MB_PRIzu " bytes",
                        size, bytes_read);
-        pub->set_fatal(true);
+        pub->set_fatal();
         return false;
     }
 
@@ -224,14 +224,14 @@ bool SparseFilePrivate::skip_bytes(uint64_t bytes)
         } else if (discarded != bytes) {
             pub->set_error(file->error(), "Reached EOF when skipping bytes: %s",
                            file->error_string().c_str());
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
         return true;
     }
 
     // Unreached
-    pub->set_fatal(true);
+    pub->set_fatal();
     return false;
 }
 
@@ -600,7 +600,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
                            "Internal error: src_begin (%" PRIu64 ")"
                            " < cur_src_offset (%" PRIu64 ")",
                            src_begin, cur_src_offset);
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
@@ -608,7 +608,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
             pub->set_error(pub->error(),
                            "Failed to skip to chunk #%" MB_PRIzu ": %s",
                            chunk_num, pub->error_string().c_str());
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
@@ -618,7 +618,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
             pub->set_error(pub->error(),
                            "Failed to read chunk header for chunk %" MB_PRIzu
                            ": %s", chunk_num, pub->error_string().c_str());
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
@@ -635,14 +635,14 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
                            "Failed to skip extra bytes in chunk #%" MB_PRIzu
                            "'s header: %s", chunk_num,
                            pub->error_string().c_str());
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
         ChunkInfo chunk_info{};
 
         if (!process_chunk(chdr, tgt_begin, chunk_info)) {
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
@@ -657,7 +657,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
                            "Chunk #%" MB_PRIzu " ends (%" PRIu64 ") after the "
                            "file size specified in the sparse header (%"
                            PRIu64 ")", chunk_num, chunk_info.end, file_size);
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
@@ -671,7 +671,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
                            "Last chunk does not end (%" PRIu64 ") at position"
                            " specified by sparse header (%" PRIu64 ")",
                            chunks.back().end, file_size);
-            pub->set_fatal(true);
+            pub->set_fatal();
             return false;
         }
 
