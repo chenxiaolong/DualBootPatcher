@@ -23,17 +23,18 @@
 
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 #include "mbcommon/string.h"
 
 #include "mbpio/error.h"
 #include "mbpio/private/common.h"
 
-#ifdef IO_PLATFORM_WINDOWS
-#include "mbpio/win32/error.h"
+#ifdef _WIN32
+#  include <windows.h>
 #else
-#include <cerrno>
-#include <sys/stat.h>
+#  include <cerrno>
+#  include <sys/stat.h>
 #endif
 
 namespace io
@@ -75,7 +76,7 @@ bool createDirectories(const std::string &path)
         if (!mb::utf8_to_wcs(wTemp, temp)) {
             setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to convert UTF-16 to UTF-8: %s",
-                    temp.c_str(), win32::errorToString(GetLastError()).c_str()));
+                    temp.c_str(), mb::ec_from_win32().message().c_str()));
             return false;
         }
 
@@ -86,7 +87,7 @@ bool createDirectories(const std::string &path)
                 && GetLastError() != ERROR_ALREADY_EXISTS) {
             setLastError(Error::PlatformError, mb::format(
                     "%s: Failed to create directory: %s",
-                    temp.c_str(), win32::errorToString(GetLastError()).c_str()));
+                    temp.c_str(), mb::ec_from_win32().message().c_str()));
             return false;
         }
 #else

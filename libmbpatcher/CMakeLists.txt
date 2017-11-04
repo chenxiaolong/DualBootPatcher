@@ -39,10 +39,6 @@ foreach(variant ${variants})
         src/patchers/zippatcher.cpp
     )
 
-    if(WIN32)
-        target_sources(${lib_target} PRIVATE src/private/win32.cpp)
-    endif()
-
     # Includes
     target_include_directories(
         ${lib_target}

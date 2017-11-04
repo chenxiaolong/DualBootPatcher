@@ -24,11 +24,11 @@
 #include <memory>
 #include <type_traits>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 #include "mbcommon/string.h"
 
 #include "mbpio/error.h"
-#include "mbpio/win32/error.h"
 
 namespace io
 {
@@ -58,7 +58,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
         if (error != ERROR_FILE_NOT_FOUND) {
             setLastError(Error::PlatformError, mb::format(
                     "FindFirstFileExW() failed: %s",
-                    errorToString(error).c_str()));
+                    mb::ec_from_win32(error).message().c_str()));
             return false;
         }
     } else {
@@ -82,7 +82,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
                         DWORD error = GetLastError();
                         setLastError(Error::PlatformError, mb::format(
                                 "DeleteFileW() failed: %s",
-                                errorToString(error).c_str()));
+                                mb::ec_from_win32(error).message().c_str()));
                         return false;
                     }
                 }
@@ -94,7 +94,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
                 if (error != ERROR_NO_MORE_FILES) {
                     setLastError(Error::PlatformError, mb::format(
                             "FindNextFileW() failed: %s",
-                            errorToString(error).c_str()));
+                            mb::ec_from_win32(error).message().c_str()));
                     return false;
                 }
                 break;
@@ -106,7 +106,7 @@ static bool win32RecursiveDelete(const std::wstring &path)
         DWORD error = GetLastError();
         setLastError(Error::PlatformError, mb::format(
                 "RemoveDirectoryW() failed: %s",
-                errorToString(error).c_str()));
+                mb::ec_from_win32(error).message().c_str()));
         return false;
     }
 

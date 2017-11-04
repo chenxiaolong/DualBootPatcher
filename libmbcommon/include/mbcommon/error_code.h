@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,17 +19,25 @@
 
 #pragma once
 
-#include <string>
+#include "mbcommon/common.h"
 
-#include <windows.h>
+#include <system_error>
 
-namespace io
+#ifdef _WIN32
+#  include <windef.h>
+#endif
+
+namespace mb
 {
-namespace win32
-{
 
-std::wstring errorToWString(DWORD win32Error);
-std::string errorToString(DWORD win32Error);
+MB_EXPORT std::error_code ec_from_errno(int errno_value);
+MB_EXPORT std::error_code ec_from_errno();
 
-}
+#ifdef _WIN32
+MB_EXPORT const std::error_category & win32_error_category();
+
+MB_EXPORT std::error_code ec_from_win32(DWORD error_value);
+MB_EXPORT std::error_code ec_from_win32();
+#endif
+
 }

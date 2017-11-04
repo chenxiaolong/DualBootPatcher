@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/file/memory_p.h"
 #include "mbcommon/string.h"
 
@@ -226,8 +227,7 @@ bool MemoryFile::on_write(const void *buf, size_t size, size_t &bytes_written)
             // Enlarge buffer
             void *new_data = realloc(priv->data, desired_size);
             if (!new_data) {
-                set_error(std::error_code(errno, std::generic_category()),
-                          "Failed to enlarge buffer");
+                set_error(ec_from_errno(), "Failed to enlarge buffer");
                 return false;
             }
 
@@ -306,8 +306,7 @@ bool MemoryFile::on_truncate(uint64_t size)
     } else {
         void *new_data = realloc(priv->data, static_cast<size_t>(size));
         if (!new_data) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to resize buffer");
+            set_error(ec_from_errno(), "Failed to resize buffer");
             return false;
         }
 

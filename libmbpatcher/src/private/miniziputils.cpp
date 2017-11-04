@@ -30,6 +30,7 @@
 #include <time.h>
 #endif
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/locale.h"
 
@@ -50,10 +51,8 @@
 #  include "minizip/ioandroid.h"
 #endif
 
-#ifdef _WIN32
-#include "mbpatcher/private/win32.h"
-#else
-#include <sys/stat.h>
+#ifndef _WIN32
+#  include <sys/stat.h>
 #endif
 
 #include "mbpatcher/private/fileutils.h"
@@ -613,7 +612,7 @@ static bool get_file_time(const std::string &filename, uint32_t *dostime)
         return true;
     } else {
         LOGE("%s: FindFirstFileW() failed: %s",
-             filename.c_str(), win32_error_to_string(GetLastError()).c_str());
+             filename.c_str(), ec_from_win32().message().c_str());
     }
 #elif defined unix || defined __APPLE__ || defined __ANDROID__
     struct stat sb;

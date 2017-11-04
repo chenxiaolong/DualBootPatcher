@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
 #include "mbcommon/file/fd_p.h"
@@ -377,8 +378,7 @@ bool FdFile::on_open()
 #endif
                 priv->filename.c_str(), priv->flags, DEFAULT_MODE);
         if (priv->fd < 0) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to open file");
+            set_error(ec_from_errno(), "Failed to open file");
             return false;
         }
     }
@@ -386,8 +386,7 @@ bool FdFile::on_open()
     struct stat sb;
 
     if (priv->funcs->fn_fstat(priv->fd, &sb) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to stat file");
+        set_error(ec_from_errno(), "Failed to stat file");
         return false;
     }
 
@@ -407,8 +406,7 @@ bool FdFile::on_close()
     bool ret = true;
 
     if (priv->owned && priv->fd >= 0 && priv->funcs->fn_close(priv->fd) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to close file");
+        set_error(ec_from_errno(), "Failed to close file");
         ret = false;
     }
 
@@ -428,8 +426,7 @@ bool FdFile::on_read(void *buf, size_t size, size_t &bytes_read)
 
     ssize_t n = priv->funcs->fn_read(priv->fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to read file");
+        set_error(ec_from_errno(), "Failed to read file");
         return false;
     }
 
@@ -447,8 +444,7 @@ bool FdFile::on_write(const void *buf, size_t size, size_t &bytes_written)
 
     ssize_t n = priv->funcs->fn_write(priv->fd, buf, size);
     if (n < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to write file");
+        set_error(ec_from_errno(), "Failed to write file");
         return false;
     }
 
@@ -462,8 +458,7 @@ bool FdFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
 
     off64_t ret = priv->funcs->fn_lseek64(priv->fd, offset, whence);
     if (ret < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to seek file");
+        set_error(ec_from_errno(), "Failed to seek file");
         return false;
     }
 
@@ -476,8 +471,7 @@ bool FdFile::on_truncate(uint64_t size)
     MB_PRIVATE(FdFile);
 
     if (priv->funcs->fn_ftruncate64(priv->fd, static_cast<off64_t>(size)) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to truncate file");
+        set_error(ec_from_errno(), "Failed to truncate file");
         return false;
     }
 

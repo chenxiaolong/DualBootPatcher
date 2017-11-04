@@ -24,16 +24,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
 #include "mbcommon/file/win32_p.h"
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
-
-#define GET_LAST_ERROR() \
-    static_cast<int>(GetLastError())
-#define WIN32_ERROR_CODE() \
-    std::error_code(GET_LAST_ERROR(), std::system_category())
 
 /*!
  * \file mbcommon/file/win32.h
@@ -423,7 +419,7 @@ bool Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(WIN32_ERROR_CODE(), "Failed to open file");
+            set_error(ec_from_win32(), "Failed to open file");
             return false;
         }
     }
@@ -439,7 +435,7 @@ bool Win32File::on_close()
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(WIN32_ERROR_CODE(), "Failed to close file");
+        set_error(ec_from_win32(), "Failed to close file");
         ret = false;
     }
 
@@ -468,7 +464,7 @@ bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to read file");
+        set_error(ec_from_win32(), "Failed to read file");
         return false;
     }
 
@@ -504,7 +500,7 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to write file");
+        set_error(ec_from_win32(), "Failed to write file");
         return false;
     }
 
@@ -544,7 +540,7 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     );
 
     if (!ret) {
-        set_error(WIN32_ERROR_CODE(), "Failed to seek file");
+        set_error(ec_from_win32(), "Failed to seek file");
         return false;
     }
 
@@ -572,7 +568,7 @@ bool Win32File::on_truncate(uint64_t size)
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(WIN32_ERROR_CODE(), "Failed to set EOF position");
+        set_error(ec_from_win32(), "Failed to set EOF position");
         ret = false;
     }
 

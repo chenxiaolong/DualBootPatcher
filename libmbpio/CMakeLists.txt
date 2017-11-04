@@ -39,7 +39,6 @@ if(MBP_TARGET_HAS_BUILDS)
             mbpio-static
             PRIVATE
             src/win32/delete.cpp
-            src/win32/error.cpp
         )
     else()
         target_sources(

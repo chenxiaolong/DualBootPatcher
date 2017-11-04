@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/libc/string.h"
 
 #define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
@@ -275,8 +276,7 @@ bool file_search(File &file, int64_t start, int64_t end,
 
     buf.reset(static_cast<char *>(malloc(buf_size)));
     if (!buf) {
-        file.set_error(std::error_code(errno, std::generic_category()),
-                       "Failed to allocate buffer");
+        file.set_error(ec_from_errno(), "Failed to allocate buffer");
         return false;
     }
 

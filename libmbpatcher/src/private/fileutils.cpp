@@ -24,15 +24,15 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
 #include "mblog/logging.h"
 
 #ifdef _WIN32
-#include "mbpatcher/private/win32.h"
-#include <windows.h>
+#  include <windows.h>
 #else
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif
 
 #define LOG_TAG "mbpatcher/private/fileutils"
@@ -286,7 +286,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
     );
     if (!ret) {
         LOGE("CryptAcquireContext() failed: %s",
-             win32_error_to_string(GetLastError()).c_str());
+             ec_from_win32().message().c_str());
         return std::string();
     }
 
@@ -307,7 +307,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         );
         if (!ret) {
             LOGE("CryptGenRandom() failed: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 ec_from_win32().message().c_str());
             break;
         }
 
@@ -320,7 +320,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         std::wstring w_new_path;
         if (!utf8_to_wcs(w_new_path, new_path)) {
             LOGE("Failed to convert UTF-8 to WCS: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 ec_from_win32().message().c_str());
             break;
         }
 
@@ -333,7 +333,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
             break;
         } else if (GetLastError() != ERROR_ALREADY_EXISTS) {
             LOGE("CreateDirectoryW() failed: %s",
-                 win32_error_to_string(GetLastError()).c_str());
+                 ec_from_win32().message().c_str());
             new_path.clear();
             break;
         }
