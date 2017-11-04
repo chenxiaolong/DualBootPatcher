@@ -173,12 +173,15 @@ TEST_F(FileFdTest, OpenFilenameMbsFailure)
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameMbsInvalidMode)
 {
-    TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 {
@@ -214,12 +217,15 @@ TEST_F(FileFdTest, OpenFilenameWcsFailure)
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
 {
-    TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
-    ASSERT_EQ(file.error(), mb::FileError::InvalidMode);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<mb::FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFstatFailed)
 {

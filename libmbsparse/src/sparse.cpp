@@ -1057,9 +1057,7 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
         new_offset = priv->file_size + static_cast<uint64_t>(offset);
         break;
     default:
-        set_error(make_error_code(FileError::InvalidWhence),
-                  "Invalid seek whence: %d", whence);
-        return false;
+        MB_UNREACHABLE("Invalid seek whence: %d", whence);
     }
 
     if (!priv->move_to_chunk(new_offset)) {
