@@ -95,11 +95,11 @@ static struct CompressionMap
     const char *name;
     const char *extension;
 } g_compression_map[] = {
-    { util::CompressionType::NONE, "none",  ".tar" },
-    { util::CompressionType::LZ4,  "lz4",   ".tar.lz4" },
-    { util::CompressionType::GZIP, "gzip",  ".tar.gz" },
-    { util::CompressionType::XZ,   "xz",    ".tar.xz" },
-    { util::CompressionType::NONE, nullptr, nullptr }
+    { util::CompressionType::None, "none",  ".tar" },
+    { util::CompressionType::Lz4,  "lz4",   ".tar.lz4" },
+    { util::CompressionType::Gzip, "gzip",  ".tar.gz" },
+    { util::CompressionType::Xz,   "xz",    ".tar.xz" },
+    { util::CompressionType::None, nullptr, nullptr }
 };
 
 static BackupTargets parse_targets_string(const std::string &targets)
@@ -903,7 +903,7 @@ int backup_main(int argc, char *argv[])
     std::string targets_str("all");
     std::string name;
     std::string backupdir(MULTIBOOT_BACKUP_DIR);
-    util::CompressionType compression = util::CompressionType::LZ4;
+    util::CompressionType compression = util::CompressionType::Lz4;
     bool force = false;
 
     if (!util::format_time("%Y.%m.%d-%H.%M.%S", name)) {
