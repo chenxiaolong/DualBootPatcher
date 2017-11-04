@@ -79,11 +79,11 @@ typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 
 using namespace mb::device;
 
-enum class ExtractResult
+enum class ExtractResult : uint8_t
 {
-    OK,
-    MISSING,
-    ERROR
+    Ok,
+    Missing,
+    Error,
 };
 
 static int interface;
@@ -199,20 +199,20 @@ static ExtractResult la_skip_to(archive *a, const char *filename,
         const char *name = archive_entry_pathname(*entry);
         if (!name) {
             error("libarchive: Failed to get filename");
-            return ExtractResult::ERROR;
+            return ExtractResult::Error;
         }
 
         if (strcmp(filename, name) == 0) {
-            return ExtractResult::OK;
+            return ExtractResult::Ok;
         }
     }
     if (ret != ARCHIVE_EOF) {
         error("libarchive: Failed to read header: %s", archive_error_string(a));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     error("libarchive: Failed to find %s in zip", filename);
-    return ExtractResult::MISSING;
+    return ExtractResult::Missing;
 }
 
 static bool load_sales_code()
@@ -270,7 +270,7 @@ static bool load_block_devs()
         }
 
         archive_entry *entry;
-        if (la_skip_to(a, DEVICE_JSON_FILE, &entry) != ExtractResult::OK) {
+        if (la_skip_to(a, DEVICE_JSON_FILE, &entry) != ExtractResult::Ok) {
             return false;
         }
 
@@ -381,16 +381,16 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
 
     if (!a) {
         error("Out of memory");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!la_open_zip(a.get(), zip_file)) {
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     archive_entry *entry;
     auto result = la_skip_to(a.get(), zip_filename, &entry);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
@@ -398,19 +398,19 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
                    a.get())) {
         error("Failed to open sparse file in zip: %s",
               file.error_string().c_str());
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!sparse_file.open(&file)) {
         error("Failed to open sparse file: %s",
               sparse_file.error_string().c_str());
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!out_file.open(out_filename, mb::FileOpenMode::WriteOnly)) {
         error("%s: Failed to open for writing: %s",
               out_filename, out_file.error_string().c_str());
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     char buf[10240];
@@ -438,7 +438,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
             if (!out_file.write(buf, n, nwritten)) {
                 error("%s: Failed to write file: %s",
                       out_filename, out_file.error_string().c_str());
-                return ExtractResult::ERROR;
+                return ExtractResult::Error;
             }
 
             n -= nwritten;
@@ -449,16 +449,16 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
     if (!ret) {
         error("Failed to read sparse file %s: %s",
               zip_filename, sparse_file.error_string().c_str());
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!out_file.close()) {
         error("%s: Failed to close file: %s",
               out_filename, out_file.error_string().c_str());
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    return ExtractResult::OK;
+    return ExtractResult::Ok;
 }
 
 static ExtractResult extract_raw_file(const char *zip_filename,
@@ -476,16 +476,16 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 
     if (!a) {
         error("Out of memory");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!la_open_zip(a.get(), zip_file)) {
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     archive_entry *entry;
     auto result = la_skip_to(a.get(), zip_filename, &entry);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
@@ -495,7 +495,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
                 O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC | O_LARGEFILE, 0600);
     if (fd < 0) {
         error("%s: Failed to open: %s", out_filename, strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     auto close_fd = mb::finally([fd]{
@@ -520,7 +520,7 @@ static ExtractResult extract_raw_file(const char *zip_filename,
             if ((nwritten = write(fd, out_ptr, static_cast<size_t>(n))) < 0) {
                 error("%s: Failed to write: %s",
                       out_filename, strerror(errno));
-                return ExtractResult::ERROR;
+                return ExtractResult::Error;
             }
 
             n -= nwritten;
@@ -530,10 +530,10 @@ static ExtractResult extract_raw_file(const char *zip_filename,
     if (n != 0) {
         error("libarchive: %s: Failed to read %s: %s",
               zip_file, zip_filename, archive_error_string(a.get()));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    return ExtractResult::OK;
+    return ExtractResult::Ok;
 }
 
 static bool copy_dir_if_exists(const char *source_dir,
@@ -732,19 +732,19 @@ static ExtractResult flash_csc()
     ExtractResult result;
 
     result = extract_raw_file(CACHE_SPARSE_FILE, TEMP_CACHE_SPARSE_FILE);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
     result = extract_raw_file(FUSE_SPARSE_FILE, TEMP_FUSE_SPARSE_FILE);
-    if (result != ExtractResult::OK) {
-        return ExtractResult::ERROR;
+    if (result != ExtractResult::Ok) {
+        return ExtractResult::Error;
     }
 
     if (chmod(TEMP_FUSE_SPARSE_FILE, 0700) < 0) {
         error("%s: Failed to chmod: %s",
               TEMP_FUSE_SPARSE_FILE, strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     // Create temporary file for fuse
@@ -761,13 +761,13 @@ static ExtractResult flash_csc()
     }
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     } else if (WIFSIGNALED(status)) {
         error("Command killed by signal: %d", WTERMSIG(status));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     } else if (WEXITSTATUS(status) != 0) {
         error("Command returned non-zero exit status: %d", WEXITSTATUS(status));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     auto unmount_fuse_file = mb::finally([]{
@@ -784,7 +784,7 @@ static ExtractResult flash_csc()
         error("Failed to mount (%s) %s at %s: %s",
               TEMP_CACHE_MOUNT_FILE, "ext4", TEMP_CACHE_MOUNT_DIR,
               strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     auto unmount_dir = mb::finally([]{
@@ -794,7 +794,7 @@ static ExtractResult flash_csc()
     // Mount system
     if (!mount_system()) {
         error("Failed to mount system");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     auto unmount_system_dir = mb::finally([]{
@@ -803,15 +803,15 @@ static ExtractResult flash_csc()
 
     if (!flash_csc_zip()) {
         error("Failed to flash CSC zip");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!apply_multi_csc()) {
         error("Failed to apply Multi-CSC");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    return ExtractResult::OK;
+    return ExtractResult::Ok;
 }
 
 static bool flash_zip()
@@ -856,13 +856,13 @@ static bool flash_zip()
     ui_print("Flashing system image");
     result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
     switch (result) {
-    case ExtractResult::ERROR:
+    case ExtractResult::Error:
         ui_print("Failed to flash system image");
         return false;
-    case ExtractResult::MISSING:
+    case ExtractResult::Missing:
         ui_print("[WARNING] System image not found");
         break;
-    case ExtractResult::OK:
+    case ExtractResult::Ok:
         ui_print("Successfully flashed system image");
         break;
     }
@@ -875,13 +875,13 @@ static bool flash_zip()
     ui_print("Flashing CSC from cache image");
     result = flash_csc();
     switch (result) {
-    case ExtractResult::ERROR:
+    case ExtractResult::Error:
         ui_print("Failed to flash CSC");
         return false;
-    case ExtractResult::MISSING:
+    case ExtractResult::Missing:
         ui_print("[WARNING] Cache image not found. Won't flash CSC");
         break;
-    case ExtractResult::OK:
+    case ExtractResult::Ok:
         ui_print("Successfully flashed CSC");
         break;
     }
@@ -893,7 +893,7 @@ static bool flash_zip()
 #else
     ui_print("Flashing boot image");
     result = extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev.c_str());
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         ui_print("Failed to flash boot image");
         return false;
     }
