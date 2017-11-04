@@ -580,7 +580,7 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
     system:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system 
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
       - /dev/block/mmcblk0p23
       - /dev/block/bootdevice/by-name/system
     data:
