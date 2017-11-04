@@ -94,11 +94,11 @@ struct ChunkInfo
     uint32_t fill_val;
 };
 
-enum class Seekability
+enum class Seekability : uint8_t
 {
-    CAN_SEEK,
-    CAN_SKIP,
-    CAN_READ,
+    CanSeek,
+    CanSkip,
+    CanRead,
 };
 
 class SparseFilePrivate

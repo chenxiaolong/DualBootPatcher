@@ -39,14 +39,14 @@ protected:
                          uint64_t &new_offset) override
     {
         switch (_seekability) {
-        case mb::sparse::Seekability::CAN_SEEK:
+        case mb::sparse::Seekability::CanSeek:
             return mb::MemoryFile::on_seek(offset, whence, new_offset);
-        case mb::sparse::Seekability::CAN_SKIP:
+        case mb::sparse::Seekability::CanSkip:
             if (whence == SEEK_CUR && offset >= 0) {
                 return mb::MemoryFile::on_seek(offset, whence, new_offset);
             }
             break;
-        case mb::sparse::Seekability::CAN_READ:
+        case mb::sparse::Seekability::CanRead:
             break;
         default:
             set_fatal();
@@ -59,7 +59,7 @@ protected:
     }
 
 private:
-    mb::sparse::Seekability _seekability = mb::sparse::Seekability::CAN_SEEK;
+    mb::sparse::Seekability _seekability = mb::sparse::Seekability::CanSeek;
 };
 
 struct SparseTest : testing::Test
@@ -667,7 +667,7 @@ TEST_F(SparseTest, ReadValidDataWithSkippableFile)
     build_valid_data();
 
     // Check that valid sparse header can be opened
-    _source_file.set_seekability(mb::sparse::Seekability::CAN_SKIP);
+    _source_file.set_seekability(mb::sparse::Seekability::CanSkip);
     ASSERT_TRUE(_file.open(&_source_file));
 
     // Check that the entire file could be read and that the contents are
@@ -704,7 +704,7 @@ TEST_F(SparseTest, ReadValidDataWithUnseekableFile)
     build_valid_data();
 
     // Check that valid sparse header can be opened
-    _source_file.set_seekability(mb::sparse::Seekability::CAN_READ);
+    _source_file.set_seekability(mb::sparse::Seekability::CanRead);
     ASSERT_TRUE(_file.open(&_source_file));
 
     // Check that the entire file could be read and that the contents are
