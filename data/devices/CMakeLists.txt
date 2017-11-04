@@ -14,6 +14,7 @@ set(files
     dexp.yml
     doogee.yml
     elephone.yml
+    energy_sistem.yml
     gionee.yml
     google.yml
     gree.yml
