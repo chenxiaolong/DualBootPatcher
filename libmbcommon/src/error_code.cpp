@@ -29,6 +29,16 @@
 namespace mb
 {
 
+std::error_code ec_from_errno(int errno_value)
+{
+    return {errno_value, std::generic_category()};
+}
+
+std::error_code ec_from_errno()
+{
+    return ec_from_errno(errno);
+}
+
 // Unfortunately, libstdc++'s system_category() only works with errno
 // https://github.com/gcc-mirror/gcc/blob/gcc-7_2_0-release/libstdc%2B%2B-v3/src/c%2B%2B11/system_error.cc#L54
 
@@ -193,6 +203,16 @@ const std::error_category & win32_error_category()
 #else
     return std::system_category();
 #endif
+}
+
+std::error_code ec_from_win32(DWORD error_value)
+{
+    return {static_cast<int>(error_value), win32_error_category()};
+}
+
+std::error_code ec_from_win32()
+{
+    return ec_from_win32(GetLastError());
 }
 #endif
 

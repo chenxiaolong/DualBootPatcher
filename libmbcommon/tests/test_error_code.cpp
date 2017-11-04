@@ -19,6 +19,8 @@
 
 #include <gmock/gmock.h>
 
+#include <cerrno>
+
 #ifdef _WIN32
 #  include <windows.h>
 #endif
@@ -26,6 +28,23 @@
 #include "mbcommon/error_code.h"
 
 using namespace mb;
+
+TEST(ErrorCodeTest, ConvertFromErrnoValue)
+{
+    auto ec = ec_from_errno(ENOENT);
+    ASSERT_TRUE(ec);
+    ASSERT_EQ(ec.value(), ENOENT);
+    ASSERT_EQ(ec, std::errc::no_such_file_or_directory);
+}
+
+TEST(ErrorCodeTest, ConvertFromCurrentErrnoValue)
+{
+    errno = ENOENT;
+    auto ec = ec_from_errno();
+    ASSERT_TRUE(ec);
+    ASSERT_EQ(ec.value(), ENOENT);
+    ASSERT_EQ(ec, std::errc::no_such_file_or_directory);
+}
 
 #ifdef _WIN32
 
@@ -47,6 +66,23 @@ TEST(ErrorCodeTest, Win32ComparableToStdErrc)
 {
     auto ec = std::error_code(ERROR_FILE_NOT_FOUND, win32_error_category());
     ASSERT_TRUE(ec);
+    ASSERT_EQ(ec, std::errc::no_such_file_or_directory);
+}
+
+TEST(ErrorCodeTest, ConvertFromWin32ErrorValue)
+{
+    auto ec = ec_from_win32(ERROR_FILE_NOT_FOUND);
+    ASSERT_TRUE(ec);
+    ASSERT_EQ(ec.value(), ERROR_FILE_NOT_FOUND);
+    ASSERT_EQ(ec, std::errc::no_such_file_or_directory);
+}
+
+TEST(ErrorCodeTest, ConvertFromCurrentWin32ErrorValue)
+{
+    SetLastError(ERROR_FILE_NOT_FOUND);
+    auto ec = ec_from_win32();
+    ASSERT_TRUE(ec);
+    ASSERT_EQ(ec.value(), ERROR_FILE_NOT_FOUND);
     ASSERT_EQ(ec, std::errc::no_such_file_or_directory);
 }
 
