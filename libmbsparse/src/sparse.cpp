@@ -212,10 +212,10 @@ bool SparseFilePrivate::skip_bytes(uint64_t bytes)
     }
 
     switch (seekability) {
-    case Seekability::CAN_SEEK:
-    case Seekability::CAN_SKIP:
+    case Seekability::CanSeek:
+    case Seekability::CanSkip:
         return wseek(static_cast<int64_t>(bytes));
-    case Seekability::CAN_READ:
+    case Seekability::CanRead:
         uint64_t discarded;
         if (!file_read_discard(*file, bytes, discarded)) {
             pub->set_error(file->error(), "Failed to read and discard data: %s",
@@ -818,11 +818,11 @@ bool SparseFile::on_open()
     unsigned char first_byte;
     size_t n;
 
-    priv->seekability = Seekability::CAN_READ;
+    priv->seekability = Seekability::CanRead;
 
     if (priv->file->seek(0, SEEK_CUR, nullptr)) {
         DEBUG("File supports forward skipping");
-        priv->seekability = Seekability::CAN_SKIP;
+        priv->seekability = Seekability::CanSkip;
     } else if (priv->file->error() != FileErrorC::Unsupported) {
         set_error(priv->file->error(), "%s",
                   priv->file->error_string().c_str());
@@ -842,7 +842,7 @@ bool SparseFile::on_open()
 
     if (priv->file->seek(-static_cast<int64_t>(n), SEEK_CUR, nullptr)) {
         DEBUG("File supports random seeking");
-        priv->seekability = Seekability::CAN_SEEK;
+        priv->seekability = Seekability::CanSeek;
         priv->cur_src_offset -= n;
         n = 0;
     } else if (priv->file->error() != FileErrorC::Unsupported) {
@@ -936,7 +936,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
 
             uint64_t raw_src_offset = priv->chunk->raw_begin + diff;
             if (raw_src_offset != priv->cur_src_offset) {
-                assert(priv->seekability == Seekability::CAN_SEEK);
+                assert(priv->seekability == Seekability::CanSeek);
 
                 int64_t seek_offset;
                 if (raw_src_offset < priv->cur_src_offset) {
@@ -1020,7 +1020,7 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
 
     OPER("seek(%" PRId64 ", %d)", offset, whence);
 
-    if (priv->seekability != Seekability::CAN_SEEK) {
+    if (priv->seekability != Seekability::CanSeek) {
         set_error(make_error_code(FileError::UnsupportedSeek),
                   "Underlying file does not support seeking");
         return false;

@@ -30,9 +30,9 @@ namespace mb
 
 enum class FileState : uint16_t
 {
-    NEW     = 1u << 0,
-    OPENED  = 1u << 1,
-    FATAL   = 1u << 2,
+    New     = 1u << 0,
+    Opened  = 1u << 1,
+    Fatal   = 1u << 2,
 };
 MB_DECLARE_FLAGS(FileStates, FileState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)

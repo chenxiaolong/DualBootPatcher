@@ -215,15 +215,15 @@ bool libarchive_tar_extract(const std::string &filename,
     archive_read_support_format_tar(in.get());
 
     switch (compression) {
-    case CompressionType::NONE:
+    case CompressionType::None:
         break;
-    case CompressionType::LZ4:
+    case CompressionType::Lz4:
         archive_read_support_filter_lz4(in.get());
         break;
-    case CompressionType::GZIP:
+    case CompressionType::Gzip:
         archive_read_support_filter_gzip(in.get());
         break;
-    case CompressionType::XZ:
+    case CompressionType::Xz:
         archive_read_support_filter_xz(in.get());
         break;
     default:
@@ -395,15 +395,15 @@ bool libarchive_tar_create(const std::string &filename,
     archive_write_set_bytes_per_block(out.get(), 10240);
 
     switch (compression) {
-    case CompressionType::NONE:
+    case CompressionType::None:
         break;
-    case CompressionType::LZ4:
+    case CompressionType::Lz4:
         archive_write_add_filter_lz4(out.get());
         break;
-    case CompressionType::GZIP:
+    case CompressionType::Gzip:
         archive_write_add_filter_gzip(out.get());
         break;
-    case CompressionType::XZ:
+    case CompressionType::Xz:
         archive_write_add_filter_xz(out.get());
         break;
     default:
