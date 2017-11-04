@@ -407,7 +407,7 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
         return ExtractResult::ERROR;
     }
 
-    if (!out_file.open(out_filename, mb::FileOpenMode::WRITE_ONLY)) {
+    if (!out_file.open(out_filename, mb::FileOpenMode::WriteOnly)) {
         error("%s: Failed to open for writing: %s",
               out_filename, out_file.error_string().c_str());
         return ExtractResult::ERROR;

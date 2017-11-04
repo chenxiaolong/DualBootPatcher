@@ -175,7 +175,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsSuccess)
             .WillOnce(testing::Return(reinterpret_cast<HANDLE>(1)));
 
     TestableWin32File file(&_funcs);
-    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open("x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileWin32Test, OpenFilenameMbsFailure)
@@ -186,7 +186,7 @@ TEST_F(FileWin32Test, OpenFilenameMbsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open("x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 
@@ -209,7 +209,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsSuccess)
             .WillOnce(testing::Return(reinterpret_cast<HANDLE>(1)));
 
     TestableWin32File file(&_funcs);
-    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileWin32Test, OpenFilenameWcsFailure)
@@ -220,7 +220,7 @@ TEST_F(FileWin32Test, OpenFilenameWcsFailure)
             .Times(1);
 
     TestableWin32File file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error().value(), ERROR_INVALID_HANDLE);
 }
 

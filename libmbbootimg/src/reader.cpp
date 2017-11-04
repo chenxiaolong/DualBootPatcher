@@ -340,7 +340,7 @@ int Reader::open_filename(const std::string &filename)
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::READ_ONLY));
+            new StandardFile(filename, FileOpenMode::ReadOnly));
     if (!file->is_open()) {
         set_error(file->error(),
                   "Failed to open for reading: %s",
@@ -366,7 +366,7 @@ int Reader::open_filename_w(const std::wstring &filename)
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
     std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::READ_ONLY));
+            new StandardFile(filename, FileOpenMode::ReadOnly));
     if (!file->is_open()) {
         set_error(file->error(),
                   "Failed to open for reading: %s",

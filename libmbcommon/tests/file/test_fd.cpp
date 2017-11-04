@@ -153,7 +153,7 @@ TEST_F(FileFdTest, OpenFilenameMbsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open("x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameMbsFailure)
@@ -169,7 +169,7 @@ TEST_F(FileFdTest, OpenFilenameMbsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open("x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -197,7 +197,7 @@ TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameWcsFailure)
@@ -213,7 +213,7 @@ TEST_F(FileFdTest, OpenFilenameWcsFailure)
 #endif
 
     TestableFdFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 

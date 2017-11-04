@@ -34,7 +34,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::READ_ONLY
+ * \var FileOpenMode::ReadOnly
  *
  * \brief Open file for reading.
  *
@@ -42,7 +42,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::READ_WRITE
+ * \var FileOpenMode::ReadWrite
  *
  * \brief Open file for reading and writing.
  *
@@ -50,7 +50,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::WRITE_ONLY
+ * \var FileOpenMode::WriteOnly
  *
  * \brief Truncate file and open for writing.
  *
@@ -58,7 +58,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::READ_WRITE_TRUNC
+ * \var FileOpenMode::ReadWriteTrunc
  *
  * \brief Truncate file and open for reading and writing.
  *
@@ -66,7 +66,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::APPEND
+ * \var FileOpenMode::Append
  *
  * \brief Open file for appending.
  *
@@ -74,7 +74,7 @@ namespace mb
  */
 
 /*!
- * \var FileOpenMode::READ_APPEND
+ * \var FileOpenMode::ReadAppend
  *
  * \brief Open file for reading and appending.
  *

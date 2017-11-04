@@ -538,7 +538,7 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
     int ret;
 
     auto error = FileUtils::open_file(file, full_path,
-                                      FileOpenMode::WRITE_ONLY);
+                                      FileOpenMode::WriteOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
              full_path.c_str(), file.error_string().c_str());
@@ -700,7 +700,7 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     int ret;
 
     auto error = FileUtils::open_file(file, path,
-                                      FileOpenMode::READ_ONLY);
+                                      FileOpenMode::ReadOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), file.error_string().c_str());

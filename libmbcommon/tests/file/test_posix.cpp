@@ -165,7 +165,7 @@ TEST_F(FilePosixTest, OpenFilenameMbsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open("x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameMbsFailure)
@@ -179,7 +179,7 @@ TEST_F(FilePosixTest, OpenFilenameMbsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open("x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open("x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 
@@ -206,7 +206,7 @@ TEST_F(FilePosixTest, OpenFilenameWcsSuccess)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_TRUE(file.open(L"x", mb::FileOpenMode::ReadOnly));
 }
 
 TEST_F(FilePosixTest, OpenFilenameWcsFailure)
@@ -220,7 +220,7 @@ TEST_F(FilePosixTest, OpenFilenameWcsFailure)
 #endif
 
     TestablePosixFile file(&_funcs);
-    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::READ_ONLY));
+    ASSERT_FALSE(file.open(L"x", mb::FileOpenMode::ReadOnly));
     ASSERT_EQ(file.error(), std::errc::io_error);
 }
 

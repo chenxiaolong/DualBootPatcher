@@ -543,14 +543,14 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     optional<uint64_t> offset;
 
     // Open input file
-    if (!fin.open(input_file, FileOpenMode::READ_ONLY)) {
+    if (!fin.open(input_file, FileOpenMode::ReadOnly)) {
         LOGE("%s: Failed to open for reading: %s",
              input_file.c_str(), fin.error_string().c_str());
         return false;
     }
 
     // Open output file
-    if (!fout.open(output_file, FileOpenMode::WRITE_ONLY)) {
+    if (!fout.open(output_file, FileOpenMode::WriteOnly)) {
         LOGE("%s: Failed to open for writing: %s",
              output_file.c_str(), fout.error_string().c_str());
         return false;

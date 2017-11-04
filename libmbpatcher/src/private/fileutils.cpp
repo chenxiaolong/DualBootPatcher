@@ -77,7 +77,7 @@ ErrorCode FileUtils::read_to_memory(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
+    auto error = open_file(file, path, FileOpenMode::ReadOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), file.error_string().c_str());
@@ -119,7 +119,7 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::READ_ONLY);
+    auto error = open_file(file, path, FileOpenMode::ReadOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), file.error_string().c_str());
@@ -154,7 +154,7 @@ ErrorCode FileUtils::write_from_memory(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
+    auto error = open_file(file, path, FileOpenMode::WriteOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), file.error_string().c_str());
@@ -177,7 +177,7 @@ ErrorCode FileUtils::write_from_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::WRITE_ONLY);
+    auto error = open_file(file, path, FileOpenMode::WriteOnly);
     if (error != ErrorCode::NoError) {
         LOGE("%s: Failed to open for writing: %s",
              path.c_str(), file.error_string().c_str());

@@ -745,14 +745,14 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
         return -1;
     }
 
-    ret = priv->la_file.open(w_filename, FileOpenMode::READ_ONLY);
+    ret = priv->la_file.open(w_filename, FileOpenMode::ReadOnly);
 #else
 #  ifdef __ANDROID__
     if (priv->fd >= 0) {
         ret = priv->la_file.open(priv->fd, false);
     } else
 #  endif
-    ret = priv->la_file.open(priv->info->input_path(), FileOpenMode::READ_ONLY);
+    ret = priv->la_file.open(priv->info->input_path(), FileOpenMode::ReadOnly);
 #endif
 
     if (!ret) {
