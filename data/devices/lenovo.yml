@@ -580,27 +580,25 @@
       - /dev/block/platform/soc.0/7824900.sdhci/by-name
       - /dev/block/bootdevice/by-name
     system:
-      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system 
       - /dev/block/mmcblk0p23
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
-    cache:
-      - /dev/block/bootdevice/by-name/cache
-      - /dev/block/mmcblk0p25
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/system
     data:
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/mmcblk0p30
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p30
+      - /dev/block/bootdevice/by-name/userdata
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p25
+      - /dev/block/bootdevice/by-name/cache
     boot:
-      - /dev/block/bootdevice/by-name/aboot
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/mmcblk0p22
-      - /dev/block/mmcblk0p4
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p22
+      - /dev/block/bootdevice/by-name/boot
     recovery:
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/mmcblk0p26
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p26
+      - /dev/block/bootdevice/by-name/recovery
     extra:
       - /dev/block/mmcblk1p1
       - /dev/block/platform/soc.0/7824900.sdhci/by-name/DDR
