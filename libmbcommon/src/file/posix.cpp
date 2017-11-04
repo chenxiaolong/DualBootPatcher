@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
 #include "mbcommon/file/posix_p.h"
@@ -401,8 +402,7 @@ bool PosixFile::on_open()
 #endif
                 priv->filename.c_str(), priv->mode);
         if (!priv->fp) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to open file");
+            set_error(ec_from_errno(), "Failed to open file");
             return false;
         }
     }
@@ -416,8 +416,7 @@ bool PosixFile::on_open()
     fd = priv->funcs->fn_fileno(priv->fp);
     if (fd >= 0) {
         if (priv->funcs->fn_fstat(fd, &sb) < 0) {
-            set_error(std::error_code(errno, std::generic_category()),
-                      "Failed to stat file");
+            set_error(ec_from_errno(), "Failed to stat file");
             return false;
         }
 
@@ -448,8 +447,7 @@ bool PosixFile::on_close()
     bool ret = true;
 
     if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to close file");
+        set_error(ec_from_errno(), "Failed to close file");
         ret = false;
     }
 
@@ -466,8 +464,7 @@ bool PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
     size_t n = priv->funcs->fn_fread(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to read file");
+        set_error(ec_from_errno(), "Failed to read file");
         return false;
     }
 
@@ -482,8 +479,7 @@ bool PosixFile::on_write(const void *buf, size_t size, size_t &bytes_written)
     size_t n = priv->funcs->fn_fwrite(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to write file");
+        set_error(ec_from_errno(), "Failed to write file");
         return false;
     }
 
@@ -506,16 +502,14 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     // Get current file position
     old_pos = priv->funcs->fn_ftello(priv->fp);
     if (old_pos < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to get file position");
+        set_error(ec_from_errno(), "Failed to get file position");
         return false;
     }
 
     // Try to seek
     if (priv->funcs->fn_fseeko(priv->fp, static_cast<off_t>(offset),
                                whence) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to seek file");
+        set_error(ec_from_errno(), "Failed to seek file");
         return false;
     }
 
@@ -523,8 +517,7 @@ bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     new_pos = priv->funcs->fn_ftello(priv->fp);
     if (new_pos < 0) {
         // Try to restore old position
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to get file position");
+        set_error(ec_from_errno(), "Failed to get file position");
         if (priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) != 0) {
             set_fatal(true);
         }
@@ -547,8 +540,7 @@ bool PosixFile::on_truncate(uint64_t size)
     }
 
     if (priv->funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
-        set_error(std::error_code(errno, std::generic_category()),
-                  "Failed to truncate file");
+        set_error(ec_from_errno(), "Failed to truncate file");
         return false;
     }
 
