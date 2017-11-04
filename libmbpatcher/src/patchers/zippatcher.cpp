@@ -282,7 +282,7 @@ bool ZipPatcherPrivate::patch_zip()
             FileUtils::create_temporary_dir(pc->temp_directory());
 
     if (!pass1(temp_dir, exclude_from_pass1)) {
-        io::deleteRecursively(temp_dir);
+        io::delete_recursively(temp_dir);
         return false;
     }
 
@@ -291,11 +291,11 @@ bool ZipPatcherPrivate::patch_zip()
     // On the second pass, run the autopatchers on the rest of the files
 
     if (!pass2(temp_dir, exclude_from_pass1)) {
-        io::deleteRecursively(temp_dir);
+        io::delete_recursively(temp_dir);
         return false;
     }
 
-    io::deleteRecursively(temp_dir);
+    io::delete_recursively(temp_dir);
 
     for (const CopySpec &spec : to_copy) {
         if (cancelled) return false;

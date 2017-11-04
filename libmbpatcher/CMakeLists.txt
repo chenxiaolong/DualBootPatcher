@@ -67,7 +67,7 @@ foreach(variant ${variants})
         interface.global.CXXVersion
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
-        mbpio-static
+        mbpio-${variant}
         mblog-${variant}
         minizip-${variant}
         LibArchive::LibArchive
