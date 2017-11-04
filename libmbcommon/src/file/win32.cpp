@@ -152,28 +152,28 @@ bool Win32FilePrivate::convert_mode(FileOpenMode mode,
     bool append = false;
 
     switch (mode) {
-    case FileOpenMode::READ_ONLY:
+    case FileOpenMode::ReadOnly:
         access = GENERIC_READ;
         creation = OPEN_EXISTING;
         break;
-    case FileOpenMode::READ_WRITE:
+    case FileOpenMode::ReadWrite:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = OPEN_EXISTING;
         break;
-    case FileOpenMode::WRITE_ONLY:
+    case FileOpenMode::WriteOnly:
         access = GENERIC_WRITE;
         creation = CREATE_ALWAYS;
         break;
-    case FileOpenMode::READ_WRITE_TRUNC:
+    case FileOpenMode::ReadWriteTrunc:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = CREATE_ALWAYS;
         break;
-    case FileOpenMode::APPEND:
+    case FileOpenMode::Append:
         access = GENERIC_WRITE;
         creation = OPEN_ALWAYS;
         append = true;
         break;
-    case FileOpenMode::READ_APPEND:
+    case FileOpenMode::ReadAppend:
         access = GENERIC_READ | GENERIC_WRITE;
         creation = OPEN_ALWAYS;
         append = true;

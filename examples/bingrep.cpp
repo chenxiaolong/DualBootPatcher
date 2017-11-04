@@ -143,7 +143,7 @@ static bool search_file(const char *path, int64_t start, int64_t end,
                         size_t bsize, const void *pattern,
                         size_t pattern_size, int64_t max_matches)
 {
-    mb::StandardFile file(path, mb::FileOpenMode::READ_ONLY);
+    mb::StandardFile file(path, mb::FileOpenMode::ReadOnly);
 
     if (!file.is_open()) {
         fprintf(stderr, "%s: Failed to open file: %s\n",

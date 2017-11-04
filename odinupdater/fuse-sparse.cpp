@@ -94,7 +94,7 @@ static int fuse_open(const char *path, fuse_file_info *fi)
         return -ENOMEM;
     }
 
-    if (!ctx->source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
+    if (!ctx->source_file.open(source_fd_path, mb::FileOpenMode::ReadOnly)) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 source_fd_path, ctx->source_file.error_string().c_str());
         auto error = ctx->source_file.error();
@@ -195,7 +195,7 @@ static int get_sparse_file_size()
     mb::StandardFile source_file;
     mb::sparse::SparseFile sparse_file;
 
-    if (!source_file.open(source_fd_path, mb::FileOpenMode::READ_ONLY)) {
+    if (!source_file.open(source_fd_path, mb::FileOpenMode::ReadOnly)) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
                 source_fd_path, source_file.error_string().c_str());
         auto error = source_file.error();

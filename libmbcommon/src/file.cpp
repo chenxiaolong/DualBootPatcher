@@ -120,10 +120,10 @@ File::~File()
  * back to a useful state by assigning from a valid object. For example:
  *
  * \code{.cpp}
- * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
- * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::ReadOnly);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::ReadOnly);
  * file1 = std::move(file2);
- * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::ReadOnly);
  * \endcode
  */
 File::File(File &&other) noexcept : _priv_ptr(std::move(other._priv_ptr))
@@ -140,10 +140,10 @@ File::File(File &&other) noexcept : _priv_ptr(std::move(other._priv_ptr))
  * back to a useful state by assigning from a valid object. For example:
  *
  * \code{.cpp}
- * mb::StandardFile file1("foo.txt", mb::FileOpenMode::READ_ONLY);
- * mb::StandardFile file2("bar.txt", mb::FileOpenMode::READ_ONLY);
+ * mb::StandardFile file1("foo.txt", mb::FileOpenMode::ReadOnly);
+ * mb::StandardFile file2("bar.txt", mb::FileOpenMode::ReadOnly);
  * file1 = std::move(file2);
- * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::READ_ONLY);
+ * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::ReadOnly);
  * \endcode
  */
 File & File::operator=(File &&rhs) noexcept
