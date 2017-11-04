@@ -399,6 +399,7 @@
     - a6020a46
     - A6020a26
     - a6020a26
+    - A6020l36
   architecture: arm64-v8a
 
   block_devs:
