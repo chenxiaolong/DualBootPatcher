@@ -59,7 +59,7 @@ public:
     // File state
     bool is_open();
     bool is_fatal();
-    bool set_fatal(bool fatal);
+    void set_fatal();
 
     // Error handling functions
     std::error_code error();
