@@ -527,10 +527,10 @@ bool MinizipUtils::extract_file(unzFile uf, const std::string &directory)
 #endif
     full_path += filename;
 
-    std::string parent_path = io::dirName(full_path);
-    if (!io::createDirectories(parent_path)) {
+    std::string parent_path = io::dir_name(full_path);
+    if (!io::create_directories(parent_path)) {
         LOGW("%s: Failed to create directory: %s",
-             parent_path.c_str(), io::lastErrorString().c_str());
+             parent_path.c_str(), io::last_error_string().c_str());
     }
 
     StandardFile file;

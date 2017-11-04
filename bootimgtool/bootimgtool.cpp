@@ -269,27 +269,27 @@ static void prepend_if_empty(Paths &paths, const std::string &dir,
                              const std::string &prefix)
 {
     if (paths.header.empty())
-        paths.header = io::pathJoin({dir, prefix + "header.txt"});
+        paths.header = mb::io::path_join({dir, prefix + "header.txt"});
     if (paths.kernel.empty())
-        paths.kernel = io::pathJoin({dir, prefix + IMAGE_KERNEL});
+        paths.kernel = mb::io::path_join({dir, prefix + IMAGE_KERNEL});
     if (paths.ramdisk.empty())
-        paths.ramdisk = io::pathJoin({dir, prefix + IMAGE_RAMDISK});
+        paths.ramdisk = mb::io::path_join({dir, prefix + IMAGE_RAMDISK});
     if (paths.second.empty())
-        paths.second = io::pathJoin({dir, prefix + IMAGE_SECOND});
+        paths.second = mb::io::path_join({dir, prefix + IMAGE_SECOND});
     if (paths.dt.empty())
-        paths.dt = io::pathJoin({dir, prefix + IMAGE_DT});
+        paths.dt = mb::io::path_join({dir, prefix + IMAGE_DT});
     if (paths.aboot.empty())
-        paths.aboot = io::pathJoin({dir, prefix + IMAGE_ABOOT});
+        paths.aboot = mb::io::path_join({dir, prefix + IMAGE_ABOOT});
     if (paths.kernel_mtkhdr.empty())
-        paths.kernel_mtkhdr = io::pathJoin({dir, prefix + IMAGE_KERNEL_MTKHDR});
+        paths.kernel_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_KERNEL_MTKHDR});
     if (paths.ramdisk_mtkhdr.empty())
-        paths.ramdisk_mtkhdr = io::pathJoin({dir, prefix + IMAGE_RAMDISK_MTKHDR});
+        paths.ramdisk_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_RAMDISK_MTKHDR});
     if (paths.ipl.empty())
-        paths.ipl = io::pathJoin({dir, prefix + IMAGE_IPL});
+        paths.ipl = mb::io::path_join({dir, prefix + IMAGE_IPL});
     if (paths.rpm.empty())
-        paths.rpm = io::pathJoin({dir, prefix + IMAGE_RPM});
+        paths.rpm = mb::io::path_join({dir, prefix + IMAGE_RPM});
     if (paths.appsbl.empty())
-        paths.appsbl = io::pathJoin({dir, prefix + IMAGE_APPSBL});
+        paths.appsbl = mb::io::path_join({dir, prefix + IMAGE_APPSBL});
 }
 
 static void absolute_to_offset(uint32_t *base_ptr,
@@ -918,7 +918,7 @@ static bool unpack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(input_file);
+        prefix = mb::io::base_name(input_file);
         prefix += "-";
     }
 
@@ -928,9 +928,9 @@ static bool unpack_main(int argc, char *argv[])
 
     prepend_if_empty(paths, output_dir, prefix);
 
-    if (!io::createDirectories(output_dir)) {
+    if (!mb::io::create_directories(output_dir)) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), io::lastErrorString().c_str());
+                output_dir.c_str(), mb::io::last_error_string().c_str());
         return false;
     }
 
@@ -1083,7 +1083,7 @@ static bool pack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(output_file);
+        prefix = mb::io::base_name(output_file);
         prefix += "-";
     }
 

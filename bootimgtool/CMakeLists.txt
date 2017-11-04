@@ -32,7 +32,7 @@ foreach(variant ${variants})
         interface.global.CXXVersion
         interface.mbcommon.dynamic-link
         mbbootimg-${variant}
-        mbpio-static
+        mbpio-${variant}
         mbcommon-${variant}
     )
 
