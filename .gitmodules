@@ -24,4 +24,4 @@
 	url = https://github.com/chenxiaolong/Optional.git
 [submodule "external/outcome"]
 	path = external/outcome
-	url = https://github.com/ned14/outcome.git
+	url = https://github.com/chenxiaolong/outcome.git
