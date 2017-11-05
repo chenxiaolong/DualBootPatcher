@@ -339,8 +339,8 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
     MB_PRIVATE(Win32File);
     if (priv) {
         // Convert filename to platform-native encoding
-        std::wstring native_filename;
-        if (!mbs_to_wcs(native_filename, filename)) {
+        auto converted = mbs_to_wcs(filename);
+        if (!converted) {
             set_error(make_error_code(FileError::CannotConvertEncoding),
                       "Failed to convert MBS filename to WCS");
             return false;
@@ -360,7 +360,7 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
 
         priv->handle = INVALID_HANDLE_VALUE;
         priv->owned = true;
-        priv->filename = std::move(native_filename);
+        priv->filename = std::move(converted.value());
         priv->access = access;
         priv->sharing = sharing;
         priv->sa = sa;

@@ -737,15 +737,15 @@ int OdinPatcherPrivate::la_open_cb(archive *a, void *userdata)
     bool ret;
 
 #ifdef _WIN32
-    std::wstring w_filename;
-    if (!utf8_to_wcs(w_filename, priv->info->input_path())) {
+    auto w_filename = utf8_to_wcs(priv->info->input_path());
+    if (!w_filename) {
         LOGE("%s: Failed to convert from UTF8 to WCS",
              priv->info->input_path().c_str());
         priv->error = ErrorCode::FileOpenError;
         return -1;
     }
 
-    ret = priv->la_file.open(w_filename, FileOpenMode::ReadOnly);
+    ret = priv->la_file.open(w_filename.value(), FileOpenMode::ReadOnly);
 #else
 #  ifdef __ANDROID__
     if (priv->fd >= 0) {

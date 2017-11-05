@@ -169,10 +169,12 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
     }
 
 #if defined(MINIZIP_WIN32)
-    if (!utf8_to_wcs(ctx->path, path)) {
+    auto converted = utf8_to_wcs(path);
+    if (!converted) {
         delete ctx;
         return nullptr;
     }
+    ctx->path = std::move(converted.value());
 
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
 #elif defined(MINIZIP_ANDROID)
@@ -201,10 +203,12 @@ MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
     }
 
 #if defined(MINIZIP_WIN32)
-    if (!utf8_to_wcs(ctx->path, path)) {
+    auto converted = utf8_to_wcs(path);
+    if (!converted) {
         delete ctx;
         return nullptr;
     }
+    ctx->path = std::move(converted.value());
 
     fill_win32_filefunc64W(&ctx->buf.filefunc64);
 #elif defined(MINIZIP_ANDROID)
@@ -595,12 +599,12 @@ static bool get_file_time(const std::string &filename, uint32_t *dostime)
     HANDLE h_find;
     WIN32_FIND_DATAW ff32;
 
-    std::wstring w_filename;
-    if (!utf8_to_wcs(w_filename, filename)) {
+    auto w_filename = utf8_to_wcs(filename);
+    if (!w_filename) {
         return false;
     }
 
-    h_find = FindFirstFileW(w_filename.c_str(), &ff32);
+    h_find = FindFirstFileW(w_filename.value().c_str(), &ff32);
 
     if (h_find != INVALID_HANDLE_VALUE)
     {

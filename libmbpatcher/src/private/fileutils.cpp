@@ -49,14 +49,15 @@ ErrorCode FileUtils::open_file(StandardFile &file, const std::string &path,
     bool ret;
 
 #ifdef _WIN32
-    std::wstring w_filename;
+    auto w_filename = utf8_to_wcs(path);
 
-    if (!utf8_to_wcs(w_filename, path)) {
-        LOGE("%s: Failed to convert from UTF8 to WCS", path.c_str());
+    if (!w_filename) {
+        LOGE("%s: Failed to convert from UTF8 to WCS: %s",
+             path.c_str(), w_filename.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    ret = file.open(w_filename, mode);
+    ret = file.open(w_filename.value(), mode);
 #else
     ret = file.open(path, mode);
 #endif
@@ -242,7 +243,8 @@ std::string FileUtils::system_temporary_dir()
     }
 
 done:
-    return wcs_to_utf8(w_path);
+    auto result = wcs_to_utf8(w_path);
+    return result ? std::move(result.value()) : std::string();
 #else
     const char *value;
 
@@ -317,16 +319,16 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
         }
 
         // This is not particularly fast, but it'll do for now
-        std::wstring w_new_path;
-        if (!utf8_to_wcs(w_new_path, new_path)) {
+        auto w_new_path = utf8_to_wcs(new_path);
+        if (!w_new_path) {
             LOGE("Failed to convert UTF-8 to WCS: %s",
-                 ec_from_win32().message().c_str());
+                 w_new_path.error().message().c_str());
             break;
         }
 
         ret = CreateDirectoryW(
-            w_new_path.c_str(), // lpPathName
-            nullptr             // lpSecurityAttributes
+            w_new_path.value().c_str(), // lpPathName
+            nullptr                     // lpSecurityAttributes
         );
 
         if (ret) {
