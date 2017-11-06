@@ -53,11 +53,11 @@ public:
 
 private:
 #if defined(_WIN32)
-    bool open(HANDLE handle, bool owned, bool append) = delete;
+    oc::result<void> open(HANDLE handle, bool owned, bool append) = delete;
 #elif defined(__ANDROID__)
-    bool open(int fd, bool owned) = delete;
+    oc::result<void> open(int fd, bool owned) = delete;
 #else
-    bool open(FILE *fp, bool owned) = delete;
+    oc::result<void> open(FILE *fp, bool owned) = delete;
 #endif
 };
 

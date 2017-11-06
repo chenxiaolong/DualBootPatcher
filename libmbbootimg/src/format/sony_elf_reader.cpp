@@ -138,23 +138,24 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
     // Read program segment headers
     for (Elf32_Half i = 0; i < _hdr.e_phnum; ++i) {
         Sony_Elf32_Phdr phdr;
-        size_t n;
 
-        if (!file.seek(static_cast<int64_t>(pos), SEEK_SET, nullptr)) {
-            _reader.set_error(file.error(),
+        auto seek_ret = file.seek(static_cast<int64_t>(pos), SEEK_SET);
+        if (!seek_ret) {
+            _reader.set_error(seek_ret.error(),
                               "Failed to seek to segment %" PRIu16
                               " at %" PRIu64 ": %s", i, pos,
-                              file.error_string().c_str());
+                              seek_ret.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        if (!file_read_fully(file, &phdr, sizeof(phdr), n)) {
-            _reader.set_error(file.error(),
+        auto n = file_read_fully(file, &phdr, sizeof(phdr));
+        if (!n) {
+            _reader.set_error(n.error(),
                               "Failed to read segment %" PRIu16 ": %s",
-                              i, file.error_string().c_str());
+                              i, n.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        } else if (n != sizeof(phdr)) {
-            _reader.set_error(make_error_code(SonyElfError::UnexpectedEndOfFile),
+        } else if (n.value() != sizeof(phdr)) {
+            _reader.set_error(SonyElfError::UnexpectedEndOfFile,
                               "Unexpected EOF when reading segment"
                               " header %" PRIu16, i);
             return RET_WARN;
@@ -171,30 +172,31 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
             char cmdline[512];
 
             if (phdr.p_memsz >= sizeof(cmdline)) {
-                _reader.set_error(make_error_code(
-                        SonyElfError::KernelCmdlineTooLong));
+                _reader.set_error(SonyElfError::KernelCmdlineTooLong);
                 return RET_WARN;
             }
 
-            if (!file.seek(phdr.p_offset, SEEK_SET, nullptr)) {
-                _reader.set_error(file.error(),
+            auto seek_ret = file.seek(phdr.p_offset, SEEK_SET);
+            if (!seek_ret) {
+                _reader.set_error(seek_ret.error(),
                                   "Failed to seek to cmdline: %s",
-                                  file.error_string().c_str());
+                                  seek_ret.error().message().c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;
             }
 
-            if (!file_read_fully(file, cmdline, phdr.p_memsz, n)) {
-                _reader.set_error(file.error(),
+            auto n = file_read_fully(file, cmdline, phdr.p_memsz);
+            if (!n) {
+                _reader.set_error(n.error(),
                                   "Failed to read cmdline: %s",
-                                  file.error_string().c_str());
+                                  n.error().message().c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;
-            } else if (n != phdr.p_memsz) {
-                _reader.set_error(make_error_code(SonyElfError::UnexpectedEndOfFile),
+            } else if (n.value() != phdr.p_memsz) {
+                _reader.set_error(SonyElfError::UnexpectedEndOfFile,
                                   "Unexpected EOF when reading cmdline");
                 return RET_WARN;
             }
 
-            cmdline[n] = '\0';
+            cmdline[n.value()] = '\0';
 
             if (!header.set_kernel_cmdline({cmdline})) {
                 return RET_UNSUPPORTED;
@@ -302,27 +304,28 @@ int SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
                                               Sony_Elf32_Ehdr &header_out)
 {
     Sony_Elf32_Ehdr header;
-    size_t n;
 
-    if (!file.seek(0, SEEK_SET, nullptr)) {
-        reader.set_error(file.error(),
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        reader.set_error(seek_ret.error(),
                          "Failed to seek to beginning: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, &header, sizeof(header), n)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, &header, sizeof(header));
+    if (!n) {
+        reader.set_error(n.error(),
                          "Failed to read header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(header)) {
-        reader.set_error(make_error_code(SonyElfError::SonyElfHeaderTooSmall));
+    } else if (n.value() != sizeof(header)) {
+        reader.set_error(SonyElfError::SonyElfHeaderTooSmall);
         return RET_WARN;
     }
 
     if (memcmp(header.e_ident, SONY_E_IDENT, SONY_EI_NIDENT) != 0) {
-        reader.set_error(make_error_code(SonyElfError::InvalidElfMagic));
+        reader.set_error(SonyElfError::InvalidElfMagic);
         return RET_WARN;
     }
 

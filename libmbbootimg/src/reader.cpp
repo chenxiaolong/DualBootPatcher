@@ -339,12 +339,13 @@ int Reader::open_filename(const std::string &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadOnly));
-    if (!file->is_open()) {
-        set_error(file->error(),
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
+
+    if (!ret) {
+        set_error(ret.error(),
                   "Failed to open for reading: %s",
-                  file->error_string().c_str());
+                  ret.error().message().c_str());
         return RET_FAILED;
     }
 
@@ -365,12 +366,13 @@ int Reader::open_filename_w(const std::wstring &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadOnly));
-    if (!file->is_open()) {
-        set_error(file->error(),
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
+
+    if (!ret) {
+        set_error(ret.error(),
                   "Failed to open for reading: %s",
-                  file->error_string().c_str());
+                  ret.error().message().c_str());
         return RET_FAILED;
     }
 
@@ -432,10 +434,11 @@ int Reader::open(File *file)
     if (!priv->format) {
         for (auto &f : priv->formats) {
             // Seek to beginning
-            if (!file->seek(0, SEEK_SET, nullptr)) {
-                set_error(file->error(),
+            auto seek_ret = file->seek(0, SEEK_SET);
+            if (!seek_ret) {
+                set_error(seek_ret.error(),
                           "Failed to seek file: %s",
-                          file->error_string().c_str());
+                          seek_ret.error().message().c_str());
                 return file->is_fatal() ? RET_FATAL : RET_FAILED;
             }
 
@@ -525,10 +528,11 @@ int Reader::read_header(Header &header)
     int ret;
 
     // Seek to beginning
-    if (!priv->file->seek(0, SEEK_SET, nullptr)) {
-        set_error(priv->file->error(),
+    auto seek_ret = priv->file->seek(0, SEEK_SET);
+    if (!seek_ret) {
+        set_error(seek_ret.error(),
                   "Failed to seek file: %s",
-                  priv->file->error_string().c_str());
+                  seek_ret.error().message().c_str());
         return priv->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 

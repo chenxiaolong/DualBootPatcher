@@ -43,9 +43,9 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFile)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(PosixFile)
 
-    bool open(FILE *fp, bool owned);
-    bool open(const std::string &filename, FileOpenMode mode);
-    bool open(const std::wstring &filename, FileOpenMode mode);
+    oc::result<void> open(FILE *fp, bool owned);
+    oc::result<void> open(const std::string &filename, FileOpenMode mode);
+    oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
 
 protected:
     /*! \cond INTERNAL */
@@ -58,15 +58,12 @@ protected:
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+    oc::result<void> on_open() override;
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
 };
 
 }

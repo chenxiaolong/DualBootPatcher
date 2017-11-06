@@ -25,9 +25,9 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
-#include "mbcommon/locale.h"
-
 #include "mbcommon/file/win32_p.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/locale.h"
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
@@ -273,28 +273,28 @@ Win32File::Win32File(Win32FilePrivate *priv,
                      HANDLE handle, bool owned, bool append)
     : File(priv)
 {
-    open(handle, owned, append);
+    (void) open(handle, owned, append);
 }
 
 Win32File::Win32File(Win32FilePrivate *priv,
                      const std::string &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 Win32File::Win32File(Win32FilePrivate *priv,
                      const std::wstring &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 Win32File::~Win32File()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -311,9 +311,10 @@ Win32File::~Win32File()
  * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
  * \param append Whether append mode should be enabled
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(HANDLE handle, bool owned, bool append)
+oc::result<void> Win32File::open(HANDLE handle, bool owned, bool append)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -332,18 +333,17 @@ bool Win32File::open(HANDLE handle, bool owned, bool append)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(const std::string &filename, FileOpenMode mode)
+oc::result<void> Win32File::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
         // Convert filename to platform-native encoding
         auto converted = mbs_to_wcs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
+            return FileError::CannotConvertEncoding;
         }
 
         DWORD access;
@@ -379,9 +379,10 @@ bool Win32File::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
+oc::result<void> Win32File::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(Win32File);
     if (priv) {
@@ -410,7 +411,7 @@ bool Win32File::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-bool Win32File::on_open()
+oc::result<void> Win32File::on_open()
 {
     MB_PRIVATE(Win32File);
 
@@ -419,33 +420,31 @@ bool Win32File::on_open()
                 priv->filename.c_str(), priv->access, priv->sharing, &priv->sa,
                 priv->creation, priv->attrib, nullptr);
         if (priv->handle == INVALID_HANDLE_VALUE) {
-            set_error(ec_from_win32(), "Failed to open file");
-            return false;
+            return ec_from_win32();
         }
     }
 
-    return true;
+    return oc::success();
 }
 
-bool Win32File::on_close()
+oc::result<void> Win32File::on_close()
 {
     MB_PRIVATE(Win32File);
 
-    bool ret = true;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        priv->clear();
+    });
 
     if (priv->owned && priv->handle != INVALID_HANDLE_VALUE
             && !priv->funcs->fn_CloseHandle(priv->handle)) {
-        set_error(ec_from_win32(), "Failed to close file");
-        ret = false;
+        return ec_from_win32();
     }
 
-    // Reset to allow opening another file
-    priv->clear();
-
-    return ret;
+    return oc::success();
 }
 
-bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> Win32File::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(Win32File);
 
@@ -464,15 +463,13 @@ bool Win32File::on_read(void *buf, size_t size, size_t &bytes_read)
     );
 
     if (!ret) {
-        set_error(ec_from_win32(), "Failed to read file");
-        return false;
+        return ec_from_win32();
     }
 
-    bytes_read = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> Win32File::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(Win32File);
 
@@ -481,10 +478,7 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     // We have to seek manually in append mode because the Win32 API has no
     // native append mode.
     if (priv->append) {
-        uint64_t pos;
-        if (!on_seek(0, SEEK_END, pos)) {
-            return false;
-        }
+        OUTCOME_TRYV(on_seek(0, SEEK_END));
     }
 
     if (size > UINT_MAX) {
@@ -500,15 +494,13 @@ bool Win32File::on_write(const void *buf, size_t size, size_t &bytes_written)
     );
 
     if (!ret) {
-        set_error(ec_from_win32(), "Failed to write file");
-        return false;
+        return ec_from_win32();
     }
 
-    bytes_written = n;
-    return true;
+    return n;
 }
 
-bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+oc::result<uint64_t> Win32File::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(Win32File);
 
@@ -540,47 +532,45 @@ bool Win32File::on_seek(int64_t offset, int whence, uint64_t &new_offset)
     );
 
     if (!ret) {
-        set_error(ec_from_win32(), "Failed to seek file");
-        return false;
+        return ec_from_win32();
     }
 
-    new_offset = static_cast<uint64_t>(new_pos.QuadPart);
-    return true;
+    return static_cast<uint64_t>(new_pos.QuadPart);
 }
 
-bool Win32File::on_truncate(uint64_t size)
+oc::result<void> Win32File::on_truncate(uint64_t size)
 {
     MB_PRIVATE(Win32File);
 
-    bool ret = true;
-    uint64_t current_pos;
-    uint64_t temp;
-
     // Get current position
-    if (!on_seek(0, SEEK_CUR, current_pos)) {
-        return false;
-    }
+    OUTCOME_TRY(current_pos, on_seek(0, SEEK_CUR));
 
     // Move to new position
-    if (!on_seek(static_cast<int64_t>(size), SEEK_SET, temp)) {
-        return false;
-    }
+    OUTCOME_TRYV(on_seek(static_cast<int64_t>(size), SEEK_SET));
+
+    std::error_code error;
 
     // Truncate
     if (!priv->funcs->fn_SetEndOfFile(priv->handle)) {
-        set_error(ec_from_win32(), "Failed to set EOF position");
-        ret = false;
+        error = ec_from_win32();
     }
 
     // Move back to initial position
-    if (!on_seek(static_cast<int64_t>(current_pos), SEEK_SET, temp)) {
+    auto temp = on_seek(static_cast<int64_t>(current_pos), SEEK_SET);
+    if (!temp) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
         set_fatal();
-        ret = false;
+        if (!error) {
+            error = std::move(temp.error());
+        }
     }
 
-    return ret;
+    if (error) {
+        return error;
+    }
+
+    return oc::success();
 }
 
 }

@@ -28,29 +28,26 @@ enum class FileSearchAction
 {
     Continue,
     Stop,
-    Fail,
 };
 
-typedef FileSearchAction (*FileSearchResultCallback)(File &file, void *userdata,
-                                                     uint64_t offset);
+using FileSearchResultCallback =
+        oc::result<FileSearchAction> (*)(File &file, void *userdata,
+                                         uint64_t offset);
 
-MB_EXPORT bool file_read_fully(File &file,
-                               void *buf, size_t size,
-                               size_t &bytes_read);
-MB_EXPORT bool file_write_fully(File &file,
-                                const void *buf, size_t size,
-                                size_t &bytes_written);
+MB_EXPORT oc::result<size_t> file_read_fully(File &file,
+                                             void *buf, size_t size);
+MB_EXPORT oc::result<size_t> file_write_fully(File &file,
+                                              const void *buf, size_t size);
 
-MB_EXPORT bool file_read_discard(File &file, uint64_t size,
-                                 uint64_t &bytes_discarded);
+MB_EXPORT oc::result<uint64_t> file_read_discard(File &file, uint64_t size);
 
-MB_EXPORT bool file_search(File &file, int64_t start, int64_t end,
-                           size_t bsize, const void *pattern,
-                           size_t pattern_size, int64_t max_matches,
-                           FileSearchResultCallback result_cb,
-                           void *userdata);
+MB_EXPORT oc::result<void> file_search(File &file, int64_t start, int64_t end,
+                                       size_t bsize, const void *pattern,
+                                       size_t pattern_size, int64_t max_matches,
+                                       FileSearchResultCallback result_cb,
+                                       void *userdata);
 
-MB_EXPORT bool file_move(File &file, uint64_t src, uint64_t dest,
-                         uint64_t size, uint64_t &size_moved);
+MB_EXPORT oc::result<uint64_t> file_move(File &file, uint64_t src,
+                                         uint64_t dest, uint64_t size);
 
 }

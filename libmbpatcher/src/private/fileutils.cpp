@@ -43,26 +43,23 @@ namespace mb
 namespace patcher
 {
 
-ErrorCode FileUtils::open_file(StandardFile &file, const std::string &path,
-                               FileOpenMode mode)
+oc::result<void> FileUtils::open_file(StandardFile &file,
+                                      const std::string &path,
+                                      FileOpenMode mode)
 {
-    bool ret;
-
 #ifdef _WIN32
     auto w_filename = utf8_to_wcs(path);
 
     if (!w_filename) {
         LOGE("%s: Failed to convert from UTF8 to WCS: %s",
              path.c_str(), w_filename.error().message().c_str());
-        return ErrorCode::FileOpenError;
+        return w_filename.as_failure();
     }
 
-    ret = file.open(w_filename.value(), mode);
+    return file.open(w_filename.value(), mode);
 #else
-    ret = file.open(path, mode);
+    return file.open(path, mode);
 #endif
-
-    return ret ? ErrorCode::NoError : ErrorCode::FileOpenError;
 }
 
 /*!
@@ -78,27 +75,32 @@ ErrorCode FileUtils::read_to_memory(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::ReadOnly);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::ReadOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    uint64_t size;
-    if (!file.seek(0, SEEK_END, &size) || !file.seek(0, SEEK_SET, nullptr)) {
+    auto size = file.seek(0, SEEK_END);
+    if (!size) {
         LOGE("%s: Failed to seek file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), size.error().message().c_str());
+        return ErrorCode::FileSeekError;
+    }
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        LOGE("%s: Failed to seek file: %s",
+             path.c_str(), seek_ret.error().message().c_str());
         return ErrorCode::FileSeekError;
     }
 
-    std::vector<unsigned char> data(static_cast<size_t>(size));
+    std::vector<unsigned char> data(static_cast<size_t>(size.value()));
 
-    size_t bytes_read;
-    if (!file.read(data.data(), data.size(), bytes_read)
-            || bytes_read != size) {
+    auto bytes_read = file.read(data.data(), data.size());
+    if (!bytes_read || bytes_read.value() != size.value()) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_read.error().message().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -120,28 +122,33 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::ReadOnly);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::ReadOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for reading: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    uint64_t size;
-    if (!file.seek(0, SEEK_END, &size) || !file.seek(0, SEEK_SET, nullptr)) {
+    auto size = file.seek(0, SEEK_END);
+    if (!size) {
         LOGE("%s: Failed to seek file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), size.error().message().c_str());
+        return ErrorCode::FileSeekError;
+    }
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        LOGE("%s: Failed to seek file: %s",
+             path.c_str(), seek_ret.error().message().c_str());
         return ErrorCode::FileSeekError;
     }
 
     std::string data;
-    data.resize(static_cast<size_t>(size));
+    data.resize(static_cast<size_t>(size.value()));
 
-    size_t bytes_read;
-    if (!file.read(&data[0], data.size(), bytes_read)
-            || bytes_read != size) {
+    auto bytes_read = file.read(&data[0], data.size());
+    if (!bytes_read || bytes_read.value() != size.value()) {
         LOGE("%s: Failed to read file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_read.error().message().c_str());
         return ErrorCode::FileReadError;
     }
 
@@ -155,18 +162,17 @@ ErrorCode FileUtils::write_from_memory(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::WriteOnly);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::WriteOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    size_t bytes_written;
-    if (!file.write(contents.data(), contents.size(), bytes_written)
-            || bytes_written != contents.size()) {
+    auto bytes_written = file.write(contents.data(), contents.size());
+    if (!bytes_written || bytes_written.value() != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_written.error().message().c_str());
         return ErrorCode::FileWriteError;
     }
 
@@ -178,18 +184,17 @@ ErrorCode FileUtils::write_from_string(const std::string &path,
 {
     StandardFile file;
 
-    auto error = open_file(file, path, FileOpenMode::WriteOnly);
-    if (error != ErrorCode::NoError) {
+    auto ret = open_file(file, path, FileOpenMode::WriteOnly);
+    if (!ret) {
         LOGE("%s: Failed to open for writing: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), ret.error().message().c_str());
         return ErrorCode::FileOpenError;
     }
 
-    size_t bytes_written;
-    if (!file.write(contents.data(), contents.size(), bytes_written)
-            || bytes_written != contents.size()) {
+    auto bytes_written = file.write(contents.data(), contents.size());
+    if (!bytes_written || bytes_written.value() != contents.size()) {
         LOGE("%s: Failed to write file: %s",
-             path.c_str(), file.error_string().c_str());
+             path.c_str(), bytes_written.error().message().c_str());
         return ErrorCode::FileWriteError;
     }
 

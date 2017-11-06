@@ -146,8 +146,7 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
     uint64_t read_cur_offset = read_start_offset;
 
     if (_read_cur_offset != srentry.offset) {
-        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET,
-                       nullptr)) {
+        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET)) {
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
@@ -203,12 +202,14 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
         return RET_FAILED;
     }
 
-    if (!file_read_fully(file, buf, to_copy, bytes_read)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, buf, to_copy);
+    if (!n) {
+        reader.set_error(n.error(),
                          "Failed to read data: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
+    bytes_read = n.value();
 
     _read_cur_offset += bytes_read;
 

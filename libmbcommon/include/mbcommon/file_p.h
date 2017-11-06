@@ -28,7 +28,7 @@
 namespace mb
 {
 
-enum class FileState : uint16_t
+enum class FileState : uint8_t
 {
     New     = 1u << 0,
     Opened  = 1u << 1,
@@ -46,10 +46,6 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
 
     FileState state;
-
-    // Error
-    std::error_code error_code;
-    std::string error_string;
 };
 
 }

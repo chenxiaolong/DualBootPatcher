@@ -35,6 +35,7 @@
 #include "mbcommon/file_util.h"
 #include "mbcommon/string.h"
 
+#include "mbsparse/sparse_error.h"
 #include "mbsparse/sparse_p.h"
 
 // Enable debug logging of headers, offsets, etc.?
@@ -44,6 +45,7 @@
 
 #if SPARSE_DEBUG || SPARSE_DEBUG_OPER
 #  include "mblog/logging.h"
+#  define LOG_TAG "mbsparse/sparse"
 #endif
 
 #if SPARSE_DEBUG
@@ -158,42 +160,30 @@ void SparseFilePrivate::clear()
     chunk = chunks.end();
 }
 
-bool SparseFilePrivate::wread(void *buf, size_t size)
+oc::result<void> SparseFilePrivate::wread(void *buf, size_t size)
 {
     MB_PUBLIC(SparseFile);
-    size_t bytes_read;
 
-    if (!file_read_fully(*file, buf, size, bytes_read)) {
-        pub->set_error(file->error(), "Failed to read file: %s",
-                       file->error_string().c_str());
-        return false;
-    }
+    OUTCOME_TRY(bytes_read, file_read_fully(*file, buf, size));
 
     if (bytes_read != size) {
-        pub->set_error(file->error(), "Requested %" MB_PRIzu
-                       " bytes, but only read %" MB_PRIzu " bytes",
-                       size, bytes_read);
+        DEBUG("Requested %" MB_PRIzu " bytes, but only read %" MB_PRIzu " bytes",
+              size, bytes_read);
         pub->set_fatal();
-        return false;
+        return SparseFileError::UnexpectedEndOfFile;
     }
 
     cur_src_offset += bytes_read;
-    return true;
+    return oc::success();
 }
 
-bool SparseFilePrivate::wseek(int64_t offset)
+oc::result<void> SparseFilePrivate::wseek(int64_t offset)
 {
-    MB_PUBLIC(SparseFile);
-
-    if (!file->seek(offset, SEEK_CUR, nullptr)) {
-        pub->set_error(file->error(), "Failed to seek file: %s",
-                       file->error_string().c_str());
-        return false;
-    }
+    OUTCOME_TRYV(file->seek(offset, SEEK_CUR));
 
     cur_src_offset = static_cast<uint64_t>(
             static_cast<int64_t>(cur_src_offset) + offset);
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -201,14 +191,15 @@ bool SparseFilePrivate::wseek(int64_t offset)
  *
  * \param bytes Number of bytes to skip
  *
- * \return Whether the bytes are successfully skipped
+ * \return Nothing if the bytes are successfully skipped. Otherwise, the error
+ *         code.
  */
-bool SparseFilePrivate::skip_bytes(uint64_t bytes)
+oc::result<void> SparseFilePrivate::skip_bytes(uint64_t bytes)
 {
     MB_PUBLIC(SparseFile);
 
     if (bytes == 0) {
-        return true;
+        return oc::success();
     }
 
     switch (seekability) {
@@ -216,23 +207,17 @@ bool SparseFilePrivate::skip_bytes(uint64_t bytes)
     case Seekability::CanSkip:
         return wseek(static_cast<int64_t>(bytes));
     case Seekability::CanRead:
-        uint64_t discarded;
-        if (!file_read_discard(*file, bytes, discarded)) {
-            pub->set_error(file->error(), "Failed to read and discard data: %s",
-                           file->error_string().c_str());
-            return false;
-        } else if (discarded != bytes) {
-            pub->set_error(file->error(), "Reached EOF when skipping bytes: %s",
-                           file->error_string().c_str());
+        OUTCOME_TRY(discarded, file_read_discard(*file, bytes));
+
+        if (discarded != bytes) {
+            DEBUG("Reached EOF when skipping bytes");
             pub->set_fatal();
-            return false;
+            return SparseFileError::UnexpectedEndOfFile;
         }
-        return true;
+        return oc::success();
     }
 
-    // Unreached
-    pub->set_fatal();
-    return false;
+    MB_UNREACHABLE("Invalid seekability: %d", static_cast<int>(seekability));
 }
 
 /*!
@@ -260,21 +245,18 @@ bool SparseFilePrivate::skip_bytes(uint64_t bytes)
  * \param preread_size Size of data already read from the file (must be less
  *                     than `sizeof(SparseHeader)`)
  *
- * \return Whether the sparse header is successfully read
+ * \return Nothing if the sparse header is successfully read. Otherwise, the
+ *         error code.
  */
-bool SparseFilePrivate::process_sparse_header(const void *preread_data,
-                                              size_t preread_size)
+oc::result<void> SparseFilePrivate::process_sparse_header(const void *preread_data,
+                                                          size_t preread_size)
 {
-    MB_PUBLIC(SparseFile);
-
     assert(preread_size < sizeof(shdr));
 
     // Read header
     memcpy(&shdr, preread_data, preread_size);
-    if (!wread(reinterpret_cast<char *>(&shdr) + preread_size,
-               sizeof(shdr) - preread_size)) {
-        return false;
-    }
+    OUTCOME_TRYV(wread(reinterpret_cast<char *>(&shdr) + preread_size,
+                 sizeof(shdr) - preread_size));
 
     fix_sparse_header_byte_order(shdr);
 
@@ -284,82 +266,73 @@ bool SparseFilePrivate::process_sparse_header(const void *preread_data,
 
     // Check magic bytes
     if (shdr.magic != SPARSE_HEADER_MAGIC) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Expected magic to be %08x, but got %08x",
-                       SPARSE_HEADER_MAGIC, shdr.magic);
-        return false;
+        DEBUG("Expected magic to be %08x, but got %08x",
+              SPARSE_HEADER_MAGIC, shdr.magic);
+        return SparseFileError::InvalidSparseMagic;
     }
 
     // Check major version
     if (shdr.major_version != SPARSE_HEADER_MAJOR_VER) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Expected major version to be %u, but got %u",
-                       SPARSE_HEADER_MAJOR_VER, shdr.major_version);
-        return false;
+        DEBUG("Expected major version to be %u, but got %u",
+              SPARSE_HEADER_MAJOR_VER, shdr.major_version);
+        return SparseFileError::InvalidSparseMajorVersion;
     }
 
     // Check sparse header size field
     if (shdr.file_hdr_sz < sizeof(SparseHeader)) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Expected sparse header size to be at least %" MB_PRIzu
-                       ", but have %" PRIu32, sizeof(shdr), shdr.file_hdr_sz);
-        return false;
+        DEBUG("Expected sparse header size to be at least %" MB_PRIzu
+              ", but have %" PRIu32, sizeof(shdr), shdr.file_hdr_sz);
+        return SparseFileError::InvalidSparseHeaderSize;
     }
 
     // Check chunk header size field
     if (shdr.chunk_hdr_sz < sizeof(ChunkHeader)) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Expected chunk header size to be at least %" MB_PRIzu
-                       ", but have %" PRIu32, sizeof(SparseHeader),
-                       shdr.chunk_hdr_sz);
-        return false;
+        DEBUG("Expected chunk header size to be at least %" MB_PRIzu
+              ", but have %" PRIu32, sizeof(SparseHeader), shdr.chunk_hdr_sz);
+        return SparseFileError::InvalidChunkHeaderSize;
     }
 
     // Skip any extra bytes in the file header
-    if (!skip_bytes(shdr.file_hdr_sz - sizeof(SparseHeader))) {
-        return false;
-    }
+    OUTCOME_TRYV(skip_bytes(shdr.file_hdr_sz - sizeof(SparseHeader)));
 
     file_size = static_cast<uint64_t>(shdr.total_blks) * shdr.blk_sz;
 
-    return true;
+    return oc::success();
 }
 
 /*!
  * \brief Read and verify raw chunk header
  *
- * \param[in] chdr Chunk header
- * \param[in] tgt_offset Offset of the output file
- * \param[out] chunk_out ChunkInfo to store chunk info
+ * \param chdr Chunk header
+ * \param tgt_offset Offset of the output file
  *
- * \return Whether the chunk header is valid
+ * \return ChunkInfo if the chunk header is valid. Otherwise, the error code.
  */
-bool SparseFilePrivate::process_raw_chunk(const ChunkHeader &chdr,
-                                          uint64_t tgt_offset,
-                                          ChunkInfo &chunk_out)
+oc::result<ChunkInfo>
+SparseFilePrivate::process_raw_chunk(const ChunkHeader &chdr,
+                                     uint64_t tgt_offset)
 {
-    MB_PUBLIC(SparseFile);
-
     uint32_t data_size = chdr.total_sz - shdr.chunk_hdr_sz;
     uint64_t chunk_size = static_cast<uint64_t>(chdr.chunk_sz) * shdr.blk_sz;
 
     if (data_size != chunk_size) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Number of data blocks (%" PRIu32 ") does not match"
-                       " number of expected blocks (%" PRIu32 ")",
-                       data_size / shdr.blk_sz, chdr.chunk_sz);
-        return false;
+        DEBUG("Number of data blocks (%" PRIu32 ") does not match"
+              " number of expected blocks (%" PRIu32 ")",
+              data_size / shdr.blk_sz, chdr.chunk_sz);
+        return SparseFileError::InvalidRawChunk;
     }
 
-    chunk_out.type = chdr.chunk_type;
-    chunk_out.begin = tgt_offset;
-    chunk_out.end = tgt_offset + data_size;
-    chunk_out.src_begin = cur_src_offset - shdr.chunk_hdr_sz;
-    chunk_out.src_end = cur_src_offset + data_size;
-    chunk_out.raw_begin = cur_src_offset;
-    chunk_out.raw_end = cur_src_offset + data_size;
+    ChunkInfo ci;
 
-    return true;
+    ci.type = chdr.chunk_type;
+    ci.begin = tgt_offset;
+    ci.end = tgt_offset + data_size;
+    ci.src_begin = cur_src_offset - shdr.chunk_hdr_sz;
+    ci.src_end = cur_src_offset + data_size;
+    ci.raw_begin = cur_src_offset;
+    ci.raw_end = cur_src_offset + data_size;
+
+    return std::move(ci);
 }
 
 /*!
@@ -368,45 +341,41 @@ bool SparseFilePrivate::process_raw_chunk(const ChunkHeader &chdr,
  * This function will check the following properties:
  *   * Chunk data size is 4 bytes (`sizeof(uint32_t)`)
  *
- * \param[in] chdr Chunk header
- * \param[in] tgt_offset Offset of the output file
- * \param[out] chunk_out ChunkInfo to store chunk info
+ * \param chdr Chunk header
+ * \param tgt_offset Offset of the output file
  *
- * \return Whether the chunk header is valid
+ * \return ChunkInfo if the chunk header is valid. Otherwise, the error code.
  */
-bool SparseFilePrivate::process_fill_chunk(const ChunkHeader &chdr,
-                                           uint64_t tgt_offset,
-                                           ChunkInfo &chunk_out)
+oc::result<ChunkInfo>
+SparseFilePrivate::process_fill_chunk(const ChunkHeader &chdr,
+                                      uint64_t tgt_offset)
 {
-    MB_PUBLIC(SparseFile);
-
     uint32_t data_size = chdr.total_sz - shdr.chunk_hdr_sz;
     uint64_t chunk_size = static_cast<uint64_t>(chdr.chunk_sz) * shdr.blk_sz;
     uint32_t fill_val;
 
     if (data_size != sizeof(fill_val)) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Data size (%" PRIu32 ") does not match size of 32-bit "
-                       "integer", data_size);
-        return false;
+        DEBUG("Data size (%" PRIu32 ") does not match size of 32-bit integer",
+              data_size);
+        return SparseFileError::InvalidFillChunk;
     }
 
     uint64_t src_begin = cur_src_offset - shdr.chunk_hdr_sz;
 
-    if (!wread(&fill_val, sizeof(fill_val))) {
-        return false;
-    }
+    OUTCOME_TRYV(wread(&fill_val, sizeof(fill_val)));
 
     uint64_t src_end = cur_src_offset;
 
-    chunk_out.type = chdr.chunk_type;
-    chunk_out.begin = tgt_offset;
-    chunk_out.end = tgt_offset + chunk_size;
-    chunk_out.src_begin = src_begin;
-    chunk_out.src_end = src_end;
-    chunk_out.fill_val = fill_val;
+    ChunkInfo ci;
 
-    return true;
+    ci.type = chdr.chunk_type;
+    ci.begin = tgt_offset;
+    ci.end = tgt_offset + chunk_size;
+    ci.src_begin = src_begin;
+    ci.src_end = src_end;
+    ci.fill_val = fill_val;
+
+    return std::move(ci);
 }
 
 /*!
@@ -415,34 +384,32 @@ bool SparseFilePrivate::process_fill_chunk(const ChunkHeader &chdr,
  * This function will check the following properties:
  *   * Chunk data size is 0 bytes
  *
- * \param[in] chdr Chunk header
- * \param[in] tgt_offset Offset of the output file
- * \param[out] chunk_out ChunkInfo to store chunk info
+ * \param chdr Chunk header
+ * \param tgt_offset Offset of the output file
  *
- * \return Whether the chunk header is valid
+ * \return ChunkInfo if the chunk header is valid. Otherwise, the error code.
  */
-bool SparseFilePrivate::process_skip_chunk(const ChunkHeader &chdr,
-                                           uint64_t tgt_offset,
-                                           ChunkInfo &chunk_out)
+oc::result<ChunkInfo>
+SparseFilePrivate::process_skip_chunk(const ChunkHeader &chdr,
+                                      uint64_t tgt_offset)
 {
-    MB_PUBLIC(SparseFile);
-
     uint32_t data_size = chdr.total_sz - shdr.chunk_hdr_sz;
     uint64_t chunk_size = static_cast<uint64_t>(chdr.chunk_sz) * shdr.blk_sz;
 
     if (data_size != 0) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Data size (%" PRIu32 ") is not 0", data_size);
-        return false;
+        DEBUG("Data size (%" PRIu32 ") is not 0", data_size);
+        return SparseFileError::InvalidSkipChunk;
     }
 
-    chunk_out.type = chdr.chunk_type;
-    chunk_out.begin = tgt_offset;
-    chunk_out.end = tgt_offset + chunk_size;
-    chunk_out.src_begin = cur_src_offset - shdr.chunk_hdr_sz;
-    chunk_out.src_end = cur_src_offset + data_size;
+    ChunkInfo ci;
 
-    return true;
+    ci.type = chdr.chunk_type;
+    ci.begin = tgt_offset;
+    ci.end = tgt_offset + chunk_size;
+    ci.src_begin = cur_src_offset - shdr.chunk_hdr_sz;
+    ci.src_end = cur_src_offset + data_size;
+
+    return std::move(ci);
 }
 
 /*!
@@ -451,49 +418,43 @@ bool SparseFilePrivate::process_skip_chunk(const ChunkHeader &chdr,
  * This function will check the following properties:
  *   * Chunk data size is 4 bytes (`sizeof(uint32_t)`)
  *
- * \param[in] chdr Chunk header
- * \param[in] tgt_offset Offset of the output file
- * \param[out] chunk_out ChunkInfo to store chunk info
+ * \param chdr Chunk header
+ * \param tgt_offset Offset of the output file
  *
- * \return Whether the chunk header is valid
+ * \return ChunkInfo if the chunk header is valid. Otherwise, the error code.
  */
-bool SparseFilePrivate::process_crc32_chunk(const ChunkHeader &chdr,
-                                            uint64_t tgt_offset,
-                                            ChunkInfo &chunk_out)
+oc::result<ChunkInfo>
+SparseFilePrivate::process_crc32_chunk(const ChunkHeader &chdr,
+                                       uint64_t tgt_offset)
 {
-    MB_PUBLIC(SparseFile);
-    (void) tgt_offset;
-
     uint32_t data_size = chdr.total_sz - shdr.chunk_hdr_sz;
     uint64_t chunk_size = static_cast<uint64_t>(chdr.chunk_sz) * shdr.blk_sz;
     uint32_t crc32;
 
     if (chunk_size != 0) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Chunk data size (%" PRIu64 ") is not 0", chunk_size);
-        return false;
+        DEBUG("Chunk data size (%" PRIu64 ") is not 0", chunk_size);
+        return SparseFileError::InvalidCrc32Chunk;
     }
 
     if (data_size != sizeof(crc32)) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Data size (%" PRIu32 ") does not match size of 32-bit"
-                       " integer", data_size);
-        return false;
+        DEBUG("Data size (%" PRIu32 ") does not match size of 32-bit integer",
+              data_size);
+        return SparseFileError::InvalidCrc32Chunk;
     }
 
-    if (!wread(&crc32, sizeof(crc32))) {
-        return false;
-    }
+    OUTCOME_TRYV(wread(&crc32, sizeof(crc32)));
 
     expected_crc32 = mb_le32toh(crc32);
 
-    chunk_out.type = chdr.chunk_type;
-    chunk_out.begin = tgt_offset;
-    chunk_out.end = tgt_offset;
-    chunk_out.src_begin = tgt_offset - shdr.chunk_hdr_sz;
-    chunk_out.src_end = tgt_offset + data_size;
+    ChunkInfo ci;
 
-    return true;
+    ci.type = chdr.chunk_type;
+    ci.begin = tgt_offset;
+    ci.end = tgt_offset;
+    ci.src_begin = tgt_offset - shdr.chunk_hdr_sz;
+    ci.src_end = tgt_offset + data_size;
+
+    return std::move(ci);
 }
 
 /*!
@@ -511,38 +472,32 @@ bool SparseFilePrivate::process_crc32_chunk(const ChunkHeader &chdr,
  *       will advanced to the byte after the entire chunk.
  * \post \a cur_src_offset will be set to the new source file position
  *
- * \param[in] chdr Chunk header
- * \param[in] tgt_offset Offset of the output file
- * \param[out] chunk_out ChunkInfo to store chunk info
+ * \param chdr Chunk header
+ * \param tgt_offset Offset of the output file
  *
- * \return Whether the chunk header is valid
+ * \return Nothing if the chunk header is valid. Otherwise, the error code.
  */
-bool SparseFilePrivate::process_chunk(const ChunkHeader &chdr,
-                                      uint64_t tgt_offset,
-                                      ChunkInfo &chunk_out)
+oc::result<ChunkInfo>
+SparseFilePrivate::process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset)
 {
-    MB_PUBLIC(SparseFile);
-
     if (chdr.total_sz < shdr.chunk_hdr_sz) {
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Total chunk size (%" PRIu32 ") smaller than chunk "
-                       "header size", chdr.total_sz);
-        return false;
+        DEBUG("Total chunk size (%" PRIu32 ") smaller than chunk header size",
+              chdr.total_sz);
+        return SparseFileError::InvalidChunkSize;
     }
 
     switch (chdr.chunk_type) {
     case CHUNK_TYPE_RAW:
-        return process_raw_chunk(chdr, tgt_offset, chunk_out);
+        return process_raw_chunk(chdr, tgt_offset);
     case CHUNK_TYPE_FILL:
-        return process_fill_chunk(chdr, tgt_offset, chunk_out);
+        return process_fill_chunk(chdr, tgt_offset);
     case CHUNK_TYPE_DONT_CARE:
-        return process_skip_chunk(chdr, tgt_offset, chunk_out);
+        return process_skip_chunk(chdr, tgt_offset);
     case CHUNK_TYPE_CRC32:
-        return process_crc32_chunk(chdr, tgt_offset, chunk_out);
+        return process_crc32_chunk(chdr, tgt_offset);
     default:
-        pub->set_error(make_error_code(FileError::BadFileFormat),
-                       "Unknown chunk type: %u", chdr.chunk_type);
-        return false;
+        DEBUG("Unknown chunk type: %u", chdr.chunk_type);
+        return SparseFileError::InvalidChunkType;
     }
 }
 
@@ -552,16 +507,16 @@ bool SparseFilePrivate::process_chunk(const ChunkHeader &chdr,
  * \note This function only returns a failure code if a file operation fails. To
  *       check if a matching chunk is found, use `chunk != chunks.end()`.
  *
- * \return True unless an error occurs
+ * \return Nothing unless an error occurs
  */
-bool SparseFilePrivate::move_to_chunk(uint64_t offset)
+oc::result<void> SparseFilePrivate::move_to_chunk(uint64_t offset)
 {
     MB_PUBLIC(SparseFile);
 
     // No action needed if the offset is in the current chunk
     if (chunk != chunks.end()
             && offset >= chunk->begin && offset < chunk->end) {
-        return true;
+        return oc::success();
     }
 
     // If the offset is in the current range of chunks, then do a binary search
@@ -569,7 +524,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
     if (!chunks.empty() && offset < chunks.back().end) {
         chunk = binary_find(chunks.begin(), chunks.end(), offset, OffsetComp());
         if (chunk != chunks.end()) {
-            return true;
+            return oc::success();
         }
     }
 
@@ -577,6 +532,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
     chunk = chunks.end();
     while (chunks.size() < shdr.total_chunks) {
         size_t chunk_num = chunks.size();
+        (void) chunk_num;
 
         DEBUG("Reading next chunk (#%" MB_PRIzu ")", chunk_num);
 
@@ -596,30 +552,29 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
 
         // Skip to src_begin
         if (src_begin < cur_src_offset) {
-            pub->set_error(make_error_code(FileError::BadFileFormat),
-                           "Internal error: src_begin (%" PRIu64 ")"
-                           " < cur_src_offset (%" PRIu64 ")",
-                           src_begin, cur_src_offset);
+            DEBUG("Internal error: src_begin (%" PRIu64 ")"
+                  " < cur_src_offset (%" PRIu64 ")",
+                  src_begin, cur_src_offset);
             pub->set_fatal();
-            return false;
+            return SparseFileError::InternalError;
         }
 
-        if (!skip_bytes(src_begin - cur_src_offset)) {
-            pub->set_error(pub->error(),
-                           "Failed to skip to chunk #%" MB_PRIzu ": %s",
-                           chunk_num, pub->error_string().c_str());
+        auto skip_ret = skip_bytes(src_begin - cur_src_offset);
+        if (!skip_ret) {
+            DEBUG("Failed to skip to chunk #%" MB_PRIzu ": %s",
+                  chunk_num, skip_ret.error().message().c_str());
             pub->set_fatal();
-            return false;
+            return skip_ret.as_failure();
         }
 
         ChunkHeader chdr;
 
-        if (!wread(&chdr, sizeof(chdr))) {
-            pub->set_error(pub->error(),
-                           "Failed to read chunk header for chunk %" MB_PRIzu
-                           ": %s", chunk_num, pub->error_string().c_str());
+        auto read_ret = wread(&chdr, sizeof(chdr));
+        if (!read_ret) {
+            DEBUG("Failed to read chunk header for chunk %" MB_PRIzu ": %s",
+                  chunk_num, read_ret.error().message().c_str());
             pub->set_fatal();
-            return false;
+            return read_ret.as_failure();
         }
 
         fix_chunk_header_byte_order(chdr);
@@ -630,49 +585,47 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
 
         // Skip any extra bytes in the chunk header. process_sparse_header()
         // checks the size to make sure that the value won't underflow.
-        if (!skip_bytes(shdr.chunk_hdr_sz - sizeof(chdr))) {
-            pub->set_error(pub->error(),
-                           "Failed to skip extra bytes in chunk #%" MB_PRIzu
-                           "'s header: %s", chunk_num,
-                           pub->error_string().c_str());
+        skip_ret = skip_bytes(shdr.chunk_hdr_sz - sizeof(chdr));
+        if (!skip_ret) {
+            DEBUG("Failed to skip extra bytes in chunk #%" MB_PRIzu
+                  "'s header: %s", chunk_num,
+                  skip_ret.error().message().c_str());
             pub->set_fatal();
-            return false;
+            return skip_ret.as_failure();
         }
 
-        ChunkInfo chunk_info{};
-
-        if (!process_chunk(chdr, tgt_begin, chunk_info)) {
+        auto chunk_info = process_chunk(chdr, tgt_begin);
+        if (!chunk_info) {
             pub->set_fatal();
-            return false;
+            return chunk_info.as_failure();
         }
+        auto &&ci = chunk_info.value();
 
         OPER("Chunk #%" MB_PRIzu " covers source range (%" PRIu64 " - %" PRIu64 ")",
-             chunk_num, chunk_info.src_begin, chunk_info.src_end);
+             chunk_num, ci.src_begin, ci.src_end);
         OPER("Chunk #%" MB_PRIzu " covers output range (%" PRIu64 " - %" PRIu64 ")",
-             chunk_num, chunk_info.begin, chunk_info.end);
+             chunk_num, ci.begin, ci.end);
 
         // Make sure the chunk does not end after the header-specified file size
-        if (chunk_info.end > file_size) {
-            pub->set_error(make_error_code(FileError::BadFileFormat),
-                           "Chunk #%" MB_PRIzu " ends (%" PRIu64 ") after the "
-                           "file size specified in the sparse header (%"
-                           PRIu64 ")", chunk_num, chunk_info.end, file_size);
+        if (ci.end > file_size) {
+            DEBUG("Chunk #%" MB_PRIzu " ends (%" PRIu64 ") after the file size "
+                  "specified in the sparse header (%" PRIu64 ")",
+                  chunk_num, ci.end, file_size);
             pub->set_fatal();
-            return false;
+            return SparseFileError::InvalidChunkBounds;
         }
 
-        chunks.push_back(std::move(chunk_info));
+        chunks.push_back(std::move(ci));
 
         // If we just read the last chunk, make sure it ends at the same
         // position as specified in the sparse header
         if (chunks.size() == shdr.total_chunks
                 && chunks.back().end != file_size) {
-            pub->set_error(make_error_code(FileError::BadFileFormat),
-                           "Last chunk does not end (%" PRIu64 ") at position"
-                           " specified by sparse header (%" PRIu64 ")",
-                           chunks.back().end, file_size);
+            DEBUG("Last chunk does not end (%" PRIu64 ") at position"
+                  " specified by sparse header (%" PRIu64 ")",
+                  chunks.back().end, file_size);
             pub->set_fatal();
-            return false;
+            return SparseFileError::InvalidChunkBounds;
         }
 
         if (offset >= chunks.back().begin && offset < chunks.back().end) {
@@ -684,7 +637,7 @@ bool SparseFilePrivate::move_to_chunk(uint64_t offset)
         chunk = chunks.end();
     }
 
-    return true;
+    return oc::success();
 }
 
 /*! \endcond */
@@ -730,13 +683,13 @@ SparseFile::SparseFile(SparseFilePrivate *priv)
 SparseFile::SparseFile(SparseFilePrivate *priv, File *file)
     : _priv_ptr(priv)
 {
-    open(file);
+    (void) open(file);
 }
 /*! \endcond */
 
 SparseFile::~SparseFile()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -748,9 +701,10 @@ SparseFile::~SparseFile()
  *
  * \param file File to open
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool SparseFile::open(File *file)
+oc::result<void> SparseFile::open(File *file)
 {
     MB_PRIVATE(SparseFile);
     if (priv) {
@@ -783,17 +737,17 @@ uint64_t SparseFile::size()
  * skipping.
  *
  * \code{.cpp}
- * file.seek(0, SEEK_CUR, nullptr) == true;
- * // Forward skipping unsupported if file.error() == FileError::UnsupportedSeek
+ * !!file.seek(0, SEEK_CUR) == true;
+ * // Forward skipping unsupported if FileError::UnsupportedSeek is returned
  * \endcode
  *
  * The following test will be run (following the forward skipping test) to
  * determine if the file supports random seeking.
  *
  * \code{.cpp}
- * file.read(buf, 1, &n) == true;
- * file.seek(-1, SEEK_CUR, nullptr) == true;
- * // Random seeking unsupported if file.error() == FileError::UnsupportedSeek
+ * !!file.read(buf, 1) == true;
+ * !!file.seek(-1, SEEK_CUR) == true;
+ * // Random seeking unsupported if FileError::UnsupportedSeek is returned
  * \endcode
  *
  * \note This function will fail if the file handle is not open.
@@ -803,91 +757,77 @@ uint64_t SparseFile::size()
  *      relative seeks. This allows for opening sparse files where the data
  *      isn't at the beginning of the file.
  *
- * \return Whether the sparse file is successfully opened
+ * \return Nothing if the sparse file is successfully opened. Otherwise, the
+ *         error code.
  */
-bool SparseFile::on_open()
+oc::result<void> SparseFile::on_open()
 {
     MB_PRIVATE(SparseFile);
 
     if (!priv->file->is_open()) {
-        set_error(make_error_code(FileError::InvalidState),
-                  "Underlying file is not open");
-        return false;
+        DEBUG("Underlying file is not open");
+        return FileError::InvalidState;
     }
-
-    unsigned char first_byte;
-    size_t n;
 
     priv->seekability = Seekability::CanRead;
 
-    if (priv->file->seek(0, SEEK_CUR, nullptr)) {
+    auto seek_ret = priv->file->seek(0, SEEK_CUR);
+    if (seek_ret) {
         DEBUG("File supports forward skipping");
         priv->seekability = Seekability::CanSkip;
-    } else if (priv->file->error() != FileErrorC::Unsupported) {
-        set_error(priv->file->error(), "%s",
-                  priv->file->error_string().c_str());
-        return false;
+    } else if (seek_ret.error() != FileErrorC::Unsupported) {
+        return seek_ret.as_failure();
     }
 
-    if (!priv->file->read(&first_byte, 1, n)) {
-        set_error(priv->file->error(), "%s",
-                  priv->file->error_string().c_str());
-        return false;
-    } else if (n != 1) {
-        set_error(make_error_code(FileError::BadFileFormat),
-                  "Failed to read first byte of file");
-        return false;
+    unsigned char first_byte;
+
+    OUTCOME_TRY(n, priv->file->read(&first_byte, 1));
+    if (n != 1) {
+        DEBUG("Failed to read first byte of file");
+        return SparseFileError::UnexpectedEndOfFile;
     }
     priv->cur_src_offset += n;
 
-    if (priv->file->seek(-static_cast<int64_t>(n), SEEK_CUR, nullptr)) {
+    seek_ret = priv->file->seek(-static_cast<int64_t>(n), SEEK_CUR);
+    if (seek_ret) {
         DEBUG("File supports random seeking");
         priv->seekability = Seekability::CanSeek;
         priv->cur_src_offset -= n;
         n = 0;
-    } else if (priv->file->error() != FileErrorC::Unsupported) {
-        set_error(priv->file->error(), "%s",
-                  priv->file->error_string().c_str());
-        return false;
+    } else if (seek_ret.error() != FileErrorC::Unsupported) {
+        return seek_ret.as_failure();
     }
 
-    if (!priv->process_sparse_header(&first_byte, n)) {
-        return false;
-    }
-
-    return true;
+    return priv->process_sparse_header(&first_byte, n);
 }
 
 /*!
  * \brief Close opened sparse file
  *
  * \note If the sparse file is open, then no matter what value is returned, the
- *       sparse file will be closed. The return value is the return value of the
- *       close callback function (if one was provided).
+ *       sparse file will be closed.
  *
- * \return
- *   * True if no error was encountered when closing the file.
- *   * False if an error occurs while closing the file
+ * \return Always returns nothing
  */
-bool SparseFile::on_close()
+oc::result<void> SparseFile::on_close()
 {
     MB_PRIVATE(SparseFile);
 
     // Reset to allow opening another file
     priv->clear();
 
-    return true;
+    return oc::success();
 }
 
 /*!
  * \brief Read sparse file
  *
  * This function will read the specified amount of bytes from the source file.
- * If this function returns true and \p bytes_read is less than \p size, then
- * the end of the sparse file (EOF) has been reached. If any error occurs, the
- * function will return false and any further attempts to read or seek the
- * sparse file results in undefined behavior as the internal state will be
- * invalid.
+ * If this function returns a size count less than \p size, then the end of the
+ * sparse file (EOF) has been reached. If any error occurs, the function will
+ * return an error code and any further attempts to read or seek the sparse file
+ * may produce invalid or unexpected results. It is not undefined behavior in
+ * the C++ sense of the term.
  *
  * Some examples of failures include:
  * * Source reaching EOF before the end of the sparse file is reached
@@ -897,22 +837,22 @@ bool SparseFile::on_close()
  *
  * \param buf Buffer to read data into
  * \param size Number of bytes to read
- * \param bytes_read Number of bytes that were read
  *
- * \return Whether the specified number of bytes were successfully read
+ * \return Number of bytes read if the specified number of bytes were
+ *         successfully read. Otherwise, the error code.
  */
-bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> SparseFile::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(SparseFile);
 
-    OPER("read(buf, %" MB_PRIzu ", *bytesRead)", size);
+    OPER("read(buf, %" MB_PRIzu ")", size);
 
     uint64_t total_read = 0;
 
     while (size > 0) {
-        if (!priv->move_to_chunk(priv->cur_tgt_offset)) {
-            return false;
-        } else if (priv->chunk == priv->chunks.end()) {
+        OUTCOME_TRYV(priv->move_to_chunk(priv->cur_tgt_offset));
+
+        if (priv->chunk == priv->chunks.end()) {
             OPER("Reached EOF");
             break;
         }
@@ -947,14 +887,10 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
                             raw_src_offset - priv->cur_src_offset);
                 }
 
-                if (!priv->wseek(seek_offset)) {
-                    return false;
-                }
+                OUTCOME_TRYV(priv->wseek(seek_offset));
             }
 
-            if (!priv->wread(buf, static_cast<size_t>(to_read))) {
-                return false;
-            }
+            OUTCOME_TRYV(priv->wread(buf, static_cast<size_t>(to_read)));
 
             n_read = to_read;
             break;
@@ -986,7 +922,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
             n_read = to_read;
             break;
         default:
-            assert(false);
+            MB_UNREACHABLE("Invalid chunk type: %" PRIu16, priv->chunk->type);
         }
 
         OPER("Read %" PRIu64 " bytes", n_read);
@@ -996,8 +932,7 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
         buf = reinterpret_cast<unsigned char *>(buf) + n_read;
     }
 
-    bytes_read = static_cast<size_t>(total_read);
-    return true;
+    return static_cast<size_t>(total_read);
 }
 
 /*!
@@ -1008,31 +943,29 @@ bool SparseFile::on_read(void *buf, size_t size, size_t &bytes_read)
  *
  * \note Seeking will only work if the underlying file handle supports seeking.
  *
- * \param[in] offset Offset to seek
- * \param[in] whence \a SEEK_SET, \a SEEK_CUR, or \a SEEK_END
- * \param[out] new_offset_out Pointer to store new offset of sparse file
+ * \param offset Offset to seek
+ * \param whence \a SEEK_SET, \a SEEK_CUR, or \a SEEK_END
  *
- * \return Whether the seeking was successful
+ * \return New offset of sparse file if the seeking was successful. Otherwise,
+ *         the error code.
  */
-bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
+oc::result<uint64_t> SparseFile::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(SparseFile);
 
     OPER("seek(%" PRId64 ", %d)", offset, whence);
 
     if (priv->seekability != Seekability::CanSeek) {
-        set_error(make_error_code(FileError::UnsupportedSeek),
-                  "Underlying file does not support seeking");
-        return false;
+        DEBUG("Underlying file does not support seeking");
+        return FileError::UnsupportedSeek;
     }
 
     uint64_t new_offset;
     switch (whence) {
     case SEEK_SET:
         if (offset < 0) {
-            set_error(make_error_code(FileError::ArgumentOutOfRange),
-                      "Cannot seek to negative offset");
-            return false;
+            DEBUG("Cannot seek to negative offset");
+            return FileError::ArgumentOutOfRange;
         }
         new_offset = static_cast<uint64_t>(offset);
         break;
@@ -1040,9 +973,8 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->cur_tgt_offset)
                 || (offset > 0 && priv->cur_tgt_offset
                         >= UINT64_MAX - static_cast<uint64_t>(offset))) {
-            set_error(make_error_code(FileError::IntegerOverflow),
-                      "Offset overflows uint64_t");
-            return false;
+            DEBUG("Offset overflows uint64_t");
+            return FileError::IntegerOverflow;
         }
         new_offset = priv->cur_tgt_offset + static_cast<uint64_t>(offset);
         break;
@@ -1050,9 +982,8 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
         if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->file_size)
                 || (offset > 0 && priv->file_size
                         >= UINT64_MAX - static_cast<uint64_t>(offset))) {
-            set_error(make_error_code(FileError::IntegerOverflow),
-                      "Offset overflows uint64_t");
-            return false;
+            DEBUG("Offset overflows uint64_t");
+            return FileError::IntegerOverflow;
         }
         new_offset = priv->file_size + static_cast<uint64_t>(offset);
         break;
@@ -1060,16 +991,12 @@ bool SparseFile::on_seek(int64_t offset, int whence, uint64_t &new_offset_out)
         MB_UNREACHABLE("Invalid seek whence: %d", whence);
     }
 
-    if (!priv->move_to_chunk(new_offset)) {
-        return false;
-    }
+    OUTCOME_TRYV(priv->move_to_chunk(new_offset));
 
     // May move past EOF, which is okay (mimics lseek behavior), but read()
     priv->cur_tgt_offset = new_offset;
 
-    new_offset_out = new_offset;
-
-    return true;
+    return new_offset;
 }
 
 }

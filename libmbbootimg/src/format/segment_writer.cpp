@@ -156,13 +156,15 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
 int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
 {
     if (!_have_pos) {
-        if (!file.seek(0, SEEK_CUR, &_pos)) {
-            writer.set_error(file.error(),
+        auto pos = file.seek(0, SEEK_CUR);
+        if (!pos) {
+            writer.set_error(pos.error(),
                              "Failed to get current offset: %s",
-                             file.error_string().c_str());
+                             pos.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
+        _pos = pos.value();
         _have_pos = true;
     }
 
@@ -217,19 +219,19 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
         return RET_FAILED;
     }
 
-    if (!file_write_fully(file, buf, buf_size, bytes_written)) {
-        writer.set_error(file.error(),
+    auto n = file_write_fully(file, buf, buf_size);
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to write data: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (bytes_written != buf_size) {
-        writer.set_error(file.error(),
-                         "Write was truncated: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != buf_size) {
+        writer.set_error(n.error(), "Write was truncated");
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
         return RET_FATAL;
     }
+    bytes_written = n.value();
 
     _entry_size += static_cast<uint32_t>(buf_size);
     _pos += buf_size;
@@ -245,16 +247,16 @@ int SegmentWriter::finish_entry(File &file, Writer &writer)
     // Finish previous entry by aligning to page
     if (_entry->align > 0) {
         auto skip = align_page_size<uint64_t>(_pos, _entry->align);
-        uint64_t new_pos;
 
-        if (!file.seek(static_cast<int64_t>(skip), SEEK_CUR, &new_pos)) {
-            writer.set_error(file.error(),
+        auto new_pos = file.seek(static_cast<int64_t>(skip), SEEK_CUR);
+        if (!new_pos) {
+            writer.set_error(new_pos.error(),
                              "Failed to seek to page boundary: %s",
-                             file.error_string().c_str());
+                             new_pos.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        _pos = new_pos;
+        _pos = new_pos.value();
     }
 
     return RET_OK;

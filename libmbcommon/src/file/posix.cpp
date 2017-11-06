@@ -28,9 +28,9 @@
 #include <unistd.h>
 
 #include "mbcommon/error_code.h"
-#include "mbcommon/locale.h"
-
 #include "mbcommon/file/posix_p.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/locale.h"
 
 #ifndef __ANDROID__
 static_assert(sizeof(off_t) > 4, "Not compiling with LFS support!");
@@ -259,28 +259,28 @@ PosixFile::PosixFile(PosixFilePrivate *priv,
                      FILE *fp, bool owned)
     : File(priv)
 {
-    open(fp, owned);
+    (void) open(fp, owned);
 }
 
 PosixFile::PosixFile(PosixFilePrivate *priv,
                      const std::string &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 PosixFile::PosixFile(PosixFilePrivate *priv,
                      const std::wstring &filename, FileOpenMode mode)
     : File(priv)
 {
-    open(filename, mode);
+    (void) open(filename, mode);
 }
 
 /*! \endcond */
 
 PosixFile::~PosixFile()
 {
-    close();
+    (void) close();
 }
 
 /*!
@@ -294,9 +294,10 @@ PosixFile::~PosixFile()
  * \param owned Whether the `FILE *` instance should be owned by the File
  *              handle
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool PosixFile::open(FILE *fp, bool owned)
+oc::result<void> PosixFile::open(FILE *fp, bool owned)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -316,9 +317,10 @@ bool PosixFile::open(FILE *fp, bool owned)
  * \param filename MBS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool PosixFile::open(const std::string &filename, FileOpenMode mode)
+oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -326,9 +328,7 @@ bool PosixFile::open(const std::string &filename, FileOpenMode mode)
 #ifdef _WIN32
         auto converted = mbs_to_wcs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert MBS filename to WCS");
-            return false;
+            return FileError::CannotConvertEncoding;
         }
         auto &&native_filename = converted.value();
 #else
@@ -359,9 +359,10 @@ bool PosixFile::open(const std::string &filename, FileOpenMode mode)
  * \param filename WCS filename
  * \param mode Open mode (\ref FileOpenMode)
  *
- * \return Whether the file is successfully opened
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
  */
-bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
+oc::result<void> PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 {
     MB_PRIVATE(PosixFile);
     if (priv) {
@@ -371,9 +372,7 @@ bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 #else
         auto converted = wcs_to_mbs(filename);
         if (!converted) {
-            set_error(make_error_code(FileError::CannotConvertEncoding),
-                      "Failed to convert WCS filename to MBS");
-            return false;
+            return FileError::CannotConvertEncoding;
         }
         auto &&native_filename = converted.value();
 #endif
@@ -392,7 +391,7 @@ bool PosixFile::open(const std::wstring &filename, FileOpenMode mode)
     return File::open();
 }
 
-bool PosixFile::on_open()
+oc::result<void> PosixFile::on_open()
 {
     MB_PRIVATE(PosixFile);
 
@@ -404,8 +403,7 @@ bool PosixFile::on_open()
 #endif
                 priv->filename.c_str(), priv->mode);
         if (!priv->fp) {
-            set_error(ec_from_errno(), "Failed to open file");
-            return false;
+            return ec_from_errno();
         }
     }
 
@@ -418,14 +416,11 @@ bool PosixFile::on_open()
     fd = priv->funcs->fn_fileno(priv->fp);
     if (fd >= 0) {
         if (priv->funcs->fn_fstat(fd, &sb) < 0) {
-            set_error(ec_from_errno(), "Failed to stat file");
-            return false;
+            return ec_from_errno();
         }
 
         if (S_ISDIR(sb.st_mode)) {
-            set_error(std::make_error_code(std::errc::is_a_directory),
-                      "Failed to open file");
-            return false;
+            return std::make_error_code(std::errc::is_a_directory);
         }
 
         // Enable seekability based on file type because lseek(fd, 0, SEEK_CUR)
@@ -439,114 +434,103 @@ bool PosixFile::on_open()
         }
     }
 
-    return true;
+    return oc::success();
 }
 
-bool PosixFile::on_close()
+oc::result<void> PosixFile::on_close()
 {
     MB_PRIVATE(PosixFile);
 
-    bool ret = true;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        priv->clear();
+    });
 
     if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
-        set_error(ec_from_errno(), "Failed to close file");
-        ret = false;
+        return ec_from_errno();
     }
 
-    // Reset to allow opening another file
-    priv->clear();
-
-    return ret;
+    return oc::success();
 }
 
-bool PosixFile::on_read(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> PosixFile::on_read(void *buf, size_t size)
 {
     MB_PRIVATE(PosixFile);
 
     size_t n = priv->funcs->fn_fread(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(ec_from_errno(), "Failed to read file");
-        return false;
+        return ec_from_errno();
     }
 
-    bytes_read = n;
-    return true;
+    return n;
 }
 
-bool PosixFile::on_write(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> PosixFile::on_write(const void *buf, size_t size)
 {
     MB_PRIVATE(PosixFile);
 
     size_t n = priv->funcs->fn_fwrite(buf, 1, size, priv->fp);
 
     if (n < size && priv->funcs->fn_ferror(priv->fp)) {
-        set_error(ec_from_errno(), "Failed to write file");
-        return false;
+        return ec_from_errno();
     }
 
-    bytes_written = n;
-    return true;
+    return n;
 }
 
-bool PosixFile::on_seek(int64_t offset, int whence, uint64_t &new_offset)
+oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
 {
     MB_PRIVATE(PosixFile);
 
     off_t old_pos, new_pos;
 
     if (!priv->can_seek) {
-        set_error(make_error_code(FileError::UnsupportedSeek),
-                  "Seek not supported");
-        return false;
+        return FileError::UnsupportedSeek;
     }
 
     // Get current file position
     old_pos = priv->funcs->fn_ftello(priv->fp);
     if (old_pos < 0) {
-        set_error(ec_from_errno(), "Failed to get file position");
-        return false;
+        return ec_from_errno();
     }
 
     // Try to seek
     if (priv->funcs->fn_fseeko(priv->fp, static_cast<off_t>(offset),
                                whence) < 0) {
-        set_error(ec_from_errno(), "Failed to seek file");
-        return false;
+        return ec_from_errno();
     }
 
     // Get new position
     new_pos = priv->funcs->fn_ftello(priv->fp);
     if (new_pos < 0) {
         // Try to restore old position
-        set_error(ec_from_errno(), "Failed to get file position");
+        int errno_to_report = errno;
         if (priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) != 0) {
+            errno_to_report = errno;
             set_fatal();
         }
-        return false;
+        return ec_from_errno(errno_to_report);
     }
 
-    new_offset = static_cast<uint64_t>(new_pos);
-    return true;
+    return static_cast<uint64_t>(new_pos);
 }
 
-bool PosixFile::on_truncate(uint64_t size)
+oc::result<void> PosixFile::on_truncate(uint64_t size)
 {
     MB_PRIVATE(PosixFile);
 
     int fd = priv->funcs->fn_fileno(priv->fp);
     if (fd < 0) {
-        set_error(make_error_code(FileError::UnsupportedTruncate),
-                  "fileno() not supported for fp");
-        return false;
+        // fileno() not supported for fp
+        return FileError::UnsupportedTruncate;
     }
 
     if (priv->funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
-        set_error(ec_from_errno(), "Failed to truncate file");
-        return false;
+        return ec_from_errno();
     }
 
-    return true;
+    return oc::success();
 }
 
 }

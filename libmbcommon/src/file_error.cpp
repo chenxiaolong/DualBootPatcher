@@ -56,6 +56,8 @@ std::string FileErrorCategory::message(int ev) const
         return "cannot convert string encoding";
     case FileError::InvalidState:
         return "invalid state";
+    case FileError::ObjectMoved:
+        return "object was moved";
     case FileError::UnsupportedRead:
         return "read not supported";
     case FileError::UnsupportedWrite:
@@ -66,8 +68,6 @@ std::string FileErrorCategory::message(int ev) const
         return "truncate not supported";
     case FileError::IntegerOverflow:
         return "integer overflowed";
-    case FileError::BadFileFormat:
-        return "bad file format";
     default:
         return "(unknown file error)";
     }
@@ -81,6 +81,7 @@ FileErrorCategory::default_error_condition(int code) const noexcept
     case FileError::CannotConvertEncoding:
         return FileErrorC::InvalidArgument;
     case FileError::InvalidState:
+    case FileError::ObjectMoved:
         return FileErrorC::InvalidState;
     case FileError::UnsupportedRead:
     case FileError::UnsupportedWrite:
