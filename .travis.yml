@@ -42,7 +42,7 @@ script:
   - travis_wait 30
   - cd --
   # Clone your DBP
-  - git clone https://github.com/yshalsager/DualBootPatcher -b downgraded ${TRAVIS_BUILD_DIR}/DualBootPatcher/
+  - git clone https://github.com/AdamHarrisKam/DualBootPatcher -b downgraded ${TRAVIS_BUILD_DIR}/DualBootPatcher/
   - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/
   - git submodule update --init --recursive
   - mkdir ${TRAVIS_BUILD_DIR}/DualBootPatcher/build
