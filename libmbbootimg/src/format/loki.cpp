@@ -261,7 +261,7 @@ static int _loki_write_aboot(Writer &writer, File &file,
 {
     if (aboot_func_offset > SIZE_MAX - fake_size
             || aboot_func_offset + fake_size > aboot_size) {
-        writer.set_error(make_error_code(LokiError::AbootFunctionOutOfRange),
+        writer.set_error(LokiError::AbootFunctionOutOfRange,
                          "aboot func offset + fake size out of range");
         return RET_FAILED;
     }
@@ -350,7 +350,7 @@ int _loki_patch_file(Writer &writer, File &file,
     memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
 
     if (aboot_size < MIN_ABOOT_SIZE) {
-        writer.set_error(make_error_code(LokiError::AbootImageTooSmall));
+        writer.set_error(LokiError::AbootImageTooSmall);
         return RET_FAILED;
     }
 
@@ -387,7 +387,7 @@ int _loki_patch_file(Writer &writer, File &file,
     }
 
     if (target == 0) {
-        writer.set_error(make_error_code(LokiError::AbootFunctionNotFound));
+        writer.set_error(LokiError::AbootFunctionNotFound);
         return RET_FAILED;
     }
 
@@ -399,7 +399,7 @@ int _loki_patch_file(Writer &writer, File &file,
     }
 
     if (!tgt) {
-        writer.set_error(make_error_code(LokiError::UnsupportedAbootImage));
+        writer.set_error(LokiError::UnsupportedAbootImage);
         return RET_FAILED;
     }
 
@@ -422,7 +422,7 @@ int _loki_patch_file(Writer &writer, File &file,
             + align_page_size<uint32_t>(ahdr.kernel_size, ahdr.page_size);
 
     if (!_patch_shellcode(tgt->hdr, ahdr.ramdisk_addr, patch)) {
-        writer.set_error(make_error_code(LokiError::ShellcodePatchFailed));
+        writer.set_error(LokiError::ShellcodePatchFailed);
         return RET_FAILED;
     }
 

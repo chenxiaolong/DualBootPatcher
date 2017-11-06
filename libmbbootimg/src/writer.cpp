@@ -44,7 +44,7 @@
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(priv->state & (STATES))) { \
-            set_error(make_error_code(WriterError::InvalidState), \
+            set_error(WriterError::InvalidState, \
                       "%s: Invalid state: "\
                       "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
                       __func__, static_cast<uint8_t>(STATES), \
@@ -289,7 +289,7 @@ int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format_)
     MB_PUBLIC(Writer);
 
     if (state != WriterState::New) {
-        pub->set_error(make_error_code(WriterError::InvalidState),
+        pub->set_error(WriterError::InvalidState,
                        "%s: Invalid state: expected 0x%" PRIx8
                        ", actual: 0x%" PRIx8,
                        __func__, static_cast<uint8_t>(WriterState::New),
@@ -446,7 +446,7 @@ int Writer::open(File *file)
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatRegistered));
+        set_error(WriterError::NoFormatRegistered);
         return RET_FAILED;
     }
 
@@ -675,7 +675,7 @@ int Writer::format_code()
     GET_PIMPL_OR_RETURN(-1);
 
     if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatSelected));
+        set_error(WriterError::NoFormatSelected);
         return -1;
     }
 
@@ -692,7 +692,7 @@ std::string Writer::format_name()
     GET_PIMPL_OR_RETURN({});
 
     if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatSelected));
+        set_error(WriterError::NoFormatSelected);
         return {};
     }
 
@@ -719,7 +719,7 @@ int Writer::set_format_by_code(int code)
         }
     }
 
-    set_error(make_error_code(WriterError::InvalidFormatCode),
+    set_error(WriterError::InvalidFormatCode,
               "Invalid format code: %d", code);
     return RET_FAILED;
 }
@@ -744,7 +744,7 @@ int Writer::set_format_by_name(const std::string &name)
         }
     }
 
-    set_error(make_error_code(WriterError::InvalidFormatName),
+    set_error(WriterError::InvalidFormatName,
               "Invalid format name: %s", name.c_str());
     return RET_FAILED;
 }

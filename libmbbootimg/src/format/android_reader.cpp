@@ -119,7 +119,7 @@ int AndroidFormatReader::read_header(File &file, Header &header)
 
     ret = convert_header(_hdr, header);
     if (ret != RET_OK) {
-        _reader.set_error(make_error_code(AndroidError::HeaderSetFieldsFailed),
+        _reader.set_error(AndroidError::HeaderSetFieldsFailed,
                           "Failed to set header fields");
         return ret;
     }
@@ -238,7 +238,7 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
     size_t offset;
 
     if (max_header_offset > MAX_HEADER_OFFSET) {
-        reader.set_error(make_error_code(AndroidError::InvalidArgument),
+        reader.set_error(AndroidError::InvalidArgument,
                          "Max header offset (%" PRIu64
                          ") must be less than %" MB_PRIzu,
                          max_header_offset, MAX_HEADER_OFFSET);
@@ -264,7 +264,7 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
 
     ptr = mb_memmem(buf, n.value(), BOOT_MAGIC, BOOT_MAGIC_SIZE);
     if (!ptr) {
-        reader.set_error(make_error_code(AndroidError::HeaderNotFound),
+        reader.set_error(AndroidError::HeaderNotFound,
                          "Android magic not found in first %" MB_PRIzu " bytes",
                          MAX_HEADER_OFFSET);
         return RET_WARN;
@@ -273,7 +273,7 @@ int AndroidFormatReader::find_header(Reader &reader, File &file,
     offset = static_cast<size_t>(static_cast<unsigned char *>(ptr) - buf);
 
     if (n.value() - offset < sizeof(AndroidHeader)) {
-        reader.set_error(make_error_code(AndroidError::HeaderOutOfBounds),
+        reader.set_error(AndroidError::HeaderOutOfBounds,
                          "Android header at %" MB_PRIzu " exceeds file size",
                          offset);
         return RET_WARN;
@@ -351,7 +351,7 @@ int AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
 
     if (n.value() != SAMSUNG_SEANDROID_MAGIC_SIZE
             || memcmp(buf, SAMSUNG_SEANDROID_MAGIC, n.value()) != 0) {
-        reader.set_error(make_error_code(AndroidError::SamsungMagicNotFound),
+        reader.set_error(AndroidError::SamsungMagicNotFound,
                          "SEAndroid magic not found in last %" MB_PRIzu
                          " bytes", SAMSUNG_SEANDROID_MAGIC_SIZE);
         return RET_WARN;
@@ -424,7 +424,7 @@ int AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
 
     if (n.value() != bump::BUMP_MAGIC_SIZE
             || memcmp(buf, bump::BUMP_MAGIC, n.value()) != 0) {
-        reader.set_error(make_error_code(AndroidError::BumpMagicNotFound),
+        reader.set_error(AndroidError::BumpMagicNotFound,
                          "Bump magic not found in last %" MB_PRIzu " bytes",
                          bump::BUMP_MAGIC_SIZE);
         return RET_WARN;

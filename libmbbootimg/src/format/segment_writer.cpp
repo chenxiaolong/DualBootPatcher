@@ -64,13 +64,12 @@ int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
                                uint64_t align, Writer &writer)
 {
     if (_state != SegmentWriterState::Begin) {
-        writer.set_error(make_error_code(
-                SegmentError::AddEntryInIncorrectState));
+        writer.set_error(SegmentError::AddEntryInIncorrectState);
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        writer.set_error(make_error_code(SegmentError::TooManyEntries));
+        writer.set_error(SegmentError::TooManyEntries);
         return RET_FATAL;
     }
 
@@ -197,7 +196,7 @@ int SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
     auto size = entry.size();
     if (size) {
         if (*size > UINT32_MAX) {
-            writer.set_error(make_error_code(SegmentError::InvalidEntrySize),
+            writer.set_error(SegmentError::InvalidEntrySize,
                              "Invalid entry size: %" PRIu64, *size);
             return RET_FAILED;
         }
@@ -214,8 +213,7 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
     // Check for overflow
     if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
             || _pos > UINT64_MAX - buf_size) {
-        writer.set_error(make_error_code(
-                SegmentError::WriteWouldOverflowInteger));
+        writer.set_error(SegmentError::WriteWouldOverflowInteger);
         return RET_FAILED;
     }
 

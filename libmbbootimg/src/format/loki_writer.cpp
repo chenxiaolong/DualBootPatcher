@@ -74,8 +74,7 @@ std::string LokiFormatWriter::name()
 int LokiFormatWriter::init()
 {
     if (!SHA1_Init(&_sha_ctx)) {
-        _writer.set_error(make_error_code(
-                android::AndroidError::Sha1InitError));
+        _writer.set_error(android::AndroidError::Sha1InitError);
         return RET_FAILED;
     }
 
@@ -207,7 +206,7 @@ int LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - _aboot.size()) {
-            _writer.set_error(make_error_code(LokiError::AbootImageTooLarge));
+            _writer.set_error(LokiError::AbootImageTooLarge);
             return RET_FATAL;
         }
 
@@ -226,8 +225,7 @@ int LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
         if (!SHA1_Update(&_sha_ctx, buf, buf_size)) {
-            _writer.set_error(make_error_code(
-                    android::AndroidError::Sha1UpdateError));
+            _writer.set_error(android::AndroidError::Sha1UpdateError);
             // This must be fatal as the write already happened and cannot be
             // reattempted
             return RET_FATAL;
@@ -254,8 +252,7 @@ int LokiFormatWriter::finish_entry(File &file)
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == ENTRY_TYPE_DEVICE_TREE
             && !SHA1_Update(&_sha_ctx, "\x00\x00\x00\x00", 4)) {
-        _writer.set_error(make_error_code(
-                android::AndroidError::Sha1UpdateError));
+        _writer.set_error(android::AndroidError::Sha1UpdateError);
         return RET_FATAL;
     }
 
@@ -263,8 +260,7 @@ int LokiFormatWriter::finish_entry(File &file)
     if (swentry->type != ENTRY_TYPE_ABOOT
             && (swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
-        _writer.set_error(make_error_code(
-                android::AndroidError::Sha1UpdateError));
+        _writer.set_error(android::AndroidError::Sha1UpdateError);
         return RET_FATAL;
     }
 

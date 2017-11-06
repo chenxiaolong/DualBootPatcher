@@ -654,7 +654,7 @@ int LokiFormatReader::read_header_old(Reader &reader, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader.set_error(make_error_code(LokiError::PageSizeCannotBeZero));
+        reader.set_error(LokiError::PageSizeCannotBeZero);
         return RET_WARN;
     }
 
@@ -774,7 +774,7 @@ int LokiFormatReader::read_header_new(Reader &reader, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader.set_error(make_error_code(LokiError::PageSizeCannotBeZero));
+        reader.set_error(LokiError::PageSizeCannotBeZero);
         return RET_WARN;
     }
 

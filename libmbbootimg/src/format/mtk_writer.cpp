@@ -93,8 +93,7 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
     uint32_t ramdisk_mtkhdr_size = 0;
 
     if (!SHA1_Init(&sha_ctx)) {
-        writer.set_error(make_error_code(
-                android::AndroidError::Sha1InitError));
+        writer.set_error(android::AndroidError::Sha1InitError);
         return RET_FAILED;
     }
 
@@ -128,8 +127,7 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
             }
 
             if (!SHA1_Update(&sha_ctx, buf, n.value())) {
-                writer.set_error(make_error_code(
-                        android::AndroidError::Sha1UpdateError));
+                writer.set_error(android::AndroidError::Sha1UpdateError);
                 return RET_FAILED;
             }
 
@@ -166,15 +164,13 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         }
 
         if (!SHA1_Update(&sha_ctx, &le32_size, sizeof(le32_size))) {
-            writer.set_error(make_error_code(
-                    android::AndroidError::Sha1UpdateError));
+            writer.set_error(android::AndroidError::Sha1UpdateError);
             return RET_FAILED;
         }
     }
 
     if (!SHA1_Final(digest, &sha_ctx)) {
-        writer.set_error(make_error_code(
-                android::AndroidError::Sha1UpdateError));
+        writer.set_error(android::AndroidError::Sha1UpdateError);
         return RET_FATAL;
     }
 
@@ -240,20 +236,18 @@ int MtkFormatWriter::write_header(File &file, const Header &header)
             _hdr.page_size = *page_size;
             break;
         default:
-            _writer.set_error(make_error_code(android::AndroidError::InvalidPageSize),
+            _writer.set_error(android::AndroidError::InvalidPageSize,
                               "Invalid page size: %" PRIu32, *page_size);
             return RET_FAILED;
         }
     } else {
-        _writer.set_error(make_error_code(
-                android::AndroidError::MissingPageSize));
+        _writer.set_error(android::AndroidError::MissingPageSize);
         return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(_hdr.name)) {
-            _writer.set_error(make_error_code(
-                    android::AndroidError::BoardNameTooLong));
+            _writer.set_error(android::AndroidError::BoardNameTooLong);
             return RET_FAILED;
         }
 
@@ -263,8 +257,7 @@ int MtkFormatWriter::write_header(File &file, const Header &header)
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            _writer.set_error(make_error_code(
-                    android::AndroidError::KernelCmdlineTooLong));
+            _writer.set_error(android::AndroidError::KernelCmdlineTooLong);
             return RET_FAILED;
         }
 
@@ -346,14 +339,12 @@ int MtkFormatWriter::finish_entry(File &file)
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
             && swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
-        _writer.set_error(make_error_code(
-                MtkError::EntryTooLargeToFitMtkHeader));
+        _writer.set_error(MtkError::EntryTooLargeToFitMtkHeader);
         return RET_FATAL;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
             && swentry->size != sizeof(MtkHeader)) {
-        _writer.set_error(make_error_code(
-                MtkError::InvalidEntrySizeForMtkHeader));
+        _writer.set_error(MtkError::InvalidEntrySizeForMtkHeader);
         return RET_FATAL;
     }
 

@@ -271,20 +271,18 @@ int MtkFormatReader::read_header(File &file, Header &header)
     // Validate that the kernel and ramdisk sizes are consistent
     if (_hdr.kernel_size != static_cast<uint64_t>(
             _mtk_kernel_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(make_error_code(
-                MtkError::MismatchedKernelSizeInHeaders));
+        _reader.set_error(MtkError::MismatchedKernelSizeInHeaders);
         return RET_FAILED;
     }
     if (_hdr.ramdisk_size != static_cast<uint64_t>(
             _mtk_ramdisk_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(make_error_code(
-                MtkError::MismatchedRamdiskSizeInHeaders));
+        _reader.set_error(MtkError::MismatchedRamdiskSizeInHeaders);
         return RET_FAILED;
     }
 
     ret = android::AndroidFormatReader::convert_header(_hdr, header);
     if (ret != RET_OK) {
-        _reader.set_error(make_error_code(MtkError::HeaderSetFieldsFailed));
+        _reader.set_error(MtkError::HeaderSetFieldsFailed);
         return ret;
     }
 

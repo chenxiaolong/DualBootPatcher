@@ -80,7 +80,7 @@ std::string AndroidFormatWriter::name()
 int AndroidFormatWriter::init()
 {
     if (!SHA1_Init(&_sha_ctx)) {
-        _writer.set_error(make_error_code(AndroidError::Sha1InitError));
+        _writer.set_error(AndroidError::Sha1InitError);
         return RET_FAILED;
     }
 
@@ -128,18 +128,18 @@ int AndroidFormatWriter::write_header(File &file, const Header &header)
             _hdr.page_size = *page_size;
             break;
         default:
-            _writer.set_error(make_error_code(AndroidError::InvalidPageSize),
+            _writer.set_error(AndroidError::InvalidPageSize,
                               "Invalid page size: %" PRIu32, *page_size);
             return RET_FAILED;
         }
     } else {
-        _writer.set_error(make_error_code(AndroidError::MissingPageSize));
+        _writer.set_error(AndroidError::MissingPageSize);
         return RET_FAILED;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(_hdr.name)) {
-            _writer.set_error(make_error_code(AndroidError::BoardNameTooLong));
+            _writer.set_error(AndroidError::BoardNameTooLong);
             return RET_FAILED;
         }
 
@@ -149,8 +149,7 @@ int AndroidFormatWriter::write_header(File &file, const Header &header)
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            _writer.set_error(make_error_code(
-                    AndroidError::KernelCmdlineTooLong));
+            _writer.set_error(AndroidError::KernelCmdlineTooLong);
             return RET_FAILED;
         }
 
@@ -217,7 +216,7 @@ int AndroidFormatWriter::write_data(File &file, const void *buf,
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
     if (!SHA1_Update(&_sha_ctx, buf, buf_size)) {
-        _writer.set_error(make_error_code(AndroidError::Sha1UpdateError));
+        _writer.set_error(AndroidError::Sha1UpdateError);
         // This must be fatal as the write already happened and cannot be
         // reattempted
         return RET_FATAL;
@@ -243,7 +242,7 @@ int AndroidFormatWriter::finish_entry(File &file)
     // Include size for everything except empty DT images
     if ((swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
-        _writer.set_error(make_error_code(AndroidError::Sha1UpdateError));
+        _writer.set_error(AndroidError::Sha1UpdateError);
         return RET_FATAL;
     }
 
@@ -316,7 +315,7 @@ int AndroidFormatWriter::close(File &file)
         // Set ID
         unsigned char digest[SHA_DIGEST_LENGTH];
         if (!SHA1_Final(digest, &_sha_ctx)) {
-            _writer.set_error(make_error_code(AndroidError::Sha1UpdateError));
+            _writer.set_error(AndroidError::Sha1UpdateError);
             return RET_FATAL;
         }
         memcpy(_hdr.id, digest, SHA_DIGEST_LENGTH);

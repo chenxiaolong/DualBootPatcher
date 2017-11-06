@@ -252,7 +252,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
             // dumping this segment.
             continue;
         } else {
-            _reader.set_error(make_error_code(SonyElfError::InvalidTypeOrFlagsField),
+            _reader.set_error(SonyElfError::InvalidTypeOrFlagsField,
                               "Invalid type (0x%08" PRIx32 ") or flags"
                               " (0x%08" PRIx32 ") field in segment"
                               " %" PRIu32, phdr.p_type, phdr.p_flags, i);
