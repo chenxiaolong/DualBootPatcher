@@ -44,9 +44,6 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(File)
 
-    File(File &&other) noexcept;
-    File & operator=(File &&rhs) noexcept;
-
     // File close
     oc::result<void> close();
 
@@ -65,6 +62,9 @@ protected:
     /*! \cond INTERNAL */
     File(FilePrivate *priv);
     /*! \endcond */
+
+    File(File &&other) noexcept;
+    File & operator=(File &&rhs) noexcept;
 
     // File open
     oc::result<void> open();
