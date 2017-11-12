@@ -44,7 +44,7 @@
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(priv->state & (STATES))) { \
-            set_error(make_error_code(ReaderError::InvalidState), \
+            set_error(ReaderError::InvalidState, \
                       "%s: Invalid state: "\
                       "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
                       __func__, static_cast<uint8_t>(STATES), \
@@ -257,7 +257,7 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format_)
     MB_PUBLIC(Reader);
 
     if (state != ReaderState::New) {
-        pub->set_error(make_error_code(ReaderError::InvalidState),
+        pub->set_error(ReaderError::InvalidState,
                        "%s: Invalid state: expected 0x%" PRIx8
                        ", actual: 0x%" PRIx8,
                        __func__, static_cast<uint8_t>(ReaderState::New),
@@ -266,7 +266,7 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format_)
     }
 
     if (formats.size() == MAX_FORMATS) {
-        pub->set_error(make_error_code(ReaderError::TooManyFormats),
+        pub->set_error(ReaderError::TooManyFormats,
                        "Too many formats enabled");
         return RET_FAILED;
     }
@@ -274,7 +274,7 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format_)
     for (auto const &f : formats) {
         if ((FORMAT_BASE_MASK & f->type())
                 == (FORMAT_BASE_MASK & format_->type())) {
-            pub->set_error(make_error_code(ReaderError::FormatAlreadyEnabled),
+            pub->set_error(ReaderError::FormatAlreadyEnabled,
                            "%s format (0x%x) already enabled",
                            format_->name().c_str(), format_->type());
             return RET_WARN;
@@ -339,12 +339,13 @@ int Reader::open_filename(const std::string &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadOnly));
-    if (!file->is_open()) {
-        set_error(file->error(),
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
+
+    if (!ret) {
+        set_error(ret.error(),
                   "Failed to open for reading: %s",
-                  file->error_string().c_str());
+                  ret.error().message().c_str());
         return RET_FAILED;
     }
 
@@ -365,12 +366,13 @@ int Reader::open_filename_w(const std::wstring &filename)
     GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(ReaderState::New, RET_FATAL);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadOnly));
-    if (!file->is_open()) {
-        set_error(file->error(),
+    auto file = std::make_unique<StandardFile>();
+    auto ret = file->open(filename, FileOpenMode::ReadOnly);
+
+    if (!ret) {
+        set_error(ret.error(),
                   "Failed to open for reading: %s",
-                  file->error_string().c_str());
+                  ret.error().message().c_str());
         return RET_FAILED;
     }
 
@@ -424,7 +426,7 @@ int Reader::open(File *file)
     FormatReader *format = nullptr;
 
     if (priv->formats.empty()) {
-        set_error(make_error_code(ReaderError::NoFormatsRegistered));
+        set_error(ReaderError::NoFormatsRegistered);
         return RET_FAILED;
     }
 
@@ -432,10 +434,11 @@ int Reader::open(File *file)
     if (!priv->format) {
         for (auto &f : priv->formats) {
             // Seek to beginning
-            if (!file->seek(0, SEEK_SET, nullptr)) {
-                set_error(file->error(),
+            auto seek_ret = file->seek(0, SEEK_SET);
+            if (!seek_ret) {
+                set_error(seek_ret.error(),
                           "Failed to seek file: %s",
-                          file->error_string().c_str());
+                          seek_ret.error().message().c_str());
                 return file->is_fatal() ? RET_FATAL : RET_FAILED;
             }
 
@@ -452,7 +455,7 @@ int Reader::open(File *file)
         }
 
         if (!format) {
-            set_error(make_error_code(ReaderError::UnknownFileFormat),
+            set_error(ReaderError::UnknownFileFormat,
                       "Failed to determine boot image format");
             return RET_FAILED;
         }
@@ -525,10 +528,11 @@ int Reader::read_header(Header &header)
     int ret;
 
     // Seek to beginning
-    if (!priv->file->seek(0, SEEK_SET, nullptr)) {
-        set_error(priv->file->error(),
+    auto seek_ret = priv->file->seek(0, SEEK_SET);
+    if (!seek_ret) {
+        set_error(seek_ret.error(),
                   "Failed to seek file: %s",
-                  priv->file->error_string().c_str());
+                  seek_ret.error().message().c_str());
         return priv->file->is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
@@ -656,7 +660,7 @@ int Reader::format_code()
     GET_PIMPL_OR_RETURN(-1);
 
     if (!priv->format) {
-        set_error(make_error_code(ReaderError::NoFormatSelected));
+        set_error(ReaderError::NoFormatSelected);
         return -1;
     }
 
@@ -681,7 +685,7 @@ std::string Reader::format_name()
     GET_PIMPL_OR_RETURN({});
 
     if (!priv->format) {
-        set_error(make_error_code(ReaderError::NoFormatSelected));
+        set_error(ReaderError::NoFormatSelected);
         return {};
     }
 
@@ -720,7 +724,7 @@ int Reader::set_format_by_code(int code)
     }
 
     if (!format) {
-        set_error(make_error_code(ReaderError::EnabledFormatNotFound));
+        set_error(ReaderError::EnabledFormatNotFound);
         priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
@@ -761,7 +765,7 @@ int Reader::set_format_by_name(const std::string &name)
     }
 
     if (!format) {
-        set_error(make_error_code(ReaderError::EnabledFormatNotFound));
+        set_error(ReaderError::EnabledFormatNotFound);
         priv->state = ReaderState::Fatal;
         return RET_FATAL;
     }
@@ -814,7 +818,7 @@ int Reader::enable_format_by_code(int code)
         }
     }
 
-    set_error(make_error_code(ReaderError::InvalidFormatCode),
+    set_error(ReaderError::InvalidFormatCode,
               "Invalid format code: %d", code);
     return RET_FAILED;
 }
@@ -840,7 +844,7 @@ int Reader::enable_format_by_name(const std::string &name)
         }
     }
 
-    set_error(make_error_code(ReaderError::InvalidFormatName),
+    set_error(ReaderError::InvalidFormatName,
               "Invalid format name: %s", name.c_str());
     return RET_FAILED;
 }
@@ -931,9 +935,11 @@ int Reader::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 
     priv->error_code = ec;
 
-    if (!format_v(priv->error_string, fmt, ap)) {
+    auto result = format_v_safe(fmt, ap);
+    if (!result) {
         return RET_FAILED;
     }
+    priv->error_string = std::move(result.value());
 
     if (!priv->error_string.empty()) {
         priv->error_string += ": ";

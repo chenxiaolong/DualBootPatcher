@@ -24,6 +24,8 @@
 
 #include <cstdint>
 
+#include "mbcommon/outcome.h"
+
 namespace mb
 {
 namespace sparse
@@ -113,24 +115,25 @@ public:
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFilePrivate)
 
-    bool wread(void *buf, size_t size);
-    bool wseek(int64_t offset);
-    bool skip_bytes(uint64_t bytes);
+    oc::result<void> wread(void *buf, size_t size);
+    oc::result<void> wseek(int64_t offset);
+    oc::result<void> skip_bytes(uint64_t bytes);
 
-    bool process_sparse_header(const void *preread_data, size_t preread_size);
+    oc::result<void> process_sparse_header(const void *preread_data,
+                                           size_t preread_size);
 
-    bool process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                           ChunkInfo &chunk_out);
-    bool process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                            ChunkInfo &chunk_out);
-    bool process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                             ChunkInfo &chunk_out);
-    bool process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset,
-                       ChunkInfo &chunk_out);
+    oc::result<ChunkInfo>
+    process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<ChunkInfo>
+    process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<ChunkInfo>
+    process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<ChunkInfo>
+    process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<ChunkInfo>
+    process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
 
-    bool move_to_chunk(uint64_t offset);
+    oc::result<void> move_to_chunk(uint64_t offset);
 
     File *file;
     Seekability seekability;

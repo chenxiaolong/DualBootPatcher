@@ -66,8 +66,6 @@ std::string FileErrorCategory::message(int ev) const
         return "truncate not supported";
     case FileError::IntegerOverflow:
         return "integer overflowed";
-    case FileError::BadFileFormat:
-        return "bad file format";
     default:
         return "(unknown file error)";
     }

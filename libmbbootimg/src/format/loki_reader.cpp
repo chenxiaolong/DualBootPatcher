@@ -229,28 +229,29 @@ int LokiFormatReader::find_loki_header(Reader &reader, File &file,
                                        uint64_t &offset_out)
 {
     LokiHeader header;
-    size_t n;
 
-    if (!file.seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr)) {
-        reader.set_error(file.error(),
+    auto seek_ret = file.seek(LOKI_MAGIC_OFFSET, SEEK_SET);
+    if (!seek_ret) {
+        reader.set_error(seek_ret.error(),
                          "Loki magic not found: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_WARN;
     }
 
-    if (!file_read_fully(file, &header, sizeof(header), n)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, &header, sizeof(header));
+    if (!n) {
+        reader.set_error(n.error(),
                          "Failed to read header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(header)) {
-        reader.set_error(make_error_code(LokiError::LokiHeaderTooSmall),
+    } else if (n.value() != sizeof(header)) {
+        reader.set_error(LokiError::LokiHeaderTooSmall,
                          "Too small to be Loki image");
         return RET_WARN;
     }
 
     if (memcmp(header.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE) != 0) {
-        reader.set_error(make_error_code(LokiError::InvalidLokiMagic));
+        reader.set_error(LokiError::InvalidLokiMagic);
         return RET_WARN;
     }
 
@@ -289,48 +290,50 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
     // If the boot image was patched with a newer version of loki, find the
     // ramdisk offset in the shell code
     uint32_t ramdisk_addr = 0;
-    size_t n;
 
     if (loki_hdr.ramdisk_addr != 0) {
         uint64_t offset = 0;
 
         auto result_cb = [](File &file_, void *userdata, uint64_t offset_)
-                -> FileSearchAction {
+                -> oc::result<FileSearchAction> {
             (void) file_;
             auto offset_ptr = static_cast<uint64_t *>(userdata);
             *offset_ptr = offset_;
             return FileSearchAction::Continue;
         };
 
-        if (!file_search(file, -1, -1, 0, LOKI_SHELLCODE,
-                         LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset)) {
-            reader.set_error(file.error(),
+        auto ret = file_search(file, -1, -1, 0, LOKI_SHELLCODE,
+                               LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset);
+        if (!ret) {
+            reader.set_error(ret.error(),
                              "Failed to search for Loki shellcode: %s",
-                             file.error_string().c_str());
+                             ret.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
         if (offset == 0) {
-            reader.set_error(make_error_code(LokiError::ShellcodeNotFound));
+            reader.set_error(LokiError::ShellcodeNotFound);
             return RET_WARN;
         }
 
         offset += LOKI_SHELLCODE_SIZE - 5;
 
-        if (!file.seek(static_cast<int64_t>(offset), SEEK_SET, nullptr)) {
-            reader.set_error(file.error(),
+        auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
+        if (!seek_ret) {
+            reader.set_error(seek_ret.error(),
                              "Failed to seek to ramdisk address offset: %s",
-                             file.error_string().c_str());
+                             seek_ret.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        if (!file_read_fully(file, &ramdisk_addr, sizeof(ramdisk_addr), n)) {
-            reader.set_error(file.error(),
+        auto n = file_read_fully(file, &ramdisk_addr, sizeof(ramdisk_addr));
+        if (!n) {
+            reader.set_error(n.error(),
                              "Failed to read ramdisk address offset: %s",
-                             file.error_string().c_str());
+                             n.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        } else if (n != sizeof(ramdisk_addr)) {
-            reader.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
+        } else if (n.value() != sizeof(ramdisk_addr)) {
+            reader.set_error(LokiError::UnexpectedEndOfFile,
                              "Unexpected EOF when reading ramdisk address");
             return RET_WARN;
         }
@@ -340,7 +343,7 @@ int LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
         // Otherwise, use the default for jflte (- 0x00008000 + 0x02000000)
 
         if (hdr.kernel_addr > UINT32_MAX - 0x01ff8000) {
-            reader.set_error(make_error_code(LokiError::InvalidKernelAddress),
+            reader.set_error(LokiError::InvalidKernelAddress,
                              "Invalid kernel address: %" PRIu32,
                              hdr.kernel_addr);
             return RET_WARN;
@@ -402,11 +405,9 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 
     // Find first result with flags == 0x00 and flags == 0x08
     auto result_cb = [](File &file_, void *userdata, uint64_t offset)
-            -> FileSearchAction {
+            -> oc::result<FileSearchAction> {
         auto result_ = static_cast<SearchResult *>(userdata);
-        uint64_t orig_offset;
         unsigned char flags;
-        size_t n;
 
         // Stop early if possible
         if (result_->flag0_offset && result_->flag8_offset) {
@@ -414,19 +415,16 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         }
 
         // Save original position
-        if (!file_.seek(0, SEEK_CUR, &orig_offset)) {
-            return FileSearchAction::Fail;
-        }
+        OUTCOME_TRY(orig_offset, file_.seek(0, SEEK_CUR));
 
         // Seek to flags byte
-        if (!file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET, nullptr)) {
-            return FileSearchAction::Fail;
-        }
+        OUTCOME_TRYV(file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET));
 
         // Read next bytes for flags
-        if (!file_read_fully(file_, &flags, sizeof(flags), n)) {
-            return FileSearchAction::Fail;
-        } else if (n != sizeof(flags)) {
+        auto n = file_read_fully(file_, &flags, sizeof(flags));
+        if (!n) {
+            return n.as_failure();
+        } else if (n.value() != sizeof(flags)) {
             // EOF
             return FileSearchAction::Stop;
         }
@@ -438,18 +436,17 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         }
 
         // Restore original position as per contract
-        if (!file_.seek(static_cast<int64_t>(orig_offset), SEEK_SET, nullptr)) {
-            return FileSearchAction::Fail;
-        }
+        OUTCOME_TRYV(file_.seek(static_cast<int64_t>(orig_offset), SEEK_SET));
 
         return FileSearchAction::Continue;
     };
 
-    if (!file_search(file, start_offset, -1, 0, gzip_deflate_magic,
-                     sizeof(gzip_deflate_magic), -1, result_cb, &result)) {
-        reader.set_error(file.error(),
+    auto ret = file_search(file, start_offset, -1, 0, gzip_deflate_magic,
+                           sizeof(gzip_deflate_magic), -1, result_cb, &result);
+    if (!ret) {
+        reader.set_error(ret.error(),
                          "Failed to search for gzip magic: %s",
-                         file.error_string().c_str());
+                         ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
@@ -460,7 +457,7 @@ int LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
     } else if (result.flag0_offset) {
         gzip_offset_out = *result.flag0_offset;
     } else {
-        reader.set_error(make_error_code(LokiError::NoRamdiskGzipHeaderFound));
+        reader.set_error(LokiError::NoRamdiskGzipHeaderFound);
         return RET_WARN;
     }
 
@@ -493,12 +490,6 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
                                             uint32_t &ramdisk_size_out)
 {
     int32_t aboot_size;
-    uint64_t aboot_offset;
-#if 0
-    uint64_t cur_offset;
-    char buf[1024];
-    size_t n;
-#endif
 
     // If the boot image was patched with an old version of loki, the ramdisk
     // size is not stored properly. We'll need to guess the size of the archive.
@@ -512,51 +503,55 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
         aboot_size = 0x200;
     }
 
-    if (!file.seek(-aboot_size, SEEK_END, &aboot_offset)) {
-        reader.set_error(file.error(),
+    auto aboot_offset = file.seek(-aboot_size, SEEK_END);
+    if (!aboot_offset) {
+        reader.set_error(aboot_offset.error(),
                          "Failed to seek to end of file: %s",
-                         file.error_string().c_str());
+                         aboot_offset.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (ramdisk_offset > aboot_offset) {
-        reader.set_error(make_error_code(
-                LokiError::RamdiskOffsetGreaterThanAbootOffset));
+    if (ramdisk_offset > aboot_offset.value()) {
+        reader.set_error(LokiError::RamdiskOffsetGreaterThanAbootOffset);
         return RET_FAILED;
     }
 
     // Ignore zero padding as we might strip away too much
 #if 1
-    ramdisk_size_out = static_cast<uint32_t>(aboot_offset - ramdisk_offset);
+    ramdisk_size_out = static_cast<uint32_t>(
+            aboot_offset.value() - ramdisk_offset);
     return RET_OK;
 #else
+    char buf[1024];
+
     // Search backwards to find non-zero byte
-    cur_offset = aboot_offset;
+    uint64_t cur_offset = aboot_offset.value();
 
     while (cur_offset > ramdisk_offset) {
         size_t to_read = std::min<uint64_t>(
                 sizeof(buf), cur_offset - ramdisk_offset);
         cur_offset -= to_read;
 
-        if (!file.seek(cur_offset, SEEK_SET, nullptr)) {
-            reader.set_error(file.error(),
+        auto seek_ret = file.seek(cur_offset, SEEK_SET);
+        if (!seek_ret) {
+            reader.set_error(seek_ret.error(),
                              "Failed to seek: %s",
-                             file.error_string().c_str());
+                             seek_ret.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        if (!file_read_fully(file, buf, to_read, n)) {
-            reader.set_error(file.error(),
+        auto n = file_read_fully(file, buf, to_read);
+        if (!n) {
+            reader.set_error(n.error(),
                              "Failed to read: %s",
-                             file.error_string().c_str());
+                             n.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
-        } else if (n != to_read) {
-            reader.set_error(make_error_code(
-                    LokiError::UnexpectedFileTruncation));
+        } else if (n.value() != to_read) {
+            reader.set_error(LokiError::UnexpectedFileTruncation);
             return RET_FAILED;
         }
 
-        for (size_t i = n; i-- > 0; ) {
+        for (size_t i = n.value(); i-- > 0; ) {
             if (buf[i] != '\0') {
                 ramdisk_size_out = cur_offset - ramdisk_offset + i;
                 return RET_OK;
@@ -564,7 +559,7 @@ int LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
         }
     }
 
-    reader.set_error(make_error_code(LokiError::FailedToDetermineRamdiskSize));
+    reader.set_error(LokiError::FailedToDetermineRamdiskSize);
     return RET_WARN;
 #endif
 }
@@ -592,7 +587,6 @@ int LokiFormatReader::find_linux_kernel_size(Reader &reader, File &file,
                                              uint32_t kernel_offset,
                                              uint32_t &kernel_size_out)
 {
-    size_t n;
     uint32_t kernel_size;
 
     // If the boot image was patched with an early version of loki, the
@@ -600,20 +594,22 @@ int LokiFormatReader::find_linux_kernel_size(Reader &reader, File &file,
     // shellcode). The size is stored in the kernel image's header though, so
     // we'll use that.
     // http://www.simtec.co.uk/products/SWLINUX/files/booting_article.html#d0e309
-    if (!file.seek(kernel_offset + 0x2c, SEEK_SET, nullptr)) {
-        reader.set_error(file.error(),
+    auto seek_ret = file.seek(kernel_offset + 0x2c, SEEK_SET);
+    if (!seek_ret) {
+        reader.set_error(seek_ret.error(),
                          "Failed to seek to kernel header: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, &kernel_size, sizeof(kernel_size), n)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, &kernel_size, sizeof(kernel_size));
+    if (!n) {
+        reader.set_error(n.error(),
                          "Failed to read size from kernel header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(kernel_size)) {
-        reader.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
+    } else if (n.value() != sizeof(kernel_size)) {
+        reader.set_error(LokiError::UnexpectedEndOfFile,
                          "Unexpected EOF when reading kernel header");
         return RET_WARN;
     }
@@ -658,7 +654,7 @@ int LokiFormatReader::read_header_old(Reader &reader, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader.set_error(make_error_code(LokiError::PageSizeCannotBeZero));
+        reader.set_error(LokiError::PageSizeCannotBeZero);
         return RET_WARN;
     }
 
@@ -778,7 +774,7 @@ int LokiFormatReader::read_header_new(Reader &reader, File &file,
     int ret;
 
     if (hdr.page_size == 0) {
-        reader.set_error(make_error_code(LokiError::PageSizeCannotBeZero));
+        reader.set_error(LokiError::PageSizeCannotBeZero);
         return RET_WARN;
     }
 

@@ -63,13 +63,12 @@ int SegmentReader::entries_add(int type, uint64_t offset, uint32_t size,
                                bool can_truncate, Reader &reader)
 {
     if (_state != SegmentReaderState::Begin) {
-        reader.set_error(make_error_code(
-                SegmentError::AddEntryInIncorrectState));
+        reader.set_error(SegmentError::AddEntryInIncorrectState);
         return RET_FATAL;
     }
 
     if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        reader.set_error(make_error_code(SegmentError::TooManyEntries));
+        reader.set_error(SegmentError::TooManyEntries);
         return RET_FATAL;
     }
 
@@ -136,8 +135,7 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
                                  Reader &reader)
 {
     if (srentry.offset > UINT64_MAX - srentry.size) {
-        reader.set_error(make_error_code(
-                SegmentError::EntryWouldOverflowOffset));
+        reader.set_error(SegmentError::EntryWouldOverflowOffset);
         return RET_FAILED;
     }
 
@@ -146,8 +144,7 @@ int SegmentReader::move_to_entry(File &file, Entry &entry,
     uint64_t read_cur_offset = read_start_offset;
 
     if (_read_cur_offset != srentry.offset) {
-        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET,
-                       nullptr)) {
+        if (!file.seek(static_cast<int64_t>(read_start_offset), SEEK_SET)) {
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
     }
@@ -196,26 +193,28 @@ int SegmentReader::read_data(File &file, void *buf, size_t buf_size,
             buf_size, _read_end_offset - _read_cur_offset));
 
     if (_read_cur_offset > SIZE_MAX - to_copy) {
-        reader.set_error(make_error_code(SegmentError::ReadWouldOverflowInteger),
+        reader.set_error(SegmentError::ReadWouldOverflowInteger,
                          "Current offset %" PRIu64 " with read size %"
                          MB_PRIzu " would overflow integer",
                          _read_cur_offset, to_copy);
         return RET_FAILED;
     }
 
-    if (!file_read_fully(file, buf, to_copy, bytes_read)) {
-        reader.set_error(file.error(),
+    auto n = file_read_fully(file, buf, to_copy);
+    if (!n) {
+        reader.set_error(n.error(),
                          "Failed to read data: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
+    bytes_read = n.value();
 
     _read_cur_offset += bytes_read;
 
     // Fail if we reach EOF early
     if (bytes_read == 0 && _read_cur_offset != _read_end_offset
             && !_entry->can_truncate) {
-        reader.set_error(make_error_code(SegmentError::EntryIsTruncated),
+        reader.set_error(SegmentError::EntryIsTruncated,
                          "Entry is truncated (expected %" PRIu64 " more bytes)",
                          _read_end_offset - _read_cur_offset);
         return RET_FATAL;

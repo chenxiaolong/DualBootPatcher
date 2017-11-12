@@ -24,66 +24,59 @@
 #include <memory>
 #include <string>
 
-#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 
 #include "mbcommon/file_error.h"
+#include "mbcommon/file_p.h"
+#include "mbcommon/outcome.h"
 
 namespace mb
 {
 
-class FilePrivate;
 class MB_EXPORT File
 {
-    MB_DECLARE_PRIVATE(File)
-
 public:
     File();
     virtual ~File();
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(File)
 
-    File(File &&other) noexcept;
-    File & operator=(File &&rhs) noexcept;
-
     // File close
-    bool close();
+    oc::result<void> close();
 
     // File operations
-    bool read(void *buf, size_t size, size_t &bytes_read);
-    bool write(const void *buf, size_t size, size_t &bytes_written);
-    bool seek(int64_t offset, int whence, uint64_t *new_offset);
-    bool truncate(uint64_t size);
+    oc::result<size_t> read(void *buf, size_t size);
+    oc::result<size_t> write(const void *buf, size_t size);
+    oc::result<uint64_t> seek(int64_t offset, int whence);
+    oc::result<void> truncate(uint64_t size);
 
     // File state
     bool is_open();
     bool is_fatal();
     void set_fatal();
 
-    // Error handling functions
-    std::error_code error();
-    std::string error_string();
-    MB_PRINTF(3, 4)
-    bool set_error(std::error_code ec, const char *fmt, ...);
-    bool set_error_v(std::error_code ec, const char *fmt, va_list ap);
-
 protected:
-    /*! \cond INTERNAL */
-    File(FilePrivate *priv);
-    /*! \endcond */
+    File(File &&other) noexcept;
+    File & operator=(File &&rhs) noexcept;
 
     // File open
-    bool open();
+    oc::result<void> open();
 
-    virtual bool on_open();
-    virtual bool on_close();
-    virtual bool on_read(void *buf, size_t size, size_t &bytes_read);
-    virtual bool on_write(const void *buf, size_t size, size_t &bytes_written);
-    virtual bool on_seek(int64_t offset, int whence, uint64_t &new_offset);
-    virtual bool on_truncate(uint64_t size);
+    detail::FileState state();
+    void set_state(detail::FileState state);
 
-    std::unique_ptr<FilePrivate> _priv_ptr;
+    virtual oc::result<void> on_open();
+    virtual oc::result<void> on_close();
+    virtual oc::result<size_t> on_read(void *buf, size_t size);
+    virtual oc::result<size_t> on_write(const void *buf, size_t size);
+    virtual oc::result<uint64_t> on_seek(int64_t offset, int whence);
+    virtual oc::result<void> on_truncate(uint64_t size);
+
+private:
+    /*! \cond INTERNAL */
+    detail::FileState m_state;
+    /*! \endcond */
 };
 
 }

@@ -83,7 +83,10 @@ std::string Win32ErrorCategory::message(int ev) const
     if (size > 0) {
         std::wstring message(message_buffer, size);
 
-        if (wcs_to_utf8(result, message)) {
+        auto converted = wcs_to_utf8(message);
+        if (converted) {
+            result = std::move(converted.value());
+
             while (!result.empty()
                     && (result.back() == '\n' || result.back() == '\r')) {
                 result.pop_back();

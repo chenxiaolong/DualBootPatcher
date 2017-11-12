@@ -19,33 +19,22 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
+#pragma GCC diagnostic push
 
-#include "mbcommon/file/callbacks.h"
-#include "mbcommon/file_p.h"
+#ifdef __clang__
+#  pragma GCC diagnostic ignored "-Wc++1z-extensions"
+#  pragma GCC diagnostic ignored "-Wdocumentation"
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 
-/*! \cond INTERNAL */
+#include "outcome.hpp"
+
+#pragma GCC diagnostic pop
+
+
 namespace mb
 {
 
-class CallbackFilePrivate : public FilePrivate
-{
-public:
-    CallbackFilePrivate();
-    virtual ~CallbackFilePrivate();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFilePrivate)
-
-    void clear();
-
-    CallbackFile::OpenCb open_cb;
-    CallbackFile::CloseCb close_cb;
-    CallbackFile::ReadCb read_cb;
-    CallbackFile::WriteCb write_cb;
-    CallbackFile::SeekCb seek_cb;
-    CallbackFile::TruncateCb truncate_cb;
-    void *userdata;
-};
+namespace oc = OUTCOME_V2_NAMESPACE;
 
 }
-/*! \endcond */

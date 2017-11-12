@@ -25,47 +25,42 @@
 
 namespace mb
 {
-
-enum class FileError
+namespace sparse
 {
-    ArgumentOutOfRange      = 10,
-    CannotConvertEncoding   = 11,
 
-    InvalidState            = 20,
+enum class SparseFileError
+{
+    UnexpectedEndOfFile         = 10,
 
-    UnsupportedRead         = 30,
-    UnsupportedWrite        = 31,
-    UnsupportedSeek         = 32,
-    UnsupportedTruncate     = 33,
+    // Sparse header errors
+    InvalidSparseMagic          = 20,
+    InvalidSparseMajorVersion   = 21,
+    InvalidSparseHeaderSize     = 22,
+    InvalidChunkHeaderSize      = 23,
 
-    IntegerOverflow         = 40,
+    // Chunk errors
+    InvalidChunkSize            = 30,
+    InvalidChunkType            = 31,
+    InvalidChunkBounds          = 32,
+    InvalidRawChunk             = 33,
+    InvalidFillChunk            = 34,
+    InvalidSkipChunk            = 35,
+    InvalidCrc32Chunk           = 36,
+
+    InternalError               = 40,
 };
 
-enum class FileErrorC
-{
-    InvalidArgument         = 10,
-    InvalidState            = 20,
-    Unsupported             = 30,
-    InternalError           = 40,
-};
+MB_EXPORT std::error_code make_error_code(SparseFileError e);
 
-MB_EXPORT std::error_code make_error_code(FileError e);
-MB_EXPORT std::error_condition make_error_condition(FileErrorC ec);
+MB_EXPORT const std::error_category & sparse_file_error_category();
 
-MB_EXPORT const std::error_category & file_error_category();
-MB_EXPORT const std::error_category & file_errorc_category();
-
+}
 }
 
 namespace std
 {
     template<>
-    struct MB_EXPORT is_error_code_enum<mb::FileError> : true_type
-    {
-    };
-
-    template<>
-    struct MB_EXPORT is_error_condition_enum<mb::FileErrorC> : true_type
+    struct MB_EXPORT is_error_code_enum<mb::sparse::SparseFileError> : true_type
     {
     };
 }

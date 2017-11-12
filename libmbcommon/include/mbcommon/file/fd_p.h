@@ -19,13 +19,14 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
+#include <cstddef>
 
-#include "mbcommon/file/fd.h"
-#include "mbcommon/file_p.h"
+#include <sys/stat.h>
 
 /*! \cond INTERNAL */
 namespace mb
+{
+namespace detail
 {
 
 struct FdFileFuncs
@@ -50,32 +51,6 @@ struct FdFileFuncs
     virtual ssize_t fn_write(int fd, const void *buf, size_t count) = 0;
 };
 
-class FdFilePrivate : public FilePrivate
-{
-public:
-    FdFilePrivate();
-    virtual ~FdFilePrivate();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFilePrivate)
-
-    void clear();
-
-    static int convert_mode(FileOpenMode mode);
-
-    FdFileFuncs *funcs;
-
-    int fd;
-    bool owned;
-#ifdef _WIN32
-    std::wstring filename;
-#else
-    std::string filename;
-#endif
-    int flags;
-
-protected:
-    FdFilePrivate(FdFileFuncs *funcs);
-};
-
+}
 }
 /*! \endcond */

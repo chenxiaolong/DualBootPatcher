@@ -31,6 +31,7 @@
 #endif
 
 #include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 #include "mbcommon/string_p.h"
 
@@ -112,18 +113,17 @@ namespace mb
  * \note The value of `errno` and `GetLastError()` (on Win32) are preserved if
  *       this function does not fail.
  *
- * \param[out] out Reference to store output string
- * \param[in] fmt Format string
- * \param[in] ... Format arguments
+ * \param fmt Format string
+ * \param ... Format arguments
  *
- * \return Whether the format string was successfully processed.
+ * \return Resulting formatted string or error.
  */
-bool format(std::string &out, const char *fmt, ...)
+oc::result<std::string> format_safe(const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    bool result = format_v(out, fmt, ap);
+    auto result = format_v_safe(fmt, ap);
     va_end(ap);
 
     return result;
@@ -169,45 +169,47 @@ std::string format(const char *fmt, ...)
  * \note The value of `errno` and `GetLastError()` (on Win32) are always
  *       preserved.
  *
- * \param[out] out Reference to store output string
- * \param[in] fmt Format string
- * \param[in] ap Format arguments as `va_list`
+ * \param fmt Format string
+ * \param ap Format arguments as `va_list`
  *
- * \return Whether the format string was successfully processed.
+ * \return Resulting formatted string or error.
  */
-bool format_v(std::string &out, const char *fmt, va_list ap)
+oc::result<std::string> format_v_safe(const char *fmt, va_list ap)
 {
     static_assert(INT_MAX <= SIZE_MAX, "INT_MAX > SIZE_MAX");
 
     ErrorRestorer restorer;
     int ret;
     va_list copy;
+    std::string buf;
 
     va_copy(copy, ap);
     ret = vsnprintf(nullptr, 0, fmt, copy);
     va_end(copy);
 
-    if (ret < 0 || static_cast<size_t>(ret) == SIZE_MAX) {
-        return false;
+    if (ret < 0) {
+        return ec_from_errno();
+    } else if (static_cast<size_t>(ret) == SIZE_MAX) {
+        return std::make_error_code(std::errc::value_too_large);
     }
 
     // C++11 guarantees that the memory is contiguous, but does not guarantee
     // that the internal buffer is NULL-terminated, so we'll make room for '\0'
     // and then get rid of it.
-    out.resize(static_cast<size_t>(ret) + 1);
+    buf.resize(static_cast<size_t>(ret) + 1);
 
     va_copy(copy, ap);
-    // NOTE: Change `&out[0]` to `out.data()` once we target C++17.
-    ret = vsnprintf(&out[0], out.size(), fmt, copy);
+    // NOTE: Change `&buf[0]` to `buf.data()` once we target C++17.
+    ret = vsnprintf(&buf[0], buf.size(), fmt, copy);
     va_end(copy);
 
     if (ret < 0) {
-        return false;
+        return ec_from_errno();
     }
 
-    out.resize(static_cast<size_t>(ret));
+    buf.resize(static_cast<size_t>(ret));
 
-    return true;
+    return std::move(buf);
 }
 
 /*!
@@ -228,12 +230,14 @@ bool format_v(std::string &out, const char *fmt, va_list ap)
  */
 std::string format_v(const char *fmt, va_list ap)
 {
-    std::string result;
-    // TODO: This should use exceptions to report errors, but we currently don't
-    // support them due to the substantial size increase of the compiled
-    // binaries.
-    format_v(result, fmt, ap);
-    return result;
+    auto result = format_v_safe(fmt, ap);
+    if (!result) {
+        // TODO: This should use exceptions to report errors, but we currently
+        // don't support them due to the substantial size increase of the
+        // compiled binaries.
+        std::terminate();
+    }
+    return std::move(result.value());
 }
 
 /*!
@@ -602,29 +606,25 @@ bool ends_with_icase(const std::string &string, const std::string &suffix)
  * \param[in] data New byte sequence to insert
  * \param[in] data_size Size of new byte sequence to insert
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occurred, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mem_insert(void **mem, size_t *mem_size, size_t pos,
-               const void *data, size_t data_size)
+oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
+                            const void *data, size_t data_size)
 {
     void *buf;
     size_t buf_size;
 
     if (pos > *mem_size) {
-        errno = EINVAL;
-        return -1;
+        return std::make_error_code(std::errc::invalid_argument);
     } else if (*mem_size >= SIZE_MAX - data_size) {
-        errno = EOVERFLOW;
-        return -1;
+        return std::make_error_code(std::errc::value_too_large);
     }
 
     buf_size = *mem_size + data_size;
 
     buf = static_cast<char *>(malloc(buf_size));
     if (!buf) {
-        return -1;
+        return ec_from_errno();
     }
 
     void *target_ptr = buf;
@@ -642,7 +642,7 @@ int mem_insert(void **mem, size_t *mem_size, size_t pos,
     free(*mem);
     *mem = buf;
     *mem_size = buf_size;
-    return 0;
+    return oc::success();
 }
 
 /*!
@@ -657,22 +657,18 @@ int mem_insert(void **mem, size_t *mem_size, size_t pos,
  *                (0 \<= \p pos \<= \p *mem_size)
  * \param[in] s New string to insert
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occurred, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int str_insert(char **str, size_t pos, const char *s)
+oc::result<void> str_insert(char **str, size_t pos, const char *s)
 {
     size_t str_size;
 
     str_size = strlen(*str);
 
     if (pos > str_size) {
-        errno = EINVAL;
-        return -1;
+        return std::make_error_code(std::errc::invalid_argument);
     } else if (str_size == SIZE_MAX) {
-        errno = EOVERFLOW;
-        return -1;
+        return std::make_error_code(std::errc::value_too_large);
     }
 
     ++str_size;
@@ -701,14 +697,12 @@ int str_insert(char **str, size_t pos, const char *s)
  * \param[in] n Number of replacements to attempt (0 to disable limit)
  * \param[out] n_replaced Pointer to store number of replacements made
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occurred, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mem_replace(void **mem, size_t *mem_size,
-                const void *from, size_t from_size,
-                const void *to, size_t to_size,
-                size_t n, size_t *n_replaced)
+oc::result<void> mem_replace(void **mem, size_t *mem_size,
+                             const void *from, size_t from_size,
+                             const void *to, size_t to_size,
+                             size_t n, size_t *n_replaced)
 {
     char *buf = nullptr;
     size_t buf_size = 0;
@@ -723,7 +717,7 @@ int mem_replace(void **mem, size_t *mem_size,
         if (n_replaced) {
             *n_replaced = 0;
         }
-        return 0;
+        return oc::success();
     }
 
     while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
@@ -733,8 +727,7 @@ int mem_replace(void **mem, size_t *mem_size,
                 || buf_size + static_cast<size_t>(ptr - base_ptr)
                         >= SIZE_MAX - to_size) {
             free(buf);
-            errno = EOVERFLOW;
-            return -1;
+            return std::make_error_code(std::errc::value_too_large);
         }
 
         size_t new_buf_size =
@@ -742,7 +735,7 @@ int mem_replace(void **mem, size_t *mem_size,
         auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
-            return -1;
+            return ec_from_errno();
         }
 
         target_ptr = new_buf + buf_size;
@@ -768,15 +761,14 @@ int mem_replace(void **mem, size_t *mem_size,
     if (ptr_remain > 0) {
         if (buf_size >= SIZE_MAX - ptr_remain) {
             free(buf);
-            errno = EOVERFLOW;
-            return -1;
+            return std::make_error_code(std::errc::value_too_large);
         }
 
         size_t new_buf_size = buf_size + ptr_remain;
         auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
-            return -1;
+            return ec_from_errno();
         }
 
         target_ptr = new_buf + buf_size;
@@ -794,7 +786,7 @@ int mem_replace(void **mem, size_t *mem_size,
         *n_replaced = matches;
     }
 
-    return 0;
+    return oc::success();
 }
 
 /*!
@@ -812,12 +804,10 @@ int mem_replace(void **mem, size_t *mem_size,
  * \param[in] n Number of replacements to attempt (0 to disable limit)
  * \param[out] n_replaced Pointer to store number of replacements made
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occurred, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int str_replace(char **str, const char *from, const char *to,
-                size_t n, size_t *n_replaced)
+oc::result<void> str_replace(char **str, const char *from, const char *to,
+                             size_t n, size_t *n_replaced)
 {
     size_t str_size = strlen(*str) + 1;
 

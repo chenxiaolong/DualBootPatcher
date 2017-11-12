@@ -24,24 +24,19 @@
 namespace mb
 {
 
-class CallbackFilePrivate;
 class MB_EXPORT CallbackFile : public File
 {
-    MB_DECLARE_PRIVATE(CallbackFile)
-
 public:
-    typedef bool (*OpenCb)(File &file, void *userdata);
-    typedef bool (*CloseCb)(File &file, void *userdata);
-    typedef bool (*ReadCb)(File &file, void *userdata,
-                           void *buf, size_t size,
-                           size_t &bytes_read);
-    typedef bool (*WriteCb)(File &file, void *userdata,
-                            const void *buf, size_t size,
-                            size_t &bytes_written);
-    typedef bool (*SeekCb)(File &file, void *userdata,
-                           int64_t offset, int whence, uint64_t &new_offset);
-    typedef bool (*TruncateCb)(File &file, void *userdata,
-                               uint64_t size);
+    using OpenCb = oc::result<void> (*)(File &file, void *userdata);
+    using CloseCb = oc::result<void> (*)(File &file, void *userdata);
+    using ReadCb = oc::result<size_t> (*)(File &file, void *userdata,
+                                          void *buf, size_t size);
+    using WriteCb = oc::result<size_t> (*)(File &file, void *userdata,
+                                           const void *buf, size_t size);
+    using SeekCb = oc::result<uint64_t> (*)(File &file, void *userdata,
+                                            int64_t offset, int whence);
+    using TruncateCb = oc::result<void> (*)(File &file, void *userdata,
+                                            uint64_t size);
 
     CallbackFile();
     CallbackFile(OpenCb open_cb,
@@ -53,39 +48,39 @@ public:
                  void *userdata);
     virtual ~CallbackFile();
 
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(CallbackFile)
+    CallbackFile(CallbackFile &&other) noexcept;
+    CallbackFile & operator=(CallbackFile &&rhs) noexcept;
 
-    bool open(OpenCb open_cb,
-              CloseCb close_cb,
-              ReadCb read_cb,
-              WriteCb write_cb,
-              SeekCb seek_cb,
-              TruncateCb truncate_cb,
-              void *userdata);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFile)
+
+    oc::result<void> open(OpenCb open_cb,
+                          CloseCb close_cb,
+                          ReadCb read_cb,
+                          WriteCb write_cb,
+                          SeekCb seek_cb,
+                          TruncateCb truncate_cb,
+                          void *userdata);
 
 protected:
-    /*! \cond INTERNAL */
-    CallbackFile(CallbackFilePrivate *priv);
-    CallbackFile(CallbackFilePrivate *priv,
-                 OpenCb open_cb,
-                 CloseCb close_cb,
-                 ReadCb read_cb,
-                 WriteCb write_cb,
-                 SeekCb seek_cb,
-                 TruncateCb truncate_cb,
-                 void *userdata);
-    /*! \endcond */
+    oc::result<void> on_open() override;
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    OpenCb m_open_cb;
+    CloseCb m_close_cb;
+    ReadCb m_read_cb;
+    WriteCb m_write_cb;
+    SeekCb m_seek_cb;
+    TruncateCb m_truncate_cb;
+    void *m_userdata;
+    /*! \endcond */
 };
 
 }

@@ -21,16 +21,14 @@
 
 #include "mbcommon/file.h"
 
+#include "mbcommon/file/fd_p.h"
 #include "mbcommon/file/open_mode.h"
 
 namespace mb
 {
 
-class FdFilePrivate;
 class MB_EXPORT FdFile : public File
 {
-    MB_DECLARE_PRIVATE(FdFile)
-
 public:
     FdFile();
     FdFile(int fd, bool owned);
@@ -38,33 +36,48 @@ public:
     FdFile(const std::wstring &filename, FileOpenMode mode);
     virtual ~FdFile();
 
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(FdFile)
+    FdFile(FdFile &&other) noexcept;
+    FdFile & operator=(FdFile &&rhs) noexcept;
 
-    bool open(int fd, bool owned);
-    bool open(const std::string &filename, FileOpenMode mode);
-    bool open(const std::wstring &filename, FileOpenMode mode);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FdFile)
+
+    oc::result<void> open(int fd, bool owned);
+    oc::result<void> open(const std::string &filename, FileOpenMode mode);
+    oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
 
 protected:
     /*! \cond INTERNAL */
-    FdFile(FdFilePrivate *priv);
-    FdFile(FdFilePrivate *priv,
+    FdFile(detail::FdFileFuncs *funcs);
+    FdFile(detail::FdFileFuncs *funcs,
            int fd, bool owned);
-    FdFile(FdFilePrivate *priv,
+    FdFile(detail::FdFileFuncs *funcs,
            const std::string &filename, FileOpenMode mode);
-    FdFile(FdFilePrivate *priv,
+    FdFile(detail::FdFileFuncs *funcs,
            const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+    oc::result<void> on_open() override;
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
+
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    detail::FdFileFuncs *m_funcs;
+
+    int m_fd;
+    bool m_owned;
+#ifdef _WIN32
+    std::wstring m_filename;
+#else
+    std::string m_filename;
+#endif
+    int m_flags;
+    /*! \endcond */
 };
 
 }

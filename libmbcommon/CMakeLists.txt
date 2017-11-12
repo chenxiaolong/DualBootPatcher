@@ -143,6 +143,7 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         optional
+        outcome
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library

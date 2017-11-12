@@ -148,24 +148,23 @@ static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
 static int _loki_read_android_header(Writer &writer, File &file,
                                      android::AndroidHeader &ahdr)
 {
-    size_t n;
-
-    if (!file.seek(0, SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        writer.set_error(seek_ret.error(),
                          "Failed to seek to beginning: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_read_fully(file, &ahdr, sizeof(ahdr), n)) {
-        writer.set_error(file.error(),
+    auto n = file_read_fully(file, &ahdr, sizeof(ahdr));
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to read Android header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(ahdr)) {
-        writer.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
-                         "Unexpected EOF when reading Android header: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != sizeof(ahdr)) {
+        writer.set_error(LokiError::UnexpectedEndOfFile,
+                         "Unexpected EOF when reading Android header");
         return RET_FAILED;
     }
 
@@ -178,26 +177,26 @@ static int _loki_write_android_header(Writer &writer, File &file,
                                       const android::AndroidHeader &ahdr)
 {
     android::AndroidHeader dup = ahdr;
-    size_t n;
 
     android_fix_header_byte_order(dup);
 
-    if (!file.seek(0, SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
+    auto seek_ret = file.seek(0, SEEK_SET);
+    if (!seek_ret) {
+        writer.set_error(seek_ret.error(),
                          "Failed to seek to beginning: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_write_fully(file, &dup, sizeof(dup), n)) {
-        writer.set_error(file.error(),
+    auto n = file_write_fully(file, &dup, sizeof(dup));
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to write Android header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(dup)) {
-        writer.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
-                         "Unexpected EOF when writing Android header: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != sizeof(dup)) {
+        writer.set_error(LokiError::UnexpectedEndOfFile,
+                         "Unexpected EOF when writing Android header");
         return RET_FAILED;
     }
 
@@ -208,26 +207,26 @@ static int _loki_write_loki_header(Writer &writer, File &file,
                                    const LokiHeader &lhdr)
 {
     LokiHeader dup = lhdr;
-    size_t n;
 
     loki_fix_header_byte_order(dup);
 
-    if (!file.seek(LOKI_MAGIC_OFFSET, SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
+    auto seek_ret = file.seek(LOKI_MAGIC_OFFSET, SEEK_SET);
+    if (!seek_ret) {
+        writer.set_error(seek_ret.error(),
                          "Failed to seek to Loki header offset: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_write_fully(file, &dup, sizeof(dup), n)) {
-        writer.set_error(file.error(),
+    auto n = file_write_fully(file, &dup, sizeof(dup));
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to write Loki header: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != sizeof(dup)) {
-        writer.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
-                         "Unexpected EOF when writing Loki header: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != sizeof(dup)) {
+        writer.set_error(LokiError::UnexpectedEndOfFile,
+                         "Unexpected EOF when writing Loki header");
         return RET_FAILED;
     }
 
@@ -238,16 +237,15 @@ static int _loki_move_dt_image(Writer &writer, File &file,
                                uint64_t aboot_offset, uint32_t fake_size,
                                uint32_t dt_size)
 {
-    uint64_t n;
-
     // Move DT image
-    if (!file_move(file, aboot_offset, aboot_offset + fake_size, dt_size, n)) {
-        writer.set_error(file.error(),
+    auto n = file_move(file, aboot_offset, aboot_offset + fake_size, dt_size);
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to move DT image: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != dt_size) {
-        writer.set_error(make_error_code(LokiError::UnexpectedFileTruncation),
+    } else if (n.value() != dt_size) {
+        writer.set_error(LokiError::UnexpectedFileTruncation,
                          "DT image truncated when moving");
         // Non-recoverable
         return RET_FATAL;
@@ -261,31 +259,30 @@ static int _loki_write_aboot(Writer &writer, File &file,
                              uint64_t aboot_offset, size_t aboot_func_offset,
                              uint32_t fake_size)
 {
-    size_t n;
-
     if (aboot_func_offset > SIZE_MAX - fake_size
             || aboot_func_offset + fake_size > aboot_size) {
-        writer.set_error(make_error_code(LokiError::AbootFunctionOutOfRange),
+        writer.set_error(LokiError::AbootFunctionOutOfRange,
                          "aboot func offset + fake size out of range");
         return RET_FAILED;
     }
 
-    if (!file.seek(static_cast<int64_t>(aboot_offset), SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
+    auto seek_ret = file.seek(static_cast<int64_t>(aboot_offset), SEEK_SET);
+    if (!seek_ret) {
+        writer.set_error(seek_ret.error(),
                          "Failed to seek to ramdisk offset: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
     }
 
-    if (!file_write_fully(file, aboot + aboot_func_offset, fake_size, n)) {
-        writer.set_error(file.error(),
+    auto n = file_write_fully(file, aboot + aboot_func_offset, fake_size);
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to write aboot segment: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return RET_FATAL;
-    } else if (n != fake_size) {
-        writer.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
-                         "Unexpected EOF when writing aboot segment: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != fake_size) {
+        writer.set_error(LokiError::UnexpectedEndOfFile,
+                         "Unexpected EOF when writing aboot segment");
         return RET_FATAL;
     }
 
@@ -297,25 +294,24 @@ static int _loki_write_shellcode(Writer &writer, File &file,
                                  uint32_t aboot_func_align,
                                  unsigned char patch[LOKI_SHELLCODE_SIZE])
 {
-    size_t n;
-
-    if (!file.seek(static_cast<int64_t>(aboot_offset + aboot_func_align),
-                   SEEK_SET, nullptr)) {
-        writer.set_error(file.error(),
+    auto seek_ret = file.seek(
+            static_cast<int64_t>(aboot_offset + aboot_func_align), SEEK_SET);
+    if (!seek_ret) {
+        writer.set_error(seek_ret.error(),
                          "Failed to seek to shellcode offset: %s",
-                         file.error_string().c_str());
+                         seek_ret.error().message().c_str());
         return RET_FAILED;
     }
 
-    if (!file_write_fully(file, patch, LOKI_SHELLCODE_SIZE, n)) {
-        writer.set_error(file.error(),
+    auto n = file_write_fully(file, patch, LOKI_SHELLCODE_SIZE);
+    if (!n) {
+        writer.set_error(n.error(),
                          "Failed to write shellcode: %s",
-                         file.error_string().c_str());
+                         n.error().message().c_str());
         return file.is_fatal() ? RET_FATAL : RET_FAILED;
-    } else if (n != LOKI_SHELLCODE_SIZE) {
-        writer.set_error(make_error_code(LokiError::UnexpectedEndOfFile),
-                         "Unexpected EOF when writing shellcode: %s",
-                         file.error_string().c_str());
+    } else if (n.value() != LOKI_SHELLCODE_SIZE) {
+        writer.set_error(LokiError::UnexpectedEndOfFile,
+                         "Unexpected EOF when writing shellcode");
         return RET_FATAL;
     }
 
@@ -354,7 +350,7 @@ int _loki_patch_file(Writer &writer, File &file,
     memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
 
     if (aboot_size < MIN_ABOOT_SIZE) {
-        writer.set_error(make_error_code(LokiError::AbootImageTooSmall));
+        writer.set_error(LokiError::AbootImageTooSmall);
         return RET_FAILED;
     }
 
@@ -391,7 +387,7 @@ int _loki_patch_file(Writer &writer, File &file,
     }
 
     if (target == 0) {
-        writer.set_error(make_error_code(LokiError::AbootFunctionNotFound));
+        writer.set_error(LokiError::AbootFunctionNotFound);
         return RET_FAILED;
     }
 
@@ -403,7 +399,7 @@ int _loki_patch_file(Writer &writer, File &file,
     }
 
     if (!tgt) {
-        writer.set_error(make_error_code(LokiError::UnsupportedAbootImage));
+        writer.set_error(LokiError::UnsupportedAbootImage);
         return RET_FAILED;
     }
 
@@ -426,7 +422,7 @@ int _loki_patch_file(Writer &writer, File &file,
             + align_page_size<uint32_t>(ahdr.kernel_size, ahdr.page_size);
 
     if (!_patch_shellcode(tgt->hdr, ahdr.ramdisk_addr, patch)) {
-        writer.set_error(make_error_code(LokiError::ShellcodePatchFailed));
+        writer.set_error(LokiError::ShellcodePatchFailed);
         return RET_FAILED;
     }
 
