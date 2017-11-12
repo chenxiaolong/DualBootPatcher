@@ -25,10 +25,10 @@
 #include "mbcommon/file/memory.h"
 
 #include "mbsparse/sparse_error.h"
-#include "mbsparse/sparse_p.h"
 
 using namespace mb;
 using namespace mb::sparse;
+using namespace mb::sparse::detail;
 
 class CustomMemoryFile : public MemoryFile
 {
