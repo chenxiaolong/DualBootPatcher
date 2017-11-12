@@ -28,16 +28,14 @@
 #include <cstdint>
 
 #include "mbcommon/file_error.h"
+#include "mbcommon/file_p.h"
 #include "mbcommon/outcome.h"
 
 namespace mb
 {
 
-class FilePrivate;
 class MB_EXPORT File
 {
-    MB_DECLARE_PRIVATE(File)
-
 public:
     File();
     virtual ~File();
@@ -59,15 +57,14 @@ public:
     void set_fatal();
 
 protected:
-    /*! \cond INTERNAL */
-    File(FilePrivate *priv);
-    /*! \endcond */
-
     File(File &&other) noexcept;
     File & operator=(File &&rhs) noexcept;
 
     // File open
     oc::result<void> open();
+
+    detail::FileState state();
+    void set_state(detail::FileState state);
 
     virtual oc::result<void> on_open();
     virtual oc::result<void> on_close();
@@ -76,7 +73,10 @@ protected:
     virtual oc::result<uint64_t> on_seek(int64_t offset, int whence);
     virtual oc::result<void> on_truncate(uint64_t size);
 
-    std::unique_ptr<FilePrivate> _priv_ptr;
+private:
+    /*! \cond INTERNAL */
+    detail::FileState m_state;
+    /*! \endcond */
 };
 
 }

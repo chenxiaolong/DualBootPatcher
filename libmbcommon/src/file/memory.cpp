@@ -28,7 +28,6 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
-#include "mbcommon/file/memory_p.h"
 #include "mbcommon/string.h"
 
 /*!
@@ -39,26 +38,7 @@
 namespace mb
 {
 
-/*! \cond INTERNAL */
-
-MemoryFilePrivate::MemoryFilePrivate()
-{
-    clear();
-}
-
-MemoryFilePrivate::~MemoryFilePrivate() = default;
-
-void MemoryFilePrivate::clear()
-{
-    data = nullptr;
-    size = 0;
-    data_ptr = nullptr;
-    size_ptr = nullptr;
-    pos = 0;
-    fixed_size = false;
-}
-
-/*! \endcond */
+using namespace detail;
 
 /*!
  * \class MemoryFile
@@ -73,8 +53,9 @@ void MemoryFilePrivate::clear()
  * need to be called to open a file.
  */
 MemoryFile::MemoryFile()
-    : MemoryFile(new MemoryFilePrivate())
+    : File()
 {
+    clear();
 }
 
 /*!
@@ -89,8 +70,9 @@ MemoryFile::MemoryFile()
  * \param size Size of data buffer
  */
 MemoryFile::MemoryFile(const void *buf, size_t size)
-    : MemoryFile(new MemoryFilePrivate(), buf, size)
+    : MemoryFile()
 {
+    (void) open(buf, size);
 }
 
 /*!
@@ -105,36 +87,42 @@ MemoryFile::MemoryFile(const void *buf, size_t size)
  * \param[in,out] size_ptr Pointer to size of data buffer
  */
 MemoryFile::MemoryFile(void **buf_ptr, size_t *size_ptr)
-    : MemoryFile(new MemoryFilePrivate(), buf_ptr, size_ptr)
-{
-}
-
-/*! \cond INTERNAL */
-
-MemoryFile::MemoryFile(MemoryFilePrivate *priv)
-    : File(priv)
-{
-}
-
-MemoryFile::MemoryFile(MemoryFilePrivate *priv,
-                       const void *buf, size_t size)
-    : File(priv)
-{
-    (void) open(buf, size);
-}
-
-MemoryFile::MemoryFile(MemoryFilePrivate *priv,
-                       void **buf_ptr, size_t *size_ptr)
-    : File(priv)
+    : MemoryFile()
 {
     (void) open(buf_ptr, size_ptr);
 }
 
-/*! \endcond */
-
 MemoryFile::~MemoryFile()
 {
     (void) close();
+}
+
+MemoryFile::MemoryFile(MemoryFile &&other) noexcept
+    : File(std::move(other))
+    , m_data(other.m_data)
+    , m_size(other.m_size)
+    , m_data_ptr(other.m_data_ptr)
+    , m_size_ptr(other.m_size_ptr)
+    , m_pos(other.m_pos)
+    , m_fixed_size(other.m_fixed_size)
+{
+    other.clear();
+}
+
+MemoryFile & MemoryFile::operator=(MemoryFile &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    m_data = rhs.m_data;;
+    m_size = rhs.m_size;
+    m_data_ptr = rhs.m_data_ptr;
+    m_size_ptr = rhs.m_size_ptr;
+    m_pos = rhs.m_pos;
+    m_fixed_size = rhs.m_fixed_size;
+
+    rhs.clear();
+
+    return *this;
 }
 
 /*!
@@ -148,15 +136,15 @@ MemoryFile::~MemoryFile()
  */
 oc::result<void> MemoryFile::open(const void *buf, size_t size)
 {
-    MB_PRIVATE(MemoryFile);
-    if (priv) {
-        priv->data = const_cast<void *>(buf);
-        priv->size = size;
-        priv->data_ptr = nullptr;
-        priv->size_ptr = nullptr;
-        priv->pos = 0;
-        priv->fixed_size = true;
+    if (state() == FileState::New) {
+        m_data = const_cast<void *>(buf);
+        m_size = size;
+        m_data_ptr = nullptr;
+        m_size_ptr = nullptr;
+        m_pos = 0;
+        m_fixed_size = true;
     }
+
     return File::open();
 }
 
@@ -171,109 +159,101 @@ oc::result<void> MemoryFile::open(const void *buf, size_t size)
  */
 oc::result<void> MemoryFile::open(void **buf_ptr, size_t *size_ptr)
 {
-    MB_PRIVATE(MemoryFile);
-    if (priv) {
-        priv->data = *buf_ptr;
-        priv->size = *size_ptr;
-        priv->data_ptr = buf_ptr;
-        priv->size_ptr = size_ptr;
-        priv->pos = 0;
-        priv->fixed_size = false;
+    if (state() == FileState::New) {
+        m_data = *buf_ptr;
+        m_size = *size_ptr;
+        m_data_ptr = buf_ptr;
+        m_size_ptr = size_ptr;
+        m_pos = 0;
+        m_fixed_size = false;
     }
+
     return File::open();
 }
 
 oc::result<void> MemoryFile::on_close()
 {
-    MB_PRIVATE(MemoryFile);
-
     // Reset to allow opening another file
-    priv->clear();
+    clear();
 
     return oc::success();
 }
 
 oc::result<size_t> MemoryFile::on_read(void *buf, size_t size)
 {
-    MB_PRIVATE(MemoryFile);
-
     size_t to_read = 0;
-    if (priv->pos < priv->size) {
-        to_read = std::min(priv->size - priv->pos, size);
+    if (m_pos < m_size) {
+        to_read = std::min(m_size - m_pos, size);
     }
 
-    memcpy(buf, static_cast<char *>(priv->data) + priv->pos, to_read);
-    priv->pos += to_read;
+    memcpy(buf, static_cast<char *>(m_data) + m_pos, to_read);
+    m_pos += to_read;
 
     return to_read;
 }
 
 oc::result<size_t> MemoryFile::on_write(const void *buf, size_t size)
 {
-    MB_PRIVATE(MemoryFile);
-
-    if (priv->pos > SIZE_MAX - size) {
+    if (m_pos > SIZE_MAX - size) {
         return FileError::ArgumentOutOfRange;
     }
 
-    size_t desired_size = priv->pos + size;
+    size_t desired_size = m_pos + size;
     size_t to_write = size;
 
-    if (desired_size > priv->size) {
-        if (priv->fixed_size) {
-            to_write = priv->pos <= priv->size ? priv->size - priv->pos : 0;
+    if (desired_size > m_size) {
+        if (m_fixed_size) {
+            to_write = m_pos <= m_size ? m_size - m_pos : 0;
         } else {
             // Enlarge buffer
-            void *new_data = realloc(priv->data, desired_size);
+            void *new_data = realloc(m_data, desired_size);
             if (!new_data) {
                 return ec_from_errno();
             }
 
             // Zero-initialize new space
-            memset(static_cast<char *>(new_data) + priv->size, 0,
-                   desired_size - priv->size);
+            memset(static_cast<char *>(new_data) + m_size, 0,
+                   desired_size - m_size);
 
-            priv->data = new_data;
-            priv->size = desired_size;
-            if (priv->data_ptr) {
-                *priv->data_ptr = priv->data;
+            m_data = new_data;
+            m_size = desired_size;
+            if (m_data_ptr) {
+                *m_data_ptr = m_data;
             }
-            if (priv->size_ptr) {
-                *priv->size_ptr = priv->size;
+            if (m_size_ptr) {
+                *m_size_ptr = m_size;
             }
         }
     }
 
-    memcpy(static_cast<char *>(priv->data) + priv->pos, buf, to_write);
-    priv->pos += to_write;
+    memcpy(static_cast<char *>(m_data) + m_pos, buf, to_write);
+    m_pos += to_write;
 
     return to_write;
 }
 
 oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
 {
-    MB_PRIVATE(MemoryFile);
-
     switch (whence) {
     case SEEK_SET:
         if (offset < 0 || static_cast<uint64_t>(offset) > SIZE_MAX) {
             return FileError::ArgumentOutOfRange;
         }
-        return priv->pos = static_cast<size_t>(offset);
+        return m_pos = static_cast<size_t>(offset);
     case SEEK_CUR:
-        if ((offset < 0 && static_cast<uint64_t>(-offset) > priv->pos)
+        if ((offset < 0 && static_cast<uint64_t>(-offset) > m_pos)
                 || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - priv->pos)) {
+                        > SIZE_MAX - m_pos)) {
             return FileError::ArgumentOutOfRange;
         }
-        return priv->pos += static_cast<size_t>(offset);
+        return m_pos += static_cast<size_t>(offset);
     case SEEK_END:
-        if ((offset < 0 && static_cast<size_t>(-offset) > priv->size)
+        if ((offset < 0 && static_cast<size_t>(-offset) > m_size)
                 || (offset > 0 && static_cast<uint64_t>(offset)
-                        > SIZE_MAX - priv->size)) {
+                        > SIZE_MAX - m_size)) {
             return FileError::ArgumentOutOfRange;
         }
-        return priv->pos = priv->size + static_cast<size_t>(offset);
+        return m_pos = m_size + static_cast<size_t>(offset);
     default:
         MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
@@ -281,34 +261,42 @@ oc::result<uint64_t> MemoryFile::on_seek(int64_t offset, int whence)
 
 oc::result<void> MemoryFile::on_truncate(uint64_t size)
 {
-    MB_PRIVATE(MemoryFile);
-
-    if (priv->fixed_size) {
+    if (m_fixed_size) {
         // Cannot truncate fixed buffer
         return FileError::UnsupportedTruncate;
     } else {
-        void *new_data = realloc(priv->data, static_cast<size_t>(size));
+        void *new_data = realloc(m_data, static_cast<size_t>(size));
         if (!new_data) {
             return ec_from_errno();
         }
 
         // Zero-initialize new space
-        if (size > priv->size) {
-            memset(static_cast<char *>(new_data) + priv->size, 0,
-                   static_cast<size_t>(size) - priv->size);
+        if (size > m_size) {
+            memset(static_cast<char *>(new_data) + m_size, 0,
+                   static_cast<size_t>(size) - m_size);
         }
 
-        priv->data = new_data;
-        priv->size = static_cast<size_t>(size);
-        if (priv->data_ptr) {
-            *priv->data_ptr = priv->data;
+        m_data = new_data;
+        m_size = static_cast<size_t>(size);
+        if (m_data_ptr) {
+            *m_data_ptr = m_data;
         }
-        if (priv->size_ptr) {
-            *priv->size_ptr = priv->size;
+        if (m_size_ptr) {
+            *m_size_ptr = m_size;
         }
     }
 
     return oc::success();
+}
+
+void MemoryFile::clear()
+{
+    m_data = nullptr;
+    m_size = 0;
+    m_data_ptr = nullptr;
+    m_size_ptr = nullptr;
+    m_pos = 0;
+    m_fixed_size = false;
 }
 
 }

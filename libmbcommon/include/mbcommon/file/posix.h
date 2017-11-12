@@ -22,17 +22,15 @@
 #include "mbcommon/file.h"
 
 #include "mbcommon/file/open_mode.h"
+#include "mbcommon/file/posix_p.h"
 
 #include <cstdio>
 
 namespace mb
 {
 
-class PosixFilePrivate;
 class MB_EXPORT PosixFile : public File
 {
-    MB_DECLARE_PRIVATE(PosixFile)
-
 public:
     PosixFile();
     PosixFile(FILE *fp, bool owned);
@@ -40,8 +38,10 @@ public:
     PosixFile(const std::wstring &filename, FileOpenMode mode);
     virtual ~PosixFile();
 
+    PosixFile(PosixFile &&other) noexcept;
+    PosixFile & operator=(PosixFile &&rhs) noexcept;
+
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PosixFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(PosixFile)
 
     oc::result<void> open(FILE *fp, bool owned);
     oc::result<void> open(const std::string &filename, FileOpenMode mode);
@@ -49,12 +49,12 @@ public:
 
 protected:
     /*! \cond INTERNAL */
-    PosixFile(PosixFilePrivate *priv);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs);
+    PosixFile(detail::PosixFileFuncs *funcs,
               FILE *fp, bool owned);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs,
               const std::string &filename, FileOpenMode mode);
-    PosixFile(PosixFilePrivate *priv,
+    PosixFile(detail::PosixFileFuncs *funcs,
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
@@ -64,6 +64,25 @@ protected:
     oc::result<size_t> on_write(const void *buf, size_t size) override;
     oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
     oc::result<void> on_truncate(uint64_t size) override;
+
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    detail::PosixFileFuncs *m_funcs;
+
+    FILE *m_fp;
+    bool m_owned;
+#ifdef _WIN32
+    std::wstring m_filename;
+    const wchar_t *m_mode;
+#else
+    std::string m_filename;
+    const char *m_mode;
+#endif
+
+    bool m_can_seek;
+    /*! \endcond */
 };
 
 }

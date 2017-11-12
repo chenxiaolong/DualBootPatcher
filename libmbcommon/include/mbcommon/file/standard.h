@@ -35,7 +35,6 @@
 namespace mb
 {
 
-class StandardFilePrivate;
 class MB_EXPORT StandardFile : public STANDARD_FILE_IMPL
 {
     using Base = STANDARD_FILE_IMPL;

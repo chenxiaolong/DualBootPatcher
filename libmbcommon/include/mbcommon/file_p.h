@@ -19,13 +19,12 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
-
-#include "mbcommon/file.h"
 #include "mbcommon/flags.h"
 
 /*! \cond INTERNAL */
 namespace mb
+{
+namespace detail
 {
 
 enum class FileState : uint8_t
@@ -33,20 +32,11 @@ enum class FileState : uint8_t
     New     = 1u << 0,
     Opened  = 1u << 1,
     Fatal   = 1u << 2,
+    Moved   = 1u << 3,
 };
 MB_DECLARE_FLAGS(FileStates, FileState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(FileStates)
 
-class FilePrivate
-{
-public:
-    FilePrivate();
-    virtual ~FilePrivate();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(FilePrivate)
-
-    FileState state;
-};
-
+}
 }
 /*! \endcond */

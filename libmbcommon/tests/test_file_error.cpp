@@ -38,8 +38,6 @@ TEST(FileErrorTest, CheckErrorCodesComparableToErrorConditions)
 
     TEST_EQUALITY(make_error_code(FileError::InvalidState),
                   FileErrorC::InvalidState);
-    TEST_EQUALITY(make_error_code(FileError::ObjectMoved),
-                  FileErrorC::InvalidState);
 
     TEST_EQUALITY(make_error_code(FileError::UnsupportedRead),
                   FileErrorC::Unsupported);

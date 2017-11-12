@@ -25,23 +25,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "mbcommon/file_p.h"
 #include "mbcommon/finally.h"
-
-#define GET_PIMPL_OR_RETURN(RETVAL) \
-    MB_PRIVATE(File); \
-    do { \
-        if (!priv) { \
-            return RETVAL; \
-        } \
-    } while (0)
-
-#define GET_PIMPL_OR_RETURN_ERROR() \
-    GET_PIMPL_OR_RETURN(FileError::ObjectMoved)
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
-        if (!(priv->state & (STATES))) { \
+        if (!(m_state & (STATES))) { \
             return RETVAL; \
         } \
     } while (0)
@@ -59,11 +47,7 @@
 namespace mb
 {
 
-/*! \cond INTERNAL */
-FilePrivate::FilePrivate() = default;
-
-FilePrivate::~FilePrivate() = default;
-/*! \endcond */
+using namespace detail;
 
 /*!
  * \class File
@@ -72,29 +56,17 @@ FilePrivate::~FilePrivate() = default;
  */
 
 /*!
- * \var File::_priv_ptr
+ * \var File::m_state
  *
- * \brief Pointer to pimpl object
+ * \brief State of the File handle
  */
 
 /*!
  * \brief Construct new File handle.
  */
-File::File() : _priv_ptr(new FilePrivate())
+File::File() : m_state(FileState::New)
 {
-    MB_PRIVATE(File);
-
-    priv->state = FileState::New;
 }
-
-/*! \cond INTERNAL */
-File::File(FilePrivate *priv_) : _priv_ptr(priv_)
-{
-    MB_PRIVATE(File);
-
-    priv->state = FileState::New;
-}
-/*! \endcond */
 
 /*!
  * \brief Destroy a File handle.
@@ -102,15 +74,15 @@ File::File(FilePrivate *priv_) : _priv_ptr(priv_)
  * If the handle has not been closed, it will be closed. Since this is the
  * destructor, it is not possible to get the result of the file close operation.
  * To get the result of the file close operation, call File::close() manually.
+ *
+ * If the File object has been moved, no action will be taken.
  */
 File::~File()
 {
-    MB_PRIVATE(File);
-
     // We can't call a virtual function (on_close()) from the destructor, so we
     // must ensure that subclasses will call close().
-    if (priv) {
-        assert(priv->state == FileState::New);
+    if (m_state != FileState::Moved) {
+        assert(m_state == FileState::New);
     }
 }
 
@@ -127,8 +99,9 @@ File::~File()
  * file2 = mb::StandardFile("baz.txt", mb::FileOpenMode::ReadOnly);
  * \endcode
  */
-File::File(File &&other) noexcept : _priv_ptr(std::move(other._priv_ptr))
+File::File(File &&other) noexcept : m_state(other.m_state)
 {
+    other.m_state = FileState::Moved;
 }
 
 /*!
@@ -151,7 +124,8 @@ File & File::operator=(File &&rhs) noexcept
 {
     (void) close();
 
-    _priv_ptr = std::move(rhs._priv_ptr);
+    m_state = rhs.m_state;
+    rhs.m_state = FileState::Moved;
 
     return *this;
 }
@@ -162,6 +136,10 @@ File & File::operator=(File &&rhs) noexcept
  * Once the handle has been opened, the file operation functions, such as
  * File::read(), are available to use.
  *
+ * For subclass member functions that call open(), only open the file if state()
+ * is FileState::New. Always call through to open(), regardless of state(), to
+ * get an appropriate error code.
+ *
  * \note This function should generally only be called by subclasses. Most
  *       subclasses will provide a variant of this function that can take
  *       parameters, such as a filename.
@@ -171,13 +149,12 @@ File & File::operator=(File &&rhs) noexcept
  */
 oc::result<void> File::open()
 {
-    GET_PIMPL_OR_RETURN_ERROR();
     ENSURE_STATE_OR_RETURN_ERROR(FileState::New);
 
     auto ret = on_open();
 
     if (ret) {
-        priv->state = FileState::Opened;
+        m_state = FileState::Opened;
     } else {
         // If the file was not successfully opened, then close it
         (void) on_close();
@@ -200,13 +177,13 @@ oc::result<void> File::open()
  */
 oc::result<void> File::close()
 {
-    GET_PIMPL_OR_RETURN_ERROR();
+    ENSURE_STATE_OR_RETURN_ERROR(~FileStates(FileState::Moved));
 
     auto reset_state = finally([&] {
-        priv->state = FileState::New;
+        m_state = FileState::New;
     });
 
-    if (priv->state == FileState::New) {
+    if (m_state == FileState::New) {
         return oc::success();
     }
 
@@ -242,7 +219,6 @@ oc::result<void> File::close()
  */
 oc::result<size_t> File::read(void *buf, size_t size)
 {
-    GET_PIMPL_OR_RETURN_ERROR();
     ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
     return on_read(buf, size);
@@ -270,7 +246,6 @@ oc::result<size_t> File::read(void *buf, size_t size)
  */
 oc::result<size_t> File::write(const void *buf, size_t size)
 {
-    GET_PIMPL_OR_RETURN_ERROR();
     ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
     return on_write(buf, size);
@@ -287,7 +262,6 @@ oc::result<size_t> File::write(const void *buf, size_t size)
  */
 oc::result<uint64_t> File::seek(int64_t offset, int whence)
 {
-    GET_PIMPL_OR_RETURN_ERROR();
     ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
     return on_seek(offset, whence);
@@ -307,7 +281,6 @@ oc::result<uint64_t> File::seek(int64_t offset, int whence)
  */
 oc::result<void> File::truncate(uint64_t size)
 {
-    GET_PIMPL_OR_RETURN_ERROR();
     ENSURE_STATE_OR_RETURN_ERROR(FileState::Opened);
 
     return on_truncate(size);
@@ -320,8 +293,7 @@ oc::result<void> File::truncate(uint64_t size)
  */
 bool File::is_open()
 {
-    GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::Opened;
+    return m_state == FileState::Opened;
 }
 
 /*!
@@ -334,8 +306,7 @@ bool File::is_open()
  */
 bool File::is_fatal()
 {
-    GET_PIMPL_OR_RETURN(false);
-    return priv->state == FileState::Fatal;
+    return m_state == FileState::Fatal;
 }
 
 /*!
@@ -348,11 +319,32 @@ bool File::is_fatal()
  */
 void File::set_fatal()
 {
-    GET_PIMPL_OR_RETURN();
-
-    if (priv->state == FileState::Opened) {
-        priv->state = FileState::Fatal;
+    if (m_state == FileState::Opened) {
+        m_state = FileState::Fatal;
     }
+}
+
+/*!
+ * \brief Get current state of the File handle
+ *
+ * \return State of the File handle
+ */
+FileState File::state()
+{
+    return m_state;
+}
+
+/*!
+ * \brief Set state of the File handle
+ *
+ * \warning Be very careful with this function. File makes certain guarantees to
+ *          subclasses that could be broken if the state is changed.
+ *
+ * \param state New state of the File handle
+ */
+void File::set_state(FileState state)
+{
+    m_state = state;
 }
 
 /*!

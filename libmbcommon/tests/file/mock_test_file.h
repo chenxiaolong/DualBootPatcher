@@ -23,7 +23,7 @@
 
 #include <gmock/gmock.h>
 
-#include "mbcommon/file_p.h"
+#include "mbcommon/file.h"
 
 static constexpr size_t INITIAL_BUF_SIZE = 1024;
 
@@ -38,25 +38,24 @@ struct TestFileCounters
     unsigned int n_truncate = 0;
 };
 
-class TestFilePrivate : public mb::FilePrivate
-{
-};
-
 class TestFile : public mb::File
 {
 public:
-    MB_DECLARE_PRIVATE(TestFile)
-
     TestFile();
     TestFile(TestFileCounters *counters);
     virtual ~TestFile();
 
+    TestFile(TestFile &&other) noexcept;
+    TestFile & operator=(TestFile &&rhs) noexcept;
+
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(TestFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(TestFile)
 
     // Make open function public since we don't need/have a parameterized open
     // function
     using mb::File::open;
+
+    using mb::File::state;
+    using mb::File::set_state;
 
 protected:
     mb::oc::result<void> on_open() override;

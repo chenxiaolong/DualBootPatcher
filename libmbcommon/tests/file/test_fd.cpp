@@ -25,9 +25,9 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/fd.h"
-#include "mbcommon/file/fd_p.h"
 
 using namespace mb;
+using namespace mb::detail;
 
 struct MockFdFileFuncs : public FdFileFuncs
 {
@@ -96,38 +96,28 @@ struct MockFdFileFuncs : public FdFileFuncs
     }
 };
 
-class TestableFdFilePrivate : public FdFilePrivate
-{
-public:
-    TestableFdFilePrivate(FdFileFuncs *funcs) : FdFilePrivate(funcs)
-    {
-    }
-};
-
 class TestableFdFile : public FdFile
 {
 public:
-    MB_DECLARE_PRIVATE(TestableFdFile)
-
     TestableFdFile(FdFileFuncs *funcs)
-        : FdFile(new TestableFdFilePrivate(funcs))
+        : FdFile(funcs)
     {
     }
 
     TestableFdFile(FdFileFuncs *funcs, int fd, bool owned)
-        : FdFile(new TestableFdFilePrivate(funcs), fd, owned)
+        : FdFile(funcs, fd, owned)
     {
     }
 
     TestableFdFile(FdFileFuncs *funcs,
                    const std::string &filename, FileOpenMode mode)
-        : FdFile(new TestableFdFilePrivate(funcs), filename, mode)
+        : FdFile(funcs, filename, mode)
     {
     }
 
     TestableFdFile(FdFileFuncs *funcs,
                    const std::wstring &filename, FileOpenMode mode)
-        : FdFile(new TestableFdFilePrivate(funcs), filename, mode)
+        : FdFile(funcs, filename, mode)
     {
     }
 

@@ -19,7 +19,6 @@
 
 #include "mbcommon/file/callbacks.h"
 
-#include "mbcommon/file/callbacks_p.h"
 #include "mbcommon/finally.h"
 
 /*!
@@ -31,6 +30,8 @@
 
 namespace mb
 {
+
+using namespace detail;
 
 /*!
  * \typedef CallbackFile::OpenCb
@@ -119,28 +120,6 @@ namespace mb
  *         return an error code.
  */
 
-/*! \cond INTERNAL */
-
-CallbackFilePrivate::CallbackFilePrivate()
-{
-    clear();
-}
-
-CallbackFilePrivate::~CallbackFilePrivate() = default;
-
-void CallbackFilePrivate::clear()
-{
-    open_cb = nullptr;
-    close_cb = nullptr;
-    read_cb = nullptr;
-    write_cb = nullptr;
-    seek_cb = nullptr;
-    truncate_cb = nullptr;
-    userdata = nullptr;
-}
-
-/*! \endcond */
-
 /*!
  * \class CallbackFile
  *
@@ -155,8 +134,9 @@ void CallbackFilePrivate::clear()
  * to open a file.
  */
 CallbackFile::CallbackFile()
-    : CallbackFile(new CallbackFilePrivate())
+    : File()
 {
+    clear();
 }
 
 /*!
@@ -182,37 +162,45 @@ CallbackFile::CallbackFile(OpenCb open_cb,
                            SeekCb seek_cb,
                            TruncateCb truncate_cb,
                            void *userdata)
-    : CallbackFile(new CallbackFilePrivate(), open_cb, close_cb, read_cb,
-                   write_cb, seek_cb, truncate_cb, userdata)
-{
-}
-
-/*! \cond INTERNAL */
-
-CallbackFile::CallbackFile(CallbackFilePrivate *priv)
-    : File(priv)
-{
-}
-
-CallbackFile::CallbackFile(CallbackFilePrivate *priv,
-                           OpenCb open_cb,
-                           CloseCb close_cb,
-                           ReadCb read_cb,
-                           WriteCb write_cb,
-                           SeekCb seek_cb,
-                           TruncateCb truncate_cb,
-                           void *userdata)
-    : File(priv)
+    : CallbackFile()
 {
     (void) open(open_cb, close_cb, read_cb, write_cb, seek_cb, truncate_cb,
                 userdata);
 }
 
-/*! \endcond */
-
 CallbackFile::~CallbackFile()
 {
     (void) close();
+}
+
+CallbackFile::CallbackFile(CallbackFile &&other) noexcept
+    : File(std::move(other))
+    , m_open_cb(other.m_open_cb)
+    , m_close_cb(other.m_close_cb)
+    , m_read_cb(other.m_read_cb)
+    , m_write_cb(other.m_write_cb)
+    , m_seek_cb(other.m_seek_cb)
+    , m_truncate_cb(other.m_truncate_cb)
+    , m_userdata(other.m_userdata)
+{
+    other.clear();
+}
+
+CallbackFile & CallbackFile::operator=(CallbackFile &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    m_open_cb = rhs.m_open_cb;
+    m_close_cb = rhs.m_close_cb;
+    m_read_cb = rhs.m_read_cb;
+    m_write_cb = rhs.m_write_cb;
+    m_seek_cb = rhs.m_seek_cb;
+    m_truncate_cb = rhs.m_truncate_cb;
+    m_userdata = rhs.m_userdata;
+
+    rhs.clear();
+
+    return *this;
 }
 
 /*!
@@ -237,18 +225,14 @@ oc::result<void> CallbackFile::open(OpenCb open_cb,
                                     TruncateCb truncate_cb,
                                     void *userdata)
 {
-    MB_PRIVATE(CallbackFile);
-
-    // pimpl can be NULL if the handle was moved. File::open() will fail
-    // appropriately in that case.
-    if (priv) {
-        priv->open_cb = open_cb;
-        priv->close_cb = close_cb;
-        priv->read_cb = read_cb;
-        priv->write_cb = write_cb;
-        priv->seek_cb = seek_cb;
-        priv->truncate_cb = truncate_cb;
-        priv->userdata = userdata;
+    if (state() == FileState::New) {
+        m_open_cb = open_cb;
+        m_close_cb = close_cb;
+        m_read_cb = read_cb;
+        m_write_cb = write_cb;
+        m_seek_cb = seek_cb;
+        m_truncate_cb = truncate_cb;
+        m_userdata = userdata;
     }
 
     return File::open();
@@ -256,10 +240,8 @@ oc::result<void> CallbackFile::open(OpenCb open_cb,
 
 oc::result<void> CallbackFile::on_open()
 {
-    MB_PRIVATE(CallbackFile);
-
-    if (priv->open_cb) {
-        return priv->open_cb(*this, priv->userdata);
+    if (m_open_cb) {
+        return m_open_cb(*this, m_userdata);
     } else {
         return File::on_open();
     }
@@ -267,15 +249,13 @@ oc::result<void> CallbackFile::on_open()
 
 oc::result<void> CallbackFile::on_close()
 {
-    MB_PRIVATE(CallbackFile);
-
     // Reset to allow opening another file
     auto reset = finally([&] {
-        priv->clear();
+        clear();
     });
 
-    if (priv->close_cb) {
-        return priv->close_cb(*this, priv->userdata);
+    if (m_close_cb) {
+        return m_close_cb(*this, m_userdata);
     } else {
         return File::on_close();
     }
@@ -283,10 +263,8 @@ oc::result<void> CallbackFile::on_close()
 
 oc::result<size_t> CallbackFile::on_read(void *buf, size_t size)
 {
-    MB_PRIVATE(CallbackFile);
-
-    if (priv->read_cb) {
-        return priv->read_cb(*this, priv->userdata, buf, size);
+    if (m_read_cb) {
+        return m_read_cb(*this, m_userdata, buf, size);
     } else {
         return File::on_read(buf, size);
     }
@@ -294,10 +272,8 @@ oc::result<size_t> CallbackFile::on_read(void *buf, size_t size)
 
 oc::result<size_t> CallbackFile::on_write(const void *buf, size_t size)
 {
-    MB_PRIVATE(CallbackFile);
-
-    if (priv->write_cb) {
-        return priv->write_cb(*this, priv->userdata, buf, size);
+    if (m_write_cb) {
+        return m_write_cb(*this, m_userdata, buf, size);
     } else {
         return File::on_write(buf, size);
     }
@@ -305,10 +281,8 @@ oc::result<size_t> CallbackFile::on_write(const void *buf, size_t size)
 
 oc::result<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
 {
-    MB_PRIVATE(CallbackFile);
-
-    if (priv->seek_cb) {
-        return priv->seek_cb(*this, priv->userdata, offset, whence);
+    if (m_seek_cb) {
+        return m_seek_cb(*this, m_userdata, offset, whence);
     } else {
         return File::on_seek(offset, whence);
     }
@@ -316,13 +290,22 @@ oc::result<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
 
 oc::result<void> CallbackFile::on_truncate(uint64_t size)
 {
-    MB_PRIVATE(CallbackFile);
-
-    if (priv->truncate_cb) {
-        return priv->truncate_cb(*this, priv->userdata, size);
+    if (m_truncate_cb) {
+        return m_truncate_cb(*this, m_userdata, size);
     } else {
         return File::on_truncate(size);
     }
+}
+
+void CallbackFile::clear()
+{
+    m_open_cb = nullptr;
+    m_close_cb = nullptr;
+    m_read_cb = nullptr;
+    m_write_cb = nullptr;
+    m_seek_cb = nullptr;
+    m_truncate_cb = nullptr;
+    m_userdata = nullptr;
 }
 
 }

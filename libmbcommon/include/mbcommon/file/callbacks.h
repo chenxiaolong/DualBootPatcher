@@ -24,11 +24,8 @@
 namespace mb
 {
 
-class CallbackFilePrivate;
 class MB_EXPORT CallbackFile : public File
 {
-    MB_DECLARE_PRIVATE(CallbackFile)
-
 public:
     using OpenCb = oc::result<void> (*)(File &file, void *userdata);
     using CloseCb = oc::result<void> (*)(File &file, void *userdata);
@@ -51,8 +48,10 @@ public:
                  void *userdata);
     virtual ~CallbackFile();
 
+    CallbackFile(CallbackFile &&other) noexcept;
+    CallbackFile & operator=(CallbackFile &&rhs) noexcept;
+
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(CallbackFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(CallbackFile)
 
     oc::result<void> open(OpenCb open_cb,
                           CloseCb close_cb,
@@ -63,24 +62,25 @@ public:
                           void *userdata);
 
 protected:
-    /*! \cond INTERNAL */
-    CallbackFile(CallbackFilePrivate *priv);
-    CallbackFile(CallbackFilePrivate *priv,
-                 OpenCb open_cb,
-                 CloseCb close_cb,
-                 ReadCb read_cb,
-                 WriteCb write_cb,
-                 SeekCb seek_cb,
-                 TruncateCb truncate_cb,
-                 void *userdata);
-    /*! \endcond */
-
     oc::result<void> on_open() override;
     oc::result<void> on_close() override;
     oc::result<size_t> on_read(void *buf, size_t size) override;
     oc::result<size_t> on_write(const void *buf, size_t size) override;
     oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
     oc::result<void> on_truncate(uint64_t size) override;
+
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    OpenCb m_open_cb;
+    CloseCb m_close_cb;
+    ReadCb m_read_cb;
+    WriteCb m_write_cb;
+    SeekCb m_seek_cb;
+    TruncateCb m_truncate_cb;
+    void *m_userdata;
+    /*! \endcond */
 };
 
 }

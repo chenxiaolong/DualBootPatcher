@@ -21,9 +21,9 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/posix.h"
-#include "mbcommon/file/posix_p.h"
 
 using namespace mb;
+using namespace mb::detail;
 
 // Dummy fp that's never dereferenced
 static FILE *g_fp = reinterpret_cast<FILE *>(-1);
@@ -108,39 +108,28 @@ struct MockPosixFileFuncs : public PosixFileFuncs
     }
 };
 
-class TestablePosixFilePrivate : public PosixFilePrivate
-{
-public:
-    TestablePosixFilePrivate(PosixFileFuncs *funcs)
-        : PosixFilePrivate(funcs)
-    {
-    }
-};
-
 class TestablePosixFile : public PosixFile
 {
 public:
-    MB_DECLARE_PRIVATE(TestablePosixFile)
-
     TestablePosixFile(PosixFileFuncs *funcs)
-        : PosixFile(new TestablePosixFilePrivate(funcs))
+        : PosixFile(funcs)
     {
     }
 
     TestablePosixFile(PosixFileFuncs *funcs, FILE *fp, bool owned)
-        : PosixFile(new TestablePosixFilePrivate(funcs), fp, owned)
+        : PosixFile(funcs, fp, owned)
     {
     }
 
     TestablePosixFile(PosixFileFuncs *funcs,
                       const std::string &filename, FileOpenMode mode)
-        : PosixFile(new TestablePosixFilePrivate(funcs), filename, mode)
+        : PosixFile(funcs, filename, mode)
     {
     }
 
     TestablePosixFile(PosixFileFuncs *funcs,
                       const std::wstring &filename, FileOpenMode mode)
-        : PosixFile(new TestablePosixFilePrivate(funcs), filename, mode)
+        : PosixFile(funcs, filename, mode)
     {
     }
 

@@ -32,7 +32,6 @@ enum class FileError
     CannotConvertEncoding   = 11,
 
     InvalidState            = 20,
-    ObjectMoved             = 21,
 
     UnsupportedRead         = 30,
     UnsupportedWrite        = 31,

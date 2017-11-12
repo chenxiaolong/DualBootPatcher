@@ -28,7 +28,6 @@
 #include <unistd.h>
 
 #include "mbcommon/error_code.h"
-#include "mbcommon/file/posix_p.h"
 #include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
 
@@ -43,6 +42,8 @@ static_assert(sizeof(off_t) > 4, "Not compiling with LFS support!");
 
 namespace mb
 {
+
+using namespace detail;
 
 /*! \cond INTERNAL */
 struct RealPosixFileFuncs : public PosixFileFuncs
@@ -113,30 +114,8 @@ static RealPosixFileFuncs g_default_funcs;
 
 PosixFileFuncs::~PosixFileFuncs() = default;
 
-PosixFilePrivate::PosixFilePrivate()
-    : PosixFilePrivate(&g_default_funcs)
-{
-}
-
-PosixFilePrivate::PosixFilePrivate(PosixFileFuncs *funcs)
-    : funcs(funcs)
-{
-    clear();
-}
-
-PosixFilePrivate::~PosixFilePrivate() = default;
-
-void PosixFilePrivate::clear()
-{
-    fp = nullptr;
-    owned = false;
-    filename.clear();
-    mode = nullptr;
-    can_seek = false;
-}
-
 #ifdef _WIN32
-const wchar_t * PosixFilePrivate::convert_mode(FileOpenMode mode)
+static const wchar_t * convert_mode(FileOpenMode mode)
 {
     switch (mode) {
     case FileOpenMode::ReadOnly:
@@ -156,7 +135,7 @@ const wchar_t * PosixFilePrivate::convert_mode(FileOpenMode mode)
     }
 }
 #else
-const char * PosixFilePrivate::convert_mode(FileOpenMode mode)
+static const char * convert_mode(FileOpenMode mode)
 {
     switch (mode) {
     case FileOpenMode::ReadOnly:
@@ -195,7 +174,7 @@ const char * PosixFilePrivate::convert_mode(FileOpenMode mode)
  * need to be called to open a file.
  */
 PosixFile::PosixFile()
-    : PosixFile(new PosixFilePrivate())
+    : PosixFile(&g_default_funcs)
 {
 }
 
@@ -212,7 +191,7 @@ PosixFile::PosixFile()
  *              handle
  */
 PosixFile::PosixFile(FILE *fp, bool owned)
-    : PosixFile(new PosixFilePrivate(), fp, owned)
+    : PosixFile(&g_default_funcs, fp, owned)
 {
 }
 
@@ -228,7 +207,7 @@ PosixFile::PosixFile(FILE *fp, bool owned)
  * \param mode Open mode (\ref FileOpenMode)
  */
 PosixFile::PosixFile(const std::string &filename, FileOpenMode mode)
-    : PosixFile(new PosixFilePrivate(), filename, mode)
+    : PosixFile(&g_default_funcs, filename, mode)
 {
 }
 
@@ -244,34 +223,35 @@ PosixFile::PosixFile(const std::string &filename, FileOpenMode mode)
  * \param mode Open mode (\ref FileOpenMode)
  */
 PosixFile::PosixFile(const std::wstring &filename, FileOpenMode mode)
-    : PosixFile(new PosixFilePrivate(), filename, mode)
+    : PosixFile(&g_default_funcs, filename, mode)
 {
 }
 
 /*! \cond INTERNAL */
 
-PosixFile::PosixFile(PosixFilePrivate *priv)
-    : File(priv)
+PosixFile::PosixFile(PosixFileFuncs *funcs)
+    : File(), m_funcs(funcs)
 {
+    clear();
 }
 
-PosixFile::PosixFile(PosixFilePrivate *priv,
+PosixFile::PosixFile(PosixFileFuncs *funcs,
                      FILE *fp, bool owned)
-    : File(priv)
+    : PosixFile(funcs)
 {
     (void) open(fp, owned);
 }
 
-PosixFile::PosixFile(PosixFilePrivate *priv,
+PosixFile::PosixFile(PosixFileFuncs *funcs,
                      const std::string &filename, FileOpenMode mode)
-    : File(priv)
+    : PosixFile(funcs)
 {
     (void) open(filename, mode);
 }
 
-PosixFile::PosixFile(PosixFilePrivate *priv,
+PosixFile::PosixFile(PosixFileFuncs *funcs,
                      const std::wstring &filename, FileOpenMode mode)
-    : File(priv)
+    : PosixFile(funcs)
 {
     (void) open(filename, mode);
 }
@@ -281,6 +261,34 @@ PosixFile::PosixFile(PosixFilePrivate *priv,
 PosixFile::~PosixFile()
 {
     (void) close();
+}
+
+PosixFile::PosixFile(PosixFile &&other) noexcept
+    : File(std::move(other))
+    , m_funcs(other.m_funcs)
+    , m_fp(other.m_fp)
+    , m_owned(other.m_owned)
+    , m_filename(std::move(other.m_filename))
+    , m_mode(other.m_mode)
+    , m_can_seek(other.m_can_seek)
+{
+    other.clear();
+}
+
+PosixFile & PosixFile::operator=(PosixFile &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    m_funcs = rhs.m_funcs;
+    m_fp = rhs.m_fp;
+    m_owned = rhs.m_owned;
+    m_filename.swap(rhs.m_filename);
+    m_mode = rhs.m_mode;
+    m_can_seek = rhs.m_can_seek;
+
+    rhs.clear();
+
+    return *this;
 }
 
 /*!
@@ -299,11 +307,11 @@ PosixFile::~PosixFile()
  */
 oc::result<void> PosixFile::open(FILE *fp, bool owned)
 {
-    MB_PRIVATE(PosixFile);
-    if (priv) {
-        priv->fp = fp;
-        priv->owned = owned;
+    if (state() == FileState::New) {
+        m_fp = fp;
+        m_owned = owned;
     }
+
     return File::open();
 }
 
@@ -322,8 +330,7 @@ oc::result<void> PosixFile::open(FILE *fp, bool owned)
  */
 oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(PosixFile);
-    if (priv) {
+    if (state() == FileState::New) {
         // Convert filename to platform-native encoding
 #ifdef _WIN32
         auto converted = mbs_to_wcs(filename);
@@ -336,16 +343,17 @@ oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
 #endif
 
         // Convert mode to fopen-compatible mode string
-        auto mode_str = priv->convert_mode(mode);
+        auto mode_str = convert_mode(mode);
         if (!mode_str) {
             MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
-        priv->fp = nullptr;
-        priv->owned = true;
-        priv->filename = std::move(native_filename);
-        priv->mode = mode_str;
+        m_fp = nullptr;
+        m_owned = true;
+        m_filename = std::move(native_filename);
+        m_mode = mode_str;
     }
+
     return File::open();
 }
 
@@ -364,8 +372,7 @@ oc::result<void> PosixFile::open(const std::string &filename, FileOpenMode mode)
  */
 oc::result<void> PosixFile::open(const std::wstring &filename, FileOpenMode mode)
 {
-    MB_PRIVATE(PosixFile);
-    if (priv) {
+    if (state() == FileState::New) {
         // Convert filename to platform-native encoding
 #ifdef _WIN32
         auto &&native_filename = filename;
@@ -378,44 +385,42 @@ oc::result<void> PosixFile::open(const std::wstring &filename, FileOpenMode mode
 #endif
 
         // Convert mode to fopen-compatible mode string
-        auto mode_str = priv->convert_mode(mode);
+        auto mode_str = convert_mode(mode);
         if (!mode_str) {
             MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
         }
 
-        priv->fp = nullptr;
-        priv->owned = true;
-        priv->filename = std::move(native_filename);
-        priv->mode = mode_str;
+        m_fp = nullptr;
+        m_owned = true;
+        m_filename = std::move(native_filename);
+        m_mode = mode_str;
     }
+
     return File::open();
 }
 
 oc::result<void> PosixFile::on_open()
 {
-    MB_PRIVATE(PosixFile);
-
-    if (!priv->filename.empty()) {
+    if (!m_filename.empty()) {
 #ifdef _WIN32
-        priv->fp = priv->funcs->fn_wfopen(
+        m_fp = m_funcs->fn_wfopen(
 #else
-        priv->fp = priv->funcs->fn_fopen(
+        m_fp = m_funcs->fn_fopen(
 #endif
-                priv->filename.c_str(), priv->mode);
-        if (!priv->fp) {
+                m_filename.c_str(), m_mode);
+        if (!m_fp) {
             return ec_from_errno();
         }
     }
 
-    struct stat sb;
-    int fd;
-
     // Assume file is unseekable by default
-    priv->can_seek = false;
+    m_can_seek = false;
 
-    fd = priv->funcs->fn_fileno(priv->fp);
+    int fd = m_funcs->fn_fileno(m_fp);
     if (fd >= 0) {
-        if (priv->funcs->fn_fstat(fd, &sb) < 0) {
+        struct stat sb;
+
+        if (m_funcs->fn_fstat(fd, &sb) < 0) {
             return ec_from_errno();
         }
 
@@ -430,7 +435,7 @@ oc::result<void> PosixFile::on_open()
                 || S_ISBLK(sb.st_mode)
 #endif
         ) {
-            priv->can_seek = true;
+            m_can_seek = true;
         }
     }
 
@@ -439,14 +444,12 @@ oc::result<void> PosixFile::on_open()
 
 oc::result<void> PosixFile::on_close()
 {
-    MB_PRIVATE(PosixFile);
-
     // Reset to allow opening another file
     auto reset = finally([&] {
-        priv->clear();
+        clear();
     });
 
-    if (priv->owned && priv->fp && priv->funcs->fn_fclose(priv->fp) == EOF) {
+    if (m_owned && m_fp && m_funcs->fn_fclose(m_fp) == EOF) {
         return ec_from_errno();
     }
 
@@ -455,11 +458,9 @@ oc::result<void> PosixFile::on_close()
 
 oc::result<size_t> PosixFile::on_read(void *buf, size_t size)
 {
-    MB_PRIVATE(PosixFile);
+    size_t n = m_funcs->fn_fread(buf, 1, size, m_fp);
 
-    size_t n = priv->funcs->fn_fread(buf, 1, size, priv->fp);
-
-    if (n < size && priv->funcs->fn_ferror(priv->fp)) {
+    if (n < size && m_funcs->fn_ferror(m_fp)) {
         return ec_from_errno();
     }
 
@@ -468,11 +469,9 @@ oc::result<size_t> PosixFile::on_read(void *buf, size_t size)
 
 oc::result<size_t> PosixFile::on_write(const void *buf, size_t size)
 {
-    MB_PRIVATE(PosixFile);
+    size_t n = m_funcs->fn_fwrite(buf, 1, size, m_fp);
 
-    size_t n = priv->funcs->fn_fwrite(buf, 1, size, priv->fp);
-
-    if (n < size && priv->funcs->fn_ferror(priv->fp)) {
+    if (n < size && m_funcs->fn_ferror(m_fp)) {
         return ec_from_errno();
     }
 
@@ -481,32 +480,27 @@ oc::result<size_t> PosixFile::on_write(const void *buf, size_t size)
 
 oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
 {
-    MB_PRIVATE(PosixFile);
-
-    off_t old_pos, new_pos;
-
-    if (!priv->can_seek) {
+    if (!m_can_seek) {
         return FileError::UnsupportedSeek;
     }
 
     // Get current file position
-    old_pos = priv->funcs->fn_ftello(priv->fp);
+    off_t old_pos = m_funcs->fn_ftello(m_fp);
     if (old_pos < 0) {
         return ec_from_errno();
     }
 
     // Try to seek
-    if (priv->funcs->fn_fseeko(priv->fp, static_cast<off_t>(offset),
-                               whence) < 0) {
+    if (m_funcs->fn_fseeko(m_fp, static_cast<off_t>(offset), whence) < 0) {
         return ec_from_errno();
     }
 
     // Get new position
-    new_pos = priv->funcs->fn_ftello(priv->fp);
+    off_t new_pos = m_funcs->fn_ftello(m_fp);
     if (new_pos < 0) {
         // Try to restore old position
         int errno_to_report = errno;
-        if (priv->funcs->fn_fseeko(priv->fp, old_pos, SEEK_SET) != 0) {
+        if (m_funcs->fn_fseeko(m_fp, old_pos, SEEK_SET) != 0) {
             errno_to_report = errno;
             set_fatal();
         }
@@ -518,19 +512,26 @@ oc::result<uint64_t> PosixFile::on_seek(int64_t offset, int whence)
 
 oc::result<void> PosixFile::on_truncate(uint64_t size)
 {
-    MB_PRIVATE(PosixFile);
-
-    int fd = priv->funcs->fn_fileno(priv->fp);
+    int fd = m_funcs->fn_fileno(m_fp);
     if (fd < 0) {
         // fileno() not supported for fp
         return FileError::UnsupportedTruncate;
     }
 
-    if (priv->funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
+    if (m_funcs->fn_ftruncate64(fd, static_cast<off64_t>(size)) < 0) {
         return ec_from_errno();
     }
 
     return oc::success();
+}
+
+void PosixFile::clear()
+{
+    m_fp = nullptr;
+    m_owned = false;
+    m_filename.clear();
+    m_mode = nullptr;
+    m_can_seek = false;
 }
 
 }

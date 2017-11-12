@@ -30,13 +30,32 @@ TestFile::TestFile() : TestFile(nullptr)
 }
 
 TestFile::TestFile(TestFileCounters *counters)
-    : File(new TestFilePrivate()), _counters(counters)
+    : File(), _counters(counters)
 {
 }
 
 TestFile::~TestFile()
 {
     (void) close();
+}
+
+TestFile::TestFile(TestFile &&other) noexcept
+    : File(std::move(other))
+    , _buf(std::move(other._buf))
+    , _position(other._position)
+    , _counters(other._counters)
+{
+}
+
+TestFile & TestFile::operator=(TestFile &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    _buf.swap(rhs._buf);
+    _position = rhs._position;
+    _counters = rhs._counters;
+
+    return *this;
 }
 
 oc::result<void> TestFile::on_open()

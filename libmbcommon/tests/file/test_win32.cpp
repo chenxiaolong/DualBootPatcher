@@ -23,9 +23,9 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/win32.h"
-#include "mbcommon/file/win32_p.h"
 
 using namespace mb;
+using namespace mb::detail;
 
 template <typename T>
 class SetWin32ErrorAndReturnAction
@@ -116,40 +116,29 @@ struct MockWin32FileFuncs : public Win32FileFuncs
     }
 };
 
-class TestableWin32FilePrivate : public Win32FilePrivate
-{
-public:
-    TestableWin32FilePrivate(Win32FileFuncs *funcs)
-        : Win32FilePrivate(funcs)
-    {
-    }
-};
-
 class TestableWin32File : public Win32File
 {
 public:
-    MB_DECLARE_PRIVATE(TestableWin32File)
-
     TestableWin32File(Win32FileFuncs *funcs)
-        : Win32File(new TestableWin32FilePrivate(funcs))
+        : Win32File(funcs)
     {
     }
 
     TestableWin32File(Win32FileFuncs *funcs, HANDLE handle, bool owned,
                       bool append)
-        : Win32File(new TestableWin32FilePrivate(funcs), handle, owned, append)
+        : Win32File(funcs, handle, owned, append)
     {
     }
 
     TestableWin32File(Win32FileFuncs *funcs,
                       const std::string &filename, FileOpenMode mode)
-        : Win32File(new TestableWin32FilePrivate(funcs), filename, mode)
+        : Win32File(funcs, filename, mode)
     {
     }
 
     TestableWin32File(Win32FileFuncs *funcs,
                       const std::wstring &filename, FileOpenMode mode)
-        : Win32File(new TestableWin32FilePrivate(funcs), filename, mode)
+        : Win32File(funcs, filename, mode)
     {
     }
 

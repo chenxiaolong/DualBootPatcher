@@ -22,7 +22,6 @@
 #include <cinttypes>
 
 #include "mbcommon/file.h"
-#include "mbcommon/file_p.h"
 #include "mbcommon/file/callbacks.h"
 
 using namespace mb;
@@ -173,5 +172,57 @@ TEST_F(FileCallbacksTest, CheckMoveOpensAndClosesProperly)
     ASSERT_TRUE(file2.is_open());
 
     ASSERT_EQ(_n_open_cb, 2u);
+    ASSERT_EQ(_n_close_cb, 1u);
+}
+
+TEST_F(FileCallbacksTest, CheckMoveConstructor)
+{
+    CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                       _truncate_cb, this);
+    ASSERT_TRUE(file1.is_open());
+    ASSERT_EQ(_n_open_cb, 1u);
+
+    CallbackFile file2(std::move(file1));
+    ASSERT_TRUE(file2.is_open());
+    ASSERT_FALSE(file1.is_open());
+    ASSERT_EQ(_n_open_cb, 1u);
+    ASSERT_EQ(_n_close_cb, 0u);
+
+    auto ret = file1.read(nullptr, 0);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(ret.error(), FileError::InvalidState);
+
+    file1 = CallbackFile(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                         _truncate_cb, this);
+    ASSERT_TRUE(file1.is_open());
+    ASSERT_EQ(_n_open_cb, 2u);
+    ASSERT_EQ(_n_close_cb, 0u);
+}
+
+TEST_F(FileCallbacksTest, CheckMoveAssignment)
+{
+    CallbackFile file1(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                       _truncate_cb, this);
+    CallbackFile file2(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                       _truncate_cb, this);
+    ASSERT_TRUE(file1.is_open());
+    ASSERT_TRUE(file2.is_open());
+    ASSERT_EQ(_n_open_cb, 2u);
+
+    file2 = std::move(file1);
+    ASSERT_EQ(_n_open_cb, 2u);
+    ASSERT_EQ(_n_close_cb, 1u);
+
+    ASSERT_TRUE(file2.is_open());
+    ASSERT_FALSE(file1.is_open());
+
+    auto ret = file1.read(nullptr, 0);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(ret.error(), FileError::InvalidState);
+
+    // Bring File1 back to life
+    file1 = CallbackFile(_open_cb, _close_cb, _read_cb, _write_cb, _seek_cb,
+                         _truncate_cb, this);
+    ASSERT_EQ(_n_open_cb, 3u);
     ASSERT_EQ(_n_close_cb, 1u);
 }
