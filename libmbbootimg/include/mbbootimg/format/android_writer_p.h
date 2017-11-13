@@ -38,7 +38,7 @@ namespace bootimg
 namespace android
 {
 
-class AndroidFormatWriter : public FormatWriter
+class AndroidFormatWriter : public detail::FormatWriter
 {
 public:
     AndroidFormatWriter(Writer &writer, bool is_bump);

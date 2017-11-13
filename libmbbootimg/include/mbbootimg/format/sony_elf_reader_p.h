@@ -34,7 +34,7 @@ namespace bootimg
 namespace sonyelf
 {
 
-class SonyElfFormatReader : public FormatReader
+class SonyElfFormatReader : public detail::FormatReader
 {
 public:
     SonyElfFormatReader(Reader &reader);

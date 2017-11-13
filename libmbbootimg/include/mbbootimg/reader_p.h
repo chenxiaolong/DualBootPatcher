@@ -19,22 +19,24 @@
 
 #pragma once
 
-#include "mbbootimg/guard_p.h"
-
 #include <string>
-#include <vector>
 
 #include <cstddef>
 
 #include "mbcommon/common.h"
-#include "mbcommon/file.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 
 namespace mb
 {
+class File;
+
 namespace bootimg
+{
+class Reader;
+
+namespace detail
 {
 
 class FormatReader
@@ -70,35 +72,11 @@ enum class ReaderState : uint8_t
     Data    = 1u << 4,
     Closed  = 1u << 5,
     Fatal   = 1u << 6,
+    Moved   = 1u << 7,
 };
 MB_DECLARE_FLAGS(ReaderStates, ReaderState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ReaderStates)
 
-class ReaderPrivate
-{
-    MB_DECLARE_PUBLIC(Reader)
-
-public:
-    ReaderPrivate(Reader *reader);
-
-    int register_format(std::unique_ptr<FormatReader> format);
-
-    Reader *_pub_ptr;
-
-    // Global state
-    ReaderState state;
-
-    // File
-    std::unique_ptr<File> owned_file;
-    File *file;
-
-    // Error
-    std::error_code error_code;
-    std::string error_string;
-
-    std::vector<std::unique_ptr<FormatReader>> formats;
-    FormatReader *format;
-};
-
+}
 }
 }

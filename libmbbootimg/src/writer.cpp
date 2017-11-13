@@ -31,24 +31,15 @@
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer_p.h"
-
-#define GET_PIMPL_OR_RETURN(RETVAL) \
-    MB_PRIVATE(Writer); \
-    do { \
-        if (!priv) { \
-            return RETVAL; \
-        } \
-    } while (0)
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
-        if (!(priv->state & (STATES))) { \
+        if (!(m_state & (STATES))) { \
             set_error(WriterError::InvalidState, \
                       "%s: Invalid state: "\
                       "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
                       __func__, static_cast<uint8_t>(STATES), \
-                      static_cast<uint8_t>(priv->state)); \
+                      static_cast<uint8_t>(m_state)); \
             return RETVAL; \
         } \
     } while (0)
@@ -199,12 +190,14 @@ namespace mb
 namespace bootimg
 {
 
+using namespace detail;
+
 static struct
 {
     int code;
     const char *name;
     int (Writer::*func)();
-} writer_formats[] = {
+} g_writer_formats[] = {
     {
         FORMAT_ANDROID,
         FORMAT_NAME_ANDROID,
@@ -225,10 +218,6 @@ static struct
         FORMAT_SONY_ELF,
         FORMAT_NAME_SONY_ELF,
         &Writer::set_format_sony_elf
-    }, {
-        0,
-        nullptr,
-        nullptr
     },
 };
 
@@ -263,54 +252,14 @@ int FormatWriter::close(File &file)
     return RET_OK;
 }
 
-WriterPrivate::WriterPrivate(Writer *writer)
-    : _pub_ptr(writer)
-    , state(WriterState::New)
-    , owned_file()
-    , file()
-    , format()
-{
-}
-
-/*!
- * \brief Register a format writer
- *
- * Register a format writer with a Writer. The Writer will take ownership of
- * \p format.
- *
- * \param format_ FormatWriter to register
- *
- * \return
- *   * #RET_OK if the format is successfully registered
- *   * \<= #RET_FAILED if an error occurs
- */
-int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format_)
-{
-    MB_PUBLIC(Writer);
-
-    if (state != WriterState::New) {
-        pub->set_error(WriterError::InvalidState,
-                       "%s: Invalid state: expected 0x%" PRIx8
-                       ", actual: 0x%" PRIx8,
-                       __func__, static_cast<uint8_t>(WriterState::New),
-                       static_cast<uint8_t>(state));
-        return RET_FAILED;
-    }
-
-    int ret = format_->init();
-    if (ret != RET_OK) {
-        return ret;
-    }
-
-    format = std::move(format_);
-    return RET_OK;
-}
-
 /*!
  * \brief Construct new Writer.
  */
 Writer::Writer()
-    : _priv_ptr(new WriterPrivate(this))
+    : m_state(WriterState::New)
+    , m_owned_file()
+    , m_file()
+    , m_format()
 {
 }
 
@@ -323,25 +272,35 @@ Writer::Writer()
  */
 Writer::~Writer()
 {
-    MB_PRIVATE(Writer);
-
-    if (priv) {
-        if (priv->state != WriterState::Closed) {
-            close();
-        }
+    if (m_state != WriterState::Moved
+            && m_state != WriterState::Closed) {
+        close();
     }
 }
 
 Writer::Writer(Writer &&other) noexcept
-    : _priv_ptr(std::move(other._priv_ptr))
+    : m_state(other.m_state)
+    , m_owned_file(std::move(other.m_owned_file))
+    , m_file(other.m_file)
+    , m_error_code(other.m_error_code)
+    , m_error_string(std::move(other.m_error_string))
+    , m_format(std::move(other.m_format))
 {
+    other.m_state = WriterState::Moved;
 }
 
 Writer & Writer::operator=(Writer &&rhs) noexcept
 {
-    close();
+    (void) close();
 
-    _priv_ptr = std::move(rhs._priv_ptr);
+    m_state = rhs.m_state;
+    m_owned_file.swap(rhs.m_owned_file);
+    m_file = rhs.m_file;
+    m_error_code = rhs.m_error_code;
+    m_error_string.swap(rhs.m_error_string);
+    m_format.swap(rhs.m_format);
+
+    rhs.m_state = WriterState::Moved;
 
     return *this;
 }
@@ -357,7 +316,6 @@ Writer & Writer::operator=(Writer &&rhs) noexcept
  */
 int Writer::open_filename(const std::string &filename)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
@@ -385,7 +343,6 @@ int Writer::open_filename(const std::string &filename)
  */
 int Writer::open_filename_w(const std::wstring &filename)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     auto file = std::make_unique<StandardFile>();
@@ -416,7 +373,7 @@ int Writer::open_filename_w(const std::wstring &filename)
  */
 int Writer::open(std::unique_ptr<File> file)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
     int ret = open(file.get());
     if (ret != RET_OK) {
@@ -424,7 +381,7 @@ int Writer::open(std::unique_ptr<File> file)
     }
 
     // Underlying pointer is not invalidated during a move
-    priv->owned_file = std::move(file);
+    m_owned_file = std::move(file);
     return RET_OK;
 }
 
@@ -442,16 +399,15 @@ int Writer::open(std::unique_ptr<File> file)
  */
 int Writer::open(File *file)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
-    if (!priv->format) {
+    if (!m_format) {
         set_error(WriterError::NoFormatRegistered);
         return RET_FAILED;
     }
 
-    priv->state = WriterState::Header;
-    priv->file = file;
+    m_state = WriterState::Header;
+    m_file = file;
 
     return RET_OK;
 }
@@ -469,26 +425,26 @@ int Writer::open(File *file)
  */
 int Writer::close()
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), RET_FATAL);
 
     int ret = RET_OK;
 
     // Avoid double-closing or closing nothing
-    if (!(priv->state & (WriterState::Closed | WriterState::New))) {
-        if (!!priv->format) {
-            ret = priv->format->close(*priv->file);
+    if (!(m_state & (WriterState::Closed | WriterState::New))) {
+        if (!!m_format) {
+            ret = m_format->close(*m_file);
         }
 
-        if (priv->owned_file) {
-            if (!priv->owned_file->close()) {
+        if (m_owned_file) {
+            if (!m_owned_file->close()) {
                 if (RET_FAILED < ret) {
                     ret = RET_FAILED;
                 }
             }
         }
 
-        priv->owned_file.reset();
-        priv->file = nullptr;
+        m_owned_file.reset();
+        m_file = nullptr;
 
         // Don't change state to WriterState::FATAL if RET_FATAL is returned.
         // Otherwise, we risk double-closing the boot image. CLOSED and FATAL
@@ -496,7 +452,7 @@ int Writer::close()
         // closed in the latter state.
     }
 
-    priv->state = WriterState::Closed;
+    m_state = WriterState::Closed;
 
     return ret;
 }
@@ -514,17 +470,15 @@ int Writer::close()
  */
 int Writer::get_header(Header &header)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::Header, RET_FATAL);
-    int ret;
 
     header.clear();
 
-    ret = priv->format->get_header(*priv->file, header);
+    int ret = m_format->get_header(*m_file, header);
     if (ret == RET_OK) {
         // Don't alter state
     } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
+        m_state = WriterState::Fatal;
     }
 
     return ret;
@@ -546,15 +500,13 @@ int Writer::get_header(Header &header)
  */
 int Writer::write_header(const Header &header)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::Header, RET_FATAL);
-    int ret;
 
-    ret = priv->format->write_header(*priv->file, header);
+    int ret = m_format->write_header(*m_file, header);
     if (ret == RET_OK) {
-        priv->state = WriterState::Entry;
+        m_state = WriterState::Entry;
     } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
+        m_state = WriterState::Fatal;
     }
 
     return ret;
@@ -578,17 +530,15 @@ int Writer::write_header(const Header &header)
  */
 int Writer::get_entry(Entry &entry)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::Entry | WriterState::Data, RET_FATAL);
-    int ret;
 
     // Finish current entry
-    if (priv->state == WriterState::Data) {
-        ret = priv->format->finish_entry(*priv->file);
+    if (m_state == WriterState::Data) {
+        int ret = m_format->finish_entry(*m_file);
         if (ret == RET_OK) {
-            priv->state = WriterState::Entry;
+            m_state = WriterState::Entry;
         } else if (ret <= RET_FATAL) {
-            priv->state = WriterState::Fatal;
+            m_state = WriterState::Fatal;
             return ret;
         } else {
             return ret;
@@ -597,11 +547,11 @@ int Writer::get_entry(Entry &entry)
 
     entry.clear();
 
-    ret = priv->format->get_entry(*priv->file, entry);
+    int ret = m_format->get_entry(*m_file, entry);
     if (ret == RET_OK) {
-        priv->state = WriterState::Entry;
+        m_state = WriterState::Entry;
     } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
+        m_state = WriterState::Fatal;
     }
 
     return ret;
@@ -624,15 +574,13 @@ int Writer::get_entry(Entry &entry)
  */
 int Writer::write_entry(const Entry &entry)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::Entry, RET_FATAL);
-    int ret;
 
-    ret = priv->format->write_entry(*priv->file, entry);
+    int ret = m_format->write_entry(*m_file, entry);
     if (ret == RET_OK) {
-        priv->state = WriterState::Data;
+        m_state = WriterState::Data;
     } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
+        m_state = WriterState::Fatal;
     }
 
     return ret;
@@ -651,15 +599,13 @@ int Writer::write_entry(const Entry &entry)
  */
 int Writer::write_data(const void *buf, size_t size, size_t &bytes_written)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::Data, RET_FATAL);
-    int ret;
 
-    ret = priv->format->write_data(*priv->file, buf, size, bytes_written);
+    int ret = m_format->write_data(*m_file, buf, size, bytes_written);
     if (ret == RET_OK) {
         // Do not alter state. Stay in WriterState::DATA
     } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
+        m_state = WriterState::Fatal;
     }
 
     return ret;
@@ -672,14 +618,14 @@ int Writer::write_data(const void *buf, size_t size, size_t &bytes_written)
  */
 int Writer::format_code()
 {
-    GET_PIMPL_OR_RETURN(-1);
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), -1);
 
-    if (!priv->format) {
+    if (!m_format) {
         set_error(WriterError::NoFormatSelected);
         return -1;
     }
 
-    return priv->format->type();
+    return m_format->type();
 }
 
 /*!
@@ -689,14 +635,14 @@ int Writer::format_code()
  */
 std::string Writer::format_name()
 {
-    GET_PIMPL_OR_RETURN({});
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
 
-    if (!priv->format) {
+    if (!m_format) {
         set_error(WriterError::NoFormatSelected);
         return {};
     }
 
-    return priv->format->name();
+    return m_format->name();
 }
 
 /*!
@@ -710,12 +656,11 @@ std::string Writer::format_name()
  */
 int Writer::set_format_by_code(int code)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
-    for (auto it = writer_formats; it->func; ++it) {
-        if ((code & FORMAT_BASE_MASK) == (it->code & FORMAT_BASE_MASK)) {
-            return (this->*it->func)();
+    for (auto const &format : g_writer_formats) {
+        if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
+            return (this->*format.func)();
         }
     }
 
@@ -735,12 +680,11 @@ int Writer::set_format_by_code(int code)
  */
 int Writer::set_format_by_name(const std::string &name)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
     ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
 
-    for (auto it = writer_formats; it->func; ++it) {
-        if (name == it->name) {
-            return (this->*it->func)();
+    for (auto const &format : g_writer_formats) {
+        if (name == format.name) {
+            return (this->*format.func)();
         }
     }
 
@@ -758,9 +702,9 @@ int Writer::set_format_by_name(const std::string &name)
  */
 std::error_code Writer::error()
 {
-    GET_PIMPL_OR_RETURN({});
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
 
-    return priv->error_code;
+    return m_error_code;
 }
 
 /*!
@@ -773,9 +717,9 @@ std::error_code Writer::error()
  */
 std::string Writer::error_string()
 {
-    GET_PIMPL_OR_RETURN({});
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
 
-    return priv->error_string;
+    return m_error_string;
 }
 
 /*!
@@ -831,21 +775,46 @@ int Writer::set_error(std::error_code ec, const char *fmt, ...)
  */
 int Writer::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), RET_FATAL);
 
-    priv->error_code = ec;
+    m_error_code = ec;
 
     auto result = format_v_safe(fmt, ap);
     if (!result) {
         return RET_FAILED;
     }
-    priv->error_string = std::move(result.value());
+    m_error_string = std::move(result.value());
 
-    if (!priv->error_string.empty()) {
-        priv->error_string += ": ";
+    if (!m_error_string.empty()) {
+        m_error_string += ": ";
     }
-    priv->error_string += ec.message();
+    m_error_string += ec.message();
 
+    return RET_OK;
+}
+
+/*!
+ * \brief Register a format writer
+ *
+ * Register a format writer with a Writer. The Writer will take ownership of
+ * \p format.
+ *
+ * \param format FormatWriter to register
+ *
+ * \return
+ *   * #RET_OK if the format is successfully registered
+ *   * \<= #RET_FAILED if an error occurs
+ */
+int Writer::register_format(std::unique_ptr<FormatWriter> format)
+{
+    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FAILED);
+
+    int ret = format->init();
+    if (ret != RET_OK) {
+        return ret;
+    }
+
+    m_format = std::move(format);
     return RET_OK;
 }
 

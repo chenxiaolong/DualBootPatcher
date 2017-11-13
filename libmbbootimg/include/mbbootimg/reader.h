@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <cstdarg>
 #include <cstddef>
@@ -29,6 +30,7 @@
 
 #include "mbbootimg/defs.h"
 #include "mbbootimg/reader_error.h"
+#include "mbbootimg/reader_p.h"
 
 namespace mb
 {
@@ -40,11 +42,8 @@ namespace bootimg
 class Entry;
 class Header;
 
-class ReaderPrivate;
 class MB_EXPORT Reader
 {
-    MB_DECLARE_PRIVATE(Reader)
-
 public:
     Reader();
     ~Reader();
@@ -92,7 +91,21 @@ public:
     int set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 private:
-    std::unique_ptr<ReaderPrivate> _priv_ptr;
+    int register_format(std::unique_ptr<detail::FormatReader> format);
+
+    // Global state
+    detail::ReaderState m_state;
+
+    // File
+    std::unique_ptr<File> m_owned_file;
+    File *m_file;
+
+    // Error
+    std::error_code m_error_code;
+    std::string m_error_string;
+
+    std::vector<std::unique_ptr<detail::FormatReader>> m_formats;
+    detail::FormatReader *m_format;
 };
 
 }

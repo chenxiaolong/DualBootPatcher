@@ -347,12 +347,8 @@ int SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
  */
 int Reader::enable_format_sony_elf()
 {
-    using namespace sonyelf;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new SonyElfFormatReader(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<sonyelf::SonyElfFormatReader>(*this));
 }
 
 }

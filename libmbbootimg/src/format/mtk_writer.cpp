@@ -469,12 +469,7 @@ int MtkFormatWriter::close(File &file)
  */
 int Writer::set_format_mtk()
 {
-    using namespace mtk;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new MtkFormatWriter(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(std::make_unique<mtk::MtkFormatWriter>(*this));
 }
 
 }
