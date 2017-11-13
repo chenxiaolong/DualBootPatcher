@@ -42,7 +42,6 @@ foreach(variant ${variants})
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
-        interface.mbsparse.private-headers
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mblog-${variant}
     )
@@ -73,7 +72,6 @@ if(variants AND MBP_ENABLE_TESTS)
     target_link_libraries(
         mbsparse_tests
         interface.global.CXXVersion
-        interface.mbsparse.private-headers
         mbsparse-static
         gtest
         gtest_main
@@ -85,13 +83,3 @@ if(variants AND MBP_ENABLE_TESTS)
         COMMAND mbsparse_tests
     )
 endif()
-
-# Interfaces
-
-add_library(interface.mbsparse.private-headers INTERFACE)
-
-target_compile_definitions(
-    interface.mbsparse.private-headers
-    INTERFACE
-    -DMBSPARSE_BUILD
-)

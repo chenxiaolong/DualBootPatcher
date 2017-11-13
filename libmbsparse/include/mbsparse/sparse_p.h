@@ -20,15 +20,13 @@
 
 #pragma once
 
-#include "mbsparse/guard_p.h"
-
 #include <cstdint>
-
-#include "mbcommon/outcome.h"
 
 namespace mb
 {
 namespace sparse
+{
+namespace detail
 {
 
 /*! \cond INTERNAL */
@@ -103,61 +101,8 @@ enum class Seekability : uint8_t
     CanRead,
 };
 
-class SparseFilePrivate
-{
-    MB_DECLARE_PUBLIC(SparseFile)
-
-public:
-    SparseFilePrivate(SparseFile *sf);
-    ~SparseFilePrivate() = default;
-
-    void clear();
-
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFilePrivate)
-
-    oc::result<void> wread(void *buf, size_t size);
-    oc::result<void> wseek(int64_t offset);
-    oc::result<void> skip_bytes(uint64_t bytes);
-
-    oc::result<void> process_sparse_header(const void *preread_data,
-                                           size_t preread_size);
-
-    oc::result<ChunkInfo>
-    process_raw_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
-    oc::result<ChunkInfo>
-    process_fill_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
-    oc::result<ChunkInfo>
-    process_skip_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
-    oc::result<ChunkInfo>
-    process_crc32_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
-    oc::result<ChunkInfo>
-    process_chunk(const ChunkHeader &chdr, uint64_t tgt_offset);
-
-    oc::result<void> move_to_chunk(uint64_t offset);
-
-    File *file;
-    Seekability seekability;
-
-    // Expected CRC32 checksum. We currently do *not* validate this. It would
-    // only work if the entire file was read sequentially anyway.
-    uint32_t expected_crc32;
-    // Relative offset in input file
-    uint64_t cur_src_offset;
-    // Absolute offset in output file
-    uint64_t cur_tgt_offset;
-    // Expected file size
-    uint64_t file_size;
-
-    SparseHeader shdr;
-
-    std::vector<ChunkInfo> chunks;
-    decltype(chunks)::iterator chunk;
-
-private:
-    SparseFile *_pub_ptr;
-};
-
 /*! \endcond */
 
+}
 }
 }
