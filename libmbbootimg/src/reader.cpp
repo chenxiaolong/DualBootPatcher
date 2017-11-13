@@ -265,12 +265,6 @@ int ReaderPrivate::register_format(std::unique_ptr<FormatReader> format_)
         return RET_FAILED;
     }
 
-    if (formats.size() == MAX_FORMATS) {
-        pub->set_error(ReaderError::TooManyFormats,
-                       "Too many formats enabled");
-        return RET_FAILED;
-    }
-
     for (auto const &f : formats) {
         if ((FORMAT_BASE_MASK & f->type())
                 == (FORMAT_BASE_MASK & format_->type())) {

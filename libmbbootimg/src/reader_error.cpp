@@ -62,8 +62,6 @@ std::string ReaderErrorCategory::message(int ev) const
         return "enabled format not found";
     case ReaderError::NoFormatSelected:
         return "no format selected";
-    case ReaderError::TooManyFormats:
-        return "too many formats";
     case ReaderError::FormatAlreadyEnabled:
         return "format already enabled";
     case ReaderError::NoFormatsRegistered:

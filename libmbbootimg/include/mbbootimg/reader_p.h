@@ -37,8 +37,6 @@ namespace mb
 namespace bootimg
 {
 
-constexpr size_t MAX_FORMATS = 10;
-
 class FormatReader
 {
 public:
