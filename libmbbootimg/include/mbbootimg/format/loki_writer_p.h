@@ -40,7 +40,7 @@ namespace bootimg
 namespace loki
 {
 
-class LokiFormatWriter : public FormatWriter
+class LokiFormatWriter : public detail::FormatWriter
 {
 public:
     LokiFormatWriter(Writer &writer);

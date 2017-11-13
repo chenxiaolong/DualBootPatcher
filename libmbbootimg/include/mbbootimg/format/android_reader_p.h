@@ -36,7 +36,7 @@ namespace bootimg
 namespace android
 {
 
-class AndroidFormatReader : public FormatReader
+class AndroidFormatReader : public detail::FormatReader
 {
 public:
     AndroidFormatReader(Reader &reader, bool is_bump);

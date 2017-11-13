@@ -35,12 +35,8 @@ namespace bootimg
  */
 int Writer::set_format_bump()
 {
-    using namespace android;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, true)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatWriter>(*this, true));
 }
 
 }

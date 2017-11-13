@@ -29,6 +29,7 @@
 
 #include "mbbootimg/defs.h"
 #include "mbbootimg/writer_error.h"
+#include "mbbootimg/writer_p.h"
 
 namespace mb
 {
@@ -40,11 +41,8 @@ namespace bootimg
 class Entry;
 class Header;
 
-class WriterPrivate;
 class MB_EXPORT Writer
 {
-    MB_DECLARE_PRIVATE(Writer)
-
 public:
     Writer();
     ~Writer();
@@ -90,7 +88,20 @@ public:
     int set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 private:
-    std::unique_ptr<WriterPrivate> _priv_ptr;
+    int register_format(std::unique_ptr<detail::FormatWriter> format);
+
+    // Global state
+    detail::WriterState m_state;
+
+    // File
+    std::unique_ptr<File> m_owned_file;
+    File *m_file;
+
+    // Error
+    std::error_code m_error_code;
+    std::string m_error_string;
+
+    std::unique_ptr<detail::FormatWriter> m_format;
 };
 
 }

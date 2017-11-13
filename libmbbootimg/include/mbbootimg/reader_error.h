@@ -37,10 +37,9 @@ enum class ReaderError
     InvalidFormatName       = 21,
     EnabledFormatNotFound   = 22,
     NoFormatSelected        = 23,
-    TooManyFormats          = 24,
-    FormatAlreadyEnabled    = 25,
-    NoFormatsRegistered     = 26,
-    UnknownFileFormat       = 27,
+    FormatAlreadyEnabled    = 24,
+    NoFormatsRegistered     = 25,
+    UnknownFileFormat       = 26,
 };
 
 MB_EXPORT std::error_code make_error_code(ReaderError e);

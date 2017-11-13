@@ -387,12 +387,7 @@ int MtkFormatReader::read_data(File &file, void *buf, size_t buf_size,
  */
 int Reader::enable_format_mtk()
 {
-    using namespace mtk;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new MtkFormatReader(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(std::make_unique<mtk::MtkFormatReader>(*this));
 }
 
 

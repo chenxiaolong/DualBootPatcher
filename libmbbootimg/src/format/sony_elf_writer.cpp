@@ -380,12 +380,8 @@ int SonyElfFormatWriter::close(File &file)
  */
 int Writer::set_format_sony_elf()
 {
-    using namespace sonyelf;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new SonyElfFormatWriter(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<sonyelf::SonyElfFormatWriter>(*this));
 }
 
 }

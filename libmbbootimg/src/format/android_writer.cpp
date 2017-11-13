@@ -357,12 +357,8 @@ int AndroidFormatWriter::close(File &file)
  */
 int Writer::set_format_android()
 {
-    using namespace android;
-
-    MB_PRIVATE(Writer);
-
-    std::unique_ptr<FormatWriter> format{new AndroidFormatWriter(*this, false)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatWriter>(*this, false));
 }
 
 }

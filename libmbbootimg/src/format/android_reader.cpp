@@ -577,12 +577,8 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
  */
 int Reader::enable_format_android()
 {
-    using namespace android;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new AndroidFormatReader(*this, false)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatReader>(*this, false));
 }
 
 }

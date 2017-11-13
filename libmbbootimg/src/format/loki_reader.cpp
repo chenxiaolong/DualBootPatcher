@@ -858,12 +858,7 @@ int LokiFormatReader::read_header_new(Reader &reader, File &file,
  */
 int Reader::enable_format_loki()
 {
-    using namespace loki;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new LokiFormatReader(*this)};
-    return priv->register_format(std::move(format));
+    return register_format(std::make_unique<loki::LokiFormatReader>(*this));
 }
 
 }

@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include "mbbootimg/guard_p.h"
-
-#include <memory>
 #include <string>
 
 #include <cstddef>
@@ -33,7 +30,13 @@
 
 namespace mb
 {
+class File;
+
 namespace bootimg
+{
+class Writer;
+
+namespace detail
 {
 
 class FormatWriter
@@ -71,34 +74,11 @@ enum class WriterState : uint8_t
     Data    = 1u << 4,
     Closed  = 1u << 5,
     Fatal   = 1u << 6,
+    Moved   = 1u << 7,
 };
 MB_DECLARE_FLAGS(WriterStates, WriterState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)
 
-class WriterPrivate
-{
-    MB_DECLARE_PUBLIC(Writer)
-
-public:
-    WriterPrivate(Writer *writer);
-
-    int register_format(std::unique_ptr<FormatWriter> format);
-
-    Writer *_pub_ptr;
-
-    // Global state
-    WriterState state;
-
-    // File
-    std::unique_ptr<File> owned_file;
-    File *file;
-
-    // Error
-    std::error_code error_code;
-    std::string error_string;
-
-    std::unique_ptr<FormatWriter> format;
-};
-
+}
 }
 }

@@ -36,7 +36,7 @@ namespace bootimg
 namespace sonyelf
 {
 
-class SonyElfFormatWriter : public FormatWriter
+class SonyElfFormatWriter : public detail::FormatWriter
 {
 public:
     SonyElfFormatWriter(Writer &writer);

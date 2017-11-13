@@ -37,7 +37,7 @@ namespace bootimg
 namespace loki
 {
 
-class LokiFormatReader : public FormatReader
+class LokiFormatReader : public detail::FormatReader
 {
 public:
     LokiFormatReader(Reader &reader);

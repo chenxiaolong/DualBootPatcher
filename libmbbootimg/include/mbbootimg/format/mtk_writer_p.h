@@ -37,7 +37,7 @@ namespace bootimg
 namespace mtk
 {
 
-class MtkFormatWriter : public FormatWriter
+class MtkFormatWriter : public detail::FormatWriter
 {
 public:
     MtkFormatWriter(Writer &writer);

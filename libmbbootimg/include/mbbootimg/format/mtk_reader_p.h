@@ -37,7 +37,7 @@ namespace bootimg
 namespace mtk
 {
 
-class MtkFormatReader : public FormatReader
+class MtkFormatReader : public detail::FormatReader
 {
 public:
     MtkFormatReader(Reader &reader);

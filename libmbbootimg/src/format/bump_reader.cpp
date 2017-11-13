@@ -36,12 +36,8 @@ namespace bootimg
  */
 int Reader::enable_format_bump()
 {
-    using namespace android;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new AndroidFormatReader(*this, true)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatReader>(*this, true));
 }
 
 
