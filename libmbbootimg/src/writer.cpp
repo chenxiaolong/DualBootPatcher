@@ -27,6 +27,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -272,10 +273,7 @@ Writer::Writer()
  */
 Writer::~Writer()
 {
-    if (m_state != WriterState::Moved
-            && m_state != WriterState::Closed) {
-        close();
-    }
+    close();
 }
 
 Writer::Writer(Writer &&other) noexcept
@@ -427,32 +425,26 @@ int Writer::close()
 {
     ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), RET_FATAL);
 
+    auto reset_state = finally([&] {
+        m_state = WriterState::New;
+
+        m_owned_file.reset();
+        m_file = nullptr;
+    });
+
     int ret = RET_OK;
 
-    // Avoid double-closing or closing nothing
-    if (!(m_state & (WriterState::Closed | WriterState::New))) {
+    if (m_state != WriterState::New) {
         if (!!m_format) {
             ret = m_format->close(*m_file);
         }
 
-        if (m_owned_file) {
-            if (!m_owned_file->close()) {
-                if (RET_FAILED < ret) {
-                    ret = RET_FAILED;
-                }
+        if (m_owned_file && !m_owned_file->close()) {
+            if (RET_FAILED < ret) {
+                ret = RET_FAILED;
             }
         }
-
-        m_owned_file.reset();
-        m_file = nullptr;
-
-        // Don't change state to WriterState::FATAL if RET_FATAL is returned.
-        // Otherwise, we risk double-closing the boot image. CLOSED and FATAL
-        // are the same anyway, aside from the fact that boot images can be
-        // closed in the latter state.
     }
-
-    m_state = WriterState::Closed;
 
     return ret;
 }

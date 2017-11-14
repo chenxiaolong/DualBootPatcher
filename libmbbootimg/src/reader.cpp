@@ -27,6 +27,7 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -252,10 +253,7 @@ Reader::Reader()
  */
 Reader::~Reader()
 {
-    if (m_state != ReaderState::Moved
-            && m_state != ReaderState::Closed) {
-        close();
-    }
+    close();
 }
 
 Reader::Reader(Reader &&other) noexcept
@@ -443,30 +441,20 @@ int Reader::close()
 {
     ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), RET_FATAL);
 
-    int ret = RET_OK;
-
-    // Avoid double-closing or closing nothing
-    if (!(m_state & (ReaderState::Closed | ReaderState::New))) {
-        if (m_owned_file) {
-            if (!m_owned_file->close()) {
-                if (RET_FAILED < ret) {
-                    ret = RET_FAILED;
-                }
-            }
-        }
+    auto reset_state = finally([&] {
+        m_state = ReaderState::New;
 
         m_owned_file.reset();
         m_file = nullptr;
+    });
 
-        // Don't change state to ReaderState::FATAL if RET_FATAL is returned.
-        // Otherwise, we risk double-closing the boot image. CLOSED and FATAL
-        // are the same anyway, aside from the fact that boot images can be
-        // closed in the latter state.
+    if (m_state != ReaderState::New) {
+        if (m_owned_file && !m_owned_file->close()) {
+            return RET_FAILED;
+        }
     }
 
-    m_state = ReaderState::Closed;
-
-    return ret;
+    return RET_OK;
 }
 
 /*!
