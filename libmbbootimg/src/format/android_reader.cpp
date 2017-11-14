@@ -162,28 +162,27 @@ int AndroidFormatReader::read_header(File &file, Header &header)
     pos += _hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, page_size);
 
-    _seg.entries_clear();
+    std::vector<SegmentReaderEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           kernel_offset, _hdr.kernel_size, false, _reader);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           ramdisk_offset, _hdr.ramdisk_size, false, _reader);
-    if (ret != RET_OK) { return ret; }
-
+    entries.push_back({
+        ENTRY_TYPE_KERNEL, kernel_offset, _hdr.kernel_size, false
+    });
+    entries.push_back({
+        ENTRY_TYPE_RAMDISK, ramdisk_offset, _hdr.ramdisk_size, false
+    });
     if (_hdr.second_size > 0) {
-        ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                               second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) { return ret; }
+        entries.push_back({
+            ENTRY_TYPE_SECONDBOOT, second_offset, _hdr.second_size, false
+        });
+    }
+    if (_hdr.dt_size > 0) {
+        entries.push_back({
+            ENTRY_TYPE_DEVICE_TREE, dt_offset, _hdr.dt_size, _allow_truncated_dt
+        });
     }
 
-    if (_hdr.dt_size > 0) {
-        ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                               dt_offset, _hdr.dt_size, _allow_truncated_dt,
-                               _reader);
-        if (ret != RET_OK) { return ret; }
-    }
+    ret = _seg.set_entries(_reader, std::move(entries));
+    if (ret != RET_OK) { return ret; }
 
     return RET_OK;
 }

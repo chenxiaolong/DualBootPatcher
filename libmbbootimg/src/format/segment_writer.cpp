@@ -39,122 +39,48 @@ namespace bootimg
 {
 
 SegmentWriter::SegmentWriter()
-    : _state(SegmentWriterState::Begin)
-    , _entries()
-    , _entries_len()
-    , _entry()
-    , _entry_size()
-    , _have_pos()
-    , _pos()
+    : m_state(SegmentWriterState::Begin)
+    , m_entries()
+    , m_entry()
+    , m_entry_size()
+    , m_pos()
 {
 }
 
-size_t SegmentWriter::entries_size() const
+const std::vector<SegmentWriterEntry> & SegmentWriter::entries() const
 {
-    return _entries_len;
+    return m_entries;
 }
 
-void SegmentWriter::entries_clear()
+int SegmentWriter::set_entries(Writer &writer,
+                               std::vector<SegmentWriterEntry> entries)
 {
-    _entries_len = 0;
-    _entry = nullptr;
-}
-
-int SegmentWriter::entries_add(int type, uint32_t size, bool size_set,
-                               uint64_t align, Writer &writer)
-{
-    if (_state != SegmentWriterState::Begin) {
+    if (m_state != SegmentWriterState::Begin) {
         writer.set_error(SegmentError::AddEntryInIncorrectState);
         return RET_FATAL;
     }
 
-    if (_entries_len == sizeof(_entries) / sizeof(_entries[0])) {
-        writer.set_error(SegmentError::TooManyEntries);
-        return RET_FATAL;
-    }
-
-    SegmentWriterEntry *entry = &_entries[_entries_len];
-    entry->type = type;
-    entry->offset = 0;
-    entry->size = size;
-    entry->size_set = size_set;
-    entry->align = align;
-
-    ++_entries_len;
+    m_entries = std::move(entries);
+    m_entry = m_entries.end();
 
     return RET_OK;
 }
 
-const SegmentWriterEntry * SegmentWriter::entries_get(size_t index)
+std::vector<SegmentWriterEntry>::const_iterator SegmentWriter::entry() const
 {
-    if (index < _entries_len) {
-        return &_entries[index];
-    } else {
-        return nullptr;
-    }
-}
-
-const SegmentWriterEntry * SegmentWriter::entry() const
-{
-    switch (_state) {
-    case SegmentWriterState::Entries:
-        return _entry;
-    default:
-        return nullptr;
-    }
-}
-
-SegmentWriterEntry * SegmentWriter::next_entry()
-{
-    switch (_state) {
-    case SegmentWriterState::Begin:
-        if (_entries_len > 0) {
-            return _entries;
-        } else {
-            return nullptr;
-        }
-    case SegmentWriterState::Entries:
-        if (static_cast<size_t>(_entry - _entries + 1) == _entries_len) {
-            return nullptr;
-        } else {
-            return _entry + 1;
-        }
-    default:
-        return nullptr;
-    }
-}
-
-const SegmentWriterEntry * SegmentWriter::next_entry() const
-{
-    switch (_state) {
-    case SegmentWriterState::Begin:
-        if (_entries_len > 0) {
-            return _entries;
-        } else {
-            return nullptr;
-        }
-    case SegmentWriterState::Entries:
-        if (static_cast<size_t>(_entry - _entries + 1) == _entries_len) {
-            return nullptr;
-        } else {
-            return _entry + 1;
-        }
-    default:
-        return nullptr;
-    }
+    return m_entry;
 }
 
 void SegmentWriter::update_size_if_unset(uint32_t size)
 {
-    if (!_entry->size_set) {
-        _entry->size = size;
-        _entry->size_set = true;
+    if (!m_entry->size) {
+        m_entry->size = size;
     }
 }
 
 int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
 {
-    if (!_have_pos) {
+    if (!m_pos) {
         auto pos = file.seek(0, SEEK_CUR);
         if (!pos) {
             writer.set_error(pos.error(),
@@ -163,27 +89,34 @@ int SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        _pos = pos.value();
-        _have_pos = true;
+        m_pos = pos.value();
     }
 
     // Get next entry
-    auto *swentry = next_entry();
-    if (!swentry) {
-        _state = SegmentWriterState::End;
-        _entry = nullptr;
+    auto swentry = m_entries.end();
+
+    if (m_state == SegmentWriterState::Begin) {
+        swentry = m_entries.begin();
+    } else if (m_state == SegmentWriterState::Entries
+            && m_entry != m_entries.end()) {
+        swentry = m_entry + 1;
+    }
+
+    if (swentry == m_entries.end()) {
+        m_state = SegmentWriterState::End;
+        m_entry = swentry;
         return RET_EOF;
     }
 
     // Update starting offset
-    swentry->offset = _pos;
+    swentry->offset = *m_pos;
 
     entry.clear();
     entry.set_type(swentry->type);
 
-    _entry_size = 0;
-    _state = SegmentWriterState::Entries;
-    _entry = swentry;
+    m_entry_size = 0;
+    m_state = SegmentWriterState::Entries;
+    m_entry = swentry;
 
     return RET_OK;
 }
@@ -211,8 +144,8 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
                               size_t &bytes_written, Writer &writer)
 {
     // Check for overflow
-    if (buf_size > UINT32_MAX || _entry_size > UINT32_MAX - buf_size
-            || _pos > UINT64_MAX - buf_size) {
+    if (buf_size > UINT32_MAX || m_entry_size > UINT32_MAX - buf_size
+            || *m_pos > UINT64_MAX - buf_size) {
         writer.set_error(SegmentError::WriteWouldOverflowInteger);
         return RET_FAILED;
     }
@@ -231,8 +164,8 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
     }
     bytes_written = n.value();
 
-    _entry_size += static_cast<uint32_t>(buf_size);
-    _pos += buf_size;
+    m_entry_size += static_cast<uint32_t>(buf_size);
+    *m_pos += buf_size;
 
     return RET_OK;
 }
@@ -240,11 +173,11 @@ int SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
 int SegmentWriter::finish_entry(File &file, Writer &writer)
 {
     // Update size with number of bytes written
-    update_size_if_unset(_entry_size);
+    update_size_if_unset(m_entry_size);
 
     // Finish previous entry by aligning to page
-    if (_entry->align > 0) {
-        auto skip = align_page_size<uint64_t>(_pos, _entry->align);
+    if (m_entry->align > 0) {
+        auto skip = align_page_size<uint64_t>(*m_pos, m_entry->align);
 
         auto new_pos = file.seek(static_cast<int64_t>(skip), SEEK_CUR);
         if (!new_pos) {
@@ -254,7 +187,7 @@ int SegmentWriter::finish_entry(File &file, Writer &writer)
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
-        _pos = new_pos.value();
+        m_pos = new_pos.value();
     }
 
     return RET_OK;

@@ -176,26 +176,16 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
         _hdr_appsbl.p_paddr = *address;
     }
 
-    // Clear existing entries (none should exist unless this function fails and
-    // the user reattempts to call it)
-    _seg.entries_clear();
+    std::vector<SegmentWriterEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL, 0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
+    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, 0 });
+    entries.push_back({ SONY_ELF_ENTRY_CMDLINE, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_IPL, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
 
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK, 0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(SONY_ELF_ENTRY_CMDLINE, 0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL, 0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM, 0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL, 0, false, 0, _writer);
+    ret = _seg.set_entries(_writer, std::move(entries));
     if (ret != RET_OK) { return ret; }
 
     // Start writing at offset 4096
@@ -219,7 +209,7 @@ int SonyElfFormatWriter::get_entry(File &file, Entry &entry)
         return ret;
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     // Silently handle cmdline entry
     if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
@@ -265,42 +255,42 @@ int SonyElfFormatWriter::finish_entry(File &file)
         return ret;
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
         _hdr_kernel.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_kernel.p_filesz = swentry->size;
-        _hdr_kernel.p_memsz = swentry->size;
+        _hdr_kernel.p_filesz = *swentry->size;
+        _hdr_kernel.p_memsz = *swentry->size;
         break;
     case ENTRY_TYPE_RAMDISK:
         _hdr_ramdisk.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_ramdisk.p_filesz = swentry->size;
-        _hdr_ramdisk.p_memsz = swentry->size;
+        _hdr_ramdisk.p_filesz = *swentry->size;
+        _hdr_ramdisk.p_memsz = *swentry->size;
         break;
     case ENTRY_TYPE_SONY_IPL:
         _hdr_ipl.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_ipl.p_filesz = swentry->size;
-        _hdr_ipl.p_memsz = swentry->size;
+        _hdr_ipl.p_filesz = *swentry->size;
+        _hdr_ipl.p_memsz = *swentry->size;
         break;
     case ENTRY_TYPE_SONY_RPM:
         _hdr_rpm.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_rpm.p_filesz = swentry->size;
-        _hdr_rpm.p_memsz = swentry->size;
+        _hdr_rpm.p_filesz = *swentry->size;
+        _hdr_rpm.p_memsz = *swentry->size;
         break;
     case ENTRY_TYPE_SONY_APPSBL:
         _hdr_appsbl.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_appsbl.p_filesz = swentry->size;
-        _hdr_appsbl.p_memsz = swentry->size;
+        _hdr_appsbl.p_filesz = *swentry->size;
+        _hdr_appsbl.p_memsz = *swentry->size;
         break;
     case SONY_ELF_ENTRY_CMDLINE:
         _hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
-        _hdr_cmdline.p_filesz = swentry->size;
-        _hdr_cmdline.p_memsz = swentry->size;
+        _hdr_cmdline.p_filesz = *swentry->size;
+        _hdr_cmdline.p_memsz = *swentry->size;
         break;
     }
 
-    if (swentry->size > 0) {
+    if (*swentry->size > 0) {
         ++_hdr.e_phnum;
     }
 
@@ -309,10 +299,10 @@ int SonyElfFormatWriter::finish_entry(File &file)
 
 int SonyElfFormatWriter::close(File &file)
 {
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     // If successful, finish up the boot image
-    if (!swentry) {
+    if (swentry == _seg.entries().end()) {
         // Write headers
         Sony_Elf32_Ehdr hdr = _hdr;
         Sony_Elf32_Phdr hdr_kernel = _hdr_kernel;

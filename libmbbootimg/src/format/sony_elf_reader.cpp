@@ -132,8 +132,7 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
     // Header
     pos += sizeof(Sony_Elf32_Ehdr);
 
-    // Reset entries
-    _seg.entries_clear();
+    std::vector<SegmentReaderEntry> entries;
 
     // Read program segment headers
     for (Elf32_Half i = 0; i < _hdr.e_phnum; ++i) {
@@ -203,45 +202,45 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
             }
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
                 && phdr.p_flags == SONY_E_FLAGS_KERNEL) {
-            ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                                   phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) { return ret; }
+            entries.push_back({
+                ENTRY_TYPE_KERNEL, phdr.p_offset, phdr.p_memsz, false
+            });
 
             if (!header.set_kernel_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
             }
         } else if (phdr.p_type == SONY_E_TYPE_RAMDISK
                 && phdr.p_flags == SONY_E_FLAGS_RAMDISK) {
-            ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                                   phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) { return ret; }
+            entries.push_back({
+                ENTRY_TYPE_RAMDISK, phdr.p_offset, phdr.p_memsz, false
+            });
 
             if (!header.set_ramdisk_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
             }
         } else if (phdr.p_type == SONY_E_TYPE_IPL
                 && phdr.p_flags == SONY_E_FLAGS_IPL) {
-            ret = _seg.entries_add(ENTRY_TYPE_SONY_IPL,
-                                   phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) { return ret; }
+            entries.push_back({
+                ENTRY_TYPE_SONY_IPL, phdr.p_offset, phdr.p_memsz, false
+            });
 
             if (!header.set_sony_ipl_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
             }
         } else if (phdr.p_type == SONY_E_TYPE_RPM
                 && phdr.p_flags == SONY_E_FLAGS_RPM) {
-            ret = _seg.entries_add(ENTRY_TYPE_SONY_RPM,
-                                   phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) { return ret; }
+            entries.push_back({
+                ENTRY_TYPE_SONY_RPM, phdr.p_offset, phdr.p_memsz, false
+            });
 
             if (!header.set_sony_rpm_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
             }
         } else if (phdr.p_type == SONY_E_TYPE_APPSBL
                 && phdr.p_flags == SONY_E_FLAGS_APPSBL) {
-            ret = _seg.entries_add(ENTRY_TYPE_SONY_APPSBL,
-                                   phdr.p_offset, phdr.p_memsz, false, _reader);
-            if (ret != RET_OK) { return ret; }
+            entries.push_back({
+                ENTRY_TYPE_SONY_APPSBL, phdr.p_offset, phdr.p_memsz, false
+            });
 
             if (!header.set_sony_appsbl_address(phdr.p_vaddr)) {
                 return RET_UNSUPPORTED;
@@ -259,6 +258,9 @@ int SonyElfFormatReader::read_header(File &file, Header &header)
             return RET_WARN;
         }
     }
+
+    ret = _seg.set_entries(_reader, std::move(entries));
+    if (ret != RET_OK) { return ret; }
 
     return RET_OK;
 }

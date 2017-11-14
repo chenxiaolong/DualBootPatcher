@@ -155,24 +155,14 @@ int LokiFormatWriter::write_header(File &file, const Header &header)
     // TODO: UNUSED
     // TODO: ID
 
-    // Clear existing entries (none should exist unless this function fails and
-    // the user reattempts to call it)
-    _seg.entries_clear();
+    std::vector<SegmentWriterEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
+    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_ABOOT, 0, 0, 0 });
 
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_ABOOT,
-                           0, true, 0, _writer);
+    ret = _seg.set_entries(_writer, std::move(entries));
     if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
@@ -202,7 +192,7 @@ int LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
 {
     int ret;
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - _aboot.size()) {
@@ -244,10 +234,10 @@ int LokiFormatWriter::finish_entry(File &file)
         return ret;
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     // Update SHA1 hash
-    uint32_t le32_size = mb_htole32(swentry->size);
+    uint32_t le32_size = mb_htole32(*swentry->size);
 
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == ENTRY_TYPE_DEVICE_TREE
@@ -258,7 +248,7 @@ int LokiFormatWriter::finish_entry(File &file)
 
     // Include size for everything except empty DT images
     if (swentry->type != ENTRY_TYPE_ABOOT
-            && (swentry->type != ENTRY_TYPE_DEVICE_TREE || swentry->size > 0)
+            && (swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
         _writer.set_error(android::AndroidError::Sha1UpdateError);
         return RET_FATAL;
@@ -266,13 +256,13 @@ int LokiFormatWriter::finish_entry(File &file)
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
-        _hdr.kernel_size = swentry->size;
+        _hdr.kernel_size = *swentry->size;
         break;
     case ENTRY_TYPE_RAMDISK:
-        _hdr.ramdisk_size = swentry->size;
+        _hdr.ramdisk_size = *swentry->size;
         break;
     case ENTRY_TYPE_DEVICE_TREE:
-        _hdr.dt_size = swentry->size;
+        _hdr.dt_size = *swentry->size;
         break;
     }
 
@@ -301,10 +291,10 @@ int LokiFormatWriter::close(File &file)
         _file_size = file_size.value();
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     // If successful, finish up the boot image
-    if (!swentry) {
+    if (swentry == _seg.entries().end()) {
         // Truncate to set size
         auto truncate_ret = file.truncate(*_file_size);
         if (!truncate_ret) {

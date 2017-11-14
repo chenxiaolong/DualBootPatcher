@@ -21,6 +21,8 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <vector>
+
 #include <cstdint>
 
 #include "mbbootimg/reader.h"
@@ -29,8 +31,6 @@ namespace mb
 {
 namespace bootimg
 {
-
-constexpr size_t SEGMENT_READER_MAX_ENTRIES = 10;
 
 enum class SegmentReaderState
 {
@@ -52,17 +52,12 @@ class SegmentReader
 public:
     SegmentReader();
 
-    size_t entries_size() const;
-    void entries_clear();
-    int entries_add(int type, uint64_t offset, uint32_t size, bool can_truncate,
-                    Reader &reader);
-
-    const SegmentReaderEntry * entry() const;
-    const SegmentReaderEntry * next_entry() const;
-    const SegmentReaderEntry * find_entry(int entry_type);
+    const std::vector<SegmentReaderEntry> & entries() const;
+    int set_entries(Reader &reader, std::vector<SegmentReaderEntry> entries);
 
     int move_to_entry(File &file, Entry &entry,
-                      const SegmentReaderEntry &srentry, Reader &reader);
+                      std::vector<SegmentReaderEntry>::iterator srentry,
+                      Reader &reader);
 
     int read_entry(File &file, Entry &entry, Reader &reader);
     int go_to_entry(File &file, Entry &entry, int entry_type, Reader &reader);
@@ -70,15 +65,14 @@ public:
                   Reader &reader);
 
 private:
-    SegmentReaderState _state;
+    SegmentReaderState m_state;
 
-    SegmentReaderEntry _entries[SEGMENT_READER_MAX_ENTRIES];
-    size_t _entries_len;
-    const SegmentReaderEntry *_entry;
+    std::vector<SegmentReaderEntry> m_entries;
+    decltype(m_entries)::iterator m_entry;
 
-    uint64_t _read_start_offset;
-    uint64_t _read_end_offset;
-    uint64_t _read_cur_offset;
+    uint64_t m_read_start_offset;
+    uint64_t m_read_end_offset;
+    uint64_t m_read_cur_offset;
 };
 
 }
