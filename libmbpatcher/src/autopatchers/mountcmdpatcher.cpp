@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -30,15 +30,6 @@ namespace mb
 namespace patcher
 {
 
-/*! \cond INTERNAL */
-class MountCmdPatcherPrivate
-{
-public:
-    const PatcherConfig *pc;
-    const FileInfo *info;
-};
-/*! \endcond */
-
 
 const std::string MountCmdPatcher::Id = "MountCmdPatcher";
 
@@ -50,22 +41,17 @@ static const std::string InstallerScript =
         "installer.sh";
 
 
-MountCmdPatcher::MountCmdPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info)
-    : _priv_ptr(new MountCmdPatcherPrivate())
+MountCmdPatcher::MountCmdPatcher(const PatcherConfig &pc, const FileInfo &info)
 {
-    MB_PRIVATE(MountCmdPatcher);
-    priv->pc = pc;
-    priv->info = info;
+    (void) pc;
+    (void) info;
 }
 
-MountCmdPatcher::~MountCmdPatcher()
-{
-}
+MountCmdPatcher::~MountCmdPatcher() = default;
 
 ErrorCode MountCmdPatcher::error() const
 {
-    return ErrorCode();
+    return {};
 }
 
 std::string MountCmdPatcher::id() const

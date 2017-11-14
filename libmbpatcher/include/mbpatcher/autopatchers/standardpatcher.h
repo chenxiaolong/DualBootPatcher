@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/patcherinterface.h"
 
@@ -30,15 +28,14 @@ namespace mb
 namespace patcher
 {
 
-class StandardPatcherPrivate;
 class StandardPatcher : public AutoPatcher
 {
-    MB_DECLARE_PRIVATE(StandardPatcher)
-
 public:
-    explicit StandardPatcher(const PatcherConfig * const pc,
-                             const FileInfo * const info);
+    StandardPatcher(const PatcherConfig &pc, const FileInfo &info);
     ~StandardPatcher();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(StandardPatcher)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(StandardPatcher)
 
     static const std::string Id;
 
@@ -46,20 +43,20 @@ public:
 
     static const std::string SystemTransferList;
 
-    virtual ErrorCode error() const override;
+    ErrorCode error() const override;
 
-    virtual std::string id() const override;
+    std::string id() const override;
 
-    virtual std::vector<std::string> new_files() const override;
-    virtual std::vector<std::string> existing_files() const override;
+    std::vector<std::string> new_files() const override;
+    std::vector<std::string> existing_files() const override;
 
-    virtual bool patch_files(const std::string &directory) override;
+    bool patch_files(const std::string &directory) override;
 
     bool patch_updater(const std::string &directory);
     bool patch_transfer_list(const std::string &directory);
 
 private:
-    std::unique_ptr<StandardPatcherPrivate> _priv_ptr;
+    const FileInfo &m_info;
 };
 
 }

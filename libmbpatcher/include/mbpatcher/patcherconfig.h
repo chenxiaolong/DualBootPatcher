@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -36,11 +36,8 @@ namespace patcher
 class Patcher;
 class AutoPatcher;
 
-class PatcherConfigPrivate;
 class MB_EXPORT PatcherConfig
 {
-    MB_DECLARE_PRIVATE(PatcherConfig)
-
 public:
     PatcherConfig();
     ~PatcherConfig();
@@ -58,16 +55,25 @@ public:
 
     Patcher * create_patcher(const std::string &id);
     AutoPatcher * create_auto_patcher(const std::string &id,
-                                      const FileInfo * const info);
+                                      const FileInfo &info);
 
     void destroy_patcher(Patcher *patcher);
     void destroy_auto_patcher(AutoPatcher *patcher);
 
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(PatcherConfig)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(PatcherConfig)
+    MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(PatcherConfig)
 
 private:
-    std::unique_ptr<PatcherConfigPrivate> _priv_ptr;
+    // Directories
+    std::string m_data_dir;
+    std::string m_temp_dir;
+
+    // Errors
+    ErrorCode m_error;
+
+    // Created patchers
+    std::vector<std::unique_ptr<Patcher>> m_patchers;
+    std::vector<std::unique_ptr<AutoPatcher>> m_auto_patchers;
 };
 
 }

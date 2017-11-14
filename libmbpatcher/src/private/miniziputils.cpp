@@ -127,7 +127,7 @@ std::string MinizipUtils::zip_error_string(int ret)
     }
 }
 
-struct MinizipUtils::UnzCtx
+struct UnzCtx
 {
     unzFile uf;
     zlib_filefunc64_def z_func;
@@ -139,7 +139,7 @@ struct MinizipUtils::UnzCtx
 #endif
 };
 
-struct MinizipUtils::ZipCtx
+struct ZipCtx
 {
     zipFile zf;
     zlib_filefunc64_def z_func;
@@ -161,7 +161,7 @@ zipFile MinizipUtils::ctx_get_zip_file(ZipCtx *ctx)
     return ctx->zf;
 }
 
-MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
+UnzCtx * MinizipUtils::open_input_file(std::string path)
 {
     UnzCtx *ctx = new(std::nothrow) UnzCtx();
     if (!ctx) {
@@ -195,7 +195,7 @@ MinizipUtils::UnzCtx * MinizipUtils::open_input_file(std::string path)
     return ctx;
 }
 
-MinizipUtils::ZipCtx * MinizipUtils::open_output_file(std::string path)
+ZipCtx * MinizipUtils::open_output_file(std::string path)
 {
     ZipCtx *ctx = new(std::nothrow) ZipCtx();
     if (!ctx) {
