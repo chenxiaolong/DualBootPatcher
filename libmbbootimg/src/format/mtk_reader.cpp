@@ -324,37 +324,33 @@ int MtkFormatReader::read_header(File &file, Header &header)
     pos += _hdr.dt_size;
     pos += align_page_size<uint64_t>(pos, page_size);
 
-    _seg.entries_clear();
+    std::vector<SegmentReaderEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
-                           kernel_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           *_mtk_kernel_offset, _mtk_kernel_hdr.size, false,
-                           _reader);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
-                           ramdisk_offset, sizeof(MtkHeader), false, _reader);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           *_mtk_ramdisk_offset, _mtk_ramdisk_hdr.size, false,
-                           _reader);
-    if (ret != RET_OK) { return ret; }
-
+    entries.push_back({
+        ENTRY_TYPE_MTK_KERNEL_HEADER, kernel_offset, sizeof(MtkHeader), false
+    });
+    entries.push_back({
+        ENTRY_TYPE_KERNEL, *_mtk_kernel_offset, _mtk_kernel_hdr.size, false
+    });
+    entries.push_back({
+        ENTRY_TYPE_MTK_RAMDISK_HEADER, ramdisk_offset, sizeof(MtkHeader), false
+    });
+    entries.push_back({
+        ENTRY_TYPE_RAMDISK, *_mtk_ramdisk_offset, _mtk_ramdisk_hdr.size, false
+    });
     if (_hdr.second_size > 0) {
-        ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                               second_offset, _hdr.second_size, false, _reader);
-        if (ret != RET_OK) { return ret; }
+        entries.push_back({
+            ENTRY_TYPE_SECONDBOOT, second_offset, _hdr.second_size, false
+        });
+    }
+    if (_hdr.dt_size > 0) {
+        entries.push_back({
+            ENTRY_TYPE_DEVICE_TREE, dt_offset, _hdr.dt_size, false
+        });
     }
 
-    if (_hdr.dt_size > 0) {
-        ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                               dt_offset, _hdr.dt_size, false, _reader);
-        if (ret != RET_OK) { return ret; }
-    }
+    ret = _seg.set_entries(_reader, std::move(entries));
+    if (ret != RET_OK) { return ret; }
 
     return RET_OK;
 }

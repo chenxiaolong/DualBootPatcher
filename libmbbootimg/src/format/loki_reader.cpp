@@ -167,21 +167,22 @@ int LokiFormatReader::read_header(File &file, Header &header)
         return ret;
     }
 
-    _seg.entries_clear();
+    std::vector<SegmentReaderEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           kernel_offset, kernel_size, false, _reader);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           ramdisk_offset, ramdisk_size, false, _reader);
-    if (ret != RET_OK) { return ret; }
-
+    entries.push_back({
+        ENTRY_TYPE_KERNEL, kernel_offset, kernel_size, false
+    });
+    entries.push_back({
+        ENTRY_TYPE_RAMDISK, ramdisk_offset, ramdisk_size, false
+    });
     if (_hdr.dt_size > 0 && dt_offset != 0) {
-        ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                               dt_offset, _hdr.dt_size, false, _reader);
-        if (ret != RET_OK) { return ret; }
+        entries.push_back({
+            ENTRY_TYPE_DEVICE_TREE, dt_offset, _hdr.dt_size, false
+        });
     }
+
+    ret = _seg.set_entries(_reader, std::move(entries));
+    if (ret != RET_OK) { return ret; }
 
     return RET_OK;
 }

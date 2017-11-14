@@ -52,8 +52,6 @@ const char * SegmentErrorCategory::name() const noexcept
 std::string SegmentErrorCategory::message(int ev) const
 {
     switch (static_cast<SegmentError>(ev)) {
-    case SegmentError::TooManyEntries:
-        return "too many entries";
     case SegmentError::AddEntryInIncorrectState:
         return "adding entry in incorrect state";
     case SegmentError::EntryWouldOverflowOffset:

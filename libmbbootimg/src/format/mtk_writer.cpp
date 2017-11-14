@@ -97,16 +97,15 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         return RET_FAILED;
     }
 
-    for (size_t i = 0; i < seg.entries_size(); ++i) {
-        auto const *entry = seg.entries_get(i);
-        uint64_t remain = entry->size;
+    for (auto const &entry : seg.entries()) {
+        uint64_t remain = *entry.size;
 
-        auto seek_ret = file.seek(static_cast<int64_t>(entry->offset),
+        auto seek_ret = file.seek(static_cast<int64_t>(entry.offset),
                                   SEEK_SET);
         if (!seek_ret) {
             writer.set_error(seek_ret.error(),
-                             "Failed to seek to entry %" MB_PRIzu ": %s",
-                             i, seek_ret.error().message().c_str());
+                             "Failed to seek to entry: %s",
+                             seek_ret.error().message().c_str());
             return file.is_fatal() ? RET_FATAL : RET_FAILED;
         }
 
@@ -117,8 +116,8 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
             auto n = file_read_fully(file, buf, static_cast<size_t>(to_read));
             if (!n) {
                 writer.set_error(n.error(),
-                                 "Failed to read entry %" MB_PRIzu ": %s",
-                                 i, n.error().message().c_str());
+                                 "Failed to read entry: %s",
+                                 n.error().message().c_str());
                 return file.is_fatal() ? RET_FATAL : RET_FAILED;
             } else if (n.value() != to_read) {
                 writer.set_error(n.error(),
@@ -137,27 +136,27 @@ static int _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         uint32_t le32_size;
 
         // Update checksum with size
-        switch (entry->type) {
+        switch (entry.type) {
         case ENTRY_TYPE_MTK_KERNEL_HEADER:
-            kernel_mtkhdr_size = entry->size;
+            kernel_mtkhdr_size = *entry.size;
             continue;
         case ENTRY_TYPE_MTK_RAMDISK_HEADER:
-            ramdisk_mtkhdr_size = entry->size;
+            ramdisk_mtkhdr_size = *entry.size;
             continue;
         case ENTRY_TYPE_KERNEL:
-            le32_size = mb_htole32(entry->size + kernel_mtkhdr_size);
+            le32_size = mb_htole32(*entry.size + kernel_mtkhdr_size);
             break;
         case ENTRY_TYPE_RAMDISK:
-            le32_size = mb_htole32(entry->size + ramdisk_mtkhdr_size);
+            le32_size = mb_htole32(*entry.size + ramdisk_mtkhdr_size);
             break;
         case ENTRY_TYPE_SECONDBOOT:
-            le32_size = mb_htole32(entry->size);
+            le32_size = mb_htole32(*entry.size);
             break;
         case ENTRY_TYPE_DEVICE_TREE:
-            if (entry->size == 0) {
+            if (*entry.size == 0) {
                 continue;
             }
-            le32_size = mb_htole32(entry->size);
+            le32_size = mb_htole32(*entry.size);
             break;
         default:
             continue;
@@ -269,32 +268,16 @@ int MtkFormatWriter::write_header(File &file, const Header &header)
     // TODO: UNUSED
     // TODO: ID
 
-    // Clear existing entries (none should exist unless this function fails and
-    // the user reattempts to call it)
-    _seg.entries_clear();
+    std::vector<SegmentWriterEntry> entries;
 
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_KERNEL_HEADER,
-                           0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
+    entries.push_back({ ENTRY_TYPE_MTK_KERNEL_HEADER, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_MTK_RAMDISK_HEADER, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, _hdr.page_size });
+    entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, _hdr.page_size });
 
-    ret = _seg.entries_add(ENTRY_TYPE_KERNEL,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_MTK_RAMDISK_HEADER,
-                           0, false, 0, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_RAMDISK,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_SECONDBOOT,
-                           0, false, _hdr.page_size, _writer);
-    if (ret != RET_OK) { return ret; }
-
-    ret = _seg.entries_add(ENTRY_TYPE_DEVICE_TREE,
-                           0, false, _hdr.page_size, _writer);
+    ret = _seg.set_entries(_writer, std::move(entries));
     if (ret != RET_OK) { return ret; }
 
     // Start writing after first page
@@ -334,16 +317,16 @@ int MtkFormatWriter::finish_entry(File &file)
         return ret;
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     if ((swentry->type == ENTRY_TYPE_KERNEL
             || swentry->type == ENTRY_TYPE_RAMDISK)
-            && swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
+            && *swentry->size == UINT32_MAX - sizeof(MtkHeader)) {
         _writer.set_error(MtkError::EntryTooLargeToFitMtkHeader);
         return RET_FATAL;
     } else if ((swentry->type == ENTRY_TYPE_MTK_KERNEL_HEADER
             || swentry->type == ENTRY_TYPE_MTK_RAMDISK_HEADER)
-            && swentry->size != sizeof(MtkHeader)) {
+            && *swentry->size != sizeof(MtkHeader)) {
         _writer.set_error(MtkError::InvalidEntrySizeForMtkHeader);
         return RET_FATAL;
     }
@@ -351,17 +334,17 @@ int MtkFormatWriter::finish_entry(File &file)
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
         _hdr.kernel_size = static_cast<uint32_t>(
-                swentry->size + sizeof(MtkHeader));
+                *swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_RAMDISK:
         _hdr.ramdisk_size = static_cast<uint32_t>(
-                swentry->size + sizeof(MtkHeader));
+                *swentry->size + sizeof(MtkHeader));
         break;
     case ENTRY_TYPE_SECONDBOOT:
-        _hdr.second_size = swentry->size;
+        _hdr.second_size = *swentry->size;
         break;
     case ENTRY_TYPE_DEVICE_TREE:
-        _hdr.dt_size = swentry->size;
+        _hdr.dt_size = *swentry->size;
         break;
     }
 
@@ -384,10 +367,10 @@ int MtkFormatWriter::close(File &file)
         _file_size = file_size.value();
     }
 
-    auto const *swentry = _seg.entry();
+    auto swentry = _seg.entry();
 
     // If successful, finish up the boot image
-    if (!swentry) {
+    if (swentry == _seg.entries().end()) {
         // Truncate to set size
         auto truncate_ret = file.truncate(*_file_size);
         if (!truncate_ret) {
@@ -398,18 +381,17 @@ int MtkFormatWriter::close(File &file)
         }
 
         // Update MTK header sizes
-        for (size_t i = 0; i < _seg.entries_size(); ++i) {
-            auto const *entry = _seg.entries_get(i);
-            switch (entry->type) {
+        for (auto const &entry : _seg.entries()) {
+            switch (entry.type) {
             case ENTRY_TYPE_MTK_KERNEL_HEADER:
                 ret = _mtk_header_update_size(
-                        _writer, file, entry->offset,
+                        _writer, file, entry.offset,
                         static_cast<uint32_t>(
                                 _hdr.kernel_size - sizeof(MtkHeader)));
                 break;
             case ENTRY_TYPE_MTK_RAMDISK_HEADER:
                 ret = _mtk_header_update_size(
-                        _writer, file, entry->offset,
+                        _writer, file, entry.offset,
                         static_cast<uint32_t>(
                                 _hdr.ramdisk_size - sizeof(MtkHeader)));
                 break;
