@@ -38,15 +38,6 @@ namespace mb
 namespace patcher
 {
 
-/*! \cond INTERNAL */
-class StandardPatcherPrivate
-{
-public:
-    const PatcherConfig *pc;
-    const FileInfo *info;
-};
-/*! \endcond */
-
 
 const std::string StandardPatcher::Id
         = "StandardPatcher";
@@ -65,18 +56,13 @@ static constexpr char FORMAT_FMT[] =
         "(run_program(\"/update-binary-tool\", \"format\", \"%s\") == 0)";
 
 
-StandardPatcher::StandardPatcher(const PatcherConfig * const pc,
-                                 const FileInfo * const info)
-    : _priv_ptr(new StandardPatcherPrivate())
+StandardPatcher::StandardPatcher(const PatcherConfig &pc, const FileInfo &info)
+    : m_info(info)
 {
-    MB_PRIVATE(StandardPatcher);
-    priv->pc = pc;
-    priv->info = info;
+    (void) pc;
 }
 
-StandardPatcher::~StandardPatcher()
-{
-}
+StandardPatcher::~StandardPatcher() = default;
 
 ErrorCode StandardPatcher::error() const
 {
@@ -562,8 +548,6 @@ bool StandardPatcher::patch_files(const std::string &directory)
 
 bool StandardPatcher::patch_updater(const std::string &directory)
 {
-    MB_PRIVATE(StandardPatcher);
-
     std::string contents;
     std::string path;
 
@@ -590,7 +574,7 @@ bool StandardPatcher::patch_updater(const std::string &directory)
     EdifyTokenizer::dump(tokens);
 #endif
 
-    auto &&device = priv->info->device();
+    auto &&device = m_info.device();
     auto system_devs = device.system_block_devs();
     auto cache_devs = device.cache_block_devs();
     auto data_devs = device.data_block_devs();

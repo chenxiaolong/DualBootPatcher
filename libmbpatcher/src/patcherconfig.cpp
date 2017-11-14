@@ -39,23 +39,6 @@ namespace mb
 namespace patcher
 {
 
-/*! \cond INTERNAL */
-class PatcherConfigPrivate
-{
-public:
-    // Directories
-    std::string data_dir;
-    std::string temp_dir;
-
-    // Errors
-    ErrorCode error;
-
-    // Created patchers
-    std::vector<Patcher *> alloc_patchers;
-    std::vector<AutoPatcher *> alloc_auto_patchers;
-};
-/*! \endcond */
-
 /*!
  * \class PatcherConfig
  *
@@ -63,24 +46,9 @@ public:
  * Blah blah documenting later ;)
  */
 
-PatcherConfig::PatcherConfig() : _priv_ptr(new PatcherConfigPrivate())
-{
-}
+PatcherConfig::PatcherConfig() = default;
 
-PatcherConfig::~PatcherConfig()
-{
-    MB_PRIVATE(PatcherConfig);
-
-    for (Patcher *patcher : priv->alloc_patchers) {
-        destroy_patcher(patcher);
-    }
-    priv->alloc_patchers.clear();
-
-    for (AutoPatcher *patcher : priv->alloc_auto_patchers) {
-        destroy_auto_patcher(patcher);
-    }
-    priv->alloc_auto_patchers.clear();
-}
+PatcherConfig::~PatcherConfig() = default;
 
 /*!
  * \brief Get error information
@@ -92,8 +60,7 @@ PatcherConfig::~PatcherConfig()
  */
 ErrorCode PatcherConfig::error() const
 {
-    MB_PRIVATE(const PatcherConfig);
-    return priv->error;
+    return m_error;
 }
 
 /*!
@@ -103,8 +70,7 @@ ErrorCode PatcherConfig::error() const
  */
 std::string PatcherConfig::data_directory() const
 {
-    MB_PRIVATE(const PatcherConfig);
-    return priv->data_dir;
+    return m_data_dir;
 }
 
 /*!
@@ -116,12 +82,10 @@ std::string PatcherConfig::data_directory() const
  */
 std::string PatcherConfig::temp_directory() const
 {
-    MB_PRIVATE(const PatcherConfig);
-
-    if (priv->temp_dir.empty()) {
+    if (m_temp_dir.empty()) {
         return FileUtils::system_temporary_dir();
     } else {
-        return priv->temp_dir;
+        return m_temp_dir;
     }
 }
 
@@ -132,8 +96,7 @@ std::string PatcherConfig::temp_directory() const
  */
 void PatcherConfig::set_data_directory(std::string path)
 {
-    MB_PRIVATE(PatcherConfig);
-    priv->data_dir = std::move(path);
+    m_data_dir = std::move(path);
 }
 
 /*!
@@ -146,8 +109,7 @@ void PatcherConfig::set_data_directory(std::string path)
  */
 void PatcherConfig::set_temp_directory(std::string path)
 {
-    MB_PRIVATE(PatcherConfig);
-    priv->temp_dir = std::move(path);
+    m_temp_dir = std::move(path);
 }
 
 /*!
@@ -186,23 +148,23 @@ std::vector<std::string> PatcherConfig::auto_patchers() const
  */
 Patcher * PatcherConfig::create_patcher(const std::string &id)
 {
-    MB_PRIVATE(PatcherConfig);
-
-    Patcher *p = nullptr;
+    std::unique_ptr<Patcher> p;
 
     if (id == OdinPatcher::Id) {
-        p = new OdinPatcher(this);
+        p = std::make_unique<OdinPatcher>(*this);
     } else if (id == RamdiskUpdater::Id) {
-        p = new RamdiskUpdater(this);
+        p = std::make_unique<RamdiskUpdater>(*this);
     } else if (id == ZipPatcher::Id) {
-        p = new ZipPatcher(this);
+        p = std::make_unique<ZipPatcher>(*this);
     }
 
-    if (p != nullptr) {
-        priv->alloc_patchers.push_back(p);
+    if (!p) {
+        return nullptr;
     }
 
-    return p;
+    auto *ptr = p.get();
+    m_patchers.push_back(std::move(p));
+    return ptr;
 }
 
 /*!
@@ -214,23 +176,23 @@ Patcher * PatcherConfig::create_patcher(const std::string &id)
  * \return New AutoPatcher
  */
 AutoPatcher * PatcherConfig::create_auto_patcher(const std::string &id,
-                                                 const FileInfo * const info)
+                                                 const FileInfo &info)
 {
-    MB_PRIVATE(PatcherConfig);
-
-    AutoPatcher *ap = nullptr;
+    std::unique_ptr<AutoPatcher> ap;
 
     if (id == StandardPatcher::Id) {
-        ap = new StandardPatcher(this, info);
+        ap = std::make_unique<StandardPatcher>(*this, info);
     } else if (id == MountCmdPatcher::Id) {
-        ap = new MountCmdPatcher(this, info);
+        ap = std::make_unique<MountCmdPatcher>(*this, info);
     }
 
-    if (ap != nullptr) {
-        priv->alloc_auto_patchers.push_back(ap);
+    if (!ap) {
+        return nullptr;
     }
 
-    return ap;
+    auto *ptr = ap.get();
+    m_auto_patchers.push_back(std::move(ap));
+    return ptr;
 }
 
 /*!
@@ -240,16 +202,15 @@ AutoPatcher * PatcherConfig::create_auto_patcher(const std::string &id,
  */
 void PatcherConfig::destroy_patcher(Patcher *patcher)
 {
-    MB_PRIVATE(PatcherConfig);
-
-    auto it = std::find(priv->alloc_patchers.begin(),
-                        priv->alloc_patchers.end(),
-                        patcher);
-
-    assert(it != priv->alloc_patchers.end());
-
-    priv->alloc_patchers.erase(it);
-    delete patcher;
+    auto it = std::find_if(
+        m_patchers.begin(),
+        m_patchers.end(),
+        [&](const std::unique_ptr<Patcher> &item) {
+            return item.get() == patcher;
+        }
+    );
+    assert(it != m_patchers.end());
+    m_patchers.erase(it);
 }
 
 /*!
@@ -259,16 +220,15 @@ void PatcherConfig::destroy_patcher(Patcher *patcher)
  */
 void PatcherConfig::destroy_auto_patcher(AutoPatcher *patcher)
 {
-    MB_PRIVATE(PatcherConfig);
-
-    auto it = std::find(priv->alloc_auto_patchers.begin(),
-                        priv->alloc_auto_patchers.end(),
-                        patcher);
-
-    assert(it != priv->alloc_auto_patchers.end());
-
-    priv->alloc_auto_patchers.erase(it);
-    delete patcher;
+    auto it = std::find_if(
+        m_auto_patchers.begin(),
+        m_auto_patchers.end(),
+        [&](const std::unique_ptr<AutoPatcher> &item) {
+            return item.get() == patcher;
+        }
+    );
+    assert(it != m_auto_patchers.end());
+    m_auto_patchers.erase(it);
 }
 
 }
