@@ -35,7 +35,7 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
-    ---
+
 - name: LAVA iris X1Beats
   id: X1Beats
   codenames:
