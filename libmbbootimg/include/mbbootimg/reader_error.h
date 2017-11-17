@@ -40,6 +40,10 @@ enum class ReaderError
     FormatAlreadyEnabled    = 24,
     NoFormatsRegistered     = 25,
     UnknownFileFormat       = 26,
+
+    EndOfEntries            = 30,
+
+    UnsupportedGoTo         = 40,
 };
 
 MB_EXPORT std::error_code make_error_code(ReaderError e);

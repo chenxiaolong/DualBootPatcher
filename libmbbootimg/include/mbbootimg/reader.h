@@ -54,44 +54,49 @@ public:
     Reader & operator=(Reader &&rhs) noexcept;
 
     // Open/close
-    int open_filename(const std::string &filename);
-    int open_filename_w(const std::wstring &filename);
-    int open(std::unique_ptr<File> file);
-    int open(File *file);
-    int close();
+    bool open_filename(const std::string &filename);
+    bool open_filename_w(const std::wstring &filename);
+    bool open(std::unique_ptr<File> file);
+    bool open(File *file);
+    bool close();
 
     // Operations
-    int read_header(Header &header);
-    int read_entry(Entry &entry);
-    int go_to_entry(Entry &entry, int entry_type);
-    int read_data(void *buf, size_t size, size_t &bytes_read);
+    bool read_header(Header &header);
+    bool read_entry(Entry &entry);
+    bool go_to_entry(Entry &entry, int entry_type);
+    bool read_data(void *buf, size_t size, size_t &bytes_read);
 
     // Format operations
     int format_code();
     std::string format_name();
-    int set_format_by_code(int code);
-    int set_format_by_name(const std::string &name);
-    int enable_format_all();
-    int enable_format_by_code(int code);
-    int enable_format_by_name(const std::string &name);
+    bool set_format_by_code(int code);
+    bool set_format_by_name(const std::string &name);
+    bool enable_format_all();
+    bool enable_format_by_code(int code);
+    bool enable_format_by_name(const std::string &name);
 
     // Specific formats
-    int enable_format_android();
-    int enable_format_bump();
-    int enable_format_loki();
-    int enable_format_mtk();
-    int enable_format_sony_elf();
+    bool enable_format_android();
+    bool enable_format_bump();
+    bool enable_format_loki();
+    bool enable_format_mtk();
+    bool enable_format_sony_elf();
+
+    // Reader state
+    bool is_open();
+    bool is_fatal();
+    void set_fatal();
 
     // Error handling
     std::error_code error();
     std::string error_string();
-    int set_error(std::error_code ec);
+    bool set_error(std::error_code ec);
     MB_PRINTF(3, 4)
-    int set_error(std::error_code ec, const char *fmt, ...);
-    int set_error_v(std::error_code ec, const char *fmt, va_list ap);
+    bool set_error(std::error_code ec, const char *fmt, ...);
+    bool set_error_v(std::error_code ec, const char *fmt, va_list ap);
 
 private:
-    int register_format(std::unique_ptr<detail::FormatReader> format);
+    bool register_format(std::unique_ptr<detail::FormatReader> format);
 
     // Global state
     detail::ReaderState m_state;

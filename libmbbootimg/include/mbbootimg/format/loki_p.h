@@ -55,8 +55,8 @@ static inline void loki_fix_header_byte_order(LokiHeader &header)
     header.ramdisk_addr = mb_le32toh(header.ramdisk_addr);
 }
 
-int _loki_patch_file(Writer &writer, File &file,
-                     const void *aboot, size_t aboot_size);
+bool _loki_patch_file(Writer &writer, File &file,
+                      const void *aboot, size_t aboot_size);
 
 }
 }

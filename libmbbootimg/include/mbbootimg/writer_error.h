@@ -37,6 +37,8 @@ enum class WriterError
     InvalidFormatName       = 21,
     NoFormatSelected        = 22,
     NoFormatRegistered      = 23,
+
+    EndOfEntries            = 30,
 };
 
 MB_EXPORT std::error_code make_error_code(WriterError e);
