@@ -46,15 +46,15 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatReader)
 
-    virtual int type() override;
-    virtual std::string name() override;
+    int type() override;
+    std::string name() override;
 
-    virtual int bid(File &file, int best_bid) override;
-    virtual int read_header(File &file, Header &header) override;
-    virtual int read_entry(File &file, Entry &entry) override;
-    virtual int go_to_entry(File &file, Entry &entry, int entry_type) override;
-    virtual int read_data(File &file, void *buf, size_t buf_size,
-                          size_t &bytes_read) override;
+    int bid(File &file, int best_bid) override;
+    bool read_header(File &file, Header &header) override;
+    bool read_entry(File &file, Entry &entry) override;
+    bool go_to_entry(File &file, Entry &entry, int entry_type) override;
+    bool read_data(File &file, void *buf, size_t buf_size,
+                   size_t &bytes_read) override;
 
 private:
     // Header values

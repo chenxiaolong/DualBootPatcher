@@ -62,6 +62,8 @@ std::string WriterErrorCategory::message(int ev) const
         return "no format selected";
     case WriterError::NoFormatRegistered:
         return "no format registered";
+    case WriterError::EndOfEntries:
+        return "end of entries";
     default:
         return "(unknown writer error)";
     }

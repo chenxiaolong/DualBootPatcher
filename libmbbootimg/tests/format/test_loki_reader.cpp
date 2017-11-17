@@ -52,8 +52,8 @@ TEST(FindLokiHeaderTest, ValidMagicShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
-              RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_loki_header(reader, file, header,
+                                                   offset));
 }
 
 TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
@@ -66,8 +66,8 @@ TEST(FindLokiHeaderTest, UndersizedImageShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
-              RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_loki_header(reader, file, header,
+                                                    offset));
     ASSERT_EQ(reader.error(), LokiError::LokiHeaderTooSmall);
 }
 
@@ -91,8 +91,8 @@ TEST(FindLokiHeaderTest, InvalidMagicShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_loki_header(reader, file, header, offset),
-              RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_loki_header(reader, file, header,
+                                                    offset));
     ASSERT_EQ(reader.error(), LokiError::InvalidLokiMagic);
 }
 
@@ -121,8 +121,8 @@ TEST(LokiFindRamdiskAddressTest, OldImageShouldUseJflteAddress)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
-                                                     ramdisk_addr), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                       ramdisk_addr));
 
     ASSERT_EQ(ramdisk_addr, ahdr.kernel_addr + 0x01ff8000);
 }
@@ -157,8 +157,8 @@ TEST(LokiFindRamdiskAddressTest, NewImageValidShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
-                                                     ramdisk_addr), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
+                                                       ramdisk_addr));
 
     ASSERT_EQ(ramdisk_addr, 0xddccbbaa);
 }
@@ -177,8 +177,8 @@ TEST(LokiFindRamdiskAddressTest, NewImageMissingShellcodeShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
-                                                     ramdisk_addr), RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr,
+                                                        lhdr, ramdisk_addr));
     ASSERT_EQ(reader.error(), LokiError::ShellcodeNotFound);
 }
 
@@ -207,8 +207,8 @@ TEST(LokiFindRamdiskAddressTest, NewImageTruncatedShellcodeShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_address(reader, file, ahdr, lhdr,
-                                                     ramdisk_addr), RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_ramdisk_address(reader, file, ahdr,
+                                                        lhdr, ramdisk_addr));
     ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
@@ -227,8 +227,8 @@ TEST(LokiOldFindGzipOffsetTest, ZeroFlagHeaderFoundShouldSucceed)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                     gzip_offset), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                       gzip_offset));
 
     ASSERT_EQ(gzip_offset, 0u);
 }
@@ -246,8 +246,8 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagHeaderFoundShouldSucceed)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                     gzip_offset), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                       gzip_offset));
 
     ASSERT_EQ(gzip_offset, 0u);
 }
@@ -266,8 +266,8 @@ TEST(LokiOldFindGzipOffsetTest, EightFlagShouldHavePrecedence)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
-                                                     gzip_offset), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 0,
+                                                       gzip_offset));
 
     ASSERT_EQ(gzip_offset, 4u);
 }
@@ -286,8 +286,8 @@ TEST(LokiOldFindGzipOffsetTest, StartOffsetShouldBeRespected)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                     gzip_offset), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                       gzip_offset));
 
     ASSERT_EQ(gzip_offset, 4u);
 }
@@ -301,8 +301,8 @@ TEST(LokiOldFindGzipOffsetTest, MissingMagicShouldWarn)
     mb::MemoryFile file(static_cast<const void *>(nullptr), 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                     gzip_offset), RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                        gzip_offset));
     ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
@@ -319,8 +319,8 @@ TEST(LokiOldFindGzipOffsetTest, MissingFlagsShouldWarn)
     mb::MemoryFile file(data, sizeof(data));
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
-                                                     gzip_offset), RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_gzip_offset_old(reader, file, 4,
+                                                        gzip_offset));
     ASSERT_EQ(reader.error(), LokiError::NoRamdiskGzipHeaderFound);
 }
 
@@ -342,9 +342,9 @@ TEST(LokiOldFindRamdiskSizeTest, ValidSamsungImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
-                                                      ahdr.page_size,
-                                                      ramdisk_size), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                        ahdr.page_size,
+                                                        ramdisk_size));
 
     ASSERT_EQ(ramdisk_size, ahdr.page_size);
 }
@@ -365,9 +365,9 @@ TEST(LokiOldFindRamdiskSizeTest, ValidLGImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
-                                                      ahdr.page_size,
-                                                      ramdisk_size), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                        ahdr.page_size,
+                                                        ramdisk_size));
 
     ASSERT_EQ(ramdisk_size, ahdr.page_size);
 }
@@ -388,10 +388,9 @@ TEST(LokiOldFindRamdiskSizeTest, OutOfBoundsRamdiskOffsetShouldFail)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
-                                                      data.size() + 1,
-                                                      ramdisk_size),
-              RET_FAILED);
+    ASSERT_FALSE(LokiFormatReader::find_ramdisk_size_old(reader, file, ahdr,
+                                                         data.size() + 1,
+                                                         ramdisk_size));
     ASSERT_EQ(reader.error(), LokiError::RamdiskOffsetGreaterThanAbootOffset);
 }
 
@@ -413,8 +412,8 @@ TEST(FindLinuxKernelSizeTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
-                                                       kernel_size), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+                                                         kernel_size));
 
     ASSERT_EQ(kernel_size, 0xddccbbaa);
 }
@@ -431,8 +430,8 @@ TEST(FindLinuxKernelSizeTest, TruncatedImageShouldWarn)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
-                                                       kernel_size), RET_WARN);
+    ASSERT_FALSE(LokiFormatReader::find_linux_kernel_size(reader, file, 2048,
+                                                          kernel_size));
     ASSERT_EQ(reader.error(), LokiError::UnexpectedEndOfFile);
 }
 
@@ -490,10 +489,10 @@ TEST(LokiReadOldHeaderTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::read_header_old(reader, file, ahdr, lhdr,
-                                                header, kernel_offset,
-                                                kernel_size, ramdisk_offset,
-                                                ramdisk_size), RET_OK);
+    ASSERT_TRUE(LokiFormatReader::read_header_old(reader, file, ahdr, lhdr,
+                                                  header, kernel_offset,
+                                                  kernel_size, ramdisk_offset,
+                                                  ramdisk_size));
 
     // Board name
     auto board_name = header.board_name();
@@ -594,11 +593,10 @@ TEST(LokiReadNewHeaderTest, ValidImageShouldSucceed)
     mb::MemoryFile file(data.data(), data.size());
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_EQ(LokiFormatReader::read_header_new(reader, file, ahdr, lhdr,
-                                                header, kernel_offset,
-                                                kernel_size, ramdisk_offset,
-                                                ramdisk_size, dt_offset),
-              RET_OK);
+    ASSERT_TRUE(LokiFormatReader::read_header_new(reader, file, ahdr, lhdr,
+                                                  header, kernel_offset,
+                                                  kernel_size, ramdisk_offset,
+                                                  ramdisk_size, dt_offset));
 
     // Board name
     auto board_name = header.board_name();

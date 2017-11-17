@@ -228,12 +228,8 @@ static la_ssize_t laBootImgReadCb(archive *a, void *userdata,
     (void) a;
     LaBootImgCtx *ctx = static_cast<LaBootImgCtx *>(userdata);
     size_t bytesRead;
-    int ret;
 
-    ret = ctx->reader.read_data(ctx->buf, sizeof(ctx->buf), bytesRead);
-    if (ret == RET_EOF) {
-        return 0;
-    } else if (ret != RET_OK) {
+    if (!ctx->reader.read_data(ctx->buf, sizeof(ctx->buf), bytesRead)) {
         return -1;
     }
 
@@ -267,15 +263,13 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Open input boot image
-    ret = reader.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader.enable_format_all()) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         reader.error_string().c_str());
         goto done;
     }
-    ret = reader.open_filename(filename);
-    if (ret != RET_OK) {
+    if (!reader.open_filename(filename)) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
                         filename, reader.error_string().c_str());
@@ -283,8 +277,7 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Read header
-    ret = reader.read_header(header);
-    if (ret != RET_OK) {
+    if (!reader.read_header(header)) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
                         filename, reader.error_string().c_str());
@@ -292,15 +285,15 @@ CLASS_METHOD(getBootImageRomId)(JNIEnv *env, jclass clazz, jstring jfilename)
     }
 
     // Go to ramdisk
-    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
-    if (ret == RET_EOF) {
-        throw_exception(env, IOException,
-                        "%s: Boot image is missing ramdisk", filename);
-        goto done;
-    } else if (ret != RET_OK) {
-        throw_exception(env, IOException,
-                        "%s: Failed to find ramdisk entry: %s",
-                        filename, reader.error_string().c_str());
+    if (!reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK)) {
+        if (reader.error() == ReaderError::EndOfEntries) {
+            throw_exception(env, IOException,
+                            "%s: Boot image is missing ramdisk", filename);
+        } else {
+            throw_exception(env, IOException,
+                            "%s: Failed to find ramdisk entry: %s",
+                            filename, reader.error_string().c_str());
+        }
         goto done;
     }
 
@@ -387,7 +380,6 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     Entry entry1;
     Entry entry2;
     size_t entries = 0;
-    int ret;
     const char *filename1 = nullptr;
     const char *filename2 = nullptr;
     jboolean result = false;
@@ -402,15 +394,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Set up reader formats
-    ret = reader1.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader1.enable_format_all()) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         reader1.error_string().c_str());
         goto done;
     }
-    ret = reader2.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader2.enable_format_all()) {
         throw_exception(env, IOException,
                         "Failed to enable all boot image formats: %s",
                         reader2.error_string().c_str());
@@ -418,15 +408,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Open boot images
-    ret = reader1.open_filename(filename1);
-    if (ret != RET_OK) {
+    if (!reader1.open_filename(filename1)) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
                         filename1, reader1.error_string().c_str());
         goto done;
     }
-    ret = reader2.open_filename(filename2);
-    if (ret != RET_OK) {
+    if (!reader2.open_filename(filename2)) {
         throw_exception(env, IOException,
                         "%s: Failed to open boot image for reading: %s",
                         filename2, reader2.error_string().c_str());
@@ -434,15 +422,13 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
     }
 
     // Read headers
-    ret = reader1.read_header(header1);
-    if (ret != RET_OK) {
+    if (!reader1.read_header(header1)) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
                         filename1, reader1.error_string().c_str());
         goto done;
     }
-    ret = reader2.read_header(header2);
-    if (ret != RET_OK) {
+    if (!reader2.read_header(header2)) {
         throw_exception(env, IOException,
                         "%s: Failed to read header: %s",
                         filename2, reader2.error_string().c_str());
@@ -456,21 +442,33 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
 
     // Count entries in first boot image
     {
-        while ((ret = reader1.read_entry(entry1)) == RET_OK) {
+        while (true) {
+            if (!reader1.read_entry(entry1)) {
+                if (reader1.error() == ReaderError::EndOfEntries) {
+                    break;
+                }
+                throw_exception(env, IOException,
+                                "%s: Failed to read entry: %s",
+                                filename1, reader1.error_string().c_str());
+                goto done;
+            }
             ++entries;
-        }
-
-        if (ret != RET_EOF) {
-            throw_exception(env, IOException,
-                            "%s: Failed to read entry: %s",
-                            filename1, reader1.error_string().c_str());
-            goto done;
         }
     }
 
     // Compare each entry in second image to first
     {
-        while ((ret = reader2.read_entry(entry2)) == RET_OK) {
+        while (true) {
+            if (!reader2.read_entry(entry2)) {
+                if (reader2.error() == ReaderError::EndOfEntries) {
+                    break;
+                }
+                throw_exception(env, IOException,
+                                "%s: Failed to read entry: %s",
+                                filename2, reader2.error_string().c_str());
+                goto done;
+            }
+
             if (entries == 0) {
                 // Too few entries in second image
                 goto done;
@@ -478,14 +476,14 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             --entries;
 
             // Find the same entry in first image
-            ret = reader1.go_to_entry(entry1, *entry2.type());
-            if (ret == RET_EOF) {
-                // Cannot be equal if entry is missing
-                goto done;
-            } else if (ret != RET_OK) {
-                throw_exception(env, IOException,
-                                "%s: Failed to seek to entry: %s", filename1,
-                                reader1.error_string().c_str());
+            if (!reader1.go_to_entry(entry1, *entry2.type())) {
+                if (reader1.error() == ReaderError::EndOfEntries) {
+                    // Cannot be equal if entry is missing
+                } else {
+                    throw_exception(env, IOException,
+                                    "%s: Failed to seek to entry: %s", filename1,
+                                    reader1.error_string().c_str());
+                }
                 goto done;
             }
 
@@ -495,10 +493,17 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
             size_t n1;
             size_t n2;
 
-            while ((ret = reader1.read_data(
-                    buf1, sizeof(buf1), n1)) == RET_OK) {
-                ret = reader2.read_data(buf2, n1, n2);
-                if (ret != RET_OK) {
+            while (true) {
+                if (!reader1.read_data(buf1, sizeof(buf1), n1)) {
+                    throw_exception(env, IOException,
+                                    "%s: Failed to read data: %s", filename1,
+                                    reader1.error_string().c_str());
+                    goto done;
+                } else if (n1 == 0) {
+                    break;
+                }
+
+                if (!reader2.read_data(buf2, n1, n2)) {
                     throw_exception(env, IOException,
                                     "%s: Failed to read data: %s", filename2,
                                     reader2.error_string().c_str());
@@ -510,20 +515,6 @@ CLASS_METHOD(bootImagesEqual)(JNIEnv *env, jclass clazz, jstring jfilename1,
                     goto done;
                 }
             }
-
-            if (ret != RET_EOF) {
-                throw_exception(env, IOException,
-                                "%s: Failed to read data: %s", filename1,
-                                reader1.error_string().c_str());
-                goto done;
-            }
-        }
-
-        if (ret != RET_EOF) {
-            throw_exception(env, IOException,
-                            "%s: Failed to read entry: %s",
-                            filename2, reader2.error_string().c_str());
-            goto done;
         }
     }
 

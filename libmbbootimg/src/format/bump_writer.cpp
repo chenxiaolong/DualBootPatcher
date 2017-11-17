@@ -29,11 +29,9 @@ namespace bootimg
 /*!
  * \brief Set Bump boot image output format
  *
- * \return
- *   * #RET_OK if the format is successfully set
- *   * \<= #RET_WARN if an error occurs
+ * \return Whether the format is successfully set
  */
-int Writer::set_format_bump()
+bool Writer::set_format_bump()
 {
     return register_format(
             std::make_unique<android::AndroidFormatWriter>(*this, true));

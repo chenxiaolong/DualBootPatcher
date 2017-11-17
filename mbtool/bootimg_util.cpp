@@ -40,13 +40,20 @@ namespace mb
 
 bool bi_copy_data_to_fd(Reader &reader, int fd)
 {
-    int ret;
     char buf[BUF_SIZE];
     size_t n_read;
     ssize_t n_written;
     size_t remain;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
+    while (true) {
+        if (!reader.read_data(buf, sizeof(buf), n_read)) {
+            LOGE("Failed to read boot image entry data: %s",
+                 reader.error_string().c_str());
+            return false;
+        } else if (n_read == 0) {
+            break;
+        }
+
         remain = n_read;
 
         while (remain > 0) {
@@ -58,12 +65,6 @@ bool bi_copy_data_to_fd(Reader &reader, int fd)
 
             remain -= static_cast<size_t>(n_written);
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     return true;
@@ -86,7 +87,7 @@ bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 
         size_t bytes_written;
 
-        if (writer.write_data(buf, n, bytes_written) != RET_OK
+        if (!writer.write_data(buf, n, bytes_written)
                 || bytes_written != n) {
             LOGE("Failed to write entry data: %s",
                  writer.error_string().c_str());
@@ -115,22 +116,23 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
         return false;
     }
 
-    int ret;
     char buf[10240];
     size_t n;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n)) == RET_OK) {
+    while (true) {
+        if (!reader.read_data(buf, sizeof(buf), n)) {
+            LOGE("Failed to read entry data: %s",
+                 reader.error_string().c_str());
+            return false;
+        } else if (n == 0) {
+            break;
+        }
+
         if (fwrite(buf, 1, n, fp.get()) != n) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     if (fclose(fp.release()) < 0) {
@@ -144,24 +146,24 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 
 bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
-    int ret;
     char buf[10240];
     size_t n_read;
     size_t n_written;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
-        ret = writer.write_data(buf, n_read, n_written);
-        if (ret != RET_OK || n_read != n_written) {
+    while (true) {
+        if (!reader.read_data(buf, sizeof(buf), n_read)) {
+            LOGE("Failed to read boot image entry data: %s",
+                 reader.error_string().c_str());
+            return false;
+        } else if (n_read == 0) {
+            break;
+        }
+
+        if (!writer.write_data(buf, n_read, n_written) || n_read != n_written) {
             LOGE("Failed to write entry data: %s",
                  writer.error_string().c_str());
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     return true;

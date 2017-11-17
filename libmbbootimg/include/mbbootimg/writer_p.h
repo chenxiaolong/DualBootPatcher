@@ -51,16 +51,16 @@ public:
     virtual int type() = 0;
     virtual std::string name() = 0;
 
-    virtual int init();
-    virtual int set_option(const char *key, const char *value);
-    virtual int get_header(File &file, Header &header) = 0;
-    virtual int write_header(File &file, const Header &header) = 0;
-    virtual int get_entry(File &file, Entry &entry) = 0;
-    virtual int write_entry(File &file, const Entry &entry) = 0;
-    virtual int write_data(File &file, const void *buf, size_t buf_size,
-                           size_t &bytes_written) = 0;
-    virtual int finish_entry(File &file);
-    virtual int close(File &file);
+    virtual bool init();
+    virtual bool set_option(const char *key, const char *value);
+    virtual bool get_header(File &file, Header &header) = 0;
+    virtual bool write_header(File &file, const Header &header) = 0;
+    virtual bool get_entry(File &file, Entry &entry) = 0;
+    virtual bool write_entry(File &file, const Entry &entry) = 0;
+    virtual bool write_data(File &file, const void *buf, size_t buf_size,
+                            size_t &bytes_written) = 0;
+    virtual bool finish_entry(File &file);
+    virtual bool close(File &file);
 
 protected:
     Writer &_writer;
@@ -72,9 +72,8 @@ enum class WriterState : uint8_t
     Header  = 1u << 2,
     Entry   = 1u << 3,
     Data    = 1u << 4,
-    Closed  = 1u << 5,
-    Fatal   = 1u << 6,
-    Moved   = 1u << 7,
+    Fatal   = 1u << 5,
+    Moved   = 1u << 6,
 };
 MB_DECLARE_FLAGS(WriterStates, WriterState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(WriterStates)

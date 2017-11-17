@@ -68,6 +68,10 @@ std::string ReaderErrorCategory::message(int ev) const
         return "no formats registered";
     case ReaderError::UnknownFileFormat:
         return "unknown file format";
+    case ReaderError::EndOfEntries:
+        return "end of entries";
+    case ReaderError::UnsupportedGoTo:
+        return "go to entry not supported";
     default:
         return "(unknown reader error)";
     }

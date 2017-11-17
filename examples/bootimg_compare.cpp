@@ -81,45 +81,38 @@ int main(int argc, char *argv[])
     Entry entry1;
     Entry entry2;
     size_t entries = 0;
-    int ret;
 
     // Set up reader formats
-    ret = reader1.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader1.enable_format_all()) {
         fprintf(stderr, "Failed to enable all boot image formats: %s\n",
                 reader1.error_string().c_str());
         return EXIT_FAILURE;
     }
-    ret = reader2.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader2.enable_format_all()) {
         fprintf(stderr, "Failed to enable all boot image formats: %s\n",
                 reader2.error_string().c_str());
         return EXIT_FAILURE;
     }
 
     // Open boot images
-    ret = reader1.open_filename(filename1);
-    if (ret != RET_OK) {
+    if (!reader1.open_filename(filename1)) {
         fprintf(stderr, "%s: Failed to open boot image for reading: %s\n",
                 filename1, reader1.error_string().c_str());
         return EXIT_FAILURE;
     }
-    ret = reader2.open_filename(filename2);
-    if (ret != RET_OK) {
+    if (!reader2.open_filename(filename2)) {
         fprintf(stderr, "%s: Failed to open boot image for reading: %s\n",
                 filename2, reader2.error_string().c_str());
         return EXIT_FAILURE;
     }
 
     // Read headers
-    ret = reader1.read_header(header1);
-    if (ret != RET_OK) {
+    if (!reader1.read_header(header1)) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
                 filename1, reader1.error_string().c_str());
         return EXIT_FAILURE;
     }
-    ret = reader2.read_header(header2);
-    if (ret != RET_OK) {
+    if (!reader2.read_header(header2)) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
                 filename2, reader2.error_string().c_str());
         return EXIT_FAILURE;
@@ -132,20 +125,31 @@ int main(int argc, char *argv[])
 
     // Count entries in first boot image
     {
-        while ((ret = reader1.read_entry(entry1)) == RET_OK) {
+        while (true) {
+            if (!reader1.read_entry(entry1)) {
+                if (reader1.error() == ReaderError::EndOfEntries) {
+                    break;
+                }
+                fprintf(stderr, "%s: Failed to read entry: %s\n",
+                        filename1, reader1.error_string().c_str());
+                return EXIT_FAILURE;
+            }
             ++entries;
-        }
-
-        if (ret != RET_EOF) {
-            fprintf(stderr, "%s: Failed to read entry: %s\n",
-                    filename1, reader1.error_string().c_str());
-            return EXIT_FAILURE;
         }
     }
 
     // Compare each entry in second image to first
     {
-        while ((ret = reader2.read_entry(entry2)) == RET_OK) {
+        while (true) {
+            if (!reader2.read_entry(entry2)) {
+                if (reader2.error() == ReaderError::EndOfEntries) {
+                    break;
+                }
+                fprintf(stderr, "%s: Failed to read entry: %s",
+                        filename2, reader2.error_string().c_str());
+                return EXIT_FAILURE;
+            }
+
             if (entries == 0) {
                 // Too few entries in second image
                 return 2;
@@ -153,14 +157,15 @@ int main(int argc, char *argv[])
             --entries;
 
             // Find the same entry in first image
-            ret = reader1.go_to_entry(entry1, *entry2.type());
-            if (ret == RET_EOF) {
-                // Cannot be equal if entry is missing
-                return 2;
-            } else if (ret != RET_OK) {
-                fprintf(stderr, "%s: Failed to seek to entry: %s\n", filename1,
-                        reader1.error_string().c_str());
-                return EXIT_FAILURE;
+            if (!reader1.go_to_entry(entry1, *entry2.type())) {
+                if (reader1.error() == ReaderError::EndOfEntries) {
+                    // Cannot be equal if entry is missing
+                    return 2;
+                } else {
+                    fprintf(stderr, "%s: Failed to seek to entry: %s\n",
+                            filename1, reader1.error_string().c_str());
+                    return EXIT_FAILURE;
+                }
             }
 
             // Compare data
@@ -169,10 +174,16 @@ int main(int argc, char *argv[])
             size_t n1;
             size_t n2;
 
-            while ((ret = reader1.read_data(
-                    buf1, sizeof(buf1), n1)) == RET_OK) {
-                ret = reader2.read_data(buf2, n1, n2);
-                if (ret != RET_OK) {
+            while (true) {
+                if (!reader1.read_data(buf1, sizeof(buf1), n1)) {
+                    fprintf(stderr, "%s: Failed to read data: %s\n", filename1,
+                            reader1.error_string().c_str());
+                    return EXIT_FAILURE;
+                } else if (n1 == 0) {
+                    break;
+                }
+
+                if (!reader2.read_data(buf2, n1, n2)) {
                     fprintf(stderr, "%s: Failed to read data: %s\n", filename2,
                             reader2.error_string().c_str());
                     return EXIT_FAILURE;
@@ -183,18 +194,6 @@ int main(int argc, char *argv[])
                     return 2;
                 }
             }
-
-            if (ret != RET_EOF) {
-                fprintf(stderr, "%s: Failed to read data: %s\n", filename1,
-                        reader1.error_string().c_str());
-                return EXIT_FAILURE;
-            }
-        }
-
-        if (ret != RET_EOF) {
-            fprintf(stderr, "%s: Failed to read entry: %s",
-                    filename2, reader2.error_string().c_str());
-            return EXIT_FAILURE;
         }
     }
 

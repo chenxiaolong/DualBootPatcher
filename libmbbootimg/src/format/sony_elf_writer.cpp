@@ -72,19 +72,17 @@ std::string SonyElfFormatWriter::name()
     return FORMAT_NAME_SONY_ELF;
 }
 
-int SonyElfFormatWriter::get_header(File &file, Header &header)
+bool SonyElfFormatWriter::get_header(File &file, Header &header)
 {
     (void) file;
 
     header.set_supported_fields(SUPPORTED_FIELDS);
 
-    return RET_OK;
+    return true;
 }
 
-int SonyElfFormatWriter::write_header(File &file, const Header &header)
+bool SonyElfFormatWriter::write_header(File &file, const Header &header)
 {
-    int ret;
-
     _cmdline.clear();
 
     _hdr = {};
@@ -185,8 +183,9 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
     entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
     entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
 
-    ret = _seg.set_entries(_writer, std::move(entries));
-    if (ret != RET_OK) { return ret; }
+    if (!_seg.set_entries(_writer, std::move(entries))) {
+        return false;
+    }
 
     // Start writing at offset 4096
     auto seek_ret = file.seek(4096, SEEK_SET);
@@ -194,19 +193,17 @@ int SonyElfFormatWriter::write_header(File &file, const Header &header)
         _writer.set_error(seek_ret.error(),
                           "Failed to seek to first page: %s",
                           seek_ret.error().message().c_str());
-        return file.is_fatal() ? RET_FATAL : RET_FAILED;
+        if (file.is_fatal()) { _writer.set_fatal(); }
+        return false;
     }
 
-    return RET_OK;
+    return true;
 }
 
-int SonyElfFormatWriter::get_entry(File &file, Entry &entry)
+bool SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 {
-    int ret;
-
-    ret = _seg.get_entry(file, entry, _writer);
-    if (ret != RET_OK) {
-        return ret;
+    if (!_seg.get_entry(file, entry, _writer)) {
+        return false;
     }
 
     auto swentry = _seg.entry();
@@ -219,40 +216,45 @@ int SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 
         entry.set_size(_cmdline.size());
 
-        ret = write_entry(file, entry);
-        if (ret != RET_OK) { return RET_FATAL; }
+        if (!write_entry(file, entry)) {
+            _writer.set_fatal();
+            return false;
+        }
 
-        ret = write_data(file, _cmdline.data(), _cmdline.size(), n);
-        if (ret != RET_OK) { return RET_FATAL; }
+        if (!write_data(file, _cmdline.data(), _cmdline.size(), n)) {
+            _writer.set_fatal();
+            return false;
+        }
 
-        ret = finish_entry(file);
-        if (ret != RET_OK) { return RET_FATAL; }
+        if (!finish_entry(file)) {
+            _writer.set_fatal();
+            return false;
+        }
 
-        ret = get_entry(file, entry);
-        if (ret != RET_OK) { return RET_FATAL; }
+        if (!get_entry(file, entry)) {
+            _writer.set_fatal();
+            return false;
+        }
     }
 
-    return RET_OK;
+    return true;
 }
 
-int SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
+bool SonyElfFormatWriter::write_entry(File &file, const Entry &entry)
 {
     return _seg.write_entry(file, entry, _writer);
 }
 
-int SonyElfFormatWriter::write_data(File &file, const void *buf,
-                                    size_t buf_size, size_t &bytes_written)
+bool SonyElfFormatWriter::write_data(File &file, const void *buf,
+                                     size_t buf_size, size_t &bytes_written)
 {
     return _seg.write_data(file, buf, buf_size, bytes_written, _writer);
 }
 
-int SonyElfFormatWriter::finish_entry(File &file)
+bool SonyElfFormatWriter::finish_entry(File &file)
 {
-    int ret;
-
-    ret = _seg.finish_entry(file, _writer);
-    if (ret != RET_OK) {
-        return ret;
+    if (!_seg.finish_entry(file, _writer)) {
+        return false;
     }
 
     auto swentry = _seg.entry();
@@ -294,10 +296,10 @@ int SonyElfFormatWriter::finish_entry(File &file)
         ++_hdr.e_phnum;
     }
 
-    return RET_OK;
+    return true;
 }
 
-int SonyElfFormatWriter::close(File &file)
+bool SonyElfFormatWriter::close(File &file)
 {
     auto swentry = _seg.entry();
 
@@ -341,7 +343,8 @@ int SonyElfFormatWriter::close(File &file)
             _writer.set_error(seek_ret.error(),
                               "Failed to seek to beginning: %s",
                               seek_ret.error().message().c_str());
-            return file.is_fatal() ? RET_FATAL : RET_FAILED;
+            if (file.is_fatal()) { _writer.set_fatal(); }
+            return false;
         }
 
         // Write headers
@@ -351,12 +354,13 @@ int SonyElfFormatWriter::close(File &file)
                 _writer.set_error(n.error(),
                                   "Failed to write header: %s",
                                   n.error().message().c_str());
-                return file.is_fatal() ? RET_FATAL : RET_FAILED;
+                if (file.is_fatal()) { _writer.set_fatal(); }
+                return false;
             }
         }
     }
 
-    return RET_OK;
+    return true;
 }
 
 }
@@ -364,11 +368,9 @@ int SonyElfFormatWriter::close(File &file)
 /*!
  * \brief Set Sony ELF boot image output format
  *
- * \return
- *   * #RET_OK if the format is successfully set
- *   * \<= #RET_WARN if an error occurs
+ * \return Whether the format is successfully set
  */
-int Writer::set_format_sony_elf()
+bool Writer::set_format_sony_elf()
 {
     return register_format(
             std::make_unique<sonyelf::SonyElfFormatWriter>(*this));

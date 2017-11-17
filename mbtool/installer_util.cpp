@@ -310,31 +310,26 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     Header header;
     Entry in_entry;
     Entry out_entry;
-    int ret;
 
     // Open input boot image
-    ret = reader.enable_format_all();
-    if (ret != RET_OK) {
+    if (!reader.enable_format_all()) {
         LOGE("Failed to enable input boot image formats: %s",
              reader.error_string().c_str());
         return false;
     }
-    ret = reader.open_filename(input_file);
-    if (ret != RET_OK) {
+    if (!reader.open_filename(input_file)) {
         LOGE("%s: Failed to open boot image for reading: %s",
              input_file.c_str(), reader.error_string().c_str());
         return false;
     }
 
     // Open output boot image
-    ret = writer.set_format_by_code(reader.format_code());
-    if (ret != RET_OK) {
+    if (!writer.set_format_by_code(reader.format_code())) {
         LOGE("Failed to set output boot image format: %s",
              writer.error_string().c_str());
         return false;
     }
-    ret = writer.open_filename(output_file);
-    if (ret != RET_OK) {
+    if (!writer.open_filename(output_file)) {
         LOGE("%s: Failed to open boot image for writing: %s",
              output_file.c_str(), writer.error_string().c_str());
         return false;
@@ -347,26 +342,32 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
-    ret = reader.read_header(header);
-    if (ret != RET_OK) {
+    if (!reader.read_header(header)) {
         LOGE("%s: Failed to read header: %s",
              input_file.c_str(), reader.error_string().c_str());
         return false;
     }
-    ret = writer.write_header(header);
-    if (ret != RET_OK) {
+    if (!writer.write_header(header)) {
         LOGE("%s: Failed to write header: %s",
              output_file.c_str(), writer.error_string().c_str());
         return false;
     }
 
     // Write entries
-    while ((ret = writer.get_entry(out_entry)) == RET_OK) {
+    while (true) {
+        if (!writer.get_entry(out_entry)) {
+            if (writer.error() == WriterError::EndOfEntries) {
+                break;
+            }
+            LOGE("%s: Failed to get entry: %s",
+                 output_file.c_str(), writer.error_string().c_str());
+            return false;
+        }
+
         auto type = out_entry.type();
 
         // Write entry metadata
-        ret = writer.write_entry(out_entry);
-        if (ret != RET_OK) {
+        if (!writer.write_entry(out_entry)) {
             LOGE("%s: Failed to write entry: %s",
                  output_file.c_str(), writer.error_string().c_str());
             return false;
@@ -378,14 +379,16 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 return false;
             }
         } else {
-            ret = reader.go_to_entry(in_entry, *type);
-            if (ret == RET_EOF) {
-                LOGV("Skipping non existent boot image entry: %d", *type);
-                continue;
-            } else if (ret != RET_OK) {
-                LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), *type, reader.error_string().c_str());
-                return false;
+            if (!reader.go_to_entry(in_entry, *type)) {
+                if (reader.error() == ReaderError::EndOfEntries) {
+                    LOGV("Skipping non existent boot image entry: %d", *type);
+                    continue;
+                } else {
+                    LOGE("%s: Failed to go to entry: %d: %s",
+                         input_file.c_str(), *type,
+                         reader.error_string().c_str());
+                    return false;
+                }
             }
 
             if (type == ENTRY_TYPE_RAMDISK) {
@@ -441,7 +444,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
     }
 
-    if (writer.close() != RET_OK) {
+    if (!writer.close()) {
         LOGE("%s: Failed to close boot image: %s",
              output_file.c_str(), writer.error_string().c_str());
         return false;

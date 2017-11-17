@@ -47,18 +47,18 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatWriter)
 
-    virtual int type() override;
-    virtual std::string name() override;
+    int type() override;
+    std::string name() override;
 
-    virtual int init() override;
-    virtual int get_header(File &file, Header &header) override;
-    virtual int write_header(File &file, const Header &header) override;
-    virtual int get_entry(File &file, Entry &entry) override;
-    virtual int write_entry(File &file, const Entry &entry) override;
-    virtual int write_data(File &file, const void *buf, size_t buf_size,
-                           size_t &bytes_written) override;
-    virtual int finish_entry(File &file) override;
-    virtual int close(File &file) override;
+    bool init() override;
+    bool get_header(File &file, Header &header) override;
+    bool write_header(File &file, const Header &header) override;
+    bool get_entry(File &file, Entry &entry) override;
+    bool write_entry(File &file, const Entry &entry) override;
+    bool write_data(File &file, const void *buf, size_t buf_size,
+                    size_t &bytes_written) override;
+    bool finish_entry(File &file) override;
+    bool close(File &file) override;
 
 private:
     // Header values

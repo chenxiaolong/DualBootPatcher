@@ -53,16 +53,16 @@ public:
     SegmentReader();
 
     const std::vector<SegmentReaderEntry> & entries() const;
-    int set_entries(Reader &reader, std::vector<SegmentReaderEntry> entries);
+    bool set_entries(Reader &reader, std::vector<SegmentReaderEntry> entries);
 
-    int move_to_entry(File &file, Entry &entry,
-                      std::vector<SegmentReaderEntry>::iterator srentry,
-                      Reader &reader);
+    bool move_to_entry(File &file, Entry &entry,
+                       std::vector<SegmentReaderEntry>::iterator srentry,
+                       Reader &reader);
 
-    int read_entry(File &file, Entry &entry, Reader &reader);
-    int go_to_entry(File &file, Entry &entry, int entry_type, Reader &reader);
-    int read_data(File &file, void *buf, size_t buf_size, size_t &bytes_read,
-                  Reader &reader);
+    bool read_entry(File &file, Entry &entry, Reader &reader);
+    bool go_to_entry(File &file, Entry &entry, int entry_type, Reader &reader);
+    bool read_data(File &file, void *buf, size_t buf_size, size_t &bytes_read,
+                   Reader &reader);
 
 private:
     SegmentReaderState m_state;
