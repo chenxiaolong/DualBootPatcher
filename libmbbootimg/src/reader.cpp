@@ -854,7 +854,9 @@ bool Reader::set_error(std::error_code ec, const char *fmt, ...)
  */
 bool Reader::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), false);
+    if (m_state == ReaderState::Moved) {
+        return false;
+    }
 
     m_error_code = ec;
 

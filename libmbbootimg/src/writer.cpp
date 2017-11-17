@@ -755,7 +755,9 @@ bool Writer::set_error(std::error_code ec, const char *fmt, ...)
  */
 bool Writer::set_error_v(std::error_code ec, const char *fmt, va_list ap)
 {
-    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), false);
+    if (m_state == WriterState::Moved) {
+        return false;
+    }
 
     m_error_code = ec;
 
