@@ -227,6 +227,9 @@ int MtkFormatReader::bid(File &file, int best_bid)
         _mtk_kernel_offset = mtk_kernel_offset;
         _mtk_ramdisk_offset = mtk_ramdisk_offset;
         bid += static_cast<int>(2 * MTK_MAGIC_SIZE * 8);
+    } else if (_reader.error().category() == mtk_error_category()) {
+        // Headers not found. This can't be an MTK boot image.
+        return 0;
     } else {
         return -1;
     }
