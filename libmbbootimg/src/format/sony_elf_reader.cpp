@@ -100,8 +100,6 @@ int SonyElfFormatReader::bid(File &file, int best_bid)
 
 bool SonyElfFormatReader::read_header(File &file, Header &header)
 {
-    int ret;
-
     if (!_have_header) {
         // A bid might not have been performed if the user forced a particular
         // format
@@ -141,17 +139,12 @@ bool SonyElfFormatReader::read_header(File &file, Header &header)
             return false;
         }
 
-        auto n = file_read_fully(file, &phdr, sizeof(phdr));
-        if (!n) {
-            _reader.set_error(n.error(),
+        auto ret = file_read_exact(file, &phdr, sizeof(phdr));
+        if (!ret) {
+            _reader.set_error(ret.error(),
                               "Failed to read segment %" PRIu16 ": %s",
-                              i, n.error().message().c_str());
+                              i, ret.error().message().c_str());
             if (file.is_fatal()) { _reader.set_fatal(); }
-            return false;
-        } else if (n.value() != sizeof(phdr)) {
-            _reader.set_error(SonyElfError::UnexpectedEndOfFile,
-                              "Unexpected EOF when reading segment"
-                              " header %" PRIu16, i);
             return false;
         }
 
@@ -179,20 +172,16 @@ bool SonyElfFormatReader::read_header(File &file, Header &header)
                 return false;
             }
 
-            auto n = file_read_fully(file, cmdline, phdr.p_memsz);
-            if (!n) {
-                _reader.set_error(n.error(),
+            auto ret = file_read_exact(file, cmdline, phdr.p_memsz);
+            if (!ret) {
+                _reader.set_error(ret.error(),
                                   "Failed to read cmdline: %s",
-                                  n.error().message().c_str());
+                                  ret.error().message().c_str());
                 if (file.is_fatal()) { _reader.set_fatal(); };
-                return false;
-            } else if (n.value() != phdr.p_memsz) {
-                _reader.set_error(SonyElfError::UnexpectedEndOfFile,
-                                  "Unexpected EOF when reading cmdline");
                 return false;
             }
 
-            cmdline[n.value()] = '\0';
+            cmdline[phdr.p_memsz] = '\0';
 
             header.set_kernel_cmdline({cmdline});
         } else if (phdr.p_type == SONY_E_TYPE_KERNEL
@@ -297,15 +286,16 @@ bool SonyElfFormatReader::find_sony_elf_header(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, &header, sizeof(header));
-    if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read header: %s",
-                         n.error().message().c_str());
-        if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(header)) {
-        reader.set_error(SonyElfError::SonyElfHeaderTooSmall);
+    auto ret = file_read_exact(file, &header, sizeof(header));
+    if (!ret) {
+        if (ret.error() == FileError::UnexpectedEof) {
+            reader.set_error(SonyElfError::SonyElfHeaderTooSmall);
+        } else {
+            reader.set_error(ret.error(),
+                             "Failed to read header: %s",
+                             ret.error().message().c_str());
+            if (file.is_fatal()) { reader.set_fatal(); }
+        }
         return false;
     }
 

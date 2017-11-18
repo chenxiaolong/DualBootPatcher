@@ -81,17 +81,21 @@ static bool read_mtk_header(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, &mtkhdr, sizeof(mtkhdr));
-    if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read MTK header: %s",
-                         n.error().message().c_str());
-        if (file.is_fatal()) { reader.set_fatal(); }
+    auto ret = file_read_exact(file, &mtkhdr, sizeof(mtkhdr));
+    if (!ret) {
+        if (ret.error() == FileError::UnexpectedEof) {
+            reader.set_error(MtkError::MtkHeaderNotFound,
+                             "MTK header not found at %" PRIu64, offset);
+        } else {
+            reader.set_error(ret.error(),
+                             "Failed to read MTK header: %s",
+                             ret.error().message().c_str());
+            if (file.is_fatal()) { reader.set_fatal(); }
+        }
         return false;
     }
 
-    if (n.value() != sizeof(MtkHeader)
-            || memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
+    if (memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
         reader.set_error(MtkError::MtkHeaderNotFound,
                          "MTK header not found at %" PRIu64, offset);
         return false;

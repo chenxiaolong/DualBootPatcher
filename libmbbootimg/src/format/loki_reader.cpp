@@ -232,16 +232,17 @@ bool LokiFormatReader::find_loki_header(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, &header, sizeof(header));
-    if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read header: %s",
-                         n.error().message().c_str());
-        if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(header)) {
-        reader.set_error(LokiError::LokiHeaderTooSmall,
-                         "Too small to be Loki image");
+    auto ret = file_read_exact(file, &header, sizeof(header));
+    if (!ret) {
+        if (ret.error() == FileError::UnexpectedEof) {
+            reader.set_error(LokiError::LokiHeaderTooSmall,
+                             "Too small to be Loki image");
+        } else {
+            reader.set_error(ret.error(),
+                             "Failed to read header: %s",
+                             ret.error().message().c_str());
+            if (file.is_fatal()) { reader.set_fatal(); }
+        }
         return false;
     }
 
@@ -322,16 +323,13 @@ bool LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
             return false;
         }
 
-        auto n = file_read_fully(file, &ramdisk_addr, sizeof(ramdisk_addr));
-        if (!n) {
-            reader.set_error(n.error(),
+        auto read_ret = file_read_exact(file, &ramdisk_addr,
+                                        sizeof(ramdisk_addr));
+        if (!read_ret) {
+            reader.set_error(read_ret.error(),
                              "Failed to read ramdisk address offset: %s",
-                             n.error().message().c_str());
+                             read_ret.error().message().c_str());
             if (file.is_fatal()) { reader.set_fatal(); }
-            return false;
-        } else if (n.value() != sizeof(ramdisk_addr)) {
-            reader.set_error(LokiError::UnexpectedEndOfFile,
-                             "Unexpected EOF when reading ramdisk address");
             return false;
         }
 
@@ -417,12 +415,13 @@ bool LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         OUTCOME_TRYV(file_.seek(static_cast<int64_t>(offset + 3), SEEK_SET));
 
         // Read next bytes for flags
-        auto n = file_read_fully(file_, &flags, sizeof(flags));
-        if (!n) {
-            return n.as_failure();
-        } else if (n.value() != sizeof(flags)) {
-            // EOF
-            return FileSearchAction::Stop;
+        auto ret = file_read_exact(file_, &flags, sizeof(flags));
+        if (!ret) {
+            if (ret.error() == FileError::UnexpectedEof) {
+                return FileSearchAction::Stop;
+            } else {
+                return ret.as_failure();
+            }
         }
 
         if (!result_->flag0_offset && flags == 0x00) {
@@ -538,19 +537,16 @@ bool LokiFormatReader::find_ramdisk_size_old(Reader &reader, File &file,
             return false;
         }
 
-        auto n = file_read_fully(file, buf, to_read);
-        if (!n) {
-            reader.set_error(n.error(),
+        auto ret = file_read_exact(file, buf, to_read);
+        if (!ret) {
+            reader.set_error(ret.error(),
                              "Failed to read: %s",
-                             n.error().message().c_str());
+                             ret.error().message().c_str());
             if (file.is_fatal()) { reader.set_fatal(); }
-            return false;
-        } else if (n.value() != to_read) {
-            reader.set_error(LokiError::UnexpectedFileTruncation);
             return false;
         }
 
-        for (size_t i = n.value(); i-- > 0; ) {
+        for (size_t i = to_read; i-- > 0; ) {
             if (buf[i] != '\0') {
                 ramdisk_size_out = cur_offset - ramdisk_offset + i;
                 return true;
@@ -602,16 +598,12 @@ bool LokiFormatReader::find_linux_kernel_size(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, &kernel_size, sizeof(kernel_size));
-    if (!n) {
-        reader.set_error(n.error(),
+    auto ret = file_read_exact(file, &kernel_size, sizeof(kernel_size));
+    if (!ret) {
+        reader.set_error(ret.error(),
                          "Failed to read size from kernel header: %s",
-                         n.error().message().c_str());
+                         ret.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(kernel_size)) {
-        reader.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when reading kernel header");
         return false;
     }
 

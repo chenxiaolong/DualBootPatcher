@@ -41,8 +41,6 @@ const char * SparseFileErrorCategory::name() const noexcept
 std::string SparseFileErrorCategory::message(int ev) const
 {
     switch (static_cast<SparseFileError>(ev)) {
-    case SparseFileError::UnexpectedEndOfFile:
-        return "unexpected end of file";
     case SparseFileError::InvalidSparseMagic:
         return "invalid sparse header magic";
     case SparseFileError::InvalidSparseMajorVersion:

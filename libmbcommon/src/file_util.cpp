@@ -43,9 +43,13 @@ namespace mb
  * \brief Read from a File handle.
  *
  * This function differs from File::read() in that it will call File::read()
- * repeatedly until the buffer is filled or EOF is reached. If File::read()
+ * repeatedly until \p size bytes are read or EOF is reached. If File::read()
  * returns std::errc::interrupted, then the read operation will be automatically
  * reattempted.
+ *
+ * If this function fails, the contents of \p buf are unspecified. It is also
+ * unspecified how many bytes are read, though it will always be less than
+ * \p size.
  *
  * \param[in] file File handle
  * \param[out] buf Buffer to read into
@@ -54,7 +58,7 @@ namespace mb
  * \return Number of bytes read if some are successfully read or EOF is reached.
  *         Otherwise, the error code.
  */
-oc::result<size_t> file_read_fully(File &file, void *buf, size_t size)
+oc::result<size_t> file_read_retry(File &file, void *buf, size_t size)
 {
     size_t bytes_read = 0;
 
@@ -81,9 +85,12 @@ oc::result<size_t> file_read_fully(File &file, void *buf, size_t size)
  * \brief Write to a File handle.
  *
  * This function differs from File::write() in that it will call File::write()
- * repeatedly until the buffer is filled or EOF is reached. If File::write()
- * returns std::errc::interrupted, then the write operation will be
+ * repeatedly until \p size bytes are written or EOF is reached. If
+ * File::write() returns std::errc::interrupted, then the write operation is
  * automatically reattempted.
+ *
+ * If this function fails, it is unspecified how many bytes were written, though
+ * it will always be less than \p size.
  *
  * \param file File handle
  * \param buf Buffer to write from
@@ -92,7 +99,7 @@ oc::result<size_t> file_read_fully(File &file, void *buf, size_t size)
  * \return Number of bytes written if some are successfully written or EOF is
  *         reached. Otherwise, the error code.
  */
-oc::result<size_t> file_write_fully(File &file, const void *buf, size_t size)
+oc::result<size_t> file_write_retry(File &file, const void *buf, size_t size)
 {
     size_t bytes_written = 0;
 
@@ -116,6 +123,67 @@ oc::result<size_t> file_write_fully(File &file, const void *buf, size_t size)
 }
 
 /*!
+ * \brief Read from a File handle.
+ *
+ * This function differs from File::read() in that it will call File::read()
+ * repeatedly until \p size bytes are read. If File::read() returns
+ * std::errc::interrupted, then the read operation will be automatically
+ * reattempted. If EOF is reached before the specified number of bytes are read,
+ * then FileError::UnexpectedEof will be returned.
+ *
+ * If this function fails, the contents of \p buf are unspecified. It is also
+ * unspecified how many bytes are read, though it will always be less than
+ * \p size.
+ *
+ * \param[in] file File handle
+ * \param[out] buf Buffer to read into
+ * \param[in] size Buffer size
+ *
+ * \return Nothing if the specified number of bytes were successfully read.
+ *         Otherwise, the error code.
+ */
+oc::result<void> file_read_exact(File &file, void *buf, size_t size)
+{
+    OUTCOME_TRY(n, file_read_retry(file, buf, size));
+
+    if (n != size) {
+        return FileError::UnexpectedEof;
+    }
+
+    return oc::success();
+}
+
+/*!
+ * \brief Write to a File handle.
+ *
+ * This function differs from File::write() in that it will call File::write()
+ * repeatedly until \p size bytes are written. If File::write() returns
+ * std::errc::interrupted, then the write operation will be automatically
+ * reattempted. If EOF is reached before the specified number of bytes are read,
+ * then FileError::UnexpectedEof will be returned.
+ *
+ * If this function fails, it is unspecified how many bytes were written, though
+ * it will always be less than \p size.
+ *
+ * \param file File handle
+ * \param buf Buffer to write from
+ * \param size Buffer size
+ *
+ * \return Nothing if the specified number of bytes were successfully written.
+ *         Otherwise, the error code.
+ */
+oc::result<void> file_write_exact(File &file, const void *buf, size_t size)
+{
+    OUTCOME_TRY(n, file_write_retry(file, buf, size));
+
+    if (n != size) {
+        return FileError::UnexpectedEof;
+    }
+
+    return oc::success();
+}
+
+/*!
  * \brief Read from a File handle and discard the data.
  *
  * This function will repeatedly call File::read() and discard any data that
@@ -135,19 +203,15 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
     uint64_t bytes_discarded = 0;
 
     while (bytes_discarded < size) {
-        auto to_read = std::min<uint64_t>(size, sizeof(buf));
-        auto n = file.read(buf, static_cast<size_t>(to_read));
-        if (!n) {
-            if (n.error() == std::errc::interrupted) {
-                continue;
-            } else {
-                return n.as_failure();
-            }
-        } else if (n.value() == 0) {
+        auto to_read = std::min<uint64_t>(size - bytes_discarded, sizeof(buf));
+
+        OUTCOME_TRY(n, file_read_retry(file, buf,
+                                       static_cast<size_t>(to_read)));
+        bytes_discarded += n;
+
+        if (n < to_read) {
             break;
         }
-
-        bytes_discarded += n.value();
     }
 
     return bytes_discarded;
@@ -284,7 +348,7 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
     ptr_remain = buf.size();
 
     while (true) {
-        OUTCOME_TRY(n, file_read_fully(file, ptr, ptr_remain));
+        OUTCOME_TRY(n, file_read_retry(file, ptr, ptr_remain));
 
         // Number of available bytes in buf
         n += static_cast<size_t>(ptr - buf.data());
@@ -359,13 +423,13 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
  * This function is equivalent to `memmove()`, except it operates on a File
  * handle. The source and destination regions can overlap. In the degenerate
  * case where \p src == \p dest or \p size == 0, no operation will be performed,
- * but the function will return true and set \p size_moved accordingly.
+ * but the function will return \p size accordingly.
  *
  * \note This function is very seek-heavy and may be slow if the handle cannot
  *       seek efficiently. It will perform two seeks per loop interation. Each
  *       iteration moves up to 10240 bytes.
  *
- * \note If \p *size_moved is less than \p size, then the *first* \p *size_moved
+ * \note If the return value, \p r, is less than \p size, then the *first* \p r
  *       bytes have been copied from offset \p src to offset \p dest. This is
  *       true even if \p src \< \p dest, resulting in a backwards copy.
  *
@@ -405,7 +469,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                                    SEEK_SET));
 
             // Read data from source
-            OUTCOME_TRY(n_read, file_read_fully(
+            OUTCOME_TRY(n_read, file_read_retry(
                     file, buf, static_cast<size_t>(to_read)));
             if (n_read == 0) {
                 break;
@@ -416,7 +480,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                                    SEEK_SET));
 
             // Write data to destination
-            OUTCOME_TRY(n_written, file_write_fully(file, buf, n_read));
+            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
 
             size_moved += n_written;
 
@@ -434,7 +498,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                     src + size - size_moved - to_read), SEEK_SET));
 
             // Read data form source
-            OUTCOME_TRY(n_read, file_read_fully(
+            OUTCOME_TRY(n_read, file_read_retry(
                     file, buf, static_cast<size_t>(to_read)));
             if (n_read == 0) {
                 break;
@@ -445,7 +509,7 @@ oc::result<uint64_t> file_move(File &file, uint64_t src, uint64_t dest,
                     dest + size - size_moved - n_read), SEEK_SET));
 
             // Write data to destination
-            OUTCOME_TRY(n_written, file_write_fully(file, buf, n_read));
+            OUTCOME_TRY(n_written, file_write_retry(file, buf, n_read));
 
             size_moved += n_written;
 

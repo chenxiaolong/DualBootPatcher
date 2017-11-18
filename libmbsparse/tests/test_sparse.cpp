@@ -530,7 +530,7 @@ TEST_F(SparseTest, CheckReadTruncatedChunkHeaderFatal)
     ASSERT_TRUE(_file.open(&_source_file));
     auto n = _file.read(buf, sizeof(buf));
     ASSERT_FALSE(n);
-    ASSERT_EQ(n.error(), SparseFileError::UnexpectedEndOfFile);
+    ASSERT_EQ(n.error(), FileError::UnexpectedEof);
     ASSERT_TRUE(_file.is_fatal());
 }
 

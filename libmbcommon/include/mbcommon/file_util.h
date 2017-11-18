@@ -34,10 +34,15 @@ using FileSearchResultCallback =
         oc::result<FileSearchAction> (*)(File &file, void *userdata,
                                          uint64_t offset);
 
-MB_EXPORT oc::result<size_t> file_read_fully(File &file,
+MB_EXPORT oc::result<size_t> file_read_retry(File &file,
                                              void *buf, size_t size);
-MB_EXPORT oc::result<size_t> file_write_fully(File &file,
+MB_EXPORT oc::result<size_t> file_write_retry(File &file,
                                               const void *buf, size_t size);
+
+MB_EXPORT oc::result<void> file_read_exact(File &file,
+                                           void *buf, size_t size);
+MB_EXPORT oc::result<void> file_write_exact(File &file,
+                                            const void *buf, size_t size);
 
 MB_EXPORT oc::result<uint64_t> file_read_discard(File &file, uint64_t size);
 

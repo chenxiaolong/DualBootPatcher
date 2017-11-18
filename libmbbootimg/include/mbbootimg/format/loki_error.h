@@ -56,7 +56,6 @@ enum class LokiError
 
     // Miscellaneous
     UnexpectedFileTruncation            = 50,
-    UnexpectedEndOfFile                 = 51,
 };
 
 MB_EXPORT std::error_code make_error_code(LokiError e);

@@ -30,8 +30,6 @@ namespace sparse
 
 enum class SparseFileError
 {
-    UnexpectedEndOfFile         = 10,
-
     // Sparse header errors
     InvalidSparseMagic          = 20,
     InvalidSparseMajorVersion   = 21,

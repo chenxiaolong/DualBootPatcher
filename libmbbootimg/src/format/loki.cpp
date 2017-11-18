@@ -157,16 +157,12 @@ static bool _loki_read_android_header(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, &ahdr, sizeof(ahdr));
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_read_exact(file, &ahdr, sizeof(ahdr));
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to read Android header: %s",
-                         n.error().message().c_str());
+                         ret.error().message().c_str());
         if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(ahdr)) {
-        writer.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when reading Android header");
         return false;
     }
 
@@ -191,16 +187,12 @@ static bool _loki_write_android_header(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_write_fully(file, &dup, sizeof(dup));
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, &dup, sizeof(dup));
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write Android header: %s",
-                         n.error().message().c_str());
+                         ret.error().message().c_str());
         if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(dup)) {
-        writer.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when writing Android header");
         return false;
     }
 
@@ -223,16 +215,12 @@ static bool _loki_write_loki_header(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_write_fully(file, &dup, sizeof(dup));
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, &dup, sizeof(dup));
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write Loki header: %s",
-                         n.error().message().c_str());
+                         ret.error().message().c_str());
         if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(dup)) {
-        writer.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when writing Loki header");
         return false;
     }
 
@@ -283,16 +271,11 @@ static bool _loki_write_aboot(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_write_fully(file, aboot + aboot_func_offset, fake_size);
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, aboot + aboot_func_offset, fake_size);
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write aboot segment: %s",
-                         n.error().message().c_str());
-        writer.set_fatal();
-        return false;
-    } else if (n.value() != fake_size) {
-        writer.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when writing aboot segment");
+                         ret.error().message().c_str());
         writer.set_fatal();
         return false;
     }
@@ -314,16 +297,11 @@ static bool _loki_write_shellcode(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_write_fully(file, patch, LOKI_SHELLCODE_SIZE);
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, patch, LOKI_SHELLCODE_SIZE);
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write shellcode: %s",
-                         n.error().message().c_str());
-        if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != LOKI_SHELLCODE_SIZE) {
-        writer.set_error(LokiError::UnexpectedEndOfFile,
-                         "Unexpected EOF when writing shellcode");
+                         ret.error().message().c_str());
         writer.set_fatal();
         return false;
     }
