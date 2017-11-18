@@ -69,16 +69,12 @@ static int _mtk_header_update_size(Writer &writer, File &file,
         return false;
     }
 
-    auto n = file_write_fully(file, &le32_size, sizeof(le32_size));
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, &le32_size, sizeof(le32_size));
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write MTK size field: %s",
-                         n.error().message().c_str());
+                         ret.error().message().c_str());
         if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != sizeof(le32_size)) {
-        writer.set_error(n.error(),
-                         "Unexpected EOF when writing MTK size field");
         return false;
     }
 
@@ -117,20 +113,16 @@ static bool _mtk_compute_sha1(Writer &writer, SegmentWriter &seg,
         while (remain > 0) {
             auto to_read = std::min<uint64_t>(remain, sizeof(buf));
 
-            auto n = file_read_fully(file, buf, static_cast<size_t>(to_read));
-            if (!n) {
-                writer.set_error(n.error(),
+            auto ret = file_read_exact(file, buf, static_cast<size_t>(to_read));
+            if (!ret) {
+                writer.set_error(ret.error(),
                                  "Failed to read entry: %s",
-                                 n.error().message().c_str());
+                                 ret.error().message().c_str());
                 if (writer.is_fatal()) { writer.set_fatal(); }
-                return false;
-            } else if (n.value() != to_read) {
-                writer.set_error(n.error(),
-                                 "Unexpected EOF when reading entry");
                 return false;
             }
 
-            if (!SHA1_Update(&sha_ctx, buf, n.value())) {
+            if (!SHA1_Update(&sha_ctx, buf, static_cast<size_t>(to_read))) {
                 writer.set_error(android::AndroidError::Sha1UpdateError);
                 return false;
             }
@@ -434,11 +426,11 @@ bool MtkFormatWriter::close(File &file)
         }
 
         // Write header
-        auto n = file_write_fully(file, &hdr, sizeof(hdr));
-        if (!n || n.value() != sizeof(hdr)) {
-            _writer.set_error(n.error(),
+        auto ret = file_write_exact(file, &hdr, sizeof(hdr));
+        if (!ret) {
+            _writer.set_error(ret.error(),
                               "Failed to write header: %s",
-                              n.error().message().c_str());
+                              ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
             return false;
         }

@@ -349,11 +349,11 @@ bool SonyElfFormatWriter::close(File &file)
 
         // Write headers
         for (auto it = headers; it->ptr && it->can_write; ++it) {
-            auto n = file_write_fully(file, it->ptr, it->size);
-            if (!n || n.value() != it->size) {
-                _writer.set_error(n.error(),
+            auto ret = file_write_exact(file, it->ptr, it->size);
+            if (!ret) {
+                _writer.set_error(ret.error(),
                                   "Failed to write header: %s",
-                                  n.error().message().c_str());
+                                  ret.error().message().c_str());
                 if (file.is_fatal()) { _writer.set_fatal(); }
                 return false;
             }

@@ -60,8 +60,6 @@ std::string SegmentErrorCategory::message(int ev) const
         return "read would overflow integer";
     case SegmentError::WriteWouldOverflowInteger:
         return "write would overflow integer";
-    case SegmentError::EntryIsTruncated:
-        return "entry is truncated";
     case SegmentError::InvalidEntrySize:
         return "invalid entry size";
     default:

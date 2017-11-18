@@ -34,8 +34,7 @@ enum class SegmentError
     EntryWouldOverflowOffset    = 11,
     ReadWouldOverflowInteger    = 12,
     WriteWouldOverflowInteger   = 13,
-    EntryIsTruncated            = 14,
-    InvalidEntrySize            = 15,
+    InvalidEntrySize            = 14,
 };
 
 MB_EXPORT std::error_code make_error_code(SegmentError e);

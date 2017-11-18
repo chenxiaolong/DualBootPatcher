@@ -152,21 +152,17 @@ bool SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
         return false;
     }
 
-    auto n = file_write_fully(file, buf, buf_size);
-    if (!n) {
-        writer.set_error(n.error(),
+    auto ret = file_write_exact(file, buf, buf_size);
+    if (!ret) {
+        writer.set_error(ret.error(),
                          "Failed to write data: %s",
-                         n.error().message().c_str());
-        if (file.is_fatal()) { writer.set_fatal(); }
-        return false;
-    } else if (n.value() != buf_size) {
-        writer.set_error(n.error(), "Write was truncated");
+                         ret.error().message().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
         writer.set_fatal();
         return false;
     }
-    bytes_written = n.value();
+    bytes_written = buf_size;
 
     m_entry_size += static_cast<uint32_t>(buf_size);
     *m_pos += buf_size;

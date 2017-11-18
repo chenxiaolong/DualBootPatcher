@@ -329,11 +329,11 @@ bool LokiFormatWriter::close(File &file)
         }
 
         // Write header
-        auto n = file_write_fully(file, &hdr, sizeof(hdr));
-        if (!n || n.value() != sizeof(hdr)) {
-            _writer.set_error(n.error(),
+        auto ret = file_write_exact(file, &hdr, sizeof(hdr));
+        if (!ret) {
+            _writer.set_error(ret.error(),
                               "Failed to write header: %s",
-                              n.error().message().c_str());
+                              ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
             return false;
         }

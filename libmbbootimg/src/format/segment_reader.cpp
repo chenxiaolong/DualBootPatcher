@@ -160,7 +160,8 @@ bool SegmentReader::read_data(File &file, void *buf, size_t buf_size,
         return false;
     }
 
-    auto n = file_read_fully(file, buf, to_copy);
+    // We allow truncation for certain things, so we can't use file_read_exact()
+    auto n = file_read_retry(file, buf, to_copy);
     if (!n) {
         reader.set_error(n.error(),
                          "Failed to read data: %s",
@@ -173,9 +174,9 @@ bool SegmentReader::read_data(File &file, void *buf, size_t buf_size,
     m_read_cur_offset += bytes_read;
 
     // Fail if we reach EOF early
-    if (bytes_read == 0 && m_read_cur_offset != m_read_end_offset
+    if (bytes_read < to_copy && m_read_cur_offset != m_read_end_offset
             && !m_entry->can_truncate) {
-        reader.set_error(SegmentError::EntryIsTruncated,
+        reader.set_error(FileError::UnexpectedEof,
                          "Entry is truncated (expected %" PRIu64 " more bytes)",
                          m_read_end_offset - m_read_cur_offset);
         reader.set_fatal();

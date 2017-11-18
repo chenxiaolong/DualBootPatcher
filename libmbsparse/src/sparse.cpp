@@ -313,7 +313,7 @@ oc::result<void> SparseFile::on_open()
     OUTCOME_TRY(n, m_file->read(&first_byte, 1));
     if (n != 1) {
         DEBUG("Failed to read first byte of file");
-        return SparseFileError::UnexpectedEndOfFile;
+        return FileError::UnexpectedEof;
     }
     m_cur_src_offset += n;
 
@@ -534,16 +534,13 @@ void SparseFile::clear()
 
 oc::result<void> SparseFile::wread(void *buf, size_t size)
 {
-    OUTCOME_TRY(bytes_read, file_read_fully(*m_file, buf, size));
-
-    if (bytes_read != size) {
-        DEBUG("Requested %" MB_PRIzu " bytes, but only read %" MB_PRIzu " bytes",
-              size, bytes_read);
+    auto ret = file_read_exact(*m_file, buf, size);
+    if (!ret) {
         set_fatal();
-        return SparseFileError::UnexpectedEndOfFile;
+        return ret.as_failure();
     }
 
-    m_cur_src_offset += bytes_read;
+    m_cur_src_offset += size;
     return oc::success();
 }
 
@@ -580,7 +577,7 @@ oc::result<void> SparseFile::skip_bytes(uint64_t bytes)
         if (discarded != bytes) {
             DEBUG("Reached EOF when skipping bytes");
             set_fatal();
-            return SparseFileError::UnexpectedEndOfFile;
+            return FileError::UnexpectedEof;
         }
         return oc::success();
     }

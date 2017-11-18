@@ -281,22 +281,22 @@ bool AndroidFormatWriter::close(File &file)
         // Write bump magic if we're outputting a bump'd image. Otherwise, write
         // the Samsung SEAndroid magic.
         if (_is_bump) {
-            auto n = file_write_fully(file, bump::BUMP_MAGIC,
-                                      bump::BUMP_MAGIC_SIZE);
-            if (!n || n.value() != bump::BUMP_MAGIC_SIZE) {
-                _writer.set_error(n.error(),
+            auto ret = file_write_exact(file, bump::BUMP_MAGIC,
+                                        bump::BUMP_MAGIC_SIZE);
+            if (!ret) {
+                _writer.set_error(ret.error(),
                                   "Failed to write Bump magic: %s",
-                                  n.error().message().c_str());
+                                  ret.error().message().c_str());
                 if (file.is_fatal()) { _writer.set_fatal(); }
                 return false;
             }
         } else {
-            auto n = file_write_fully(file, SAMSUNG_SEANDROID_MAGIC,
-                                      SAMSUNG_SEANDROID_MAGIC_SIZE);
-            if (!n || n.value() != SAMSUNG_SEANDROID_MAGIC_SIZE) {
-                _writer.set_error(n.error(),
+            auto ret = file_write_exact(file, SAMSUNG_SEANDROID_MAGIC,
+                                        SAMSUNG_SEANDROID_MAGIC_SIZE);
+            if (!ret) {
+                _writer.set_error(ret.error(),
                                   "Failed to write SEAndroid magic: %s",
-                                  n.error().message().c_str());
+                                  ret.error().message().c_str());
                 if (file.is_fatal()) { _writer.set_fatal(); }
                 return false;
             }
@@ -326,11 +326,11 @@ bool AndroidFormatWriter::close(File &file)
         }
 
         // Write header
-        auto n = file_write_fully(file, &hdr, sizeof(hdr));
-        if (!n || n.value() != sizeof(hdr)) {
-            _writer.set_error(n.error(),
+        auto ret = file_write_exact(file, &hdr, sizeof(hdr));
+        if (!ret) {
+            _writer.set_error(ret.error(),
                               "Failed to write header: %s",
-                              n.error().message().c_str());
+                              ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
             return false;
         }

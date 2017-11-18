@@ -246,7 +246,7 @@ bool AndroidFormatReader::find_header(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, buf, static_cast<size_t>(max_header_offset)
+    auto n = file_read_retry(file, buf, static_cast<size_t>(max_header_offset)
                              + sizeof(AndroidHeader));
     if (!n) {
         reader.set_error(n.error(),
@@ -336,7 +336,7 @@ bool AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
         return false;
     }
 
-    auto n = file_read_fully(file, buf, sizeof(buf));
+    auto n = file_read_retry(file, buf, sizeof(buf));
     if (!n) {
         reader.set_error(n.error(),
                          "Failed to read SEAndroid magic: %s",
@@ -411,7 +411,7 @@ bool AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
         return false;
     }
 
-    auto n = file_read_fully(file, buf, sizeof(buf));
+    auto n = file_read_retry(file, buf, sizeof(buf));
     if (!n) {
         reader.set_error(n.error(),
                          "Failed to read SEAndroid magic: %s",

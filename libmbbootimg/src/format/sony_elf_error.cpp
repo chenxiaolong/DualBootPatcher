@@ -62,8 +62,6 @@ std::string SonyElfErrorCategory::message(int ev) const
         return "kernel cmdline too long";
     case SonyElfError::InvalidTypeOrFlagsField:
         return "invalid type or flags field";
-    case SonyElfError::UnexpectedEndOfFile:
-        return "unexpected end of file";
     default:
         return "(unknown Sony ELF format error)";
     }

@@ -601,10 +601,11 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
             return false;
         }
 
-        auto n = file_write_fully(fout, target_pattern, sizeof(target_pattern));
-        if (!n || n.value() != sizeof(target_pattern)) {
+        auto ret = file_write_exact(fout, target_pattern,
+                                    sizeof(target_pattern));
+        if (!ret) {
             LOGE("%s: Failed to write target pattern: %s",
-                 output_file.c_str(), n.error().message().c_str());
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
     }
@@ -667,13 +668,13 @@ bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
         size_t to_read = static_cast<size_t>(
                 std::min<uint64_t>(to_copy, sizeof(buf)));
 
-        auto n = file_read_fully(fin, buf, to_read);
+        auto n = file_read_retry(fin, buf, to_read);
         if (!n || n.value() != to_read) {
             LOGE("Failed to read data: %s", n.error().message().c_str());
             return false;
         }
 
-        n = file_write_fully(fout, buf, to_read);
+        n = file_write_retry(fout, buf, to_read);
         if (!n || n.value() != to_read) {
             LOGE("Failed to write data: %s", n.error().message().c_str());
             return false;
@@ -690,7 +691,7 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
     char buf[10240];
 
     while (true) {
-        auto n_read = file_read_fully(fin, buf, sizeof(buf));
+        auto n_read = file_read_retry(fin, buf, sizeof(buf));
         if (!n_read) {
             LOGE("Failed to read data: %s", n_read.error().message().c_str());
             return false;
@@ -698,7 +699,7 @@ bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
             break;
         }
 
-        auto n_written = file_write_fully(fout, buf, n_read.value());
+        auto n_written = file_write_retry(fout, buf, n_read.value());
         if (!n_written || n_written.value() != n_read.value()) {
             LOGE("Failed to write data: %s",
                  n_written.error().message().c_str());
