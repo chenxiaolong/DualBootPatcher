@@ -662,11 +662,10 @@ static bool write_data_file_to_entry(const std::string &path, Writer &writer)
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        size_t bytes_written;
-
-        if (!writer.write_data(buf, n, bytes_written) || bytes_written != n) {
+        auto bytes_written = writer.write_data(buf, n);
+        if (!bytes_written) {
             fprintf(stderr, "Failed to write entry data: %s\n",
-                    writer.error_string().c_str());
+                    bytes_written.error().message().c_str());
             return false;
         }
 
@@ -693,18 +692,18 @@ static bool write_data_entry_to_file(const std::string &path, Reader &reader)
     }
 
     char buf[10240];
-    size_t n;
 
     while (true) {
-        if (!reader.read_data(buf, sizeof(buf), n)) {
+        auto n = reader.read_data(buf, sizeof(buf));
+        if (!n) {
             fprintf(stderr, "Failed to read entry data: %s\n",
-                    reader.error_string().c_str());
+                    n.error().message().c_str());
             return false;
-        } else if (n == 0) {
+        } else if (n.value() == 0) {
             break;
         }
 
-        if (fwrite(buf, 1, n, fp.get()) != n) {
+        if (fwrite(buf, 1, n.value(), fp.get()) != n.value()) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));
             return false;
@@ -768,9 +767,10 @@ static bool write_file_to_entry(const Paths &paths, Writer &writer,
         return false;
     }
 
-    if (!writer.write_entry(entry)) {
+    auto ret = writer.write_entry(entry);
+    if (!ret) {
         fprintf(stderr, "Failed to write entry: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -940,28 +940,32 @@ static bool unpack_main(int argc, char *argv[])
     Entry entry;
 
     if (type) {
-        if (!reader.enable_format_by_name(type)) {
+        auto ret = reader.enable_format_by_name(type);
+        if (!ret) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, reader.error_string().c_str());
+                    type, ret.error().message().c_str());
             return false;
         }
     } else {
-        if (!reader.enable_format_all()) {
+        auto ret = reader.enable_format_all();
+        if (!ret) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
-                    reader.error_string().c_str());
+                    ret.error().message().c_str());
             return false;
         }
     }
 
-    if (!reader.open_filename(input_file)) {
+    auto ret = reader.open_filename(input_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), reader.error_string().c_str());
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    if (!reader.read_header(header)) {
+    ret = reader.read_header(header);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), reader.error_string().c_str());
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -970,12 +974,13 @@ static bool unpack_main(int argc, char *argv[])
     }
 
     while (true) {
-        if (!reader.read_entry(entry)) {
-            if (reader.error() == ReaderError::EndOfEntries) {
+        ret = reader.read_entry(entry);
+        if (!ret) {
+            if (ret.error() == ReaderError::EndOfEntries) {
                 break;
             }
             fprintf(stderr, "Failed to read entry: %s\n",
-                    reader.error_string().c_str());
+                    ret.error().message().c_str());
             return false;
         }
 
@@ -1101,15 +1106,17 @@ static bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    if (!writer.open_filename(output_file)) {
+    auto ret = writer.open_filename(output_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), writer.error_string().c_str());
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    if (!writer.get_header(header)) {
+    ret = writer.get_header(header);
+    if (!ret) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -1117,19 +1124,21 @@ static bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    if (!writer.write_header(header)) {
+    ret = writer.write_header(header);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), writer.error_string().c_str());
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     while (true) {
-        if (!writer.get_entry(entry)) {
-            if (writer.error() == WriterError::EndOfEntries) {
+        ret = writer.get_entry(entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
                 break;
             }
             fprintf(stderr, "Failed to get next entry: %s\n",
-                    writer.error_string().c_str());
+                    ret.error().message().c_str());
             return false;
         }
 
@@ -1138,9 +1147,10 @@ static bool pack_main(int argc, char *argv[])
         }
     }
 
-    if (!writer.close()) {
+    ret = writer.close();
+    if (!ret) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 

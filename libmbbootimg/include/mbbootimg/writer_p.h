@@ -51,16 +51,24 @@ public:
     virtual int type() = 0;
     virtual std::string name() = 0;
 
-    virtual bool init();
-    virtual bool set_option(const char *key, const char *value);
-    virtual bool get_header(File &file, Header &header) = 0;
-    virtual bool write_header(File &file, const Header &header) = 0;
-    virtual bool get_entry(File &file, Entry &entry) = 0;
-    virtual bool write_entry(File &file, const Entry &entry) = 0;
-    virtual bool write_data(File &file, const void *buf, size_t buf_size,
-                            size_t &bytes_written) = 0;
-    virtual bool finish_entry(File &file);
-    virtual bool close(File &file);
+    virtual oc::result<void>
+    init();
+    virtual oc::result<void>
+    set_option(const char *key, const char *value);
+    virtual oc::result<void>
+    get_header(File &file, Header &header) = 0;
+    virtual oc::result<void>
+    write_header(File &file, const Header &header) = 0;
+    virtual oc::result<void>
+    get_entry(File &file, Entry &entry) = 0;
+    virtual oc::result<void>
+    write_entry(File &file, const Entry &entry) = 0;
+    virtual oc::result<size_t>
+    write_data(File &file, const void *buf, size_t buf_size) = 0;
+    virtual oc::result<void>
+    finish_entry(File &file);
+    virtual oc::result<void>
+    close(File &file);
 
 protected:
     Writer &_writer;

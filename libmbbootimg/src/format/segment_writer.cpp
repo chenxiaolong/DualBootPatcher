@@ -52,18 +52,16 @@ const std::vector<SegmentWriterEntry> & SegmentWriter::entries() const
     return m_entries;
 }
 
-bool SegmentWriter::set_entries(Writer &writer,
-                                std::vector<SegmentWriterEntry> entries)
+oc::result<void> SegmentWriter::set_entries(std::vector<SegmentWriterEntry> entries)
 {
     if (m_state != SegmentWriterState::Begin) {
-        writer.set_error(SegmentError::AddEntryInIncorrectState);
-        return false;
+        return SegmentError::AddEntryInIncorrectState;
     }
 
     m_entries = std::move(entries);
     m_entry = m_entries.end();
 
-    return true;
+    return oc::success();
 }
 
 std::vector<SegmentWriterEntry>::const_iterator SegmentWriter::entry() const
@@ -78,16 +76,14 @@ void SegmentWriter::update_size_if_unset(uint32_t size)
     }
 }
 
-bool SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
+oc::result<void> SegmentWriter::get_entry(File &file, Entry &entry,
+                                          Writer &writer)
 {
     if (!m_pos) {
         auto pos = file.seek(0, SEEK_CUR);
         if (!pos) {
-            writer.set_error(pos.error(),
-                             "Failed to get current offset: %s",
-                             pos.error().message().c_str());
             if (file.is_fatal()) { writer.set_fatal(); }
-            return false;
+            return pos.as_failure();
         }
 
         m_pos = pos.value();
@@ -106,8 +102,7 @@ bool SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
     if (swentry == m_entries.end()) {
         m_state = SegmentWriterState::End;
         m_entry = swentry;
-        writer.set_error(WriterError::EndOfEntries);
-        return false;
+        return WriterError::EndOfEntries;
     }
 
     // Update starting offset
@@ -120,57 +115,53 @@ bool SegmentWriter::get_entry(File &file, Entry &entry, Writer &writer)
     m_state = SegmentWriterState::Entries;
     m_entry = swentry;
 
-    return true;
+    return oc::success();
 }
 
-bool SegmentWriter::write_entry(File &file, const Entry &entry, Writer &writer)
+oc::result<void> SegmentWriter::write_entry(File &file, const Entry &entry,
+                                            Writer &writer)
 {
     (void) file;
+    (void) writer;
 
     // Use entry size if specified
     auto size = entry.size();
     if (size) {
         if (*size > UINT32_MAX) {
-            writer.set_error(SegmentError::InvalidEntrySize,
-                             "Invalid entry size: %" PRIu64, *size);
-            return false;
+            //DEBUG("Invalid entry size: %" PRIu64, *size);
+            return SegmentError::InvalidEntrySize;
         }
 
         update_size_if_unset(static_cast<uint32_t>(*size));
     }
 
-    return true;
+    return oc::success();
 }
 
-bool SegmentWriter::write_data(File &file, const void *buf, size_t buf_size,
-                               size_t &bytes_written, Writer &writer)
+oc::result<size_t> SegmentWriter::write_data(File &file, const void *buf,
+                                             size_t buf_size, Writer &writer)
 {
     // Check for overflow
     if (buf_size > UINT32_MAX || m_entry_size > UINT32_MAX - buf_size
             || *m_pos > UINT64_MAX - buf_size) {
-        writer.set_error(SegmentError::WriteWouldOverflowInteger);
-        return false;
+        return SegmentError::WriteWouldOverflowInteger;
     }
 
     auto ret = file_write_exact(file, buf, buf_size);
     if (!ret) {
-        writer.set_error(ret.error(),
-                         "Failed to write data: %s",
-                         ret.error().message().c_str());
         // This is a fatal error. We must guarantee that buf_size bytes will be
         // written.
         writer.set_fatal();
-        return false;
+        return ret.as_failure();
     }
-    bytes_written = buf_size;
 
     m_entry_size += static_cast<uint32_t>(buf_size);
     *m_pos += buf_size;
 
-    return true;
+    return buf_size;
 }
 
-bool SegmentWriter::finish_entry(File &file, Writer &writer)
+oc::result<void> SegmentWriter::finish_entry(File &file, Writer &writer)
 {
     // Update size with number of bytes written
     update_size_if_unset(m_entry_size);
@@ -181,17 +172,14 @@ bool SegmentWriter::finish_entry(File &file, Writer &writer)
 
         auto new_pos = file.seek(static_cast<int64_t>(skip), SEEK_CUR);
         if (!new_pos) {
-            writer.set_error(new_pos.error(),
-                             "Failed to seek to page boundary: %s",
-                             new_pos.error().message().c_str());
             if (file.is_fatal()) { writer.set_fatal(); }
-            return false;
+            return new_pos.as_failure();
         }
 
         m_pos = new_pos.value();
     }
 
-    return true;
+    return oc::success();
 }
 
 }

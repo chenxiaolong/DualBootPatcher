@@ -48,27 +48,31 @@ public:
     int type() override;
     std::string name() override;
 
-    bool set_option(const char *key, const char *value) override;
-    int bid(File &file, int best_bid) override;
-    bool read_header(File &file, Header &header) override;
-    bool read_entry(File &file, Entry &entry) override;
-    bool go_to_entry(File &file, Entry &entry, int entry_type) override;
-    bool read_data(File &file, void *buf, size_t buf_size,
-                   size_t &bytes_read) override;
+    oc::result<void> set_option(const char *key, const char *value) override;
+    oc::result<int> bid(File &file, int best_bid) override;
+    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<void> read_entry(File &file, Entry &entry) override;
+    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
-    static bool find_header(Reader &reader, File &file,
-                            uint64_t max_header_offset,
-                            AndroidHeader &header_out, uint64_t &offset_out);
-    static bool find_samsung_seandroid_magic(Reader &reader, File &file,
-                                             const AndroidHeader &hdr,
-                                             uint64_t &offset_out);
-    static bool find_bump_magic(Reader &reader, File &file,
-                                const AndroidHeader &hdr, uint64_t &offset_out);
+    static oc::result<void>
+    find_header(Reader &reader, File &file,
+                uint64_t max_header_offset,
+                AndroidHeader &header_out,
+                uint64_t &offset_out);
+    static oc::result<void>
+    find_samsung_seandroid_magic(Reader &reader, File &file,
+                                 const AndroidHeader &hdr,
+                                 uint64_t &offset_out);
+    static oc::result<void>
+    find_bump_magic(Reader &reader, File &file,
+                    const AndroidHeader &hdr,
+                    uint64_t &offset_out);
     static bool convert_header(const AndroidHeader &hdr, Header &header);
 
 private:
-    int bid_android(File &file, int best_bid);
-    int bid_bump(File &file, int best_bid);
+    oc::result<int> bid_android(File &file, int best_bid);
+    oc::result<int> bid_bump(File &file, int best_bid);
 
     // Header values
     AndroidHeader _hdr;

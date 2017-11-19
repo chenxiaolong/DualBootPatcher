@@ -312,26 +312,30 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     Entry out_entry;
 
     // Open input boot image
-    if (!reader.enable_format_all()) {
+    auto ret = reader.enable_format_all();
+    if (!ret) {
         LOGE("Failed to enable input boot image formats: %s",
-             reader.error_string().c_str());
+             ret.error().message().c_str());
         return false;
     }
-    if (!reader.open_filename(input_file)) {
+    ret = reader.open_filename(input_file);
+    if (!ret) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), reader.error_string().c_str());
+             input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Open output boot image
-    if (!writer.set_format_by_code(reader.format_code())) {
+    ret = writer.set_format_by_code(reader.format_code());
+    if (!ret) {
         LOGE("Failed to set output boot image format: %s",
-             writer.error_string().c_str());
+             ret.error().message().c_str());
         return false;
     }
-    if (!writer.open_filename(output_file)) {
+    ret = writer.open_filename(output_file);
+    if (!ret) {
         LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), writer.error_string().c_str());
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -342,34 +346,38 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
-    if (!reader.read_header(header)) {
+    ret = reader.read_header(header);
+    if (!ret) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), reader.error_string().c_str());
+             input_file.c_str(), ret.error().message().c_str());
         return false;
     }
-    if (!writer.write_header(header)) {
+    ret = writer.write_header(header);
+    if (!ret) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), writer.error_string().c_str());
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Write entries
     while (true) {
-        if (!writer.get_entry(out_entry)) {
-            if (writer.error() == WriterError::EndOfEntries) {
+        ret = writer.get_entry(out_entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
                 break;
             }
             LOGE("%s: Failed to get entry: %s",
-                 output_file.c_str(), writer.error_string().c_str());
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
 
         auto type = out_entry.type();
 
         // Write entry metadata
-        if (!writer.write_entry(out_entry)) {
+        ret = writer.write_entry(out_entry);
+        if (!ret) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), writer.error_string().c_str());
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
 
@@ -379,14 +387,15 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                 return false;
             }
         } else {
-            if (!reader.go_to_entry(in_entry, *type)) {
-                if (reader.error() == ReaderError::EndOfEntries) {
+            ret = reader.go_to_entry(in_entry, *type);
+            if (!ret) {
+                if (ret.error() == ReaderError::EndOfEntries) {
                     LOGV("Skipping non existent boot image entry: %d", *type);
                     continue;
                 } else {
                     LOGE("%s: Failed to go to entry: %d: %s",
                          input_file.c_str(), *type,
-                         reader.error_string().c_str());
+                         ret.error().message().c_str());
                     return false;
                 }
             }
@@ -444,9 +453,10 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
         }
     }
 
-    if (!writer.close()) {
+    ret = writer.close();
+    if (!ret) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), writer.error_string().c_str());
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 

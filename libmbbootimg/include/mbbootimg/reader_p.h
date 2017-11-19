@@ -51,13 +51,18 @@ public:
     virtual int type() = 0;
     virtual std::string name() = 0;
 
-    virtual bool set_option(const char *key, const char *value);
-    virtual int bid(File &file, int best_bid) = 0;
-    virtual bool read_header(File &file, Header &header) = 0;
-    virtual bool read_entry(File &file, Entry &entry) = 0;
-    virtual bool go_to_entry(File &file, Entry &entry, int entry_type);
-    virtual bool read_data(File &file, void *buf, size_t buf_size,
-                           size_t &bytes_read) = 0;
+    virtual oc::result<void>
+    set_option(const char *key, const char *value);
+    virtual oc::result<int>
+    bid(File &file, int best_bid) = 0;
+    virtual oc::result<void>
+    read_header(File &file, Header &header) = 0;
+    virtual oc::result<void>
+    read_entry(File &file, Entry &entry) = 0;
+    virtual oc::result<void>
+    go_to_entry(File &file, Entry &entry, int entry_type);
+    virtual oc::result<size_t>
+    read_data(File &file, void *buf, size_t buf_size) = 0;
 
 protected:
     Reader &_reader;

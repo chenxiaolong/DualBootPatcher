@@ -71,26 +71,26 @@ std::string LokiFormatWriter::name()
     return FORMAT_NAME_LOKI;
 }
 
-bool LokiFormatWriter::init()
+oc::result<void> LokiFormatWriter::init()
 {
     if (!SHA1_Init(&_sha_ctx)) {
-        _writer.set_error(android::AndroidError::Sha1InitError);
-        return false;
+        return android::AndroidError::Sha1InitError;
     }
 
-    return true;
+    return oc::success();
 }
 
-bool LokiFormatWriter::get_header(File &file, Header &header)
+oc::result<void> LokiFormatWriter::get_header(File &file, Header &header)
 {
     (void) file;
 
     header.set_supported_fields(NEW_SUPPORTED_FIELDS);
 
-    return true;
+    return oc::success();
 }
 
-bool LokiFormatWriter::write_header(File &file, const Header &header)
+oc::result<void> LokiFormatWriter::write_header(File &file,
+                                                const Header &header)
 {
     // Construct header
     memset(&_hdr, 0, sizeof(_hdr));
@@ -120,19 +120,16 @@ bool LokiFormatWriter::write_header(File &file, const Header &header)
             _hdr.page_size = *page_size;
             break;
         default:
-            _writer.set_error(android::AndroidError::MissingPageSize,
-                              "Invalid page size: %" PRIu32, *page_size);
-            return false;
+            //DEBUG("Invalid page size: %" PRIu32, *page_size);
+            return android::AndroidError::MissingPageSize;
         }
     } else {
-        _writer.set_error(android::AndroidError::MissingPageSize);
-        return false;
+        return android::AndroidError::MissingPageSize;
     }
 
     if (auto board_name = header.board_name()) {
         if (board_name->size() >= sizeof(_hdr.name)) {
-            _writer.set_error(android::AndroidError::BoardNameTooLong);
-            return false;
+            return android::AndroidError::BoardNameTooLong;
         }
 
         strncpy(reinterpret_cast<char *>(_hdr.name), board_name->c_str(),
@@ -141,8 +138,7 @@ bool LokiFormatWriter::write_header(File &file, const Header &header)
     }
     if (auto cmdline = header.kernel_cmdline()) {
         if (cmdline->size() >= sizeof(_hdr.cmdline)) {
-            _writer.set_error(android::AndroidError::KernelCmdlineTooLong);
-            return false;
+            return android::AndroidError::KernelCmdlineTooLong;
         }
 
         strncpy(reinterpret_cast<char *>(_hdr.cmdline), cmdline->c_str(),
@@ -160,43 +156,37 @@ bool LokiFormatWriter::write_header(File &file, const Header &header)
     entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, _hdr.page_size });
     entries.push_back({ ENTRY_TYPE_ABOOT, 0, 0, 0 });
 
-    if (!_seg.set_entries(_writer, std::move(entries))) {
-        return false;
-    }
+    OUTCOME_TRYV(_seg.set_entries(std::move(entries)));
 
     // Start writing after first page
     auto seek_ret = file.seek(_hdr.page_size, SEEK_SET);
     if (!seek_ret) {
-        _writer.set_error(seek_ret.error(),
-                          "Failed to seek to first page: %s",
-                          seek_ret.error().message().c_str());
         if (file.is_fatal()) { _writer.set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
-    return true;
+    return oc::success();
 }
 
-bool LokiFormatWriter::get_entry(File &file, Entry &entry)
+oc::result<void> LokiFormatWriter::get_entry(File &file, Entry &entry)
 {
     return _seg.get_entry(file, entry, _writer);
 }
 
-bool LokiFormatWriter::write_entry(File &file, const Entry &entry)
+oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
 {
     return _seg.write_entry(file, entry, _writer);
 }
 
-bool LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
-                                  size_t &bytes_written)
+oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
+                                                size_t buf_size)
 {
     auto swentry = _seg.entry();
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - _aboot.size()) {
-            _writer.set_error(LokiError::AbootImageTooLarge);
             _writer.set_fatal();
-            return false;
+            return LokiError::AbootImageTooLarge;
         }
 
         size_t old_aboot_size = _aboot.size();
@@ -204,31 +194,26 @@ bool LokiFormatWriter::write_data(File &file, const void *buf, size_t buf_size,
 
         memcpy(_aboot.data() + old_aboot_size, buf, buf_size);
 
-        bytes_written = buf_size;
+        return buf_size;
     } else {
-        if (!_seg.write_data(file, buf, buf_size, bytes_written, _writer)) {
-            return false;
-        }
+        OUTCOME_TRY(n, _seg.write_data(file, buf, buf_size, _writer));
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
-        if (!SHA1_Update(&_sha_ctx, buf, buf_size)) {
-            _writer.set_error(android::AndroidError::Sha1UpdateError);
+        if (!SHA1_Update(&_sha_ctx, buf, n)) {
             // This must be fatal as the write already happened and cannot be
             // reattempted
             _writer.set_fatal();
-            return false;
+            return android::AndroidError::Sha1UpdateError;
         }
-    }
 
-    return true;
+        return n;
+    }
 }
 
-bool LokiFormatWriter::finish_entry(File &file)
+oc::result<void> LokiFormatWriter::finish_entry(File &file)
 {
-    if (!_seg.finish_entry(file, _writer)) {
-        return false;
-    }
+    OUTCOME_TRYV(_seg.finish_entry(file, _writer));
 
     auto swentry = _seg.entry();
 
@@ -238,18 +223,16 @@ bool LokiFormatWriter::finish_entry(File &file)
     // Include fake 0 size for unsupported secondboot image
     if (swentry->type == ENTRY_TYPE_DEVICE_TREE
             && !SHA1_Update(&_sha_ctx, "\x00\x00\x00\x00", 4)) {
-        _writer.set_error(android::AndroidError::Sha1UpdateError);
         _writer.set_fatal();
-        return false;
+        return android::AndroidError::Sha1UpdateError;
     }
 
     // Include size for everything except empty DT images
     if (swentry->type != ENTRY_TYPE_ABOOT
             && (swentry->type != ENTRY_TYPE_DEVICE_TREE || *swentry->size > 0)
             && !SHA1_Update(&_sha_ctx, &le32_size, sizeof(le32_size))) {
-        _writer.set_error(android::AndroidError::Sha1UpdateError);
         _writer.set_fatal();
-        return false;
+        return android::AndroidError::Sha1UpdateError;
     }
 
     switch (swentry->type) {
@@ -264,28 +247,22 @@ bool LokiFormatWriter::finish_entry(File &file)
         break;
     }
 
-    return true;
+    return oc::success();
 }
 
-bool LokiFormatWriter::close(File &file)
+oc::result<void> LokiFormatWriter::close(File &file)
 {
     if (_file_size) {
         auto seek_ret = file.seek(static_cast<int64_t>(*_file_size), SEEK_SET);
         if (!seek_ret) {
-            _writer.set_error(seek_ret.error(),
-                              "Failed to seek to end of file: %s",
-                              seek_ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
-            return false;
+            return seek_ret.as_failure();
         }
     } else {
         auto file_size = file.seek(0, SEEK_CUR);
         if (!file_size) {
-            _writer.set_error(file_size.error(),
-                              "Failed to get file offset: %s",
-                              file_size.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
-            return false;
+            return file_size.as_failure();
         }
 
         _file_size = file_size.value();
@@ -298,19 +275,15 @@ bool LokiFormatWriter::close(File &file)
         // Truncate to set size
         auto truncate_ret = file.truncate(*_file_size);
         if (!truncate_ret) {
-            _writer.set_error(truncate_ret.error(),
-                              "Failed to truncate file: %s",
-                              truncate_ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
-            return false;
+            return truncate_ret.as_failure();
         }
 
         // Set ID
         unsigned char digest[SHA_DIGEST_LENGTH];
         if (!SHA1_Final(digest, &_sha_ctx)) {
-            _writer.set_error(android::AndroidError::Sha1UpdateError);
             _writer.set_fatal();
-            return false;
+            return android::AndroidError::Sha1UpdateError;
         }
         memcpy(_hdr.id, digest, SHA_DIGEST_LENGTH);
 
@@ -321,30 +294,23 @@ bool LokiFormatWriter::close(File &file)
         // Seek back to beginning to write header
         auto seek_ret = file.seek(0, SEEK_SET);
         if (!seek_ret) {
-            _writer.set_error(seek_ret.error(),
-                              "Failed to seek to beginning: %s",
-                              seek_ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
-            return false;
+            return seek_ret.as_failure();
         }
 
         // Write header
         auto ret = file_write_exact(file, &hdr, sizeof(hdr));
         if (!ret) {
-            _writer.set_error(ret.error(),
-                              "Failed to write header: %s",
-                              ret.error().message().c_str());
             if (file.is_fatal()) { _writer.set_fatal(); }
-            return false;
+            return ret.as_failure();
         }
 
         // Patch with Loki
-        if (!_loki_patch_file(_writer, file, _aboot.data(), _aboot.size())) {
-            return false;
-        }
+        OUTCOME_TRYV(_loki_patch_file(_writer, file, _aboot.data(),
+                                      _aboot.size()));
     }
 
-    return true;
+    return oc::success();
 }
 
 }
@@ -352,9 +318,9 @@ bool LokiFormatWriter::close(File &file)
 /*!
  * \brief Set Loki boot image output format
  *
- * \return Whether the format is successfully set
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-bool Writer::set_format_loki()
+oc::result<void> Writer::set_format_loki()
 {
     return register_format(std::make_unique<loki::LokiFormatWriter>(*this));
 }

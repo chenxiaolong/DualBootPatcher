@@ -46,15 +46,15 @@ public:
     int type() override;
     std::string name() override;
 
-    int bid(File &file, int best_bid) override;
-    bool read_header(File &file, Header &header) override;
-    bool read_entry(File &file, Entry &entry) override;
-    bool go_to_entry(File &file, Entry &entry, int entry_type) override;
-    bool read_data(File &file, void *buf, size_t buf_size,
-                   size_t &bytes_read) override;
+    oc::result<int> bid(File &file, int best_bid) override;
+    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<void> read_entry(File &file, Entry &entry) override;
+    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
-    static bool find_sony_elf_header(Reader &reader, File &file,
-                                     Sony_Elf32_Ehdr &header_out);
+    static oc::result<void>
+    find_sony_elf_header(Reader &reader, File &file,
+                         Sony_Elf32_Ehdr &header_out);
 
 private:
     // Header values

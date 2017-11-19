@@ -32,13 +32,15 @@ enum class WriterError
 {
     InvalidState            = 10,
 
-    // Format errors
-    InvalidFormatCode       = 20,
-    InvalidFormatName       = 21,
-    NoFormatSelected        = 22,
-    NoFormatRegistered      = 23,
+    UnknownOption           = 20,
 
-    EndOfEntries            = 30,
+    // Format errors
+    InvalidFormatCode       = 30,
+    InvalidFormatName       = 31,
+    NoFormatSelected        = 32,
+    NoFormatRegistered      = 33,
+
+    EndOfEntries            = 40,
 };
 
 MB_EXPORT std::error_code make_error_code(WriterError e);

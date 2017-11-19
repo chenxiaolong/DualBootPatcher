@@ -28,7 +28,6 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
-#include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
@@ -36,14 +35,12 @@
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
         if (!(m_state & (STATES))) { \
-            set_error(ReaderError::InvalidState, \
-                      "%s: Invalid state: "\
-                      "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
-                      __func__, static_cast<uint8_t>(STATES), \
-                      static_cast<uint8_t>(m_state)); \
             return RETVAL; \
         } \
     } while (0)
+
+#define ENSURE_STATE_OR_RETURN_ERROR(STATES) \
+    ENSURE_STATE_OR_RETURN(STATES, ReaderError::InvalidState)
 
 /*!
  * \file mbbootimg/reader.h
@@ -70,14 +67,14 @@
  * that conform to the file format (eg. magic string). The file position will be
  * set to the beginning of the file before this function is called.
  *
- * \param bir MbBiReader
+ * \param bir Reader
  * \param userdata User callback data
  * \param best_bid Current best bid
  *
  * \return
  *   * Return a non-negative integer to place a bid
- *   * Return -2 to indicate that the bid cannot be won
- *   * Return -1 if an error occurs.
+ *   * Return -1 to indicate that the bid cannot be won
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
@@ -86,15 +83,15 @@
  *
  * \brief Format reader callback to set option
  *
- * \param bir MbBiReader
+ * \param bir Reader
  * \param userdata User callback data
  * \param key Option key
  * \param value Option value
  *
  * \return
- *   * Return true the option is handled successfully
- *   * Return TODO if the option cannot be handled
- *   * Return false if an error occurs
+ *   * Return nothing the option is handled successfully
+ *   * Return ReaderError::UnknownOption if the option cannot be handled
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
@@ -103,13 +100,13 @@
  *
  * \brief Format reader callback to read header
  *
- * \param[in] bir MbBiReader
+ * \param[in] bir Reader
  * \param[in] userdata User callback data
  * \param[out] header Header instance to write header values
  *
  * \return
- *   * Return true if the header is successfully read
- *   * Return false if an error occurs
+ *   * Return nothing if the header is successfully read
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
@@ -121,13 +118,14 @@
  * \note This callback *must* be able to skip to the next entry if the user does
  *       not read or finish reading the entry data with Reader::read_data().
  *
- * \param[in] bir MbBiReader
+ * \param[in] bir Reader
  * \param[in] userdata User callback data
  * \param[out] entry Entry instance to write entry values
  *
  * \return
- *   * Return true if the entry is successfully read
- *   * Return false if an error occurs
+ *   * Return nothing if the entry is successfully read
+ *   * Return ReaderError::EndOfEntries if there are no more entries
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
@@ -136,16 +134,15 @@
  *
  * \brief Format reader callback to seek to a specific entry
  *
- * \param[in] bir MbBiReader
+ * \param[in] bir Reader
  * \param[in] userdata User callback data
  * \param[out] entry Entry instance to write entry values
  * \param[in] entry_type Entry type to seek to
  *
  * \return
- *   * Return true if the entry is successfully read
- *   * Return false and set the error to ReaderError::EndOfEntries if the entry
- *     cannot be found
- *   * Return false if an error occurs
+ *   * Return nothing if the entry is successfully read
+ *   * Return ReaderError::EndOfEntries if the entry cannot be found
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
@@ -154,18 +151,16 @@
  *
  * \brief Format reader callback to read entry data
  *
- * \note This function *may* return less than \p buf_size bytes, but *must*
- *       return more than 0 bytes unless EOF is reached.
+ * \note This function *must* read \p buf_size bytes unless EOF is reached.
  *
- * \param[in] bir MbBiReader
+ * \param[in] bir Reader
  * \param[in] userdata User callback data
  * \param[out] buf Output buffer to write data
  * \param[in] buf_size Size of output buffer
- * \param[out] bytes_read Output number of bytes that are read
  *
  * \return
- *   * Return true if the entry is successfully read
- *   * Return false if an error occurs
+ *   * Return number of bytes read if the entry is successfully read
+ *   * Return a specific error code if an error occurs
  */
 
 ///
@@ -181,7 +176,7 @@ static struct
 {
     int code;
     const char *name;
-    bool (Reader::*func)();
+    oc::result<void> (Reader::*func)();
 } g_reader_formats[] = {
     {
         FORMAT_ANDROID,
@@ -213,20 +208,20 @@ FormatReader::FormatReader(Reader &reader)
 
 FormatReader::~FormatReader() = default;
 
-bool FormatReader::set_option(const char *key, const char *value)
+oc::result<void> FormatReader::set_option(const char *key, const char *value)
 {
     (void) key;
     (void) value;
-    return false;
+    return ReaderError::UnknownOption;
 }
 
-bool FormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
+oc::result<void> FormatReader::go_to_entry(File &file, Entry &entry,
+                                           int entry_type)
 {
     (void) file;
     (void) entry;
     (void) entry_type;
-    _reader.set_error(ReaderError::UnsupportedGoTo);
-    return false;
+    return ReaderError::UnsupportedGoTo;
 }
 
 /*!
@@ -249,15 +244,13 @@ Reader::Reader()
  */
 Reader::~Reader()
 {
-    close();
+    (void) close();
 }
 
 Reader::Reader(Reader &&other) noexcept
     : m_state(other.m_state)
     , m_owned_file(std::move(other.m_owned_file))
     , m_file(other.m_file)
-    , m_error_code(other.m_error_code)
-    , m_error_string(std::move(other.m_error_string))
     , m_formats(std::move(other.m_formats))
     , m_format(other.m_format)
 {
@@ -271,8 +264,6 @@ Reader & Reader::operator=(Reader &&rhs) noexcept
     m_state = rhs.m_state;
     m_owned_file.swap(rhs.m_owned_file);
     m_file = rhs.m_file;
-    m_error_code = rhs.m_error_code;
-    m_error_string.swap(rhs.m_error_string);
     m_formats.swap(rhs.m_formats);
     m_format = rhs.m_format;
 
@@ -286,21 +277,15 @@ Reader & Reader::operator=(Reader &&rhs) noexcept
  *
  * \param filename MBS filename
  *
- * \return Whether the boot image is successfully opened
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-bool Reader::open_filename(const std::string &filename)
+oc::result<void> Reader::open_filename(const std::string &filename)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::ReadOnly);
-
-    if (!ret) {
-        set_error(ret.error(),
-                  "Failed to open for reading: %s",
-                  ret.error().message().c_str());
-        return false;
-    }
+    OUTCOME_TRYV(file->open(filename, FileOpenMode::ReadOnly));
 
     return open(std::move(file));
 }
@@ -310,21 +295,15 @@ bool Reader::open_filename(const std::string &filename)
  *
  * \param filename WCS filename
  *
- * \return Whether the boot image is successfully opened
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-bool Reader::open_filename_w(const std::wstring &filename)
+oc::result<void> Reader::open_filename_w(const std::wstring &filename)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     auto file = std::make_unique<StandardFile>();
-    auto ret = file->open(filename, FileOpenMode::ReadOnly);
-
-    if (!ret) {
-        set_error(ret.error(),
-                  "Failed to open for reading: %s",
-                  ret.error().message().c_str());
-        return false;
-    }
+    OUTCOME_TRYV(file->open(filename, FileOpenMode::ReadOnly));
 
     return open(std::move(file));
 }
@@ -337,19 +316,18 @@ bool Reader::open_filename_w(const std::wstring &filename)
  *
  * \param file File handle
  *
- * \return Whether the boot image is successfully opened
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-bool Reader::open(std::unique_ptr<File> file)
+oc::result<void> Reader::open(std::unique_ptr<File> file)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
-    if (!open(file.get())) {
-        return false;
-    }
+    OUTCOME_TRYV(open(file.get()));
 
     // Underlying pointer is not invalidated during a move
     m_owned_file = std::move(file);
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -360,18 +338,18 @@ bool Reader::open(std::unique_ptr<File> file)
  *
  * \param file File handle
  *
- * \return Whether the boot image is successfully opened
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-bool Reader::open(File *file)
+oc::result<void> Reader::open(File *file)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     int best_bid = 0;
     FormatReader *format = nullptr;
 
     if (m_formats.empty()) {
-        set_error(ReaderError::NoFormatsRegistered);
-        return false;
+        return ReaderError::NoFormatsRegistered;
     }
 
     // Perform bid if a format wasn't explicitly chosen
@@ -380,29 +358,20 @@ bool Reader::open(File *file)
             // Seek to beginning
             auto seek_ret = file->seek(0, SEEK_SET);
             if (!seek_ret) {
-                set_error(seek_ret.error(),
-                          "Failed to seek file: %s",
-                          seek_ret.error().message().c_str());
                 if (file->is_fatal()) { set_fatal(); }
-                return false;
+                return seek_ret.as_failure();
             }
 
             // Call bidder
-            int ret = f->bid(*file, best_bid);
-            if (ret > best_bid) {
-                best_bid = ret;
+            OUTCOME_TRY(bid, f->bid(*file, best_bid));
+            if (bid > best_bid) {
+                best_bid = bid;
                 format = f.get();
-            } else if (ret == -2) {
-                continue;
-            } else if (ret < 0) {
-                return false;
             }
         }
 
         if (!format) {
-            set_error(ReaderError::UnknownFileFormat,
-                      "Failed to determine boot image format");
-            return false;
+            return ReaderError::UnknownFileFormat;
         }
 
         m_format = format;
@@ -411,7 +380,7 @@ bool Reader::open(File *file)
     m_state = ReaderState::Header;
     m_file = file;
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -420,11 +389,12 @@ bool Reader::open(File *file)
  * This function will close a Reader if it is open. Regardless of the return
  * value, the reader is closed and can no longer be used for further operations.
  *
- * \return Whether the reader is successfully closed
+ * \return Nothing if the reader is successfully closed. Otherwise, a specific
+ *         error code.
  */
-bool Reader::close()
+oc::result<void> Reader::close()
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), false);
+    ENSURE_STATE_OR_RETURN_ERROR(~ReaderStates(ReaderState::Moved));
 
     auto reset_state = finally([&] {
         m_state = ReaderState::New;
@@ -434,12 +404,12 @@ bool Reader::close()
     });
 
     if (m_state != ReaderState::New) {
-        if (m_owned_file && !m_owned_file->close()) {
-            return false;
+        if (m_owned_file) {
+            OUTCOME_TRYV(m_owned_file->close());
         }
     }
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -449,30 +419,26 @@ bool Reader::close()
  *
  * \param[out] header Reference to Header for storing header values
  *
- * \return Whether the boot image header is successfully read
+ * \return Nothing if the boot image header is successfully read. Otherwise, a
+ *         specific error code.
  */
-bool Reader::read_header(Header &header)
+oc::result<void> Reader::read_header(Header &header)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::Header, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Header);
 
     // Seek to beginning
     auto seek_ret = m_file->seek(0, SEEK_SET);
     if (!seek_ret) {
-        set_error(seek_ret.error(),
-                  "Failed to seek file: %s",
-                  seek_ret.error().message().c_str());
         if (m_file->is_fatal()) { set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
     header.clear();
 
-    if (!m_format->read_header(*m_file, header)) {
-        return false;
-    }
+    OUTCOME_TRYV(m_format->read_header(*m_file, header));
 
     m_state = ReaderState::Entry;
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -483,23 +449,21 @@ bool Reader::read_header(Header &header)
  *
  * \param[out] entry Reference to Entry for storing entry values
  *
- * \return Whether the boot image entry is successfully read. If there are no
- *         more entries, this function returns false and sets the error to
- *         ReaderError::EndOfEntries.
+ * \return Nothing if the boot image entry is successfully read. If there are no
+ *         more entries, this function returns ReaderError::EndOfEntries. If any
+ *         other error occurs, a specific error code will be returned.
  */
-bool Reader::read_entry(Entry &entry)
+oc::result<void> Reader::read_entry(Entry &entry)
 {
     // Allow skipping to the next entry without reading the data
-    ENSURE_STATE_OR_RETURN(ReaderState::Entry | ReaderState::Data, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Entry | ReaderState::Data);
 
     entry.clear();
 
-    if (!m_format->read_entry(*m_file, entry)) {
-        return false;
-    }
+    OUTCOME_TRYV(m_format->read_entry(*m_file, entry));
 
     m_state = ReaderState::Data;
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -511,23 +475,22 @@ bool Reader::read_entry(Entry &entry)
  * \param[out] entry Reference to Entry for storing entry values
  * \param[in] entry_type Entry type to seek to (0 for first entry)
  *
- * \return Whether the boot image entry is successfully read. If the boot image
- *         entry is not found, this function returns false and sets the error
- *         to ReaderError::EndOfEntries.
+ * \return Nothing if the boot image entry is successfully read. If the boot
+ *         image entry is not found, this function returns
+ *         ReaderError::EndOfEntries. If any other error occurs, a specific
+ *         error code will be returned.
  */
-bool Reader::go_to_entry(Entry &entry, int entry_type)
+oc::result<void> Reader::go_to_entry(Entry &entry, int entry_type)
 {
     // Allow skipping to an entry without reading the data
-    ENSURE_STATE_OR_RETURN(ReaderState::Entry | ReaderState::Data, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Entry | ReaderState::Data);
 
     entry.clear();
 
-    if (!m_format->go_to_entry(*m_file, entry, entry_type)) {
-        return false;
-    }
+    OUTCOME_TRYV(m_format->go_to_entry(*m_file, entry, entry_type));
 
     m_state = ReaderState::Data;
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -535,17 +498,17 @@ bool Reader::go_to_entry(Entry &entry, int entry_type)
  *
  * \param[out] buf Output buffer
  * \param[in] size Size of output buffer
- * \param[out] bytes_read Pointer to store number of bytes read
  *
- * \return Whether the data is successfully read. If EOF is reached,
- *         \p bytes_read will be less than \p size.
+ * \return Number of bytes read. If EOF is reached, the return value will be
+ *         less than \p size. Otherwise, it's guaranteed to equal \p size. If an
+ *         error occurs, a specific error code will be returned.
  */
-bool Reader::read_data(void *buf, size_t size, size_t &bytes_read)
+oc::result<size_t> Reader::read_data(void *buf, size_t size)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::Data, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::Data);
 
     // Do not alter state. Stay in ReaderState::DATA
-    return m_format->read_data(*m_file, buf, size, bytes_read);
+    return m_format->read_data(*m_file, buf, size);
 }
 
 /*!
@@ -566,7 +529,7 @@ int Reader::format_code()
     ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), -1);
 
     if (!m_format) {
-        set_error(ReaderError::NoFormatSelected);
+        // ReaderError::NoFormatSelected
         return -1;
     }
 
@@ -591,7 +554,7 @@ std::string Reader::format_name()
     ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), {});
 
     if (!m_format) {
-        set_error(ReaderError::NoFormatSelected);
+        // ReaderError::NoFormatSelected
         return {};
     }
 
@@ -606,16 +569,16 @@ std::string Reader::format_name()
  *
  * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-bool Reader::set_format_by_code(int code)
+oc::result<void> Reader::set_format_by_code(int code)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
     FormatReader *format = nullptr;
 
-    if (!enable_format_by_code(code)
-            && m_error_code != ReaderError::FormatAlreadyEnabled) {
-        return false;
+    auto ret = enable_format_by_code(code);
+    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
+        return ret.as_failure();
     }
 
     for (auto &f : m_formats) {
@@ -626,15 +589,11 @@ bool Reader::set_format_by_code(int code)
         }
     }
 
-    if (!format) {
-        set_error(ReaderError::EnabledFormatNotFound);
-        m_state = ReaderState::Fatal;
-        return false;
-    }
+    assert(format);
 
     m_format = format;
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -645,16 +604,16 @@ bool Reader::set_format_by_code(int code)
  *
  * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
  *
- * \return Whether the format is successfully set
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-bool Reader::set_format_by_name(const std::string &name)
+oc::result<void> Reader::set_format_by_name(const std::string &name)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
     FormatReader *format = nullptr;
 
-    if (!enable_format_by_name(name)
-            && m_error_code != ReaderError::FormatAlreadyEnabled) {
-        return false;
+    auto ret = enable_format_by_name(name);
+    if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
+        return ret.as_failure();
     }
 
     for (auto &f : m_formats) {
@@ -664,34 +623,31 @@ bool Reader::set_format_by_name(const std::string &name)
         }
     }
 
-    if (!format) {
-        set_error(ReaderError::EnabledFormatNotFound);
-        m_state = ReaderState::Fatal;
-        return false;
-    }
+    assert(format);
 
     m_format = format;
 
-    return true;
+    return oc::success();
 }
 
 /*!
  * \brief Enable support for all boot image formats.
  *
- * \return Whether all formats are successfully enabled
+ * \return Nothing if all formats are successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_all()
+oc::result<void> Reader::enable_format_all()
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     for (auto const &format : g_reader_formats) {
-        if (!(this->*format.func)()
-                && m_error_code != ReaderError::FormatAlreadyEnabled) {
-            return false;
+        auto ret = (this->*format.func)();
+        if (!ret && ret.error() != ReaderError::FormatAlreadyEnabled) {
+            return ret.as_failure();
         }
     }
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -699,11 +655,12 @@ bool Reader::enable_format_all()
  *
  * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_by_code(int code)
+oc::result<void> Reader::enable_format_by_code(int code)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     for (auto const &format : g_reader_formats) {
         if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
@@ -711,9 +668,7 @@ bool Reader::enable_format_by_code(int code)
         }
     }
 
-    set_error(ReaderError::InvalidFormatCode,
-              "Invalid format code: %d", code);
-    return false;
+    return ReaderError::InvalidFormatCode;
 }
 
 /*!
@@ -721,11 +676,12 @@ bool Reader::enable_format_by_code(int code)
  *
  * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_by_name(const std::string &name)
+oc::result<void> Reader::enable_format_by_name(const std::string &name)
 {
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     for (auto const &format : g_reader_formats) {
         if (name == format.name) {
@@ -733,9 +689,7 @@ bool Reader::enable_format_by_name(const std::string &name)
         }
     }
 
-    set_error(ReaderError::InvalidFormatName,
-              "Invalid format name: %s", name.c_str());
-    return false;
+    return ReaderError::InvalidFormatName;
 }
 
 /*!
@@ -776,120 +730,19 @@ void Reader::set_fatal()
     }
 }
 
-/*!
- * \brief Get error code for a failed operation.
- *
- * \note The return value is undefined if an operation did not fail.
- *
- * \return Error code for failed operation.
- */
-std::error_code Reader::error()
+oc::result<void> Reader::register_format(std::unique_ptr<FormatReader> format)
 {
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), {});
-
-    return m_error_code;
-}
-
-/*!
- * \brief Get error string for a failed operation.
- *
- * \note The return value is undefined if an operation did not fail.
- *
- * \return Error string for failed operation. The string contents may be
- *         undefined.
- */
-std::string Reader::error_string()
-{
-    ENSURE_STATE_OR_RETURN(~ReaderStates(ReaderState::Moved), {});
-
-    return m_error_string;
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa Reader::set_error_v()
- *
- * \param ec Error code
- *
- * \return Whether the error is successfully set
- */
-bool Reader::set_error(std::error_code ec)
-{
-    return set_error(ec, "%s", "");
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa Reader::set_error_v()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ... `printf()`-style format arguments
- *
- * \return Whether the error is successfully set
- */
-bool Reader::set_error(std::error_code ec, const char *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-    bool ret = set_error_v(ec, fmt, ap);
-    va_end(ap);
-
-    return ret;
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa Reader::set_error()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ap `printf()`-style format arguments as a va_list
- *
- * \return Whether the error is successfully set
- */
-bool Reader::set_error_v(std::error_code ec, const char *fmt, va_list ap)
-{
-    if (m_state == ReaderState::Moved) {
-        return false;
-    }
-
-    m_error_code = ec;
-
-    auto result = format_v_safe(fmt, ap);
-    if (!result) {
-        return false;
-    }
-    m_error_string = std::move(result.value());
-
-    if (!m_error_string.empty()) {
-        m_error_string += ": ";
-    }
-    m_error_string += ec.message();
-
-    return true;
-}
-
-bool Reader::register_format(std::unique_ptr<FormatReader> format)
-{
-    ENSURE_STATE_OR_RETURN(ReaderState::New, false);
+    ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
     for (auto const &f : m_formats) {
         if ((FORMAT_BASE_MASK & f->type())
                 == (FORMAT_BASE_MASK & format->type())) {
-            set_error(ReaderError::FormatAlreadyEnabled,
-                      "%s format (0x%x) already enabled",
-                      format->name().c_str(), format->type());
-            return false;
+            return ReaderError::FormatAlreadyEnabled;
         }
     }
 
     m_formats.push_back(std::move(format));
-    return true;
+    return oc::success();
 }
 
 }
