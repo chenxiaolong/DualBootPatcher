@@ -225,7 +225,7 @@ _loki_move_dt_image(Writer &writer, File &file,
     } else if (n.value() != dt_size) {
         // Non-recoverable
         writer.set_fatal();
-        return LokiError::UnexpectedFileTruncation;
+        return FileError::UnexpectedEof;
     }
 
     return oc::success();

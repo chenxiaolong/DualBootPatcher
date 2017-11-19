@@ -82,8 +82,6 @@ std::string LokiErrorCategory::message(int ev) const
         return "failed to find aboot function";
     case LokiError::AbootFunctionOutOfRange:
         return "aboot function out of range";
-    case LokiError::UnexpectedFileTruncation:
-        return "unexpected file truncation";
     default:
         return "(unknown Loki format error)";
     }
