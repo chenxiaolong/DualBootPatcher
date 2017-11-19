@@ -55,17 +55,18 @@ public:
     SegmentWriter();
 
     const std::vector<SegmentWriterEntry> & entries() const;
-    bool set_entries(Writer &writer, std::vector<SegmentWriterEntry> entries);
+    oc::result<void> set_entries(std::vector<SegmentWriterEntry> entries);
 
     std::vector<SegmentWriterEntry>::const_iterator entry() const;
 
     void update_size_if_unset(uint32_t size);
 
-    bool get_entry(File &file, Entry &entry, Writer &writer);
-    bool write_entry(File &file, const Entry &entry, Writer &writer);
-    bool write_data(File &file, const void *buf, size_t buf_size,
-                    size_t &bytes_written, Writer &writer);
-    bool finish_entry(File &file, Writer &writer);
+    oc::result<void> get_entry(File &file, Entry &entry, Writer &writer);
+    oc::result<void> write_entry(File &file, const Entry &entry,
+                                 Writer &writer);
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size,
+                                  Writer &writer);
+    oc::result<void> finish_entry(File &file, Writer &writer);
 
 private:
     SegmentWriterState m_state;

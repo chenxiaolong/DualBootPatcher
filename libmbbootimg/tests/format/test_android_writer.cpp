@@ -27,6 +27,7 @@
 #include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
 
+using namespace mb;
 using namespace mb::bootimg;
 
 struct AndroidWriterSHA1Test : public ::testing::Test
@@ -34,7 +35,7 @@ struct AndroidWriterSHA1Test : public ::testing::Test
 protected:
     void *_buf;
     size_t _buf_size;
-    mb::MemoryFile _file;
+    MemoryFile _file;
     Writer _writer;
 
     AndroidWriterSHA1Test()
@@ -70,7 +71,6 @@ protected:
 
         Header header;
         Entry entry;
-        size_t n;
 
         // Write dummy header
         ASSERT_TRUE(_writer.get_header(header));
@@ -78,15 +78,21 @@ protected:
         ASSERT_TRUE(_writer.write_header(header));
 
         // Write specified dummy entries
-        while ((_writer.get_entry(entry))) {
+        while (true) {
+            auto ret = _writer.get_entry(entry);
+            if (!ret) {
+                ASSERT_EQ(ret.error(), WriterError::EndOfEntries);
+                break;
+            }
+
             ASSERT_TRUE(_writer.write_entry(entry));
 
             if (*entry.type() & types) {
-                ASSERT_TRUE(_writer.write_data("hello", 5, n));
-                ASSERT_EQ(n, 5u);
+                auto n = _writer.write_data("hello", 5);
+                ASSERT_TRUE(n);
+                ASSERT_EQ(n.value(), 5u);
             }
         }
-        ASSERT_EQ(_writer.error(), WriterError::EndOfEntries);
 
         // Close to write header
         ASSERT_TRUE(_writer.close());

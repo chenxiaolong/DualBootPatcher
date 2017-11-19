@@ -78,7 +78,8 @@ std::string AndroidFormatReader::name()
     }
 }
 
-bool AndroidFormatReader::set_option(const char *key, const char *value)
+oc::result<void> AndroidFormatReader::set_option(const char *key,
+                                                 const char *value)
 {
     if (strcmp(key, "strict") == 0) {
         bool strict = strcasecmp(value, "true") == 0
@@ -86,13 +87,13 @@ bool AndroidFormatReader::set_option(const char *key, const char *value)
                 || strcasecmp(value, "y") == 0
                 || strcmp(value, "1") == 0;
         _allow_truncated_dt = !strict;
-        return true;
+        return oc::success();
     } else {
-        return false;
+        return FormatReader::set_option(key, value);
     }
 }
 
-int AndroidFormatReader::bid(File &file, int best_bid)
+oc::result<int> AndroidFormatReader::bid(File &file, int best_bid)
 {
     if (_is_bump) {
         return bid_bump(file, best_bid);
@@ -101,23 +102,19 @@ int AndroidFormatReader::bid(File &file, int best_bid)
     }
 }
 
-bool AndroidFormatReader::read_header(File &file, Header &header)
+oc::result<void> AndroidFormatReader::read_header(File &file, Header &header)
 {
     if (!_header_offset) {
         // A bid might not have been performed if the user forced a particular
         // format
         uint64_t header_offset;
-        if (!find_header(_reader, file, MAX_HEADER_OFFSET, _hdr,
-                         header_offset)) {
-            return false;
-        }
+        OUTCOME_TRYV(find_header(_reader, file, MAX_HEADER_OFFSET, _hdr,
+                                 header_offset));
         _header_offset = header_offset;
     }
 
     if (!convert_header(_hdr, header)) {
-        _reader.set_error(AndroidError::HeaderSetFieldsFailed,
-                          "Failed to set header fields");
-        return false;
+        return AndroidError::HeaderSetFieldsFailed;
     }
 
     // Calculate offsets for each section
@@ -177,23 +174,24 @@ bool AndroidFormatReader::read_header(File &file, Header &header)
         });
     }
 
-    return _seg.set_entries(_reader, std::move(entries));
+    return _seg.set_entries(std::move(entries));
 }
 
-bool AndroidFormatReader::read_entry(File &file, Entry &entry)
+oc::result<void> AndroidFormatReader::read_entry(File &file, Entry &entry)
 {
     return _seg.read_entry(file, entry, _reader);
 }
 
-bool AndroidFormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
+oc::result<void> AndroidFormatReader::go_to_entry(File &file, Entry &entry,
+                                                  int entry_type)
 {
     return _seg.go_to_entry(file, entry, entry_type, _reader);
 }
 
-bool AndroidFormatReader::read_data(File &file, void *buf, size_t buf_size,
-                                    size_t &bytes_read)
+oc::result<size_t> AndroidFormatReader::read_data(File &file, void *buf,
+                                                  size_t buf_size)
 {
-    return _seg.read_data(file, buf, buf_size, bytes_read, _reader);
+    return _seg.read_data(file, buf, buf_size, _reader);
 }
 
 /*!
@@ -215,62 +213,52 @@ bool AndroidFormatReader::read_data(File &file, void *buf, size_t buf_size,
  * \param[out] offset_out Pointer to store header offset
  *
  * \return
- *   * True if the header is found
- *   * False with error set to AndroidError::HeaderNotFound
- *     or AndroidError::HeaderOutOfBounds if the header is not found
- *   * False if any file operation fails
+ *   * Nothing if the header is found
+ *   * AndroidError::HeaderNotFound or AndroidError::HeaderOutOfBounds if the
+ *     header is not found
+ *   * A specific error code if any file operation fails
  */
-bool AndroidFormatReader::find_header(Reader &reader, File &file,
-                                      uint64_t max_header_offset,
-                                      AndroidHeader &header_out,
-                                      uint64_t &offset_out)
+oc::result<void>
+AndroidFormatReader::find_header(Reader &reader, File &file,
+                                 uint64_t max_header_offset,
+                                 AndroidHeader &header_out,
+                                 uint64_t &offset_out)
 {
     unsigned char buf[MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
     void *ptr;
     size_t offset;
 
     if (max_header_offset > MAX_HEADER_OFFSET) {
-        reader.set_error(AndroidError::InvalidArgument,
-                         "Max header offset (%" PRIu64
-                         ") must be less than %" MB_PRIzu,
-                         max_header_offset, MAX_HEADER_OFFSET);
-        return false;
+        //DEBUG("Max header offset (%" PRIu64 ") must be less than %" MB_PRIzu,
+        //      max_header_offset, MAX_HEADER_OFFSET);
+        return AndroidError::InvalidArgument;
     }
 
     auto seek_ret = file.seek(0, SEEK_SET);
     if (!seek_ret) {
-        reader.set_error(seek_ret.error(),
-                         "Failed to seek to beginning: %s",
-                         seek_ret.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
     auto n = file_read_retry(file, buf, static_cast<size_t>(max_header_offset)
                              + sizeof(AndroidHeader));
     if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read header: %s",
-                         n.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return n.as_failure();
     }
 
     ptr = mb_memmem(buf, n.value(), BOOT_MAGIC, BOOT_MAGIC_SIZE);
     if (!ptr) {
-        reader.set_error(AndroidError::HeaderNotFound,
-                         "Android magic not found in first %" MB_PRIzu " bytes",
-                         MAX_HEADER_OFFSET);
-        return false;
+        //DEBUG("Android magic not found in first %" MB_PRIzu " bytes",
+        //      MAX_HEADER_OFFSET);
+        return AndroidError::HeaderNotFound;
     }
 
     offset = static_cast<size_t>(static_cast<unsigned char *>(ptr) - buf);
 
     if (n.value() - offset < sizeof(AndroidHeader)) {
-        reader.set_error(AndroidError::HeaderOutOfBounds,
-                         "Android header at %" MB_PRIzu " exceeds file size",
-                         offset);
-        return false;
+        //DEBUG("Android header at %" MB_PRIzu " exceeds file size", offset);
+        return AndroidError::HeaderOutOfBounds;
     }
 
     // Copy header
@@ -278,7 +266,7 @@ bool AndroidFormatReader::find_header(Reader &reader, File &file,
     android_fix_header_byte_order(header_out);
     offset_out = offset;
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -295,15 +283,14 @@ bool AndroidFormatReader::find_header(Reader &reader, File &file,
  * \param[out] offset_out Pointer to store magic offset
  *
  * \return
- *   * True if the magic is found
- *   * False with error set to AndroidError::SamsungMagicNotFound if the magic
- *     is not found
- *   * False if any file operation fails
+ *   * Nothing if the magic is found
+ *   * AndroidError::SamsungMagicNotFound if the magic is not found
+ *   * A specific error code if any file operation fails
  */
-bool AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
-                                                       File &file,
-                                                       const AndroidHeader &hdr,
-                                                       uint64_t &offset_out)
+oc::result<void>
+AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader, File &file,
+                                                  const AndroidHeader &hdr,
+                                                  uint64_t &offset_out)
 {
     unsigned char buf[SAMSUNG_SEANDROID_MAGIC_SIZE];
     uint64_t pos = 0;
@@ -329,32 +316,25 @@ bool AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
 
     auto seek_ret = file.seek(static_cast<int64_t>(pos), SEEK_SET);
     if (!seek_ret) {
-        reader.set_error(seek_ret.error(),
-                         "SEAndroid magic not found: %s",
-                         seek_ret.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
     auto n = file_read_retry(file, buf, sizeof(buf));
     if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read SEAndroid magic: %s",
-                         n.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return n.as_failure();
     }
 
     if (n.value() != SAMSUNG_SEANDROID_MAGIC_SIZE
             || memcmp(buf, SAMSUNG_SEANDROID_MAGIC, n.value()) != 0) {
-        reader.set_error(AndroidError::SamsungMagicNotFound,
-                         "SEAndroid magic not found in last %" MB_PRIzu
-                         " bytes", SAMSUNG_SEANDROID_MAGIC_SIZE);
-        return false;
+        //DEBUG("SEAndroid magic not found in last %" MB_PRIzu " bytes",
+        //      SAMSUNG_SEANDROID_MAGIC_SIZE);
+        return AndroidError::SamsungMagicNotFound;
     }
 
     offset_out = pos;
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -371,14 +351,14 @@ bool AndroidFormatReader::find_samsung_seandroid_magic(Reader &reader,
  * \param[out] offset_out Pointer to store magic offset
  *
  * \return
- *   * True if the magic is found
- *   * False with error set to AndroidError::BumpMagicNotFound if the magic is
- *     not found
- *   * False if any file operation fails
+ *   * Nothing if the magic is found
+ *   * AndroidError::BumpMagicNotFound if the magic is not found
+ *   * A specific error code if any file operation fails
  */
-bool AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
-                                          const AndroidHeader &hdr,
-                                          uint64_t &offset_out)
+oc::result<void>
+AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
+                                     const AndroidHeader &hdr,
+                                     uint64_t &offset_out)
 {
     unsigned char buf[bump::BUMP_MAGIC_SIZE];
     uint64_t pos = 0;
@@ -404,32 +384,25 @@ bool AndroidFormatReader::find_bump_magic(Reader &reader, File &file,
 
     auto seek_ret = file.seek(static_cast<int64_t>(pos), SEEK_SET);
     if (!seek_ret) {
-        reader.set_error(seek_ret.error(),
-                         "SEAndroid magic not found: %s",
-                         seek_ret.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
     auto n = file_read_retry(file, buf, sizeof(buf));
     if (!n) {
-        reader.set_error(n.error(),
-                         "Failed to read SEAndroid magic: %s",
-                         n.error().message().c_str());
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return n.as_failure();
     }
 
     if (n.value() != bump::BUMP_MAGIC_SIZE
             || memcmp(buf, bump::BUMP_MAGIC, n.value()) != 0) {
-        reader.set_error(AndroidError::BumpMagicNotFound,
-                         "Bump magic not found in last %" MB_PRIzu " bytes",
-                         bump::BUMP_MAGIC_SIZE);
-        return false;
+        //DEBUG("Bump magic not found in last %" MB_PRIzu " bytes",
+        //      bump::BUMP_MAGIC_SIZE);
+        return AndroidError::BumpMagicNotFound;
     }
 
     offset_out = pos;
-    return true;
+    return oc::success();
 }
 
 bool AndroidFormatReader::convert_header(const AndroidHeader &hdr,
@@ -464,44 +437,47 @@ bool AndroidFormatReader::convert_header(const AndroidHeader &hdr,
  * \brief Perform a bid
  *
  * \return
- *   * If \>= 0, the number of bits that conform to the Android format
- *   * -2 if this is a bid that can't be won
- *   * -1 if an error occurs
+ *   * If \>= 0, the number of bits that conform to the Bump format
+ *   * If \< 0, the bid cannot be won
+ *   * A specific error code
  */
-int AndroidFormatReader::bid_android(File &file, int best_bid)
+oc::result<int> AndroidFormatReader::bid_android(File &file, int best_bid)
 {
     int bid = 0;
 
     if (best_bid >= static_cast<int>(
             BOOT_MAGIC_SIZE + SAMSUNG_SEANDROID_MAGIC_SIZE) * 8) {
         // This is a bid we can't win, so bail out
-        return -2;
+        return -1;
     }
 
     // Find the Android header
     uint64_t header_offset;
-    if (find_header(_reader, file, MAX_HEADER_OFFSET, _hdr, header_offset)) {
+    auto ret = find_header(_reader, file, MAX_HEADER_OFFSET, _hdr,
+                           header_offset);
+    if (ret) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
         bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
-    } else if (_reader.error() == AndroidError::HeaderNotFound
-            || _reader.error() == AndroidError::HeaderOutOfBounds) {
+    } else if (ret.error() == AndroidError::HeaderNotFound
+            || ret.error() == AndroidError::HeaderOutOfBounds) {
         // Header not found. This can't be an Android boot image.
         return 0;
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     // Find the Samsung magic
     uint64_t samsung_offset;
-    if (find_samsung_seandroid_magic(_reader, file, _hdr, samsung_offset)) {
+    ret = find_samsung_seandroid_magic(_reader, file, _hdr, samsung_offset);
+    if (ret) {
         // Update bid to account for matched bits
         _samsung_offset = samsung_offset;
         bid += static_cast<int>(SAMSUNG_SEANDROID_MAGIC_SIZE * 8);
-    } else if (_reader.error() == AndroidError::SamsungMagicNotFound) {
+    } else if (ret.error() == AndroidError::SamsungMagicNotFound) {
         // Nothing found. Don't change bid
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     return bid;
@@ -512,43 +488,46 @@ int AndroidFormatReader::bid_android(File &file, int best_bid)
  *
  * \return
  *   * If \>= 0, the number of bits that conform to the Bump format
- *   * -2 if this is a bid that can't be won
- *   * -1 if an error occurs
+ *   * If \< 0, the bid cannot be won
+ *   * A specific error code
  */
-int AndroidFormatReader::bid_bump(File &file, int best_bid)
+oc::result<int> AndroidFormatReader::bid_bump(File &file, int best_bid)
 {
     int bid = 0;
 
     if (best_bid >= static_cast<int>(
             BOOT_MAGIC_SIZE + bump::BUMP_MAGIC_SIZE) * 8) {
         // This is a bid we can't win, so bail out
-        return -2;
+        return -1;
     }
 
     // Find the Android header
     uint64_t header_offset;
-    if (find_header(_reader, file, MAX_HEADER_OFFSET, _hdr, header_offset)) {
+    auto ret = find_header(_reader, file, MAX_HEADER_OFFSET, _hdr,
+                           header_offset);
+    if (ret) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
         bid += static_cast<int>(BOOT_MAGIC_SIZE * 8);
-    } else if (_reader.error() == AndroidError::HeaderNotFound
-            || _reader.error() == AndroidError::HeaderOutOfBounds) {
+    } else if (ret.error() == AndroidError::HeaderNotFound
+            || ret.error() == AndroidError::HeaderOutOfBounds) {
         // Header not found. This can't be an Android boot image.
         return 0;
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     // Find the Bump magic
     uint64_t bump_offset;
-    if (find_bump_magic(_reader, file, _hdr, bump_offset)) {
+    ret = find_bump_magic(_reader, file, _hdr, bump_offset);
+    if (ret) {
         // Update bid to account for matched bits
         _bump_offset = bump_offset;
         bid += static_cast<int>(bump::BUMP_MAGIC_SIZE * 8);
-    } else if (_reader.error() == AndroidError::BumpMagicNotFound) {
+    } else if (ret.error() == AndroidError::BumpMagicNotFound) {
         // Nothing found. Don't change bid
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     return bid;
@@ -559,9 +538,10 @@ int AndroidFormatReader::bid_bump(File &file, int best_bid)
 /*!
  * \brief Enable support for Android boot image format
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_android()
+oc::result<void> Reader::enable_format_android()
 {
     return register_format(
             std::make_unique<android::AndroidFormatReader>(*this, false));

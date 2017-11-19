@@ -54,6 +54,8 @@ std::string WriterErrorCategory::message(int ev) const
     switch (static_cast<WriterError>(ev)) {
     case WriterError::InvalidState:
         return "invalid state";
+    case WriterError::UnknownOption:
+        return "unknown option";
     case WriterError::InvalidFormatCode:
         return "invalid format code";
     case WriterError::InvalidFormatName:

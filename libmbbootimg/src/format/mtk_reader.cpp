@@ -63,48 +63,43 @@ namespace mtk
  * \param[out] mtkhdr_out Pointer to store MTK header (in host byte order)
  *
  * \return
- *   * True if the header is found
- *   * False with MtkError if the header is not found
- *   * False if any file operation fails
+ *   * Nothing if the header is found
+ *   * An MtkError if the header is not found
+ *   * A specific error if any file operation fails
  */
-static bool read_mtk_header(Reader &reader, File &file,
-                            uint64_t offset, MtkHeader &mtkhdr_out)
+static oc::result<void>
+read_mtk_header(Reader &reader, File &file,
+                uint64_t offset, MtkHeader &mtkhdr_out)
 {
     MtkHeader mtkhdr;
 
     auto seek_ret = file.seek(static_cast<int64_t>(offset), SEEK_SET);
     if (!seek_ret) {
-        reader.set_error(seek_ret.error(),
-                         "Failed to seek to MTK header at %" PRIu64 ": %s",
-                         offset, seek_ret.error().message().c_str());
+        //DEBUG("Failed to seek to MTK header at %" PRIu64, offset);
         if (file.is_fatal()) { reader.set_fatal(); }
-        return false;
+        return seek_ret.as_failure();
     }
 
     auto ret = file_read_exact(file, &mtkhdr, sizeof(mtkhdr));
     if (!ret) {
         if (ret.error() == FileError::UnexpectedEof) {
-            reader.set_error(MtkError::MtkHeaderNotFound,
-                             "MTK header not found at %" PRIu64, offset);
+            //DEBUG("MTK header not found at %" PRIu64, offset);
+            return MtkError::MtkHeaderNotFound;
         } else {
-            reader.set_error(ret.error(),
-                             "Failed to read MTK header: %s",
-                             ret.error().message().c_str());
             if (file.is_fatal()) { reader.set_fatal(); }
+            return ret.as_failure();
         }
-        return false;
     }
 
     if (memcmp(mtkhdr.magic, MTK_MAGIC, MTK_MAGIC_SIZE) != 0) {
-        reader.set_error(MtkError::MtkHeaderNotFound,
-                         "MTK header not found at %" PRIu64, offset);
-        return false;
+        //DEBUG("MTK header not found at %" PRIu64, offset);
+        return MtkError::MtkHeaderNotFound;
     }
 
     mtkhdr_out = mtkhdr;
     mtk_fix_header_byte_order(mtkhdr_out);
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -126,16 +121,17 @@ static bool read_mtk_header(Reader &reader, File &file,
  * \param[out] ramdisk_offset_out Pointer to store offset of ramdisk image
  *
  * \return
- *   * True if both the kernel and ramdisk headers are found
- *   * False with MtkError if the kernel or ramdisk header is not found
- *   * False if any file operation fails
+ *   * Nothing if both the kernel and ramdisk headers are found
+ *   * An MtkError if the kernel or ramdisk header is not found
+ *   * A specific error if any file operation fails
  */
-static bool find_mtk_headers(Reader &reader, File &file,
-                             const android::AndroidHeader &hdr,
-                             MtkHeader &kernel_mtkhdr_out,
-                             uint64_t &kernel_offset_out,
-                             MtkHeader &ramdisk_mtkhdr_out,
-                             uint64_t &ramdisk_offset_out)
+static oc::result<void>
+find_mtk_headers(Reader &reader, File &file,
+                 const android::AndroidHeader &hdr,
+                 MtkHeader &kernel_mtkhdr_out,
+                 uint64_t &kernel_offset_out,
+                 MtkHeader &ramdisk_mtkhdr_out,
+                 uint64_t &ramdisk_offset_out)
 {
     uint64_t kernel_offset;
     uint64_t ramdisk_offset;
@@ -154,19 +150,15 @@ static bool find_mtk_headers(Reader &reader, File &file,
     pos += hdr.ramdisk_size;
     pos += align_page_size<uint64_t>(pos, hdr.page_size);
 
-    if (read_mtk_header(reader, file, kernel_offset, kernel_mtkhdr_out)) {
-        kernel_offset_out = kernel_offset + sizeof(MtkHeader);
-    } else {
-        return false;
-    }
+    OUTCOME_TRYV(read_mtk_header(reader, file, kernel_offset,
+                                 kernel_mtkhdr_out));
+    kernel_offset_out = kernel_offset + sizeof(MtkHeader);
 
-    if (read_mtk_header(reader, file, ramdisk_offset, ramdisk_mtkhdr_out)) {
-        ramdisk_offset_out = ramdisk_offset + sizeof(MtkHeader);
-    } else {
-        return false;
-    }
+    OUTCOME_TRYV(read_mtk_header(reader, file, ramdisk_offset,
+                                 ramdisk_mtkhdr_out));
+    ramdisk_offset_out = ramdisk_offset + sizeof(MtkHeader);
 
-    return true;
+    return oc::success();
 }
 
 MtkFormatReader::MtkFormatReader(Reader &reader)
@@ -194,74 +186,72 @@ std::string MtkFormatReader::name()
  *
  * \return
  *   * If \>= 0, the number of bits that conform to the MTK format
- *   * -2 if this is a bid that can't be won
- *   * -1 if an error occurs
+ *   * If \< 0, the bid cannot be won
+ *   * A specific error code
  */
-int MtkFormatReader::bid(File &file, int best_bid)
+oc::result<int> MtkFormatReader::bid(File &file, int best_bid)
 {
     int bid = 0;
 
     if (best_bid >= static_cast<int>(
             android::BOOT_MAGIC_SIZE + 2 * MTK_MAGIC_SIZE) * 8) {
         // This is a bid we can't win, so bail out
-        return -2;
+        return -1;
     }
 
     // Find the Android header
     uint64_t header_offset;
-    if (android::AndroidFormatReader::find_header(
-            _reader, file, android::MAX_HEADER_OFFSET, _hdr, header_offset)) {
+    auto ret = android::AndroidFormatReader::find_header(
+            _reader, file, android::MAX_HEADER_OFFSET, _hdr, header_offset);
+    if (ret) {
         // Update bid to account for matched bits
         _header_offset = header_offset;
         bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
-    } else if (_reader.error() == android::AndroidError::HeaderNotFound
-            || _reader.error() == android::AndroidError::HeaderOutOfBounds) {
+    } else if (ret.error() == android::AndroidError::HeaderNotFound
+            || ret.error() == android::AndroidError::HeaderOutOfBounds) {
         // Header not found. This can't be an Android boot image.
         return 0;
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     uint64_t mtk_kernel_offset;
     uint64_t mtk_ramdisk_offset;
-    if (find_mtk_headers(_reader, file, _hdr,
-                         _mtk_kernel_hdr, mtk_kernel_offset,
-                         _mtk_ramdisk_hdr, mtk_ramdisk_offset)) {
+    ret = find_mtk_headers(_reader, file, _hdr,
+                           _mtk_kernel_hdr, mtk_kernel_offset,
+                           _mtk_ramdisk_hdr, mtk_ramdisk_offset);
+    if (ret) {
         // Update bid to account for matched bids
         _mtk_kernel_offset = mtk_kernel_offset;
         _mtk_ramdisk_offset = mtk_ramdisk_offset;
         bid += static_cast<int>(2 * MTK_MAGIC_SIZE * 8);
-    } else if (_reader.error().category() == mtk_error_category()) {
+    } else if (ret.error().category() == mtk_error_category()) {
         // Headers not found. This can't be an MTK boot image.
         return 0;
     } else {
-        return -1;
+        return ret.as_failure();
     }
 
     return bid;
 }
 
-bool MtkFormatReader::read_header(File &file, Header &header)
+oc::result<void> MtkFormatReader::read_header(File &file, Header &header)
 {
     if (!_header_offset) {
         // A bid might not have been performed if the user forced a particular
         // format
         uint64_t header_offset;
-        if (!android::AndroidFormatReader::find_header(
+        OUTCOME_TRYV(android::AndroidFormatReader::find_header(
                 _reader, file, android::MAX_HEADER_OFFSET, _hdr,
-                header_offset)) {
-            return false;
-        }
+                header_offset));
         _header_offset = header_offset;
     }
     if (!_mtk_kernel_offset || !_mtk_ramdisk_offset) {
         uint64_t mtk_kernel_offset;
         uint64_t mtk_ramdisk_offset;
-        if (!find_mtk_headers(_reader, file, _hdr,
-                              _mtk_kernel_hdr, mtk_kernel_offset,
-                              _mtk_ramdisk_hdr, mtk_ramdisk_offset)) {
-            return false;
-        }
+        OUTCOME_TRYV(find_mtk_headers(_reader, file, _hdr,
+                                      _mtk_kernel_hdr, mtk_kernel_offset,
+                                      _mtk_ramdisk_hdr, mtk_ramdisk_offset));
         _mtk_kernel_offset = mtk_kernel_offset;
         _mtk_ramdisk_offset = mtk_ramdisk_offset;
     }
@@ -269,18 +259,15 @@ bool MtkFormatReader::read_header(File &file, Header &header)
     // Validate that the kernel and ramdisk sizes are consistent
     if (_hdr.kernel_size != static_cast<uint64_t>(
             _mtk_kernel_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(MtkError::MismatchedKernelSizeInHeaders);
-        return false;
+        return MtkError::MismatchedKernelSizeInHeaders;
     }
     if (_hdr.ramdisk_size != static_cast<uint64_t>(
             _mtk_ramdisk_hdr.size) + sizeof(MtkHeader)) {
-        _reader.set_error(MtkError::MismatchedRamdiskSizeInHeaders);
-        return false;
+        return MtkError::MismatchedRamdiskSizeInHeaders;
     }
 
     if (!android::AndroidFormatReader::convert_header(_hdr, header)) {
-        _reader.set_error(MtkError::HeaderSetFieldsFailed);
-        return false;
+        return MtkError::HeaderSetFieldsFailed;
     }
 
     // Calculate offsets for each section
@@ -346,23 +333,24 @@ bool MtkFormatReader::read_header(File &file, Header &header)
         });
     }
 
-    return _seg.set_entries(_reader, std::move(entries));
+    return _seg.set_entries(std::move(entries));
 }
 
-bool MtkFormatReader::read_entry(File &file, Entry &entry)
+oc::result<void> MtkFormatReader::read_entry(File &file, Entry &entry)
 {
     return _seg.read_entry(file, entry, _reader);
 }
 
-bool MtkFormatReader::go_to_entry(File &file, Entry &entry, int entry_type)
+oc::result<void> MtkFormatReader::go_to_entry(File &file, Entry &entry,
+                                              int entry_type)
 {
     return _seg.go_to_entry(file, entry, entry_type, _reader);
 }
 
-bool MtkFormatReader::read_data(File &file, void *buf, size_t buf_size,
-                                size_t &bytes_read)
+oc::result<size_t> MtkFormatReader::read_data(File &file, void *buf,
+                                              size_t buf_size)
 {
-    return _seg.read_data(file, buf, buf_size, bytes_read, _reader);
+    return _seg.read_data(file, buf, buf_size, _reader);
 }
 
 }
@@ -370,13 +358,13 @@ bool MtkFormatReader::read_data(File &file, void *buf, size_t buf_size,
 /*!
  * \brief Enable support for MTK boot image format
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_mtk()
+oc::result<void> Reader::enable_format_mtk()
 {
     return register_format(std::make_unique<mtk::MtkFormatReader>(*this));
 }
-
 
 }
 }

@@ -29,9 +29,10 @@ namespace bootimg
 /*!
  * \brief Enable support for Bump boot image format
  *
- * \return Whether the format is successfully enabled
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-bool Reader::enable_format_bump()
+oc::result<void> Reader::enable_format_bump()
 {
     return register_format(
             std::make_unique<android::AndroidFormatReader>(*this, true));

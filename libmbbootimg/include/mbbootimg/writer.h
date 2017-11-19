@@ -22,10 +22,10 @@
 #include <memory>
 #include <string>
 
-#include <cstdarg>
 #include <cstddef>
 
 #include "mbcommon/common.h"
+#include "mbcommon/outcome.h"
 
 #include "mbbootimg/defs.h"
 #include "mbbootimg/writer_error.h"
@@ -53,47 +53,39 @@ public:
     Writer & operator=(Writer &&rhs) noexcept;
 
     // Open/close
-    bool open_filename(const std::string &filename);
-    bool open_filename_w(const std::wstring &filename);
-    bool open(std::unique_ptr<File> file);
-    bool open(File *file);
-    bool close();
+    oc::result<void> open_filename(const std::string &filename);
+    oc::result<void> open_filename_w(const std::wstring &filename);
+    oc::result<void> open(std::unique_ptr<File> file);
+    oc::result<void> open(File *file);
+    oc::result<void> close();
 
     // Operations
-    bool get_header(Header &header);
-    bool write_header(const Header &header);
-    bool get_entry(Entry &entry);
-    bool write_entry(const Entry &entry);
-    bool write_data(const void *buf, size_t size, size_t &bytes_written);
+    oc::result<void> get_header(Header &header);
+    oc::result<void> write_header(const Header &header);
+    oc::result<void> get_entry(Entry &entry);
+    oc::result<void> write_entry(const Entry &entry);
+    oc::result<size_t> write_data(const void *buf, size_t size);
 
     // Format operations
     int format_code();
     std::string format_name();
-    bool set_format_by_code(int code);
-    bool set_format_by_name(const std::string &name);
+    oc::result<void> set_format_by_code(int code);
+    oc::result<void> set_format_by_name(const std::string &name);
 
     // Specific formats
-    bool set_format_android();
-    bool set_format_bump();
-    bool set_format_loki();
-    bool set_format_mtk();
-    bool set_format_sony_elf();
+    oc::result<void> set_format_android();
+    oc::result<void> set_format_bump();
+    oc::result<void> set_format_loki();
+    oc::result<void> set_format_mtk();
+    oc::result<void> set_format_sony_elf();
 
     // Writer state
     bool is_open();
     bool is_fatal();
     void set_fatal();
 
-    // Error handling functions
-    std::error_code error();
-    std::string error_string();
-    bool set_error(std::error_code ec);
-    MB_PRINTF(3, 4)
-    bool set_error(std::error_code ec, const char *fmt, ...);
-    bool set_error_v(std::error_code ec, const char *fmt, va_list ap);
-
 private:
-    bool register_format(std::unique_ptr<detail::FormatWriter> format);
+    oc::result<void> register_format(std::unique_ptr<detail::FormatWriter> format);
 
     // Global state
     detail::WriterState m_state;
@@ -101,10 +93,6 @@ private:
     // File
     std::unique_ptr<File> m_owned_file;
     File *m_file;
-
-    // Error
-    std::error_code m_error_code;
-    std::string m_error_string;
 
     std::unique_ptr<detail::FormatWriter> m_format;
 };

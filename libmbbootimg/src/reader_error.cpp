@@ -54,12 +54,12 @@ std::string ReaderErrorCategory::message(int ev) const
     switch (static_cast<ReaderError>(ev)) {
     case ReaderError::InvalidState:
         return "invalid state";
+    case ReaderError::UnknownOption:
+        return "unknown option";
     case ReaderError::InvalidFormatCode:
         return "invalid format code";
     case ReaderError::InvalidFormatName:
         return "invalid format name";
-    case ReaderError::EnabledFormatNotFound:
-        return "enabled format not found";
     case ReaderError::NoFormatSelected:
         return "no format selected";
     case ReaderError::FormatAlreadyEnabled:
