@@ -39,7 +39,7 @@ namespace mb
 namespace patcher
 {
 
-class ZipCtx;
+struct ZipCtx;
 
 class OdinPatcher : public Patcher
 {
