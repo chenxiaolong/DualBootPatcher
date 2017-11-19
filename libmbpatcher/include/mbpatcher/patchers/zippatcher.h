@@ -30,8 +30,8 @@ namespace mb
 namespace patcher
 {
 
-class UnzCtx;
-class ZipCtx;
+struct UnzCtx;
+struct ZipCtx;
 
 class ZipPatcher : public Patcher
 {
