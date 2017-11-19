@@ -105,6 +105,9 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "  rpm             Rpm image                                     [    S]\n" \
     "  appsbl          Appsbl image                                  [    S]\n"
 
+#define HELP_IMAGES_ABOOT \
+    "  aboot           Aboot image                                   [  L  ]\n"
+
 #define HELP_LEGEND \
     "Legend:\n" \
     "  [A B L M S]\n" \
@@ -196,6 +199,7 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     HELP_HEADERS \
     "\n" \
     HELP_IMAGES \
+    HELP_IMAGES_ABOOT \
     "\n" \
     HELP_LEGEND \
     "\n" \
