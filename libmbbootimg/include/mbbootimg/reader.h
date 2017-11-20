@@ -99,6 +99,7 @@ private:
 
     std::vector<std::unique_ptr<detail::FormatReader>> m_formats;
     detail::FormatReader *m_format;
+    bool m_format_user_set;
 };
 
 }

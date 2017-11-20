@@ -232,6 +232,7 @@ Reader::Reader()
     , m_owned_file()
     , m_file()
     , m_format()
+    , m_format_user_set(false)
 {
 }
 
@@ -253,6 +254,7 @@ Reader::Reader(Reader &&other) noexcept
     , m_file(other.m_file)
     , m_formats(std::move(other.m_formats))
     , m_format(other.m_format)
+    , m_format_user_set(other.m_format_user_set)
 {
     other.m_state = ReaderState::Moved;
 }
@@ -266,6 +268,7 @@ Reader & Reader::operator=(Reader &&rhs) noexcept
     m_file = rhs.m_file;
     m_formats.swap(rhs.m_formats);
     m_format = rhs.m_format;
+    m_format_user_set = rhs.m_format_user_set;
 
     rhs.m_state = ReaderState::Moved;
 
@@ -401,6 +404,11 @@ oc::result<void> Reader::close()
 
         m_owned_file.reset();
         m_file = nullptr;
+
+        // Reset auto-detected format
+        if (!m_format_user_set) {
+            m_format = nullptr;
+        }
     });
 
     if (m_state != ReaderState::New) {
@@ -592,6 +600,7 @@ oc::result<void> Reader::set_format_by_code(int code)
     assert(format);
 
     m_format = format;
+    m_format_user_set = true;
 
     return oc::success();
 }
@@ -626,6 +635,7 @@ oc::result<void> Reader::set_format_by_name(const std::string &name)
     assert(format);
 
     m_format = format;
+    m_format_user_set = true;
 
     return oc::success();
 }
