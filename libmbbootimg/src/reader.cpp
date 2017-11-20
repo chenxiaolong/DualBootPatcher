@@ -53,38 +53,13 @@
  */
 
 /*!
- * \defgroup MB_BI_READER_FORMAT_CALLBACKS Format reader callbacks
- */
-
-/*!
- * \typedef FormatReaderBidder
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
- *
- * \brief Format reader callback to place bid
- *
- * Place a bid based on the confidence in which the format reader can parse the
- * boot image. The bid is usually the number of bits the reader is confident
- * that conform to the file format (eg. magic string). The file position will be
- * set to the beginning of the file before this function is called.
- *
- * \param bir Reader
- * \param userdata User callback data
- * \param best_bid Current best bid
- *
- * \return
- *   * Return a non-negative integer to place a bid
- *   * Return -1 to indicate that the bid cannot be won
- *   * Return a specific error code if an error occurs
- */
-
-/*!
- * \typedef FormatReaderSetOption
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::set_option
  *
  * \brief Format reader callback to set option
  *
- * \param bir Reader
- * \param userdata User callback data
+ * \note This is currently not exposed in the public API. There is no way to
+ *       access this function.
+ *
  * \param key Option key
  * \param value Option value
  *
@@ -95,13 +70,55 @@
  */
 
 /*!
- * \typedef FormatReaderReadHeader
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::open
+ *
+ * \brief Format reader callback to open a boot image
+ *
+ * This function returns a bid based on the confidence in which the format
+ * reader can parse the boot image. The bid is usually the number of bits the
+ * reader is confident that conform to the file format (eg. magic string). The
+ * file position is set to the beginning of the file before this function is
+ * called and also after.
+ *
+ * If this function returns an error code or if the bid is lost, close() will be
+ * called in Reader::open() to clean up any state. Otherwise, close() will be
+ * called in Reader::close() when the user closes the Reader.
+ *
+ * \param file Reference to file handle
+ * \param best_bid Current best bid
+ *
+ * \return
+ *   * Return a non-negative integer to place a bid
+ *   * Return a negative integer to indicate that the bid cannot be won
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatReader::close
+ *
+ * \brief Format reader callback to finalize and close boot image
+ *
+ * This function will be called to clean up the state regardless of whether the
+ * file is successfully opened. It is guaranteed that this function will only
+ * ever be called once after a call to open(). If an error code is returned, the
+ * user cannot reattempt the close operation.
+ *
+ * \param file Reference to file handle
+ *
+ * \return
+ *   * Return nothing if no errors occur while closing the boot image
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatReader::read_header
  *
  * \brief Format reader callback to read header
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * The file position is guaranteed to be set to the beginning of the file before
+ * this function is called.
+ *
+ * \param[in] file Reference to file handle
  * \param[out] header Header instance to write header values
  *
  * \return
@@ -110,16 +127,14 @@
  */
 
 /*!
- * \typedef FormatReaderReadEntry
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::read_entry
  *
  * \brief Format reader callback to read next entry
  *
  * \note This callback *must* be able to skip to the next entry if the user does
  *       not read or finish reading the entry data with Reader::read_data().
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Entry instance to write entry values
  *
  * \return
@@ -129,13 +144,11 @@
  */
 
 /*!
- * \typedef FormatReaderGoToEntry
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::go_to_entry
  *
  * \brief Format reader callback to seek to a specific entry
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Entry instance to write entry values
  * \param[in] entry_type Entry type to seek to
  *
@@ -146,15 +159,13 @@
  */
 
 /*!
- * \typedef FormatReaderReadData
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::read_data
  *
  * \brief Format reader callback to read entry data
  *
  * \note This function *must* read \p buf_size bytes unless EOF is reached.
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] buf Output buffer to write data
  * \param[in] buf_size Size of output buffer
  *
@@ -202,7 +213,7 @@ static struct
 };
 
 FormatReader::FormatReader(Reader &reader)
-    : _reader(reader)
+    : m_reader(reader)
 {
 }
 
@@ -213,6 +224,12 @@ oc::result<void> FormatReader::set_option(const char *key, const char *value)
     (void) key;
     (void) value;
     return ReaderError::UnknownOption;
+}
+
+oc::result<void> FormatReader::close(File &file)
+{
+    (void) file;
+    return oc::success();
 }
 
 oc::result<void> FormatReader::go_to_entry(File &file, Entry &entry,
@@ -232,6 +249,7 @@ Reader::Reader()
     , m_owned_file()
     , m_file()
     , m_format()
+    , m_format_user_set(false)
 {
 }
 
@@ -253,6 +271,7 @@ Reader::Reader(Reader &&other) noexcept
     , m_file(other.m_file)
     , m_formats(std::move(other.m_formats))
     , m_format(other.m_format)
+    , m_format_user_set(other.m_format_user_set)
 {
     other.m_state = ReaderState::Moved;
 }
@@ -266,6 +285,7 @@ Reader & Reader::operator=(Reader &&rhs) noexcept
     m_file = rhs.m_file;
     m_formats.swap(rhs.m_formats);
     m_format = rhs.m_format;
+    m_format_user_set = rhs.m_format_user_set;
 
     rhs.m_state = ReaderState::Moved;
 
@@ -345,12 +365,18 @@ oc::result<void> Reader::open(File *file)
 {
     ENSURE_STATE_OR_RETURN_ERROR(ReaderState::New);
 
-    int best_bid = 0;
-    FormatReader *format = nullptr;
-
     if (m_formats.empty()) {
         return ReaderError::NoFormatsRegistered;
     }
+
+    int best_bid = 0;
+    FormatReader *format = nullptr;
+
+    auto close_format = finally([&] {
+        if (format) {
+            (void) format->close(*file);
+        }
+    });
 
     // Perform bid if a format wasn't explicitly chosen
     if (!m_format) {
@@ -362,9 +388,22 @@ oc::result<void> Reader::open(File *file)
                 return seek_ret.as_failure();
             }
 
+            auto close_f = finally([&] {
+                (void) f->close(*file);
+            });
+
             // Call bidder
-            OUTCOME_TRY(bid, f->bid(*file, best_bid));
+            OUTCOME_TRY(bid, f->open(*file, best_bid));
+
             if (bid > best_bid) {
+                // Close previous best format
+                if (format) {
+                    (void) format->close(*file);
+                }
+
+                // Don't close this format
+                close_f.dismiss();
+
                 best_bid = bid;
                 format = f.get();
             }
@@ -373,6 +412,9 @@ oc::result<void> Reader::open(File *file)
         if (!format) {
             return ReaderError::UnknownFileFormat;
         }
+
+        // We've found a matching format, so don't close it
+        close_format.dismiss();
 
         m_format = format;
     }
@@ -401,15 +443,27 @@ oc::result<void> Reader::close()
 
         m_owned_file.reset();
         m_file = nullptr;
+
+        // Reset auto-detected format
+        if (!m_format_user_set) {
+            m_format = nullptr;
+        }
     });
 
+    oc::result<void> ret = oc::success();
+
     if (m_state != ReaderState::New) {
+        ret = m_format->close(*m_file);
+
         if (m_owned_file) {
-            OUTCOME_TRYV(m_owned_file->close());
+            auto close_ret = m_owned_file->close();
+            if (ret && !close_ret) {
+                ret = std::move(close_ret);
+            }
         }
     }
 
-    return oc::success();
+    return ret;
 }
 
 /*!
@@ -592,6 +646,7 @@ oc::result<void> Reader::set_format_by_code(int code)
     assert(format);
 
     m_format = format;
+    m_format_user_set = true;
 
     return oc::success();
 }
@@ -626,6 +681,7 @@ oc::result<void> Reader::set_format_by_name(const std::string &name)
     assert(format);
 
     m_format = format;
+    m_format_user_set = true;
 
     return oc::success();
 }

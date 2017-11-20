@@ -53,17 +53,13 @@
  */
 
 /*!
- * \defgroup MB_BI_WRITER_FORMAT_CALLBACKS Format writer callbacks
- */
-
-/*!
- * \typedef FormatWriterSetOption
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::set_option
  *
  * \brief Format writer callback to set option
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \note This is currently not exposed in the public API. There is no way to
+ *       access this function.
+ *
  * \param key Option key
  * \param value Option value
  *
@@ -74,13 +70,44 @@
  */
 
 /*!
- * \typedef FormatWriterGetHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::open
+ *
+ * \brief Format writer callback to initialize a boot image
+ *
+ * If this function returns an error code, close() will be called in
+ * Writer::open() to clean up any state. Otherwise, close() will be called in
+ * Writer::close() when the user closes the Writer.
+ *
+ * \param file Reference to file handle
+ *
+ * \return
+ *   * Return nothing if no errors occur while initializing the boot image
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatWriter::close
+ *
+ * \brief Format writer callback to finalize and close boot image
+ *
+ * This function will be called to clean up the state regardless of whether the
+ * file is successfully opened. It is guaranteed that this function will only
+ * ever be called once after a call to open(). If an error code is returned, the
+ * user cannot reattempt the close operation.
+ *
+ * \param file Reference to file handle
+ *
+ * \return
+ *   * Return nothing if no errors occur while closing the boot image
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatWriter::get_header
  *
  * \brief Format writer callback to get Header instance
  *
- * \param[in] biw Writer
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] header Pointer to store Header instance
  *
  * \return
@@ -89,13 +116,11 @@
  */
 
 /*!
- * \typedef FormatWriterWriteHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_header
  *
  * \brief Format writer callback to write header
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param header Header instance to write
  *
  * \return
@@ -104,13 +129,11 @@
  */
 
 /*!
- * \typedef FormatWriterGetEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::get_entry
  *
  * \brief Format writer callback to get Entry instance
  *
- * \param[in] biw Writer
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Pointer to store Entry instance
  *
  * \return
@@ -119,13 +142,11 @@
  */
 
 /*!
- * \typedef FormatWriterWriteEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_entry
  *
  * \brief Format writer callback to write entry
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param entry Entry instance to write
  *
  * \return
@@ -134,16 +155,14 @@
  */
 
 /*!
- * \typedef FormatWriterWriteData
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_data
  *
  * \brief Format writer callback to write entry data
  *
  * \note The callback function *must* write \p buf_size bytes or return an error
  *       if it cannot do so.
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param buf Input buffer
  * \param buf_size Size of input buffer
  *
@@ -153,30 +172,14 @@
  */
 
 /*!
- * \typedef FormatWriterFinishEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::finish_entry
  *
  * \brief Format writer callback to complete the writing of an entry
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  *
  * \return
  *   * Return nothing if successful
- *   * Return a specific error code if an error occurs
- */
-
-/*!
- * \typedef FormatWriterClose
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
- *
- * \brief Format writer callback to finalize and close boot image
- *
- * \param biw Writer
- * \param userdata User callback data
- *
- * \return
- *   * Return nothing if no errors occur while closing the boot image
  *   * Return a specific error code if an error occurs
  */
 
@@ -219,16 +222,11 @@ static struct
 };
 
 FormatWriter::FormatWriter(Writer &writer)
-    : _writer(writer)
+    : m_writer(writer)
 {
 }
 
 FormatWriter::~FormatWriter() = default;
-
-oc::result<void> FormatWriter::init()
-{
-    return oc::success();
-}
 
 oc::result<void> FormatWriter::set_option(const char *key, const char *value)
 {
@@ -237,13 +235,19 @@ oc::result<void> FormatWriter::set_option(const char *key, const char *value)
     return WriterError::UnknownOption;
 }
 
-oc::result<void> FormatWriter::finish_entry(File &file)
+oc::result<void> FormatWriter::open(File &file)
 {
     (void) file;
     return oc::success();
 }
 
 oc::result<void> FormatWriter::close(File &file)
+{
+    (void) file;
+    return oc::success();
+}
+
+oc::result<void> FormatWriter::finish_entry(File &file)
 {
     (void) file;
     return oc::success();
@@ -374,6 +378,12 @@ oc::result<void> Writer::open(File *file)
         return WriterError::NoFormatRegistered;
     }
 
+    auto ret = m_format->open(*file);
+    if (!ret) {
+        (void) m_format->close(*file);
+        return ret.as_failure();
+    }
+
     m_state = WriterState::Header;
     m_file = file;
 
@@ -407,9 +417,7 @@ oc::result<void> Writer::close()
     oc::result<void> ret = oc::success();
 
     if (m_state != WriterState::New) {
-        if (!!m_format) {
-            ret = m_format->close(*m_file);
-        }
+        ret = m_format->close(*m_file);
 
         if (m_owned_file) {
             auto close_ret = m_owned_file->close();
@@ -666,8 +674,6 @@ void Writer::set_fatal()
 oc::result<void> Writer::register_format(std::unique_ptr<FormatWriter> format)
 {
     ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
-
-    OUTCOME_TRYV(format->init());
 
     m_format = std::move(format);
     return oc::success();

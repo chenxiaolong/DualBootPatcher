@@ -52,9 +52,11 @@ public:
     virtual std::string name() = 0;
 
     virtual oc::result<void>
-    init();
-    virtual oc::result<void>
     set_option(const char *key, const char *value);
+    virtual oc::result<void>
+    open(File &file);
+    virtual oc::result<void>
+    close(File &file);
     virtual oc::result<void>
     get_header(File &file, Header &header) = 0;
     virtual oc::result<void>
@@ -67,11 +69,9 @@ public:
     write_data(File &file, const void *buf, size_t buf_size) = 0;
     virtual oc::result<void>
     finish_entry(File &file);
-    virtual oc::result<void>
-    close(File &file);
 
 protected:
-    Writer &_writer;
+    Writer &m_writer;
 };
 
 enum class WriterState : uint8_t

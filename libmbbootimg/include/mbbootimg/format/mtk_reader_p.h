@@ -49,7 +49,8 @@ public:
     int type() override;
     std::string name() override;
 
-    oc::result<int> bid(File &file, int best_bid) override;
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
     oc::result<void> read_header(File &file, Header &header) override;
     oc::result<void> read_entry(File &file, Entry &entry) override;
     oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
@@ -57,16 +58,16 @@ public:
 
 private:
     // Header values
-    android::AndroidHeader _hdr;
-    MtkHeader _mtk_kernel_hdr;
-    MtkHeader _mtk_ramdisk_hdr;
+    android::AndroidHeader m_hdr;
+    MtkHeader m_mtk_kernel_hdr;
+    MtkHeader m_mtk_ramdisk_hdr;
 
     // Offsets
-    optional<uint64_t> _header_offset;
-    optional<uint64_t> _mtk_kernel_offset;
-    optional<uint64_t> _mtk_ramdisk_offset;
+    optional<uint64_t> m_header_offset;
+    optional<uint64_t> m_mtk_kernel_offset;
+    optional<uint64_t> m_mtk_ramdisk_offset;
 
-    SegmentReader _seg;
+    optional<SegmentReader> m_seg;
 };
 
 }

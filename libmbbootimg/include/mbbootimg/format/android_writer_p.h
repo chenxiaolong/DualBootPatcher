@@ -50,26 +50,24 @@ public:
     int type() override;
     std::string name() override;
 
-    oc::result<void> init() override;
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
     oc::result<void> get_header(File &file, Header &header) override;
     oc::result<void> write_header(File &file, const Header &header) override;
     oc::result<void> get_entry(File &file, Entry &entry) override;
     oc::result<void> write_entry(File &file, const Entry &entry) override;
     oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
     oc::result<void> finish_entry(File &file) override;
-    oc::result<void> close(File &file) override;
 
 private:
+    const bool m_is_bump;
+
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
+    SHA_CTX m_sha_ctx;
 
-    bool _is_bump;
-
-    SHA_CTX _sha_ctx;
-
-    SegmentWriter _seg;
+    optional<SegmentWriter> m_seg;
 };
 
 }

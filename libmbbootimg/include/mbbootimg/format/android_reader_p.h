@@ -49,7 +49,8 @@ public:
     std::string name() override;
 
     oc::result<void> set_option(const char *key, const char *value) override;
-    oc::result<int> bid(File &file, int best_bid) override;
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
     oc::result<void> read_header(File &file, Header &header) override;
     oc::result<void> read_entry(File &file, Entry &entry) override;
     oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
@@ -71,22 +72,20 @@ public:
     static bool convert_header(const AndroidHeader &hdr, Header &header);
 
 private:
-    oc::result<int> bid_android(File &file, int best_bid);
-    oc::result<int> bid_bump(File &file, int best_bid);
+    oc::result<int> open_android(File &file, int best_bid);
+    oc::result<int> open_bump(File &file, int best_bid);
+
+    const bool m_is_bump;
 
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
     // Offsets
-    optional<uint64_t> _header_offset;
-    optional<uint64_t> _samsung_offset;
-    optional<uint64_t> _bump_offset;
+    optional<uint64_t> m_header_offset;
 
-    bool _allow_truncated_dt;
+    bool m_allow_truncated_dt;
 
-    bool _is_bump;
-
-    SegmentReader _seg;
+    optional<SegmentReader> m_seg;
 };
 
 }

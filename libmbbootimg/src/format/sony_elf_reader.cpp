@@ -49,8 +49,7 @@ namespace sonyelf
 
 SonyElfFormatReader::SonyElfFormatReader(Reader &reader)
     : FormatReader(reader)
-    , _hdr()
-    , _have_header()
+    , m_hdr()
 {
 }
 
@@ -74,7 +73,7 @@ std::string SonyElfFormatReader::name()
  *   * If \< 0, the bid cannot be won
  *   * A specific error code
  */
-oc::result<int> SonyElfFormatReader::bid(File &file, int best_bid)
+oc::result<int> SonyElfFormatReader::open(File &file, int best_bid)
 {
     int bid = 0;
 
@@ -84,10 +83,9 @@ oc::result<int> SonyElfFormatReader::bid(File &file, int best_bid)
     }
 
     // Find the Sony ELF header
-    auto ret = find_sony_elf_header(_reader, file, _hdr);
+    auto ret = find_sony_elf_header(m_reader, file, m_hdr);
     if (ret) {
         // Update bid to account for matched bits
-        _have_header = true;
         bid += static_cast<int>(SONY_EI_NIDENT * 8);
     } else if (ret.error().category() == sony_elf_error_category()) {
         // Header not found. This can't be a Sony ELF boot image.
@@ -96,20 +94,25 @@ oc::result<int> SonyElfFormatReader::bid(File &file, int best_bid)
         return ret.as_failure();
     }
 
+    m_seg = SegmentReader();
+
     return bid;
+}
+
+oc::result<void> SonyElfFormatReader::close(File &file)
+{
+    (void) file;
+
+    m_hdr = {};
+    m_seg = {};
+
+    return oc::success();
 }
 
 oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
 {
-    if (!_have_header) {
-        // A bid might not have been performed if the user forced a particular
-        // format
-        OUTCOME_TRYV(find_sony_elf_header(_reader, file, _hdr));
-        _have_header = true;
-    }
-
     header.set_supported_fields(SUPPORTED_FIELDS);
-    header.set_entrypoint_address(_hdr.e_entry);
+    header.set_entrypoint_address(m_hdr.e_entry);
 
     // Calculate offsets for each section
 
@@ -125,20 +128,20 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
     std::vector<SegmentReaderEntry> entries;
 
     // Read program segment headers
-    for (Elf32_Half i = 0; i < _hdr.e_phnum; ++i) {
+    for (Elf32_Half i = 0; i < m_hdr.e_phnum; ++i) {
         Sony_Elf32_Phdr phdr;
 
         auto seek_ret = file.seek(static_cast<int64_t>(pos), SEEK_SET);
         if (!seek_ret) {
             //DEBUG("Failed to seek to segment %" PRIu16 " at %" PRIu64, i, pos);
-            if (file.is_fatal()) { _reader.set_fatal(); }
+            if (file.is_fatal()) { m_reader.set_fatal(); }
             return seek_ret.as_failure();
         }
 
         auto ret = file_read_exact(file, &phdr, sizeof(phdr));
         if (!ret) {
             //DEBUG("Failed to read segment %" PRIu16, i);
-            if (file.is_fatal()) { _reader.set_fatal(); }
+            if (file.is_fatal()) { m_reader.set_fatal(); }
             return ret.as_failure();
         }
 
@@ -159,14 +162,14 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
             seek_ret = file.seek(phdr.p_offset, SEEK_SET);
             if (!seek_ret) {
                 //DEBUG("Failed to seek to cmdline");
-                if (file.is_fatal()) { _reader.set_fatal(); }
+                if (file.is_fatal()) { m_reader.set_fatal(); }
                 return seek_ret.as_failure();
             }
 
             ret = file_read_exact(file, cmdline, phdr.p_memsz);
             if (!ret) {
                 //DEBUG("Failed to read cmdline");
-                if (file.is_fatal()) { _reader.set_fatal(); };
+                if (file.is_fatal()) { m_reader.set_fatal(); };
                 return ret.as_failure();
             }
 
@@ -221,24 +224,24 @@ oc::result<void> SonyElfFormatReader::read_header(File &file, Header &header)
         }
     }
 
-    return _seg.set_entries(std::move(entries));
+    return m_seg->set_entries(std::move(entries));
 }
 
 oc::result<void> SonyElfFormatReader::read_entry(File &file, Entry &entry)
 {
-    return _seg.read_entry(file, entry, _reader);
+    return m_seg->read_entry(file, entry, m_reader);
 }
 
 oc::result<void> SonyElfFormatReader::go_to_entry(File &file, Entry &entry,
                                                   int entry_type)
 {
-    return _seg.go_to_entry(file, entry, entry_type, _reader);
+    return m_seg->go_to_entry(file, entry, entry_type, m_reader);
 }
 
 oc::result<size_t> SonyElfFormatReader::read_data(File &file, void *buf,
                                                   size_t buf_size)
 {
-    return _seg.read_data(file, buf, buf_size, _reader);
+    return m_seg->read_data(file, buf, buf_size, m_reader);
 }
 
 /*!

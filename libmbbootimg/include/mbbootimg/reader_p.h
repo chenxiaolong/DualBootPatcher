@@ -54,7 +54,9 @@ public:
     virtual oc::result<void>
     set_option(const char *key, const char *value);
     virtual oc::result<int>
-    bid(File &file, int best_bid) = 0;
+    open(File &file, int best_bid) = 0;
+    virtual oc::result<void>
+    close(File &file);
     virtual oc::result<void>
     read_header(File &file, Header &header) = 0;
     virtual oc::result<void>
@@ -65,7 +67,7 @@ public:
     read_data(File &file, void *buf, size_t buf_size) = 0;
 
 protected:
-    Reader &_reader;
+    Reader &m_reader;
 };
 
 enum class ReaderState : uint8_t
