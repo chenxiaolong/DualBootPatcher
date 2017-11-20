@@ -65,7 +65,7 @@ public:
     read_data(File &file, void *buf, size_t buf_size) = 0;
 
 protected:
-    Reader &_reader;
+    Reader &m_reader;
 };
 
 enum class ReaderState : uint8_t

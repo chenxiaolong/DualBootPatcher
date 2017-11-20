@@ -99,14 +99,14 @@ public:
 
 private:
     // Header values
-    android::AndroidHeader _hdr;
-    LokiHeader _loki_hdr;
+    android::AndroidHeader m_hdr;
+    LokiHeader m_loki_hdr;
 
     // Offsets
-    optional<uint64_t> _header_offset;
-    optional<uint64_t> _loki_offset;
+    optional<uint64_t> m_header_offset;
+    optional<uint64_t> m_loki_offset;
 
-    SegmentReader _seg;
+    SegmentReader m_seg;
 };
 
 }

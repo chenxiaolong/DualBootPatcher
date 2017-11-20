@@ -71,7 +71,7 @@ public:
     close(File &file);
 
 protected:
-    Writer &_writer;
+    Writer &m_writer;
 };
 
 enum class WriterState : uint8_t

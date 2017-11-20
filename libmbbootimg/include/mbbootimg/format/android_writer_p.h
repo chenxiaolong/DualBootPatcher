@@ -61,15 +61,15 @@ public:
 
 private:
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
+    optional<uint64_t> m_file_size;
 
-    bool _is_bump;
+    bool m_is_bump;
 
-    SHA_CTX _sha_ctx;
+    SHA_CTX m_sha_ctx;
 
-    SegmentWriter _seg;
+    SegmentWriter m_seg;
 };
 
 }

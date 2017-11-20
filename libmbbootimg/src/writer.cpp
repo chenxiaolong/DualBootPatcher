@@ -219,7 +219,7 @@ static struct
 };
 
 FormatWriter::FormatWriter(Writer &writer)
-    : _writer(writer)
+    : m_writer(writer)
 {
 }
 

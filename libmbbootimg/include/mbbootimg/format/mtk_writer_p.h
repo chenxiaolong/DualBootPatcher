@@ -59,11 +59,11 @@ public:
 
 private:
     // Header values
-    android::AndroidHeader _hdr;
+    android::AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
+    optional<uint64_t> m_file_size;
 
-    SegmentWriter _seg;
+    SegmentWriter m_seg;
 };
 
 }

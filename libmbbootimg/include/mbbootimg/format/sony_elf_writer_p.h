@@ -58,17 +58,17 @@ public:
 
 private:
     // Header values
-    Sony_Elf32_Ehdr _hdr;
-    Sony_Elf32_Phdr _hdr_kernel;
-    Sony_Elf32_Phdr _hdr_ramdisk;
-    Sony_Elf32_Phdr _hdr_cmdline;
-    Sony_Elf32_Phdr _hdr_ipl;
-    Sony_Elf32_Phdr _hdr_rpm;
-    Sony_Elf32_Phdr _hdr_appsbl;
+    Sony_Elf32_Ehdr m_hdr;
+    Sony_Elf32_Phdr m_hdr_kernel;
+    Sony_Elf32_Phdr m_hdr_ramdisk;
+    Sony_Elf32_Phdr m_hdr_cmdline;
+    Sony_Elf32_Phdr m_hdr_ipl;
+    Sony_Elf32_Phdr m_hdr_rpm;
+    Sony_Elf32_Phdr m_hdr_appsbl;
 
-    std::string _cmdline;
+    std::string m_cmdline;
 
-    SegmentWriter _seg;
+    SegmentWriter m_seg;
 };
 
 }

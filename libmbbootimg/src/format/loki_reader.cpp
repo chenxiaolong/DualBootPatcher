@@ -51,8 +51,8 @@ namespace loki
 
 LokiFormatReader::LokiFormatReader(Reader &reader)
     : FormatReader(reader)
-    , _hdr()
-    , _loki_hdr()
+    , m_hdr()
+    , m_loki_hdr()
 {
 }
 
@@ -88,10 +88,10 @@ oc::result<int> LokiFormatReader::bid(File &file, int best_bid)
 
     // Find the Loki header
     uint64_t loki_offset;
-    auto ret = find_loki_header(_reader, file, _loki_hdr, loki_offset);
+    auto ret = find_loki_header(m_reader, file, m_loki_hdr, loki_offset);
     if (ret) {
         // Update bid to account for matched bits
-        _loki_offset = loki_offset;
+        m_loki_offset = loki_offset;
         bid += static_cast<int>(LOKI_MAGIC_SIZE * 8);
     } else if (ret.error().category() == loki_error_category()) {
         // Header not found. This can't be a Loki boot image.
@@ -103,10 +103,10 @@ oc::result<int> LokiFormatReader::bid(File &file, int best_bid)
     // Find the Android header
     uint64_t header_offset;
     ret = android::AndroidFormatReader::find_header(
-            _reader, file, LOKI_MAX_HEADER_OFFSET, _hdr, header_offset);
+            m_reader, file, LOKI_MAX_HEADER_OFFSET, m_hdr, header_offset);
     if (ret) {
         // Update bid to account for matched bits
-        _header_offset = header_offset;
+        m_header_offset = header_offset;
         bid += static_cast<int>(android::BOOT_MAGIC_SIZE * 8);
     } else if (ret.error() == android::AndroidError::HeaderNotFound
             || ret.error() == android::AndroidError::HeaderOutOfBounds) {
@@ -129,30 +129,30 @@ oc::result<void> LokiFormatReader::read_header(File &file, Header &header)
 
     // A bid might not have been performed if the user forced a particular
     // format
-    if (!_loki_offset) {
+    if (!m_loki_offset) {
         uint64_t loki_offset;
-        OUTCOME_TRYV(find_loki_header(_reader, file, _loki_hdr, loki_offset));
-        _loki_offset = loki_offset;
+        OUTCOME_TRYV(find_loki_header(m_reader, file, m_loki_hdr, loki_offset));
+        m_loki_offset = loki_offset;
     }
-    if (!_header_offset) {
+    if (!m_header_offset) {
         uint64_t header_offset;
         OUTCOME_TRYV(android::AndroidFormatReader::find_header(
-                _reader, file, android::MAX_HEADER_OFFSET, _hdr,
+                m_reader, file, android::MAX_HEADER_OFFSET, m_hdr,
                 header_offset));
-        _header_offset = header_offset;
+        m_header_offset = header_offset;
     }
 
     // New-style images record the original values of changed fields in the
     // Android header
-    if (_loki_hdr.orig_kernel_size != 0
-            && _loki_hdr.orig_ramdisk_size != 0
-            && _loki_hdr.ramdisk_addr != 0) {
-        OUTCOME_TRYV(read_header_new(_reader, file, _hdr, _loki_hdr, header,
+    if (m_loki_hdr.orig_kernel_size != 0
+            && m_loki_hdr.orig_ramdisk_size != 0
+            && m_loki_hdr.ramdisk_addr != 0) {
+        OUTCOME_TRYV(read_header_new(m_reader, file, m_hdr, m_loki_hdr, header,
                                      kernel_offset, kernel_size,
                                      ramdisk_offset, ramdisk_size,
                                      dt_offset));
     } else {
-        OUTCOME_TRYV(read_header_old(_reader, file, _hdr, _loki_hdr, header,
+        OUTCOME_TRYV(read_header_old(m_reader, file, m_hdr, m_loki_hdr, header,
                                      kernel_offset, kernel_size,
                                      ramdisk_offset, ramdisk_size));
     }
@@ -165,30 +165,30 @@ oc::result<void> LokiFormatReader::read_header(File &file, Header &header)
     entries.push_back({
         ENTRY_TYPE_RAMDISK, ramdisk_offset, ramdisk_size, false
     });
-    if (_hdr.dt_size > 0 && dt_offset != 0) {
+    if (m_hdr.dt_size > 0 && dt_offset != 0) {
         entries.push_back({
-            ENTRY_TYPE_DEVICE_TREE, dt_offset, _hdr.dt_size, false
+            ENTRY_TYPE_DEVICE_TREE, dt_offset, m_hdr.dt_size, false
         });
     }
 
-    return _seg.set_entries(std::move(entries));
+    return m_seg.set_entries(std::move(entries));
 }
 
 oc::result<void> LokiFormatReader::read_entry(File &file, Entry &entry)
 {
-    return _seg.read_entry(file, entry, _reader);
+    return m_seg.read_entry(file, entry, m_reader);
 }
 
 oc::result<void> LokiFormatReader::go_to_entry(File &file, Entry &entry,
                                                int entry_type)
 {
-    return _seg.go_to_entry(file, entry, entry_type, _reader);
+    return m_seg.go_to_entry(file, entry, entry_type, m_reader);
 }
 
 oc::result<size_t> LokiFormatReader::read_data(File &file, void *buf,
                                                size_t buf_size)
 {
-    return _seg.read_data(file, buf, buf_size, _reader);
+    return m_seg.read_data(file, buf, buf_size, m_reader);
 }
 
 /*!

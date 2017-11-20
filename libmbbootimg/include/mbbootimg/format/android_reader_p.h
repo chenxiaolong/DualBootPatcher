@@ -75,18 +75,18 @@ private:
     oc::result<int> bid_bump(File &file, int best_bid);
 
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
     // Offsets
-    optional<uint64_t> _header_offset;
-    optional<uint64_t> _samsung_offset;
-    optional<uint64_t> _bump_offset;
+    optional<uint64_t> m_header_offset;
+    optional<uint64_t> m_samsung_offset;
+    optional<uint64_t> m_bump_offset;
 
-    bool _allow_truncated_dt;
+    bool m_allow_truncated_dt;
 
-    bool _is_bump;
+    bool m_is_bump;
 
-    SegmentReader _seg;
+    SegmentReader m_seg;
 };
 
 }

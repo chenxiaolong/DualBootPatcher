@@ -202,7 +202,7 @@ static struct
 };
 
 FormatReader::FormatReader(Reader &reader)
-    : _reader(reader)
+    : m_reader(reader)
 {
 }
 

@@ -58,11 +58,11 @@ public:
 
 private:
     // Header values
-    Sony_Elf32_Ehdr _hdr;
+    Sony_Elf32_Ehdr m_hdr;
 
-    bool _have_header;
+    bool m_have_header;
 
-    SegmentReader _seg;
+    SegmentReader m_seg;
 };
 
 }

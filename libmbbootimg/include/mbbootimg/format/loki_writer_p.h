@@ -63,15 +63,15 @@ public:
 
 private:
     // Header values
-    android::AndroidHeader _hdr;
+    android::AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
+    optional<uint64_t> m_file_size;
 
-    std::vector<unsigned char> _aboot;
+    std::vector<unsigned char> m_aboot;
 
-    SHA_CTX _sha_ctx;
+    SHA_CTX m_sha_ctx;
 
-    SegmentWriter _seg;
+    SegmentWriter m_seg;
 };
 
 }
