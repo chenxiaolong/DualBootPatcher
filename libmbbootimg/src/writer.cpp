@@ -53,17 +53,13 @@
  */
 
 /*!
- * \defgroup MB_BI_WRITER_FORMAT_CALLBACKS Format writer callbacks
- */
-
-/*!
- * \typedef FormatWriterSetOption
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::set_option
  *
  * \brief Format writer callback to set option
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \note This is currently not exposed in the public API. There is no way to
+ *       access this function.
+ *
  * \param key Option key
  * \param value Option value
  *
@@ -74,13 +70,11 @@
  */
 
 /*!
- * \typedef FormatWriterGetHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::get_header
  *
  * \brief Format writer callback to get Header instance
  *
- * \param[in] biw Writer
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] header Pointer to store Header instance
  *
  * \return
@@ -89,13 +83,11 @@
  */
 
 /*!
- * \typedef FormatWriterWriteHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_header
  *
  * \brief Format writer callback to write header
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param header Header instance to write
  *
  * \return
@@ -104,13 +96,11 @@
  */
 
 /*!
- * \typedef FormatWriterGetEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::get_entry
  *
  * \brief Format writer callback to get Entry instance
  *
- * \param[in] biw Writer
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Pointer to store Entry instance
  *
  * \return
@@ -119,13 +109,11 @@
  */
 
 /*!
- * \typedef FormatWriterWriteEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_entry
  *
  * \brief Format writer callback to write entry
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param entry Entry instance to write
  *
  * \return
@@ -134,16 +122,14 @@
  */
 
 /*!
- * \typedef FormatWriterWriteData
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_data
  *
  * \brief Format writer callback to write entry data
  *
  * \note The callback function *must* write \p buf_size bytes or return an error
  *       if it cannot do so.
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param buf Input buffer
  * \param buf_size Size of input buffer
  *
@@ -153,13 +139,11 @@
  */
 
 /*!
- * \typedef FormatWriterFinishEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::finish_entry
  *
  * \brief Format writer callback to complete the writing of an entry
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  *
  * \return
  *   * Return nothing if successful
@@ -167,13 +151,11 @@
  */
 
 /*!
- * \typedef FormatWriterClose
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::close
  *
  * \brief Format writer callback to finalize and close boot image
  *
- * \param biw Writer
- * \param userdata User callback data
+ * \param file Reference to file handle
  *
  * \return
  *   * Return nothing if no errors occur while closing the boot image

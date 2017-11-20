@@ -53,38 +53,13 @@
  */
 
 /*!
- * \defgroup MB_BI_READER_FORMAT_CALLBACKS Format reader callbacks
- */
-
-/*!
- * \typedef FormatReaderBidder
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
- *
- * \brief Format reader callback to place bid
- *
- * Place a bid based on the confidence in which the format reader can parse the
- * boot image. The bid is usually the number of bits the reader is confident
- * that conform to the file format (eg. magic string). The file position will be
- * set to the beginning of the file before this function is called.
- *
- * \param bir Reader
- * \param userdata User callback data
- * \param best_bid Current best bid
- *
- * \return
- *   * Return a non-negative integer to place a bid
- *   * Return -1 to indicate that the bid cannot be won
- *   * Return a specific error code if an error occurs
- */
-
-/*!
- * \typedef FormatReaderSetOption
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::set_option
  *
  * \brief Format reader callback to set option
  *
- * \param bir Reader
- * \param userdata User callback data
+ * \note This is currently not exposed in the public API. There is no way to
+ *       access this function.
+ *
  * \param key Option key
  * \param value Option value
  *
@@ -95,13 +70,30 @@
  */
 
 /*!
- * \typedef FormatReaderReadHeader
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::bid
+ *
+ * \brief Format reader callback to place bid
+ *
+ * Place a bid based on the confidence in which the format reader can parse the
+ * boot image. The bid is usually the number of bits the reader is confident
+ * that conform to the file format (eg. magic string). The file position will be
+ * set to the beginning of the file before this function is called.
+ *
+ * \param file Reference to file handle
+ * \param best_bid Current best bid
+ *
+ * \return
+ *   * Return a non-negative integer to place a bid
+ *   * Return a negative integer to indicate that the bid cannot be won
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatReader::read_header
  *
  * \brief Format reader callback to read header
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] header Header instance to write header values
  *
  * \return
@@ -110,16 +102,14 @@
  */
 
 /*!
- * \typedef FormatReaderReadEntry
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::read_entry
  *
  * \brief Format reader callback to read next entry
  *
  * \note This callback *must* be able to skip to the next entry if the user does
  *       not read or finish reading the entry data with Reader::read_data().
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Entry instance to write entry values
  *
  * \return
@@ -129,13 +119,11 @@
  */
 
 /*!
- * \typedef FormatReaderGoToEntry
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::go_to_entry
  *
  * \brief Format reader callback to seek to a specific entry
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Entry instance to write entry values
  * \param[in] entry_type Entry type to seek to
  *
@@ -146,15 +134,13 @@
  */
 
 /*!
- * \typedef FormatReaderReadData
- * \ingroup MB_BI_READER_FORMAT_CALLBACKS
+ * \fn FormatReader::read_data
  *
  * \brief Format reader callback to read entry data
  *
  * \note This function *must* read \p buf_size bytes unless EOF is reached.
  *
- * \param[in] bir Reader
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] buf Output buffer to write data
  * \param[in] buf_size Size of output buffer
  *
