@@ -54,7 +54,9 @@ public:
     virtual oc::result<void>
     set_option(const char *key, const char *value);
     virtual oc::result<int>
-    bid(File &file, int best_bid) = 0;
+    open(File &file, int best_bid) = 0;
+    virtual oc::result<void>
+    close(File &file);
     virtual oc::result<void>
     read_header(File &file, Header &header) = 0;
     virtual oc::result<void>

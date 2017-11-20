@@ -189,7 +189,7 @@ std::string MtkFormatReader::name()
  *   * If \< 0, the bid cannot be won
  *   * A specific error code
  */
-oc::result<int> MtkFormatReader::bid(File &file, int best_bid)
+oc::result<int> MtkFormatReader::open(File &file, int best_bid)
 {
     int bid = 0;
 
@@ -232,29 +232,29 @@ oc::result<int> MtkFormatReader::bid(File &file, int best_bid)
         return ret.as_failure();
     }
 
+    m_seg = SegmentReader();
+
     return bid;
+}
+
+oc::result<void> MtkFormatReader::close(File &file)
+{
+    (void) file;
+
+    m_hdr = {};
+    m_mtk_kernel_hdr = {};
+    m_mtk_ramdisk_hdr = {};
+    m_header_offset = {};
+    m_mtk_kernel_offset = {};
+    m_mtk_ramdisk_offset = {};
+    m_seg = {};
+
+    return oc::success();
 }
 
 oc::result<void> MtkFormatReader::read_header(File &file, Header &header)
 {
-    if (!m_header_offset) {
-        // A bid might not have been performed if the user forced a particular
-        // format
-        uint64_t header_offset;
-        OUTCOME_TRYV(android::AndroidFormatReader::find_header(
-                m_reader, file, android::MAX_HEADER_OFFSET, m_hdr,
-                header_offset));
-        m_header_offset = header_offset;
-    }
-    if (!m_mtk_kernel_offset || !m_mtk_ramdisk_offset) {
-        uint64_t mtk_kernel_offset;
-        uint64_t mtk_ramdisk_offset;
-        OUTCOME_TRYV(find_mtk_headers(m_reader, file, m_hdr,
-                                      m_mtk_kernel_hdr, mtk_kernel_offset,
-                                      m_mtk_ramdisk_hdr, mtk_ramdisk_offset));
-        m_mtk_kernel_offset = mtk_kernel_offset;
-        m_mtk_ramdisk_offset = mtk_ramdisk_offset;
-    }
+    (void) file;
 
     // Validate that the kernel and ramdisk sizes are consistent
     if (m_hdr.kernel_size != static_cast<uint64_t>(
@@ -333,24 +333,24 @@ oc::result<void> MtkFormatReader::read_header(File &file, Header &header)
         });
     }
 
-    return m_seg.set_entries(std::move(entries));
+    return m_seg->set_entries(std::move(entries));
 }
 
 oc::result<void> MtkFormatReader::read_entry(File &file, Entry &entry)
 {
-    return m_seg.read_entry(file, entry, m_reader);
+    return m_seg->read_entry(file, entry, m_reader);
 }
 
 oc::result<void> MtkFormatReader::go_to_entry(File &file, Entry &entry,
                                               int entry_type)
 {
-    return m_seg.go_to_entry(file, entry, entry_type, m_reader);
+    return m_seg->go_to_entry(file, entry, entry_type, m_reader);
 }
 
 oc::result<size_t> MtkFormatReader::read_data(File &file, void *buf,
                                               size_t buf_size)
 {
-    return m_seg.read_data(file, buf, buf_size, m_reader);
+    return m_seg->read_data(file, buf, buf_size, m_reader);
 }
 
 }
