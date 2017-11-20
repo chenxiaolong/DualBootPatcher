@@ -32,7 +32,6 @@
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
 #include "mbcommon/finally.h"
-#include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/sony_elf_defs.h"
@@ -71,6 +70,80 @@ int SonyElfFormatWriter::type()
 std::string SonyElfFormatWriter::name()
 {
     return FORMAT_NAME_SONY_ELF;
+}
+
+oc::result<void> SonyElfFormatWriter::open(File &file)
+{
+    (void) file;
+
+    m_seg = SegmentWriter();
+
+    return oc::success();
+}
+
+oc::result<void> SonyElfFormatWriter::close(File &file)
+{
+    auto reset_state = finally([&] {
+        m_hdr = {};
+        m_hdr_kernel = {};
+        m_hdr_ramdisk = {};
+        m_hdr_cmdline = {};
+        m_hdr_ipl = {};
+        m_hdr_rpm = {};
+        m_hdr_appsbl = {};
+        m_cmdline.clear();
+        m_seg = {};
+    });
+
+    if (m_writer.is_open()) {
+        auto swentry = m_seg->entry();
+
+        // If successful, finish up the boot image
+        if (swentry == m_seg->entries().end()) {
+            // Write headers
+            struct {
+                const void *ptr;
+                size_t size;
+                bool can_write;
+            } headers[] = {
+                { &m_hdr, sizeof(m_hdr), true },
+                { &m_hdr_kernel, sizeof(m_hdr_kernel), m_hdr_kernel.p_filesz > 0 },
+                { &m_hdr_ramdisk, sizeof(m_hdr_ramdisk), m_hdr_ramdisk.p_filesz > 0 },
+                { &m_hdr_cmdline, sizeof(m_hdr_cmdline), m_hdr_cmdline.p_filesz > 0 },
+                { &m_hdr_ipl, sizeof(m_hdr_ipl), m_hdr_ipl.p_filesz > 0 },
+                { &m_hdr_rpm, sizeof(m_hdr_rpm), m_hdr_rpm.p_filesz > 0 },
+                { &m_hdr_appsbl, sizeof(m_hdr_appsbl), m_hdr_appsbl.p_filesz > 0 },
+            };
+
+            sony_elf_fix_ehdr_byte_order(m_hdr);
+            sony_elf_fix_phdr_byte_order(m_hdr_kernel);
+            sony_elf_fix_phdr_byte_order(m_hdr_ramdisk);
+            sony_elf_fix_phdr_byte_order(m_hdr_cmdline);
+            sony_elf_fix_phdr_byte_order(m_hdr_ipl);
+            sony_elf_fix_phdr_byte_order(m_hdr_rpm);
+            sony_elf_fix_phdr_byte_order(m_hdr_appsbl);
+
+            // Seek back to beginning to write headers
+            auto seek_ret = file.seek(0, SEEK_SET);
+            if (!seek_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return seek_ret.as_failure();
+            }
+
+            // Write headers
+            for (auto const &header : headers) {
+                if (header.can_write) {
+                    auto ret = file_write_exact(file, header.ptr, header.size);
+                    if (!ret) {
+                        if (file.is_fatal()) { m_writer.set_fatal(); }
+                        return ret.as_failure();
+                    }
+                }
+            }
+        }
+    }
+
+    return oc::success();
 }
 
 oc::result<void> SonyElfFormatWriter::get_header(File &file, Header &header)
@@ -185,7 +258,7 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
     entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
     entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
 
-    OUTCOME_TRYV(m_seg.set_entries(std::move(entries)));
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing at offset 4096
     auto seek_ret = file.seek(4096, SEEK_SET);
@@ -199,9 +272,9 @@ oc::result<void> SonyElfFormatWriter::write_header(File &file,
 
 oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 {
-    OUTCOME_TRYV(m_seg.get_entry(file, entry, m_writer));
+    OUTCOME_TRYV(m_seg->get_entry(file, entry, m_writer));
 
-    auto swentry = m_seg.entry();
+    auto swentry = m_seg->entry();
 
     // Silently handle cmdline entry
     if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
@@ -227,20 +300,20 @@ oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
 oc::result<void> SonyElfFormatWriter::write_entry(File &file,
                                                   const Entry &entry)
 {
-    return m_seg.write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry, m_writer);
 }
 
 oc::result<size_t> SonyElfFormatWriter::write_data(File &file, const void *buf,
                                                    size_t buf_size)
 {
-    return m_seg.write_data(file, buf, buf_size, m_writer);
+    return m_seg->write_data(file, buf, buf_size, m_writer);
 }
 
 oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg.finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
 
-    auto swentry = m_seg.entry();
+    auto swentry = m_seg->entry();
 
     switch (swentry->type) {
     case ENTRY_TYPE_KERNEL:
@@ -277,65 +350,6 @@ oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
 
     if (*swentry->size > 0) {
         ++m_hdr.e_phnum;
-    }
-
-    return oc::success();
-}
-
-oc::result<void> SonyElfFormatWriter::close(File &file)
-{
-    auto swentry = m_seg.entry();
-
-    // If successful, finish up the boot image
-    if (swentry == m_seg.entries().end()) {
-        // Write headers
-        Sony_Elf32_Ehdr hdr = m_hdr;
-        Sony_Elf32_Phdr hdr_kernel = m_hdr_kernel;
-        Sony_Elf32_Phdr hdr_ramdisk = m_hdr_ramdisk;
-        Sony_Elf32_Phdr hdr_cmdline = m_hdr_cmdline;
-        Sony_Elf32_Phdr hdr_ipl = m_hdr_ipl;
-        Sony_Elf32_Phdr hdr_rpm = m_hdr_rpm;
-        Sony_Elf32_Phdr hdr_appsbl = m_hdr_appsbl;
-
-        struct {
-            const void *ptr;
-            size_t size;
-            bool can_write;
-        } headers[] = {
-            { &hdr, sizeof(hdr), true },
-            { &hdr_kernel, sizeof(hdr_kernel), hdr_kernel.p_filesz > 0 },
-            { &hdr_ramdisk, sizeof(hdr_ramdisk), hdr_ramdisk.p_filesz > 0 },
-            { &hdr_cmdline, sizeof(hdr_cmdline), hdr_cmdline.p_filesz > 0 },
-            { &hdr_ipl, sizeof(hdr_ipl), hdr_ipl.p_filesz > 0 },
-            { &hdr_rpm, sizeof(hdr_rpm), hdr_rpm.p_filesz > 0 },
-            { &hdr_appsbl, sizeof(hdr_appsbl), hdr_appsbl.p_filesz > 0 },
-        };
-
-        sony_elf_fix_ehdr_byte_order(hdr);
-        sony_elf_fix_phdr_byte_order(hdr_kernel);
-        sony_elf_fix_phdr_byte_order(hdr_ramdisk);
-        sony_elf_fix_phdr_byte_order(hdr_cmdline);
-        sony_elf_fix_phdr_byte_order(hdr_ipl);
-        sony_elf_fix_phdr_byte_order(hdr_rpm);
-        sony_elf_fix_phdr_byte_order(hdr_appsbl);
-
-        // Seek back to beginning to write headers
-        auto seek_ret = file.seek(0, SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
-
-        // Write headers
-        for (auto const &header : headers) {
-            if (header.can_write) {
-                auto ret = file_write_exact(file, header.ptr, header.size);
-                if (!ret) {
-                    if (file.is_fatal()) { m_writer.set_fatal(); }
-                    return ret.as_failure();
-                }
-            }
-        }
     }
 
     return oc::success();

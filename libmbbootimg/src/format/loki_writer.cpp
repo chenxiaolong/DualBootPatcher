@@ -31,7 +31,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/string.h"
+#include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
@@ -71,10 +71,75 @@ std::string LokiFormatWriter::name()
     return FORMAT_NAME_LOKI;
 }
 
-oc::result<void> LokiFormatWriter::init()
+oc::result<void> LokiFormatWriter::open(File &file)
 {
+    (void) file;
+
     if (!SHA1_Init(&m_sha_ctx)) {
         return android::AndroidError::Sha1InitError;
+    }
+
+    m_seg = SegmentWriter();
+
+    return oc::success();
+}
+
+oc::result<void> LokiFormatWriter::close(File &file)
+{
+    auto reset_state = finally([&] {
+        m_hdr = {};
+        m_aboot.clear();
+        m_sha_ctx = {};
+        m_seg = {};
+    });
+
+    if (m_writer.is_open()) {
+        auto swentry = m_seg->entry();
+
+        // If successful, finish up the boot image
+        if (swentry == m_seg->entries().end()) {
+            auto file_size = file.seek(0, SEEK_CUR);
+            if (!file_size) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return file_size.as_failure();
+            }
+
+            // Truncate to set size
+            auto truncate_ret = file.truncate(file_size.value());
+            if (!truncate_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return truncate_ret.as_failure();
+            }
+
+            // Set ID
+            unsigned char digest[SHA_DIGEST_LENGTH];
+            if (!SHA1_Final(digest, &m_sha_ctx)) {
+                m_writer.set_fatal();
+                return android::AndroidError::Sha1UpdateError;
+            }
+            memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
+
+            // Convert fields back to little-endian
+            android_fix_header_byte_order(m_hdr);
+
+            // Seek back to beginning to write header
+            auto seek_ret = file.seek(0, SEEK_SET);
+            if (!seek_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return seek_ret.as_failure();
+            }
+
+            // Write header
+            auto ret = file_write_exact(file, &m_hdr, sizeof(m_hdr));
+            if (!ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return ret.as_failure();
+            }
+
+            // Patch with Loki
+            OUTCOME_TRYV(_loki_patch_file(m_writer, file, m_aboot.data(),
+                                          m_aboot.size()));
+        }
     }
 
     return oc::success();
@@ -93,7 +158,7 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
                                                 const Header &header)
 {
     // Construct header
-    memset(&m_hdr, 0, sizeof(m_hdr));
+    m_hdr = {};
     memcpy(m_hdr.magic, android::BOOT_MAGIC, android::BOOT_MAGIC_SIZE);
 
     if (auto address = header.kernel_address()) {
@@ -156,7 +221,7 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
     entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
     entries.push_back({ ENTRY_TYPE_ABOOT, 0, 0, 0 });
 
-    OUTCOME_TRYV(m_seg.set_entries(std::move(entries)));
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing after first page
     auto seek_ret = file.seek(m_hdr.page_size, SEEK_SET);
@@ -170,18 +235,18 @@ oc::result<void> LokiFormatWriter::write_header(File &file,
 
 oc::result<void> LokiFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return m_seg.get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file, entry, m_writer);
 }
 
 oc::result<void> LokiFormatWriter::write_entry(File &file, const Entry &entry)
 {
-    return m_seg.write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry, m_writer);
 }
 
 oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
                                                 size_t buf_size)
 {
-    auto swentry = m_seg.entry();
+    auto swentry = m_seg->entry();
 
     if (swentry->type == ENTRY_TYPE_ABOOT) {
         if (buf_size > MAX_ABOOT_SIZE - m_aboot.size()) {
@@ -196,7 +261,7 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
         return buf_size;
     } else {
-        OUTCOME_TRY(n, m_seg.write_data(file, buf, buf_size, m_writer));
+        OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
 
         // We always include the image in the hash. The size is sometimes
         // included and is handled in finish_entry().
@@ -213,9 +278,9 @@ oc::result<size_t> LokiFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> LokiFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg.finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
 
-    auto swentry = m_seg.entry();
+    auto swentry = m_seg->entry();
 
     // Update SHA1 hash
     uint32_t le32_size = mb_htole32(*swentry->size);
@@ -245,69 +310,6 @@ oc::result<void> LokiFormatWriter::finish_entry(File &file)
     case ENTRY_TYPE_DEVICE_TREE:
         m_hdr.dt_size = *swentry->size;
         break;
-    }
-
-    return oc::success();
-}
-
-oc::result<void> LokiFormatWriter::close(File &file)
-{
-    if (m_file_size) {
-        auto seek_ret = file.seek(static_cast<int64_t>(*m_file_size), SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
-    } else {
-        auto file_size = file.seek(0, SEEK_CUR);
-        if (!file_size) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return file_size.as_failure();
-        }
-
-        m_file_size = file_size.value();
-    }
-
-    auto swentry = m_seg.entry();
-
-    // If successful, finish up the boot image
-    if (swentry == m_seg.entries().end()) {
-        // Truncate to set size
-        auto truncate_ret = file.truncate(*m_file_size);
-        if (!truncate_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return truncate_ret.as_failure();
-        }
-
-        // Set ID
-        unsigned char digest[SHA_DIGEST_LENGTH];
-        if (!SHA1_Final(digest, &m_sha_ctx)) {
-            m_writer.set_fatal();
-            return android::AndroidError::Sha1UpdateError;
-        }
-        memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
-
-        // Convert fields back to little-endian
-        android::AndroidHeader hdr = m_hdr;
-        android_fix_header_byte_order(hdr);
-
-        // Seek back to beginning to write header
-        auto seek_ret = file.seek(0, SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
-
-        // Write header
-        auto ret = file_write_exact(file, &hdr, sizeof(hdr));
-        if (!ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return ret.as_failure();
-        }
-
-        // Patch with Loki
-        OUTCOME_TRYV(_loki_patch_file(m_writer, file, m_aboot.data(),
-                                      m_aboot.size()));
     }
 
     return oc::success();

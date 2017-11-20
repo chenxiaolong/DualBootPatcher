@@ -31,7 +31,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/string.h"
+#include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/align_p.h"
@@ -51,8 +51,8 @@ namespace android
 
 AndroidFormatWriter::AndroidFormatWriter(Writer &writer, bool is_bump)
     : FormatWriter(writer)
-    , m_hdr()
     , m_is_bump(is_bump)
+    , m_hdr()
     , m_sha_ctx()
 {
 }
@@ -77,10 +77,70 @@ std::string AndroidFormatWriter::name()
     }
 }
 
-oc::result<void> AndroidFormatWriter::init()
+oc::result<void> AndroidFormatWriter::open(File &file)
 {
+    (void) file;
+
     if (!SHA1_Init(&m_sha_ctx)) {
         return AndroidError::Sha1InitError;
+    }
+
+    m_seg = SegmentWriter();
+
+    return oc::success();
+}
+
+oc::result<void> AndroidFormatWriter::close(File &file)
+{
+    auto reset_state = finally([&] {
+        m_hdr = {};
+        m_sha_ctx = {};
+        m_seg = {};
+    });
+
+    if (m_writer.is_open()) {
+        auto swentry = m_seg->entry();
+
+        // If successful, finish up the boot image
+        if (swentry == m_seg->entries().end()) {
+            // Write bump magic if we're outputting a bump'd image. Otherwise,
+            // write the Samsung SEAndroid magic.
+            auto magic = m_is_bump ? bump::BUMP_MAGIC : SAMSUNG_SEANDROID_MAGIC;
+            auto magic_size = m_is_bump
+                ? bump::BUMP_MAGIC_SIZE
+                : SAMSUNG_SEANDROID_MAGIC_SIZE;
+
+            auto ret = file_write_exact(file, magic, magic_size);
+            if (!ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return ret.as_failure();
+            }
+
+            // Set ID
+            unsigned char digest[SHA_DIGEST_LENGTH];
+            if (!SHA1_Final(digest, &m_sha_ctx)) {
+                m_writer.set_fatal();
+                return AndroidError::Sha1UpdateError;
+            }
+            memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
+
+            // Convert fields back to little-endian
+            android_fix_header_byte_order(m_hdr);
+
+            // Seek back to beginning to write header
+            auto seek_ret = file.seek(0, SEEK_SET);
+            if (!seek_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return seek_ret.as_failure();
+            }
+
+            // Write header
+            ret = file_write_exact(file, &m_hdr, sizeof(m_hdr));
+            if (!ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return ret.as_failure();
+            }
+        }
     }
 
     return oc::success();
@@ -99,7 +159,7 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
                                                    const Header &header)
 {
     // Construct header
-    memset(&m_hdr, 0, sizeof(m_hdr));
+    m_hdr = {};
     memcpy(m_hdr.magic, BOOT_MAGIC, BOOT_MAGIC_SIZE);
 
     if (auto address = header.kernel_address()) {
@@ -162,7 +222,7 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
     entries.push_back({ ENTRY_TYPE_SECONDBOOT, 0, {}, m_hdr.page_size });
     entries.push_back({ ENTRY_TYPE_DEVICE_TREE, 0, {}, m_hdr.page_size });
 
-    OUTCOME_TRYV(m_seg.set_entries(std::move(entries)));
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
 
     // Start writing after first page
     auto seek_ret = file.seek(m_hdr.page_size, SEEK_SET);
@@ -176,19 +236,19 @@ oc::result<void> AndroidFormatWriter::write_header(File &file,
 
 oc::result<void> AndroidFormatWriter::get_entry(File &file, Entry &entry)
 {
-    return m_seg.get_entry(file, entry, m_writer);
+    return m_seg->get_entry(file, entry, m_writer);
 }
 
 oc::result<void> AndroidFormatWriter::write_entry(File &file,
                                                   const Entry &entry)
 {
-    return m_seg.write_entry(file, entry, m_writer);
+    return m_seg->write_entry(file, entry, m_writer);
 }
 
 oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
                                                    size_t buf_size)
 {
-    OUTCOME_TRY(n, m_seg.write_data(file, buf, buf_size, m_writer));
+    OUTCOME_TRY(n, m_seg->write_data(file, buf, buf_size, m_writer));
 
     // We always include the image in the hash. The size is sometimes included
     // and is handled in finish_entry().
@@ -204,9 +264,9 @@ oc::result<size_t> AndroidFormatWriter::write_data(File &file, const void *buf,
 
 oc::result<void> AndroidFormatWriter::finish_entry(File &file)
 {
-    OUTCOME_TRYV(m_seg.finish_entry(file, m_writer));
+    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
 
-    auto swentry = m_seg.entry();
+    auto swentry = m_seg->entry();
 
     // Update SHA1 hash
     uint32_t le32_size = mb_htole32(*swentry->size);
@@ -231,76 +291,6 @@ oc::result<void> AndroidFormatWriter::finish_entry(File &file)
     case ENTRY_TYPE_DEVICE_TREE:
         m_hdr.dt_size = *swentry->size;
         break;
-    }
-
-    return oc::success();
-}
-
-oc::result<void> AndroidFormatWriter::close(File &file)
-{
-    if (m_file_size) {
-        auto seek_ret = file.seek(static_cast<int64_t>(*m_file_size), SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
-    } else {
-        auto file_size = file.seek(0, SEEK_CUR);
-        if (!file_size) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return file_size.as_failure();
-        }
-
-        m_file_size = file_size.value();
-    }
-
-    auto swentry = m_seg.entry();
-
-    // If successful, finish up the boot image
-    if (swentry == m_seg.entries().end()) {
-        // Write bump magic if we're outputting a bump'd image. Otherwise, write
-        // the Samsung SEAndroid magic.
-        if (m_is_bump) {
-            auto ret = file_write_exact(file, bump::BUMP_MAGIC,
-                                        bump::BUMP_MAGIC_SIZE);
-            if (!ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return ret.as_failure();
-            }
-        } else {
-            auto ret = file_write_exact(file, SAMSUNG_SEANDROID_MAGIC,
-                                        SAMSUNG_SEANDROID_MAGIC_SIZE);
-            if (!ret) {
-                if (file.is_fatal()) { m_writer.set_fatal(); }
-                return ret.as_failure();
-            }
-        }
-
-        // Set ID
-        unsigned char digest[SHA_DIGEST_LENGTH];
-        if (!SHA1_Final(digest, &m_sha_ctx)) {
-            m_writer.set_fatal();
-            return AndroidError::Sha1UpdateError;
-        }
-        memcpy(m_hdr.id, digest, SHA_DIGEST_LENGTH);
-
-        // Convert fields back to little-endian
-        AndroidHeader hdr = m_hdr;
-        android_fix_header_byte_order(hdr);
-
-        // Seek back to beginning to write header
-        auto seek_ret = file.seek(0, SEEK_SET);
-        if (!seek_ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return seek_ret.as_failure();
-        }
-
-        // Write header
-        auto ret = file_write_exact(file, &hdr, sizeof(hdr));
-        if (!ret) {
-            if (file.is_fatal()) { m_writer.set_fatal(); }
-            return ret.as_failure();
-        }
     }
 
     return oc::success();

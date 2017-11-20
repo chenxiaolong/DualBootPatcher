@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include "mbcommon/optional.h"
+
 #include "mbbootimg/format/sony_elf_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
 #include "mbbootimg/writer.h"
@@ -48,13 +50,14 @@ public:
     int type() override;
     std::string name() override;
 
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
     oc::result<void> get_header(File &file, Header &header) override;
     oc::result<void> write_header(File &file, const Header &header) override;
     oc::result<void> get_entry(File &file, Entry &entry) override;
     oc::result<void> write_entry(File &file, const Entry &entry) override;
     oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
     oc::result<void> finish_entry(File &file) override;
-    oc::result<void> close(File &file) override;
 
 private:
     // Header values
@@ -68,7 +71,7 @@ private:
 
     std::string m_cmdline;
 
-    SegmentWriter m_seg;
+    optional<SegmentWriter> m_seg;
 };
 
 }
