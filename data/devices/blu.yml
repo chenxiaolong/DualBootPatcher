@@ -3,10 +3,9 @@
   codenames:
     - BLU_VIVO_5
     - gionee6753_65u_m0
-    - VIVO_5
-    architecture: arm64-v8a
+  architecture: arm64-v8a
     
-block_devs:
+  block_devs:
     base_dirs:
      - /dev/block/platform/mtk-msdc.0/by-name
      - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name
@@ -47,3 +46,15 @@ block_devs:
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/tee2
       - /dev/block/platform/mtk-msdc.0/by-name/uboot
       - /dev/block/platform/mtk-msdc.0/11230000.MSDC0/by-name/uboot
+
+  boot_ui:
+    supported: true
+    flags:
+      - (TW_HAS_DOWNLOAD_MODE)
+    graphics_backends:
+      - fbdev
+    brightness_path: (/sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness)
+    max_brightness: (255)
+    default_brightness: (162)
+    pixel_format: (RGBX_8888)
+    theme: portrait_hdpi
