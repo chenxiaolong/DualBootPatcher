@@ -8,6 +8,7 @@ set(files
     archos.yml
     ark.yml
     asus.yml
+    blu.yml
     cagabi.yml
     cherrymobile.yml
     coolpad.yml
