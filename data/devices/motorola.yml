@@ -443,7 +443,7 @@
     cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
     graphics_backends:
       - fbdev
-theme: portrait_hdpi
+    theme: portrait_hdpi
 
 - name: Motorola Moto X (2013)
   id: ghost
