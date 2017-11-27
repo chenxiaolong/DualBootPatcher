@@ -27,6 +27,7 @@ set(files
     leagoo.yml
     lenovo.yml
     lg.yml
+    linnex.yml
     micromax.yml
     meizu.yml
     motorola.yml
