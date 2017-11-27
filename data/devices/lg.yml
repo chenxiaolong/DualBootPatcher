@@ -702,7 +702,7 @@
       - fbdev
     theme: portrait_hdpi
    
-   name: LG Stylo 3 Plus (Freedom Mobile)
+- name: LG Stylo 3 Plus (Freedom Mobile)
   id: sf340n
   codenames:
     - sf340n
@@ -749,4 +749,3 @@
     graphics_backends:
       - fbdev
     theme: portrait_hdpi
-    
