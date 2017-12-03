@@ -5,11 +5,11 @@ services:
 
 before_install:
   # Clone DualBootPatcher Repository
-  - git clone --recursive https://github.com/yshalsager/DualBootPatcher -b master DualBootPatcher/
+  - git clone --recursive https://github.com/Trild/DualBootPatcher -b master DualBootPatcher/
   # Pull docker images
-  - docker pull yshalsager/dualbootpatcher:9.3.0-2-base
-  - docker pull yshalsager/dualbootpatcher:9.3.0-2-android
-  - docker pull yshalsager/dualbootpatcher:9.3.0-2-linux
+  - docker pull Trild/dualbootpatcher:9.3.0-2-base
+  - docker pull Trild/dualbootpatcher:9.3.0-2-android
+  - docker pull Trild/dualbootpatcher:9.3.0-2-linux
 script:
   # Make work directories 
   - mkdir $HOME/.android
