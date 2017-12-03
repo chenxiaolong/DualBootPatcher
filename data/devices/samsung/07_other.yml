@@ -56,7 +56,6 @@
      - /dev/block/platform/13540000.dwmmc/by-name/RECOVERY
      - /dev/block/mmcblk0p11
  	 	   
-
 - name: Samsung Exynos7870/80
   id: exynos7870
   codenames:
