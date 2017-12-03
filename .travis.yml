@@ -42,11 +42,11 @@ script:
   - travis_wait 30
   - cd --
   # Clone your DBP
-  - git clone https://github.com/Trild/DualBootPatcher -b downgraded ${TRAVIS_BUILD_DIR}/DualBootPatcher/
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/
+  - git clone https://github.com/Trild/DualBootPatcher -b downgraded ${TRAVIS_BUILD_DIR}/
+  - cd ${TRAVIS_BUILD_DIR}/
   - git submodule update --init --recursive
-  - mkdir ${TRAVIS_BUILD_DIR}/DualBootPatcher/build
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/
+  - mkdir ${TRAVIS_BUILD_DIR}/build
+  - cd ${TRAVIS_BUILD_DIR}/build/
   # Build APK
   - cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
   - 2>/dev/null 1>&2 make -j16
@@ -59,10 +59,10 @@ script:
   - cd --
 after_success:
   - export TRAVIS_CURRENT_DATE=$(date +"%d%m%y-%Hh%Mm%Ss")
-  - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
-  - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
-  - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities/DualBootUtilities-9.2.0.zip
-  - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities/DualBootUtilities-9.2.0.zip
+  - ls -l ${TRAVIS_BUILD_DIR}/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+  - md5sum ${TRAVIS_BUILD_DIR}/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+  - ls -l ${TRAVIS_BUILD_DIR}/build/utilities/DualBootUtilities-9.2.0.zip
+  - md5sum ${TRAVIS_BUILD_DIR}/build/utilities/DualBootUtilities-9.2.0.zip
   # Upload to transfer.sh
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities && curl --upload-file ./DualBootUtilities-9.2.0.zip https://transfer.sh/DualBootUtilities-9.2.0-${TRAVIS_CURRENT_DATE}.zip
-  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/ && curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-${TRAVIS_CURRENT_DATE}.apk
+  - cd ${TRAVIS_BUILD_DIR}/build/utilities && curl --upload-file ./DualBootUtilities-9.2.0.zip https://transfer.sh/DualBootUtilities-9.2.0-${TRAVIS_CURRENT_DATE}.zip
+  - cd ${TRAVIS_BUILD_DIR}/Android_GUI/build/outputs/apk/ && curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-${TRAVIS_CURRENT_DATE}.apk
