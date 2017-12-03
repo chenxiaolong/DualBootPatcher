@@ -33,64 +33,62 @@
       - fbdev
     theme: portrait_hdpi
     
-    	- name: Samsung Exynos 7580
-	  id : exynos7580
-	  codenames : 
-	   - a3xeltexx
-	   - a5xeltexx
-	   - a7xeltexx
-	   - gvwifi
-	   - gvlte
-	   - j7eltexx
-	   - s5neoltexx
-	 architecture: armeabi-v7a
-	 block_devs:
-	   base_dirs:
-	     - /dev/block/platform/13540000.dwmmc0/by-name
-	   system: 
-	     - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
-	     - /dev/block/mmcblk0p20
-	   cache: 
-	     - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
-	     - /dev/block/mmcblk0p21
-	   data: 
-	     - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
-	     - /dev/block/mmcblk0p23
-	   boot:
-	     - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
-	     - /dev/block/mmcblk0p10
-	   recovery:
-	     - /dev/block/platform/13540000.dwmmc/by-name/RECOVERY
-	     - /dev/block/mmcblk0p11
-	 	 	   
-
-	- name: Samsung Exynos7870/80
-	  id: exynos7870
-	  codenames:
-	    - a3y17lte
-	    - j7velte
-	    - on7xelte
-	    - j7xelte
-	    - j7y17lte
-	    - gtaxllte
-	    - a7y17lte
-	    - a5y17lte
-	  architecture: armeabi-v7a
-	  block_devs:
-	    base_dirs:
-	      - /dev/block/platform/13540000.dwmmc0/by-name
-	    system:
-	      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
-	    cache:
-	      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
-	    data:
-	      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
-	    boot:
-	      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
-	    recovery:
-	      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
-
-- name: Samsung Galaxy Star
+    - name: Samsung Exynos 7580
+  id : exynos7580
+  codenames : 
+   - a3xeltexx
+   - a5xeltexx
+   - a7xeltexx
+   - gvwifi
+   - gvlte
+   - j7eltexx
+   - s5neoltexx
+ architecture: armeabi-v7a
+ block_devs:
+   base_dirs:
+     - /dev/block/platform/13540000.dwmmc0/by-name
+   system: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+     - /dev/block/mmcblk0p20
+   cache: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+     - /dev/block/mmcblk0p21
+   data: 
+     - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+     - /dev/block/mmcblk0p23
+   boot:
+     - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+     - /dev/block/mmcblk0p10
+   recovery:
+     - /dev/block/platform/13540000.dwmmc/by-name/RECOVERY
+     - /dev/block/mmcblk0p11
+ 	 	   
+     - name: Samsung Exynos7870/80
+  id: exynos7870
+  codenames:
+    - a3y17lte
+    - j7velte
+    - on7xelte
+    - j7xelte
+    - j7y17lte
+    - gtaxllte
+    - a7y17lte
+    - a5y17lte
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/13540000.dwmmc0/by-name
+    system:
+      - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+    cache:
+      - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+    data:
+     - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+    boot:
+      - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+    recovery:
+      - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+  -name: Samsung Galaxy Star
   id: mint
   codenames:
     - mint
