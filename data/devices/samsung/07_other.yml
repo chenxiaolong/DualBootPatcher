@@ -62,7 +62,11 @@
    recovery:
      - /dev/block/platform/13540000.dwmmc/by-name/RECOVERY
      - /dev/block/mmcblk0p11
- 	 	   
+   boot_ui:
+   supported: true
+   flags: 
+	- TW_HAS_DOWNLOAD_MODE
+ 	   
      - name: Samsung Exynos7870/80
   id: exynos7870
   codenames:
@@ -78,16 +82,27 @@
   block_devs:
     base_dirs:
       - /dev/block/platform/13540000.dwmmc0/by-name
+      - /dev/block/mmcblk0p10
     system:
       - /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+      - /dev/block/mmcblk0p19
     cache:
       - /dev/block/platform/13540000.dwmmc0/by-name/CACHE
+      - /dev/block/mmcblk0p20
     data:
      - /dev/block/platform/13540000.dwmmc0/by-name/USERDATA
+     - /dev/block/mmcblk0p24
     boot:
       - /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+      - /dev/block/mmcblk0p10
     recovery:
       - /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+      - /dev/block/mmcblk0p11
+   boot_ui:
+   supported: true
+   flags: 
+	- TW_HAS_DOWNLOAD_MODE
+  
   -name: Samsung Galaxy Star
   id: mint
   codenames:
