@@ -1,0 +1,39 @@
+---
+- name: samsung GT-S7272
+  id: logands
+  codenames:
+      - logands
+  architecture: armeabi-v7a
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdhci.1/by-name
+    system:
+      - /dev/block/platform/sdhci.1/by-name/system
+    cache:
+      - /dev/block/platform/sdhci.1/by-name/CSC
+    data:
+      - /dev/block/platform/sdhci.1/by-name/userdata
+    boot:
+      - /dev/block/platform/sdhci.1/by-name/KERNEL
+    recovery:
+      - /dev/block/platform/sdhci.1/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/sdhci.1/by-name/HIDDEN
+      - /dev/block/platform/sdhci.1/by-name/efs
+      - /dev/block/platform/sdhci.1/by-name/modem
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_NO_CPU_TEMP
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+       pixel_format: BGRA_8888
+ brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 168
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
