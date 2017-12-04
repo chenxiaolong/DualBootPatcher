@@ -103,7 +103,6 @@
    flags: 
 	- TW_HAS_DOWNLOAD_MODE
   
-  -name: Samsung Galaxy Star
   id: mint
   codenames:
     - mint
