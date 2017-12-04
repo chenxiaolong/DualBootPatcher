@@ -33,4 +33,5 @@ if(MBP_TOP_LEVEL_BUILD)
     )
 
     add_subdirectory(devices)
+    <samsung>.yml
 endif()
