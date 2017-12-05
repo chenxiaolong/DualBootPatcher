@@ -39,11 +39,12 @@
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
-- name: Alcatel Pixi 4(5)
+- name: Alcatel Pixi 4(5) 5010
   id: Pixi4-5
   codenames:
     - Pixi4-5
     - pixi4-5
+    - pixi4_5
     - 5010G
     - 5010A
     - 5010D
@@ -53,29 +54,30 @@
 
   block_devs:
     base_dirs:
-      - /dev/block/platform/mtk-msdc.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
     system:
-      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
       - /dev/block/mmcblk0p19
     cache:
-      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/cache
       - /dev/block/mmcblk0p20
     data:
-      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/userdata
       - /dev/block/mmcblk0p21
     boot:
-      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/boot
       - /dev/block/mmcblk0p8
     recovery:
-      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/recovery
       - /dev/block/mmcblk0p9
 
   boot_ui:
-    supported: yes
+    supported: true
     graphics_backends:
       - fbdev
     brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
     max_brightness: 255
+    default_brightness: 128
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
 
