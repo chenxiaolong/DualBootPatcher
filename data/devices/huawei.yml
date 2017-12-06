@@ -1,422 +1,62 @@
 ---
-- name: Huawei Ascend P7
-  id: hwp7
+- name: HUAWEI CRO-U00
+  id: HWCRO-U6580M
   codenames:
-    - hwp7
+      - CRO-U00
+      - HWCRO-U6580M
   architecture: armeabi-v7a
-
   block_devs:
     base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
     system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p28
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p21
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p30
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p17
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p18
-
-
-- name: Huawei Ascend Mate 2
-  id: mt2l03
-  codenames:
-    - hwMT2L03
-    - hwMT2LO3
-    - mt2
-    - MT2
-    - mt2l03
-    - MT2L03
-    - mt2-l03
-    - MT2-L03
-  architecture: armeabi-v7a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/msm_sdcc.1/by-name
-    system:
-      - /dev/block/platform/msm_sdcc.1/by-name/system
-      - /dev/block/mmcblk0p23
-    cache:
-      - /dev/block/platform/msm_sdcc.1/by-name/cache
-      - /dev/block/mmcblk0p21
-    data:
-      - /dev/block/platform/msm_sdcc.1/by-name/userdata
-      - /dev/block/mmcblk0p24
-    boot:
-      - /dev/block/platform/msm_sdcc.1/by-name/boot
-      - /dev/block/mmcblk0p18
-    recovery:
-      - /dev/block/platform/msm_sdcc.1/by-name/recovery
-      - /dev/block/mmcblk0p19
-
-
-- name: Huawei P9 Plus
-  id: VIE
-  codenames:
-    - VIE
-    - HWVIE
-    - hi3650
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p39
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p42
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
-
-
-- name: Huawei P9
-  id: EVA
-  codenames:
-    - EVA
-    - HWEVA
-    - hi3650
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p39
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p42
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
-
-
-- name: Huawei Y6
-  id: scale
-  codenames:
-    - y6
-    - Honor4A
-    - scale
-    - scl-tl00h
-    - SCL-TL10
-    - scl-tl10
-    - scl-al00h
-    - SCL-AL00H
-    - scl-l01
-    - SCL-L01
-    - scl-l02
-    - SCL-L02
-    - scl-l03
-    - scl-u31
-    - SCL-U31
-  architecture: armeabi-v7a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name
-      - /dev/block/bootdevice/by-name
-    system:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
-      - /dev/block/bootdevice/by-name/system
-      - /dev/block/mmcblk0p24
-    cache:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
-      - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p22
-    data:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
-      - /dev/block/bootdevice/by-name/userdata
-      - /dev/block/mmcblk0p25
-    boot:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
-      - /dev/block/bootdevice/by-name/boot
-      - /dev/block/mmcblk0p19
-    recovery:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
-      - /dev/block/bootdevice/by-name/recovery
-      - /dev/block/mmcblk0p20
-
-
-- name: Huawei Mate 8
-  id: NXT
-  codenames:
-    - NXT
-    - next
-    - HWNXT
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p39
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
     cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p42
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
-
-- name: Huawei Honor 6X
-  id: BLN
-  codenames:
-    - BLN
-    - HWBLN-H
-    - hi6250
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p40
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p42
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
-
-
-- name: Huawei P8 Lite
-  id: hi6210sft
-  codenames:
-    - ALE-L21
-    - ALE-L23
-    - ALE-UL00
-    - ALICE
-    - Alice
-    - hi6210sft
-    - hwALE-H
-    - hwALE-H:5.0
-    - hwALE-H:6.1
-    - hwALE-H:6.0
-    - hwgra
-    - ALICE_TL23
-    - ALICE_TL21
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p38
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p34
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p40
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p27
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p28
-
-
-- name: Huawei P8 Lite (hi6210sft variant)
-  id: hi6210sft
-  codenames:
-    - ALE-L21
-    - ALE-L23
-    - ALE-UL00
-    - ALICE
-    - Alice
-    - hi6210sft
-    - hwALE-H
-    - hwALE-H:5.0
-    - hwALE-H:6.1
-    - hwALE-H:6.0
-    - hwgra
-    - ALICE_TL23
-    - ALICE_TL21
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p38
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p34
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p40
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p27
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p28
-
-
-- name: Huawei P8 Lite (Alice variant)
-  id: alice
-  codenames:
-    - ALE-L21
-    - ALE-L23
-    - ALE-UL00
-    - ALICE
-    - Alice
-    - hi6210sft
-    - hwALE-H
-    - hwALE-H:5.0
-    - hwALE-H:6.1
-    - hwALE-H:6.0
-    - hwgra	
-    - ALICE_TL23
-    - ALICE_TL21
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p38
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p34
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p40
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p27
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p28
-
-
-- name: Huawei Y635
-  id: hwY635
-  codenames:
-    - Y635-L21
-    - msm8916
-    - HuaweiY635-L21
-    - Y635
-    - hwY635
-  architecture: armeabi-v7a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name
-      - /dev/block/platform/7824900.sdhci/by-name
-    system:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
-      - /dev/block/platform/7824900.sdhci/by-name/system
       - /dev/block/mmcblk0p23
-    cache:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
-      - /dev/block/platform/7824900.sdhci/by-name/cache
-      - /dev/block/mmcblk0p21
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/cache
     data:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
-      - /dev/block/platform/7824900.sdhci/by-name/userdata
       - /dev/block/mmcblk0p24
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/userdata
     boot:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
-      - /dev/block/platform/7824900.sdhci/by-name/boot
-      - /dev/block/mmcblk0p18
+      - /dev/block/mmcblk0p7
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/boot
     recovery:
-      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
-      - /dev/block/platform/7824900.sdhci/by-name/recovery
-      - /dev/block/mmcblk0p19
-
-
-- name: Huawei Honor 8
-  id: FRD
-  codenames:
-    - FRD
-    - hi3650
-    - HWFRD
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p43
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p49
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
-
-
-- name: Huawei P9 Lite
-  id: VNS
-  codenames:
-    - VNS
-    - venus
-    - hi6250
-    - HWVNS-H
-  architecture: arm64-v8a
-
-  block_devs:
-    base_dirs:
-      - /dev/block/platform/hi_mci.0/by-name
-    system:
-      - /dev/block/platform/hi_mci.0/by-name/system
-      - /dev/block/mmcblk0p44
-    cache:
-      - /dev/block/platform/hi_mci.0/by-name/cache
-      - /dev/block/mmcblk0p36
-    data:
-      - /dev/block/platform/hi_mci.0/by-name/userdata
-      - /dev/block/mmcblk0p49
-    boot:
-      - /dev/block/platform/hi_mci.0/by-name/boot
-      - /dev/block/mmcblk0p28
-    recovery:
-      - /dev/block/platform/hi_mci.0/by-name/recovery
-      - /dev/block/mmcblk0p29
+      - /dev/block/mmcblk0p8
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bak
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bakraw
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/custom
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/expdb
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/flashinfo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/frp
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/keystore
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/nvdata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/oemkeystore
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/proinfo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/protect1
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/protect2
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/seccfg
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/secro
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/simlock
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
