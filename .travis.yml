@@ -57,4 +57,4 @@ script:
   - 2>/dev/null 1>&2 make -C data/devices -j16
   - ./utilities/create.sh
   - cd --
-after_success: .utility/update-gh-pages.sh
+after_success: ./update-gh-pages.sh
