@@ -57,4 +57,10 @@ script:
   - 2>/dev/null 1>&2 make -C data/devices -j16
   - ./utilities/create.sh
   - cd --
-after_success: ./update-gh-pages.sh
+after_success: 
+  deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN # Set in travis-ci.org dashboard
+  on:
+    branch: master
