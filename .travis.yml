@@ -1,0 +1,68 @@
+language: android
+jdk: oraclejdk8
+
+android:
+  components:
+  - android-25
+  - platforms-android-25
+  - platform-tools
+  - tools
+  - build-tools-25.0.3
+  - extra-google-m2repository
+  - extra-android-m2repository
+# install dependencies
+addons:
+  apt:
+    packages:
+      - build-essential
+      - ccache
+      - libboost-dev
+      - libjansson-dev
+      - libssl-dev
+      - libyaml-cpp-dev
+      - openssl
+      - python-minimal
+      - curl
+
+before_install:
+  - cd --
+  # Install jansson, not required since chenxiaolong#697
+  - wget -q http://www.digip.org/jansson/releases/jansson-2.9.tar.gz && tar xzf jansson-2.9.tar.gz && cd jansson-2.9/ && ./configure && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
+  # Install openssl
+  - wget -q https://www.openssl.org/source/openssl-1.1.0c.tar.gz && tar xzf openssl-1.1.0c.tar.gz && cd openssl-1.1.0c && ./config shared --prefix=/usr/local/ssl --openssldir=/usr/local/ssl && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && export PATH=${PATH}:/usr/local/ssl && cd --
+  # Install cmake >3.6
+  - wget -q https://cmake.org/files/v3.7/cmake-3.7.2.tar.gz && tar xzf cmake-3.7.2.tar.gz && mv cmake-3.7.2 cmake && cd cmake && sed -i 's|cmake_options="-DCMAKE_BOOTSTRAP=1"|cmake_options="-DCMAKE_BOOTSTRAP=1 -DCMAKE_USE_OPENSSL=ON"|' bootstrap && ./bootstrap && 2>/dev/null 1>&2 make && 2>/dev/null 1>&2 sudo make install && cd --
+  # Get Android NDK R15
+  - wget -q https://dl.google.com/android/repository/android-ndk-r15-linux-x86_64.zip && unzip -qq android-ndk-r15-linux-x86_64.zip && mv android-ndk-r15 android-ndk
+  - export ANDROID_NDK_HOME=~/android-ndk
+  - export ANDROID_NDK=~/android-ndk
+  - cd --
+
+script:
+  - travis_wait 30
+  - cd --
+  # Clone your DBP
+  - git clone https://github.com/dbp007/DualBootPatcher -b master ${TRAVIS_BUILD_DIR}/DualBootPatcher/
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/
+  - git submodule update --init --recursive
+  - mkdir ${TRAVIS_BUILD_DIR}/DualBootPatcher/build
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/
+  # Build APK
+  - cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug
+  - 2>/dev/null 1>&2 make -j16
+  - rm -rf assets && cpack -G TXZ
+  - 2>/dev/null 1>&2 make apk -j16
+  # Build Utilities.zip
+  - 2>/dev/null 1>&2 make android-system_armeabi-v7a -j16
+  - 2>/dev/null 1>&2 make -C data/devices -j16
+  - ./utilities/create.sh
+  - cd --
+after_success:
+  - export TRAVIS_CURRENT_DATE=$(date +"%d%m%y-%Hh%Mm%Ss")
+  - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+  - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
+  - ls -l ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities/DualBootUtilities-9.2.0.zip
+  - md5sum ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities/DualBootUtilities-9.2.0.zip
+  # Upload to transfer.sh
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/build/utilities && curl --upload-file ./DualBootUtilities-9.2.0.zip https://transfer.sh/DualBootUtilities-9.2.0-${TRAVIS_CURRENT_DATE}.zip
+  - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/ && curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-${TRAVIS_CURRENT_DATE}.apk
