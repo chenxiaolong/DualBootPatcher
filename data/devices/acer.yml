@@ -8,7 +8,7 @@
 
   block_devs:
     base_dirs:
-      - /dev/block/platform/mtk-msdc.0/by-name/
+      - /dev/block/platform/mtk-msdc.0/by-name
     system:
       - /dev/block/mmcblk0p21
       - /dev/block/platform/mtk-msdc.0/by-name/system
