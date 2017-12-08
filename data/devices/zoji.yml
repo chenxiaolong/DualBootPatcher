@@ -5,7 +5,9 @@
       - HT17
       - Z7
       - leq6737m_65_n
-  architecture: arm64-v8a  block_devs:
+  architecture: arm64-v8a
+  
+  block_devs:
     base_dirs:
       - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
     system:
