@@ -46,7 +46,7 @@ after_success:
 deploy:
   provider: releases
   api_key: "$GIT_OAUTH_TOKEN_DBPAPK"
-  file: "${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
+  file: "/home/travis/build/yshalsager/DualBootPatcher/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
   skip_cleanup: true
   on:
     tags: false
