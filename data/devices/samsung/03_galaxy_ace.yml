@@ -72,7 +72,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-name: Samsung Galaxy Ace 4 Neo
+- name: Samsung Galaxy Ace 4 Neo
   id: vivalto3mve
   codenames:
     - vivalto3mve
@@ -114,7 +114,7 @@ name: Samsung Galaxy Ace 4 Neo
 - name: Samsung Galaxy Ace 3 Duos (GT-S7272)
   id: logands
   codenames:
-      - logands
+    - logands
   architecture: armeabi-v7a
   
   block_devs:
@@ -134,7 +134,7 @@ name: Samsung Galaxy Ace 4 Neo
       - /dev/block/platform/sdhci.1/by-name/HIDDEN
       - /dev/block/platform/sdhci.1/by-name/efs
       - /dev/block/platform/sdhci.1/by-name/modem
-	  
+
   boot_ui:
     supported: true
     flags:
