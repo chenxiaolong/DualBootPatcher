@@ -219,7 +219,7 @@
       - fbdev
     theme: portrait_hdpi
     
-    - name: LePro3
+- name: LePro3
   id: le_zl1
   codenames:
     - le_zl1
