@@ -1,16 +1,11 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.7)
 
 # Add our custom module path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-# Add custom module path for AndroidCompat platform on CMake 3.7
-if(NOT CMAKE_VERSION VERSION_LESS 3.7)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/cmake-3.7")
-endif()
-
 project(DualBootPatcher CXX C ASM)
 set(MBP_VERSION_MAJOR 9)
-set(MBP_VERSION_MINOR 2)
+set(MBP_VERSION_MINOR 3)
 set(MBP_VERSION_PATCH 0)
 set(MBP_VERSION "${MBP_VERSION_MAJOR}.${MBP_VERSION_MINOR}.${MBP_VERSION_PATCH}")
 
@@ -50,20 +45,21 @@ if(NOT ${MBP_SYSTEM_BUILD_TYPE} STREQUAL release
     message(FATAL_ERROR "Invalid system build type: ${MBP_SYSTEM_BUILD_TYPE}")
 endif()
 
-# Require at least Android NDK r14b
+# Require at least Android NDK r15
 if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
-    set(ndk_min_version 141.0)
-    set(ndk_max_version 142.0)
+    set(ndk_min_version 150.0)
+    set(ndk_max_version 153.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        141.3816874
+        150.4075724
+        152.4203891
     )
 
     if(DEFINED ndk_version_whitelist
@@ -175,6 +171,9 @@ include(cmake/ConfigSigning.cmake)
 # Build target config
 include(${MBP_TARGET_CONFIG_FILE})
 
+# Implicit system include directories
+include(cmake/ImplicitIncludeDirs.cmake)
+
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
 
@@ -190,7 +189,7 @@ add_subdirectory(libmbbootimg)
 add_subdirectory(libmbdevice)
 add_subdirectory(libmblog)
 add_subdirectory(libmbpio)
-add_subdirectory(libmbp)
+add_subdirectory(libmbpatcher)
 add_subdirectory(libmbsign)
 add_subdirectory(libmbsparse)
 add_subdirectory(libmbutil)
@@ -208,6 +207,8 @@ add_subdirectory(utilities)
 add_subdirectory(signtool)
 add_subdirectory(devicesgen)
 add_subdirectory(android)
+
+add_cxx_hack_to_all_targets()
 
 # Must go after signtool since it references SIGNTOOL_COMMAND
 configure_file(

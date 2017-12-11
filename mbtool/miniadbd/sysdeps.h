@@ -121,7 +121,7 @@ static __inline__ void adb_sleep_ms(int mseconds)
 
 static __inline__ char* adb_dirstart(const char* path)
 {
-    return strchr(path, '/');
+    return (char *) strchr(path, '/');
 }
 
 #endif /* _ADB_SYSDEPS_H */

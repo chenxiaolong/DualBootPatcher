@@ -30,6 +30,18 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/sde14
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/devices/soc/900000.qcom\x2cmdss_mdp/900000.qcom\x2cmdss_mdp:qcom\x2cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 153
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Z11
   id: NX531J
   codenames:
@@ -54,7 +66,17 @@
     recovery:
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p15
-      
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: ZTE BA510
   id: P635T39
   codenames:
@@ -79,4 +101,35 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
-
+      
+- name: ZTE Redbull V5
+  id: X9180
+  codenames:
+    - X9180
+    - U9180
+    - N9180
+    - V9180
+    - x9180
+    - u9180
+    - n9180
+    - v9180
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name   
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p21
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p23
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p26
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p18
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p19

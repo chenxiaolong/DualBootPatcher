@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -28,15 +28,15 @@ namespace mb
 
 enum class SELinuxResult
 {
-    CHANGED,
-    UNCHANGED,
-    ERROR,
+    Changed,
+    Unchanged,
+    Error,
 };
 
-SELinuxResult selinux_raw_set_allow_rule(policydb_t *pdb,
+SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
                                          uint16_t source_type_val,
                                          uint16_t target_type_val,
-                                         uint16_t class_type_val,
+                                         uint16_t class_val,
                                          uint32_t perm_val,
                                          bool remove);
 SELinuxResult selinux_raw_set_type_trans(policydb_t *pdb,
@@ -110,11 +110,11 @@ bool selinux_add_to_role(policydb_t *pdb,
 
 enum class SELinuxPatch
 {
-    NONE = 0,
-    PRE_BOOT,
-    MAIN,
-    CWM_RECOVERY,
-    STRIP_NO_AUDIT,
+    None = 0,
+    PreBoot,
+    Main,
+    CwmRecovery,
+    StripNoAudit,
 };
 
 bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch);

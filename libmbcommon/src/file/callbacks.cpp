@@ -1,37 +1,152 @@
 /*
  * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/file/callbacks.h"
+
+#include "mbcommon/finally.h"
 
 /*!
  * \file mbcommon/file/callbacks.h
  * \brief Open file with callbacks
  */
 
-MB_BEGIN_C_DECLS
+// Typedefs documentation
+
+namespace mb
+{
+
+using namespace detail;
 
 /*!
- * Open MbFile handle with callbacks.
+ * \typedef CallbackFile::OpenCb
  *
- * This is a wrapper function around the `mb_file_set_*_callback()` functions.
+ * \brief File open callback
  *
- * \param file MbFile handle
+ * \note If an error code is returned, the #CallbackFile::CloseCb callback, if
+ *       registered, will be called to clean up the resources.
+ *
+ * \param file File handle
+ *
+ * \return Return nothing if the file was successfully opened. Otherwise, return
+ *         an error code.
+ */
+
+/*!
+ * \typedef CallbackFile::CloseCb
+ *
+ * \brief File close callback
+ *
+ * This callback, if registered, will be called once and only once once to clean
+ * up the resources, regardless of the current state. In other words, this
+ * callback will be called even if is_fatal() returns true. If any memory, file
+ * handles, or other resources need to be freed, this callback is the place to
+ * do so.
+ *
+ * It is guaranteed that no further callbacks will be invoked after this
+ * callback executes.
+ *
+ * \param file File handle
+ *
+ * \return Return nothing if the file was successfully closed. Otherwise, return
+ *         an error code.
+ */
+
+/*!
+ * \typedef CallbackFile::ReadCb
+ *
+ * \brief File read callback
+ *
+ * \param[in] file File handle
+ * \param[out] buf Buffer to read into
+ * \param[in] size Buffer size
+ *
+ * \return Return the number of bytes read if some were successfully read or EOF
+ *         was reached. Otherwise, return an error.
+ */
+
+/*!
+ * \typedef CallbackFile::WriteCb
+ *
+ * \brief File write callback
+ *
+ * \param file File handle
+ * \param buf Buffer to write from
+ * \param size Buffer size
+ *
+ * \return Return the number of bytes written if some were successfully written
+ *         or EOF was reached. Otherwise, return an error code.
+ */
+
+/*!
+ * \typedef CallbackFile::SeekCb
+ *
+ * \brief File seek callback
+ *
+ * \param file File handle
+ * \param offset File position offset
+ * \param whence SEEK_SET, SEEK_CUR, or SEEK_END from `stdio.h`
+ *
+ * \return Return the new file offset if the file position was successfully set.
+ *         Otherwise, return an error code.
+ */
+
+/*!
+ * \typedef CallbackFile::TruncateCb
+ *
+ * \brief File truncate callback
+ *
+ * \note This callback must *not* change the file position.
+ *
+ * \param file File handle
+ * \param size New size of file
+ *
+ * \return Return nothing if the file size was successfully changed. Otherwise,
+ *         return an error code.
+ */
+
+/*!
+ * \class CallbackFile
+ *
+ * \brief Open file with C-style callbacks.
+ */
+
+/*!
+ * \brief Construct unbound CallbackFile.
+ *
+ * The File handle will not be bound to any file. The open(OpenCb, CloseCb,
+ * ReadCb, WriteCb, SeekCb, TruncateCb, void *) function will need to be called
+ * to open a file.
+ */
+CallbackFile::CallbackFile()
+    : File()
+{
+    clear();
+}
+
+/*!
+ * \brief Open File handle with callbacks.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(OpenCb, CloseCb, ReadCb, WriteCb, SeekCb, TruncateCb, void *)
+ *
  * \param open_cb File open callback
  * \param close_cb File close callback
  * \param read_cb File read callback
@@ -39,63 +154,158 @@ MB_BEGIN_C_DECLS
  * \param seek_cb File seek callback
  * \param truncate_cb File truncate callback
  * \param userdata Data pointer to pass to callbacks
- *
- * \return The minimum return value of the `mb_file_set_*_callback()` functions,
- *         mb_file_set_callback_data(), and mb_file_open()
  */
-int mb_file_open_callbacks(struct MbFile *file,
-                           MbFileOpenCb open_cb,
-                           MbFileCloseCb close_cb,
-                           MbFileReadCb read_cb,
-                           MbFileWriteCb write_cb,
-                           MbFileSeekCb seek_cb,
-                           MbFileTruncateCb truncate_cb,
+CallbackFile::CallbackFile(OpenCb open_cb,
+                           CloseCb close_cb,
+                           ReadCb read_cb,
+                           WriteCb write_cb,
+                           SeekCb seek_cb,
+                           TruncateCb truncate_cb,
                            void *userdata)
+    : CallbackFile()
 {
-    int ret = MB_FILE_OK;
-    int ret2;
-
-    ret2 = mb_file_set_open_callback(file, open_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_close_callback(file, close_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_read_callback(file, read_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_write_callback(file, write_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_seek_callback(file, seek_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_truncate_callback(file, truncate_cb);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_set_callback_data(file, userdata);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    ret2 = mb_file_open(file);
-    if (ret2 < ret) {
-        ret = ret2;
-    }
-
-    return ret;
+    (void) open(open_cb, close_cb, read_cb, write_cb, seek_cb, truncate_cb,
+                userdata);
 }
 
-MB_END_C_DECLS
+CallbackFile::~CallbackFile()
+{
+    (void) close();
+}
+
+CallbackFile::CallbackFile(CallbackFile &&other) noexcept
+    : File(std::move(other))
+    , m_open_cb(other.m_open_cb)
+    , m_close_cb(other.m_close_cb)
+    , m_read_cb(other.m_read_cb)
+    , m_write_cb(other.m_write_cb)
+    , m_seek_cb(other.m_seek_cb)
+    , m_truncate_cb(other.m_truncate_cb)
+    , m_userdata(other.m_userdata)
+{
+    other.clear();
+}
+
+CallbackFile & CallbackFile::operator=(CallbackFile &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    m_open_cb = rhs.m_open_cb;
+    m_close_cb = rhs.m_close_cb;
+    m_read_cb = rhs.m_read_cb;
+    m_write_cb = rhs.m_write_cb;
+    m_seek_cb = rhs.m_seek_cb;
+    m_truncate_cb = rhs.m_truncate_cb;
+    m_userdata = rhs.m_userdata;
+
+    rhs.clear();
+
+    return *this;
+}
+
+/*!
+ * \brief Open file with callbacks.
+ *
+ * If \p open_cb is provided and returns a failure code, then \p close_cb, if
+ * provided, will be called to clean up any resources.
+ *
+ * \param open_cb File open callback
+ * \param close_cb File close callback
+ * \param read_cb File read callback
+ * \param write_cb File write callback
+ * \param seek_cb File seek callback
+ * \param truncate_cb File truncate callback
+ * \param userdata Data pointer to pass to callbacks
+ */
+oc::result<void> CallbackFile::open(OpenCb open_cb,
+                                    CloseCb close_cb,
+                                    ReadCb read_cb,
+                                    WriteCb write_cb,
+                                    SeekCb seek_cb,
+                                    TruncateCb truncate_cb,
+                                    void *userdata)
+{
+    if (state() == FileState::New) {
+        m_open_cb = open_cb;
+        m_close_cb = close_cb;
+        m_read_cb = read_cb;
+        m_write_cb = write_cb;
+        m_seek_cb = seek_cb;
+        m_truncate_cb = truncate_cb;
+        m_userdata = userdata;
+    }
+
+    return File::open();
+}
+
+oc::result<void> CallbackFile::on_open()
+{
+    if (m_open_cb) {
+        return m_open_cb(*this, m_userdata);
+    } else {
+        return File::on_open();
+    }
+}
+
+oc::result<void> CallbackFile::on_close()
+{
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        clear();
+    });
+
+    if (m_close_cb) {
+        return m_close_cb(*this, m_userdata);
+    } else {
+        return File::on_close();
+    }
+}
+
+oc::result<size_t> CallbackFile::on_read(void *buf, size_t size)
+{
+    if (m_read_cb) {
+        return m_read_cb(*this, m_userdata, buf, size);
+    } else {
+        return File::on_read(buf, size);
+    }
+}
+
+oc::result<size_t> CallbackFile::on_write(const void *buf, size_t size)
+{
+    if (m_write_cb) {
+        return m_write_cb(*this, m_userdata, buf, size);
+    } else {
+        return File::on_write(buf, size);
+    }
+}
+
+oc::result<uint64_t> CallbackFile::on_seek(int64_t offset, int whence)
+{
+    if (m_seek_cb) {
+        return m_seek_cb(*this, m_userdata, offset, whence);
+    } else {
+        return File::on_seek(offset, whence);
+    }
+}
+
+oc::result<void> CallbackFile::on_truncate(uint64_t size)
+{
+    if (m_truncate_cb) {
+        return m_truncate_cb(*this, m_userdata, size);
+    } else {
+        return File::on_truncate(size);
+    }
+}
+
+void CallbackFile::clear()
+{
+    m_open_cb = nullptr;
+    m_close_cb = nullptr;
+    m_read_cb = nullptr;
+    m_write_cb = nullptr;
+    m_seek_cb = nullptr;
+    m_truncate_cb = nullptr;
+    m_userdata = nullptr;
+}
+
+}

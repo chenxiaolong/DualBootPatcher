@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/time.h"
@@ -30,7 +30,8 @@ uint64_t current_time_ms()
 {
     struct timespec res;
     clock_gettime(CLOCK_REALTIME, &res);
-    return 1000u * res.tv_sec + res.tv_nsec / 1e6;
+    return 1000ull * static_cast<uint64_t>(res.tv_sec)
+            + static_cast<uint64_t>(res.tv_nsec) / 1000000;
 }
 
 /*!
@@ -45,7 +46,7 @@ uint64_t current_time_ms()
  *
  * \return Whether the date and time was successfully formatted
  */
-bool format_time(const std::string &format, std::string *out)
+bool format_time(const std::string &format, std::string &out)
 {
     struct timespec res;
     struct tm tm;
@@ -61,14 +62,14 @@ bool format_time(const std::string &format, std::string *out)
         return false;
     }
 
-    *out = buf;
+    out = buf;
     return true;
 }
 
 std::string format_time(const std::string &format)
 {
     std::string result;
-    format_time(format, &result);
+    format_time(format, result);
     return result;
 }
 

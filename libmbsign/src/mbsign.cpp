@@ -1,26 +1,33 @@
 /*
  * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbsign/mbsign.h"
 
 #include <cassert>
 #include <cstring>
+
+#ifdef __clang__
+#  pragma GCC diagnostic push
+#  if __has_warning("-Wold-style-cast")
+#    pragma GCC diagnostic ignored "-Wold-style-cast"
+#  endif
+#endif
 
 #include <openssl/err.h>
 #ifdef OPENSSL_IS_BORINGSSL
@@ -29,7 +36,13 @@
 #include <openssl/pem.h>
 #include <openssl/pkcs12.h>
 
+#ifdef __clang__
+#  pragma GCC diagnostic pop
+#endif
+
 #include "mblog/logging.h"
+
+#define LOG_TAG                 "mbsign"
 
 #define BUFSIZE                 1024 * 8
 
@@ -69,13 +82,13 @@ static int password_callback(char *buf, int size, int rwflag, void *userdata)
     (void) rwflag;
 
     if (userdata) {
-        const char *password = (const char *) userdata;
+        const char *password = static_cast<const char *>(userdata);
 
-        int res = strlen(password);
+        int res = static_cast<int>(strlen(password));
         if (res > size) {
             res = size;
         }
-        memcpy(buf, password, res);
+        memcpy(buf, password, static_cast<size_t>(res));
         return res;
     }
     return 0;
@@ -101,7 +114,7 @@ static int log_callback(const char *str, size_t len, void *userdata)
         LOGE("%s", copy);
         free(copy);
     }
-    return len;
+    return static_cast<int>(len);
 }
 
 static void openssl_log_errors()
@@ -191,12 +204,12 @@ EVP_PKEY * load_private_key(BIO *bio_key, int format, const char *pass)
     switch (format) {
     case KEY_FORMAT_PEM:
         pkey = PEM_read_bio_PrivateKey(
-                bio_key, nullptr, &password_callback, (void *) pass);
+                bio_key, nullptr, &password_callback, const_cast<char *>(pass));
         break;
     case KEY_FORMAT_PKCS12: {
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, &password_callback, (void *) pass,
+        if (!load_pkcs12(bio_key, &password_callback, const_cast<char *>(pass),
                          &pkey, &x509, nullptr)) {
             return nullptr;
         }
@@ -269,13 +282,13 @@ EVP_PKEY * load_public_key(BIO *bio_key, int format, const char *pass)
     switch (format) {
     case KEY_FORMAT_PEM:
         pkey = PEM_read_bio_PUBKEY(
-                bio_key, nullptr, &password_callback, (void *) pass);
+                bio_key, nullptr, &password_callback, const_cast<char *>(pass));
         break;
     case KEY_FORMAT_PKCS12: {
         EVP_PKEY *public_key;
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, &password_callback, (void *) pass,
+        if (!load_pkcs12(bio_key, &password_callback, const_cast<char *>(pass),
                          &public_key, &x509, nullptr)) {
             return nullptr;
         }
@@ -387,7 +400,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
         goto error;
     }
 
-    buf = (unsigned char *) OPENSSL_malloc(BUFSIZE);
+    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
@@ -411,7 +424,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, n)) {
+        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
             goto error;
@@ -432,13 +445,15 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
     hdr.version = version;
 
-    if (BIO_write(bio_sig_out, &hdr, sizeof(hdr)) != sizeof(hdr)) {
+    if (BIO_write(bio_sig_out, &hdr, static_cast<int>(sizeof(hdr)))
+            != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to write header to signature BIO stream");
         openssl_log_errors();
         goto error;
     }
 
-    if (BIO_write(bio_sig_out, buf, len) != (int) len) {
+    if (BIO_write(bio_sig_out, buf, static_cast<int>(len))
+            != static_cast<int>(len)) {
         LOGE("Failed to write signature to signature BIO stream");
         openssl_log_errors();
         goto error;
@@ -511,7 +526,8 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
 #endif
 
     // Read header from signature file
-    if (BIO_read(bio_sig_in, &hdr, sizeof(hdr)) != sizeof(hdr)) {
+    if (BIO_read(bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
+            != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to read header from signature BIO stream");
         openssl_log_errors();
         goto error;
@@ -539,7 +555,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
-    buf = (unsigned char *) OPENSSL_malloc(BUFSIZE);
+    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
@@ -547,7 +563,8 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
     }
 
     siglen = EVP_PKEY_size(pkey);
-    sigbuf = (unsigned char *) OPENSSL_malloc(siglen);
+    sigbuf = static_cast<unsigned char *>(
+            OPENSSL_malloc(static_cast<size_t>(siglen)));
     if (!sigbuf) {
         LOGE("Failed to allocate signature buffer");
         openssl_log_errors();
@@ -577,7 +594,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, n)) {
+        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
             goto error;
@@ -585,7 +602,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
 #endif
     }
 
-    n = EVP_DigestVerifyFinal(mctx, sigbuf, siglen);
+    n = EVP_DigestVerifyFinal(mctx, sigbuf, static_cast<size_t>(siglen));
     if (n == 1) {
         *result_out = true;
     } else if (n == 0) {

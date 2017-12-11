@@ -6,10 +6,9 @@ target_include_directories(
     ..
 )
 
-set_target_properties(
+target_link_libraries(
     mbbootui-config
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
+    PUBLIC
+    interface.global.CXXVersion
+    mbdevice-static
 )

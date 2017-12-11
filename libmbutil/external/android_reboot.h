@@ -27,7 +27,7 @@ __BEGIN_DECLS
 /* Properties */
 #define ANDROID_RB_PROPERTY "sys.powerctl"
 
-int android_reboot(int cmd, const char *arg);
+int android_reboot(unsigned int cmd, const char *arg);
 
 __END_DECLS
 

@@ -23,6 +23,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/button"
+
 GUIButton::GUIButton(xml_node<>* node) : GUIObject(node)
 {
     mButtonImg = nullptr;
@@ -254,7 +256,7 @@ int GUIButton::NotifyTouch(TOUCH_STATE state, int x, int y)
     } else {
         if (last_state == 0) {
             last_state = 1;
-            DataManager::Vibrate(TW_BUTTON_VIBRATE);
+            DataManager::Vibrate(VAR_TW_BUTTON_VIBRATE);
             if (mButtonLabel != nullptr) {
                 mButtonLabel->isHighlighted = true;
             }

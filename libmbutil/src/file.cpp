@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/file.h"
@@ -32,13 +32,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
+#include "mbcommon/finally.h"
 
 namespace mb
 {
 namespace util
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 /*!
  * \brief Create empty file with 0666 permissions
@@ -74,10 +75,9 @@ bool create_empty_file(const std::string &path)
  *
  * \return true on success, false on failure and errno set appropriately
  */
-bool file_first_line(const std::string &path,
-                     std::string *line_out)
+bool file_first_line(const std::string &path, std::string &line_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }
@@ -99,7 +99,7 @@ bool file_first_line(const std::string &path,
         --read;
     }
 
-    *line_out = line;
+    line_out = line;
 
     return true;
 }
@@ -114,7 +114,7 @@ bool file_first_line(const std::string &path,
  * \return true on success, false on failure and errno set appropriately
  */
 bool file_write_data(const std::string &path,
-                     const char *data, size_t size)
+                     const void *data, size_t size)
 {
     FILE *fp = fopen(path.c_str(), "wb");
     if (!fp) {
@@ -129,7 +129,7 @@ bool file_write_data(const std::string &path,
         }
 
         size -= nwritten;
-        data += nwritten;
+        data = static_cast<const char *>(data) + nwritten;
     } while (size > 0);
 
     bool ret = size == 0 || !ferror(fp);
@@ -151,7 +151,7 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
         return false;
     }
 
-    auto close_fd = util::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 
@@ -159,17 +159,19 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
         return false;
     }
 
-    map = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(nullptr, static_cast<size_t>(sb.st_size), PROT_READ, MAP_PRIVATE,
+               fd, 0);
     if (map == MAP_FAILED) {
         return false;
     }
 
-    auto unmap_map = util::finally([&] {
-        munmap(map, sb.st_size);
+    auto unmap_map = finally([&] {
+        munmap(map, static_cast<size_t>(sb.st_size));
     });
 
     for (auto const &item : items) {
-        if (memmem(map, sb.st_size, item.data(), item.size())) {
+        if (memmem(map, static_cast<size_t>(sb.st_size),
+                   item.data(), item.size())) {
             return true;
         }
     }
@@ -178,59 +180,60 @@ bool file_find_one_of(const std::string &path, std::vector<std::string> items)
 }
 
 bool file_read_all(const std::string &path,
-                   std::vector<unsigned char> *data_out)
+                   std::vector<unsigned char> &data_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }
 
     fseek(fp.get(), 0, SEEK_END);
-    auto size = ftell(fp.get());
+    auto size = ftello(fp.get());
     rewind(fp.get());
 
-    std::vector<unsigned char> data(size);
-    if (fread(data.data(), size, 1, fp.get()) != 1) {
+    std::vector<unsigned char> data(static_cast<size_t>(size));
+    if (fread(data.data(), static_cast<size_t>(size), 1, fp.get()) != 1) {
         return false;
     }
 
-    data_out->swap(data);
+    data_out.swap(data);
 
     return true;
 }
 
 bool file_read_all(const std::string &path,
-                   unsigned char **data_out,
-                   std::size_t *size_out)
+                   unsigned char *&data_out,
+                   std::size_t &size_out)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         return false;
     }
 
     fseek(fp.get(), 0, SEEK_END);
-    auto size = ftell(fp.get());
+    auto size = ftello(fp.get());
     rewind(fp.get());
 
-    unsigned char *data = static_cast<unsigned char *>(std::malloc(size));
+    auto data = static_cast<unsigned char *>(
+            std::malloc(static_cast<size_t>(size)));
     if (!data) {
         return false;
     }
 
-    if (fread(data, size, 1, fp.get()) != 1) {
+    if (fread(data, static_cast<size_t>(size), 1, fp.get()) != 1) {
         free(data);
         return false;
     }
 
-    *data_out = data;
-    *size_out = size;
+    data_out = data;
+    size_out = static_cast<size_t>(size);
 
     return true;
 }
 
-bool get_blockdev_size(const char *path, uint64_t *size_out)
+bool get_blockdev_size(const std::string &path, uint64_t &size_out)
 {
-    int fd = open(path, O_RDONLY);
+    int fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
         return false;
     }
@@ -239,12 +242,17 @@ bool get_blockdev_size(const char *path, uint64_t *size_out)
         close(fd);
     });
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
     uint64_t size;
     if (ioctl(fd, BLKGETSIZE64, &size) < 0) {
         return false;
     }
 
-    *size_out = size;
+#pragma GCC diagnostic pop
+
+    size_out = size;
 
     return true;
 }

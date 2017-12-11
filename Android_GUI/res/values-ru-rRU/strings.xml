@@ -1,625 +1,547 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<!--
-   * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
-   *
-   * This program is free software: you can redistribute it and/or modify
-   * it under the terms of the GNU General Public License as published by
-   * the Free Software Foundation, either version 3 of the License, or
-   * (at your option) any later version.
-   *
-   * This program is distributed in the hope that it will be useful,
-   * but WITHOUT ANY WARRANTY; without even the implied warranty of
-   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   * GNU General Public License for more details.
-   *
-   * You should have received a copy of the GNU General Public License
-   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
-
+<?xml version='1.0' encoding='UTF-8'?>
 <resources>
-    <!-- Name of the app built in release mode -->
-    <string name="app_name_release">Dual Boot Patcher</string>
-    <!-- Name of the app built in debug mode -->
-    <string name="app_name_debug">Dual Boot Patcher (Отладка)</string>
-    <!-- Name of the app built in snapshot mode -->
-    <string name="app_name_snapshot">Dual Boot Patcher (Снимок)</string>
-
-    <!-- Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching) -->
-    <string name="wait_until_finished">Подождите до окончания всех работ.</string>
-
-    <!-- Indicate the version of the app on the about screen -->
-    <string name="version">Версия %s</string>
-    <!-- GitHub source code link text -->
-    <string name="link_source_code">Исходный код</string>
-    <!-- XDA forum thread link text -->
-    <string name="link_xda_thread">Тема на форуме XDA</string>
-    <!-- Licenses link text -->
-    <string name="link_licenses">Лицензии</string>
-    <!-- Thank you message for contributors and links to relavent URLs -->
-    <string name="credits">Огромные благодарности всем кто помог реализовать этот проект!</string>
-
-    <!-- Title for card shown in the switcher when the connection to mbtool failed -->
-    <string name="mbtool_connect_fail_title">Не удается подключиться к mbtool</string>
-    <!-- Message for the card shown in the switcher when the connection to mbtool failed -->
-    <string name="mbtool_connect_fail_message">Приложению не удалось подключиться к
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Dual Boot Patcher</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Dual Boot Patcher (Отладка)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Dual Boot Patcher (Снимок)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Подождите до окончания всех работ.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Версия %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Исходный код</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">Тема на форуме XDA</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Лицензии</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Огромные благодарности всем кто помог реализовать этот проект!</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">Не удается подключиться к mbtool</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">Приложению не удалось подключиться к
         mbtool. Это могло произойти если root доступ не был предоставлен или ramdisk
         не был обновлен.\n\nНажмите чтобы попробовать еще раз.</string>
-
-    <!-- Navigation drawer item for selecting the ROM -->
-    <string name="title_roms">Прошивки</string>
-    <!-- Navigation drawer item for patching a zip file -->
-    <string name="title_patch_zip">Пропатчить прошивку Zip</string>
-    <!-- Navigation drawer item for checking free space -->
-    <string name="title_free_space">Свободное место</string>
-    <!-- Navigation drawer item for changing the ROM settings -->
-    <string name="title_rom_settings">Настройки</string>
-    <!-- Navigation drawer item for changing the app sharing settings -->
-    <string name="title_app_sharing">Общие приложения</string>
-    <!-- Nagivation drawer item for rebooting the device -->
-    <string name="title_reboot">Перезагрузить</string>
-    <!-- Navigation drawer item for showing the about screen -->
-    <string name="title_about">О программе</string>
-    <!-- Nagivation drawer item for exiting the app -->
-    <string name="title_exit">Выйти</string>
-
-    <!-- Accessibility text for opening the app drawer -->
-    <string name="drawer_open">Открыть панель навигации</string>
-    <!-- Accessibility text for closing the app drawer -->
-    <string name="drawer_close">Закрыть панель навигации</string>
-
-    <!-- Default name for the primary ROM -->
-    <string name="primary">Основная</string>
-    <!-- Default name for the secondary ROM -->
-    <string name="secondary">Второстепенная</string>
-    <!-- Default name for the multi-slot ROMs -->
-    <string name="multislot">Multi Slot %s</string>
-    <!-- Default name for the data-slot ROMs -->
-    <string name="dataslot">%s (Data slot)</string>
-    <!-- Default name for the extsd-slot ROMs -->
-    <string name="extsdslot">%s (Extsd slot)</string>
-    <!-- Text shown when a ROM's version could not be detected -->
-    <string name="couldnt_determine_version">Не удалось определить версию прошивки</string>
-
-    <!-- Title of progress dialog shown when switching ROMs -->
-    <string name="switching_rom">Переключение прошивки</string>
-    <!-- Title of progress dialog shown when setting kernel -->
-    <string name="setting_kernel">Установка ядра</string>
-    <!-- Message shown when switching ROMs succeeds -->
-    <string name="choose_rom_success">Прошивка успешно переключена</string>
-    <!-- Message shown when switching ROMs failed -->
-    <string name="choose_rom_failure">Не удалось переключить прошивку</string>
-    <!-- Message shown when switching ROMs and checksums don't match -->
-    <string name="choose_rom_checksums_invalid">Контрольные суммы образа не совпадают</string>
-    <!-- Message shown when switching ROMs and checksums are missing -->
-    <string name="choose_rom_checksums_missing">Контрольные суммы образа отсутствуют</string>
-    <!-- Message shown when setting the kernel succeeds -->
-    <string name="set_kernel_success">Ядро успешно установлено</string>
-    <!-- Message shown when setting the kernel fails -->
-    <string name="set_kernel_failure">Не удалось установить ядро</string>
-
-    <!-- Message shown when another application tries to switch the ROM via an intent -->
-    <string name="confirm_automated_switch_rom">Другое приложение пытается переключить на %s.
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">Прошивки</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Пропатчить прошивку Zip</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Свободное место</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Настройки</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">Общие приложения</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Перезагрузить</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">О программе</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Выйти</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Открыть панель навигации</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Закрыть панель навигации</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Основная</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">Второстепенная</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Multi Slot %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (Data slot)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (Extsd slot)</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">Не удалось определить версию прошивки</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">Переключение прошивки</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Установка ядра</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">Прошивка успешно переключена</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">Не удалось переключить прошивку</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">Контрольные суммы образа не совпадают</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">Контрольные суммы образа отсутствуют</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Ядро успешно установлено</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Не удалось установить ядро</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Другое приложение пытается переключить на %s.
             Продолжить?</string>
-
-    <!-- Message shown if the boot partition could not be detected because the device codename is
-         not recognized -->
-    <string name="unknown_boot_partition">Не удалось определить загрузочный раздел, так как это
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">Не удалось определить загрузочный раздел, так как это
         устройство \'s codename \'%s\' не распознано.</string>
-
-    <!-- Dialog message shown if the images' checksums don't match with switching ROMs -->
-    <string name="checksums_invalid">Контрольная сумма SHA512 для образов этой прошивки не совпадает
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">Контрольная сумма SHA512 для образов этой прошивки не совпадает
         файлы в /sdcard/MultiBoot/%s/ не соответствуют ожидаемым контрольным суммам. Стороннее приложение
         могло заразить образы прошивки. Продолжнить переключение на эту прошивку?</string>
-    <!-- Dialog message shown if the images' checksums don't exist when switching ROMs -->
-    <string name="checksums_missing">Контрольная сумма SHA512 для ядра или образов прошивки отсутствует
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">Контрольная сумма SHA512 для ядра или образов прошивки отсутствует
         в /sdcard/MultiBoot/%s/. Это могло произойти из-за обновления этого приложения.
         Продолжить переключение на эту прошивку?</string>
-
-    <!-- Version text shown on ROM card if the version could not be detected -->
-    <string name="rom_card_unknown_version">Версия не определена</string>
-    <!-- Build text shown on ROM card if the build could not be detected -->
-    <string name="rom_card_unknown_build">Сборка не определена</string>
-
-    <!-- ROM menu item for updating the ramdisk -->
-    <string name="rom_menu_update_ramdisk">Обновить ramdisk</string>
-    <!-- ROM menu item for setting kernel -->
-    <string name="rom_menu_set_kernel">Установить ядро</string>
-    <!-- ROM menu item for backing up the ROM -->
-    <string name="rom_menu_backup_rom">Резервная копия прошивки</string>
-    <!-- ROM menu item for adding an icon to the home screen -->
-    <string name="rom_menu_add_to_home_screen">Добавить на главный экран</string>
-    <!-- ROM menu item for changing the name -->
-    <string name="rom_menu_edit_name">Изменить название</string>
-    <!-- ROM menu item for changing the image -->
-    <string name="rom_menu_change_image">Изменить изображение</string>
-    <!-- ROM menu item for resetting back to the default image -->
-    <string name="rom_menu_reset_image">Сбросить изображение</string>
-    <!-- ROM menu item for wiping the ROM -->
-    <string name="rom_menu_wipe_rom">Удалить прошивку</string>
-
-    <!-- Snack bar message shown when a launcher is successfully created -->
-    <string name="successfully_created_launcher">Ссылка на %s успешно добавлена на рабочий стол.</string>
-
-    <!-- Dialog shown when adding an icon to the home screen asking whether the device should
-         automatically reboot after switching -->
-    <string name="auto_reboot_after_switching">Вы хотите, чтобы устройство автоматически перезагружалось после
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Версия не определена</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Сборка не определена</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Обновить ramdisk</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Установить ядро</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">Резервная копия прошивки</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Добавить на главный экран</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">Изменить название</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">Изменить изображение</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">Сбросить изображение</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">Удалить прошивку</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">Ссылка на %s успешно добавлена на рабочий стол.</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">Вы хотите, чтобы устройство автоматически перезагружалось после
         переключения прошивки?</string>
-
-    <!-- Target for wiping ROM's /system -->
-    <string name="wipe_target_system">Система</string>
-    <!-- Target for wiping ROM's /cache -->
-    <string name="wipe_target_cache">Кэш</string>
-    <!-- Target for wiping ROM's /data -->
-    <string name="wipe_target_data">Данные</string>
-    <!-- Target for wiping ROM's dalvik cache -->
-    <string name="wipe_target_dalvik_cache">Далвик кэш</string>
-    <!-- Target for wiping ROM's multiboot files -->
-    <string name="wipe_target_multiboot_files">Файлы MultiBoot</string>
-
-    <!-- Title of dialog box asking for which targets to wipe -->
-    <string name="wipe_rom_dialog_title">Выберите что нужно удалить</string>
-    <!-- Title of progress dialog shown when wiping targets -->
-    <string name="wiping_targets">Удаление</string>
-    <!-- Toast message indicating successfully wiped targets -->
-    <string name="wipe_rom_successfully_wiped">Успешно удалены: %s</string>
-    <!-- Toast message indicating targets that failed to wipe -->
-    <string name="wipe_rom_failed_to_wipe">Не удалось удалить: %s</string>
-    <!-- Toast message indicating that the wipe process failed to start -->
-    <string name="wipe_rom_initiate_fail">Не удалось запустить процесс удаления</string>
-    <!-- Toast message shown if the user did not select any target to wipe -->
-    <string name="wipe_rom_none_selected">Ничего не было удалено, потому что не были
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">Система</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">Кэш</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">Данные</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">Далвик кэш</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">Файлы MultiBoot</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">Выберите что нужно удалить</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">Удаление</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">Успешно удалены: %s</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">Не удалось удалить: %s</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">Не удалось запустить процесс удаления</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">Ничего не было удалено, потому что не были
         заданы цели.</string>
-    <!-- Toast message shown if the user attempts to wipe any target for the current ROM -->
-    <string name="wipe_rom_no_wipe_current_rom">Текущая прошивка не может быть удалена.</string>
-
-    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot. -->
-    <string name="switcher_storage_permission_required">Изображения и названия прошивок не удалось
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">Текущая прошивка не может быть удалена.</string>
+  <!--Switcher service notification title-->
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">Изображения и названия прошивок не удалось
         загрузить, так как доступ к памяти запрещен.</string>
-
-    <!-- Accessibility text for the ROM logo images -->
-    <string name="switcher_rom_image">Иконка прошивки</string>
-
-    <!-- Title for the confirmation dialog box shown when trying to set the kernel -->
-    <string name="switcher_ask_set_kernel_title">Устаноить ядро?</string>
-    <!-- Message for the confirmation dialog box shown when trying to set the kernel -->
-    <string name="switcher_ask_set_kernel_desc">Текущее ядро будет сохранено
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">Иконка прошивки</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Устаноить ядро?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Текущее ядро будет сохранено
         для %s прошивки.</string>
-
-    <!-- Title for the dialog box to rename a ROM -->
-    <string name="rename_rom_title">Переименовать %s</string>
-    <!-- Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM -->
-    <string name="rename_rom_desc">Введите название для %s. Оставьте пустым, чтобы
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Переименовать %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">Введите название для %s. Оставьте пустым, чтобы
         использовать стандартное название.</string>
-
-    <!-- Dialog message shown when the kernel has not been set -->
-    <string name="kernel_not_set_desc">Ядро не установлено для текущей прошивки.
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">Ядро не установлено для текущей прошивки.
         Желаете установить ядро сейчас?</string>
-    <!-- Dialog message shown when the saved kernel is different from the currently running kernel -->
-    <string name="kernel_different_from_saved_desc">Сохраненное ядро отличается
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">Сохраненное ядро отличается
         от текущего. Желаете обновить ядро для MultiBoot?</string>
-    <!-- Positive dialog button shown for the above two messages -->
-    <string name="set_kernel_now">Сейчас</string>
-    <!-- Negative dialog button shown for the above two messages -->
-    <string name="set_kernel_later">Потом</string>
-
-    <!-- Dialog message shown when the user tries to set the kernel for the incorrect ROM -->
-    <string name="set_kernel_mismatched_rom">Текущая прошивка это %1$s, но вы пытаетесь
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">Сейчас</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">Потом</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">Текущая прошивка это %1$s, но вы пытаетесь
         установить ядро для %2$s. Вы хотите это сделать?.</string>
-    <!-- In-app flashing output activity title - shown when backing up a single ROM -->
-    <string name="in_app_flashing_title_backup_rom">Создание резервной копии прошивки</string>
-    <!-- In-app flashing output activity title - shown when restoring a single ROM -->
-    <string name="in_app_flashing_title_restore_rom">Восстановление прошивки</string>
-    <!-- In-app flashing output activity title - shown when flashing a single file -->
-    <string name="in_app_flashing_title_flash_file">Установка файла</string>
-    <!-- In-app flashing output activity title - shown when flashing multiple files/backups -->
-    <string name="in_app_flashing_title_flash_files">Установка файлов</string>
-    <!-- In-app flashing activity title -->
-    <string name="in_app_flashing_title">Прошить ZIP файл</string>
-    <!-- FAB button text for adding a patched file to flash -->
-    <string name="in_app_flashing_fab_add_patched_file">Добавить пропатченный файл</string>
-    <!-- FAB button text for adding a backup to flash -->
-    <string name="in_app_flashing_fab_add_backup">Добавить файл бэкапа</string>
-    <!-- Title of pending action card for installing a zip file -->
-    <string name="in_app_flashing_action_flash_file">Установить zip файл</string>
-    <!-- Title of pending action card for restoring a backup -->
-    <string name="in_app_flashing_action_restore_backup">Восстановить бэкап</string>
-    <!-- Subtitle text in pending action card showing the selected filename -->
-    <string name="in_app_flashing_filename">Файл: %s</string>
-    <!-- [Restore backup] Subtitle text in pending action card showing the selected backup name -->
-    <string name="in_app_flashing_backup_name">Имя файла рез. копии: %s</string>
-    <!-- [Restore backup] Subtitle text in pending action card showing the restore targets -->
-    <string name="in_app_flashing_restore_targets">Задания: %s</string>
-    <!-- Subtitle text in pending action card showing the installation location -->
-    <string name="in_app_flashing_location">Место: %s</string>
-    <!-- Title shown in dialog asking for the installation location of a zip file -->
-    <string name="in_app_flashing_dialog_installation_location">Место установки:</string>
-    <!-- Title shown in the progress dialog when verifying if a zip file can be flashed -->
-    <string name="in_app_flashing_dialog_verifying_zip">Проверка zip файло</string>
-    <!-- Error message shown when the selected zip file is not found -->
-    <string name="in_app_flashing_error_zip_not_found">Выбранный zip файл не найден.</string>
-    <!-- Error message shown when the selected zip file could not be read -->
-    <string name="in_app_flashing_error_zip_read_fail">Невозможно прочитать zip файл.</string>
-    <!-- Error message shown when the selected zip file isn't patched -->
-    <string name="in_app_flashing_error_not_multiboot">Этот zip файл не был пропатчен для
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">Создание резервной копии прошивки</string>
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">Восстановление прошивки</string>
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Установка файла</string>
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Установка файлов</string>
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">Прошить ZIP файл</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Добавить пропатченный файл</string>
+  <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Добавить файл бэкапа</string>
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">Установить zip файл</string>
+  <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Восстановить бэкап</string>
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">Файл: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Имя файла рез. копии: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Задания: %s</string>
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">Место: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">Место установки:</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">Проверка zip файло</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">Выбранный zip файл не найден.</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">Невозможно прочитать zip файл.</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">Этот zip файл не был пропатчен для
         multiboot. Пожалуйста, пропатчите файл перед установкой.</string>
-    <!-- Error message shown when the selected zip file was patched with an old version of the patcher -->
-    <string name="in_app_flashing_error_version_too_old">Zip файл должен быть пропатчен %s или
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">Zip файл должен быть пропатчен %s или
         более новой версией для установки через приложение.</string>
-    <!-- Error message shown when the user tries to flash a zip file to the current ROM -->
-    <string name="in_app_flashing_error_no_overwrite_rom">Во избежание сбоев или перезагрузок
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">Во избежание сбоев или перезагрузок
         установка zip файлов невозможна на запущенной системе.</string>
-    <!-- Dialog message asking if the user wants to change the installation location of the zip -->
-    <string name="in_app_flashing_change_install_location_desc">Zip файл был пропатчен для
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">Zip файл был пропатчен для
         установки в %s. Желаете изменить место установки?</string>
-    <!-- Dialog button for keeping the current installation location -->
-    <string name="in_app_flashing_keep_current_location">Оставить место</string>
-    <!-- Dialog button for changing the installation location -->
-    <string name="in_app_flashing_change_install_location">Изменить место</string>
-    <!-- Message shown in the first-use dialog for zip flashing -->
-    <string name="in_app_flashing_dialog_first_use">Для установки файла через приложение, добавьте
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">Оставить место</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">Изменить место</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">Для установки файла через приложение, добавьте
         пропатченный zip файл нажав на иконку плюс.\n\nОчередь файлов может быть изменена
         нажатием на файл и перемещением, а для удаления сдвиньте его в сторону.\n\nПримечание:
         Это экспериментальная функция! Делайте резервные копии заранее!</string>
-    <!-- Dialog description when choosing a backup to restore -->
-    <string name="in_app_flashing_select_backup_dialog_desc">Выберите резервную копию из списка
+  <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Выберите резервную копию из списка
         для восстановления.</string>
-    <!-- Toast message shown if there are no backups available -->
-    <string name="in_app_flashing_no_backups_available">Нет резервных копий, доступных
+  <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Нет резервных копий, доступных
         для восстановления.</string>
-
-    <!-- ROM details item showing which slot the ROM is installed to -->
-    <string name="rom_details_info_slot">Слот</string>
-    <!-- ROM details item showing the version of the ROM -->
-    <string name="rom_details_info_version">Версия</string>
-    <!-- ROM details item showing the build name of the ROM -->
-    <string name="rom_details_info_build">Сборка</string>
-    <!-- ROM details item showing the mbtool version used to boot the ROM -->
-    <string name="rom_details_info_mbtool_status">Статус mbtool</string>
-    <!-- ROM details item showing the number of system apps, updated apps, and user apps -->
-    <string name="rom_details_info_apps_counts">Приложения</string>
-    <!-- ROM details value showing the number of system apps, updated apps, and user apps -->
-    <string name="rom_details_info_apps_counts_value">%1$s системных, %2$s обновленных,
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Слот</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Версия</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Сборка</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">Статус mbtool</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">Приложения</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s системных, %2$s обновленных,
         %3$s пользовательских приложений</string>
-    <!-- ROM details item showing the path to the system directory or image -->
-    <string name="rom_details_info_system_path">Путь системы</string>
-    <!-- ROM details item showing the path to the cache directory or image -->
-    <string name="rom_details_info_cache_path">Путь кэша</string>
-    <!-- ROM details item showing the path to the data directory or image -->
-    <string name="rom_details_info_data_path">Путь данных</string>
-    <!-- ROM details item showing the size of the system directory or image -->
-    <string name="rom_details_info_system_size">Размер системы</string>
-    <!-- ROM details item showing the size of the cache directory or image -->
-    <string name="rom_details_info_cache_size">Размер кэша</string>
-    <!-- ROM details item showing the size of the data directory or image -->
-    <string name="rom_details_info_data_size">Размер данных</string>
-    <!-- ROM details item value shown when calculating the directory or image sizes -->
-    <string name="rom_details_info_calculating">Подсчет…</string>
-
-    <!-- Backup ROM activity title -->
-    <string name="br_backup_title">Бэкап прошивки</string>
-    <!-- Restore ROM activity title -->
-    <string name="br_restore_title">Восстановление прошивки</string>
-
-    <!-- Backup targets dialog description -->
-    <string name="br_backup_targets_dialog_desc">Выберите объекты, для которых будут созданы рез. копии.</string>
-    <!-- Restore targets dialog description -->
-    <string name="br_restore_targets_dialog_desc">Выберите объекты, которые должны быть восстановлены.</string>
-
-    <!-- Backup/restore target for ROM's /system files -->
-    <string name="br_target_system">System</string>
-    <!-- Backup/restore target for ROM's /cache files -->
-    <string name="br_target_cache">Cache</string>
-    <!-- Backup/restore target for ROM's /data files -->
-    <string name="br_target_data">Data</string>
-    <!-- Backup/restore target for ROM's boot image -->
-    <string name="br_target_boot">Boot image</string>
-    <!-- Backup/restore target for ROM's multiboot configuration files -->
-    <string name="br_target_config">Настройеи MultiBoot</string>
-    <!-- Toast message shown if no backup/restore targets are selected -->
-    <string name="br_no_target_selected">Не выбранны объекты для восстановления/бэкапа</string>
-
-    <!-- Backup name input dialog description -->
-    <string name="br_name_dialog_desc">Введите имя резервной копии. Оно не может содержать косую
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">Путь системы</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Путь кэша</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Путь данных</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">Размер системы</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Размер кэша</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Размер данных</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Подсчет…</string>
+  <!--Backup ROM activity title-->
+  <string name="br_backup_title">Бэкап прошивки</string>
+  <!--Restore ROM activity title-->
+  <string name="br_restore_title">Восстановление прошивки</string>
+  <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Выберите объекты, для которых будут созданы рез. копии.</string>
+  <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Выберите объекты, которые должны быть восстановлены.</string>
+  <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">System</string>
+  <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Cache</string>
+  <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Data</string>
+  <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Boot image</string>
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">Настройеи MultiBoot</string>
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Не выбранны объекты для восстановления/бэкапа</string>
+  <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Введите имя резервной копии. Оно не может содержать косую
         черту (\"/\"), быть \".\" или \"..\".</string>
-    <!-- Backup name input field hint for backup name dialog -->
-    <string name="br_name_dialog_hint">Введите имя резервной копии…</string>
-    <!-- Text shown on blank background when no files have been added for patching yet -->
-    <string name="patcher_background_message">Нажмите плюс для добавления файлов для применения патча.</string>
-
-    <!-- Label for FAB to add a flashable zip -->
-    <string name="patcher_add_flashable_zip">Добавить установочный zip</string>
-    <!-- Label for FAB to add an Odin image -->
-    <string name="patcher_add_odin_image">Добавить образ Odin</string>
-
-    <!-- Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage. -->
-    <string name="patcher_storage_permission_required">Патчер не может модифицировать файлы
+  <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Введите имя резервной копии…</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">Нажмите плюс для добавления файлов для применения патча.</string>
+  <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Добавить установочный zip</string>
+  <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Добавить образ Odin</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">Патчер не может модифицировать файлы
         без доступа к чтению и записи в память. Предоставьте приложению доспуп для модификации
         файлов.</string>
-
-    <!-- Snackbar message shown if the user tries to patch the same file more than once -->
-    <string name="patcher_cannot_add_same_item">Выбранный выходной вайл уже есть
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Выбранный выходной вайл уже есть
         в очереди.</string>
-
-    <!-- Title of the device selection box in the patcher -->
-    <string name="patcher_device_title">Устройство:</string>
-    <!-- Title of the partition configuration box in the patcher -->
-    <string name="patcher_partconfig_title">Настройка местоположения:</string>
-    <!-- Title of the partition configuration description in the patcher -->
-    <string name="patcher_partconfig_desc_title">Описание:</string>
-
-    <!-- Subtitle shown in patch file card indicating the target device and ROM ID -->
-    <string name="patcher_card_subtitle_target" translatable="false">%1$s / %2$s</string>
-    <!-- Subtitle shown in patch file card when patching succeeded -->
-    <string name="patcher_card_subtitle_succeeded">Готово</string>
-    <!-- Subtitle shown in patch file card when patching failed -->
-    <string name="patcher_card_subtitle_failed">Ошибка (код %s)</string>
-    <!-- Subtitle shown in patch file card when file is waiting to be patched -->
-    <string name="patcher_card_subtitle_pending">В ожидании</string>
-    <!-- Subtitle shown in patch file card when patching has not yet started (queued) -->
-    <string name="patcher_card_subtitle_queued">В очереди</string>
-    <!-- Subtitle shown in patch file card when patching has been cancelled -->
-    <string name="patcher_card_subtitle_cancelled">Отменен</string>
-
-    <!-- Patcher options dialog title -->
-    <string name="patcher_options_dialog_title">Настройки патчера</string>
-
-    <!-- Name for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade">Обновление основной прошивки</string>
-    <!-- Description for primary ROM upgrade installation location -->
-    <string name="install_location_primary_upgrade_desc">Обновление основной прошивки,
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Устройство:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Настройка местоположения:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Описание:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Готово</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Ошибка (код %s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">В ожидании</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">В очереди</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">Отменен</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Настройки патчера</string>
+  <!--Name for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade">Обновление основной прошивки</string>
+  <!--Description for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade_desc">Обновление основной прошивки,
         не затрагивая остальные прошивки</string>
-    <!-- Description for all other installation locations -->
-    <string name="install_location_desc">Установит прошивку в %s</string>
-    <!-- Text box hint for specifying the data slot ID -->
-    <string name="install_location_named_slot_id_hint">Введите идентификационный номер</string>
-    <!-- Description text shown if the data slot ID is empty -->
-    <string name="install_location_named_slot_id_empty">Введите другой идентификационный номер</string>
-    <!-- Error tooltip shown if the data slot ID is empty -->
-    <string name="install_location_named_slot_id_error_is_empty">Идентификационный номер не может быть пустым.</string>
-    <!-- Error tooltip shown if the data slot ID contains invalid characters -->
-    <string name="install_location_named_slot_id_error_invalid">Идентификационный номер должен содержать цифры
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">Установит прошивку в %s</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">Введите идентификационный номер</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">Введите другой идентификационный номер</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">Идентификационный номер не может быть пустым.</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">Идентификационный номер должен содержать цифры
         и/или буквы латинского авфавита в нижнем регистре.</string>
-    <!-- Name for the data-slot installation location -->
-    <string name="install_location_data_slot">Раздел данных (Data)</string>
-    <!-- Name for the extsd-slot installation location -->
-    <string name="install_location_extsd_slot">Внешняя карта памяти (ExtSD)</string>
-
-    <!-- Title for the dialog box indicating that no file manager is installed -->
-    <string name="filemanager_missing_title">Отсутствует диспетчер файлов</string>
-    <!-- Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file -->
-    <string name="filemanager_missing_desc">Отсутствует подходящий диспетчер файлов. Установите
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">Раздел данных (Data)</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Внешняя карта памяти (ExtSD)</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Отсутствует диспетчер файлов</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Отсутствует подходящий диспетчер файлов. Установите
         диспетчер файлов, чтобы пропатчить zip файл.</string>
-
-    <!-- Text for the details card indicating that the patching is done -->
-    <string name="details_done">Готово</string>
-
-    <!-- Text for the progress card showing how many files have been added to the new zip -->
-    <string name="overall_progress_files">%1$s/%2$s файлов</string>
-
-    <!-- Title for total size of partition -->
-    <string name="free_space_total_size">Общий размер:</string>
-    <!-- Title for occupied space on partition -->
-    <string name="free_space_occupied_size">Занято:</string>
-    <!-- Title for free space on partition -->
-    <string name="free_space_free_size">Свободно:</string>
-    <!-- Format string for exbibytes -->
-    <string name="format_exbibytes" translatable="false">%s EiB</string>
-    <!-- Format string for pebibytes -->
-    <string name="format_pebibytes" translatable="false">%s PiB</string>
-    <!-- Format string for tebibytes -->
-    <string name="format_tebibytes" translatable="false">%s TiB</string>
-    <!-- Format string for gibibytes -->
-    <string name="format_gibibytes" translatable="false">%s GiB</string>
-    <!-- Format string for mebibytes -->
-    <string name="format_mebibytes" translatable="false">%s MiB</string>
-    <!-- Format string for kibibytes -->
-    <string name="format_kibibytes" translatable="false">%s KiB</string>
-    <!-- Format string for bytes -->
-    <string name="format_bytes" translatable="false">%s B</string>
-
-    <!-- Title for the individual application sharing section of the ROM settings -->
-    <string name="a_s_settings_indiv_app_sharing_section_title">Общие приложения</string>
-
-    <!-- Title for the preference to share individual applications -->
-    <string name="a_s_settings_indiv_app_sharing_title">Включить общие приложения</string>
-    <!-- Description for the preference to share individual applications -->
-    <string name="a_s_settings_indiv_app_sharing_desc">Общие приложения для разных прошивок
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Готово</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s файлов</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Общий размер:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Занято:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Свободно:</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Общие приложения</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Включить общие приложения</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Общие приложения для разных прошивок
         (требуется перезагрузка).</string>
-    <!-- Title for the preference to manage shared apps for individual app sharing -->
-    <string name="a_s_settings_manage_shared_apps_title">Управление общими приложениями</string>
-    <!-- Description for the preference to manage shared apps for individual app sharing -->
-    <string name="a_s_settings_manage_shared_apps_desc">Выберите приложения, которые должны
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">Управление общими приложениями</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">Выберите приложения, которые должны
         иметь общие данные.</string>
-
-    <!-- Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage. -->
-    <string name="a_s_settings_storage_permission_required">Настройки общих приложений не могут быть
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">Настройки общих приложений не могут быть
         сохранены, потому что у приложения нет доступа к памяти устройства. Предоставьте доступ к памяти
         для изменения настроек общих приложений.</string>
-
-    <!-- Dialog message shown the the mbtool version is too old and needs to be updated -->
-    <string name="a_s_settings_version_too_old">mbtool нужно обновить для использования функции общих
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">mbtool нужно обновить для использования функции общих
         приложений. Обновите ramdisk!</string>
-
-    <!-- Title for preference category for boot options -->
-    <string name="rom_settings_booting_title">Параметры загрузки</string>
-
-    <!-- Preference for updating the ramdisk -->
-    <string name="update_ramdisk_title">Обновить ramdisk</string>
-
-    <!-- Description for the ramdisk update preference when the ramdisk doesn't contain mbtool -->
-    <string name="update_ramdisk_missing_desc">В текущий момент ramdisk не имеет никакой версии
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Обновить ramdisk</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">В текущий момент ramdisk не имеет никакой версии
         mbtool.</string>
-    <!-- Description for the ramdisk update preference when the ramdisk is outdated -->
-    <string name="update_ramdisk_outdated_desc">Ramdisk имеет устаревшую версию mbtool.</string>
-    <!-- Description for the ramdisk update preference when the ramdisk is already up to date -->
-    <string name="update_ramdisk_up_to_date_desc">Ramdisk уже обновлен.</string>
-    <!-- Title when ramdisk is successfully updated -->
-
-    <string name="update_ramdisk_success_title">Ramdisk успешно обновлен</string>
-    <!-- Message asking user to reboot when the ramdisk updating succeeds -->
-    <string name="update_ramdisk_reboot_desc">Ramdisk успешно обновлен. Желаете перезагрузить
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">Ramdisk имеет устаревшую версию mbtool.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">Ramdisk уже обновлен.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Ramdisk успешно обновлен</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Ramdisk успешно обновлен. Желаете перезагрузить
         устройство?</string>
-    <!-- Message telling user that the ramdisk updating succeeded -->
-    <string name="update_ramdisk_no_reboot_desc">Ramdisk успешно обновлен.</string>
-    <!-- Title when ramdisk failed to update -->
-    <string name="update_ramdisk_failure_title">Обновление ramdisk не удалось</string>
-    <!-- Message telling the user that app sharing will not work if the ramdisk updating failed -->
-    <string name="update_ramdisk_failure_desc">Не удалось обновить ramdisk. Журнал сохранен в
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">Ramdisk успешно обновлен.</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Обновление ramdisk не удалось</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Не удалось обновить ramdisk. Журнал сохранен в
         MultiBoot/ramdisk-update.log во внутренней памяти.</string>
-
-    <!-- Toast popup message containing the countdown for forcing a ramdisk update -->
-    <plurals name="force_update_ramdisk_countdown">
-        <item quantity="one">Вы в %1$d шаге от принудительного
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Вы в %1$d шаге от принудительного
             обновления ramdisk.</item>
-        <item quantity="few">(??) Вы в %1$d шагах от принудительного
+    <item quantity="few">(??) Вы в %1$d шагах от принудительного
             обновления ramdisk.</item>
-        <item quantity="many">(??) Вы в %1$d шагах от принудительного
+    <item quantity="many">(??) Вы в %1$d шагах от принудительного
             обновления ramdisk.</item>
-        <item quantity="other">Вы в %1$d шагах от принудительного
+    <item quantity="other">Вы в %1$d шагах от принудительного
             обновления ramdisk.</item>
-    </plurals>
-    <!-- Toast popup message shown when the user forces a ramdisk update -->
-    <string name="force_updating_ramdisk">Принудительное обновление ramdisk</string>
-
-    <!-- Title for the section in the settings to manage the Boot UI -->
-    <string name="rom_settings_boot_ui_title">Загрузочный интерфейс (ЭКСПЕРИМЕНТАЛЬНАЯ ФУНКЦИЯ)</string>
-    <!-- Title for the preference to install the Boot UI -->
-    <string name="rom_settings_boot_ui_install_title">Установить загрузочный интерфейс</string>
-    <!-- Title for the preference to update the Boot UI -->
-    <string name="rom_settings_boot_ui_update_title">Обновить загрузочный интерфейс</string>
-    <!-- Title for the preference to uninstall the Boot UI -->
-    <string name="rom_settings_boot_ui_uninstall_title">Удалить загрузочный интерфейс</string>
-    <!-- Summary for the Update Boot UI preference to indicate that an update is available -->
-    <string name="rom_settings_boot_ui_update_available">Доступно обновление: %s</string>
-    <!-- Summary for the Update Boot UI preference to indicate that the Boot UI is up to date -->
-    <string name="rom_settings_boot_ui_up_to_date">Обновлено</string>
-    <!-- Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed -->
-    <string name="rom_settings_boot_ui_not_installed">Не установлено</string>
-    <!-- Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device -->
-    <string name="rom_settings_boot_ui_not_supported">Не поддерживается на этом устройстве</string>
-    <!-- Toast message to indicate that the Boot UI was successfully installed -->
-    <string name="rom_settings_boot_ui_install_success">Загрузочный интерфейс успешно установлен</string>
-    <!-- Toast message to indicate that the Boot UI failed to install -->
-    <string name="rom_settings_boot_ui_install_failure">Не удалось установить загрузочный интерфейс</string>
-    <!-- Toast message to indicate that the Boot UI was successfully uninstalled -->
-    <string name="rom_settings_boot_ui_uninstall_success">Загрузочный интерфейс удален</string>
-    <!-- Toast message to indicate that the Boot UI failed to uninstall -->
-    <string name="rom_settings_boot_ui_uninstall_failure">Ошибка удаления загрузочного интерфейс</string>
-    <!-- Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated -->
-    <string name="rom_settings_boot_ui_update_ramdisk_msg">Загрузочный интерфейс был успешно установлен.
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">Принудительное обновление ramdisk</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">Загрузочный интерфейс (ЭКСПЕРИМЕНТАЛЬНАЯ ФУНКЦИЯ)</string>
+  <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Установить загрузочный интерфейс</string>
+  <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Обновить загрузочный интерфейс</string>
+  <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">Удалить загрузочный интерфейс</string>
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">Доступно обновление: %s</string>
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">Обновлено</string>
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">Не установлено</string>
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">Не поддерживается на этом устройстве</string>
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">Загрузочный интерфейс успешно установлен</string>
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">Не удалось установить загрузочный интерфейс</string>
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">Загрузочный интерфейс удален</string>
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">Ошибка удаления загрузочного интерфейс</string>
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">Загрузочный интерфейс был успешно установлен.
         \n\nУбедитесь, что ramdisk был обновлен в каждой прошивке. Иначе, загрузочный интерфейс не будет
         работать во время загрузки.</string>
-    <!-- Title for the section in ROM Settings to change backup/restore settings -->
-    <string name="rom_settings_backup_title">Бэкап/Восстановление (ЭКСПЕРИМЕНТАЛЬНАЯ ФУНКЦИЯ)</string>
-    <!-- Title for the preference to change the backup directory -->
-    <string name="rom_settings_backup_change_directory">Изменить каталог резервного копирования</string>
-
-    <!-- Title for the section in ROM Settings to change settings related to the patcher -->
-    <string name="rom_settings_patcher_title">Патчер</string>
-    <!-- Title for the preference to show the exit button in the navigation drawer -->
-    <string name="rom_settings_show_exit_title">Показывать кнопку выхода</string>
-    <!-- Title for the preference to show the reboot button in the navigation drawer -->
-    <string name="rom_settings_show_reboot_title">Показывать кнопку перезагрузки</string>
-    <!-- Title for the preference to choose the initial screen to show when opening the app -->
-    <string name="rom_settings_initial_screen_title">Начальный экран</string>
-    <!-- Description for the initial screen preference -->
-    <string name="rom_settings_initial_screen_desc">Что будет отображаться при запуске программы.</string>
-    <!-- Title for the preference to use the dark theme -->
-    <string name="rom_settings_use_dark_theme">Использовать темную тему</string>
-    <!-- Title for the preference to enable receiving intents from third party applications -->
-    <string name="rom_settings_allow_intents_title">Разрешить принимать запросы</string>
-    <!-- Description for the preference to enable receiving intents from third party applications -->
-    <string name="rom_settings_allow_intents_desc">Разрешить сторонним приложениям отправлять запросы
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Бэкап/Восстановление (ЭКСПЕРИМЕНТАЛЬНАЯ ФУНКЦИЯ)</string>
+  <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Изменить каталог резервного копирования</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Патчер</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Показывать кнопку выхода</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Показывать кнопку перезагрузки</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">Начальный экран</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">Что будет отображаться при запуске программы.</string>
+  <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">Использовать темную тему</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Разрешить принимать запросы</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Разрешить сторонним приложениям отправлять запросы
         для этого приложения, такие как переключение прошивки или патчить файлы для прошивки.</string>
-    <!-- Title for the preference to enable confirmation dialog before rebooting -->
-    <string name="rom_settings_show_reboot_confirm_title">Показывать окно перезагрузки</string>
-    <!-- Description for the preference to enable confirmation dialog before rebooting -->
-    <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки.
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">Показывать окно перезагрузки</string>
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Показывать окно перезагрузки  Android вместо прямой перезагрузки.
         Это позволяет перезагрузиться в рекавери на прошивках, которые имеют расширенное меню перезагрузки.</string>
-    <!-- Title for the preference to set the number of parallel patching operations -->
-    <string name="rom_settings_parallel_patching_title">Параллельная модификация файлов</string>
-    <!-- Description for the preference to set the number of parallel patching operations -->
-    <string name="rom_settings_parallel_patching_desc">Позволить модифицировать %s файл(ов) одновременно, когда в очереди
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Параллельная модификация файлов</string>
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Позволить модифицировать %s файл(ов) одновременно, когда в очереди
         на модификацию несколько файлов.</string>
-
-    <!-- Title for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_intro_dialog_title">Общие приложения</string>
-    <!-- Description for the dialog box explaining individual application sharing -->
-    <string name="indiv_app_sharing_intro_dialog_desc">Функция Общие приложения позволяет хранить
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">Общие приложения</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Функция Общие приложения позволяет хранить
         настройки приложений в общей папке доступной для каждой прошивки. Использование общих
         приложений позволяет синхронизировать данные приложения между прошивками (прим. вкладки в Chrome).
         \n\nNOTE: Необходима перезагрузка, чтобы изменения вступили в силу.\n\nДля использования Общих приложений
         функция должна быть включена в каждой прошивке. Пример: В основной прошивке включена синхронизация данных
         для приложения Chrome. Chrome начинает использовать общую папку данных. Тогда при загрузке в другую прошивку
         и включении функции общих приложений для Chrome он начнет использовать общую папку данных.</string>
-
-    <!-- App label in the individual app sharing screen shown if the app uses shared data -->
-    <string name="indiv_app_sharing_shared_data">Общие данные</string>
-    <!-- App label in the individual app sharing screen shown if the app is not shared -->
-    <string name="indiv_app_sharing_not_shared">Выключено</string>
-
-    <!-- App sharing dialog checkbox text for using shared app data -->
-    <string name="indiv_app_sharing_dialog_share_data">Включить общие данные</string>
-    <!-- App sharing dialog message shown by default -->
-    <string name="indiv_app_sharing_dialog_default_message">Выбор приложения, которое должно использовать
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">Общие данные</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">Выключено</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">Включить общие данные</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Выбор приложения, которое должно использовать
         общую папку данных.</string>
-    <!-- Message in the app sharing dialog showing the list of ROMs using the shared data -->
-    <string name="indiv_app_sharing_other_roms_using_shared_data">Другие прошивки использующие общие данные:
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">Другие прошивки использующие общие данные:
         %s</string>
-
-    <!-- Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect -->
-    <string name="indiv_app_sharing_reboot_needed_message">Изменения вступят в силу после перезагрузки.</string>
-
-    <!-- Toast popup message shown when a shared app is uninstalled (and thus becomes unshared) -->
-    <string name="indiv_app_sharing_app_no_longer_shared">Приложение \'%s\' больше не имеет общих данных.</string>
-
-    <!-- Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled -->
-    <string name="third_party_intents_not_allowed">Принятие запросов от сторонних приложений выключено. Включить
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">Изменения вступят в силу после перезагрузки.</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">Приложение \'%s\' больше не имеет общих данных.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Принятие запросов от сторонних приложений выключено. Включить
         возможность предоставления доступа сторонних приложений к этому приложению можно в настройках.</string>
-
-    <!-- Progress dialog message shown when starting mbtool (with root) -->
-    <string name="mbtool_dialog_starting_mbtool">Запуск mbtool…\n(Это требует root доступа)</string>
-    <!-- Progress dialog message shown when updating mbtool (with root) -->
-    <string name="mbtool_dialog_updating_mbtool">Обновление mbtool…\n(Это требует root доступа)</string>
-    <!-- Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures -->
-    <string name="mbtool_dialog_signature_check_fail">mbtool отклонил соединение с приложением.
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">Запуск mbtool…\n(Это требует root доступа)</string>
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">Обновление mbtool…\n(Это требует root доступа)</string>
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">mbtool отклонил соединение с приложением.
         Это могло произойти из-за использования неофициальной сборки данного приложения или его модификации.
         Если вы все еще хотите продолжить, то mbtool будет закрыт и будет использоваться драгая версия mbtool запущенная
         с правами root.</string>
-    <!-- Yes/no dialog message shown when mbtool is too old and needs to be updated using root -->
-    <string name="mbtool_dialog_version_too_old">Текущая версия mbtool устарела. Необходимо обновить ее
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">Текущая версия mbtool устарела. Необходимо обновить ее
         для использования таких функций, как переключение прошивок и т.п. Это действие требует root
         доступа.</string>
-    <!-- Confirm dialog message shown when updating mbtool failed -->
-    <string name="mbtool_dialog_update_failed">Не удалось обновить mbtool. Такие действия, как переключение
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">Не удалось обновить mbtool. Такие действия, как переключение
         прошивок не будут работать.</string>
-
-    <!-- Word/phrase for Search (used in action bars) -->
-    <string name="search">Поиск</string>
-    <!-- Word/phrase for None (used in eg. a list) -->
-    <string name="none">Пусто</string>
-    <!-- Word/phrase for OK (used in dialog boxes) -->
-    <string name="ok">OK</string>
-    <!-- Word/phrase for Cancel (used in dialog boxes) -->
-    <string name="cancel">Отмена</string>
-    <!-- Word/phrase for Continue (used in dialog boxes) -->
-    <string name="proceed">Продолжить</string>
-    <!-- Word/phrase for Yes (used in dialog boxes) -->
-    <string name="yes">Да</string>
-    <!-- Word/phrase for No (used in dialog boxes) -->
-    <string name="no">Нет</string>
-    <!-- Word/phrase for try again (used in dialog boxes) -->
-    <string name="try_again">Попробовать еще раз</string>
-    <!-- Reboot now (used in dialog boxes) -->
-    <string name="reboot_now">Перезагрузить сейчас</string>
-    <!-- Reboot later (used in dialog boxes) -->
-    <string name="reboot_later">Перезагрузить позже</string>
-    <!-- Unknown (used when a value cannot be determined) -->
-    <string name="unknown">Неизвестно</string>
-
-    <!-- Text for checkbox in dialogs indicating that the dialog should not be shown again -->
-    <string name="do_not_show_again">Не показывать снова</string>
-    <!-- Text shown in a progress dialog asking the user to wait -->
-    <string name="please_wait">Пожалуйста, подождите</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <!--Path chooser dialog button to select a directory-->
+  <!--Path chooser dialog button to save a file-->
+  <!--Path chooser dialog button to create a new folder-->
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">Поиск</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Пусто</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">OK</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">Отмена</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Продолжить</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">Да</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">Нет</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">Попробовать еще раз</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Перезагрузить сейчас</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Перезагрузить позже</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">Неизвестно</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Не показывать снова</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Пожалуйста, подождите</string>
 </resources>

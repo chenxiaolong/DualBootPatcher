@@ -24,8 +24,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <cutils/properties.h>
-
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mbutil/directory.h"
@@ -41,6 +39,12 @@
 #include "infomanager.hpp"
 #include "twrp-functions.hpp"
 #include "variables.h"
+
+// _FORTIFY_SOURCE=2 doesn't play well with Clang and the NDK
+#undef __BIONIC_FORTIFY
+#include <cutils/properties.h>
+
+#define LOG_TAG "mbbootui/data"
 
 #define DEVID_MAX 64
 #define HWID_MAX 32
@@ -90,8 +94,8 @@ int DataManager::LoadValues(const std::string& filename)
     pthread_mutex_lock(&m_valuesLock);
     mPersist.LoadValues();
 
-    if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT)) {
-        blankTimer.setTime(mPersist.GetIntValue(TW_SCREEN_TIMEOUT_SECS));
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)) {
+        blankTimer.setTime(mPersist.GetIntValue(VAR_TW_SCREEN_TIMEOUT_SECS));
     }
 
     pthread_mutex_unlock(&m_valuesLock);
@@ -261,7 +265,8 @@ int DataManager::SetValue(const std::string& varName, const std::string& value, 
 
     pthread_mutex_unlock(&m_valuesLock);
 
-    if (!(tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT) && varName == TW_SCREEN_TIMEOUT_SECS) {
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout)
+            && varName == VAR_TW_SCREEN_TIMEOUT_SECS) {
         blankTimer.setTime(atoi(value.c_str()));
     }
     gui_notifyVarChange(varName.c_str(), value.c_str());
@@ -291,17 +296,17 @@ int DataManager::SetValue(const std::string& varName, const unsigned long long& 
 
 int DataManager::SetProgress(const float Fraction)
 {
-    return SetValue(TW_UI_PROGRESS, (float) (Fraction * 100.0));
+    return SetValue(VAR_TW_UI_PROGRESS, (float) (Fraction * 100.0));
 }
 
 int DataManager::ShowProgress(const float Portion, const float Seconds)
 {
     float Starting_Portion;
-    GetValue(TW_UI_PROGRESS_PORTION, Starting_Portion);
-    if (SetValue(TW_UI_PROGRESS_PORTION, (float) (Portion * 100.0) + Starting_Portion) != 0) {
+    GetValue(VAR_TW_UI_PROGRESS_PORTION, Starting_Portion);
+    if (SetValue(VAR_TW_UI_PROGRESS_PORTION, (float) (Portion * 100.0) + Starting_Portion) != 0) {
         return -1;
     }
-    if (SetValue(TW_UI_PROGRESS_FRAMES, Seconds * 30) != 0) {
+    if (SetValue(VAR_TW_UI_PROGRESS_FRAMES, Seconds * 30) != 0) {
         return -1;
     }
     return 0;
@@ -309,7 +314,7 @@ int DataManager::ShowProgress(const float Portion, const float Seconds)
 
 void DataManager::update_tz_environment_variables()
 {
-    setenv("TZ", GetStrValue(TW_TIME_ZONE).c_str(), 1);
+    setenv("TZ", GetStrValue(VAR_TW_TIME_ZONE).c_str(), 1);
     tzset();
 }
 
@@ -326,68 +331,71 @@ void DataManager::SetDefaultValues()
     mConst.SetValue("true", "1");
     mConst.SetValue("false", "0");
 
-    mConst.SetValue(TW_VERSION, mb::version());
-    mPersist.SetValue(TW_BUTTON_VIBRATE, "80");
-    mPersist.SetValue(TW_KEYBOARD_VIBRATE, "40");
-    mPersist.SetValue(TW_ACTION_VIBRATE, "160");
+    mConst.SetValue(VAR_TW_VERSION, mb::version());
+    mPersist.SetValue(VAR_TW_BUTTON_VIBRATE, "80");
+    mPersist.SetValue(VAR_TW_KEYBOARD_VIBRATE, "40");
+    mPersist.SetValue(VAR_TW_ACTION_VIBRATE, "160");
 
-    mConst.SetValue(TW_REBOOT_SYSTEM, "1");
-    mConst.SetValue(TW_REBOOT_RECOVERY, "1");
-    if (tw_flags & TW_FLAG_HAS_DOWNLOAD_MODE) {
-        mConst.SetValue(TW_REBOOT_BOOTLOADER, "0");
-        mConst.SetValue(TW_REBOOT_DOWNLOAD, "1");
+    mConst.SetValue(VAR_TW_REBOOT_SYSTEM, "1");
+    mConst.SetValue(VAR_TW_REBOOT_RECOVERY, "1");
+    if (tw_device.tw_flags() & mb::device::TwFlag::HasDownloadMode) {
+        mConst.SetValue(VAR_TW_REBOOT_BOOTLOADER, "0");
+        mConst.SetValue(VAR_TW_REBOOT_DOWNLOAD, "1");
     } else {
-        mConst.SetValue(TW_REBOOT_BOOTLOADER, "1");
-        mConst.SetValue(TW_REBOOT_DOWNLOAD, "0");
+        mConst.SetValue(VAR_TW_REBOOT_BOOTLOADER, "1");
+        mConst.SetValue(VAR_TW_REBOOT_DOWNLOAD, "0");
     }
-    mConst.SetValue(TW_REBOOT_POWEROFF, "1");
+    mConst.SetValue(VAR_TW_REBOOT_POWEROFF, "1");
 
-    mConst.SetValue(TW_NO_BATTERY_PERCENT, "0");
+    mConst.SetValue(VAR_TW_NO_BATTERY_PERCENT, "0");
 
-    if (tw_flags & TW_FLAG_NO_CPU_TEMP) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::NoCpuTemp) {
         LOGD("TW_NO_CPU_TEMP := true");
-        mConst.SetValue(TW_NO_CPU_TEMP, "1");
+        mConst.SetValue(VAR_TW_NO_CPU_TEMP, "1");
     } else {
         std::string cpu_temp_file;
-        if (tw_custom_cpu_temp_path) {
-            cpu_temp_file = tw_custom_cpu_temp_path;
+        auto const &cpu_temp_path =
+                tw_device.tw_cpu_temp_path();
+        if (!cpu_temp_path.empty()) {
+            cpu_temp_file = cpu_temp_path.c_str();
         } else {
             cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
         }
-        if (mb::util::path_exists(cpu_temp_file.c_str(), true)) {
-            mConst.SetValue(TW_NO_CPU_TEMP, "0");
+        if (mb::util::path_exists(cpu_temp_file, true)) {
+            mConst.SetValue(VAR_TW_NO_CPU_TEMP, "0");
         } else {
             LOGI("CPU temperature file '%s' not found, disabling CPU temp.", cpu_temp_file.c_str());
-            mConst.SetValue(TW_NO_CPU_TEMP, "1");
+            mConst.SetValue(VAR_TW_NO_CPU_TEMP, "1");
         }
     }
 
-    mPersist.SetValue(TW_GUI_SORT_ORDER, "1");
-    mPersist.SetValue(TW_TIME_ZONE, "CST6CDT,M3.2.0,M11.1.0");
-    mPersist.SetValue(TW_TIME_ZONE_GUISEL, "CST6;CDT,M3.2.0,M11.1.0");
-    mPersist.SetValue(TW_TIME_ZONE_GUIOFFSET, "0");
-    mPersist.SetValue(TW_TIME_ZONE_GUIDST, "1");
-    mData.SetValue(TW_ACTION_BUSY, "0");
-    mData.SetValue(TW_IS_ENCRYPTED, "0");
-    mData.SetValue(TW_CRYPTO_PASSWORD, "0");
+    mPersist.SetValue(VAR_TW_GUI_SORT_ORDER, "1");
+    mPersist.SetValue(VAR_TW_TIME_ZONE, "CST6CDT,M3.2.0,M11.1.0");
+    mPersist.SetValue(VAR_TW_TIME_ZONE_GUISEL, "CST6;CDT,M3.2.0,M11.1.0");
+    mPersist.SetValue(VAR_TW_TIME_ZONE_GUIOFFSET, "0");
+    mPersist.SetValue(VAR_TW_TIME_ZONE_GUIDST, "1");
+    mData.SetValue(VAR_TW_ACTION_BUSY, "0");
+    mData.SetValue(VAR_TW_IS_ENCRYPTED, "0");
+    mData.SetValue(VAR_TW_CRYPTO_PASSWORD, "0");
     mData.SetValue("tw_terminal_state", "0");
     mData.SetValue("tw_background_thread_running", "0");
-    mPersist.SetValue(TW_MILITARY_TIME, "0");
-    if (tw_flags & TW_FLAG_NO_SCREEN_TIMEOUT) {
-        mConst.SetValue(TW_SCREEN_TIMEOUT_SECS, "0");
-        mConst.SetValue(TW_NO_SCREEN_TIMEOUT, "1");
+    mPersist.SetValue(VAR_TW_MILITARY_TIME, "0");
+    if (tw_device.tw_flags() & mb::device::TwFlag::NoScreenTimeout) {
+        mConst.SetValue(VAR_TW_SCREEN_TIMEOUT_SECS, "0");
+        mConst.SetValue(VAR_TW_NO_SCREEN_TIMEOUT, "1");
     } else {
-        mPersist.SetValue(TW_SCREEN_TIMEOUT_SECS, "60");
-        mPersist.SetValue(TW_NO_SCREEN_TIMEOUT, "0");
+        mPersist.SetValue(VAR_TW_SCREEN_TIMEOUT_SECS, "60");
+        mPersist.SetValue(VAR_TW_NO_SCREEN_TIMEOUT, "0");
     }
-    mData.SetValue(TW_GUI_DONE, "0");
+    mData.SetValue(VAR_TW_GUI_DONE, "0");
 
     // Brightness handling
     std::string findbright;
-    if (tw_brightness_path) {
-        findbright = tw_brightness_path;
+    auto const &brightness_path = tw_device.tw_brightness_path();
+    if (!brightness_path.empty()) {
+        findbright = brightness_path;
         LOGI("TW_BRIGHTNESS_PATH := %s", findbright.c_str());
-        if (!mb::util::path_exists(findbright.c_str(), true)) {
+        if (!mb::util::path_exists(findbright, true)) {
             LOGI("Specified brightness file '%s' not found.", findbright.c_str());
             findbright = "";
         }
@@ -397,31 +405,33 @@ void DataManager::SetDefaultValues()
         static const char *lcd_backlight = "/sys/class/leds/lcd-backlight";
 
         // Attempt to locate the brightness file
-        findbright = Find_File::Find("brightness",
-                                     (tw_flags & TW_FLAG_PREFER_LCD_BACKLIGHT)
-                                     ? lcd_backlight : backlight);
+        findbright = Find_File::Find(
+                "brightness",
+                (tw_device.tw_flags() & mb::device::TwFlag::PreferLcdBacklight)
+                ? lcd_backlight : backlight);
         if (findbright.empty()) {
-            findbright = Find_File::Find("brightness",
-                                         (tw_flags & TW_FLAG_PREFER_LCD_BACKLIGHT)
-                                         ? backlight : lcd_backlight);
+            findbright = Find_File::Find(
+                    "brightness",
+                    (tw_device.tw_flags() & mb::device::TwFlag::PreferLcdBacklight)
+                    ? backlight : lcd_backlight);
         }
     }
     if (findbright.empty()) {
         LOGI("Unable to locate brightness file");
-        mConst.SetValue(TW_HAS_BRIGHTNESS_FILE, "0");
+        mConst.SetValue(VAR_TW_HAS_BRIGHTNESS_FILE, "0");
     } else {
         LOGI("Found brightness file at '%s'", findbright.c_str());
-        mConst.SetValue(TW_HAS_BRIGHTNESS_FILE, "1");
-        mConst.SetValue(TW_BRIGHTNESS_FILE, findbright);
+        mConst.SetValue(VAR_TW_HAS_BRIGHTNESS_FILE, "1");
+        mConst.SetValue(VAR_TW_BRIGHTNESS_FILE, findbright);
         std::string maxBrightness;
-        if (tw_max_brightness >= 0) {
+        if (tw_device.tw_max_brightness() >= 0) {
             std::ostringstream maxVal;
-            maxVal << tw_max_brightness;
+            maxVal << tw_device.tw_max_brightness();
             maxBrightness = maxVal.str();
         } else {
             // Attempt to locate the max_brightness file
             std::string maxbrightpath = findbright.insert(findbright.rfind('/') + 1, "max_");
-            if (mb::util::path_exists(maxbrightpath.c_str(), true)) {
+            if (mb::util::path_exists(maxbrightpath, true)) {
                 std::ifstream maxVal(maxbrightpath.c_str());
                 if (maxVal >> maxBrightness) {
                     LOGI("Got max brightness %s from '%s'", maxBrightness.c_str(), maxbrightpath.c_str());
@@ -437,40 +447,44 @@ void DataManager::SetDefaultValues()
                 maxBrightness = maxVal.str();
             }
         }
-        mConst.SetValue(TW_BRIGHTNESS_MAX, maxBrightness);
-        mPersist.SetValue(TW_BRIGHTNESS, maxBrightness);
-        mPersist.SetValue(TW_BRIGHTNESS_PCT, "100");
-        if (tw_secondary_brightness_path) {
-            std::string secondfindbright = tw_secondary_brightness_path;
-            if (secondfindbright != "" && mb::util::path_exists(secondfindbright.c_str(), true)) {
-                LOGI("Will use a second brightness file at '%s'", secondfindbright.c_str());
-                mConst.SetValue("tw_secondary_brightness_file", secondfindbright);
+        mConst.SetValue(VAR_TW_BRIGHTNESS_MAX, maxBrightness);
+        mPersist.SetValue(VAR_TW_BRIGHTNESS, maxBrightness);
+        mPersist.SetValue(VAR_TW_BRIGHTNESS_PCT, "100");
+        auto const &secondary_brightness_path =
+                tw_device.tw_secondary_brightness_path();
+        if (!secondary_brightness_path.empty()) {
+            if (mb::util::path_exists(secondary_brightness_path, true)) {
+                LOGI("Will use a second brightness file at '%s'",
+                     secondary_brightness_path.c_str());
+                mConst.SetValue("tw_secondary_brightness_file",
+                                secondary_brightness_path);
             } else {
-                LOGI("Specified secondary brightness file '%s' not found.", secondfindbright.c_str());
+                LOGI("Specified secondary brightness file '%s' not found.",
+                     secondary_brightness_path.c_str());
             }
         }
-        if (tw_default_brightness >= 0) {
-            int defValInt = tw_default_brightness;
+        if (tw_device.tw_default_brightness() >= 0) {
+            int defValInt = tw_device.tw_default_brightness();
             int maxValInt = atoi(maxBrightness.c_str());
             // Deliberately int so the % is always a whole number
             int defPctInt = (((double) defValInt / maxValInt) * 100);
             std::ostringstream defPct;
             defPct << defPctInt;
-            mPersist.SetValue(TW_BRIGHTNESS_PCT, defPct.str());
+            mPersist.SetValue(VAR_TW_BRIGHTNESS_PCT, defPct.str());
 
             std::ostringstream defVal;
-            defVal << tw_default_brightness;
-            mPersist.SetValue(TW_BRIGHTNESS, defVal.str());
+            defVal << tw_device.tw_default_brightness();
+            mPersist.SetValue(VAR_TW_BRIGHTNESS, defVal.str());
             TWFunc::Set_Brightness(defVal.str());
         } else {
             TWFunc::Set_Brightness(maxBrightness);
         }
     }
 
-    mPersist.SetValue(TW_LANGUAGE, "en");
+    mPersist.SetValue(VAR_TW_LANGUAGE, "en");
 
     // Set default autoboot timeout to 5 seconds
-    mPersist.SetValue(TW_AUTOBOOT_TIMEOUT, 5);
+    mPersist.SetValue(VAR_TW_AUTOBOOT_TIMEOUT, 5);
 
     pthread_mutex_unlock(&m_valuesLock);
 }
@@ -479,7 +493,7 @@ void DataManager::SetDefaultValues()
 int DataManager::GetMagicValue(const std::string& varName, std::string& value)
 {
     // Handle special dynamic cases
-    if (varName == TW_TIME) {
+    if (varName == VAR_TW_TIME) {
         char tmp[32];
 
         struct tm *current;
@@ -487,7 +501,7 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
         int tw_military_time;
         now = time(0);
         current = localtime(&now);
-        GetValue(TW_MILITARY_TIME, tw_military_time);
+        GetValue(VAR_TW_MILITARY_TIME, tw_military_time);
         if (current->tm_hour >= 12) {
             if (tw_military_time == 1) {
                 sprintf(tmp, "%d:%02d", current->tm_hour, current->tm_min);
@@ -503,9 +517,9 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
         }
         value = tmp;
         return 0;
-    } else if (varName == TW_CPU_TEMP) {
+    } else if (varName == VAR_TW_CPU_TEMP) {
         int tw_no_cpu_temp;
-        GetValue(TW_NO_CPU_TEMP, tw_no_cpu_temp);
+        GetValue(VAR_TW_NO_CPU_TEMP, tw_no_cpu_temp);
         if (tw_no_cpu_temp == 1) {
             return -1;
         }
@@ -518,14 +532,15 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
 
         clock_gettime(CLOCK_MONOTONIC, &curTime);
         if (curTime.tv_sec > cpuSecCheck) {
-            if (tw_custom_cpu_temp_path) {
-                cpu_temp_file = tw_custom_cpu_temp_path;
-                if (!mb::util::file_first_line(cpu_temp_file, &results)) {
+            auto const &cpu_temp_path = tw_device.tw_cpu_temp_path();
+            if (!cpu_temp_path.empty()) {
+                cpu_temp_file = cpu_temp_path;
+                if (!mb::util::file_first_line(cpu_temp_file, results)) {
                     return -1;
                 }
             } else {
                 cpu_temp_file = "/sys/class/thermal/thermal_zone0/temp";
-                if (!mb::util::file_first_line(cpu_temp_file, &results)) {
+                if (!mb::util::file_first_line(cpu_temp_file, results)) {
                     return -1;
                 }
             }
@@ -543,7 +558,7 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
         snprintf(buf, sizeof(buf), "%lu", convert_temp);
         value = buf;
         return 0;
-    } else if (varName == TW_BATTERY) {
+    } else if (varName == VAR_TW_BATTERY) {
         char tmp[16];
         static char charging = ' ';
         static int lastVal = -1;
@@ -553,8 +568,9 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
         if (curTime.tv_sec > nextSecCheck) {
             char cap_s[4];
             FILE *cap;
-            if (tw_custom_battery_path) {
-                std::string capacity_file = tw_custom_battery_path;
+            auto const &battery_path = tw_device.tw_battery_path();
+            if (!battery_path.empty()) {
+                std::string capacity_file = battery_path;
                 capacity_file += "/capacity";
                 cap = fopen(capacity_file.c_str(), "rt");
             } else {
@@ -571,8 +587,8 @@ int DataManager::GetMagicValue(const std::string& varName, std::string& value)
                     lastVal = 0;
                 }
             }
-            if (tw_custom_battery_path) {
-                std::string status_file = tw_custom_battery_path;
+            if (!battery_path.empty()) {
+                std::string status_file = battery_path;
                 status_file += "/status";
                 cap = fopen(status_file.c_str(), "rt");
             } else {
@@ -606,7 +622,7 @@ void DataManager::ReadSettingsFile()
     LoadValues(tw_settings_path);
 #endif // ifdef TW_OEM_BUILD
     update_tz_environment_variables();
-    TWFunc::Set_Brightness(GetStrValue(TW_BRIGHTNESS));
+    TWFunc::Set_Brightness(GetStrValue(VAR_TW_BRIGHTNESS));
 }
 
 void DataManager::Vibrate(const std::string& varName)

@@ -1,40 +1,36 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
 
 #include "mbcommon/string.h"
 
+using namespace mb;
+
 TEST(StringTest, FormatString)
 {
-    char *str = mb_format("Hello, %s!", "World");
-    ASSERT_NE(str, nullptr);
-    ASSERT_STREQ(str, "Hello, World!");
-    free(str);
+    ASSERT_EQ(format("Hello, %s!", "World"), "Hello, World!");
 }
 
 TEST(StringTest, FormatEmptyString)
 {
-    char *str = mb_format("");
-    ASSERT_NE(str, nullptr);
-    ASSERT_STREQ(str, "");
-    free(str);
+    ASSERT_EQ(format(""), "");
 }
 
 TEST(StringTest, FormatSizeT)
@@ -42,50 +38,27 @@ TEST(StringTest, FormatSizeT)
     ptrdiff_t signed_val = 0x7FFFFFFF;
     size_t unsigned_val = 0xFFFFFFFFu;
 
-    char *signed_d_str = mb_format("%" MB_PRIzd, signed_val);
-    ASSERT_NE(signed_d_str, nullptr);
-    ASSERT_STREQ(signed_d_str, "2147483647");
-    free(signed_d_str);
-
-    char *signed_i_str = mb_format("%" MB_PRIzi, signed_val);
-    ASSERT_NE(signed_i_str, nullptr);
-    ASSERT_STREQ(signed_i_str, "2147483647");
-    free(signed_i_str);
-
-    char *unsigned_o_str = mb_format("%" MB_PRIzo, unsigned_val);
-    ASSERT_NE(unsigned_o_str, nullptr);
-    ASSERT_STREQ(unsigned_o_str, "37777777777");
-    free(unsigned_o_str);
-
-    char *unsigned_u_str = mb_format("%" MB_PRIzu, unsigned_val);
-    ASSERT_NE(unsigned_u_str, nullptr);
-    ASSERT_STREQ(unsigned_u_str, "4294967295");
-    free(unsigned_u_str);
-
-    char *unsigned_x_str = mb_format("%" MB_PRIzx, unsigned_val);
-    ASSERT_NE(unsigned_x_str, nullptr);
-    ASSERT_STREQ(unsigned_x_str, "ffffffff");
-    free(unsigned_x_str);
-
-    char *unsigned_X_str = mb_format("%" MB_PRIzX, unsigned_val);
-    ASSERT_NE(unsigned_X_str, nullptr);
-    ASSERT_STREQ(unsigned_X_str, "FFFFFFFF");
-    free(unsigned_X_str);
+    ASSERT_EQ(format("%" MB_PRIzd, signed_val), "2147483647");
+    ASSERT_EQ(format("%" MB_PRIzi, signed_val), "2147483647");
+    ASSERT_EQ(format("%" MB_PRIzo, unsigned_val), "37777777777");
+    ASSERT_EQ(format("%" MB_PRIzu, unsigned_val), "4294967295");
+    ASSERT_EQ(format("%" MB_PRIzx, unsigned_val), "ffffffff");
+    ASSERT_EQ(format("%" MB_PRIzX, unsigned_val), "FFFFFFFF");
 }
 
 TEST(StringTest, CheckStartsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello, World!"));
-    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(starts_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", "HELLO, WORLD!"));
 
     // Check matching prefix
-    ASSERT_TRUE(mb_starts_with("Hello, World!", "Hello"));
-    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", "HELLO"));
+    ASSERT_TRUE(starts_with("Hello, World!", "Hello"));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", "HELLO"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb_starts_with("abcd", "abcde"));
-    ASSERT_FALSE(mb_starts_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(starts_with("abcd", "abcde"));
+    ASSERT_FALSE(starts_with_icase("abcd", "ABCDE"));
 }
 
 TEST(StringTest, CheckStartsWithNotNullTerminated)
@@ -101,44 +74,40 @@ TEST(StringTest, CheckStartsWithNotNullTerminated)
     size_t prefix3_len = sizeof(prefix3) / sizeof(char);
     size_t prefix4_len = sizeof(prefix4) / sizeof(char);
 
-    ASSERT_TRUE(mb_starts_with_n(source, source_len,
-                                 prefix1, prefix1_len));
-    ASSERT_FALSE(mb_starts_with_n(source, source_len,
-                                  prefix2, prefix2_len));
-    ASSERT_TRUE(mb_starts_with_icase_n(source, source_len,
-                                       prefix3, prefix3_len));
-    ASSERT_FALSE(mb_starts_with_icase_n(source, source_len,
-                                        prefix4, prefix4_len));
+    ASSERT_TRUE(starts_with_n(source, source_len, prefix1, prefix1_len));
+    ASSERT_FALSE(starts_with_n(source, source_len, prefix2, prefix2_len));
+    ASSERT_TRUE(starts_with_icase_n(source, source_len, prefix3, prefix3_len));
+    ASSERT_FALSE(starts_with_icase_n(source, source_len, prefix4, prefix4_len));
 }
 
 TEST(StringTest, CheckStartsWithEmpty)
 {
     // Empty prefix
-    ASSERT_TRUE(mb_starts_with("Hello, World!", ""));
-    ASSERT_TRUE(mb_starts_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(starts_with("Hello, World!", ""));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", ""));
 
     // Empty source
-    ASSERT_FALSE(mb_starts_with("", "abcde"));
-    ASSERT_FALSE(mb_starts_with_icase("", "abcde"));
+    ASSERT_FALSE(starts_with("", "abcde"));
+    ASSERT_FALSE(starts_with_icase("", "abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb_starts_with("", ""));
-    ASSERT_TRUE(mb_starts_with_icase("", ""));
+    ASSERT_TRUE(starts_with("", ""));
+    ASSERT_TRUE(starts_with_icase("", ""));
 }
 
 TEST(StringTest, CheckEndsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "Hello, World!"));
-    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(ends_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", "HELLO, WORLD!"));
 
     // Check matching suffix
-    ASSERT_TRUE(mb_ends_with("Hello, World!", "World!"));
-    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", "WORLD!"));
+    ASSERT_TRUE(ends_with("Hello, World!", "World!"));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", "WORLD!"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb_ends_with("abcd", "abcde"));
-    ASSERT_FALSE(mb_ends_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(ends_with("abcd", "abcde"));
+    ASSERT_FALSE(ends_with_icase("abcd", "ABCDE"));
 }
 
 TEST(StringTest, CheckEndsWithNotNullTerminated)
@@ -154,29 +123,25 @@ TEST(StringTest, CheckEndsWithNotNullTerminated)
     size_t suffix3_len = sizeof(suffix3) / sizeof(char);
     size_t suffix4_len = sizeof(suffix4) / sizeof(char);
 
-    ASSERT_TRUE(mb_ends_with_n(source, source_len,
-                               suffix1, suffix1_len));
-    ASSERT_FALSE(mb_ends_with_n(source, source_len,
-                                suffix2, suffix2_len));
-    ASSERT_TRUE(mb_ends_with_icase_n(source, source_len,
-                                     suffix3, suffix3_len));
-    ASSERT_FALSE(mb_ends_with_icase_n(source, source_len,
-                                      suffix4, suffix4_len));
+    ASSERT_TRUE(ends_with_n(source, source_len, suffix1, suffix1_len));
+    ASSERT_FALSE(ends_with_n(source, source_len, suffix2, suffix2_len));
+    ASSERT_TRUE(ends_with_icase_n(source, source_len, suffix3, suffix3_len));
+    ASSERT_FALSE(ends_with_icase_n(source, source_len, suffix4, suffix4_len));
 }
 
 TEST(StringTest, CheckEndsWithEmpty)
 {
     // Empty suffix
-    ASSERT_TRUE(mb_ends_with("Hello, World!", ""));
-    ASSERT_TRUE(mb_ends_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(ends_with("Hello, World!", ""));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", ""));
 
     // Empty source
-    ASSERT_FALSE(mb_ends_with("", "abcde"));
-    ASSERT_FALSE(mb_ends_with_icase("", "abcde"));
+    ASSERT_FALSE(ends_with("", "abcde"));
+    ASSERT_FALSE(ends_with_icase("", "abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb_ends_with("", ""));
-    ASSERT_TRUE(mb_ends_with_icase("", ""));
+    ASSERT_TRUE(ends_with("", ""));
+    ASSERT_TRUE(ends_with_icase("", ""));
 }
 
 TEST(StringTest, InsertMemory)
@@ -212,8 +177,8 @@ TEST(StringTest, InsertMemory)
         ASSERT_NE(buf, nullptr);
         memcpy(buf, it->source, buf_size);
 
-        ASSERT_EQ(mb_mem_insert(&buf, &buf_size, it->pos,
-                                it->data, it->data_size), 0);
+        ASSERT_TRUE(mem_insert(&buf, &buf_size, it->pos,
+                               it->data, it->data_size));
 
         // Ensure target string matches
         ASSERT_EQ(buf_size, it->target_size);
@@ -228,7 +193,9 @@ TEST(StringTest, InsertMemoryOutOfRange)
     void *buf = nullptr;
     size_t buf_size = 0;
 
-    ASSERT_LT(mb_mem_insert(&buf, &buf_size, 1, "", 0), 0);
+    auto result = mem_insert(&buf, &buf_size, 1, "", 0);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::invalid_argument);
 }
 
 TEST(StringTest, InsertString)
@@ -259,7 +226,7 @@ TEST(StringTest, InsertString)
         char *buf = strdup(it->source);
         ASSERT_NE(buf, nullptr);
 
-        ASSERT_EQ(mb_str_insert(&buf, it->pos, it->data), 0);
+        ASSERT_TRUE(str_insert(&buf, it->pos, it->data));
 
         // Ensure target string matches
         ASSERT_STREQ(buf, it->target);
@@ -313,8 +280,8 @@ TEST(StringTest, ReplaceMemory)
         memcpy(buf, it->source, buf_size);
 
         size_t matches;
-        ASSERT_EQ(mb_mem_replace(&buf, &buf_size, it->from, it->from_size,
-                                 it->to, it->to_size, it->n, &matches), 0);
+        ASSERT_TRUE(mem_replace(&buf, &buf_size, it->from, it->from_size,
+                                it->to, it->to_size, it->n, &matches));
 
         // Ensure target string matches
         ASSERT_EQ(buf_size, it->target_size);
@@ -366,7 +333,7 @@ TEST(StringTest, ReplaceString)
         ASSERT_NE(buf, nullptr);
 
         size_t matches;
-        ASSERT_EQ(mb_str_replace(&buf, it->from, it->to, it->n, &matches), 0);
+        ASSERT_TRUE(str_replace(&buf, it->from, it->to, it->n, &matches));
 
         // Ensure target string matches
         ASSERT_STREQ(buf, it->target);

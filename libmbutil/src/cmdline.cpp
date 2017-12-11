@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/cmdline.h"
@@ -30,6 +30,8 @@
 #include "mblog/logging.h"
 #include "mbutil/file.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/cmdline"
 
 namespace mb
 {
@@ -68,13 +70,15 @@ bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
 
     for (token = strtok_r(buf, " ", &save_ptr); token;
             token = strtok_r(nullptr, " ", &save_ptr)) {
-        const char *name = token;
-        const char *value = nullptr;
+        std::string name;
+        optional<std::string> value;
 
         char *equals = strchr(token, '=');
         if (equals) {
-            *equals = '\0';
-            value = equals + 1;
+            name = {token, equals};
+            value = {equals + 1};
+        } else {
+            name = token;
         }
 
         CmdlineIterAction action = fn(name, value, userdata);
@@ -94,30 +98,26 @@ bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
 
 struct Ctx
 {
-    const char *option;
-    bool exists;
-    std::string value;
+    std::string option;
+    optional<std::string> value;
 };
 
-static CmdlineIterAction get_option_cb(const char *name, const char *value,
+static CmdlineIterAction get_option_cb(const std::string &name,
+                                       const optional<std::string> &value,
                                        void *userdata)
 {
     Ctx *ctx = static_cast<Ctx *>(userdata);
 
-    if (strcmp(name, ctx->option) == 0) {
-        if (value) {
-            ctx->exists = true;
-            ctx->value = value;
-        } else {
-            ctx->exists = false;
-        }
+    if (name == ctx->option) {
+        ctx->value = value;
         return CmdlineIterAction::Stop;
     }
 
     return CmdlineIterAction::Continue;
 }
 
-bool kernel_cmdline_get_option(const char *option, std::string *out)
+bool kernel_cmdline_get_option(const std::string &option,
+                               optional<std::string> &value)
 {
     Ctx ctx;
     ctx.option = option;
@@ -126,12 +126,8 @@ bool kernel_cmdline_get_option(const char *option, std::string *out)
         return false;
     }
 
-    if (ctx.exists) {
-        out->swap(ctx.value);
-        return true;
-    } else {
-        return false;
-    }
+    value = std::move(ctx.value);
+    return true;
 }
 
 }

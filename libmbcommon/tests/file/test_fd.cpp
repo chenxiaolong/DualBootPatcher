@@ -1,23 +1,23 @@
 /*
  * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <climits>
 
@@ -25,714 +25,533 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/fd.h"
-#include "mbcommon/file/fd_p.h"
-#include "mbcommon/file/vtable_p.h"
 
-struct FileFdTest : testing::Test
+using namespace mb;
+using namespace mb::detail;
+
+struct MockFdFileFuncs : public FdFileFuncs
 {
-    MbFile *_file;
-    SysVtable _vtable;
-
+    // fcntl.h
 #ifdef _WIN32
-    int _n_wopen = 0;
+    MOCK_METHOD3(fn_wopen, int(const wchar_t *path, int flags, mode_t mode));
 #else
-    int _n_open = 0;
-#endif
-    int _n_fstat = 0;
-    int _n_close = 0;
-    int _n_ftruncate64 = 0;
-    int _n_lseek64 = 0;
-    int _n_read = 0;
-    int _n_write = 0;
-
-    FileFdTest() : _file(mb_file_new())
-    {
-        // These all fail by default
-#ifdef _WIN32
-        _vtable.fn_wopen = _wopen;
-#else
-        _vtable.fn_open = _open;
-#endif
-        _vtable.fn_fstat = _fstat;
-        _vtable.fn_close = _close;
-        _vtable.fn_ftruncate64 = _ftruncate64;
-        _vtable.fn_lseek64 = _lseek64;
-        _vtable.fn_read = _read;
-        _vtable.fn_write = _write;
-
-        _vtable.userdata = this;
-    }
-
-    virtual ~FileFdTest()
-    {
-        mb_file_free(_file);
-    }
-
-#ifdef _WIN32
-    static int _wopen(void *userdata, const wchar_t *path, int flags,
-                      mode_t mode)
-    {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_wopen;
-
-        errno = EIO;
-        return -1;
-    }
-#else
-    static int _open(void *userdata, const char *path, int flags, mode_t mode)
-    {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_open;
-
-        errno = EIO;
-        return -1;
-    }
+    MOCK_METHOD3(fn_open, int(const char *path, int flags, mode_t mode));
 #endif
 
-    static int _fstat(void *userdata, int fildes, struct stat *buf)
+    // sys/stat.h
+    MOCK_METHOD2(fn_fstat, int(int fildes, struct stat *buf));
+
+    // unistd.h
+    MOCK_METHOD1(fn_close, int(int fd));
+    MOCK_METHOD2(fn_ftruncate64, int(int fd, off64_t length));
+    MOCK_METHOD3(fn_lseek64, off64_t(int fd, off64_t offset, int whence));
+    MOCK_METHOD3(fn_read, ssize_t(int fd, void *buf, size_t count));
+    MOCK_METHOD3(fn_write, ssize_t(int fd, const void *buf, size_t count));
+
+    struct stat _sb_regfile{};
+
+    MockFdFileFuncs()
     {
-        (void) fildes;
-        (void) buf;
+        _sb_regfile.st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_fstat;
-
-        errno = EIO;
-        return -1;
+        // Fail everything by default
+#ifdef _WIN32
+        ON_CALL(*this, fn_wopen(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+#else
+        ON_CALL(*this, fn_open(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+#endif
+        ON_CALL(*this, fn_fstat(testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_close(testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_ftruncate64(testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_lseek64(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_read(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
+        ON_CALL(*this, fn_write(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::SetErrnoAndReturn(EIO, -1));
     }
 
-    static int _fstat_file(void *userdata, int fildes, struct stat *buf)
+    void report_as_regular_file()
     {
-        (void) fildes;
-        (void) buf;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_fstat;
-
-        buf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
-        return 0;
+        ON_CALL(*this, fn_fstat(testing::_, testing::_))
+                .WillByDefault(testing::DoAll(
+                        testing::SetArgPointee<1>(_sb_regfile),
+                        testing::Return(0)));
     }
 
-    static int _close(void *userdata, int fd)
+    void open_with_success()
     {
-        (void) fd;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_close;
-
-        errno = EIO;
-        return -1;
-    }
-
-    static int _ftruncate64(void *userdata, int fd, off_t length)
-    {
-        (void) fd;
-        (void) length;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_ftruncate64;
-
-        errno = EIO;
-        return -1;
-    }
-
-    static off64_t _lseek64(void *userdata, int fd, off64_t offset, int whence)
-    {
-        (void) fd;
-        (void) offset;
-        (void) whence;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_lseek64;
-
-        errno = EIO;
-        return -1;
-    }
-
-    static ssize_t _read(void *userdata, int fd, void *buf, size_t count)
-    {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_read;
-
-        errno = EIO;
-        return -1;
-    }
-
-    static ssize_t _write(void *userdata, int fd, const void *buf, size_t count)
-    {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_write;
-
-        errno = EIO;
-        return -1;
+#ifdef _WIN32
+        ON_CALL(*this, fn_wopen(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::Return(0));
+#else
+        ON_CALL(*this, fn_open(testing::_, testing::_, testing::_))
+                .WillByDefault(testing::Return(0));
+#endif
     }
 };
 
-TEST_F(FileFdTest, OpenNoVtable)
+class TestableFdFile : public FdFile
 {
-    memset(&_vtable, 0, sizeof(_vtable));
-    ASSERT_EQ(_mb_file_open_fd( &_vtable, _file, 0, false), MB_FILE_FATAL);
-    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INTERNAL_ERROR);
-}
+public:
+    TestableFdFile(FdFileFuncs *funcs)
+        : FdFile(funcs)
+    {
+    }
+
+    TestableFdFile(FdFileFuncs *funcs, int fd, bool owned)
+        : FdFile(funcs, fd, owned)
+    {
+    }
+
+    TestableFdFile(FdFileFuncs *funcs,
+                   const std::string &filename, FileOpenMode mode)
+        : FdFile(funcs, filename, mode)
+    {
+    }
+
+    TestableFdFile(FdFileFuncs *funcs,
+                   const std::wstring &filename, FileOpenMode mode)
+        : FdFile(funcs, filename, mode)
+    {
+    }
+
+    ~TestableFdFile()
+    {
+    }
+};
+
+struct FileFdTest : testing::Test
+{
+    testing::NiceMock<MockFdFileFuncs> _funcs;
+};
 
 TEST_F(FileFdTest, OpenFilenameMbsSuccess)
 {
+    _funcs.report_as_regular_file();
+    _funcs.open_with_success();
+
 #ifdef _WIN32
-    _vtable.fn_wopen = [](void *userdata, const wchar_t *path, int flags,
-                          mode_t mode) -> int {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_wopen;
-
-        return 0;
-    };
+    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+            .Times(1);
 #else
-    _vtable.fn_open = [](void *userdata, const char *path, int flags,
-                         mode_t mode) -> int {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_open;
-
-        return 0;
-    };
+    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+            .Times(1);
 #endif
-    _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x",
-                                        MB_FILE_OPEN_READ_ONLY),
-              MB_FILE_OK);
-#ifdef _WIN32
-    ASSERT_EQ(_n_wopen, 1);
-#else
-    ASSERT_EQ(_n_open, 1);
-#endif
+    TestableFdFile file(&_funcs);
+    ASSERT_TRUE(file.open("x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameMbsFailure)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x",
-                                        MB_FILE_OPEN_READ_ONLY),
-              MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
 #ifdef _WIN32
-    ASSERT_EQ(_n_wopen, 1);
+    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+            .Times(1);
 #else
-    ASSERT_EQ(_n_open, 1);
+    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+            .Times(1);
 #endif
+
+    TestableFdFile file(&_funcs);
+    auto result = file.open("x", FileOpenMode::ReadOnly);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameMbsInvalidMode)
 {
-    ASSERT_EQ(_mb_file_open_fd_filename(&_vtable, _file, "x", -1),
-              MB_FILE_FATAL);
-    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open("x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFilenameWcsSuccess)
 {
+    _funcs.report_as_regular_file();
+    _funcs.open_with_success();
+
 #ifdef _WIN32
-    _vtable.fn_wopen = [](void *userdata, const wchar_t *path, int flags,
-                          mode_t mode) -> int {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_wopen;
-
-        return 0;
-    };
+    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+            .Times(1);
 #else
-    _vtable.fn_open = [](void *userdata, const char *path, int flags,
-                         mode_t mode) -> int {
-        (void) path;
-        (void) flags;
-        (void) mode;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_open;
-
-        return 0;
-    };
+    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+            .Times(1);
 #endif
-    _vtable.fn_fstat = _fstat_file;
 
-    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x",
-                                          MB_FILE_OPEN_READ_ONLY),
-              MB_FILE_OK);
-#ifdef _WIN32
-    ASSERT_EQ(_n_wopen, 1);
-#else
-    ASSERT_EQ(_n_open, 1);
-#endif
+    TestableFdFile file(&_funcs);
+    ASSERT_TRUE(file.open(L"x", FileOpenMode::ReadOnly));
 }
 
 TEST_F(FileFdTest, OpenFilenameWcsFailure)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x",
-                                          MB_FILE_OPEN_READ_ONLY),
-              MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
 #ifdef _WIN32
-    ASSERT_EQ(_n_wopen, 1);
+    EXPECT_CALL(_funcs, fn_wopen(testing::_, testing::_, testing::_))
+            .Times(1);
 #else
-    ASSERT_EQ(_n_open, 1);
+    EXPECT_CALL(_funcs, fn_open(testing::_, testing::_, testing::_))
+            .Times(1);
 #endif
+
+    TestableFdFile file(&_funcs);
+    auto result = file.open(L"x", FileOpenMode::ReadOnly);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
+#ifndef NDEBUG
 TEST_F(FileFdTest, OpenFilenameWcsInvalidMode)
 {
-    ASSERT_EQ(_mb_file_open_fd_filename_w(&_vtable, _file, L"x", -1),
-              MB_FILE_FATAL);
-    ASSERT_EQ(mb_file_error(_file), MB_FILE_ERROR_INVALID_ARGUMENT);
+    ASSERT_DEATH({
+        TestableFdFile file(&_funcs);
+        ASSERT_FALSE(file.open(L"x", static_cast<FileOpenMode>(-1)));
+    }, "Invalid mode");
 }
+#endif
 
 TEST_F(FileFdTest, OpenFstatFailed)
 {
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
-    ASSERT_EQ(_n_fstat, 1);
+    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+            .Times(1);
+
+    TestableFdFile file(&_funcs);
+    auto result = file.open(0, false);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, OpenDirectory)
 {
-    _vtable.fn_fstat = [](void *userdata, int fildes, struct stat *buf) -> int {
-        (void) fildes;
+    struct stat sb{};
+    sb.st_mode = S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO;
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_fstat;
+    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::DoAll(testing::SetArgPointee<1>(sb),
+                                     testing::Return(0)));
 
-        buf->st_mode = S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO;
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EISDIR);
-    ASSERT_EQ(_n_fstat, 1);
+    TestableFdFile file(&_funcs);
+    auto result = file.open(0, false);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::is_a_directory);
 }
 
 TEST_F(FileFdTest, OpenFile)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_OK);
-    ASSERT_EQ(_n_fstat, 1);
+    EXPECT_CALL(_funcs, fn_fstat(testing::_, testing::_))
+            .Times(1);
+
+    TestableFdFile file(&_funcs);
+    ASSERT_TRUE(file.open(0, false));
 }
 
 TEST_F(FileFdTest, CloseUnownedFile)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_close = [](void *userdata, int fd) -> int {
-        (void) fd;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_close;
-
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, false), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the close callback is not called
-    ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
-    ASSERT_EQ(_n_close, 0);
+    EXPECT_CALL(_funcs, fn_close(testing::_))
+            .Times(0);
+
+    TestableFdFile file(&_funcs, 0, false);
+    ASSERT_TRUE(file.is_open());
+    ASSERT_TRUE(file.close());
 }
 
 TEST_F(FileFdTest, CloseOwnedFile)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_close = [](void *userdata, int fd) -> int {
-        (void) fd;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_close;
-
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the close callback is called
-    ASSERT_EQ(mb_file_close(_file), MB_FILE_OK);
-    ASSERT_EQ(_n_close, 1);
+    EXPECT_CALL(_funcs, fn_close(testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(0));
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+    ASSERT_TRUE(file.close());
 }
 
 TEST_F(FileFdTest, CloseFailure)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the close callback is called
-    ASSERT_EQ(mb_file_close(_file), MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
-    ASSERT_EQ(_n_close, 1);
+    EXPECT_CALL(_funcs, fn_close(testing::_))
+            .Times(1);
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+    auto result = file.close();
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, ReadSuccess)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_read = [](void *userdata, int fd, void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_read;
-
-        return count;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
+    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::ReturnArg<2>());
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
     char c;
-    size_t n;
-    ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_OK);
-    ASSERT_EQ(n, 1);
-    ASSERT_EQ(_n_read, 1);
+    auto n = file.read(&c, 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 1u);
 }
 
 #if SIZE_MAX > SSIZE_MAX
 TEST_F(FileFdTest, ReadSuccessMaxSize)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_read = [](void *userdata, int fd, void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_read;
-
-        return count;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_read(_file, nullptr, static_cast<size_t>(SSIZE_MAX) + 1,
-              &n), MB_FILE_OK);
-    ASSERT_EQ(n, SSIZE_MAX);
-    ASSERT_EQ(_n_read, 1);
+    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::ReturnArg<2>());
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.read(nullptr, static_cast<size_t>(SSIZE_MAX) + 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), static_cast<size_t>(SSIZE_MAX));
 }
 #endif
 
 TEST_F(FileFdTest, ReadEof)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_read = [](void *userdata, int fd, void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_read;
-
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
+    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(0));
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
     char c;
-    size_t n;
-    ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_OK);
-    ASSERT_EQ(n, 0);
-    ASSERT_EQ(_n_read, 1);
+    auto n = file.read(&c, 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 0u);
 }
 
 TEST_F(FileFdTest, ReadFailure)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
+    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+            .Times(1);
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
     char c;
-    size_t n;
-    ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_FAILED);
-    ASSERT_EQ(_n_read, 1);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
+    auto n = file.read(&c, 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, ReadFailureEINTR)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_read = [](void *userdata, int fd, void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_read;
-
-        errno = EINTR;
-        return -1;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the read callback is called
+    EXPECT_CALL(_funcs, fn_read(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::SetErrnoAndReturn(EINTR, -1));
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
     char c;
-    size_t n;
-    ASSERT_EQ(mb_file_read(_file, &c, 1, &n), MB_FILE_RETRY);
-    ASSERT_EQ(_n_read, 1);
-    ASSERT_EQ(mb_file_error(_file), -EINTR);
+    auto n = file.read(&c, 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::interrupted);
 }
 
 TEST_F(FileFdTest, WriteSuccess)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_write = [](void *userdata, int fd, const void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_write;
-
-        return count;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_OK);
-    ASSERT_EQ(n, 1);
-    ASSERT_EQ(_n_write, 1);
+    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::ReturnArg<2>());
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.write("x", 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 1u);
 }
 
 #if SIZE_MAX > SSIZE_MAX
 TEST_F(FileFdTest, WriteSuccessMaxSize)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_write = [](void *userdata, int fd, const void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_write;
-
-        return count;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_write(_file, nullptr, static_cast<size_t>(SSIZE_MAX) + 1,
-                            &n), MB_FILE_OK);
-    ASSERT_EQ(n, SSIZE_MAX);
-    ASSERT_EQ(_n_write, 1);
+    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::ReturnArg<2>());
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.write(nullptr, static_cast<size_t>(SSIZE_MAX) + 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), static_cast<size_t>(SSIZE_MAX));
 }
 #endif
 
 TEST_F(FileFdTest, WriteEof)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_write = [](void *userdata, int fd, const void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_write;
-
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_OK);
-    ASSERT_EQ(n, 0);
-    ASSERT_EQ(_n_write, 1);
+    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(0));
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.write("x", 1);
+    ASSERT_TRUE(n);
+    ASSERT_EQ(n.value(), 0u);
 }
 
 TEST_F(FileFdTest, WriteFailure)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_FAILED);
-    ASSERT_EQ(_n_write, 1);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
+    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+            .Times(1);
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.write("x", 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, WriteFailureEINTR)
 {
-    _vtable.fn_fstat = _fstat_file;
-
-    _vtable.fn_write = [](void *userdata, int fd, const void *buf, size_t count)
-            -> ssize_t {
-        (void) fd;
-        (void) buf;
-        (void) count;
-
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_write;
-
-        errno = EINTR;
-        return -1;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    _funcs.report_as_regular_file();
 
     // Ensure that the write callback is called
-    size_t n;
-    ASSERT_EQ(mb_file_write(_file, "x", 1, &n), MB_FILE_RETRY);
-    ASSERT_EQ(_n_write, 1);
-    ASSERT_EQ(mb_file_error(_file), -EINTR);
+    EXPECT_CALL(_funcs, fn_write(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::SetErrnoAndReturn(EINTR, -1));
+
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto n = file.write("x", 1);
+    ASSERT_FALSE(n);
+    ASSERT_EQ(n.error(), std::errc::interrupted);
 }
 
 TEST_F(FileFdTest, SeekSuccess)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    _vtable.fn_lseek64 = [](void *userdata, int fd, off64_t offset, int whence)
-            -> off64_t {
-        (void) fd;
-        (void) offset;
-        (void) whence;
+    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(10));
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_lseek64;
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
 
-        return 10;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
-
-    uint64_t offset;
-    ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, &offset), MB_FILE_OK);
-    ASSERT_EQ(offset, 10);
-    ASSERT_EQ(_n_lseek64, 1);
+    auto offset = file.seek(10, SEEK_SET);
+    ASSERT_TRUE(offset);
+    ASSERT_EQ(offset.value(), 10u);
 }
 
 #define LFS_SIZE (10ULL * 1024 * 1024 * 1024)
 TEST_F(FileFdTest, SeekSuccessLargeFile)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    _vtable.fn_lseek64 = [](void *userdata, int fd, off64_t offset, int whence)
-            -> off64_t {
-        (void) fd;
-        (void) offset;
-        (void) whence;
+    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(LFS_SIZE));
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_lseek64;
-
-        return LFS_SIZE;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
 
     // Ensure that the types (off_t, etc.) are large enough for LFS
-    uint64_t offset;
-    ASSERT_EQ(mb_file_seek(_file, LFS_SIZE, SEEK_SET, &offset), MB_FILE_OK);
-    ASSERT_EQ(offset, LFS_SIZE);
-    ASSERT_EQ(_n_lseek64, 1);
+    auto offset = file.seek(LFS_SIZE, SEEK_SET);
+    ASSERT_TRUE(offset);
+    ASSERT_EQ(offset.value(), LFS_SIZE);
 }
 #undef LFS_SIZE
 
 TEST_F(FileFdTest, SeekFseekFailed)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    _vtable.fn_lseek64 = [](void *userdata, int fd, off64_t offset, int whence)
-            -> off64_t {
-        (void) fd;
-        (void) offset;
-        (void) whence;
+    EXPECT_CALL(_funcs, fn_lseek64(testing::_, testing::_, testing::_))
+            .Times(1);
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_lseek64;
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
 
-        errno = EIO;
-        return -1;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
-
-    ASSERT_EQ(mb_file_seek(_file, 10, SEEK_SET, nullptr), MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
-    ASSERT_EQ(_n_lseek64, 1);
+    auto offset = file.seek(10, SEEK_SET);
+    ASSERT_FALSE(offset);
+    ASSERT_EQ(offset.error(), std::errc::io_error);
 }
 
 TEST_F(FileFdTest, TruncateSuccess)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    _vtable.fn_ftruncate64 = [](void *userdata, int fd, off_t length) -> int {
-        (void) fd;
-        (void) length;
+    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+            .Times(1)
+            .WillOnce(testing::Return(0));
 
-        FileFdTest *test = static_cast<FileFdTest *>(userdata);
-        ++test->_n_ftruncate64;
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
 
-        return 0;
-    };
-
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
-
-    ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_OK);
-    ASSERT_EQ(_n_ftruncate64, 1);
+    ASSERT_TRUE(file.truncate(1024));
 }
 
 TEST_F(FileFdTest, TruncateFailed)
 {
-    _vtable.fn_fstat = _fstat_file;
+    _funcs.report_as_regular_file();
 
-    ASSERT_EQ(_mb_file_open_fd(&_vtable, _file, 0, true), MB_FILE_OK);
+    EXPECT_CALL(_funcs, fn_ftruncate64(testing::_, testing::_))
+            .Times(1);
 
-    ASSERT_EQ(mb_file_truncate(_file, 1024), MB_FILE_FAILED);
-    ASSERT_EQ(mb_file_error(_file), -EIO);
-    ASSERT_EQ(_n_ftruncate64, 1);
+    TestableFdFile file(&_funcs, 0, true);
+    ASSERT_TRUE(file.is_open());
+
+    auto result = file.truncate(1024);
+    ASSERT_FALSE(result);
+    ASSERT_EQ(result.error(), std::errc::io_error);
 }

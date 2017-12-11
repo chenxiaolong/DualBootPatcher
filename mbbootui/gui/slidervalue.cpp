@@ -8,6 +8,8 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbbootui/gui/slidervalue"
+
 GUISliderValue::GUISliderValue(xml_node<>* node) : GUIObject(node)
 {
     xml_attribute<>* attr;

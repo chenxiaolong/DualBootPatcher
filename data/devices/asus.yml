@@ -31,6 +31,13 @@
       - /dev/block/by-name/recovery
       - /dev/block/mmcblk0p2
 
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    theme: portrait_hdpi
+
 - name: ASUS Zenfone 2 Laser - ZE601KL
   id: Z00T
   codenames:
@@ -142,6 +149,356 @@
       # modem
       - /dev/block/bootdevice/by-name/modem
       - /dev/block/mmcblk0p41
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: ASUS Zenfone 2 Laser - ZE500KL
+  id: Z00ED
+  codenames:
+    - ASUS_Z00ED
+    - Z00ED
+    - ASUS_Z00E_2
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p42
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p41
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p43
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p34
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p35
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p38
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: ASUS ZenFone 3 Deluxe - ZS570KL
+  id: Z016
+  codenames:
+    - ASUS_Z016D
+    - WW_Z016
+    - WW_Z016_S
+    - Z016
+    - Z016_1
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/624000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/624000.ufshc/by-name/system
+      - /dev/block/sde18
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/624000.ufshc/by-name/cache
+      - /dev/block/sda6
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/624000.ufshc/by-name/userdata
+      - /dev/block/sda16
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/624000.ufshc/by-name/boot
+      - /dev/block/sde17
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/624000.ufshc/by-name/recovery
+      - /dev/block/sde19
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/platform/soc/624000.ufshc/by-name/modem
+      - /dev/block/sde11
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/hyp
+      - /dev/block/bootdevice/by-name/hypbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/cmnlib64
+      - /dev/block/bootdevice/by-name/cmnlib64bak
+      - /dev/block/bootdevice/by-name/cmnlib
+      - /dev/block/bootdevice/by-name/cmnlibbak
+      - /dev/block/bootdevice/by-name/lksecapp
+      - /dev/block/bootdevice/by-name/lksecappbak
+      - /dev/block/bootdevice/by-name/devcfg
+      - /dev/block/bootdevice/by-name/devcfgbak
+      - /dev/block/bootdevice/by-name/keymaster
+      - /dev/block/bootdevice/by-name/keymasterbak
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/devices/soc/900000.qcom,cmdss_mdp/900000.qcom,cmdss_mdp:qcom,cmdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+
+- name: ASUS ZenFone 3 ZE520KL
+  id: Z017
+  codenames:
+    - ASUS_Z017D
+    - ASUS_Z017D_1
+    - Z017
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p66
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p65
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p67
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p58
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p59
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/mmcblk0p62
+      # asusfw
+      - /dev/block/bootdevice/by-name/asusfw
+      - /dev/block/platform/soc/7824900.sdhci/by-name/asusfw
+      - /dev/block/mmcblk0p60
+      # dsp
+      - /dev/block/bootdevice/by-name/dsp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dsp
+      - /dev/block/mmcblk0p54
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/cmnlib64
+      - /dev/block/bootdevice/by-name/cmnlib64bak
+      - /dev/block/bootdevice/by-name/cmnlib
+      - /dev/block/bootdevice/by-name/cmnlibbak
+      - /dev/block/bootdevice/by-name/lksecapp
+      - /dev/block/bootdevice/by-name/lksecappbak
+      - /dev/block/bootdevice/by-name/devcfg
+      - /dev/block/bootdevice/by-name/devcfgbak
+      - /dev/block/bootdevice/by-name/keymaster
+      - /dev/block/bootdevice/by-name/keymasterbak
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/devices/soc/1a00000.qcom,mdss_mdp/1a00000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+
+- name: ASUS ZenFone 3 ZE552KL
+  id: Z012
+  codenames:
+    - ASUS_Z012D
+    - Z012
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p66
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p65
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p67
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p58
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p59
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/mmcblk0p62
+      # asusfw
+      - /dev/block/bootdevice/by-name/asusfw
+      - /dev/block/platform/soc/7824900.sdhci/by-name/asusfw
+      - /dev/block/mmcblk0p60
+      # dsp
+      - /dev/block/bootdevice/by-name/dsp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dsp
+      - /dev/block/mmcblk0p54
+      # Other
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/cmnlib64
+      - /dev/block/bootdevice/by-name/cmnlib64bak
+      - /dev/block/bootdevice/by-name/cmnlib
+      - /dev/block/bootdevice/by-name/cmnlibbak
+      - /dev/block/bootdevice/by-name/lksecapp
+      - /dev/block/bootdevice/by-name/lksecappbak
+      - /dev/block/bootdevice/by-name/devcfg
+      - /dev/block/bootdevice/by-name/devcfgbak
+      - /dev/block/bootdevice/by-name/keymaster
+      - /dev/block/bootdevice/by-name/keymasterbak
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_SCREEN_BLANK_ON_BOOT
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/devices/soc/1a00000.qcom,mdss_mdp/1a00000.qcom,mdss_mdp:qcom,mdss_fb_primary/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 149
+
+- name: ASUS Zenfone Max 
+  id: Z010D
+  codenames:
+    - ASUS_Z010D
+    - Z010D
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p43
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p42
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p44
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p35
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p36
+    extra:
+      # modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p39
       # Other
       - /dev/block/bootdevice/by-name/aboot
       - /dev/block/bootdevice/by-name/abootbak

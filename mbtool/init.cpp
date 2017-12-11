@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "init.h"
@@ -40,21 +40,18 @@
 #include "minizip/ioapi_buf.h"
 #include "minizip/unzip.h"
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/dir.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
 #include "mbutil/cmdline.h"
 #include "mbutil/command.h"
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/mount.h"
 #include "mbutil/path.h"
@@ -89,8 +86,15 @@
 #error Unknown PCRE path for architecture
 #endif
 
+#define LOG_TAG "mbtool/init"
+
+using namespace mb::device;
+
 namespace mb
 {
+
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 static pid_t daemon_pid = -1;
 
@@ -186,7 +190,7 @@ static bool stop_daemon()
     LOGV("Stopping daemon...");
 
     // Clear pid when returning
-    auto clear_pid = util::finally([]{
+    auto clear_pid = finally([]{
         daemon_pid = -1;
     });
 
@@ -195,17 +199,17 @@ static bool stop_daemon()
     return wait_for_pid("daemon", daemon_pid) != -1;
 }
 
-static util::CmdlineIterAction set_kernel_properties_cb(const char *name,
-                                                        const char *value,
+static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
+                                                        const optional<std::string> &value,
                                                         void *userdata)
 {
     (void) userdata;
 
-    if (mb_starts_with(name, "androidboot.") && strlen(name) > 12 && value) {
+    if (starts_with(name, "androidboot.") && name.size() > 12 && value) {
         char buf[PROP_NAME_MAX];
-        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name + 12);
-        if (n >= 0 && n < (int) sizeof(buf)) {
-            property_set(buf, value);
+        int n = snprintf(buf, sizeof(buf), "ro.boot.%s", name.c_str() + 12);
+        if (n >= 0 && n < static_cast<int>(sizeof(buf))) {
+            property_set(buf, *value);
         }
     }
 
@@ -273,8 +277,8 @@ static std::string get_rom_id()
 {
     std::string rom_id;
 
-    if (!util::file_first_line("/romid", &rom_id)) {
-        return std::string();
+    if (!util::file_first_line("/romid", rom_id)) {
+        return {};
     }
 
     return rom_id;
@@ -314,7 +318,7 @@ static bool fix_file_contexts(const char *path)
     std::string new_path(path);
     new_path += ".new";
 
-    autoclose::file fp_old(autoclose::fopen(path, "rb"));
+    ScopedFILE fp_old(fopen(path, "rb"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -325,7 +329,7 @@ static bool fix_file_contexts(const char *path)
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "wb"));
+    ScopedFILE fp_new(fopen(new_path.c_str(), "wb"), fclose);
     if (!fp_new) {
         LOGE("%s: Failed to open for writing: %s",
              new_path.c_str(), strerror(errno));
@@ -336,17 +340,17 @@ static bool fix_file_contexts(const char *path)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
     while ((read = getline(&line, &len, fp_old.get())) >= 0) {
-        if (mb_starts_with(line, "/data/media(")
-                && !strstr(line, "<<none>>")) {
+        if (starts_with(line, "/data/media(") && !strstr(line, "<<none>>")) {
             fputc('#', fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("%s: Failed to write file: %s",
                  new_path.c_str(), strerror(errno));
             return false;
@@ -377,23 +381,23 @@ static bool fix_binary_file_contexts(const char *path)
     SigVerifyResult result;
     result = verify_signature("/sbin/file-contexts-tool",
                               "/sbin/file-contexts-tool.sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", "/sbin/file-contexts-tool");
         return false;
     }
 
-    const char *decompile_argv[] = {
+    std::vector<std::string> decompile_argv{
         "/sbin/file-contexts-tool",  "decompile", "-p", PCRE_PATH,
-        path, tmp_path.c_str(), nullptr
+        path, tmp_path
     };
-    const char *compile_argv[] = {
+    std::vector<std::string> compile_argv{
         "/sbin/file-contexts-tool", "compile", "-p", PCRE_PATH,
-        tmp_path.c_str(), new_path.c_str(), nullptr
+        tmp_path, new_path
     };
 
     // Decompile binary file_contexts to temporary file
     int ret = util::run_command(decompile_argv[0], decompile_argv,
-                                nullptr, nullptr, nullptr, nullptr);
+                                {}, {}, nullptr, nullptr);
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to decompile file_contexts", path);
         return false;
@@ -407,7 +411,7 @@ static bool fix_binary_file_contexts(const char *path)
 
     // Recompile binary file_contexts
     ret = util::run_command(compile_argv[0], compile_argv,
-                            nullptr, nullptr, nullptr, nullptr);
+                            {}, {}, nullptr, nullptr);
     if (ret < 0 || !WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
         LOGE("%s: Failed to compile binary file_contexts", tmp_path.c_str());
         unlink(tmp_path.c_str());
@@ -432,7 +436,7 @@ static bool is_completely_whitespace(const char *str)
 
 static bool add_mbtool_services(bool enable_appsync)
 {
-    autoclose::file fp_old(autoclose::fopen("/init.rc", "rb"));
+    ScopedFILE fp_old(fopen("/init.rc", "rb"), fclose);
     if (!fp_old) {
         if (errno == ENOENT) {
             return true;
@@ -442,7 +446,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
     }
 
-    autoclose::file fp_new(autoclose::fopen("/init.rc.new", "wb"));
+    ScopedFILE fp_new(fopen("/init.rc.new", "wb"), fclose);
     if (!fp_new) {
         LOGE("Failed to open /init.rc.new for writing: %s",
              strerror(errno));
@@ -453,7 +457,7 @@ static bool add_mbtool_services(bool enable_appsync)
     size_t len = 0;
     ssize_t read = 0;
 
-    auto free_line = util::finally([&]{
+    auto free_line = finally([&]{
         free(line);
     });
 
@@ -467,7 +471,7 @@ static bool add_mbtool_services(bool enable_appsync)
         }
 
         if (enable_appsync) {
-            if (mb_starts_with(line, "service")) {
+            if (starts_with(line, "service")) {
                 inside_service = strstr(line, "installd") != nullptr;
             } else if (inside_service && is_completely_whitespace(line)) {
                 inside_service = false;
@@ -488,7 +492,8 @@ static bool add_mbtool_services(bool enable_appsync)
             fputs("import /init.multiboot.rc\n", fp_new.get());
         }
 
-        if (fwrite(line, 1, read, fp_new.get()) != (std::size_t) read) {
+        if (fwrite(line, 1, static_cast<size_t>(read), fp_new.get())
+                != static_cast<size_t>(read)) {
             LOGE("Failed to write to /init.rc.new: %s", strerror(errno));
             return false;
         }
@@ -496,7 +501,7 @@ static bool add_mbtool_services(bool enable_appsync)
         // Disable installd. mbtool's appsync will spawn it on demand
         if (enable_appsync
                 && !has_disabled_installd
-                && mb_starts_with(line, "service")
+                && starts_with(line, "service")
                 && strstr(line, "installd")) {
             fputs("    disabled\n", fp_new.get());
         }
@@ -507,7 +512,7 @@ static bool add_mbtool_services(bool enable_appsync)
     }
 
     // Create /init.multiboot.rc
-    autoclose::file fp_multiboot(autoclose::fopen("/init.multiboot.rc", "wb"));
+    ScopedFILE fp_multiboot(fopen("/init.multiboot.rc", "wb"), fclose);
     if (!fp_multiboot) {
         LOGE("Failed to open /init.multiboot.rc for writing: %s",
              strerror(errno));
@@ -540,7 +545,7 @@ static bool add_mbtool_services(bool enable_appsync)
 
 static bool write_fstab_hack(const char *fstab)
 {
-    autoclose::file fp_fstab(autoclose::fopen(fstab, "abe"));
+    ScopedFILE fp_fstab(fopen(fstab, "abe"), fclose);
     if (!fp_fstab) {
         LOGE("%s: Failed to open for writing: %s",
              fstab, strerror(errno));
@@ -561,7 +566,7 @@ static bool write_fstab_hack(const char *fstab)
 
 static bool strip_manual_mounts()
 {
-    autoclose::dir dir(autoclose::opendir("/"));
+    ScopedDIR dir(opendir("/"), closedir);
     if (!dir) {
         return true;
     }
@@ -570,14 +575,14 @@ static bool strip_manual_mounts()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb_ends_with(ent->d_name, ".rc")) {
+                || !ends_with(ent->d_name, ".rc")) {
             continue;
         }
 
         std::string path("/");
         path += ent->d_name;
 
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
         if (!fp) {
             LOGE("Failed to open %s for reading: %s",
                  path.c_str(), strerror(errno));
@@ -588,7 +593,7 @@ static bool strip_manual_mounts()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -624,7 +629,7 @@ static bool strip_manual_mounts()
         std::string new_path(path);
         new_path += ".new";
 
-        autoclose::file fp_new(autoclose::fopen(new_path.c_str(), "w"));
+        ScopedFILE fp_new(fopen(new_path.c_str(), "w"), fclose);
         if (!fp_new) {
             LOGE("Failed to open %s for writing: %s",
                  new_path.c_str(), strerror(errno));
@@ -647,50 +652,31 @@ static bool strip_manual_mounts()
     return true;
 }
 
-static std::string encode_list(const char * const *list)
+static std::string encode_list(const std::vector<std::string> &list)
 {
-    if (!list) {
-        return std::string();
-    }
-
-    // We processing char-by-char, so avoid unnecessary reallocations
-    std::size_t size = 0;
-    std::size_t list_size = 0;
-    for (auto iter = list; *iter; ++iter) {
-        std::size_t item_length = strlen(*iter);
-        size += item_length;
-        size += std::count(*iter, *iter + item_length, ',');
-        ++list_size;
-    }
-    if (size == 0) {
-        return std::string();
-    }
-    size += list_size - 1;
-
     std::string result;
-    result.reserve(size);
 
     bool first = true;
-    for (auto iter = list; *iter; ++iter) {
+    for (auto const &item : list) {
         if (!first) {
             result += ',';
         } else {
             first = false;
         }
-        for (auto c = *iter; *c; ++c) {
-            if (*c == ',' || *c == '\\') {
+        for (auto c : item) {
+            if (c == ',' || c == '\\') {
                 result += '\\';
             }
-            result += *c;
+            result += c;
         }
     }
 
     return result;
 }
 
-static bool add_props_to_default_prop(struct Device *device)
+static bool add_props_to_default_prop(const Device &device)
 {
-    autoclose::file fp(autoclose::fopen(DEFAULT_PROP_PATH, "r+b"));
+    ScopedFILE fp(fopen(DEFAULT_PROP_PATH, "r+b"), fclose);
     if (!fp) {
         if (errno == ENOENT) {
             return true;
@@ -720,44 +706,40 @@ static bool add_props_to_default_prop(struct Device *device)
 
     // Block device paths (deprecated)
     fprintf(fp.get(), "ro.patcher.blockdevs.base=%s\n",
-            encode_list(mb_device_block_dev_base_dirs(device)).c_str());
+            encode_list(device.block_dev_base_dirs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.system=%s\n",
-            encode_list(mb_device_system_block_devs(device)).c_str());
+            encode_list(device.system_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.cache=%s\n",
-            encode_list(mb_device_cache_block_devs(device)).c_str());
+            encode_list(device.cache_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.data=%s\n",
-            encode_list(mb_device_data_block_devs(device)).c_str());
+            encode_list(device.data_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.boot=%s\n",
-            encode_list(mb_device_boot_block_devs(device)).c_str());
+            encode_list(device.boot_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.recovery=%s\n",
-            encode_list(mb_device_recovery_block_devs(device)).c_str());
+            encode_list(device.recovery_block_devs()).c_str());
     fprintf(fp.get(), "ro.patcher.blockdevs.extra=%s\n",
-            encode_list(mb_device_extra_block_devs(device)).c_str());
+            encode_list(device.extra_block_devs()).c_str());
 
     return true;
 }
 
-static bool symlink_base_dir(Device *device)
+static bool symlink_base_dir(const Device &device)
 {
     struct stat sb;
     if (stat(UNIVERSAL_BY_NAME_DIR, &sb) == 0) {
         return true;
     }
 
-    std::vector<std::string> base_dirs;
-    auto devs = mb_device_block_dev_base_dirs(device);
-    if (devs) {
-        for (auto it = devs; *it; ++it) {
-            if (util::path_compare(*it, UNIVERSAL_BY_NAME_DIR) != 0
-                    && stat(*it, &sb) == 0 && S_ISDIR(sb.st_mode)) {
-                if (symlink(*it, UNIVERSAL_BY_NAME_DIR) < 0) {
-                    LOGW("Failed to symlink %s to %s",
-                         *it, UNIVERSAL_BY_NAME_DIR);
-                } else {
-                    LOGE("Symlinked %s to %s",
-                         *it, UNIVERSAL_BY_NAME_DIR);
-                    return true;
-                }
+    for (auto const &path : device.block_dev_base_dirs()) {
+        if (util::path_compare(path, UNIVERSAL_BY_NAME_DIR) != 0
+                && stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)) {
+            if (symlink(path.c_str(), UNIVERSAL_BY_NAME_DIR) < 0) {
+                LOGW("Failed to symlink %s to %s",
+                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
+            } else {
+                LOGE("Symlinked %s to %s",
+                     path.c_str(), UNIVERSAL_BY_NAME_DIR);
+                return true;
             }
         }
     }
@@ -781,7 +763,7 @@ static std::string find_fstab()
     }
 
     // Otherwise, try to find it in the /init*.rc files
-    autoclose::dir dir(autoclose::opendir("/"));
+    ScopedDIR dir(opendir("/"), closedir);
     if (!dir) {
         return std::string();
     }
@@ -792,15 +774,15 @@ static std::string find_fstab()
     while ((ent = readdir(dir.get()))) {
         // Look for *.rc files
         if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0
-                || !mb_starts_with(ent->d_name, "init")
-                || !mb_ends_with(ent->d_name, ".rc")) {
+                || !starts_with(ent->d_name, "init")
+                || !ends_with(ent->d_name, ".rc")) {
             continue;
         }
 
         std::string path("/");
         path += ent->d_name;
 
-        autoclose::file fp(autoclose::fopen(path.c_str(), "r"));
+        ScopedFILE fp(fopen(path.c_str(), "r"), fclose);
         if (!fp) {
             continue;
         }
@@ -809,7 +791,7 @@ static std::string find_fstab()
         size_t len = 0;
         ssize_t read = 0;
 
-        auto free_line = util::finally([&]{
+        auto free_line = finally([&]{
             free(line);
         });
 
@@ -842,15 +824,12 @@ static std::string find_fstab()
 
             // Replace ${ro.hardware}
             if (fstab.find("${ro.hardware}") != std::string::npos) {
-                std::string hardware;
-                util::kernel_cmdline_get_option("androidboot.hardware", &hardware);
-                util::replace_all(&fstab, "${ro.hardware}", hardware);
+                util::replace_all(fstab, "${ro.hardware}", hardware);
             }
 
             LOGD("Found fstab during search: %s", fstab.c_str());
 
             // Check if fstab exists
-            struct stat sb;
             if (stat(fstab.c_str(), &sb) < 0) {
                 LOGE("Failed to stat fstab %s: %s",
                      fstab.c_str(), strerror(errno));
@@ -877,7 +856,7 @@ static std::string find_fstab()
 
 static unsigned long get_api_version()
 {
-    return util::property_file_get_unum<unsigned long>(
+    return util::property_file_get_num<unsigned long>(
             "/system/build.prop", "ro.build.version.sdk", 0);
 }
 
@@ -886,7 +865,7 @@ static bool create_layout_version()
     // Prevent installd from dying because it can't unmount /data/media for
     // multi-user migration. Since <= 4.2 devices aren't supported anyway,
     // we'll bypass this.
-    autoclose::file fp(autoclose::fopen("/data/.layout_version", "wbe"));
+    ScopedFILE fp(fopen("/data/.layout_version", "wbe"), fclose);
     if (fp) {
         const char *layout_version;
         if (get_api_version() >= 21) {
@@ -960,7 +939,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_zip = util::finally([&]{
+    auto close_zip = finally([&]{
         unzClose(uf);
     });
 
@@ -974,7 +953,7 @@ static bool extract_zip(const char *source, const char *target)
         return false;
     }
 
-    auto close_inner_file = util::finally([&]{
+    auto close_inner_file = finally([&]{
         unzCloseCurrentFile(uf);
     });
 
@@ -994,7 +973,8 @@ static bool extract_zip(const char *source, const char *target)
     int bytes_read;
 
     while ((bytes_read = unzReadCurrentFile(uf, buf, sizeof(buf))) > 0) {
-        size_t bytes_written = fwrite(buf, 1, bytes_read, fp);
+        size_t bytes_written = fwrite(buf, 1, static_cast<size_t>(bytes_read),
+                                      fp);
         if (bytes_written == 0) {
             bool ret = !ferror(fp);
             fclose(fp);
@@ -1023,7 +1003,7 @@ static bool launch_boot_menu()
 
     if (stat(BOOT_UI_SKIP_PATH, &sb) == 0) {
         std::string skip_rom;
-        util::file_first_line(BOOT_UI_SKIP_PATH, &skip_rom);
+        util::file_first_line(BOOT_UI_SKIP_PATH, skip_rom);
 
         std::string rom_id = get_rom_id();
 
@@ -1054,7 +1034,7 @@ static bool launch_boot_menu()
     // Verify boot UI signature
     SigVerifyResult result;
     result = verify_signature(BOOT_UI_ZIP_PATH, BOOT_UI_ZIP_PATH ".sig");
-    if (result != SigVerifyResult::VALID) {
+    if (result != SigVerifyResult::Valid) {
         LOGE("%s: Invalid signature", BOOT_UI_ZIP_PATH);
         return false;
     }
@@ -1064,7 +1044,7 @@ static bool launch_boot_menu()
         return false;
     }
 
-    auto clean_up = util::finally([]{
+    auto clean_up = finally([]{
         if (!util::delete_recursive(BOOT_UI_PATH)) {
             LOGW("%s: Failed to recursively delete: %s",
                  BOOT_UI_PATH, strerror(errno));
@@ -1078,9 +1058,8 @@ static bool launch_boot_menu()
 
     start_daemon();
 
-    const char *argv[] = { BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH, nullptr };
-    int ret = util::run_command(argv[0], argv, nullptr, nullptr, nullptr,
-                                nullptr);
+    std::vector<std::string> argv{ BOOT_UI_EXEC_PATH, BOOT_UI_ZIP_PATH };
+    int ret = util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     if (ret < 0) {
         LOGE("%s: Failed to execute: %s", BOOT_UI_EXEC_PATH, strerror(errno));
     } else if (WIFEXITED(ret)) {
@@ -1187,7 +1166,7 @@ int init_main(int argc, char *argv[])
     open_devnull_stdio();
 
     // Log to kmsg
-    log::log_set_logger(std::make_shared<log::KmsgLogger>(true));
+    log::set_logger(std::make_shared<log::KmsgLogger>(true));
     if (klogctl(KLOG_CONSOLE_LEVEL, nullptr, 7) < 0) {
         LOGE("Failed to set loglevel: %s", strerror(errno));
     }
@@ -1196,20 +1175,22 @@ int init_main(int argc, char *argv[])
          version(), git_version());
 
     std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    util::file_read_all(DEVICE_JSON_PATH, contents);
     contents.push_back('\0');
 
     // Start probing for devices so we have somewhere to write logs for
     // critical_failure()
     device_init(false);
 
-    MbDeviceJsonError error;
-    Device *device = mb_device_new_from_json((char *) contents.data(), &error);
-    if (!device) {
+    Device device;
+    JsonError error;
+
+    if (!device_from_json(
+            reinterpret_cast<char *>(contents.data()), device, error)) {
         LOGE("%s: Failed to load device definition", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
-    } else if (mb_device_validate(device) != 0) {
+    } else if (device.validate()) {
         LOGE("%s: Device definition validation failed", DEVICE_JSON_PATH);
         critical_failure();
         return EXIT_FAILURE;
@@ -1246,11 +1227,12 @@ int init_main(int argc, char *argv[])
     LOGV("ROM ID is: %s", rom_id.c_str());
 
     // Mount system, cache, and external SD from fstab file
-    int flags = MOUNT_FLAG_REWRITE_FSTAB
-            | MOUNT_FLAG_MOUNT_SYSTEM
-            | MOUNT_FLAG_MOUNT_CACHE
-            | MOUNT_FLAG_MOUNT_DATA
-            | MOUNT_FLAG_MOUNT_EXTERNAL_SD;
+    MountFlags flags =
+            MountFlag::RewriteFstab
+            | MountFlag::MountSystem
+            | MountFlag::MountCache
+            | MountFlag::MountData
+            | MountFlag::MountExternalSd;
     if (!mount_fstab(fstab.c_str(), rom, device, flags)) {
         LOGE("Failed to mount fstab");
         critical_failure();
@@ -1267,8 +1249,8 @@ int init_main(int argc, char *argv[])
     // Mount selinuxfs
     selinux_mount();
     // Load pre-boot policy
-    patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE, SELINUX_LOAD_FILE,
-                   SELinuxPatch::PRE_BOOT);
+    patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE, util::SELINUX_LOAD_FILE,
+                   SELinuxPatch::PreBoot);
 
     // Mount ROM (bind mount directory or mount images, etc.)
     if (!mount_rom(rom)) {
@@ -1305,11 +1287,12 @@ int init_main(int argc, char *argv[])
 
     // Patch SELinux policy
     struct stat sb;
-    if (stat(SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
-        if (!patch_sepolicy(SELINUX_DEFAULT_POLICY_FILE,
-                            SELINUX_DEFAULT_POLICY_FILE,
-                            SELinuxPatch::MAIN)) {
-            LOGW("Failed to patch " SELINUX_DEFAULT_POLICY_FILE);
+    if (stat(util::SELINUX_DEFAULT_POLICY_FILE, &sb) == 0) {
+        if (!patch_sepolicy(util::SELINUX_DEFAULT_POLICY_FILE,
+                            util::SELINUX_DEFAULT_POLICY_FILE,
+                            SELinuxPatch::Main)) {
+            LOGW("%s: Failed to patch policy",
+                 util::SELINUX_DEFAULT_POLICY_FILE);
             critical_failure();
             return EXIT_FAILURE;
         }

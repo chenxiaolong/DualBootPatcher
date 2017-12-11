@@ -177,11 +177,13 @@ static int vk_init(struct ev *e)
     printf("Event object: %s\n", e->deviceName);
 #endif
 
-    if (tw_whitelist_input) {
-        if (strcmp(e->deviceName, tw_whitelist_input) != 0) {
+    auto const &input_whitelist = tw_device.tw_input_whitelist();
+    auto const &input_blacklist = tw_device.tw_input_blacklist();
+    if (!input_whitelist.empty()) {
+        if (e->deviceName != input_whitelist) {
             e->ignored = 1;
         }
-    } else if (!tw_input_blacklist) {
+    } else if (input_blacklist.empty()) {
         // Blacklist these "input" devices
         if (strcmp(e->deviceName, "bma250") == 0
                 || strcmp(e->deviceName, "bma150") == 0
@@ -192,7 +194,7 @@ static int vk_init(struct ev *e)
             e->ignored = 1;
         }
     } else {
-        char* bl = strdup(tw_input_blacklist);
+        char* bl = strdup(input_blacklist.c_str());
         char* blacklist = strtok(bl, "\n");
 
         while (blacklist != nullptr) {
@@ -409,7 +411,7 @@ static int vk_tp_to_screen(struct position *p, int *x, int *y)
 
     int fb_width;
     int fb_height;
-    if (!(tw_flags & TW_FLAG_TOUCHSCREEN_SWAP_XY)) {
+    if (!(tw_device.tw_flags() & mb::device::TwFlag::TouchscreenSwapXY)) {
         fb_width = gr_fb_width();
         fb_height = gr_fb_height();
     } else {
@@ -486,13 +488,13 @@ static int vk_modify(struct ev *e, struct input_event *ev)
         case ABS_MT_POSITION: //2a
             e->mt_p.synced = 0x03;
             if (ev->value == (1 << 31)) {
-                if (!(tw_flags & TW_FLAG_IGNORE_MT_POSITION_0)) {
+                if (!(tw_device.tw_flags() & mb::device::TwFlag::IgnoreMtPosition0)) {
                     e->mt_p.x = 0;
                     e->mt_p.y = 0;
                     lastWasSynReport = 1;
                 }
 #ifdef _EVENT_LOGGING
-                if (!(tw_flags & TW_FLAG_IGNORE_MT_POSITION_0)) {
+                if (!(tw_device.tw_flags() & mb::device::TwFlag::IgnoreMtPosition0)) {
                     printf("EV: %s => EV_ABS  ABS_MT_POSITION  %d, set x and y to 0 and lastWasSynReport to 1\n", e->deviceName, ev->value);
                 } else {
                     printf("Ignoring ABS_MT_POSITION 0\n", e->deviceName, ev->value);
@@ -510,7 +512,7 @@ static int vk_modify(struct ev *e, struct input_event *ev)
 
         case ABS_MT_TOUCH_MAJOR: //30
             if (ev->value == 0) {
-                if (!(tw_flags & TW_FLAG_IGNORE_MAJOR_AXIS_0)) {
+                if (!(tw_device.tw_flags() & mb::device::TwFlag::IgnoreMajorAxis0)) {
                     // We're in a touch release, although some devices will still send positions as well
                     e->mt_p.x = 0;
                     e->mt_p.y = 0;
@@ -569,7 +571,7 @@ static int vk_modify(struct ev *e, struct input_event *ev)
             break;
 
         case ABS_MT_TRACKING_ID: //39
-            if (tw_flags & TW_FLAG_IGNORE_ABS_MT_TRACKING_ID) {
+            if (tw_device.tw_flags() & mb::device::TwFlag::IgnoreAbsMtTrackingId) {
 #ifdef _EVENT_LOGGING
                 printf("EV: %s => EV_ABS ABS_MT_TRACKING_ID %d ignored\n", e->deviceName, ev->value);
 #endif
@@ -688,15 +690,15 @@ static int vk_modify(struct ev *e, struct input_event *ev)
         return 1;
     }
 
-    if (tw_flags & TW_FLAG_TOUCHSCREEN_SWAP_XY) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::TouchscreenSwapXY) {
         x ^= y;
         y ^= x;
         x ^= y;
     }
-    if (tw_flags & TW_FLAG_TOUCHSCREEN_FLIP_X) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::TouchscreenFlipX) {
         x = gr_fb_width() - x;
     }
-    if (tw_flags & TW_FLAG_TOUCHSCREEN_FLIP_Y) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::TouchscreenFlipY) {
         y = gr_fb_height() - y;
     }
 

@@ -1,32 +1,3 @@
-set(MBP_IO_SOURCES
-    src/delete.cpp
-    src/directory.cpp
-    src/error.cpp
-    src/path.cpp
-    src/private/string.cpp
-)
-
-if(WIN32)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/win32/delete.cpp
-        src/win32/error.cpp
-    )
-elseif(ANDROID)
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-else()
-    list(
-        APPEND
-        MBP_IO_SOURCES
-        src/posix/delete.cpp
-    )
-endif()
-
 # Compatibility library for nftw()/ftw() on API 17
 if(${MBP_BUILD_TARGET} STREQUAL android-app)
     add_library(
@@ -35,57 +6,93 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app)
         external/android-libc/ftw.cpp
     )
 
+    target_compile_options(
+        c_compat
+        PRIVATE
+        -Wno-shorten-64-to-32 -Wno-sign-conversion
+    )
+
     target_include_directories(
         c_compat
         PRIVATE external/android-libc
     )
 
-    set_target_properties(
+    target_link_libraries(
         c_compat
-        PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
+        PRIVATE
+        interface.global.CXXVersion
     )
 endif()
 
-if(MBP_TARGET_HAS_BUILDS)
-    add_library(mbpio-static STATIC ${MBP_IO_SOURCES})
+set(variants)
 
-    # Only build library if needed
-    set_target_properties(mbpio-static PROPERTIES EXCLUDE_FROM_ALL 1)
+if(MBP_TARGET_HAS_BUILDS
+        AND NOT ${MBP_BUILD_TARGET} STREQUAL hosttools)
+    list(APPEND variants static)
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL android-app
+        OR ${MBP_BUILD_TARGET} STREQUAL desktop)
+    list(APPEND variants shared)
+endif()
 
-    target_include_directories(
-        mbpio-static
-        PUBLIC include
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbpio-${variant})
+    string(TOUPPER ${variant} uvariant)
+
+    # Build library
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/delete.cpp
+        src/directory.cpp
+        src/error.cpp
+        src/path.cpp
     )
 
-    target_compile_definitions(
-        mbpio-static
-        PRIVATE
-        -DMB_LIBRARY
-    )
-
-    set_target_properties(
-        mbpio-static
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbpio-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
+    if(WIN32)
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/win32/delete.cpp
+        )
+    else()
+        target_sources(
+            ${lib_target}
+            PRIVATE
+            src/posix/delete.cpp
         )
     endif()
 
+    # Includes
+    target_include_directories(${lib_target} PUBLIC include)
+
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
+    endif()
+
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbpio)
+
+    # Link dependencies
     target_link_libraries(
-        mbpio-static
-        # Private dependency to pull in the libmbcommon headers. We can't make
-        # this public because libmbpio is a bad legacy library that gets
-        # included in both shared and static versions of libmbpio.
-        PRIVATE mbcommon-static
+        ${lib_target}
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
     )
-endif()
+
+    # Install shared library
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        )
+    endif()
+endforeach()

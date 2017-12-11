@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "bootimg_util.h"
@@ -27,46 +27,49 @@
 
 #include "mblog/logging.h"
 
+#define LOG_TAG "mbtool/bootimg_util"
+
 #define BUF_SIZE    10240
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
+using namespace mb::bootimg;
+
 namespace mb
 {
 
-bool bi_copy_data_to_fd(MbBiReader *bir, int fd)
+bool bi_copy_data_to_fd(Reader &reader, int fd)
 {
-    int ret;
     char buf[BUF_SIZE];
-    size_t n_read;
-    ssize_t n_written;
-    size_t remain;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
-        remain = n_read;
+    while (true) {
+        auto n_read = reader.read_data(buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read boot image entry data: %s",
+                 n_read.error().message().c_str());
+            return false;
+        } else if (n_read.value() == 0) {
+            break;
+        }
+
+        size_t remain = n_read.value();
 
         while (remain > 0) {
-            n_written = write(fd, buf + (n_read - remain), remain);
+            ssize_t n_written = write(
+                    fd, buf + (n_read.value() - remain), remain);
             if (n_written <= 0) {
                 LOGE("Failed to write data: %s", strerror(errno));
                 return false;
             }
 
-            remain -= n_written;
+            remain -= static_cast<size_t>(n_written);
         }
-    }
-
-    if (ret != MB_BI_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             mb_bi_reader_error_string(bir));
-        return false;
     }
 
     return true;
 }
 
-bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
+bool bi_copy_file_to_data(const std::string &path, Writer &writer)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -81,12 +84,10 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        size_t bytes_written;
-
-        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != MB_BI_OK
-                || bytes_written != n) {
+        auto bytes_written = writer.write_data(buf, n);
+        if (!bytes_written) {
             LOGE("Failed to write entry data: %s",
-                 mb_bi_writer_error_string(biw));
+                 bytes_written.error().message().c_str());
             return false;
         }
 
@@ -103,7 +104,7 @@ bool bi_copy_file_to_data(const std::string &path, MbBiWriter *biw)
     return true;
 }
 
-bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
+bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 {
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -112,23 +113,23 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
         return false;
     }
 
-    int ret;
     char buf[10240];
-    size_t n;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n))
-            == MB_BI_OK) {
-        if (fwrite(buf, 1, n, fp.get()) != n) {
+    while (true) {
+        auto n = reader.read_data(buf, sizeof(buf));
+        if (!n) {
+            LOGE("Failed to read entry data: %s",
+                 n.error().message().c_str());
+            return false;
+        } else if (n.value() == 0) {
+            break;
+        }
+
+        if (fwrite(buf, 1, n.value(), fp.get()) != n.value()) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
             return false;
         }
-    }
-
-    if (ret != MB_BI_EOF) {
-        LOGE("Failed to read entry data: %s",
-             mb_bi_reader_error_string(bir));
-        return false;
     }
 
     if (fclose(fp.release()) < 0) {
@@ -140,27 +141,26 @@ bool bi_copy_data_to_file(MbBiReader *bir, const std::string &path)
     return true;
 }
 
-bool bi_copy_data_to_data(MbBiReader *bir, MbBiWriter *biw)
+bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
-    int ret;
     char buf[10240];
-    size_t n_read;
-    size_t n_written;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n_read))
-            == MB_BI_OK) {
-        ret = mb_bi_writer_write_data(biw, buf, n_read, &n_written);
-        if (ret != MB_BI_OK || n_read != n_written) {
+    while (true) {
+        auto n_read = reader.read_data(buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read boot image entry data: %s",
+                 n_read.error().message().c_str());
+            return false;
+        } else if (n_read.value() == 0) {
+            break;
+        }
+
+        auto n_written = writer.write_data(buf, n_read.value());
+        if (!n_written) {
             LOGE("Failed to write entry data: %s",
-                 mb_bi_writer_error_string(biw));
+                 n_written.error().message().c_str());
             return false;
         }
-    }
-
-    if (ret != MB_BI_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             mb_bi_reader_error_string(bir));
-        return false;
     }
 
     return true;

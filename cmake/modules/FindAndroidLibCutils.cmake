@@ -5,7 +5,7 @@
 # ANDROID_LIBCUTILS_FOUND       - True if libcutils found
 
 # Find include directory
-find_path(ANDORID_LIBCUTILS_INCLUDE_DIR NAMES cutils/log.h)
+find_path(ANDROID_LIBCUTILS_INCLUDE_DIR NAMES cutils/log.h)
 
 # Find library
 find_library(ANDROID_LIBCUTILS_LIBRARY NAMES cutils libcutils)
@@ -20,6 +20,15 @@ find_package_handle_standard_args(
 
 if(ANDROID_LIBCUTILS_FOUND)
     set(ANDROID_LIBCUTILS_LIBRARIES ${ANDROID_LIBCUTILS_LIBRARY})
+
+    add_library(AndroidSystemCore::Cutils UNKNOWN IMPORTED)
+    set_target_properties(
+        AndroidSystemCore::Cutils
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+        IMPORTED_LOCATION "${ANDROID_LIBCUTILS_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ANDROID_LIBCUTILS_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(ANDROID_LIBCUTILS_INCLUDE_DIR ANDROID_LIBCUTILS_LIBRARY)

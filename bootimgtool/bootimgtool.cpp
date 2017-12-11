@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <limits>
@@ -34,6 +34,7 @@
 
 // libmbcommon
 #include <mbcommon/common.h>
+#include <mbcommon/integer.h>
 #include <mbcommon/libc/stdio.h>
 
 // libmbbootimg
@@ -73,9 +74,9 @@
 #define IMAGE_APPSBL                    "appsbl"
 
 
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 #define HELP_HEADERS \
     "Header fields:\n" \
@@ -104,6 +105,9 @@ typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
     "  rpm             Rpm image                                     [    S]\n" \
     "  appsbl          Appsbl image                                  [    S]\n"
 
+#define HELP_IMAGES_ABOOT \
+    "  aboot           Aboot image                                   [  L  ]\n"
+
 #define HELP_LEGEND \
     "Legend:\n" \
     "  [A B L M S]\n" \
@@ -120,7 +124,7 @@ typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
     "  unpack         Unpack a boot image\n" \
     "  pack           Assemble boot image from unpacked files\n" \
     "\n" \
-    "Pass -h/--help as a argument to a command to see it's available options.\n"
+    "Pass -h/--help as a argument to a command to see its available options.\n"
 
 #define HELP_UNPACK_USAGE \
     "Usage: bootimgtool unpack <input file> [<option>...]\n" \
@@ -134,7 +138,7 @@ typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
     "                  Input type of the boot image (autodetect if unspecified)\n" \
-    "                  (one of: android, bump, loki, mtk, sonyelf)\n" \
+    "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
     "  --output-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -186,7 +190,7 @@ typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
     "  -n, --noprefix  Do not prepend a prefix to the item filenames\n" \
     "  -t, --type <type>\n" \
     "                  Output type of the boot image (use header.txt if unspecified)\n" \
-    "                  (one of: android, bump, loki, mtk, sonyelf)\n" \
+    "                  (one of: android, bump, loki, mtk, sony_elf)\n" \
     "  --input-<item> <item path>\n" \
     "                  Custom path for a particular item\n" \
     "\n" \
@@ -195,6 +199,7 @@ typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
     HELP_HEADERS \
     "\n" \
     HELP_IMAGES \
+    HELP_IMAGES_ABOOT \
     "\n" \
     HELP_LEGEND \
     "\n" \
@@ -249,29 +254,6 @@ Finally<F> finally(F f)
     return Finally<F>(f);
 }
 
-template<typename UIntType>
-static inline bool str_to_unum(const char *str, int base, UIntType *out)
-{
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<UIntType>(num);
-    return true;
-}
-
 struct Paths
 {
     std::string header;
@@ -291,27 +273,27 @@ static void prepend_if_empty(Paths &paths, const std::string &dir,
                              const std::string &prefix)
 {
     if (paths.header.empty())
-        paths.header = io::pathJoin({dir, prefix + "header.txt"});
+        paths.header = mb::io::path_join({dir, prefix + "header.txt"});
     if (paths.kernel.empty())
-        paths.kernel = io::pathJoin({dir, prefix + IMAGE_KERNEL});
+        paths.kernel = mb::io::path_join({dir, prefix + IMAGE_KERNEL});
     if (paths.ramdisk.empty())
-        paths.ramdisk = io::pathJoin({dir, prefix + IMAGE_RAMDISK});
+        paths.ramdisk = mb::io::path_join({dir, prefix + IMAGE_RAMDISK});
     if (paths.second.empty())
-        paths.second = io::pathJoin({dir, prefix + IMAGE_SECOND});
+        paths.second = mb::io::path_join({dir, prefix + IMAGE_SECOND});
     if (paths.dt.empty())
-        paths.dt = io::pathJoin({dir, prefix + IMAGE_DT});
+        paths.dt = mb::io::path_join({dir, prefix + IMAGE_DT});
     if (paths.aboot.empty())
-        paths.aboot = io::pathJoin({dir, prefix + IMAGE_ABOOT});
+        paths.aboot = mb::io::path_join({dir, prefix + IMAGE_ABOOT});
     if (paths.kernel_mtkhdr.empty())
-        paths.kernel_mtkhdr = io::pathJoin({dir, prefix + IMAGE_KERNEL_MTKHDR});
+        paths.kernel_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_KERNEL_MTKHDR});
     if (paths.ramdisk_mtkhdr.empty())
-        paths.ramdisk_mtkhdr = io::pathJoin({dir, prefix + IMAGE_RAMDISK_MTKHDR});
+        paths.ramdisk_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_RAMDISK_MTKHDR});
     if (paths.ipl.empty())
-        paths.ipl = io::pathJoin({dir, prefix + IMAGE_IPL});
+        paths.ipl = mb::io::path_join({dir, prefix + IMAGE_IPL});
     if (paths.rpm.empty())
-        paths.rpm = io::pathJoin({dir, prefix + IMAGE_RPM});
+        paths.rpm = mb::io::path_join({dir, prefix + IMAGE_RPM});
     if (paths.appsbl.empty())
-        paths.appsbl = io::pathJoin({dir, prefix + IMAGE_APPSBL});
+        paths.appsbl = mb::io::path_join({dir, prefix + IMAGE_APPSBL});
 }
 
 static void absolute_to_offset(uint32_t *base_ptr,
@@ -328,8 +310,8 @@ static void absolute_to_offset(uint32_t *base_ptr,
     uint32_t tags_offset = 0;
 
     if (kernel_addr_ptr) {
-        if (*kernel_addr_ptr >= ANDROID_DEFAULT_KERNEL_OFFSET) {
-            base = *kernel_addr_ptr - ANDROID_DEFAULT_KERNEL_OFFSET;
+        if (*kernel_addr_ptr >= android::DEFAULT_KERNEL_OFFSET) {
+            base = *kernel_addr_ptr - android::DEFAULT_KERNEL_OFFSET;
             kernel_offset = *kernel_addr_ptr - base;
         } else {
             can_use_offsets = false;
@@ -421,7 +403,7 @@ static bool offset_to_absolute(uint32_t *base_ptr,
     return true;
 }
 
-static bool read_header(const std::string &path, MbBiHeader *header)
+static bool read_header(const std::string &path, Header &header)
 {
     static const char *fmt_unknown_key =
             "Unknown key: '%s'\n";
@@ -429,8 +411,6 @@ static bool read_header(const std::string &path, MbBiHeader *header)
             "Invalid value for key '%s': '%s'\n";
     static const char *fmt_unsupported =
             "Ignoring unsupported key for boot image type: '%s'\n";
-    static const char *fmt_failed_to_set =
-            "Failed to set field: '%s'\n";
 
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -488,57 +468,57 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         const char *key = ptr;
         const char *value = equals + 1;
 
-        int ret = MB_BI_OK;
+        bool ret = true;
         bool valid = true;
 
         if (strcmp(key, FIELD_CMDLINE) == 0) {
-            ret = mb_bi_header_set_kernel_cmdline(header, value);
+            ret = header.set_kernel_cmdline({value});
         } else if (strcmp(key, FIELD_BOARD) == 0) {
-            ret = mb_bi_header_set_board_name(header, value);
+            ret = header.set_board_name({value});
         } else if (strcmp(key, FIELD_BASE) == 0) {
-            valid = str_to_unum(value, 16, &base);
+            valid = mb::str_to_num(value, 16, base);
             have_base = true;
         } else if (strcmp(key, FIELD_KERNEL_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &kernel_offset);
+            valid = mb::str_to_num(value, 16, kernel_offset);
             have_kernel_offset = true;
         } else if (strcmp(key, FIELD_RAMDISK_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &ramdisk_offset);
+            valid = mb::str_to_num(value, 16, ramdisk_offset);
             have_ramdisk_offset = true;
         } else if (strcmp(key, FIELD_SECOND_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &second_offset);
+            valid = mb::str_to_num(value, 16, second_offset);
             have_second_offset = true;
         } else if (strcmp(key, FIELD_TAGS_OFFSET) == 0) {
-            valid = str_to_unum(value, 16, &tags_offset);
+            valid = mb::str_to_num(value, 16, tags_offset);
             have_tags_offset = true;
         } else if (strcmp(key, FIELD_IPL_ADDRESS) == 0) {
             uint32_t ipl_address;
-            valid = str_to_unum(value, 16, &ipl_address);
+            valid = mb::str_to_num(value, 16, ipl_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_ipl_address(header, ipl_address);
+                ret = header.set_sony_ipl_address(ipl_address);
             }
         } else if (strcmp(key, FIELD_RPM_ADDRESS) == 0) {
             uint32_t rpm_address;
-            valid = str_to_unum(value, 16, &rpm_address);
+            valid = mb::str_to_num(value, 16, rpm_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_rpm_address(header, rpm_address);
+                ret = header.set_sony_rpm_address(rpm_address);
             }
         } else if (strcmp(key, FIELD_APPSBL_ADDRESS) == 0) {
             uint32_t appsbl_address;
-            valid = str_to_unum(value, 16, &appsbl_address);
+            valid = mb::str_to_num(value, 16, appsbl_address);
             if (valid) {
-                ret = mb_bi_header_set_sony_appsbl_address(header, appsbl_address);
+                ret = header.set_sony_appsbl_address(appsbl_address);
             }
         } else if (strcmp(key, FIELD_ENTRYPOINT) == 0) {
             uint32_t entrypoint;
-            valid = str_to_unum(value, 16, &entrypoint);
+            valid = mb::str_to_num(value, 16, entrypoint);
             if (valid) {
-                ret = mb_bi_header_set_entrypoint_address(header, entrypoint);
+                ret = header.set_entrypoint_address(entrypoint);
             }
         } else if (strcmp(key, FIELD_PAGE_SIZE) == 0) {
             uint32_t page_size;
-            valid = str_to_unum(value, 10, &page_size);
+            valid = mb::str_to_num(value, 10, page_size);
             if (valid) {
-                ret = mb_bi_header_set_page_size(header, page_size);
+                ret = header.set_page_size(page_size);
             }
         } else {
             fprintf(stderr, fmt_unknown_key, key);
@@ -548,12 +528,9 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         if (!valid) {
             fprintf(stderr, fmt_invalid_value, key, value);
             return false;
-        } else if (ret == MB_BI_UNSUPPORTED) {
+        } else if (!ret) {
             fprintf(stderr, fmt_unsupported, key);
             continue;
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, key);
-            return false;
         }
     }
 
@@ -565,79 +542,53 @@ static bool read_header(const std::string &path, MbBiHeader *header)
         return false;
     }
 
-    int ret;
-
-    if (have_kernel_offset) {
-        ret = mb_bi_header_set_kernel_address(header, kernel_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_KERNEL_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_KERNEL_OFFSET);
-            return false;
-        }
+    if (have_kernel_offset && !header.set_kernel_address(kernel_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_KERNEL_OFFSET);
     }
-    if (have_ramdisk_offset) {
-        ret = mb_bi_header_set_ramdisk_address(header, ramdisk_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_RAMDISK_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_RAMDISK_OFFSET);
-            return false;
-        }
+    if (have_ramdisk_offset && !header.set_ramdisk_address(ramdisk_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_RAMDISK_OFFSET);
     }
-    if (have_second_offset) {
-        ret = mb_bi_header_set_secondboot_address(header, second_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_SECOND_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_SECOND_OFFSET);
-            return false;
-        }
+    if (have_second_offset && !header.set_secondboot_address(second_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_SECOND_OFFSET);
     }
-    if (have_tags_offset) {
-        ret = mb_bi_header_set_kernel_tags_address(header, tags_offset);
-        if (ret == MB_BI_UNSUPPORTED) {
-            fprintf(stderr, fmt_unsupported, FIELD_TAGS_OFFSET);
-        } else if (ret < 0) {
-            fprintf(stderr, fmt_failed_to_set, FIELD_TAGS_OFFSET);
-            return false;
-        }
+    if (have_tags_offset && !header.set_kernel_tags_address(tags_offset)) {
+        fprintf(stderr, fmt_unsupported, FIELD_TAGS_OFFSET);
     }
 
     return true;
 }
 
-static bool write_header(const std::string &path, MbBiHeader *header)
+static bool write_header(const std::string &path, const Header &header)
 {
     // Try to use base relative to the default kernel offset
     uint32_t base;
-    uint32_t kernel_offset;
-    uint32_t ramdisk_offset;
-    uint32_t second_offset;
-    uint32_t tags_offset;
-    bool have_kernel_offset = mb_bi_header_kernel_address_is_set(header);
-    bool have_ramdisk_offset = mb_bi_header_ramdisk_address_is_set(header);
-    bool have_second_offset = mb_bi_header_secondboot_address_is_set(header);
-    bool have_tags_offset = mb_bi_header_kernel_tags_address_is_set(header);
+    uint32_t kernel_offset = 0;
+    uint32_t ramdisk_offset = 0;
+    uint32_t second_offset = 0;
+    uint32_t tags_offset = 0;
+    auto kernel_address = header.kernel_address();
+    auto ramdisk_address = header.ramdisk_address();
+    auto secondboot_address = header.secondboot_address();
+    auto kernel_tags_address = header.kernel_tags_address();
 
-    if (have_kernel_offset) {
-        kernel_offset = mb_bi_header_kernel_address(header);
+    if (kernel_address) {
+        kernel_offset = *kernel_address;
     }
-    if (have_ramdisk_offset) {
-        ramdisk_offset = mb_bi_header_ramdisk_address(header);
+    if (ramdisk_address) {
+        ramdisk_offset = *ramdisk_address;
     }
-    if (have_second_offset) {
-        second_offset = mb_bi_header_secondboot_address(header);
+    if (secondboot_address) {
+        second_offset = *secondboot_address;
     }
-    if (have_tags_offset) {
-        tags_offset = mb_bi_header_kernel_tags_address(header);
+    if (kernel_tags_address) {
+        tags_offset = *kernel_tags_address;
     }
 
     absolute_to_offset(&base,
-                       have_kernel_offset ? &kernel_offset : nullptr,
-                       have_ramdisk_offset ? &ramdisk_offset : nullptr,
-                       have_second_offset ? &second_offset : nullptr,
-                       have_tags_offset ? &tags_offset : nullptr);
+                       kernel_address ? &kernel_offset : nullptr,
+                       ramdisk_address ? &ramdisk_offset : nullptr,
+                       secondboot_address ? &second_offset : nullptr,
+                       kernel_tags_address ? &tags_offset : nullptr);
 
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -646,39 +597,39 @@ static bool write_header(const std::string &path, MbBiHeader *header)
         return false;
     }
 
-    const char *cmdline = mb_bi_header_kernel_cmdline(header);
-    const char *board_name = mb_bi_header_board_name(header);
+    auto cmdline = header.kernel_cmdline();
+    auto board_name = header.board_name();
+    auto sony_ipl_address = header.sony_ipl_address();
+    auto sony_rpm_address = header.sony_rpm_address();
+    auto sony_appsbl_address = header.sony_appsbl_address();
+    auto entrypoint_address = header.entrypoint_address();
+    auto page_size = header.page_size();
 
     bool failed =
-            (cmdline && *cmdline && fprintf(
-                    fp.get(), "%s=%s\n", FIELD_CMDLINE, cmdline) < 0)
-            || (board_name && *board_name && fprintf(
-                    fp.get(), "%s=%s\n", FIELD_BOARD, board_name) < 0)
+            (cmdline && !cmdline->empty() && fprintf(
+                    fp.get(), "%s=%s\n", FIELD_CMDLINE, cmdline->c_str()) < 0)
+            || (board_name && !board_name->empty() && fprintf(
+                    fp.get(), "%s=%s\n", FIELD_BOARD, board_name->c_str()) < 0)
             || (fprintf(
                     fp.get(), "%s=%08x\n", FIELD_BASE, base) < 0)
-            || (have_kernel_offset && fprintf(
+            || (kernel_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_KERNEL_OFFSET, kernel_offset) < 0)
-            || (have_ramdisk_offset && fprintf(
+            || (ramdisk_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_RAMDISK_OFFSET, ramdisk_offset) < 0)
-            || (have_second_offset && fprintf(
+            || (secondboot_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_SECOND_OFFSET, second_offset) < 0)
-            || (have_tags_offset && fprintf(
+            || (kernel_tags_address && fprintf(
                     fp.get(), "%s=%08x\n", FIELD_TAGS_OFFSET, tags_offset) < 0)
-            || (mb_bi_header_sony_ipl_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_IPL_ADDRESS,
-                            mb_bi_header_sony_ipl_address(header)) < 0)
-            || (mb_bi_header_sony_rpm_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_RPM_ADDRESS,
-                            mb_bi_header_sony_rpm_address(header)) < 0)
-            || (mb_bi_header_sony_appsbl_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_APPSBL_ADDRESS,
-                            mb_bi_header_sony_appsbl_address(header)) < 0)
-            || (mb_bi_header_entrypoint_address_is_set(header) && fprintf(
-                    fp.get(), "%s=%08x\n", FIELD_ENTRYPOINT,
-                            mb_bi_header_entrypoint_address(header)) < 0)
-            || (mb_bi_header_page_size_is_set(header) && fprintf(
-                    fp.get(), "%s=%u\n", FIELD_PAGE_SIZE,
-                            mb_bi_header_page_size(header)) < 0);
+            || (sony_ipl_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_IPL_ADDRESS, *sony_ipl_address) < 0)
+            || (sony_rpm_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_RPM_ADDRESS, *sony_rpm_address) < 0)
+            || (sony_appsbl_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_APPSBL_ADDRESS, *sony_appsbl_address) < 0)
+            || (entrypoint_address && fprintf(
+                    fp.get(), "%s=%08x\n", FIELD_ENTRYPOINT, *entrypoint_address) < 0)
+            || (page_size && fprintf(
+                    fp.get(), "%s=%u\n", FIELD_PAGE_SIZE, *page_size) < 0);
 
     if (failed) {
         fprintf(stderr, "%s: Failed to write file: %s\n",
@@ -695,7 +646,7 @@ static bool write_header(const std::string &path, MbBiHeader *header)
     return true;
 }
 
-static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
+static bool write_data_file_to_entry(const std::string &path, Writer &writer)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -715,12 +666,10 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        size_t bytes_written;
-
-        if (mb_bi_writer_write_data(biw, buf, n, &bytes_written) != MB_BI_OK
-                || bytes_written != n) {
+        auto bytes_written = writer.write_data(buf, n);
+        if (!bytes_written) {
             fprintf(stderr, "Failed to write entry data: %s\n",
-                    mb_bi_writer_error_string(biw));
+                    bytes_written.error().message().c_str());
             return false;
         }
 
@@ -737,7 +686,7 @@ static bool write_data_file_to_entry(const std::string &path, MbBiWriter *biw)
     return true;
 }
 
-static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
+static bool write_data_entry_to_file(const std::string &path, Reader &reader)
 {
     ScopedFILE fp(fopen(path.c_str(), "wb"), fclose);
     if (!fp) {
@@ -746,23 +695,23 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
         return false;
     }
 
-    int ret;
     char buf[10240];
-    size_t n;
 
-    while ((ret = mb_bi_reader_read_data(bir, buf, sizeof(buf), &n))
-            == MB_BI_OK) {
-        if (fwrite(buf, 1, n, fp.get()) != n) {
+    while (true) {
+        auto n = reader.read_data(buf, sizeof(buf));
+        if (!n) {
+            fprintf(stderr, "Failed to read entry data: %s\n",
+                    n.error().message().c_str());
+            return false;
+        } else if (n.value() == 0) {
+            break;
+        }
+
+        if (fwrite(buf, 1, n.value(), fp.get()) != n.value()) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));
             return false;
         }
-    }
-
-    if (ret != MB_BI_EOF) {
-        fprintf(stderr, "Failed to read entry data: %s\n",
-                mb_bi_reader_error_string(bir));
-        return false;
     }
 
     if (fclose(fp.release()) < 0) {
@@ -774,111 +723,116 @@ static bool write_data_entry_to_file(const std::string &path, MbBiReader *bir)
     return true;
 }
 
-static bool write_file_to_entry(const Paths &paths, MbBiWriter *biw,
-                                MbBiEntry *entry)
+static bool write_file_to_entry(const Paths &paths, Writer &writer,
+                                const Entry &entry)
 {
     std::string path;
 
-    if (!mb_bi_entry_type_is_set(entry)) {
+    auto type = entry.type();
+
+    if (!type) {
         fprintf(stderr, "No entry type set!\n");
         return false;
     }
 
-    switch (mb_bi_entry_type(entry)) {
-    case MB_BI_ENTRY_KERNEL:
+    switch (*type) {
+    case ENTRY_TYPE_KERNEL:
         path = paths.kernel;
         break;
-    case MB_BI_ENTRY_RAMDISK:
+    case ENTRY_TYPE_RAMDISK:
         path = paths.ramdisk;
         break;
-    case MB_BI_ENTRY_SECONDBOOT:
+    case ENTRY_TYPE_SECONDBOOT:
         path = paths.second;
         break;
-    case MB_BI_ENTRY_DEVICE_TREE:
+    case ENTRY_TYPE_DEVICE_TREE:
         path = paths.dt;
         break;
-    case MB_BI_ENTRY_ABOOT:
+    case ENTRY_TYPE_ABOOT:
         path = paths.aboot;
         break;
-    case MB_BI_ENTRY_MTK_KERNEL_HEADER:
+    case ENTRY_TYPE_MTK_KERNEL_HEADER:
         path = paths.kernel_mtkhdr;
         break;
-    case MB_BI_ENTRY_MTK_RAMDISK_HEADER:
+    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
         path = paths.ramdisk_mtkhdr;
         break;
-    case MB_BI_ENTRY_SONY_IPL:
+    case ENTRY_TYPE_SONY_IPL:
         path = paths.ipl;
         break;
-    case MB_BI_ENTRY_SONY_RPM:
+    case ENTRY_TYPE_SONY_RPM:
         path = paths.rpm;
         break;
-    case MB_BI_ENTRY_SONY_APPSBL:
+    case ENTRY_TYPE_SONY_APPSBL:
         path = paths.appsbl;
         break;
     default:
-        fprintf(stderr, "Unknown entry type: %d\n", mb_bi_entry_type(entry));
+        fprintf(stderr, "Unknown entry type: %d\n", *type);
         return false;
     }
 
-    if (mb_bi_writer_write_entry(biw, entry) != MB_BI_OK) {
+    auto ret = writer.write_entry(entry);
+    if (!ret) {
         fprintf(stderr, "Failed to write entry: %s\n",
-                mb_bi_writer_error_string(biw));
+                ret.error().message().c_str());
         return false;
     }
 
-    return write_data_file_to_entry(path, biw);
+    return write_data_file_to_entry(path, writer);
 }
 
-static bool write_entry_to_file(const Paths &paths, MbBiReader *bir,
-                                MbBiEntry *entry)
+static bool write_entry_to_file(const Paths &paths, Reader &reader,
+                                const Entry &entry)
 {
     std::string path;
 
-    if (!mb_bi_entry_type_is_set(entry)) {
+    auto type = entry.type();
+
+    if (!type) {
         fprintf(stderr, "No entry type set!\n");
         return false;
     }
 
-    switch (mb_bi_entry_type(entry)) {
-    case MB_BI_ENTRY_KERNEL:
+    switch (*type) {
+    case ENTRY_TYPE_KERNEL:
         path = paths.kernel;
         break;
-    case MB_BI_ENTRY_RAMDISK:
+    case ENTRY_TYPE_RAMDISK:
         path = paths.ramdisk;
         break;
-    case MB_BI_ENTRY_SECONDBOOT:
+    case ENTRY_TYPE_SECONDBOOT:
         path = paths.second;
         break;
-    case MB_BI_ENTRY_DEVICE_TREE:
+    case ENTRY_TYPE_DEVICE_TREE:
         path = paths.dt;
         break;
-    case MB_BI_ENTRY_ABOOT:
+    case ENTRY_TYPE_ABOOT:
         path = paths.aboot;
         break;
-    case MB_BI_ENTRY_MTK_KERNEL_HEADER:
+    case ENTRY_TYPE_MTK_KERNEL_HEADER:
         path = paths.kernel_mtkhdr;
         break;
-    case MB_BI_ENTRY_MTK_RAMDISK_HEADER:
+    case ENTRY_TYPE_MTK_RAMDISK_HEADER:
         path = paths.ramdisk_mtkhdr;
         break;
-    case MB_BI_ENTRY_SONY_IPL:
+    case ENTRY_TYPE_SONY_IPL:
         path = paths.ipl;
         break;
-    case MB_BI_ENTRY_SONY_RPM:
+    case ENTRY_TYPE_SONY_RPM:
         path = paths.rpm;
         break;
-    case MB_BI_ENTRY_SONY_APPSBL:
+    case ENTRY_TYPE_SONY_APPSBL:
         path = paths.appsbl;
         break;
     default:
-        fprintf(stderr, "Unknown entry type: %d\n", mb_bi_entry_type(entry));
+        fprintf(stderr, "Unknown entry type: %d\n", *type);
         return false;
     }
 
-    return write_data_entry_to_file(path, bir);
+    return write_data_entry_to_file(path, reader);
 }
 
-bool unpack_main(int argc, char *argv[])
+static bool unpack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
@@ -907,24 +861,24 @@ bool unpack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"output",                required_argument, 0, 'o'},
-        {"prefix",                required_argument, 0, 'p'},
-        {"noprefix",              required_argument, 0, 'n'},
-        {"type",                  required_argument, 0, 't'},
+        {"output",                required_argument, nullptr, 'o'},
+        {"prefix",                required_argument, nullptr, 'p'},
+        {"noprefix",              required_argument, nullptr, 'n'},
+        {"type",                  required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"output-header",         required_argument, 0, OPT_OUTPUT_HEADER},
-        {"output-kernel",         required_argument, 0, OPT_OUTPUT_KERNEL},
-        {"output-ramdisk",        required_argument, 0, OPT_OUTPUT_RAMDISK},
-        {"output-second",         required_argument, 0, OPT_OUTPUT_SECOND},
-        {"output-dt",             required_argument, 0, OPT_OUTPUT_DT},
-        {"output-kernel_mtkhdr",  required_argument, 0, OPT_OUTPUT_KERNEL_MTKHDR},
-        {"output-ramdisk_mtkhdr", required_argument, 0, OPT_OUTPUT_RAMDISK_MTKHDR},
-        {"output-ipl",            required_argument, 0, OPT_OUTPUT_IPL},
-        {"output-rpm",            required_argument, 0, OPT_OUTPUT_RPM},
-        {"output-appsbl",         required_argument, 0, OPT_OUTPUT_APPSBL},
+        {"output-header",         required_argument, nullptr, OPT_OUTPUT_HEADER},
+        {"output-kernel",         required_argument, nullptr, OPT_OUTPUT_KERNEL},
+        {"output-ramdisk",        required_argument, nullptr, OPT_OUTPUT_RAMDISK},
+        {"output-second",         required_argument, nullptr, OPT_OUTPUT_SECOND},
+        {"output-dt",             required_argument, nullptr, OPT_OUTPUT_DT},
+        {"output-kernel_mtkhdr",  required_argument, nullptr, OPT_OUTPUT_KERNEL_MTKHDR},
+        {"output-ramdisk_mtkhdr", required_argument, nullptr, OPT_OUTPUT_RAMDISK_MTKHDR},
+        {"output-ipl",            required_argument, nullptr, OPT_OUTPUT_IPL},
+        {"output-rpm",            required_argument, nullptr, OPT_OUTPUT_RPM},
+        {"output-appsbl",         required_argument, nullptr, OPT_OUTPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                  no_argument,       nullptr, 'h'},
+        {nullptr,                 0,                 nullptr, 0},
     };
 
     int long_index = 0;
@@ -968,7 +922,7 @@ bool unpack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(input_file);
+        prefix = mb::io::base_name(input_file);
         prefix += "-";
     }
 
@@ -978,50 +932,44 @@ bool unpack_main(int argc, char *argv[])
 
     prepend_if_empty(paths, output_dir, prefix);
 
-    if (!io::createDirectories(output_dir)) {
+    if (!mb::io::create_directories(output_dir)) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), io::lastErrorString().c_str());
+                output_dir.c_str(), mb::io::last_error_string().c_str());
         return false;
     }
 
     // Load the boot image
-    ScopedReader bir(mb_bi_reader_new(), mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
-    int ret;
-
-    if (!bir) {
-        fprintf(stderr, "Failed to allocate reader: %s\n", strerror(errno));
-        return false;
-    }
+    Reader reader;
+    Header header;
+    Entry entry;
 
     if (type) {
-        ret = mb_bi_reader_enable_format_by_name(bir.get(), type);
-        if (ret != MB_BI_OK) {
+        auto ret = reader.enable_format_by_name(type);
+        if (!ret) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, mb_bi_reader_error_string(bir.get()));
+                    type, ret.error().message().c_str());
             return false;
         }
     } else {
-        ret = mb_bi_reader_enable_format_all(bir.get());
-        if (ret != MB_BI_OK) {
+        auto ret = reader.enable_format_all();
+        if (!ret) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
-                    mb_bi_reader_error_string(bir.get()));
+                    ret.error().message().c_str());
             return false;
         }
     }
 
-    ret = mb_bi_reader_open_filename(bir.get(), input_file.c_str());
-    if (ret != MB_BI_OK) {
+    auto ret = reader.open_filename(input_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    ret = mb_bi_reader_read_header(bir.get(), &header);
-    if (ret != MB_BI_OK) {
+    ret = reader.read_header(header);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -1029,29 +977,33 @@ bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    while ((ret = mb_bi_reader_read_entry(bir.get(), &entry)) == MB_BI_OK) {
-        if (!write_entry_to_file(paths, bir.get(), entry)) {
+    while (true) {
+        ret = reader.read_entry(entry);
+        if (!ret) {
+            if (ret.error() == ReaderError::EndOfEntries) {
+                break;
+            }
+            fprintf(stderr, "Failed to read entry: %s\n",
+                    ret.error().message().c_str());
             return false;
         }
-    }
 
-    if (ret != MB_BI_EOF) {
-        fprintf(stderr, "Failed to read entry: %s\n",
-                mb_bi_reader_error_string(bir.get()));
-        return false;
+        if (!write_entry_to_file(paths, reader, entry)) {
+            return false;
+        }
     }
 
     return true;
 }
 
-bool pack_main(int argc, char *argv[])
+static bool pack_main(int argc, char *argv[])
 {
     int opt;
     bool no_prefix = false;
     std::string output_file;
     std::string input_dir;
     std::string prefix;
-    const char *type = MB_BI_FORMAT_NAME_ANDROID;
+    const char *type = FORMAT_NAME_ANDROID;
     Paths paths;
 
     // Arguments with no short options
@@ -1075,25 +1027,25 @@ bool pack_main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"input",                required_argument, 0, 'i'},
-        {"prefix",               required_argument, 0, 'p'},
-        {"noprefix",             required_argument, 0, 'n'},
-        {"type",                 required_argument, 0, 't'},
+        {"input",                required_argument, nullptr, 'i'},
+        {"prefix",               required_argument, nullptr, 'p'},
+        {"noprefix",             required_argument, nullptr, 'n'},
+        {"type",                 required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"input-header",         required_argument, 0, OPT_INPUT_HEADER},
-        {"input-kernel",         required_argument, 0, OPT_INPUT_KERNEL},
-        {"input-ramdisk",        required_argument, 0, OPT_INPUT_RAMDISK},
-        {"input-second",         required_argument, 0, OPT_INPUT_SECOND},
-        {"input-dt",             required_argument, 0, OPT_INPUT_DT},
-        {"input-aboot",          required_argument, 0, OPT_INPUT_ABOOT},
-        {"input-kernel_mtkhdr",  required_argument, 0, OPT_INPUT_KERNEL_MTKHDR},
-        {"input-ramdisk_mtkhdr", required_argument, 0, OPT_INPUT_RAMDISK_MTKHDR},
-        {"input-ipl",            required_argument, 0, OPT_INPUT_IPL},
-        {"input-rpm",            required_argument, 0, OPT_INPUT_RPM},
-        {"input-appsbl",         required_argument, 0, OPT_INPUT_APPSBL},
+        {"input-header",         required_argument, nullptr, OPT_INPUT_HEADER},
+        {"input-kernel",         required_argument, nullptr, OPT_INPUT_KERNEL},
+        {"input-ramdisk",        required_argument, nullptr, OPT_INPUT_RAMDISK},
+        {"input-second",         required_argument, nullptr, OPT_INPUT_SECOND},
+        {"input-dt",             required_argument, nullptr, OPT_INPUT_DT},
+        {"input-aboot",          required_argument, nullptr, OPT_INPUT_ABOOT},
+        {"input-kernel_mtkhdr",  required_argument, nullptr, OPT_INPUT_KERNEL_MTKHDR},
+        {"input-ramdisk_mtkhdr", required_argument, nullptr, OPT_INPUT_RAMDISK_MTKHDR},
+        {"input-ipl",            required_argument, nullptr, OPT_INPUT_IPL},
+        {"input-rpm",            required_argument, nullptr, OPT_INPUT_RPM},
+        {"input-appsbl",         required_argument, nullptr, OPT_INPUT_APPSBL},
         // Misc
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        {"help",                 no_argument,       nullptr, 'h'},
+        {nullptr,                0,                 nullptr, 0},
     };
 
     int long_index = 0;
@@ -1138,7 +1090,7 @@ bool pack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(output_file);
+        prefix = mb::io::base_name(output_file);
         prefix += "-";
     }
 
@@ -1149,33 +1101,26 @@ bool pack_main(int argc, char *argv[])
     prepend_if_empty(paths, input_dir, prefix);
 
     // Load the boot image
-    ScopedWriter biw(mb_bi_writer_new(), mb_bi_writer_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
-    int ret;
+    Writer writer;
+    Header header;
+    Entry entry;
 
-    if (!biw) {
-        fprintf(stderr, "Failed to allocate writer: %s\n", strerror(errno));
-        return false;
-    }
-
-    ret = mb_bi_writer_set_format_by_name(biw.get(), type);
-    if (ret != MB_BI_OK) {
+    if (!writer.set_format_by_name(type)) {
         fprintf(stderr, "Invalid boot image type: %s\n", type);
         return false;
     }
 
-    ret = mb_bi_writer_open_filename(biw.get(), output_file.c_str());
-    if (ret != MB_BI_OK) {
+    auto ret = writer.open_filename(output_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    ret = mb_bi_writer_get_header(biw.get(), &header);
-    if (ret != MB_BI_OK) {
+    ret = writer.get_header(header);
+    if (!ret) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                mb_bi_writer_error_string(biw.get()));
+                ret.error().message().c_str());
         return false;
     }
 
@@ -1183,29 +1128,33 @@ bool pack_main(int argc, char *argv[])
         return false;
     }
 
-    ret = mb_bi_writer_write_header(biw.get(), header);
-    if (ret != MB_BI_OK) {
+    ret = writer.write_header(header);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    while ((ret = mb_bi_writer_get_entry(biw.get(), &entry)) == MB_BI_OK) {
-        if (!write_file_to_entry(paths, biw.get(), entry)) {
+    while (true) {
+        ret = writer.get_entry(entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
+                break;
+            }
+            fprintf(stderr, "Failed to get next entry: %s\n",
+                    ret.error().message().c_str());
+            return false;
+        }
+
+        if (!write_file_to_entry(paths, writer, entry)) {
             return false;
         }
     }
 
-    if (ret != MB_BI_EOF) {
-        fprintf(stderr, "Failed to get next entry: %s\n",
-                mb_bi_writer_error_string(biw.get()));
-        return false;
-    }
-
-    ret = mb_bi_writer_close(biw.get());
-    if (ret != MB_BI_OK) {
+    ret = writer.close();
+    if (!ret) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                mb_bi_writer_error_string(biw.get()));
+                ret.error().message().c_str());
         return false;
     }
 

@@ -26,6 +26,10 @@
  * SUCH DAMAGE.
  */
 
+// When building with libc++, one of the headers below causes a conflict if
+// it's imported before <atomic>.
+#include "mblog/logging.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -50,8 +54,6 @@
 #include <sys/un.h>
 #include <sys/xattr.h>
 
-#include "mblog/logging.h"
-
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include "mbutil/external/_system_properties.h"
 #include "mbutil/external/system_properties.h"
@@ -59,6 +61,8 @@
 #include "mbutil/external/bionic_futex.h"
 #include "mbutil/external/bionic_lock.h"
 #include "mbutil/external/bionic_macros.h"
+
+#define LOG_TAG "mbutil/external/system_properties"
 
 // NOTE: Not wanted for DualBootPatcher since the properties service
 // initializes before SELinux

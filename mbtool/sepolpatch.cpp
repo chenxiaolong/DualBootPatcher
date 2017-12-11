@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "sepolpatch.h"
@@ -39,19 +39,22 @@
 #undef bool
 
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
 
 #include "multiboot.h"
+
+#define LOG_TAG "mbtool/sepolpatch"
 
 
 extern "C" int policydb_index_decls(policydb_t *p);
 
 namespace mb
 {
+
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 /*!
  * Add or remove rule.
@@ -83,14 +86,14 @@ SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
 
     if (!av) {
         if (remove) {
-            return SELinuxResult::UNCHANGED;
+            return SELinuxResult::Unchanged;
         } else {
             avtab_datum_t av_new;
             av_new.data = (1U << (perm_val - 1));
             if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
-                return SELinuxResult::ERROR;
+                return SELinuxResult::Error;
             }
-            return SELinuxResult::CHANGED;
+            return SELinuxResult::Changed;
         }
     } else {
         auto old_data = av->data;
@@ -102,8 +105,8 @@ SELinuxResult selinux_raw_set_avtab_rule(policydb_t *pdb,
         }
 
         return (av->data == old_data)
-                ? SELinuxResult::UNCHANGED
-                : SELinuxResult::CHANGED;
+                ? SELinuxResult::Unchanged
+                : SELinuxResult::Changed;
     }
 }
 
@@ -126,17 +129,17 @@ SELinuxResult selinux_raw_set_type_trans(policydb_t *pdb,
         avtab_datum_t av_new;
         av_new.data = default_type_val;
         if (avtab_insert(&pdb->te_avtab, &key, &av_new) != 0) {
-            return SELinuxResult::ERROR;
+            return SELinuxResult::Error;
         }
-        return SELinuxResult::CHANGED;
+        return SELinuxResult::Changed;
     } else {
         auto old_data = av->data;
 
         av->data = default_type_val;
 
         return (av->data == old_data)
-                ? SELinuxResult::UNCHANGED
-                : SELinuxResult::CHANGED;
+                ? SELinuxResult::Unchanged
+                : SELinuxResult::Changed;
     }
 }
 
@@ -145,11 +148,11 @@ SELinuxResult selinux_raw_grant_all_perms(policydb_t *pdb,
                                           uint16_t target_type_val,
                                           uint16_t class_val)
 {
-    SELinuxResult result(SELinuxResult::UNCHANGED);
+    SELinuxResult result(SELinuxResult::Unchanged);
 
     auto clazz = pdb->class_val_to_struct[class_val - 1];
     if (!clazz) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // Class-specific permissions
@@ -162,19 +165,19 @@ SELinuxResult selinux_raw_grant_all_perms(policydb_t *pdb,
         for (uint32_t bucket = 0; bucket < (*table)->size; ++bucket) {
             for (hashtab_ptr_t cur = (*table)->htable[bucket]; cur;
                     cur = cur->next) {
-                perm_datum_t *perm_datum = (perm_datum_t *) cur->datum;
+                auto perm_datum = static_cast<perm_datum_t *>(cur->datum);
 
                 SELinuxResult ret = selinux_raw_set_avtab_rule(
                         pdb, source_type_val, target_type_val, class_val,
                         perm_datum->s.value, false);
 
                 switch (ret) {
-                case SELinuxResult::ERROR:
+                case SELinuxResult::Error:
                     return ret;
-                case SELinuxResult::CHANGED:
+                case SELinuxResult::Changed:
                     result = ret;
                     break;
-                case SELinuxResult::UNCHANGED:
+                case SELinuxResult::Unchanged:
                     // Ignore
                     break;
                 }
@@ -189,20 +192,21 @@ SELinuxResult selinux_raw_grant_all_perms(policydb_t *pdb,
                                           uint16_t source_type_val,
                                           uint16_t target_type_val)
 {
-    SELinuxResult result(SELinuxResult::UNCHANGED);
+    SELinuxResult result(SELinuxResult::Unchanged);
 
     for (uint32_t class_val = 1; class_val <= pdb->p_classes.nprim;
             ++class_val) {
         SELinuxResult ret = selinux_raw_grant_all_perms(
-                pdb, source_type_val, target_type_val, class_val);
+                pdb, source_type_val, target_type_val,
+                static_cast<uint16_t>(class_val));
 
         switch (ret) {
-        case SELinuxResult::ERROR:
+        case SELinuxResult::Error:
             return ret;
-        case SELinuxResult::CHANGED:
+        case SELinuxResult::Changed:
             result = ret;
             break;
-        case SELinuxResult::UNCHANGED:
+        case SELinuxResult::Unchanged:
             // Ignore
             break;
         }
@@ -217,14 +221,14 @@ SELinuxResult selinux_raw_set_permissive(policydb_t *pdb,
 {
     int ret = ebitmap_get_bit(&pdb->permissive_map, type_val);
     if (!!ret == permissive) {
-        return SELinuxResult::UNCHANGED;
+        return SELinuxResult::Unchanged;
     }
 
     if (ebitmap_set_bit(&pdb->permissive_map, type_val, permissive) < 0) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
-    return SELinuxResult::CHANGED;
+    return SELinuxResult::Changed;
 }
 
 /*!
@@ -247,7 +251,7 @@ SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
 
     if (ret1 != ret2) {
         // Maps are invalid
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // Update type-attribute maps
@@ -259,7 +263,7 @@ SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
                 &pdb->attr_type_map[attr_val - 1], type_val - 1, 1);
 
         if (ret1 < 0 || ret2 < 0) {
-            return SELinuxResult::ERROR;
+            return SELinuxResult::Error;
         }
 
         changed = true;
@@ -280,7 +284,7 @@ SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
                 if (expr->expr_type == CEXPR_NAMES && ebitmap_get_bit(
                         &expr->type_names->types, attr_val - 1)) {
                     if (ebitmap_set_bit(&expr->names, type_val - 1, 1) < 0) {
-                        return SELinuxResult::ERROR;
+                        return SELinuxResult::Error;
                     }
 
                     changed = true;
@@ -289,7 +293,7 @@ SELinuxResult selinux_raw_set_attribute(policydb_t *pdb,
         }
     }
 
-    return changed ? SELinuxResult::CHANGED : SELinuxResult::UNCHANGED;
+    return changed ? SELinuxResult::Changed : SELinuxResult::Unchanged;
 }
 
 SELinuxResult selinux_raw_add_to_role(policydb_t *pdb,
@@ -299,23 +303,23 @@ SELinuxResult selinux_raw_add_to_role(policydb_t *pdb,
     role_datum_t *role = pdb->role_val_to_struct[role_val - 1];
 
     if (ebitmap_get_bit(&role->types.types, type_val - 1)) {
-        return SELinuxResult::UNCHANGED;
+        return SELinuxResult::Unchanged;
     }
 
     if (ebitmap_set_bit(&role->types.types, type_val - 1, 1) < 0) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // (See policydb_role_cache() in policydb.c)
 #if 0
     ebitmap_destroy(&role->cache);
     return type_set_expand(&role->types, &role->cache, pdb, 1) < 0
-            ? SELinuxResult::ERROR
-            : SELinuxResult::CHANGED;
+            ? SELinuxResult::Error
+            : SELinuxResult::Changed;
 #else
     return selinux_raw_reindex(pdb)
-            ? SELinuxResult::CHANGED
-            : SELinuxResult::ERROR;
+            ? SELinuxResult::Changed
+            : SELinuxResult::Error;
 #endif
 }
 
@@ -332,8 +336,8 @@ bool selinux_raw_reindex(policydb_t *pdb)
 
 static inline class_datum_t * find_class(policydb_t *pdb, const char *name)
 {
-    return (class_datum_t *) hashtab_search(
-            pdb->p_classes.table, (hashtab_key_t) name);
+    return static_cast<class_datum_t *>(hashtab_search(
+            pdb->p_classes.table, const_cast<hashtab_key_t>(name)));
 }
 
 static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
@@ -341,13 +345,14 @@ static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
     perm_datum_t *perm;
 
     // Find class-specific permissions first
-    perm = (perm_datum_t *) hashtab_search(
-            clazz->permissions.table, (hashtab_key_t) name);
+    perm = static_cast<perm_datum_t *>(hashtab_search(
+            clazz->permissions.table, const_cast<hashtab_key_t>(name)));
 
     // Then try common permissions
     if (!perm && clazz->comdatum) {
-        perm = (perm_datum_t *) hashtab_search(
-                clazz->comdatum->permissions.table, (hashtab_key_t) name);
+        perm = static_cast<perm_datum_t *>(hashtab_search(
+                clazz->comdatum->permissions.table,
+                const_cast<hashtab_key_t>(name)));
     }
 
     return perm;
@@ -355,14 +360,14 @@ static inline perm_datum_t * find_perm(class_datum_t *clazz, const char *name)
 
 static inline type_datum_t * find_type(policydb_t *pdb, const char *name)
 {
-    return (type_datum_t *) hashtab_search(
-            pdb->p_types.table, (hashtab_key_t) name);
+    return static_cast<type_datum_t *>(hashtab_search(
+            pdb->p_types.table, const_cast<hashtab_key_t>(name)));
 }
 
 static inline role_datum_t * find_role(policydb_t *pdb, const char *name)
 {
-    return (role_datum_t *) hashtab_search(
-            pdb->p_roles.table, (hashtab_key_t) name);
+    return static_cast<role_datum_t *>(hashtab_search(
+            pdb->p_roles.table, const_cast<hashtab_key_t>(name)));
 }
 
 // Helper functions
@@ -370,10 +375,10 @@ static inline role_datum_t * find_role(policydb_t *pdb, const char *name)
 bool selinux_mount()
 {
     // Try /sys/fs/selinux
-    if (mount(SELINUX_FS_TYPE, SELINUX_MOUNT_POINT,
-              SELINUX_FS_TYPE, 0, nullptr) < 0) {
+    if (mount(util::SELINUX_FS_TYPE, util::SELINUX_MOUNT_POINT,
+              util::SELINUX_FS_TYPE, 0, nullptr) < 0) {
         LOGW("Failed to mount %s at %s: %s",
-             SELINUX_FS_TYPE, SELINUX_MOUNT_POINT, strerror(errno));
+             util::SELINUX_FS_TYPE, util::SELINUX_MOUNT_POINT, strerror(errno));
         if (errno == ENODEV || errno == ENOENT) {
             LOGI("Kernel does not support SELinux");
         }
@@ -385,8 +390,9 @@ bool selinux_mount()
 
 bool selinux_unmount()
 {
-    if (umount(SELINUX_MOUNT_POINT) < 0) {
-        LOGE("Failed to unmount %s: %s", SELINUX_MOUNT_POINT, strerror(errno));
+    if (umount(util::SELINUX_MOUNT_POINT) < 0) {
+        LOGE("Failed to unmount %s: %s",
+             util::SELINUX_MOUNT_POINT, strerror(errno));
         return false;
     }
 
@@ -398,8 +404,9 @@ bool selinux_make_all_permissive(policydb_t *pdb)
     SELinuxResult ret;
 
     for (uint32_t type_val = 1; type_val <= pdb->p_types.nprim; ++type_val) {
-        ret = selinux_raw_set_permissive(pdb, type_val, true);
-        if (ret == SELinuxResult::ERROR) {
+        ret = selinux_raw_set_permissive(pdb, static_cast<uint16_t>(type_val),
+                                         true);
+        if (ret == SELinuxResult::Error) {
             return false;
         }
     }
@@ -416,13 +423,16 @@ bool selinux_make_permissive(policydb_t *pdb,
         return false;
     }
 
-    SELinuxResult result = selinux_raw_set_permissive(pdb, type->s.value, true);
+    SELinuxResult result = selinux_raw_set_permissive(
+            pdb, static_cast<uint16_t>(type->s.value), true);
     switch (result) {
-    case SELinuxResult::CHANGED:
-    case SELinuxResult::UNCHANGED:
+    case SELinuxResult::Changed:
+    case SELinuxResult::Unchanged:
         return true;
-    case SELinuxResult::ERROR:
+    case SELinuxResult::Error:
         LOGE("Failed to set type %s to permissive", type_str);
+        [[gnu::fallthrough]];
+        [[clang::fallthrough]];
     default:
         return false;
     }
@@ -464,14 +474,16 @@ bool selinux_set_allow_rule(policydb_t *pdb,
     }
 
     SELinuxResult result = selinux_raw_set_avtab_rule(
-            pdb, source->s.value, target->s.value, clazz->s.value,
-            perm->s.value, remove);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value),
+            static_cast<uint16_t>(perm->s.value), remove);
 
     switch (result) {
-    case SELinuxResult::CHANGED:
-    case SELinuxResult::UNCHANGED:
+    case SELinuxResult::Changed:
+    case SELinuxResult::Unchanged:
         return true;
-    case SELinuxResult::ERROR:
+    case SELinuxResult::Error:
         LOGE("Failed to add rule: allow %s %s:%s %s;",
              source_str, target_str, class_str, perm_str);
     }
@@ -533,14 +545,16 @@ bool selinux_set_type_trans(policydb_t *pdb,
     }
 
     SELinuxResult result = selinux_raw_set_type_trans(
-            pdb, source->s.value, target->s.value, clazz->s.value,
-            def->s.value);
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value),
+            static_cast<uint16_t>(def->s.value));
 
     switch (result) {
-    case SELinuxResult::CHANGED:
-    case SELinuxResult::UNCHANGED:
+    case SELinuxResult::Changed:
+    case SELinuxResult::Unchanged:
         return true;
-    case SELinuxResult::ERROR:
+    case SELinuxResult::Error:
         LOGE("Failed to add type transition: type_transition %s %s:%s %s;",
              source_str, target_str, class_str, default_str);
     }
@@ -569,8 +583,10 @@ bool selinux_grant_all_perms(policydb_t *pdb,
     }
 
     auto ret = selinux_raw_grant_all_perms(
-            pdb, source->s.value, target->s.value, clazz->s.value);
-    return ret != SELinuxResult::ERROR;
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value),
+            static_cast<uint16_t>(clazz->s.value));
+    return ret != SELinuxResult::Error;
 }
 
 bool selinux_grant_all_perms(policydb_t *pdb,
@@ -588,8 +604,9 @@ bool selinux_grant_all_perms(policydb_t *pdb,
     }
 
     auto ret = selinux_raw_grant_all_perms(
-            pdb, source->s.value, target->s.value);
-    return ret != SELinuxResult::ERROR;
+            pdb, static_cast<uint16_t>(source->s.value),
+            static_cast<uint16_t>(target->s.value));
+    return ret != SELinuxResult::Error;
 }
 
 /*!
@@ -605,19 +622,19 @@ SELinuxResult selinux_create_type(policydb_t *pdb,
 {
     if (find_type(pdb, name)) {
         // Type already exists
-        return SELinuxResult::UNCHANGED;
+        return SELinuxResult::Unchanged;
     }
 
     // symtab_insert will take ownership of these allocations
     char *name_dup = strdup(name);
     if (!name_dup) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
-    type_datum_t *new_type = (type_datum_t *) malloc(sizeof(type_datum_t));
+    auto new_type = static_cast<type_datum_t *>(malloc(sizeof(type_datum_t)));
     if (!new_type) {
         free(name_dup);
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // We're creating a type, not an attribute
@@ -635,32 +652,32 @@ SELinuxResult selinux_create_type(policydb_t *pdb,
         // Policy file is broken if, somehow, ret == 1
         free(name_dup);
         free(new_type);
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     new_type->s.value = type_val;
 
     if (ebitmap_set_bit(&pdb->global->branch_list->declared.scope[SYM_TYPES],
                         type_val - 1, 1) != 0) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // Reallocate type-attribute maps for the new type
     // (see: policydb_read() in policydb.c)
-    ebitmap_t *new_type_attr_map = (ebitmap_t *) realloc(
-            pdb->type_attr_map, sizeof(ebitmap_t) * pdb->p_types.nprim);
+    auto new_type_attr_map = static_cast<ebitmap_t *>(realloc(
+            pdb->type_attr_map, sizeof(ebitmap_t) * pdb->p_types.nprim));
     if (new_type_attr_map) {
         pdb->type_attr_map = new_type_attr_map;
     } else {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
-    ebitmap_t *new_attr_type_map = (ebitmap_t *) realloc(
-            pdb->attr_type_map, sizeof(ebitmap_t) * pdb->p_types.nprim);
+    auto new_attr_type_map = static_cast<ebitmap_t *>(realloc(
+            pdb->attr_type_map, sizeof(ebitmap_t) * pdb->p_types.nprim));
     if (new_attr_type_map) {
         pdb->attr_type_map = new_attr_type_map;
     } else {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     // Initialize bitmap
@@ -670,14 +687,14 @@ SELinuxResult selinux_create_type(policydb_t *pdb,
     // Handle degenerate case
     if (ebitmap_set_bit(&pdb->type_attr_map[type_val - 1],
                         type_val - 1, 1) < 0) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
     if (!selinux_raw_reindex(pdb)) {
-        return SELinuxResult::ERROR;
+        return SELinuxResult::Error;
     }
 
-    return SELinuxResult::CHANGED;
+    return SELinuxResult::Changed;
 }
 
 /*!
@@ -707,8 +724,10 @@ bool selinux_set_attribute(policydb_t *pdb,
         return false;
     }
 
-    auto ret = selinux_raw_set_attribute(pdb, type->s.value, attr->s.value);
-    return ret != SELinuxResult::ERROR;
+    auto ret = selinux_raw_set_attribute(
+            pdb, static_cast<uint16_t>(type->s.value),
+            static_cast<uint16_t>(attr->s.value));
+    return ret != SELinuxResult::Error;
 }
 
 bool selinux_add_to_role(policydb_t *pdb,
@@ -725,11 +744,13 @@ bool selinux_add_to_role(policydb_t *pdb,
         return false;
     }
 
-    auto ret = selinux_raw_add_to_role(pdb, role->s.value, type->s.value);
-    return ret != SELinuxResult::ERROR;
+    auto ret = selinux_raw_add_to_role(
+            pdb, static_cast<uint16_t>(role->s.value),
+            static_cast<uint16_t>(type->s.value));
+    return ret != SELinuxResult::Error;
 }
 
-void selinux_strip_no_audit(policydb_t *pdb)
+static void selinux_strip_no_audit(policydb_t *pdb)
 {
 #if 0
     // This implementation works, but is confusing since it won't be printed
@@ -846,12 +867,14 @@ static bool apply_pre_boot_patches(policydb_t *pdb)
             continue;
         }
 
-        auto ret = selinux_raw_grant_all_perms(pdb, kernel->s.value, type_val);
+        auto ret = selinux_raw_grant_all_perms(
+                pdb, static_cast<uint16_t>(kernel->s.value),
+                static_cast<uint16_t>(type_val));
         switch (ret) {
-        case SELinuxResult::CHANGED:
-        case SELinuxResult::UNCHANGED:
+        case SELinuxResult::Changed:
+        case SELinuxResult::Unchanged:
             break;
-        case SELinuxResult::ERROR:
+        case SELinuxResult::Error:
             LOGE("Failed to grant all perms for: %s -> %s",
                  "kernel", pdb->p_type_val_to_name[type_val - 1]);
             return false;
@@ -898,7 +921,7 @@ static bool copy_avtab_rules(policydb_t *pdb,
 
             if (cur->key.target_type == source->s.value) {
                 avtab_key_t copy = cur->key;
-                copy.target_type = target->s.value;
+                copy.target_type = static_cast<uint16_t>(target->s.value);
 
                 to_add.push_back(std::make_pair(std::move(copy), cur->datum));
             }
@@ -940,10 +963,10 @@ static bool fix_data_media_rules(policydb_t *pdb)
     }
 
     std::string context;
-    if (!util::selinux_lget_context(path, &context)) {
+    if (!util::selinux_lget_context(path, context)) {
         LOGE("%s: Failed to get context: %s", path, strerror(errno));
         path = "/data/media";
-        if (!util::selinux_lget_context(path, &context)) {
+        if (!util::selinux_lget_context(path, context)) {
             LOGE("%s: Failed to get context: %s", path, strerror(errno));
             // Don't fail if /data/media does not exist
             return errno == ENOENT;
@@ -974,7 +997,7 @@ static bool fix_data_media_rules(policydb_t *pdb)
 static bool create_mbtool_types(policydb_t *pdb)
 {
     // Used for running any mbtool commands
-    ff(selinux_create_type(pdb, "mb_exec") != SELinuxResult::ERROR);
+    ff(selinux_create_type(pdb, "mb_exec") != SELinuxResult::Error);
     ff(selinux_add_to_role(pdb, "r", "mb_exec"));
     ff(selinux_set_attribute(pdb, "mb_exec", "domain"));
     ff(selinux_set_attribute(pdb, "mb_exec", "mlstrustedobject"));
@@ -1049,12 +1072,13 @@ static bool create_mbtool_types(policydb_t *pdb)
         }
 
         auto ret2 = selinux_raw_grant_all_perms(
-                pdb, mb_exec->s.value, type_val);
+                pdb, static_cast<uint16_t>(mb_exec->s.value),
+                static_cast<uint16_t>(type_val));
         switch (ret2) {
-        case SELinuxResult::CHANGED:
-        case SELinuxResult::UNCHANGED:
+        case SELinuxResult::Changed:
+        case SELinuxResult::Unchanged:
             break;
-        case SELinuxResult::ERROR:
+        case SELinuxResult::Error:
             LOGE("Failed to grant all perms for: %s -> %s",
                  "mb_exec", pdb->p_type_val_to_name[type_val - 1]);
             return false;
@@ -1097,20 +1121,20 @@ bool selinux_apply_patch(policydb_t *pdb, SELinuxPatch patch)
     bool ret = false;
 
     switch (patch) {
-    case SELinuxPatch::PRE_BOOT:
+    case SELinuxPatch::PreBoot:
         ret = apply_pre_boot_patches(pdb);
         break;
-    case SELinuxPatch::MAIN:
+    case SELinuxPatch::Main:
         ret = apply_main_patches(pdb);
         break;
-    case SELinuxPatch::CWM_RECOVERY:
+    case SELinuxPatch::CwmRecovery:
         ret = apply_cwm_recovery_patches(pdb);
         break;
-    case SELinuxPatch::STRIP_NO_AUDIT:
+    case SELinuxPatch::StripNoAudit:
         selinux_strip_no_audit(pdb);
         ret = true;
         break;
-    case SELinuxPatch::NONE:
+    case SELinuxPatch::None:
         break;
     }
 
@@ -1128,7 +1152,7 @@ bool patch_sepolicy(const std::string &source,
         return false;
     }
 
-    auto destroy_pdb = util::finally([&]{
+    auto destroy_pdb = finally([&]{
         policydb_destroy(&pdb);
     });
 
@@ -1154,7 +1178,7 @@ bool patch_sepolicy(const std::string &source,
 
 bool patch_loaded_sepolicy(SELinuxPatch patch)
 {
-    autoclose::file fp(autoclose::fopen(SELINUX_ENFORCE_FILE, "rbe"));
+    ScopedFILE fp(fopen(util::SELINUX_ENFORCE_FILE, "rbe"), fclose);
     if (!fp) {
         if (errno == ENOENT) {
             // If the file doesn't exist, then the kernel probably doesn't
@@ -1163,12 +1187,13 @@ bool patch_loaded_sepolicy(SELinuxPatch patch)
             return true;
         } else {
             LOGE("%s: Failed to open file: %s",
-                 SELINUX_ENFORCE_FILE, strerror(errno));
+                 util::SELINUX_ENFORCE_FILE, strerror(errno));
             return false;
         }
     }
 
-    return patch_sepolicy(SELINUX_POLICY_FILE, SELINUX_LOAD_FILE, patch);
+    return patch_sepolicy(util::SELINUX_POLICY_FILE, util::SELINUX_LOAD_FILE,
+                          patch);
 }
 
 static void sepolpatch_usage(FILE *stream)
@@ -1198,11 +1223,11 @@ struct {
     const char *name;
     SELinuxPatch patch;
 } patches[] = {
-    { "pre_boot",       SELinuxPatch::PRE_BOOT },
-    { "main",           SELinuxPatch::MAIN },
-    { "cwm_recovery",   SELinuxPatch::CWM_RECOVERY },
-    { "strip_no_audit", SELinuxPatch::STRIP_NO_AUDIT },
-    { nullptr,          SELinuxPatch::NONE },
+    { "pre_boot",       SELinuxPatch::PreBoot },
+    { "main",           SELinuxPatch::Main },
+    { "cwm_recovery",   SELinuxPatch::CwmRecovery },
+    { "strip_no_audit", SELinuxPatch::StripNoAudit },
+    { nullptr,          SELinuxPatch::None },
 };
 
 int sepolpatch_main(int argc, char *argv[])
@@ -1289,7 +1314,7 @@ int sepolpatch_main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
 
-        SELinuxPatch patch_type(SELinuxPatch::NONE);
+        SELinuxPatch patch_type(SELinuxPatch::None);
 
         for (auto it = patches; it->name; ++it) {
             if (strcmp(it->name, patch) == 0) {
@@ -1298,7 +1323,7 @@ int sepolpatch_main(int argc, char *argv[])
             }
         }
 
-        if (patch_type == SELinuxPatch::NONE) {
+        if (patch_type == SELinuxPatch::None) {
             fprintf(stderr, "Invalid patch: %s\n", patch);
             return EXIT_FAILURE;
         }
@@ -1313,10 +1338,10 @@ int sepolpatch_main(int argc, char *argv[])
                     ? EXIT_SUCCESS : EXIT_FAILURE;
         } else {
             if (!source_file) {
-                source_file = SELINUX_POLICY_FILE;
+                source_file = util::SELINUX_POLICY_FILE;
             }
             if (!target_file) {
-                target_file = SELINUX_LOAD_FILE;
+                target_file = util::SELINUX_LOAD_FILE;
             }
 
             return patch_sepolicy(source_file, target_file, patch_type)

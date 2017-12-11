@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/file/win32.h"
@@ -24,10 +24,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "mbcommon/error_code.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/locale.h"
-
-#include "mbcommon/file/callbacks.h"
-#include "mbcommon/file/win32_p.h"
 
 static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
 
@@ -36,110 +35,474 @@ static_assert(sizeof(DWORD) == 4, "DWORD is not 32 bits");
  * \brief Open file with Win32 `HANDLE` API
  */
 
-MB_BEGIN_C_DECLS
-
-static void free_ctx(Win32FileCtx *ctx)
+namespace mb
 {
-    free(ctx->filename);
-    free(ctx);
-}
 
-LPCWSTR win32_error_string(Win32FileCtx *ctx, DWORD error_code)
+using namespace detail;
+
+/*! \cond INTERNAL */
+struct RealWin32FileFuncs : public Win32FileFuncs
 {
-    LocalFree(ctx->error);
-
-    size_t size = FormatMessageW(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER
-            | FORMAT_MESSAGE_FROM_SYSTEM
-            | FORMAT_MESSAGE_IGNORE_INSERTS,            // dwFlags
-        nullptr,                                        // lpSource
-        error_code,                                     // dwMessageId
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),      // dwLanguageId
-        reinterpret_cast<LPWSTR>(&ctx->error),          // lpBuffer
-        0,                                              // nSize
-        nullptr                                         // Arguments
-    );
-
-    if (size == 0) {
-        ctx->error = nullptr;
-        return L"(FormatMessageW failed)";
+    // windows.h
+    virtual BOOL fn_CloseHandle(HANDLE hObject) override
+    {
+        return CloseHandle(hObject);
     }
 
-    return ctx->error;
+    virtual HANDLE fn_CreateFileW(LPCWSTR lpFileName,
+                                  DWORD dwDesiredAccess,
+                                  DWORD dwShareMode,
+                                  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+                                  DWORD dwCreationDisposition,
+                                  DWORD dwFlagsAndAttributes,
+                                  HANDLE hTemplateFile) override
+    {
+        return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode,
+                           lpSecurityAttributes, dwCreationDisposition,
+                           dwFlagsAndAttributes, hTemplateFile);
+    }
+
+    virtual BOOL fn_ReadFile(HANDLE hFile,
+                             LPVOID lpBuffer,
+                             DWORD nNumberOfBytesToRead,
+                             LPDWORD lpNumberOfBytesRead,
+                             LPOVERLAPPED lpOverlapped) override
+    {
+        return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead,
+                        lpNumberOfBytesRead, lpOverlapped);
+    }
+
+    virtual BOOL fn_SetEndOfFile(HANDLE hFile) override
+    {
+        return SetEndOfFile(hFile);
+    }
+
+    virtual BOOL fn_SetFilePointerEx(HANDLE hFile,
+                                     LARGE_INTEGER liDistanceToMove,
+                                     PLARGE_INTEGER lpNewFilePointer,
+                                     DWORD dwMoveMethod) override
+    {
+        return SetFilePointerEx(hFile, liDistanceToMove, lpNewFilePointer,
+                                dwMoveMethod);
+    }
+
+    virtual BOOL fn_WriteFile(HANDLE hFile,
+                              LPCVOID lpBuffer,
+                              DWORD nNumberOfBytesToWrite,
+                              LPDWORD lpNumberOfBytesWritten,
+                              LPOVERLAPPED lpOverlapped) override
+    {
+        return WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite,
+                         lpNumberOfBytesWritten, lpOverlapped);
+    }
+};
+/*! \endcond */
+
+static RealWin32FileFuncs g_default_funcs;
+
+/*! \cond INTERNAL */
+
+Win32FileFuncs::~Win32FileFuncs() = default;
+
+static bool convert_mode(FileOpenMode mode,
+                         DWORD &access_out,
+                         DWORD &sharing_out,
+                         SECURITY_ATTRIBUTES &sa_out,
+                         DWORD &creation_out,
+                         DWORD &attrib_out,
+                         bool &append_out)
+{
+    DWORD access = 0;
+    // Match open()/_wopen() behavior
+    DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE;
+    SECURITY_ATTRIBUTES sa;
+    DWORD creation = 0;
+    DWORD attrib = 0;
+    // Win32 does not have a native append mode
+    bool append = false;
+
+    switch (mode) {
+    case FileOpenMode::ReadOnly:
+        access = GENERIC_READ;
+        creation = OPEN_EXISTING;
+        break;
+    case FileOpenMode::ReadWrite:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = OPEN_EXISTING;
+        break;
+    case FileOpenMode::WriteOnly:
+        access = GENERIC_WRITE;
+        creation = CREATE_ALWAYS;
+        break;
+    case FileOpenMode::ReadWriteTrunc:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = CREATE_ALWAYS;
+        break;
+    case FileOpenMode::Append:
+        access = GENERIC_WRITE;
+        creation = OPEN_ALWAYS;
+        append = true;
+        break;
+    case FileOpenMode::ReadAppend:
+        access = GENERIC_READ | GENERIC_WRITE;
+        creation = OPEN_ALWAYS;
+        append = true;
+        break;
+    default:
+        return false;
+    }
+
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = nullptr;
+    sa.bInheritHandle = false;
+
+    access_out = access;
+    sharing_out = sharing;
+    sa_out = sa;
+    creation_out = creation;
+    attrib_out = attrib;
+    append_out = append;
+
+    return true;
 }
 
-static int win32_open_cb(struct MbFile *file, void *userdata)
-{
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
+/*! \endcond */
 
-    if (ctx->filename) {
-        ctx->handle = ctx->vtable.fn_CreateFileW(
-                ctx->vtable.userdata, ctx->filename, ctx->access, ctx->sharing,
-                &ctx->sa, ctx->creation, ctx->attrib, nullptr);
-        if (ctx->handle == INVALID_HANDLE_VALUE) {
-            mb_file_set_error(file, -errno, "Failed to open file: %ls",
-                              win32_error_string(ctx, GetLastError()));
-            return MB_FILE_FAILED;
+/*!
+ * \class Win32File
+ *
+ * \brief Open file using Win32 API.
+ *
+ * This class supports opening large files (64-bit offsets) on Windows.
+ */
+
+/*!
+ * \brief Construct unbound Win32File.
+ *
+ * The File handle will not be bound to any file. One of the open functions will
+ * need to be called to open a file.
+ */
+Win32File::Win32File()
+    : Win32File(&g_default_funcs)
+{
+}
+
+/*!
+ * \brief Open File handle from Win32 `HANDLE`.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(HANDLE, bool, bool)
+ *
+ * \param handle Win32 `HANDLE`
+ * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
+ * \param append Whether append mode should be enabled
+ */
+Win32File::Win32File(HANDLE handle, bool owned, bool append)
+    : Win32File(&g_default_funcs, handle, owned, append)
+{
+}
+
+/*!
+ * \brief Open File handle from a multi-byte filename.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(const std::string &, FileOpenMode)
+ *
+ * \param filename MBS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ */
+Win32File::Win32File(const std::string &filename, FileOpenMode mode)
+    : Win32File(&g_default_funcs, filename, mode)
+{
+}
+
+/*!
+ * \brief Open File handle from a wide-character filename.
+ *
+ * Construct the file handle and open the file. Use is_open() to check if the
+ * file was successfully opened.
+ *
+ * \sa open(const std::wstring &, FileOpenMode)
+ *
+ * \param filename WCS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ */
+Win32File::Win32File(const std::wstring &filename, FileOpenMode mode)
+    : Win32File(&g_default_funcs, filename, mode)
+{
+}
+
+/*! \cond INTERNAL */
+
+Win32File::Win32File(Win32FileFuncs *funcs)
+    : File(), m_funcs(funcs)
+{
+    clear();
+}
+
+Win32File::Win32File(Win32FileFuncs *funcs,
+                     HANDLE handle, bool owned, bool append)
+    : Win32File(funcs)
+{
+    (void) open(handle, owned, append);
+}
+
+Win32File::Win32File(Win32FileFuncs *funcs,
+                     const std::string &filename, FileOpenMode mode)
+    : Win32File(funcs)
+{
+    (void) open(filename, mode);
+}
+
+Win32File::Win32File(Win32FileFuncs *funcs,
+                     const std::wstring &filename, FileOpenMode mode)
+    : Win32File(funcs)
+{
+    (void) open(filename, mode);
+}
+
+/*! \endcond */
+
+Win32File::~Win32File()
+{
+    (void) close();
+}
+
+Win32File::Win32File(Win32File &&other) noexcept
+    : File(std::move(other))
+    , m_funcs(other.m_funcs)
+    , m_handle(other.m_handle)
+    , m_owned(other.m_owned)
+    , m_filename(std::move(other.m_filename))
+    , m_access(other.m_access)
+    , m_sharing(other.m_sharing)
+    , m_sa(other.m_sa)
+    , m_creation(other.m_creation)
+    , m_attrib(other.m_attrib)
+    , m_append(other.m_append)
+{
+    other.clear();
+}
+
+Win32File & Win32File::operator=(Win32File &&rhs) noexcept
+{
+    File::operator=(std::move(rhs));
+
+    m_funcs = rhs.m_funcs;
+    m_handle = rhs.m_handle;
+    m_owned = rhs.m_owned;
+    m_filename.swap(rhs.m_filename);
+    m_access = rhs.m_access;
+    m_sharing = rhs.m_sharing;
+    m_sa = rhs.m_sa;
+    m_creation = rhs.m_creation;
+    m_attrib = rhs.m_attrib;
+    m_append = rhs.m_append;
+
+    rhs.clear();
+
+    return *this;
+}
+
+/*!
+ * \brief Open from a Win32 `HANDLE`.
+ *
+ * If \p owned is true, then the File handle will take ownership of the
+ * Win32 `HANDLE`. In other words, the Win32 `HANDLE` will be closed when the
+ * File handle is closed.
+ *
+ * The \p append parameter exists because the Win32 API does not have a native
+ * append mode.
+ *
+ * \param handle Win32 `HANDLE`
+ * \param owned Whether the Win32 `HANDLE` should be owned by the File handle
+ * \param append Whether append mode should be enabled
+ *
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
+ */
+oc::result<void> Win32File::open(HANDLE handle, bool owned, bool append)
+{
+    if (state() == FileState::New) {
+        m_handle = handle;
+        m_owned = owned;
+        m_append = append;
+    }
+
+    return File::open();
+}
+
+/*!
+ * \brief Open from a multi-byte filename.
+ *
+ * \p filename is converted to WCS using mbs_to_wcs() before being used.
+ *
+ * \param filename MBS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
+ */
+oc::result<void> Win32File::open(const std::string &filename, FileOpenMode mode)
+{
+    if (state() == FileState::New) {
+        // Convert filename to platform-native encoding
+        auto converted = mbs_to_wcs(filename);
+        if (!converted) {
+            return FileError::CannotConvertEncoding;
+        }
+
+        DWORD access;
+        DWORD sharing;
+        SECURITY_ATTRIBUTES sa;
+        DWORD creation;
+        DWORD attrib;
+        bool append;
+
+        if (!convert_mode(mode, access, sharing, sa, creation, attrib, append)) {
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
+        }
+
+        m_handle = INVALID_HANDLE_VALUE;
+        m_owned = true;
+        m_filename = std::move(converted.value());
+        m_access = access;
+        m_sharing = sharing;
+        m_sa = sa;
+        m_creation = creation;
+        m_attrib = attrib;
+        m_append = append;
+    }
+
+    return File::open();
+}
+
+/*!
+ * \brief Open from a wide-character filename.
+ *
+ * \p filename is used directly without any conversions.
+ *
+ * \param filename WCS filename
+ * \param mode Open mode (\ref FileOpenMode)
+ *
+ * \return Nothing if the file is successfully opened. Otherwise, the error
+ *         code.
+ */
+oc::result<void> Win32File::open(const std::wstring &filename, FileOpenMode mode)
+{
+    if (state() == FileState::New) {
+        DWORD access;
+        DWORD sharing;
+        SECURITY_ATTRIBUTES sa;
+        DWORD creation;
+        DWORD attrib;
+        bool append;
+
+        if (!convert_mode(mode, access, sharing, sa, creation, attrib, append)) {
+            MB_UNREACHABLE("Invalid mode: %d", static_cast<int>(mode));
+        }
+
+        m_handle = INVALID_HANDLE_VALUE;
+        m_owned = true;
+        m_filename = filename;
+        m_access = access;
+        m_sharing = sharing;
+        m_sa = sa;
+        m_creation = creation;
+        m_attrib = attrib;
+        m_append = append;
+    }
+
+    return File::open();
+}
+
+oc::result<void> Win32File::on_open()
+{
+    if (!m_filename.empty()) {
+        m_handle = m_funcs->fn_CreateFileW(
+                m_filename.c_str(), m_access, m_sharing, &m_sa, m_creation,
+                m_attrib, nullptr);
+        if (m_handle == INVALID_HANDLE_VALUE) {
+            return ec_from_win32();
         }
     }
 
-    return MB_FILE_OK;
+    return oc::success();
 }
 
-static int win32_close_cb(struct MbFile *file, void *userdata)
+oc::result<void> Win32File::on_close()
 {
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
-    int ret = MB_FILE_OK;
+    // Reset to allow opening another file
+    auto reset = finally([&] {
+        clear();
+    });
 
-    if (ctx->owned && !ctx->vtable.fn_CloseHandle(
-            ctx->vtable.userdata, ctx->handle)) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to close file: %ls",
-                          win32_error_string(ctx, GetLastError()));
-        ret = MB_FILE_FAILED;
+    if (m_owned && m_handle != INVALID_HANDLE_VALUE
+            && !m_funcs->fn_CloseHandle(m_handle)) {
+        return ec_from_win32();
     }
 
-    free_ctx(ctx);
-
-    return ret;
+    return oc::success();
 }
 
-static int win32_read_cb(struct MbFile *file, void *userdata,
-                         void *buf, size_t size,
-                         size_t *bytes_read)
+oc::result<size_t> Win32File::on_read(void *buf, size_t size)
 {
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
     DWORD n = 0;
 
     if (size > UINT_MAX) {
         size = UINT_MAX;
     }
 
-    bool ret = ctx->vtable.fn_ReadFile(
-        ctx->vtable.userdata,   // userdata
-        ctx->handle,            // hFile
-        buf,                    // lpBuffer
-        size,                   // nNumberOfBytesToRead
-        &n,                     // lpNumberOfBytesRead
-        nullptr                 // lpOverlapped
+    bool ret = m_funcs->fn_ReadFile(
+        m_handle,   // hFile
+        buf,        // lpBuffer
+        size,       // nNumberOfBytesToRead
+        &n,         // lpNumberOfBytesRead
+        nullptr     // lpOverlapped
     );
 
     if (!ret) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to read file: %ls",
-                          win32_error_string(ctx, GetLastError()));
-        return MB_FILE_FAILED;
+        return ec_from_win32();
     }
 
-    *bytes_read = n;
-    return MB_FILE_OK;
+    return n;
 }
 
-static int win32_seek_cb(struct MbFile *file, void *userdata,
-                         int64_t offset, int whence,
-                         uint64_t *new_offset)
+oc::result<size_t> Win32File::on_write(const void *buf, size_t size)
 {
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
+    DWORD n = 0;
+
+    // We have to seek manually in append mode because the Win32 API has no
+    // native append mode.
+    if (m_append) {
+        OUTCOME_TRYV(on_seek(0, SEEK_END));
+    }
+
+    if (size > UINT_MAX) {
+        size = UINT_MAX;
+    }
+
+    bool ret = m_funcs->fn_WriteFile(
+        m_handle,   // hFile
+        buf,        // lpBuffer
+        size,       // nNumberOfBytesToWrite
+        &n,         // lpNumberOfBytesWritten
+        nullptr     // lpOverlapped
+    );
+
+    if (!ret) {
+        return ec_from_win32();
+    }
+
+    return n;
+}
+
+oc::result<uint64_t> Win32File::on_seek(int64_t offset, int whence)
+{
     DWORD move_method;
     LARGE_INTEGER pos;
     LARGE_INTEGER new_pos;
@@ -155,352 +518,69 @@ static int win32_seek_cb(struct MbFile *file, void *userdata,
         move_method = FILE_END;
         break;
     default:
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Invalid whence argument: %d", whence);
-        return MB_FILE_FAILED;
+        MB_UNREACHABLE("Invalid whence argument: %d", whence);
     }
 
     pos.QuadPart = offset;
 
-    bool ret = ctx->vtable.fn_SetFilePointerEx(
-        ctx->vtable.userdata,   // userdata
-        ctx->handle,            // hFile
-        pos,                    // liDistanceToMove
-        &new_pos,               // lpNewFilePointer
-        move_method             // dwMoveMethod
+    bool ret = m_funcs->fn_SetFilePointerEx(
+        m_handle,   // hFile
+        pos,        // liDistanceToMove
+        &new_pos,   // lpNewFilePointer
+        move_method // dwMoveMethod
     );
 
     if (!ret) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to seek file: %ls",
-                          win32_error_string(ctx, GetLastError()));
-        return MB_FILE_FAILED;
+        return ec_from_win32();
     }
 
-    *new_offset = new_pos.QuadPart;
-    return MB_FILE_OK;
+    return static_cast<uint64_t>(new_pos.QuadPart);
 }
 
-static int win32_write_cb(struct MbFile *file, void *userdata,
-                          const void *buf, size_t size,
-                          size_t *bytes_written)
+oc::result<void> Win32File::on_truncate(uint64_t size)
 {
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
-    DWORD n = 0;
-
-    // We have to seek manually in append mode because the Win32 API has no
-    // native append mode.
-    if (ctx->append) {
-        uint64_t pos;
-        int seek_ret = win32_seek_cb(file, userdata, 0, SEEK_END, &pos);
-        if (seek_ret != MB_FILE_OK) {
-            return seek_ret;
-        }
-    }
-
-    if (size > UINT_MAX) {
-        size = UINT_MAX;
-    }
-
-    bool ret = ctx->vtable.fn_WriteFile(
-        ctx->vtable.userdata,   // userdata
-        ctx->handle,            // hFile
-        buf,                    // lpBuffer
-        size,                   // nNumberOfBytesToWrite
-        &n,                     // lpNumberOfBytesWritten
-        nullptr                 // lpOverlapped
-    );
-
-    if (!ret) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to write file: %ls",
-                          win32_error_string(ctx, GetLastError()));
-        return MB_FILE_FAILED;
-    }
-
-    *bytes_written = n;
-    return MB_FILE_OK;
-}
-
-static int win32_truncate_cb(struct MbFile *file, void *userdata,
-                              uint64_t size)
-{
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(userdata);
-    int ret = MB_FILE_OK, ret2;
-    uint64_t current_pos;
-    uint64_t temp;
-
     // Get current position
-    ret2 = win32_seek_cb(file, userdata, 0, SEEK_CUR, &current_pos);
-    if (ret2 != MB_FILE_OK) {
-        return ret2;
-    }
+    OUTCOME_TRY(current_pos, on_seek(0, SEEK_CUR));
 
     // Move to new position
-    ret2 = win32_seek_cb(file, userdata, size, SEEK_SET, &temp);
-    if (ret2 != MB_FILE_OK) {
-        return ret2;
-    }
+    OUTCOME_TRYV(on_seek(static_cast<int64_t>(size), SEEK_SET));
+
+    std::error_code error;
 
     // Truncate
-    if (!ctx->vtable.fn_SetEndOfFile(ctx->vtable.userdata, ctx->handle)) {
-        mb_file_set_error(file, -GetLastError(),
-                          "Failed to set EOF position: %ls",
-                          win32_error_string(ctx, GetLastError()));
-        ret = MB_FILE_FAILED;
+    if (!m_funcs->fn_SetEndOfFile(m_handle)) {
+        error = ec_from_win32();
     }
 
     // Move back to initial position
-    ret2 = win32_seek_cb(file, userdata, current_pos, SEEK_SET, &temp);
-    if (ret2 != MB_FILE_OK) {
+    auto temp = on_seek(static_cast<int64_t>(current_pos), SEEK_SET);
+    if (!temp) {
         // We can't guarantee the file position so the handle shouldn't be used
         // anymore
-        ret = MB_FILE_FATAL;
+        set_fatal();
+        if (!error) {
+            error = std::move(temp.error());
+        }
     }
 
-    return ret;
+    if (error) {
+        return error;
+    }
+
+    return oc::success();
 }
 
-static bool check_vtable(SysVtable *vtable, bool needs_open)
+void Win32File::clear()
 {
-    return vtable
-            && vtable->fn_CloseHandle
-            && (needs_open ? !!vtable->fn_CreateFileW : true)
-            && vtable->fn_ReadFile
-            && vtable->fn_SetEndOfFile
-            && vtable->fn_SetFilePointerEx
-            && vtable->fn_WriteFile;
+    m_handle = INVALID_HANDLE_VALUE;
+    m_owned = false;
+    m_filename.clear();
+    m_access = 0;
+    m_sharing = 0;
+    m_sa = {};
+    m_creation = 0;
+    m_attrib = 0;
+    m_append = false;
 }
 
-static Win32FileCtx * create_ctx(struct MbFile *file, SysVtable *vtable,
-                                 bool needs_open)
-{
-    if (!check_vtable(vtable, needs_open)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Invalid or incomplete vtable");
-        return nullptr;
-    }
-
-    Win32FileCtx *ctx = static_cast<Win32FileCtx *>(
-            calloc(1, sizeof(Win32FileCtx)));
-    if (!ctx) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate Win32FileCtx: %s",
-                          strerror(errno));
-        return nullptr;
-    }
-
-    ctx->vtable = *vtable;
-
-    return ctx;
 }
-
-static int open_ctx(struct MbFile *file, Win32FileCtx *ctx)
-{
-    return mb_file_open_callbacks(file,
-                                  &win32_open_cb,
-                                  &win32_close_cb,
-                                  &win32_read_cb,
-                                  &win32_write_cb,
-                                  &win32_seek_cb,
-                                  &win32_truncate_cb,
-                                  ctx);
-}
-
-static bool convert_mode(Win32FileCtx *ctx, int mode)
-{
-    DWORD access = 0;
-    // Match open()/_wopen() behavior
-    DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE;
-    SECURITY_ATTRIBUTES sa;
-    DWORD creation = 0;
-    DWORD attrib = 0;
-    // Win32 does not have a native append mode
-    bool append = false;
-
-    switch (mode) {
-    case MB_FILE_OPEN_READ_ONLY:
-        access = GENERIC_READ;
-        creation = OPEN_EXISTING;
-        break;
-    case MB_FILE_OPEN_READ_WRITE:
-        access = GENERIC_READ | GENERIC_WRITE;
-        creation = OPEN_EXISTING;
-        break;
-    case MB_FILE_OPEN_WRITE_ONLY:
-        access = GENERIC_WRITE;
-        creation = CREATE_ALWAYS;
-        break;
-    case MB_FILE_OPEN_READ_WRITE_TRUNC:
-        access = GENERIC_READ | GENERIC_WRITE;
-        creation = CREATE_ALWAYS;
-        break;
-    case MB_FILE_OPEN_APPEND:
-        access = GENERIC_WRITE;
-        creation = OPEN_ALWAYS;
-        append = true;
-        break;
-    case MB_FILE_OPEN_READ_APPEND:
-        access = GENERIC_READ | GENERIC_WRITE;
-        creation = OPEN_ALWAYS;
-        append = true;
-        break;
-    default:
-        return false;
-    }
-
-    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-    sa.lpSecurityDescriptor = nullptr;
-    sa.bInheritHandle = false;
-
-    ctx->access = access;
-    ctx->sharing = sharing;
-    ctx->sa = sa;
-    ctx->creation = creation;
-    ctx->attrib = attrib;
-    ctx->append = append;
-
-    return true;
-}
-
-int _mb_file_open_HANDLE(SysVtable *vtable, struct MbFile *file, HANDLE handle,
-                         bool owned, bool append)
-{
-    Win32FileCtx *ctx = create_ctx(file, vtable, false);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->handle = handle;
-    ctx->owned = owned;
-    ctx->append = append;
-
-    return open_ctx(file, ctx);
-}
-
-int _mb_file_open_HANDLE_filename(SysVtable *vtable, struct MbFile *file,
-                                  const char *filename, int mode)
-{
-    Win32FileCtx *ctx = create_ctx(file, vtable, false);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->owned = true;
-
-    ctx->filename = mb::mbs_to_wcs(filename);
-    if (!ctx->filename) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Failed to convert MBS filename or mode to WCS");
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    if (!convert_mode(ctx, mode)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Invalid mode: %d", mode);
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    return open_ctx(file, ctx);
-}
-
-int _mb_file_open_HANDLE_filename_w(SysVtable *vtable, struct MbFile *file,
-                                    const wchar_t *filename, int mode)
-{
-    Win32FileCtx *ctx = create_ctx(file, vtable, false);
-    if (!ctx) {
-        return MB_FILE_FATAL;
-    }
-
-    ctx->owned = true;
-
-    ctx->filename = wcsdup(filename);
-    if (!ctx->filename) {
-        mb_file_set_error(file, MB_FILE_ERROR_INTERNAL_ERROR,
-                          "Failed to allocate string: %s", strerror(errno));
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    if (!convert_mode(ctx, mode)) {
-        mb_file_set_error(file, MB_FILE_ERROR_INVALID_ARGUMENT,
-                          "Invalid mode: %d", mode);
-        free_ctx(ctx);
-        return MB_FILE_FATAL;
-    }
-
-    return open_ctx(file, ctx);
-}
-
-/*!
- * Open MbFile handle from Win32 `HANDLE`.
- *
- * If \p owned is true, then the MbFile handle will take ownership of the
- * Win32 `HANDLE`. In other words, the Win32 `HANDLE` will be closed when the
- * MbFile handle is closed.
- *
- * The \p append parameter exists because the Win32 API does not have a native
- * append mode.
- *
- * \param file MbFile handle
- * \param handle Win32 `HANDLE`
- * \param owned Whether the Win32 `HANDLE` should be owned by the MbFile handle
- * \param append Whether append mode should be enabled
- *
- * \return
- *   * #MB_FILE_OK if the Win32 `HANDLE` was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_HANDLE(struct MbFile *file,
-                        HANDLE handle, bool owned, bool append)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_HANDLE(&vtable, file, handle, owned, append);
-}
-
-/*!
- * Open MbFile handle from a multi-byte filename.
- *
- * \p filename is converted to WCS using mb::mbs_to_wcs() before being used.
- *
- * \param file MbFile handle
- * \param filename MBS filename
- * \param mode Open mode (\ref MbFileOpenMode)
- *
- * \return
- *   * #MB_FILE_OK if the file was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_HANDLE_filename(struct MbFile *file, const char *filename,
-                                 int mode)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_HANDLE_filename(&vtable, file, filename, mode);
-}
-
-/*!
- * Open MbFile handle from a wide-character filename.
- *
- * \p filename is used directly without any conversions.
- *
- * \param file MbFile handle
- * \param filename WCS filename
- * \param mode Open mode (\ref MbFileOpenMode)
- *
- * \return
- *   * #MB_FILE_OK if the file was successfully opened
- *   * \<= #MB_FILE_WARN if an error occurs
- */
-int mb_file_open_HANDLE_filename_w(struct MbFile *file, const wchar_t *filename,
-                                   int mode)
-{
-    SysVtable vtable{};
-    _vtable_fill_system_funcs(&vtable);
-    return _mb_file_open_HANDLE_filename_w(&vtable, file, filename, mode);
-}
-
-MB_END_C_DECLS

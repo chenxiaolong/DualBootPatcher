@@ -20,8 +20,18 @@ if(MBP_TOP_LEVEL_BUILD)
     # devices' ramdisks.
     if(${MBP_SYSTEM_BUILD_TYPE} STREQUAL debug)
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Debug)
+        set(system_install_target install)
     else()
         set(MBP_SYSTEM_CMAKE_BUILD_TYPE Release)
+        set(system_install_target install/strip)
+    endif()
+
+    if(${MBP_BUILD_TARGET} STREQUAL android)
+        if(${CMAKE_BUILD_TYPE} STREQUAL Debug)
+            set(app_install_target install)
+        else()
+            set(app_install_target install/strip)
+        endif()
     endif()
 
     # List of ExternalProject directories to run "make clean" in
@@ -36,14 +46,12 @@ if(MBP_TOP_LEVEL_BUILD)
             #-DCMAKE_TOOLCHAIN_FILE=${ndk_path}/build/cmake/android.toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
             -DANDROID_ABI=${abi}
-            -DANDROID_STL=gnustl_static
-            #-DANDROID_STL=c++_static
-            -DANDROID_UNIFIED_HEADERS=ON
             -DMBP_BUILD_TYPE=${MBP_BUILD_TYPE}
             -DMBP_ENABLE_TESTS=OFF
             -DMBP_PREBUILTS_BINARY_DIR=${MBP_PREBUILTS_BINARY_DIR}
             -DMBP_SIGN_CONFIG_PATH=${MBP_SIGN_CONFIG_PATH}
             -DJAVA_KEYTOOL=${JAVA_KEYTOOL}
+            -DSCHEMAS2CPP_COMMAND=${SCHEMAS2CPP_COMMAND}
         )
 
         if(MBP_ANDROID_ENABLE_CCACHE)
@@ -61,6 +69,7 @@ if(MBP_TOP_LEVEL_BUILD)
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DANDROID_PIE=ON
             -DANDROID_PLATFORM=android-17
+            -DANDROID_STL=c++_shared
             -DMBP_BUILD_TARGET=android-app
         )
 
@@ -68,7 +77,8 @@ if(MBP_TOP_LEVEL_BUILD)
             ${INTERNAL_COMMON_OPTIONS}
             -DCMAKE_BUILD_TYPE=${MBP_SYSTEM_CMAKE_BUILD_TYPE}
             -DANDROID_PIE=OFF
-            -DANDROID_PLATFORM=android-24
+            -DANDROID_PLATFORM=android-21
+            -DANDROID_STL=c++_static
             -DMBP_BUILD_TARGET=android-system
         )
 
@@ -84,8 +94,13 @@ if(MBP_TOP_LEVEL_BUILD)
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
             CMAKE_ARGS ${INTERNAL_ANDROID_SYSTEM_OPTIONS}
             BUILD_ALWAYS 1
-            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+            INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${system_install_target}
             VERBATIM
+        )
+
+        add_dependencies(
+            android-system_${abi}
+            hosttools
         )
 
         set(result_files
@@ -131,8 +146,13 @@ if(MBP_TOP_LEVEL_BUILD)
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/result
                 CMAKE_ARGS ${INTERNAL_ANDROID_APP_OPTIONS}
                 BUILD_ALWAYS 1
-                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install/strip
+                INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target ${app_install_target}
                 VERBATIM
+            )
+
+            add_dependencies(
+                android-app_${abi}
+                hosttools
             )
 
             ExternalProject_Get_Property(android-app_${abi} BINARY_DIR)
@@ -226,5 +246,33 @@ if(MBP_TOP_LEVEL_BUILD)
         clean-android
         ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/clean-android.cmake
         VERBATIM
+    )
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    # Install libc++. We do this in the android-app target because we have
+    # access to the CMAKE_LINKER variable.
+    set(stl_source "$ENV{ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/libc++_shared.so")
+    set(stl_target "${CMAKE_CURRENT_BINARY_DIR}/libc++_shared.stripped.so")
+
+    add_custom_command(
+        OUTPUT "${stl_target}"
+        COMMAND "${CMAKE_STRIP}" -s "${stl_source}" -o "${stl_target}"
+        COMMENT "Strip libc++_shared library"
+        VERBATIM
+    )
+
+    add_custom_target(
+        strip_stl_shared
+        ALL
+        DEPENDS "${stl_target}"
+    )
+
+    install(
+        FILES "${stl_target}"
+        DESTINATION ${LIB_INSTALL_DIR}
+        RENAME libc++_shared.so
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE             GROUP_READ
+                    WORLD_EXECUTE             WORLD_READ
+        COMPONENT Libraries
     )
 endif()

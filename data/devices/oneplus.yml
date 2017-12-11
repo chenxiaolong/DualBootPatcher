@@ -51,7 +51,6 @@
       - fbdev
     theme: portrait_hdpi
 
-
 - name: OnePlus 2
   id: OnePlus2
   codenames:
@@ -104,7 +103,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
 
-
 - name: OnePlus 3
   id: OnePlus3
   codenames:
@@ -146,7 +144,6 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
 
-
 - name: OnePlus 3T
   id: OnePlus3T
   codenames:
@@ -178,6 +175,11 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/sde21
+     #Trust Zone
+    extra:
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/platform/soc/624000.ufshc/by-name/tz
+      - /dev/block/sde3
 
   boot_ui:
     supported: true
@@ -188,7 +190,6 @@
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     default_brightness: 80
-
 
 - name: OnePlus X
   id: onyx
@@ -222,3 +223,47 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/mmcblk0p16
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
+
+- name: OnePlus 5
+  id: OnePlus5
+  codenames:
+    - OnePlus5
+    - cheeseburger
+    - oneplus5
+    - op5
+    - A5000
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 240

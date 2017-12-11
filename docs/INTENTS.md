@@ -1,18 +1,15 @@
-DualBootPatcher now supports performing automated actions via intents. By default, the app will not allow intents from 3rd party apps. This must be explicitly enabled by the user by
+DualBootPatcher now supports performing automated actions via intents. By default, the app will not allow intents from 3rd party apps. This must be explicitly enabled by the user by enabling the option in the settings.
 
 
-Switching ROMs
-==============
+# Switching ROMs
 
 The app will ask for confirmation upon receiving the `SWITCH_ROM` intent. The user will have the option to suppress the confirmation for future intents. If the image checksums (`/sdcard/MultiBoot/[ROM ID]/*.img`) do not match the expected checksums (`/data/multiboot/checksums.prop`), DualBootPatcher will not allow the ROM switch. The user will need to manually switch ROMs once to confirm that the changes were intentional.
 
-Action
-------
+## Action
 
     com.github.chenxiaolong.dualbootpatcher.SWITCH_ROM
 
-Arguments/Extras
-----------------
+## Arguments/Extras
 
 | Parameter  | Type    | Required | Default | Description                            |
 |------------|---------|----------|---------|----------------------------------------|
@@ -21,8 +18,7 @@ Arguments/Extras
 
 **NOTE:** When `reboot` is set to `true`, the reboot will only occur if the switching was successful. If an error occurs, the device will not reboot.
 
-Result
-------
+## Result
 
 The result of the ROM switching operation can be obtained by launching the intent with `startActivityForResult()` and implementing `onActivityResult()` for the calling `Activity`. DualBootPatcher will always return `Activity.RESULT_OK` for the `resultCode` parameter. The actual results are part of the returned intent's extras. The following values are returned.
 
@@ -32,29 +28,25 @@ The result of the ROM switching operation can be obtained by launching the inten
 | `message` | String | No              | Untranslated error message        | A simple error message that should only be used for logging                         |
 
 
-Patching Files
-==============
+# Patching Files
 
 There are no restrictions for patching files via an intent from a third party application.
 
-Action
-------
+## Action
 
     com.github.chenxiaolong.dualbootpatcher.PATCH_FILE
 
-Arguments/Extras
-----------------
+## Arguments/Extras
 
 | Parameter | Type   | Required | Default                                     | Description           |
 |-----------|--------|----------|---------------------------------------------|-----------------------|
 | `path`    | String | Yes      | n/a                                         | Path to file to patch |
-| `rom_id`  | String | Yes      | n/a                                         | ROM ID to install to  |
+| `rom_id`  | String | Yes      | n/a                                         | Target ROM ID         |
 | `device`  | String | No       | Autodetected from current device's codename | Target device ID      |
 
-**NOTE:** The `device` parameter takes in a device **ID**, not a device **codename**. The list of device IDs can be found in `multiboot/info.prop` of any patched file or from the `PatcherConfig::Impl::loadDefaultDevices()` function in [libmbp/patcherconfig.cpp](https://github.com/chenxiaolong/DualBootPatcher/blob/master/libmbp/patcherconfig.cpp) from the source code.
+**NOTE:** The `device` parameter takes in a device **ID**, not a device **codename**. The list of device IDs can be found in `multiboot/info.prop` of any patched file or from [`data/devices`](../data/devices).
 
-Result
-------
+## Result
 
 Link the `SWITCH_ROM` intent, `Activity.RESULT_OK` will always be returned for the `resultCode` parameter in `onActivityResult()`. The following values are returned as part of the `data` intent.
 

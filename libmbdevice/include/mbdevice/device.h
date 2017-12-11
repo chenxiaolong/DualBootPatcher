@@ -1,146 +1,142 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
+#include <string>
+#include <vector>
 
 #include "mbcommon/common.h"
+
+#include "mbdevice/device_p.h"
 #include "mbdevice/flags.h"
 
 
-#define MB_DEVICE_OK                    0
-#define MB_DEVICE_ERROR_ERRNO           (-1)
-#define MB_DEVICE_ERROR_INVALID_VALUE   (-2)
+namespace mb
+{
+namespace device
+{
 
+class MB_EXPORT Device
+{
+public:
+    Device();
+    ~Device();
 
-struct Device;
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Device)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Device)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    std::string id() const;
+    void set_id(std::string id);
 
-MB_EXPORT struct Device * mb_device_new();
+    std::vector<std::string> codenames() const;
+    void set_codenames(std::vector<std::string> codenames);
 
-MB_EXPORT void mb_device_free(struct Device *device);
+    std::string name() const;
+    void set_name(std::string name);
 
-#define GETTER(TYPE, NAME) \
-    MB_EXPORT TYPE mb_device_ ## NAME (const struct Device *device)
-#define SETTER(TYPE, NAME) \
-    MB_EXPORT int mb_device_set_ ## NAME (struct Device *device, TYPE value)
+    std::string architecture() const;
+    void set_architecture(std::string architecture);
 
-GETTER(const char *, id);
-SETTER(const char *, id);
+    DeviceFlags flags() const;
+    void set_flags(DeviceFlags flags);
 
-GETTER(char const * const *, codenames);
-SETTER(char const * const *, codenames);
+    std::vector<std::string> block_dev_base_dirs() const;
+    void set_block_dev_base_dirs(std::vector<std::string> base_dirs);
 
-GETTER(const char *, name);
-SETTER(const char *, name);
+    std::vector<std::string> system_block_devs() const;
+    void set_system_block_devs(std::vector<std::string> block_devs);
 
-GETTER(const char *, architecture);
-SETTER(const char *, architecture);
+    std::vector<std::string> cache_block_devs() const;
+    void set_cache_block_devs(std::vector<std::string> block_devs);
 
-GETTER(uint64_t, flags);
-SETTER(uint64_t, flags);
+    std::vector<std::string> data_block_devs() const;
+    void set_data_block_devs(std::vector<std::string> block_devs);
 
-GETTER(char const * const *, block_dev_base_dirs);
-SETTER(char const * const *, block_dev_base_dirs);
+    std::vector<std::string> boot_block_devs() const;
+    void set_boot_block_devs(std::vector<std::string> block_devs);
 
-GETTER(char const * const *, system_block_devs);
-SETTER(char const * const *, system_block_devs);
+    std::vector<std::string> recovery_block_devs() const;
+    void set_recovery_block_devs(std::vector<std::string> block_devs);
 
-GETTER(char const * const *, cache_block_devs);
-SETTER(char const * const *, cache_block_devs);
+    std::vector<std::string> extra_block_devs() const;
+    void set_extra_block_devs(std::vector<std::string> block_devs);
 
-GETTER(char const * const *, data_block_devs);
-SETTER(char const * const *, data_block_devs);
+    bool tw_supported() const;
+    void set_tw_supported(bool supported);
 
-GETTER(char const * const *, boot_block_devs);
-SETTER(char const * const *, boot_block_devs);
+    TwFlags tw_flags() const;
+    void set_tw_flags(TwFlags flags);
 
-GETTER(char const * const *, recovery_block_devs);
-SETTER(char const * const *, recovery_block_devs);
+    TwPixelFormat tw_pixel_format() const;
+    void set_tw_pixel_format(TwPixelFormat format);
 
-GETTER(char const * const *, extra_block_devs);
-SETTER(char const * const *, extra_block_devs);
+    TwForcePixelFormat tw_force_pixel_format() const;
+    void set_tw_force_pixel_format(TwForcePixelFormat format);
 
-/* Boot UI */
+    int tw_overscan_percent() const;
+    void set_tw_overscan_percent(int percent);
 
-GETTER(bool, tw_supported);
-SETTER(bool, tw_supported);
+    int tw_default_x_offset() const;
+    void set_tw_default_x_offset(int offset);
 
-GETTER(uint64_t, tw_flags);
-SETTER(uint64_t, tw_flags);
+    int tw_default_y_offset() const;
+    void set_tw_default_y_offset(int offset);
 
-GETTER(enum TwPixelFormat, tw_pixel_format);
-SETTER(enum TwPixelFormat, tw_pixel_format);
+    std::string tw_brightness_path() const;
+    void set_tw_brightness_path(std::string path);
 
-GETTER(enum TwForcePixelFormat, tw_force_pixel_format);
-SETTER(enum TwForcePixelFormat, tw_force_pixel_format);
+    std::string tw_secondary_brightness_path() const;
+    void set_tw_secondary_brightness_path(std::string path);
 
-GETTER(int, tw_overscan_percent);
-SETTER(int, tw_overscan_percent);
+    int tw_max_brightness() const;
+    void set_tw_max_brightness(int value);
 
-GETTER(int, tw_default_x_offset);
-SETTER(int, tw_default_x_offset);
+    int tw_default_brightness() const;
+    void set_tw_default_brightness(int value);
 
-GETTER(int, tw_default_y_offset);
-SETTER(int, tw_default_y_offset);
+    std::string tw_battery_path() const;
+    void set_tw_battery_path(std::string path);
 
-GETTER(const char *, tw_brightness_path);
-SETTER(const char *, tw_brightness_path);
+    std::string tw_cpu_temp_path() const;
+    void set_tw_cpu_temp_path(std::string path);
 
-GETTER(const char *, tw_secondary_brightness_path);
-SETTER(const char *, tw_secondary_brightness_path);
+    std::string tw_input_blacklist() const;
+    void set_tw_input_blacklist(std::string blacklist);
 
-GETTER(int, tw_max_brightness);
-SETTER(int, tw_max_brightness);
+    std::string tw_input_whitelist() const;
+    void set_tw_input_whitelist(std::string whitelist);
 
-GETTER(int, tw_default_brightness);
-SETTER(int, tw_default_brightness);
+    std::vector<std::string> tw_graphics_backends() const;
+    void set_tw_graphics_backends(std::vector<std::string> backends);
 
-GETTER(const char *, tw_battery_path);
-SETTER(const char *, tw_battery_path);
+    std::string tw_theme() const;
+    void set_tw_theme(std::string theme);
 
-GETTER(const char *, tw_cpu_temp_path);
-SETTER(const char *, tw_cpu_temp_path);
+    ValidateFlags validate() const;
 
-GETTER(const char *, tw_input_blacklist);
-SETTER(const char *, tw_input_blacklist);
+    bool operator==(const Device &other) const;
 
-GETTER(const char *, tw_input_whitelist);
-SETTER(const char *, tw_input_whitelist);
+private:
+    detail::BaseOptions m_base;
+    detail::TwOptions m_tw;
+};
 
-GETTER(char const * const *, tw_graphics_backends);
-SETTER(char const * const *, tw_graphics_backends);
-
-GETTER(const char *, tw_theme);
-SETTER(const char *, tw_theme);
-
-
-MB_EXPORT bool mb_device_equals(struct Device *a, struct Device *b);
-
-#undef GETTER
-#undef SETTER
-
-#ifdef __cplusplus
 }
-#endif
+}

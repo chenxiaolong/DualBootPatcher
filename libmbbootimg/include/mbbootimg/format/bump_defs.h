@@ -18,6 +18,19 @@
 
 #pragma once
 
-#define BUMP_MAGIC \
-        "\x41\xa9\xe4\x67\x74\x4d\x1d\x1b\xa4\x29\xf2\xec\xea\x65\x52\x79"
-#define BUMP_MAGIC_SIZE 16
+#include <cstddef>
+
+namespace mb
+{
+namespace bootimg
+{
+namespace bump
+{
+
+constexpr char BUMP_MAGIC[] =
+        "\x41\xa9\xe4\x67\x74\x4d\x1d\x1b\xa4\x29\xf2\xec\xea\x65\x52\x79";
+constexpr size_t BUMP_MAGIC_SIZE = 16;
+
+}
+}
+}

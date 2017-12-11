@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(LZ4_FOUND)
     set(LZ4_LIBRARIES ${LZ4_LIBRARY})
+
+    add_library(LZ4::LZ4 UNKNOWN IMPORTED)
+    set_target_properties(
+        LZ4::LZ4
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${LZ4_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(LZ4_INCLUDE_DIR LZ4_LIBRARY)

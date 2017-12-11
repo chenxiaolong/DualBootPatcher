@@ -29,11 +29,11 @@ import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
 import com.github.chenxiaolong.dualbootpatcher.LogUtils;
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService;
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbcommon;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.FileInfo;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.Patcher.ProgressListener;
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbp.PatcherConfig;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbCommon;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.FileInfo;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher.ProgressListener;
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig;
 
 import org.apache.commons.io.IOUtils;
 
@@ -210,7 +210,7 @@ public class PatcherService extends ThreadPoolService {
      *
      * The task does not execute until {@link #startPatching(int)} is called.
      *
-     * @param patcherId libmbp patcher ID
+     * @param patcherId libmbpatcher patcher ID
      * @param inputUri URI for input file to patch
      * @param outputUri URI for output file
      * @param device Target device
@@ -247,15 +247,15 @@ public class PatcherService extends ThreadPoolService {
      * Asynchronously start patching a file
      *
      * During patching, the following callback methods may be called:
-     * - {@link PatcherEventListener#onPatcherUpdateDetails(int, String)} : Called when libmbp
+     * - {@link PatcherEventListener#onPatcherUpdateDetails(int, String)} : Called when libmbpatcher
      *   reports a single-line status text item (usually the file inside the archive being
      *   processed)
-     * - {@link PatcherEventListener#onPatcherUpdateProgress(int, long, long)} : Called when libmbp
+     * - {@link PatcherEventListener#onPatcherUpdateProgress(int, long, long)} : Called when libmbpatcher
      *   reports the current progress value and the maximum progress value. Make no assumptions
      *   about the current and maximum progress values. It is not guaranteed that current <= maximum
      *   or that they are positive.
      * - {@link PatcherEventListener#onPatcherUpdateFilesProgress(int, long, long)} : Called when
-     *   libmbp reports the current progress and maximum progress in terms of the number of files
+     *   libmbpatcher reports the current progress and maximum progress in terms of the number of files
      *   within the archive that have been processed. Make no assumptions about the current and
      *   maximum progress values. It is not guaranteed that current <= maximum or that they are
      *   positive.
@@ -276,7 +276,7 @@ public class PatcherService extends ThreadPoolService {
      * Cancel file patching
      *
      * This method will attempt to cancel a patching operation in progress. The task will only be
-     * cancelled if the corresponding libmbp patcher respects the cancelled flag and stops when it
+     * cancelled if the corresponding libmbpatcher patcher respects the cancelled flag and stops when it
      * is set. If a task has been cancelled,
      * {@link PatcherEventListener#onPatcherFinished(int, PatchFileState, boolean, int)} will be
      * called in the same manner as described in {@link #startPatching(int)}. The returned error
@@ -501,9 +501,9 @@ public class PatcherService extends ThreadPoolService {
     private static final class PatchFileTask extends BaseTask implements ProgressListener {
         /** Task ID */
         private final int mTaskId;
-        /** libmbp {@link PatcherConfig} object */
+        /** libmbpatcher {@link PatcherConfig} object */
         private PatcherConfig mPC;
-        /** libmbp {@link Patcher} object */
+        /** libmbpatcher {@link Patcher} object */
         private Patcher mPatcher;
         /** Whether this task has already been executed */
         private boolean mExecuted;
@@ -596,8 +596,8 @@ public class PatcherService extends ThreadPoolService {
             String outputName = queryDisplayName(cr, mOutputUri);
 
             Log.d(TAG, "Android GUI version: " + BuildConfig.VERSION_NAME);
-            Log.d(TAG, "libmbp version: " + LibMbcommon.getVersion() +
-                    " (" + LibMbcommon.getGitVersion() + ")");
+            Log.d(TAG, "Library version: " + LibMbCommon.getVersion() +
+                    " (" + LibMbCommon.getGitVersion() + ")");
             Log.d(TAG, "Patching file:");
             Log.d(TAG, "- Patcher ID:  " + mPatcherId);
             Log.d(TAG, "- Input URI:   " + mInputUri);

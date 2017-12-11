@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "daemon.h"
@@ -23,6 +23,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -30,16 +31,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <proc/readproc.h>
-
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/kmsg_logger.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/process.h"
 #include "mbutil/selinux.h"
 #include "mbutil/socket.h"
@@ -51,6 +50,11 @@
 #include "sepolpatch.h"
 #include "validcerts.h"
 
+// Needs to come last because it defines HIDDEN, which is used in packages.h
+#include <proc/readproc.h>
+
+#define LOG_TAG "mbtool/daemon"
+
 #define RESPONSE_ALLOW "ALLOW"                  // Credentials allowed
 #define RESPONSE_DENY "DENY"                    // Credentials denied
 #define RESPONSE_OK "OK"                        // Generic accepted response
@@ -60,6 +64,8 @@
 namespace mb
 {
 
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
 static int pipe_fds[2];
 static bool send_ok_to_pipe = false;
 static bool sigstop_when_ready = false;
@@ -68,7 +74,12 @@ static bool log_to_kmsg = false;
 static bool log_to_stdio = false;
 static bool no_unshare = false;
 
-static autoclose::file log_fp(nullptr, std::fclose);
+static ScopedFILE log_fp(nullptr, [](FILE *fp) {
+    if (fp) {
+        return std::fclose(fp);
+    }
+    return 0;
+});
 
 static bool verify_credentials(uid_t uid)
 {
@@ -123,14 +134,14 @@ static bool client_connection(int fd)
         return false;
     }
 
-    util::set_process_title_v(
-            nullptr, "mbtool connection from pid: %u", cred.pid);
+    util::set_process_title(format("mbtool connection from pid: %u", cred.pid),
+                            nullptr);
 
     LOGD("Client PID: %u", cred.pid);
     LOGD("Client UID: %u", cred.uid);
     LOGD("Client GID: %u", cred.gid);
 
-    auto disconnect_msg = util::finally([&]{
+    auto disconnect_msg = finally([&]{
         LOGD("Disconnecting connection from PID: %u", cred.pid);
     });
 
@@ -154,7 +165,7 @@ static bool client_connection(int fd)
     }
 
     int32_t version;
-    if (!util::socket_read_int32(fd, &version)) {
+    if (!util::socket_read_int32(fd, version)) {
         LOGE("Failed to get interface version");
         return false;
     }
@@ -175,8 +186,6 @@ static bool client_connection(int fd)
         util::socket_write_string(fd, RESPONSE_UNSUPPORTED);
         return false;
     }
-
-    return true;
 }
 
 static bool run_daemon()
@@ -190,7 +199,7 @@ static bool run_daemon()
         return false;
     }
 
-    auto close_fd = util::finally([&] {
+    auto close_fd = finally([&] {
         close(fd);
     });
 
@@ -203,9 +212,10 @@ static bool run_daemon()
 
     // Calculate correct length so the trailing junk is not included in the
     // abstract socket name
-    socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
+    socklen_t addr_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path))
+            + static_cast<socklen_t>(abs_name_len);
 
-    if (bind(fd, (struct sockaddr *) &addr, addr_len) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), addr_len) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         LOGE("Is another instance running?");
         return false;
@@ -230,13 +240,15 @@ static bool run_daemon()
 
     // Eat zombies!
     // SIG_IGN reaps zombie processes (it's not just a dummy function)
-    struct sigaction sa;
-    sa.sa_handler = SIG_IGN;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    if (sigaction(SIGCHLD, &sa, 0) < 0) {
-        LOGE("Failed to set SIGCHLD handler: %s", strerror(errno));
-        return false;
+    {
+        struct sigaction sa;
+        sa.sa_handler = SIG_IGN;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        if (sigaction(SIGCHLD, &sa, 0) < 0) {
+            LOGE("Failed to set SIGCHLD handler: %s", strerror(errno));
+            return false;
+        }
     }
 
     LOGD("Socket ready, waiting for connections");
@@ -262,8 +274,8 @@ static bool run_daemon()
 
             // Change the process name so --replace doesn't kill existing
             // connections
-            if (!util::set_process_title_v(
-                    nullptr, "mbtool connection initializing")) {
+            if (!util::set_process_title(
+                    "mbtool connection initializing", nullptr)) {
                 LOGE("Failed to set process title: %s", strerror(errno));
                 _exit(127);
             }
@@ -342,7 +354,7 @@ static bool daemon_init()
     if (log_to_stdio) {
         // Default; do nothing
     } else if (log_to_kmsg) {
-        log::log_set_logger(std::make_shared<log::KmsgLogger>(false));
+        log::set_logger(std::make_shared<log::KmsgLogger>(false));
     } else {
         if (!util::mkdir_parent(MULTIBOOT_LOG_DAEMON, 0775)
                 && errno != EEXIST) {
@@ -351,8 +363,7 @@ static bool daemon_init()
             return false;
         }
 
-        log_fp = autoclose::fopen(
-                get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w");
+        log_fp.reset(fopen(get_raw_path(MULTIBOOT_LOG_DAEMON).c_str(), "w"));
         if (!log_fp) {
             LOGE("Failed to open log file %s: %s",
                  MULTIBOOT_LOG_DAEMON, strerror(errno));
@@ -362,8 +373,7 @@ static bool daemon_init()
         fix_multiboot_permissions();
 
         // mbtool logging
-        log::log_set_logger(
-                std::make_shared<log::StdioLogger>(log_fp.get(), true));
+        log::set_logger(std::make_shared<log::StdioLogger>(log_fp.get()));
     }
 
     LOGD("Initialized daemon");
@@ -552,7 +562,7 @@ int daemon_main(int argc, char *argv[])
     }
 
     if (patch_sepolicy) {
-        patch_loaded_sepolicy(SELinuxPatch::MAIN);
+        patch_loaded_sepolicy(SELinuxPatch::Main);
     }
 
     if (!switch_context(MB_EXEC_CONTEXT)) {

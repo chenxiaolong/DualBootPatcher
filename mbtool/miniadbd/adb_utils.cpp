@@ -29,11 +29,7 @@ void dump_hex(const void* data, size_t byte_count) {
 
     std::string line;
     for (size_t i = 0; i < byte_count; ++i) {
-        char *tmp = mb_format("%02x", p[i]);
-        if (tmp) {
-            line += tmp;
-            free(tmp);
-        }
+        line += mb::format("%02x", p[i]);
     }
     line.push_back(' ');
 

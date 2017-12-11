@@ -24,11 +24,14 @@
 # CMake toolchain files
 /cmake/toolchain-*.cmake
 
+# Generated Dockerfiles
+/docker/generated/
+
 # makepkg custom configuration file
 /thirdparty/makepkg.local.conf
 
-# Downloaded or built tarballs
-/thirdparty/**/*.tar*
+# Prebuilts
+/thirdparty/prebuilts
 
 # makepkg build and output files
 /thirdparty/*/src/

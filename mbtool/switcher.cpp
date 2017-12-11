@@ -1,24 +1,25 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "switcher.h"
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -28,6 +29,7 @@
 
 #include <openssl/sha.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/chmod.h"
@@ -35,13 +37,14 @@
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
 #include "multiboot.h"
 #include "roms.h"
+
+#define LOG_TAG "mbtool/switcher"
 
 #define CHECKSUMS_PATH "/data/multiboot/checksums.prop"
 
@@ -56,9 +59,9 @@ namespace mb
  * \param image Image filename (without directory)
  * \param sha512_out SHA512 hex digest output
  *
- * \return ChecksumsGetResult::FOUND if the hash was successfully retrieved,
- *         ChecksumsGetResult::NOT_FOUND if the hash does not exist in the map,
- *         ChecksumsGetResult::MALFORMED if the property has an invalid format
+ * \return ChecksumsGetResult::Found if the hash was successfully retrieved,
+ *         ChecksumsGetResult::NotFound if the hash does not exist in the map,
+ *         ChecksumsGetResult::Malformed if the property has an invalid format
  */
 ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *props,
                                  const std::string &rom_id,
@@ -72,7 +75,7 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
     key += image;
 
     if (props->find(key) == props->end()) {
-        return ChecksumsGetResult::NOT_FOUND;
+        return ChecksumsGetResult::NotFound;
     }
 
     const std::string &value = (*props)[key];
@@ -84,15 +87,15 @@ ChecksumsGetResult checksums_get(std::unordered_map<std::string, std::string> *p
         if (algo != "sha512") {
             LOGE("%s: Invalid hash algorithm: %s",
                  checksums_path.c_str(), algo.c_str());
-            return ChecksumsGetResult::MALFORMED;
+            return ChecksumsGetResult::Malformed;
         }
 
         *sha512_out = hash;
-        return ChecksumsGetResult::FOUND;
+        return ChecksumsGetResult::Found;
     } else {
         LOGE("%s: Invalid checksum property: %s=%s",
              checksums_path.c_str(), key.c_str(), value.c_str());
-        return ChecksumsGetResult::MALFORMED;
+        return ChecksumsGetResult::Malformed;
     }
 }
 
@@ -178,8 +181,7 @@ struct Flashable
     std::string block_dev;
     std::string expected_hash;
     std::string hash;
-    unsigned char *data = nullptr;
-    std::size_t size = 0;
+    std::vector<unsigned char> data;
 };
 
 /*!
@@ -193,12 +195,12 @@ struct Flashable
  *
  * \return Block device path if found. Otherwise, an empty string.
  */
-static std::string find_block_dev(const char * const *search_dirs,
+static std::string find_block_dev(const std::vector<std::string> &search_dirs,
                                   const std::string &partition)
 {
     struct stat sb;
 
-    if (mb_starts_with(partition.c_str(), "mmcblk")) {
+    if (starts_with(partition, "mmcblk")) {
         std::string path("/dev/block/");
         path += partition;
 
@@ -207,8 +209,8 @@ static std::string find_block_dev(const char * const *search_dirs,
         }
     }
 
-    for (auto it = search_dirs; *it; ++it) {
-        std::string block_dev(*it);
+    for (auto const &path : search_dirs) {
+        std::string block_dev(path);
         block_dev += "/";
         block_dev += partition;
 
@@ -217,32 +219,32 @@ static std::string find_block_dev(const char * const *search_dirs,
         }
     }
 
-    return std::string();
+    return {};
 }
 
-static bool add_extra_images(const char *multiboot_dir,
-                             const char * const *block_dev_dirs,
+static bool add_extra_images(const std::string &multiboot_dir,
+                             const std::vector<std::string> &block_dev_dirs,
                              std::vector<Flashable> *flashables)
 {
     DIR *dir;
     dirent *ent;
 
-    dir = opendir(multiboot_dir);
+    dir = opendir(multiboot_dir.c_str());
     if (!dir) {
         return false;
     }
 
-    auto close_directory = util::finally([&]{
+    auto close_directory = finally([&]{
         closedir(dir);
     });
 
     while ((ent = readdir(dir))) {
         std::string name(ent->d_name);
-        if (name == ".img" || !mb_ends_with(name.c_str(), ".img")) {
+        if (name == ".img" || !ends_with(name, ".img")) {
             // Skip non-images
             continue;
         }
-        if (mb_starts_with(name.c_str(), "boot.img")) {
+        if (starts_with(name, "boot.img")) {
             // Skip boot images, which are handled separately
             continue;
         }
@@ -285,7 +287,7 @@ static bool add_extra_images(const char *multiboot_dir,
  *
  * \note If the checksum is missing for some images to be flashed and invalid
  *       for some other images to be flashed, this function will always return
- *       SwitchRomResult::CHECKSUM_INVALID.
+ *       SwitchRomResult::ChecksumInvalid.
  *
  * \param id ROM ID to switch to
  * \param boot_blockdev Block device path of the boot partition
@@ -293,17 +295,18 @@ static bool add_extra_images(const char *multiboot_dir,
  *                           corresponding to extra flashable images in
  *                           /sdcard/MultiBoot/[ROM ID]/ *.img
  *
- * \return SwitchRomResult::SUCCEEDED if the switching succeeded,
- *         SwitchRomResult::FAILED if the switching failed,
- *         SwitchRomResult::CHECKSUM_NOT_FOUND if the checksum for some image is missing,
- *         SwitchRomResult::CHECKSUM_INVALID if the checksum for some image is invalid
+ * \return SwitchRomResult::Succeeded if the switching succeeded,
+ *         SwitchRomResult::Failed if the switching failed,
+ *         SwitchRomResult::ChecksumNotFound if the checksum for some image is missing,
+ *         SwitchRomResult::ChecksumInvalid if the checksum for some image is invalid
  *
  */
-SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
-                           const char * const *blockdev_base_dirs,
+SwitchRomResult switch_rom(const std::string &id,
+                           const std::string &boot_blockdev,
+                           const std::vector<std::string> &blockdev_base_dirs,
                            bool force_update_checksums)
 {
-    LOGD("Attempting to switch to %s", id);
+    LOGD("Attempting to switch to %s", id.c_str());
     LOGD("Force update checksums: %d", force_update_checksums);
 
     // Path for all of the images
@@ -320,14 +323,14 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
 
     auto r = roms.find_by_id(id);
     if (!r) {
-        LOGE("Invalid ROM ID: %s", id);
-        return SwitchRomResult::FAILED;
+        LOGE("Invalid ROM ID: %s", id.c_str());
+        return SwitchRomResult::Failed;
     }
 
     if (!util::mkdir_recursive(multiboot_path, 0775)) {
         LOGE("%s: Failed to create directory: %s",
              multiboot_path.c_str(), strerror(errno));
-        return SwitchRomResult::FAILED;
+        return SwitchRomResult::Failed;
     }
 
     // We'll read the files we want to flash into memory so a malicious app
@@ -335,17 +338,12 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
     // step.
 
     std::vector<Flashable> flashables;
-    auto free_flashables = util::finally([&]{
-        for (Flashable &f : flashables) {
-            free(f.data);
-        }
-    });
 
     flashables.emplace_back();
     flashables.back().image = bootimg_path;
     flashables.back().block_dev = boot_blockdev;
 
-    if (!add_extra_images(multiboot_path.c_str(), blockdev_base_dirs, &flashables)) {
+    if (!add_extra_images(multiboot_path, blockdev_base_dirs, &flashables)) {
         LOGW("Failed to find extra images");
     }
 
@@ -356,15 +354,15 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
         // If memory becomes an issue, an alternative method is to create a
         // temporary directory in /data/multiboot/ that's only writable by root
         // and copy the images there.
-        if (!util::file_read_all(f.image, &f.data, &f.size)) {
+        if (!util::file_read_all(f.image, f.data)) {
             LOGE("%s: Failed to read image: %s",
                  f.image.c_str(), strerror(errno));
-            return SwitchRomResult::FAILED;
+            return SwitchRomResult::Failed;
         }
 
         // Get actual sha512sum
         unsigned char digest[SHA512_DIGEST_LENGTH];
-        SHA512(f.data, f.size, digest);
+        SHA512(f.data.data(), f.data.size(), digest);
         f.hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
 
         if (force_update_checksums) {
@@ -374,15 +372,15 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
         // Get expected sha512sum
         ChecksumsGetResult ret = checksums_get(
                 &props, id, util::base_name(f.image), &f.expected_hash);
-        if (ret == ChecksumsGetResult::MALFORMED) {
-            return SwitchRomResult::CHECKSUM_INVALID;
+        if (ret == ChecksumsGetResult::Malformed) {
+            return SwitchRomResult::ChecksumInvalid;
         }
 
         // Verify hashes if we have an expected hash
-        if (ret == ChecksumsGetResult::FOUND && f.expected_hash != f.hash) {
+        if (ret == ChecksumsGetResult::Found && f.expected_hash != f.hash) {
             LOGE("%s: Checksum (%s) does not match expected (%s)",
                  f.image.c_str(), f.hash.c_str(), f.expected_hash.c_str());
-            return SwitchRomResult::CHECKSUM_INVALID;
+            return SwitchRomResult::ChecksumInvalid;
         }
     }
 
@@ -392,7 +390,7 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
     for (Flashable &f : flashables) {
         if (f.expected_hash.empty()) {
             LOGE("%s: Checksum does not exist", f.image.c_str());
-            return SwitchRomResult::CHECKSUM_NOT_FOUND;
+            return SwitchRomResult::ChecksumNotFound;
         }
     }
 
@@ -400,10 +398,10 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
     for (Flashable &f : flashables) {
         // Cast is okay. The data is just passed to fwrite (ie. no signed
         // extension issues)
-        if (!util::file_write_data(f.block_dev, (char *) f.data, f.size)) {
+        if (!util::file_write_data(f.block_dev, f.data.data(), f.data.size())) {
             LOGE("%s: Failed to write image: %s",
                  f.block_dev.c_str(), strerror(errno));
-            return SwitchRomResult::FAILED;
+            return SwitchRomResult::Failed;
         }
     }
 
@@ -413,10 +411,10 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
     }
 
     if (!fix_multiboot_permissions()) {
-        //return SwitchRomResult::FAILED;
+        //return SwitchRomResult::Failed;
     }
 
-    return SwitchRomResult::SUCCEEDED;
+    return SwitchRomResult::Succeeded;
 }
 
 /*!
@@ -430,9 +428,9 @@ SwitchRomResult switch_rom(const char *id, const char *boot_blockdev,
  *
  * \return True if the kernel was successfully set. Otherwise, false.
  */
-bool set_kernel(const char *id, const char *boot_blockdev)
+bool set_kernel(const std::string &id, const std::string &boot_blockdev)
 {
-    LOGD("Attempting to set the kernel for %s", id);
+    LOGD("Attempting to set the kernel for %s", id.c_str());
 
     // Path for all of the images
     std::string multiboot_path(get_raw_path(MULTIBOOT_DIR));
@@ -448,7 +446,7 @@ bool set_kernel(const char *id, const char *boot_blockdev)
 
     auto r = roms.find_by_id(id);
     if (!r) {
-        LOGE("Invalid ROM ID: %s", id);
+        LOGE("Invalid ROM ID: %s", id.c_str());
         return false;
     }
 
@@ -458,22 +456,17 @@ bool set_kernel(const char *id, const char *boot_blockdev)
         return false;
     }
 
-    unsigned char *data;
-    std::size_t size;
+    std::vector<unsigned char> data;
 
-    if (!util::file_read_all(boot_blockdev, &data, &size)) {
+    if (!util::file_read_all(boot_blockdev, data)) {
         LOGE("%s: Failed to read block device: %s",
-             boot_blockdev, strerror(errno));
+             boot_blockdev.c_str(), strerror(errno));
         return false;
     }
 
-    auto free_data = util::finally([&]{
-        free(data);
-    });
-
     // Get actual sha512sum
     unsigned char digest[SHA512_DIGEST_LENGTH];
-    SHA512(data, size, digest);
+    SHA512(data.data(), data.size(), digest);
     std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
 
     // Add to checksums.prop
@@ -486,7 +479,7 @@ bool set_kernel(const char *id, const char *boot_blockdev)
 
     // Cast is okay. The data is just passed to fwrite (ie. no signed
     // extension issues)
-    if (!util::file_write_data(bootimg_path, (char *) data, size)) {
+    if (!util::file_write_data(bootimg_path, data.data(), data.size())) {
         LOGE("%s: Failed to write image: %s",
              bootimg_path.c_str(), strerror(errno));
         return false;

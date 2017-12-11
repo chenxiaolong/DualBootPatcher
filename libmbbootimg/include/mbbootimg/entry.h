@@ -1,75 +1,76 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
-#ifdef __cplusplus
-#  include <cstdint>
-#else
-#  include <stdint.h>
-#endif
+#include <memory>
+#include <string>
+
+#include <cstdint>
 
 #include "mbcommon/common.h"
+#include "mbcommon/optional.h"
 
-#define MB_BI_ENTRY_KERNEL              (1 << 0)
-#define MB_BI_ENTRY_RAMDISK             (1 << 1)
-#define MB_BI_ENTRY_SECONDBOOT          (1 << 2)
-#define MB_BI_ENTRY_DEVICE_TREE         (1 << 3)
-#define MB_BI_ENTRY_ABOOT               (1 << 4)
-#define MB_BI_ENTRY_MTK_KERNEL_HEADER   (1 << 5)
-#define MB_BI_ENTRY_MTK_RAMDISK_HEADER  (1 << 6)
-#define MB_BI_ENTRY_SONY_IPL            (1 << 7)
-#define MB_BI_ENTRY_SONY_RPM            (1 << 8)
-#define MB_BI_ENTRY_SONY_APPSBL         (1 << 9)
+namespace mb
+{
+namespace bootimg
+{
 
-MB_BEGIN_C_DECLS
+constexpr int ENTRY_TYPE_KERNEL             = 1 << 0;
+constexpr int ENTRY_TYPE_RAMDISK            = 1 << 1;
+constexpr int ENTRY_TYPE_SECONDBOOT         = 1 << 2;
+constexpr int ENTRY_TYPE_DEVICE_TREE        = 1 << 3;
+constexpr int ENTRY_TYPE_ABOOT              = 1 << 4;
+constexpr int ENTRY_TYPE_MTK_KERNEL_HEADER  = 1 << 5;
+constexpr int ENTRY_TYPE_MTK_RAMDISK_HEADER = 1 << 6;
+constexpr int ENTRY_TYPE_SONY_IPL           = 1 << 7;
+constexpr int ENTRY_TYPE_SONY_RPM           = 1 << 8;
+constexpr int ENTRY_TYPE_SONY_APPSBL        = 1 << 9;
 
-struct MbBiEntry;
+class MB_EXPORT Entry
+{
+public:
+    Entry();
+    ~Entry();
 
-// Basic object manipulation
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Entry)
 
-MB_EXPORT struct MbBiEntry * mb_bi_entry_new();
-MB_EXPORT void mb_bi_entry_free(struct MbBiEntry *entry);
-MB_EXPORT void mb_bi_entry_clear(struct MbBiEntry *entry);
-MB_EXPORT struct MbBiEntry * mb_bi_entry_clone(struct MbBiEntry *entry);
+    bool operator==(const Entry &rhs) const;
+    bool operator!=(const Entry &rhs) const;
 
-// Fields
+    void clear();
 
-// Entry type field
+    optional<int> type() const;
+    void set_type(optional<int> type);
 
-MB_EXPORT int mb_bi_entry_type_is_set(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_type(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_type(struct MbBiEntry *entry, int type);
-MB_EXPORT int mb_bi_entry_unset_type(struct MbBiEntry *entry);
+    optional<std::string> name() const;
+    void set_name(optional<std::string> name);
 
-// Entry name field
+    optional<uint64_t> size() const;
+    void set_size(optional<uint64_t> size);
 
-MB_EXPORT const char * mb_bi_entry_name(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_name(struct MbBiEntry *entry,
-                                   const char *name);
+private:
+    optional<int> m_type;
+    optional<std::string> m_name;
+    optional<uint64_t> m_size;
+};
 
-// Entry size field
-
-MB_EXPORT int mb_bi_entry_size_is_set(struct MbBiEntry *entry);
-MB_EXPORT uint64_t mb_bi_entry_size(struct MbBiEntry *entry);
-MB_EXPORT int mb_bi_entry_set_size(struct MbBiEntry *entry,
-                                   uint64_t size);
-MB_EXPORT int mb_bi_entry_unset_size(struct MbBiEntry *entry);
-
-MB_END_C_DECLS
+}
+}

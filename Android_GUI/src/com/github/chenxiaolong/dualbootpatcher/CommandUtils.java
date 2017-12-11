@@ -17,12 +17,11 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.os.Bundle;
 import android.util.Log;
 
+import com.stericson.RootShell.RootShell;
 import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
-import com.stericson.RootTools.RootTools;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -30,126 +29,112 @@ import java.util.concurrent.TimeoutException;
 public final class CommandUtils {
     private static final String TAG = CommandUtils.class.getSimpleName();
 
-    public static class CommandResult {
-        public int exitCode;
+    // Global lock because RootTools' design only supports a single root session
+    private static final Object LOCK = new Object();
 
-        // The output filter can put things here
-        public Bundle data = new Bundle();
-    }
-
-    public interface RootCommandListener {
+    public interface RootOutputListener {
         void onNewOutputLine(String line);
-
-        void onCommandCompletion(CommandResult result);
     }
 
-    public static class RootCommandParams {
-        public String command;
-        public RootCommandListener listener;
-        public RootLiveOutputFilter filter;
-        public boolean logOutput = true;
+    private static class RootCommandResult {
+        int exitCode;
+        String terminationMessage;
     }
 
-    public interface RootLiveOutputFilter {
-        void onOutputLine(RootCommandParams params, CommandResult result, String line);
-    }
-
-    public static boolean requestRootAccess() {
-        return RootTools.isAccessGiven();
-    }
-
-    public static class RootCommandRunner extends Thread {
-        private final RootCommandParams mParams;
-        private CommandResult mResult;
-
-        public RootCommandRunner(RootCommandParams params) {
-            super();
-            mParams = params;
+    public static class RootExecutionException extends Exception {
+        public RootExecutionException(String detailMessage) {
+            super(detailMessage);
         }
 
-        public CommandResult getResult() {
-            return mResult;
+        public RootExecutionException(String message, Throwable cause) {
+            super(message, cause);
         }
 
-        @Override
-        public void run() {
-            if (!requestRootAccess()) {
-                return;
-                // throw new RootDeniedException("Root access denied");
-            }
+        public RootExecutionException(Throwable cause) {
+            super(cause);
+        }
+    }
 
-            mResult = new CommandResult();
+    public static int runRootCommand(final RootOutputListener listener, String commandStr)
+            throws RootExecutionException, RootDeniedException {
+        synchronized (LOCK) {
+            final RootCommandResult result = new RootCommandResult();
 
             try {
-                Log.v(TAG, "Command: " + mParams.command);
+                Log.v(TAG, "Command: " + commandStr);
 
-                Command command = new Command(0, 0, mParams.command) {
+                Command command = new Command(0, 0, commandStr) {
                     @Override
                     public void commandOutput(int id, String line) {
-                        if (mParams.logOutput) {
-                            Log.d(TAG, "Root command output: " + line);
-                        }
+                        Log.d(TAG, "Root command output: " + line);
 
-                        if (mParams.filter != null) {
-                            mParams.filter.onOutputLine(mParams, mResult, line);
-                        }
-
-                        if (mParams.listener != null) {
-                            mParams.listener.onNewOutputLine(line);
+                        if (listener != null) {
+                            listener.onNewOutputLine(line);
                         }
 
                         super.commandOutput(id, line);
                     }
+
+                    @Override
+                    public void commandTerminated(int id, String reason) {
+                        synchronized (result) {
+                            result.exitCode = -1;
+                            result.terminationMessage = reason;
+                            result.notify();
+                        }
+
+                        super.commandTerminated(id, reason);
+                    }
+
+                    @Override
+                    public void commandCompleted(int id, int exitcode) {
+                        synchronized (result) {
+                            result.exitCode = exitcode;
+                            result.notify();
+                        }
+
+                        super.commandCompleted(id, exitcode);
+                    }
                 };
 
-                RootTools.getShell(true).add(command);
+                RootShell.getShell(true).add(command);
 
-                while (!command.isFinished()) {
-                    synchronized (command) {
-                        command.wait(2000);
-                    }
+                synchronized (result) {
+                    result.wait();
                 }
 
-                mResult.exitCode = command.getExitCode();
-
-                // TODO: Should this be done on another thread?
-                if (mParams.listener != null) {
-                    mParams.listener.onCommandCompletion(mResult);
+                if (result.exitCode == -1) {
+                    throw new RootExecutionException(
+                            "Process was terminated: " + result.terminationMessage);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "Process was interrupted", e);
-            } catch (TimeoutException e) {
-                Log.e(TAG, "Process timed out", e);
-            } catch (RootDeniedException e) {
-                Log.e(TAG, "Root access was denied", e);
-            }
-        }
-    }
 
-    public static int runRootCommand(String command) {
-        RootCommandParams params = new RootCommandParams();
-        params.command = command;
-
-        RootCommandRunner cmd = new RootCommandRunner(params);
-        cmd.start();
-
-        try {
-            cmd.join();
-            CommandResult result = cmd.getResult();
-
-            if (result != null) {
                 return result.exitCode;
+            } catch (IOException e) {
+                throw new RootExecutionException("I/O error", e);
+            } catch (InterruptedException e) {
+                throw new RootExecutionException("Process was interrupted", e);
+            } catch (TimeoutException e) {
+                throw new RootExecutionException("Process timed out", e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
-        return -1;
     }
 
-    public static int runRootCommand(String... args) {
+    public static int runRootCommand(RootOutputListener listener, String... commandArgs)
+            throws RootDeniedException, RootExecutionException {
+        return runRootCommand(listener, shellQuote(commandArgs));
+    }
+
+    public static int runRootCommand(String commandStr)
+            throws RootDeniedException, RootExecutionException {
+        return runRootCommand(null, commandStr);
+    }
+
+    public static int runRootCommand(String... commandArgs)
+            throws RootDeniedException, RootExecutionException {
+        return runRootCommand(null, commandArgs);
+    }
+
+    public static String shellQuote(String... args) {
         StringBuilder command = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
             if (i > 0) {
@@ -157,7 +142,7 @@ public final class CommandUtils {
             }
             command.append(shellQuote(args[i]));
         }
-        return runRootCommand(command.toString());
+        return command.toString();
     }
 
     public static String shellQuote(String text) {

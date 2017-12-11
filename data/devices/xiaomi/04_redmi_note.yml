@@ -1,0 +1,421 @@
+---
+- name: Xiaomi Redmi Note 2
+  id: hermes
+  codenames:
+    - hermes
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p15
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p16
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p17
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      # Directly written by updater-script
+      - /dev/block/platform/mtk-msdc.0/by-name/lk
+      - /dev/block/mmcblk0p6
+      - /dev/block/platform/mtk-msdc.0/by-name/logo
+      - /dev/block/mmcblk0p11
+      # From reverse engineering the update-binary, it appears that
+      # /dev/block/mmcblk0boot0 is the "preloader" partition
+      - /dev/block/mmcblk0boot0
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 250
+    default_brightness: 157
+    cpu_temp_path: /sys/class/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 3 (MTK)
+  id: hennessy
+  codenames:
+    - hennessy
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p15
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p16
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p17
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+    extra:
+      # write_raw_image() callback in update-binary checks if the para
+      # partition exists
+      - /dev/block/platform/mtk-msdc.0/by-name/para
+      - /dev/block/mmcblk0p10
+      # From reverse engineering the update-binary, it appears that
+      # /dev/block/mmcblk0boot0 is the "preloader" partition
+      - /dev/block/mmcblk0boot0
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 160
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone1/temp
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 3 Pro
+  id: kenzo
+  codenames:
+    - kenzo
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 3 SE
+  id: kate
+  codenames:
+    - kate
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p46
+    boot:
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBX_8888
+    default_brightness: 80
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 4
+  id: mido
+  codenames:
+    - mido
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/platform/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/platform/7824900.sdhci/by-name/system
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p24
+    cache:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/platform/7824900.sdhci/by-name/cache
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p25
+    data:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/platform/7824900.sdhci/by-name/userdata
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p49
+    boot:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/platform/7824900.sdhci/by-name/boot
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/platform/7824900.sdhci/by-name/recovery
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p22
+    extra:
+      # cust
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cust
+      - /dev/block/platform/7824900.sdhci/by-name/cust
+      - /dev/block/bootdevice/by-name/cust
+      - /dev/block/mmcblk0p48
+      # modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/platform/7824900.sdhci/by-name/modem
+      - /dev/block/bootdevice/by-name/modem
+      - /dev/block/mmcblk0p1
+      # Other
+      - /dev/block/bootdevice/by-name/cmnlib64
+      - /dev/block/bootdevice/by-name/splash
+      - /dev/block/bootdevice/by-name/cmnlib
+      - /dev/block/bootdevice/by-name/rpm
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/bootdevice/by-name/aboot
+      - /dev/block/bootdevice/by-name/lksecapp
+      - /dev/block/bootdevice/by-name/sbl1
+      - /dev/block/bootdevice/by-name/devcfg
+      - /dev/block/bootdevice/by-name/keymaster
+      - /dev/block/bootdevice/by-name/cmnlib64bak
+      - /dev/block/bootdevice/by-name/cmnlibbak
+      - /dev/block/bootdevice/by-name/rpmbak
+      - /dev/block/bootdevice/by-name/tzbak
+      - /dev/block/bootdevice/by-name/abootbak
+      - /dev/block/bootdevice/by-name/lksecappbak
+      - /dev/block/bootdevice/by-name/sbl1bak
+      - /dev/block/bootdevice/by-name/devcfgbak
+      - /dev/block/bootdevice/by-name/keymasterbak
+      - /dev/block/bootdevice/by-name/dsp
+      - /dev/block/bootdevice/by-name/sec
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+    pixel_format: RGBA_8888
+    default_brightness: 162
+    max_brightness: 255
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 4 (MTK)
+  id: nikel
+  codenames:
+    - nikel
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/boot
+      - /dev/block/mmcblk0p21
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11230000.msdc0/by-name/recovery
+      - /dev/block/mmcblk0p1
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 4G
+  id: dior
+  codenames:
+    - dior
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p25
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_NO_SCREEN_BLANK
+      - TW_NO_SCREEN_TIMEOUT
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 100
+    default_brightness: 160
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 4G TD/W (Single SIM)
+  id: dior
+  codenames:
+    - dior
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p24
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p25
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_NO_SCREEN_BLANK
+      - TW_NO_SCREEN_TIMEOUT
+    pixel_format: RGBX_8888
+    default_brightness: 100
+    max_brightness: 160
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi
+
+- name: Xiaomi Redmi Note 4G TD/W (Dual SIM)
+  id: gucci
+  codenames:
+    - gucci
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p26
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p30
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p25
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p29
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_NO_SCREEN_BLANK
+      - TW_NO_SCREEN_TIMEOUT
+    pixel_format: RGBX_8888
+    default_brightness: 100
+    max_brightness: 160
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    theme: portrait_hdpi

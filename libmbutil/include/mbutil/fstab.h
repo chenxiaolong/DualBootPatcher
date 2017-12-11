@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -22,29 +22,39 @@
 #include <string>
 #include <vector>
 
-#define MF_WAIT             0x1
-#define MF_CHECK            0x2
-#define MF_CRYPT            0x4
-#define MF_NONREMOVABLE     0x8
-#define MF_VOLDMANAGED      0x10
-#define MF_LENGTH           0x20
-#define MF_RECOVERYONLY     0x40
-#define MF_SWAPPRIO         0x80
-#define MF_ZRAMSIZE         0x100
-#define MF_VERIFY           0x200
-#define MF_FORCECRYPT       0x400
-#define MF_NOEMULATEDSD     0x800
-#define MF_NOTRIM           0x1000
-#define MF_FILEENCRYPTION   0x2000
-#define MF_FORMATTABLE      0x4000
-#define MF_SLOTSELECT       0x8000
-
 namespace mb
 {
 namespace util
 {
 
-struct fstab_rec
+constexpr unsigned long MF_WAIT             = 1 << 0;
+constexpr unsigned long MF_CHECK            = 1 << 1;
+constexpr unsigned long MF_CRYPT            = 1 << 2;
+constexpr unsigned long MF_NONREMOVABLE     = 1 << 3;
+constexpr unsigned long MF_VOLDMANAGED      = 1 << 4;
+constexpr unsigned long MF_LENGTH           = 1 << 5;
+constexpr unsigned long MF_RECOVERYONLY     = 1 << 6;
+constexpr unsigned long MF_SWAPPRIO         = 1 << 7;
+constexpr unsigned long MF_ZRAMSIZE         = 1 << 8;
+constexpr unsigned long MF_VERIFY           = 1 << 9;
+constexpr unsigned long MF_FORCECRYPT       = 1 << 10;
+constexpr unsigned long MF_NOEMULATEDSD     = 1 << 11;
+constexpr unsigned long MF_NOTRIM           = 1 << 12;
+constexpr unsigned long MF_FILEENCRYPTION   = 1 << 13;
+constexpr unsigned long MF_FORMATTABLE      = 1 << 14;
+constexpr unsigned long MF_SLOTSELECT       = 1 << 15;
+constexpr unsigned long MF_FORCEFDEORFBE    = 1 << 16;
+constexpr unsigned long MF_LATEMOUNT        = 1 << 17;
+constexpr unsigned long MF_NOFAIL           = 1 << 18;
+constexpr unsigned long MF_VERIFYATBOOT     = 1 << 19;
+constexpr unsigned long MF_MAX_COMP_STREAMS = 1 << 20;
+constexpr unsigned long MF_RESERVEDSIZE     = 1 << 21;
+constexpr unsigned long MF_QUOTA            = 1 << 22;
+constexpr unsigned long MF_ERASEBLKSIZE     = 1 << 23;
+constexpr unsigned long MF_LOGICALBLKSIZE   = 1 << 24;
+constexpr unsigned long MF_AVB              = 1 << 25;
+
+struct FstabRec
 {
     // Block device to mount
     std::string blk_device;
@@ -66,7 +76,7 @@ struct fstab_rec
     std::string orig_line;
 };
 
-struct twrp_fstab_rec
+struct TwrpFstabRec
 {
     std::vector<std::string> blk_devices;
     std::string mount_point;
@@ -77,8 +87,8 @@ struct twrp_fstab_rec
     std::string orig_line;
 };
 
-std::vector<fstab_rec> read_fstab(const std::string &path);
-std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path);
+std::vector<FstabRec> read_fstab(const std::string &path);
+std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path);
 
 }
 }

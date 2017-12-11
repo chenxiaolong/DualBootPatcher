@@ -31,8 +31,34 @@ public class LibC {
             Native.register(CWrapper.class, "c");
         }
 
-        public static native void free(Pointer ptr);
+        static native void free(Pointer ptr);
 
         public static native /* pid_t */ int getpid();
+    }
+
+    public static void free(Pointer ptr) {
+        CWrapper.free(ptr);
+    }
+
+    public static void freeArray(Pointer ptr) {
+        if (ptr != null) {
+            Pointer[] ptrs = ptr.getPointerArray(0);
+            for (Pointer p : ptrs) {
+                free(p);
+            }
+            free(ptr);
+        }
+    }
+
+    public static String getStringAndFree(Pointer p) {
+        String str = p.getString(0);
+        free(p);
+        return str;
+    }
+
+    public static String[] getStringArrayAndFree(Pointer p) {
+        String[] array = p.getStringArray(0);
+        freeArray(p);
+        return array;
     }
 }

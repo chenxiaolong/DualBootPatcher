@@ -1,0 +1,175 @@
+---
+- name: Alcatel Pixi 4(4)
+  id: Pixi4-4
+  codenames:
+    - Pixi4-4
+    - pixi4-4
+    - 4034G
+    - 4034A
+    - 4034D
+    - 4034E
+    - 4034X
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p9
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Alcatel Pixi 4(5) 5010
+  id: Pixi4-5
+  codenames:
+    - Pixi4-5
+    - pixi4-5
+    - pixi4_5
+    - 5010G
+    - 5010A
+    - 5010D
+    - 5010E
+    - 5010X
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
+      - /dev/block/mmcblk0p19
+    cache:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/cache
+      - /dev/block/mmcblk0p20
+    data:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/userdata
+      - /dev/block/mmcblk0p21
+    boot:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/boot
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/recovery
+      - /dev/block/mmcblk0p9
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 128
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Alcatel Pixi 4(7)
+  id: Pixi4-7
+  codenames:
+    - Pixi4-7
+    - pixi4-7
+    - 9003G
+    - 9003A
+    - 9003D
+    - 9003E
+    - 9003X
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Alcatel Pop 3(5)
+  id: pixi3_5
+  codenames:
+    - pixi3_5
+    - '5015'
+    - 5015A
+    - 5015D
+    - 5015E
+    - 5015X
+    - '5016'
+    - 5016A
+    - 5016J
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p20
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p21
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p22
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p08
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p09
+    extra:
+      - /dev/block/platform/mtk-msdc.0/by-name/custpack
+      - /dev/block/mmcblk0p13
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+    pixel_format: DEFAULT
+    force_pixel_format: NONE
+    overscan_percent: 0
+    default_x_offset: 0
+    default_y_offset: 0
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 128
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi

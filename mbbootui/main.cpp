@@ -23,18 +23,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <archive.h>
+#include <archive_entry.h>
+
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 #include "mblog/logging.h"
-#include "mbp/patcherconfig.h"
-#include "mbutil/autoclose/archive.h"
+#include "mbpatcher/patcherconfig.h"
 #include "mbutil/copy.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
-#include "mbutil/integer.h"
 #include "mbutil/properties.h"
 #include "mbutil/string.h"
 
@@ -52,6 +51,8 @@
 #include "variables.h"
 
 #include "config/config.hpp"
+
+#define LOG_TAG "mbbootui/main"
 
 #define APPEND_TO_LOG               1
 
@@ -71,7 +72,11 @@
 
 #define BOOL_STR(x)                 ((x) ? "true" : "false")
 
-static mbp::PatcherConfig pc;
+using namespace mb::device;
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+
+static mb::patcher::PatcherConfig pc;
 
 static bool redirect_output_to_file(const char *path, mode_t mode)
 {
@@ -100,23 +105,22 @@ static bool redirect_output_to_file(const char *path, mode_t mode)
 static bool detect_device()
 {
     std::vector<unsigned char> contents;
-    if (!mb::util::file_read_all(DEVICE_JSON_PATH, &contents)) {
+    if (!mb::util::file_read_all(DEVICE_JSON_PATH, contents)) {
         LOGE("%s: Failed to read file: %s", DEVICE_JSON_PATH, strerror(errno));
         return false;
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    tw_device = mb_device_new_from_json(
-            (const char *) contents.data(), &error);
-    if (!tw_device) {
+    JsonError error;
+
+    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+                          tw_device, error)) {
         LOGE("%s: Failed to load device", DEVICE_JSON_PATH);
         return false;
     }
 
-    if (mb_device_validate(tw_device) != 0) {
+    if (tw_device.validate()) {
         LOGE("%s: Validation failed", DEVICE_JSON_PATH);
-        mb_device_free(tw_device);
         return false;
     }
 
@@ -126,12 +130,12 @@ static bool detect_device()
 static bool extract_theme(const std::string &path, const std::string &target,
                           const std::string &theme_name)
 {
-    mb::autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
         return false;
     }
-    mb::autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
         return false;
@@ -183,9 +187,9 @@ static bool extract_theme(const std::string &path, const std::string &target,
 
         const char *suffix;
 
-        if (mb_starts_with(path, common_prefix.c_str())) {
+        if (mb::starts_with(path, common_prefix)) {
             suffix = path + common_prefix.size();
-        } else if (mb_starts_with(path, theme_prefix.c_str())) {
+        } else if (mb::starts_with(path, theme_prefix)) {
             suffix = path + theme_prefix.size();
         } else {
             LOGV("Skipping: %s", path);
@@ -228,183 +232,114 @@ static void wait_forever()
     }
 }
 
-struct mapping
-{
-    uint64_t libmbp;
-    uint64_t bootui;
-};
-
-static mapping flag_map[] =
-{
-    { FLAG_TW_TOUCHSCREEN_SWAP_XY,           TW_FLAG_TOUCHSCREEN_SWAP_XY           },
-    { FLAG_TW_TOUCHSCREEN_FLIP_X,            TW_FLAG_TOUCHSCREEN_FLIP_X            },
-    { FLAG_TW_TOUCHSCREEN_FLIP_Y,            TW_FLAG_TOUCHSCREEN_FLIP_Y            },
-    { FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH, TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH },
-    { FLAG_TW_SCREEN_BLANK_ON_BOOT,          TW_FLAG_SCREEN_BLANK_ON_BOOT          },
-    { FLAG_TW_BOARD_HAS_FLIPPED_SCREEN,      TW_FLAG_BOARD_HAS_FLIPPED_SCREEN      },
-    { FLAG_TW_IGNORE_MAJOR_AXIS_0,           TW_FLAG_IGNORE_MAJOR_AXIS_0           },
-    { FLAG_TW_IGNORE_MT_POSITION_0,          TW_FLAG_IGNORE_MT_POSITION_0          },
-    { FLAG_TW_IGNORE_ABS_MT_TRACKING_ID,     TW_FLAG_IGNORE_ABS_MT_TRACKING_ID     },
-    { FLAG_TW_NEW_ION_HEAP,                  TW_FLAG_NEW_ION_HEAP                  },
-    { FLAG_TW_NO_SCREEN_BLANK,               TW_FLAG_NO_SCREEN_BLANK               },
-    { FLAG_TW_NO_SCREEN_TIMEOUT,             TW_FLAG_NO_SCREEN_TIMEOUT             },
-    { FLAG_TW_ROUND_SCREEN,                  TW_FLAG_ROUND_SCREEN                  },
-    { FLAG_TW_NO_CPU_TEMP,                   TW_FLAG_NO_CPU_TEMP                   },
-    { FLAG_TW_QCOM_RTC_FIX,                  TW_FLAG_QCOM_RTC_FIX                  },
-    { FLAG_TW_HAS_DOWNLOAD_MODE,             TW_FLAG_HAS_DOWNLOAD_MODE             },
-    { FLAG_TW_PREFER_LCD_BACKLIGHT,          TW_FLAG_PREFER_LCD_BACKLIGHT          },
-    {0, 0}
-};
-
-static void load_device_config()
-{
-    uint64_t flags = mb_device_tw_flags(tw_device);
-    enum TwPixelFormat pixel_fomat =
-            mb_device_tw_pixel_format(tw_device);
-    enum TwForcePixelFormat force_pixel_format =
-            mb_device_tw_force_pixel_format(tw_device);
-
-    for (auto iter = flag_map; iter->libmbp != 0; ++iter) {
-        if (flags & iter->libmbp) {
-            tw_flags |= iter->bootui;
-        }
-    }
-
-    switch (pixel_fomat) {
-    case TW_PIXEL_FORMAT_DEFAULT:
-        tw_pixel_format = TW_PXFMT_DEFAULT;
-        break;
-    case TW_PIXEL_FORMAT_ABGR_8888:
-        tw_pixel_format = TW_PXFMT_ABGR_8888;
-        break;
-    case TW_PIXEL_FORMAT_RGBX_8888:
-        tw_pixel_format = TW_PXFMT_RGBX_8888;
-        break;
-    case TW_PIXEL_FORMAT_BGRA_8888:
-        tw_pixel_format = TW_PXFMT_BGRA_8888;
-        break;
-    case TW_PIXEL_FORMAT_RGBA_8888:
-        tw_pixel_format = TW_PXFMT_RGBA_8888;
-        break;
-    }
-
-    switch (force_pixel_format) {
-    case TW_FORCE_PIXEL_FORMAT_NONE:
-        tw_force_pixel_format = TW_FORCE_PXFMT_NONE;
-        break;
-    case TW_FORCE_PIXEL_FORMAT_RGB_565:
-        tw_force_pixel_format = TW_FORCE_PXFMT_RGB_565;
-        break;
-    }
-
-    tw_overscan_percent = mb_device_tw_overscan_percent(tw_device);
-    tw_default_x_offset = mb_device_tw_default_x_offset(tw_device);
-    tw_default_y_offset = mb_device_tw_default_y_offset(tw_device);
-    tw_brightness_path = mb_device_tw_brightness_path(tw_device);
-    tw_secondary_brightness_path = mb_device_tw_secondary_brightness_path(tw_device);
-    tw_max_brightness = mb_device_tw_max_brightness(tw_device);
-    tw_default_brightness = mb_device_tw_default_brightness(tw_device);
-    tw_custom_battery_path = mb_device_tw_battery_path(tw_device);
-    tw_custom_cpu_temp_path = mb_device_tw_cpu_temp_path(tw_device);
-    tw_input_blacklist = mb_device_tw_input_blacklist(tw_device);
-    tw_whitelist_input = mb_device_tw_input_whitelist(tw_device);
-
-    tw_graphics_backends = mb_device_tw_graphics_backends(tw_device);
-    tw_graphics_backends_length = 0;
-    for (auto it = tw_graphics_backends; *it; ++it) {
-        tw_graphics_backends_length++;
-    }
-}
-
 static void load_other_config()
 {
     // Get Android version (needed for pattern input)
-    tw_android_sdk_version = mb::util::property_file_get_snum<int>(
+    tw_android_sdk_version = mb::util::property_file_get_num<int>(
             "/raw/system/build.prop", "ro.build.version.sdk", 0);
 }
 
 static void log_startup()
 {
+    auto const &tw_input_blacklist =
+            tw_device.tw_input_blacklist();
+    auto const &tw_input_whitelist =
+            tw_device.tw_input_whitelist();
+    auto const &tw_brightness_path =
+            tw_device.tw_brightness_path();
+    auto const &tw_secondary_brightness_path =
+            tw_device.tw_secondary_brightness_path();
+    auto const &tw_battery_path =
+            tw_device.tw_battery_path();
+    auto const &tw_cpu_temp_path =
+            tw_device.tw_cpu_temp_path();
+    auto const &tw_graphics_backends =
+            tw_device.tw_graphics_backends();
+
     LOGV("----------------------------------------");
     LOGV("Launching mbbootui (version %s)", mb::version());
     LOGV("----------------------------------------");
     LOGV("Configuration:");
-    LOGV("- Flags:                        0x%" PRIx64, tw_flags);
+    LOGV("- Flags:                        0x%" PRIx64,
+         static_cast<uint64_t>(tw_device.tw_flags()));
 
-#define LOG_FLAG(FLAG) if (tw_flags & FLAG) { LOGV("  - " # FLAG); }
-    LOG_FLAG(TW_FLAG_TOUCHSCREEN_SWAP_XY);
-    LOG_FLAG(TW_FLAG_TOUCHSCREEN_FLIP_X);
-    LOG_FLAG(TW_FLAG_TOUCHSCREEN_FLIP_Y);
-    LOG_FLAG(TW_FLAG_GRAPHICS_FORCE_USE_LINELENGTH);
-    LOG_FLAG(TW_FLAG_SCREEN_BLANK_ON_BOOT);
-    LOG_FLAG(TW_FLAG_BOARD_HAS_FLIPPED_SCREEN);
-    LOG_FLAG(TW_FLAG_IGNORE_MAJOR_AXIS_0);
-    LOG_FLAG(TW_FLAG_IGNORE_MT_POSITION_0);
-    LOG_FLAG(TW_FLAG_IGNORE_ABS_MT_TRACKING_ID);
-    LOG_FLAG(TW_FLAG_NEW_ION_HEAP);
-    LOG_FLAG(TW_FLAG_NO_SCREEN_BLANK);
-    LOG_FLAG(TW_FLAG_NO_SCREEN_TIMEOUT);
-    LOG_FLAG(TW_FLAG_ROUND_SCREEN);
-    LOG_FLAG(TW_FLAG_NO_CPU_TEMP);
-    LOG_FLAG(TW_FLAG_QCOM_RTC_FIX);
-    LOG_FLAG(TW_FLAG_HAS_DOWNLOAD_MODE);
-    LOG_FLAG(TW_FLAG_PREFER_LCD_BACKLIGHT);
+#define LOG_FLAG(FLAG_NAME, FLAG) \
+    if (tw_device.tw_flags() & TwFlag::FLAG) { \
+        LOGV("  - " # FLAG_NAME); \
+    }
+    LOG_FLAG(TW_TOUCHSCREEN_SWAP_XY, TouchscreenSwapXY);
+    LOG_FLAG(TW_TOUCHSCREEN_FLIP_X, TouchscreenFlipX);
+    LOG_FLAG(TW_TOUCHSCREEN_FLIP_Y, TouchscreenFlipY);
+    LOG_FLAG(TW_GRAPHICS_FORCE_USE_LINELENGTH, GraphicsForceUseLineLength);
+    LOG_FLAG(TW_SCREEN_BLANK_ON_BOOT, ScreenBlankOnBoot);
+    LOG_FLAG(TW_BOARD_HAS_FLIPPED_SCREEN, BoardHasFlippedScreen);
+    LOG_FLAG(TW_IGNORE_MAJOR_AXIS_0, IgnoreMajorAxis0);
+    LOG_FLAG(TW_IGNORE_MT_POSITION_0, IgnoreMtPosition0);
+    LOG_FLAG(TW_IGNORE_ABS_MT_TRACKING_ID, IgnoreAbsMtTrackingId);
+    LOG_FLAG(TW_NEW_ION_HEAP, NewIonHeap);
+    LOG_FLAG(TW_NO_SCREEN_BLANK, NoScreenBlank);
+    LOG_FLAG(TW_NO_SCREEN_TIMEOUT, NoScreenTimeout);
+    LOG_FLAG(TW_ROUND_SCREEN, RoundScreen);
+    LOG_FLAG(TW_NO_CPU_TEMP, NoCpuTemp);
+    LOG_FLAG(TW_QCOM_RTC_FIX, QcomRtcFix);
+    LOG_FLAG(TW_HAS_DOWNLOAD_MODE, HasDownloadMode);
+    LOG_FLAG(TW_PREFER_LCD_BACKLIGHT, PreferLcdBacklight);
 #undef LOG_FLAG
 
     const char *temp;
-    switch (tw_pixel_format) {
-    case TW_PXFMT_DEFAULT:   temp = "TW_PXFMT_DEFAULT";   break;
-    case TW_PXFMT_ABGR_8888: temp = "TW_PXFMT_ABGR_8888"; break;
-    case TW_PXFMT_RGBX_8888: temp = "TW_PXFMT_RGBX_8888"; break;
-    case TW_PXFMT_BGRA_8888: temp = "TW_PXFMT_BGRA_8888"; break;
-    case TW_PXFMT_RGBA_8888: temp = "TW_PXFMT_RGBA_8888"; break;
-    default:                 temp = "(unknown)";          break;
+    switch (tw_device.tw_pixel_format()) {
+    case TwPixelFormat::Default:  temp = "DEFAULT";   break;
+    case TwPixelFormat::Abgr8888: temp = "ABGR_8888"; break;
+    case TwPixelFormat::Rgbx8888: temp = "RGBX_8888"; break;
+    case TwPixelFormat::Bgra8888: temp = "BGRA_8888"; break;
+    case TwPixelFormat::Rgba8888: temp = "RGBA_8888"; break;
+    default:                      temp = "(unknown)"; break;
     }
 
     LOGV("- tw_pixel_format:              %s", temp);
 
-    switch (tw_force_pixel_format) {
-    case TW_FORCE_PXFMT_NONE:    temp = "TW_FORCE_PXFMT_NONE";    break;
-    case TW_FORCE_PXFMT_RGB_565: temp = "TW_FORCE_PXFMT_RGB_565"; break;
-    default:                     temp = "(unknown)";              break;
+    switch (tw_device.tw_force_pixel_format()) {
+    case TwForcePixelFormat::None:   temp = "NONE";      break;
+    case TwForcePixelFormat::Rgb565: temp = "RGB_565";   break;
+    default:                         temp = "(unknown)"; break;
     }
 
     LOGV("- tw_force_pixel_format:        %s", temp);
 
-    LOGV("- tw_overscan_percent:          %d", tw_overscan_percent);
+    LOGV("- tw_overscan_percent:          %d", tw_device.tw_overscan_percent());
 
-    LOGV("- tw_input_blacklist:           %s", tw_input_blacklist ? tw_input_blacklist : "(none)");
-    LOGV("- tw_whitelist_input:           %s", tw_whitelist_input ? tw_whitelist_input : "(none)");
+    LOGV("- tw_input_blacklist:           %s", !tw_input_blacklist.empty() ? tw_input_blacklist.c_str() : "(none)");
+    LOGV("- tw_input_whitelist:           %s", !tw_input_whitelist.empty() ? tw_input_whitelist.c_str() : "(none)");
 
-    LOGV("- tw_default_x_offset:          %d", tw_default_x_offset);
-    LOGV("- tw_default_y_offset:          %d", tw_default_y_offset);
+    LOGV("- tw_default_x_offset:          %d", tw_device.tw_default_x_offset());
+    LOGV("- tw_default_y_offset:          %d", tw_device.tw_default_y_offset());
 
-    LOGV("- tw_brightness_path:           %s", tw_brightness_path ? tw_brightness_path : "(autodetect)");
-    LOGV("- tw_secondary_brightness_path: %s", tw_secondary_brightness_path ? tw_secondary_brightness_path : "(none)");
+    LOGV("- tw_brightness_path:           %s", !tw_brightness_path.empty() ? tw_brightness_path.c_str() : "(autodetect)");
+    LOGV("- tw_secondary_brightness_path: %s", !tw_secondary_brightness_path.empty() ? tw_secondary_brightness_path.c_str() : "(none)");
 
-    if (tw_max_brightness >= 0) {
-        LOGV("- tw_max_brightness:            %d", tw_max_brightness);
+    if (tw_device.tw_max_brightness() >= 0) {
+        LOGV("- tw_max_brightness:            %d", tw_device.tw_max_brightness());
     } else {
         LOGV("- tw_max_brightness:            %s", "(autodetect)");
     }
-    if (tw_default_brightness >= 0) {
-        LOGV("- tw_default_brightness:        %d", tw_default_brightness);
+    if (tw_device.tw_default_brightness() >= 0) {
+        LOGV("- tw_default_brightness:        %d", tw_device.tw_default_brightness());
     } else {
         LOGV("- tw_default_brightness:        %s", "(autodetect)");
     }
 
-    LOGV("- tw_custom_battery_path:       %s", tw_custom_battery_path ? tw_custom_battery_path : "(none)");
-    LOGV("- tw_custom_cpu_temp_path:      %s", tw_custom_cpu_temp_path ? tw_custom_cpu_temp_path : "(none)");
+    LOGV("- tw_battery_path:              %s", !tw_battery_path.empty() ? tw_battery_path.c_str() : "(none)");
+    LOGV("- tw_cpu_temp_path:             %s", !tw_cpu_temp_path.empty() ? tw_cpu_temp_path.c_str() : "(none)");
 
-    LOGV("- tw_resource_path:             %s", tw_resource_path);
-    LOGV("- tw_settings_path:             %s", tw_settings_path);
-    LOGV("- tw_screenshots_path:          %s", tw_screenshots_path);
-    LOGV("- tw_theme_zip_path:            %s", tw_theme_zip_path);
+    LOGV("- tw_resource_path:             %s", tw_resource_path.c_str());
+    LOGV("- tw_settings_path:             %s", tw_settings_path.c_str());
+    LOGV("- tw_screenshots_path:          %s", tw_screenshots_path.c_str());
+    LOGV("- tw_theme_zip_path:            %s", tw_theme_zip_path.c_str());
 
-    if (tw_graphics_backends_length > 0) {
-        LOGV("- tw_graphics_backends:         (%zu backends)", tw_graphics_backends_length);
-        for (size_t i = 0; i < tw_graphics_backends_length; ++i) {
-            LOGV("  - %s", tw_graphics_backends[i]);
+    if (!tw_graphics_backends.empty()) {
+        LOGV("- tw_graphics_backends:         (%zu backends)", tw_graphics_backends.size());
+        for (auto const &backend : tw_graphics_backends) {
+            LOGV("  - %s", backend.c_str());
         }
     }
 
@@ -492,19 +427,18 @@ int main(int argc, char *argv[])
     }
 
     // Check if device supports the boot UI
-    if (!mb_device_tw_supported(tw_device)) {
+    if (!tw_device.tw_supported()) {
         LOGW("Boot UI is not supported for the device");
         return EXIT_FAILURE;
     }
 
     // Load device configuration options
-    load_device_config();
     load_other_config();
 
     log_startup();
 
     if (!extract_theme(argv[optind], MBBOOTUI_THEME_PATH,
-                       mb_device_tw_theme(tw_device))) {
+                       tw_device.tw_theme())) {
         LOGE("Failed to extract theme");
         return EXIT_FAILURE;
     }
@@ -521,8 +455,8 @@ int main(int argc, char *argv[])
 
     // Set daemon version
     std::string mbtool_version;
-    mbtool_interface->version(&mbtool_version);
-    DataManager::SetValue(TW_MBTOOL_VERSION, mbtool_version);
+    mbtool_interface->version(mbtool_version);
+    DataManager::SetValue(VAR_TW_MBTOOL_VERSION, mbtool_version);
 
     LOGV("Loading graphics system...");
     if (gui_init() < 0) {
@@ -537,17 +471,17 @@ int main(int argc, char *argv[])
     // "ro.multiboot.romid" property and will do some additional checks to
     // ensure that the value is correct.
     std::string rom_id;
-    mbtool_interface->get_booted_rom_id(&rom_id);
+    mbtool_interface->get_booted_rom_id(rom_id);
     if (rom_id.empty()) {
         LOGW("Could not determine ROM ID");
     }
-    DataManager::SetValue(TW_ROM_ID, rom_id);
+    DataManager::SetValue(VAR_TW_ROM_ID, rom_id);
 
     LOGV("Loading user settings...");
     DataManager::ReadSettingsFile();
 
     LOGV("Loading language...");
-    PageManager::LoadLanguage(DataManager::GetStrValue(TW_LANGUAGE));
+    PageManager::LoadLanguage(DataManager::GetStrValue(VAR_TW_LANGUAGE));
     GUIConsole::Translate_Now();
 
     LOGV("Fixing time...");
@@ -559,7 +493,7 @@ int main(int argc, char *argv[])
 
     // Exit action
     std::string exit_action;
-    DataManager::GetValue(TW_EXIT_ACTION, exit_action);
+    DataManager::GetValue(VAR_TW_EXIT_ACTION, exit_action);
     std::vector<std::string> args = mb::util::split(exit_action, ",");
 
     // Save settings
@@ -572,11 +506,11 @@ int main(int argc, char *argv[])
                 reboot_arg = args[1];
             }
             bool result;
-            mbtool_interface->reboot(reboot_arg, &result);
+            mbtool_interface->reboot(reboot_arg, result);
             wait_forever();
         } else if (args[0] == "shutdown") {
             bool result;
-            mbtool_interface->shutdown(&result);
+            mbtool_interface->shutdown(result);
             wait_forever();
         }
     }
@@ -608,14 +542,7 @@ static int log_bridge(int prio, const char *tag, const char *fmt, va_list ap)
         break;
     }
 
-    char newfmt[512];
-    if (snprintf(newfmt, sizeof(newfmt), "[%s] %s", tag, fmt)
-            >= (int) sizeof(newfmt)) {
-        // Doesn't fit
-        return -1;
-    }
-
-    mb::log::logv(level, newfmt, ap);
+    mb::log::log(level, "[%s] %s", tag, mb::format_v(fmt, ap).c_str());
     return 0;
 }
 

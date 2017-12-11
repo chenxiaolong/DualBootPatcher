@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "miniadbd.h"
@@ -39,6 +39,8 @@
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
+#define LOG_TAG "mbtool/miniadbd"
+
 
 namespace mb
 {
@@ -59,7 +61,7 @@ static bool write_file(const char *path, const char *data, std::size_t size)
             return false;
         }
         data += n;
-        size -= n;
+        size -= static_cast<size_t>(n);
     }
 
     close(fd);
@@ -70,7 +72,7 @@ static bool initialize_adb()
 {
     bool ret = true;
 
-    const char *version = mb::version();
+    const char *v = version();
     ret = write_file("/sys/class/android_usb/android0/enable", "0", 1) && ret;
     ret = write_file("/sys/class/android_usb/android0/idVendor", "18D1", 4) && ret;
     ret = write_file("/sys/class/android_usb/android0/idProduct", "4EE7", 4) && ret;
@@ -78,7 +80,7 @@ static bool initialize_adb()
     ret = write_file("/sys/class/android_usb/android0/functions", "adb", 3) && ret;
     ret = write_file("/sys/class/android_usb/android0/iManufacturer", "mbtool", 6) && ret;
     ret = write_file("/sys/class/android_usb/android0/iProduct", "miniadbd", 8) && ret;
-    ret = write_file("/sys/class/android_usb/android0/iSerial", version, strlen(version)) && ret;
+    ret = write_file("/sys/class/android_usb/android0/iSerial", v, strlen(v)) && ret;
     ret = write_file("/sys/class/android_usb/android0/enable", "1", 1) && ret;
 
     // Create functionfs paths

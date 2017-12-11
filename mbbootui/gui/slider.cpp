@@ -8,6 +8,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/slider"
+
 GUISlider::GUISlider(xml_node<>* node) : GUIObject(node)
 {
     xml_node<>* child;
@@ -175,7 +177,7 @@ int GUISlider::NotifyTouch(TOUCH_STATE state, int x, int y)
         }
 
         if (sCurTouchX >= mRenderX + mRenderW - sTouchW) {
-            DataManager::Vibrate(TW_BUTTON_VIBRATE);
+            DataManager::Vibrate(VAR_TW_BUTTON_VIBRATE);
             sAction->doActions();
         }
 

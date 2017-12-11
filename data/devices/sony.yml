@@ -19,6 +19,13 @@
     boot:
       - /dev/block/mmcblk0p9
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
 
 - name: Sony Xperia E1
   id: falconss
@@ -57,16 +64,6 @@
       - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
       - /dev/block/bootdevice/by-name/FOTAKernel
       - /dev/block/mmcblk0p16
-
-  boot_ui:
-    supported: true
-    flags:
-      - TW_GRAPHICS_FORCE_USE_LINELENGTH
-    graphics_backends:
-      - fbdev
-    pixel_format: RGBX_8888
-    theme: portrait_hdpi
-
 
 - name: Sony Xperia Z1
   id: honami
@@ -119,7 +116,6 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: Sony Xperia T2 Ultra
   id: tianchi
   codenames:
@@ -170,7 +166,6 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-
 - name: Sony Xperia SP
   id: huashan
   codenames:
@@ -203,3 +198,105 @@
     extra:
       - /dev/block/platform/msm_sdcc.1/by-name/TA
       - /dev/block/platform/msm_sdcc.1/by-name/TZ
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_NO_SCREEN_BLANK
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/i2c-10/10-0040/leds/lcd-backlight1/brightness
+    secondary_brightness_path: /sys/devices/i2c-10/10-0040/leds/lcd-backlight2/brightness
+    max_brightness: 255
+    default_brightness: 51
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Sony Xperia XZ
+  id: kagura
+  codenames:
+    - kagura
+    - kagura_dsds
+    - F8331
+    - F8332
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/7464900.sdhci/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7464900.sdhci/by-name/system
+      - /dev/block/mmcblk0p55
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7464900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p43
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7464900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p54
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7464900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p30
+    recovery:
+      - /dev/block/bootdevice/by-name/FOTAKernel
+      - /dev/block/platform/soc/7464900.sdhci/by-name/FOTAKernel
+      - /dev/block/mmcblk0p48
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    default_brightness: 1285
+
+- name: Sony Xperia M
+  id: Nicki
+  codenames:
+    - Nicki
+    - nicki
+    - C1904
+    - C1905
+    - C2004
+    - C2005
+  architecture: armeabi-v7a
+  flags:
+    - HAS_COMBINED_BOOT_AND_RECOVERY
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p25
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p26
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p17
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/FOTAKernel
+      - /dev/block/mmcblk0p23
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/TA
+      - /dev/block/platform/msm_sdcc.1/by-name/TZ
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    graphics_backends:
+      - fbdev
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi

@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/archive.h"
@@ -24,11 +24,12 @@
 #include <cerrno>
 #include <cstring>
 
+#include "mbcommon/finally.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/archive.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
+
+#define LOG_TAG "mbutil/archive"
 
 #define LIBARCHIVE_DISK_WRITER_FLAGS \
     ARCHIVE_EXTRACT_TIME \
@@ -49,6 +50,10 @@ namespace mb
 {
 namespace util
 {
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedLinkResolver = std::unique_ptr<archive_entry_linkresolver,
+        decltype(archive_entry_linkresolver_free) *>;
 
 int libarchive_copy_data(archive *in, archive *out, archive_entry *entry)
 {
@@ -100,10 +105,10 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
             size_t ns;
 
             while (sparse > 0) {
-                if (sparse > (int64_t) sizeof(null_buf)) {
+                if (sparse > static_cast<int64_t>(sizeof(null_buf))) {
                     ns = sizeof(null_buf);
                 } else {
-                    ns = (size_t) sparse;
+                    ns = static_cast<size_t>(sparse);
                 }
 
                 bytes_written = archive_write_data(out, null_buf, ns);
@@ -113,7 +118,7 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
                     return false;
                 }
 
-                if ((size_t) bytes_written < ns) {
+                if (static_cast<size_t>(bytes_written) < ns) {
                     LOGE("%s: Truncated write", archive_entry_pathname(entry));
                     return false;
                 }
@@ -130,7 +135,7 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
             return false;
         }
 
-        if ((size_t) bytes_written < bytes_read) {
+        if (static_cast<size_t>(bytes_written) < bytes_read) {
             LOGE("%s: Truncated write", archive_entry_pathname(entry));
             return false;
         }
@@ -173,24 +178,24 @@ int libarchive_copy_header_and_data(archive *in, archive *out,
 bool libarchive_tar_extract(const std::string &filename,
                             const std::string &target,
                             const std::vector<std::string> &patterns,
-                            compression_type compression)
+                            CompressionType compression)
 {
     if (target.empty()) {
         LOGE("%s: Invalid target path for extraction", target.c_str());
         return false;
     }
 
-    autoclose::archive matcher(archive_match_new(), archive_match_free);
+    ScopedArchive matcher(archive_match_new(), archive_match_free);
     if (!matcher) {
         LOGE("%s: Out of memory when creating matcher", __FUNCTION__);
         return false;
     }
-    autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating archive reader", __FUNCTION__);
         return false;
     }
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating disk writer", __FUNCTION__);
         return false;
@@ -210,15 +215,15 @@ bool libarchive_tar_extract(const std::string &filename,
     archive_read_support_format_tar(in.get());
 
     switch (compression) {
-    case compression_type::NONE:
+    case CompressionType::None:
         break;
-    case compression_type::LZ4:
+    case CompressionType::Lz4:
         archive_read_support_filter_lz4(in.get());
         break;
-    case compression_type::GZIP:
+    case CompressionType::Gzip:
         archive_read_support_filter_gzip(in.get());
         break;
-    case compression_type::XZ:
+    case CompressionType::Xz:
         archive_read_support_filter_xz(in.get());
         break;
     default:
@@ -315,7 +320,7 @@ static bool write_file(archive *in, archive *out, archive_entry *entry)
     }
 
     if (archive_entry_size(entry) > 0) {
-        return util::libarchive_copy_data_disk_to_archive(in, out, entry);
+        return libarchive_copy_data_disk_to_archive(in, out, entry);
     }
 
     return true;
@@ -344,25 +349,25 @@ static int metadata_filter(archive *a, void *data, archive_entry *entry)
 bool libarchive_tar_create(const std::string &filename,
                            const std::string &base_dir,
                            const std::vector<std::string> &paths,
-                           compression_type compression)
+                           CompressionType compression)
 {
     if (base_dir.empty() && paths.empty()) {
         LOGE("%s: No base directory or paths specified", filename.c_str());
         return false;
     }
 
-    autoclose::archive in(archive_read_disk_new(), archive_read_free);
+    ScopedArchive in(archive_read_disk_new(), archive_read_free);
     if (!in) {
         LOGE("%s: Out of memory when creating disk reader", __FUNCTION__);
         return false;
     }
-    autoclose::archive out(archive_write_new(), archive_write_free);
+    ScopedArchive out(archive_write_new(), archive_write_free);
     if (!out) {
         LOGE("%s: Out of memory when creating archive writer", __FUNCTION__);
         return false;
     }
-    autoclose::archive_entry_linkresolver resolver(archive_entry_linkresolver_new(),
-                                                   archive_entry_linkresolver_free);
+    ScopedLinkResolver resolver(archive_entry_linkresolver_new(),
+                                archive_entry_linkresolver_free);
     if (!resolver) {
         LOGE("%s: Out of memory when creating link resolver", __FUNCTION__);
         return false;
@@ -390,15 +395,15 @@ bool libarchive_tar_create(const std::string &filename,
     archive_write_set_bytes_per_block(out.get(), 10240);
 
     switch (compression) {
-    case compression_type::NONE:
+    case CompressionType::None:
         break;
-    case compression_type::LZ4:
+    case CompressionType::Lz4:
         archive_write_add_filter_lz4(out.get());
         break;
-    case compression_type::GZIP:
+    case CompressionType::Gzip:
         archive_write_add_filter_gzip(out.get());
         break;
-    case compression_type::XZ:
+    case CompressionType::Xz:
         archive_write_add_filter_xz(out.get());
         break;
     default:
@@ -469,7 +474,7 @@ bool libarchive_tar_create(const std::string &filename,
             const char *curpath = archive_entry_pathname(entry);
             if (curpath && path[0] != '/' && !base_dir.empty()) {
                 std::string relpath;
-                if (!util::relative_path(curpath, base_dir, &relpath)) {
+                if (!relative_path(curpath, base_dir, relpath)) {
                     LOGE("Failed to compute relative path of %s starting at %s: %s",
                          curpath, base_dir.c_str(), strerror(errno));
                     archive_entry_free(entry);
@@ -599,8 +604,8 @@ static void set_up_output(archive *out)
 
 bool extract_archive(const std::string &filename, const std::string &target)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -659,8 +664,8 @@ bool extract_files(const std::string &filename, const std::string &target,
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -724,14 +729,14 @@ bool extract_files(const std::string &filename, const std::string &target,
 }
 
 bool extract_files2(const std::string &filename,
-                    const std::vector<extract_info> &files)
+                    const std::vector<ExtractInfo> &files)
 {
     if (files.empty()) {
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
 
     if (!in || !out) {
         LOGE("Out of memory");
@@ -749,7 +754,7 @@ bool extract_files2(const std::string &filename,
     set_up_output(out.get());
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        for (const extract_info &info : files) {
+        for (const ExtractInfo &info : files) {
             if (info.from == archive_entry_pathname(entry)) {
                 ++count;
 
@@ -779,13 +784,13 @@ bool extract_files2(const std::string &filename,
 }
 
 bool archive_exists(const std::string &filename,
-                    std::vector<exists_info> &files)
+                    std::vector<ExistsInfo> &files)
 {
     if (files.empty()) {
         return false;
     }
 
-    autoclose::archive in(archive_read_new(), archive_read_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
 
     if (!in) {
         LOGE("Out of memory");
@@ -795,7 +800,7 @@ bool archive_exists(const std::string &filename,
     archive_entry *entry;
     int ret;
 
-    for (exists_info &info : files) {
+    for (ExistsInfo &info : files) {
         info.exists = false;
     }
 
@@ -804,7 +809,7 @@ bool archive_exists(const std::string &filename,
     }
 
     while ((ret = archive_read_next_header(in.get(), &entry)) == ARCHIVE_OK) {
-        for (exists_info &info : files) {
+        for (ExistsInfo &info : files) {
             if (info.path == archive_entry_pathname(entry)) {
                 info.exists = true;
             }

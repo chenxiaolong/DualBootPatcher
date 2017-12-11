@@ -1,25 +1,28 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "wipe.h"
 
 #include <algorithm>
+
+#include <cerrno>
+#include <cstring>
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -33,55 +36,57 @@
 
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/wipe"
+
 namespace mb
 {
 
-class WipeDirectory : public util::FTSWrapper {
+class WipeDirectory : public util::FtsWrapper {
 public:
     WipeDirectory(std::string path, std::vector<std::string> exclusions)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _exclusions(std::move(exclusions))
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
+        , _exclusions(std::move(exclusions))
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // Exclude first-level directories
         if (_curr->fts_level == 1) {
             if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
                     != _exclusions.end()) {
-                return Action::FTS_Skip;
+                return Action::Skip;
             }
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         // Do nothing. Need depth-first search, so directories are deleted
         // in FTS_DP
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return delete_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return delete_path() ? Action::Ok : Action::Fail;
     }
 
 private:
@@ -90,12 +95,8 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            char *msg = mb_format("%s: Failed to remove: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            _error_msg = format("%s: Failed to remove: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -160,7 +161,7 @@ static bool log_wipe_file(const std::string &path)
  *       deletion does not follow symlinks.
  *
  * \param mountpoint Mountpoint root to wipe
- * \param wipe_media Whether the first-level "media" path should be deleted
+ * \param exclusions List of first-level paths to exclude
  *
  * \return True if the path was wiped or doesn't exist. False, otherwise
  */
@@ -215,7 +216,7 @@ bool wipe_system(const std::shared_ptr<Rom> &rom)
         // Ensure the image is no longer mounted
         std::string mount_point("/raw/images/");
         mount_point += rom->id;
-        util::umount(mount_point.c_str());
+        util::umount(mount_point);
 
         ret = log_wipe_file(path);
     } else {

@@ -1,38 +1,36 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mblog/android_logger.h"
 
 #include <android/log.h>
 
-#include "mblog/logging.h"
-
 namespace mb
 {
 namespace log
 {
 
-void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
+void AndroidLogger::log(const LogRecord &rec)
 {
     int logcatprio;
 
-    switch (prio) {
+    switch (rec.prio) {
     case LogLevel::Error:
         logcatprio = ANDROID_LOG_ERROR;
         break;
@@ -52,7 +50,12 @@ void AndroidLogger::log(LogLevel prio, const char *fmt, va_list ap)
         return;
     }
 
-    __android_log_vprint(logcatprio, get_log_tag(), fmt, ap);
+    __android_log_write(logcatprio, rec.tag.c_str(), rec.msg.c_str());
+}
+
+bool AndroidLogger::formatted()
+{
+    return false;
 }
 
 }

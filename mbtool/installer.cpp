@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "installer.h"
@@ -26,11 +26,13 @@
 #include <cstring>
 
 // Linux/posix
+#include <dirent.h>
 #include <fcntl.h>
-#include <mntent.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -41,6 +43,7 @@
 #include "external/legacy_property_service.h"
 
 // libmbcommon
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 
@@ -49,11 +52,8 @@
 
 // libmbdevice
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 
 // libmbutil
-#include "mbutil/autoclose/dir.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chmod.h"
 #include "mbutil/chown.h"
@@ -62,7 +62,6 @@
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fstab.h"
 #include "mbutil/loopdev.h"
 #include "mbutil/mount.h"
@@ -79,6 +78,7 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/installer"
 
 // Set to 1 to spawn a shell after installation
 // NOTE: This should ONLY be used through adb. For example:
@@ -101,14 +101,20 @@
 #define HELPER_TOOL             "/update-binary-tool"
 
 
-namespace mb {
+using namespace mb::device;
+
+namespace mb
+{
+
+using ScopedDIR = std::unique_ptr<DIR, decltype(closedir) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 const std::string Installer::CANCELLED = "cancelled";
 
 
 Installer::Installer(std::string zip_file, std::string chroot_dir,
                      std::string temp_dir, int interface, int output_fd,
-                     int flags)
+                     InstallerFlags flags)
     : _zip_file(std::move(zip_file))
     , _chroot(std::move(chroot_dir))
     , _temp(std::move(temp_dir))
@@ -124,7 +130,6 @@ Installer::Installer(std::string zip_file, std::string chroot_dir,
 
 Installer::~Installer()
 {
-    mb_device_free(_device);
 }
 
 
@@ -198,7 +203,7 @@ static bool log_delete_recursive(const std::string &path)
 }
 
 static bool log_copy_dir(const std::string &source,
-                         const std::string &target, int flags)
+                         const std::string &target, util::CopyFlags flags)
 {
     bool ret = util::copy_dir(source, target, flags);
     if (!ret) {
@@ -221,25 +226,25 @@ void Installer::output_cb(const char *line, bool error, void *userdata)
     installer->command_output(line);
 }
 
-int Installer::run_command(const char * const *argv)
+int Installer::run_command(const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
-        nullptr,
+        {},
+        {},
         _passthrough ? nullptr : &output_cb,
         this
     );
 }
 
-int Installer::run_command_chroot(const char *dir,
-                                  const char * const *argv)
+int Installer::run_command_chroot(const std::string &dir,
+                                  const std::vector<std::string> &argv)
 {
     return util::run_command(
         argv[0],
         argv,
-        nullptr,
+        {},
         dir,
         _passthrough ? nullptr : &output_cb,
         this
@@ -259,14 +264,10 @@ bool Installer::create_chroot()
 {
     // We'll just call the recovery's mount tools directly to avoid having to
     // parse TWRP and CWM's different fstab formats
-    const char *argv_mount_system[] = { "mount", "/system", nullptr };
-    const char *argv_mount_cache[] = { "mount", "/cache", nullptr };
-    const char *argv_mount_data[] = { "mount", "/data", nullptr };
-    const char *argv_mount_efs[] = { "mount", "-o", "ro", "/efs", nullptr };
-    run_command(argv_mount_system);
-    run_command(argv_mount_cache);
-    run_command(argv_mount_data);
-    run_command(argv_mount_efs);
+    run_command({ "mount", "/system" });
+    run_command({ "mount", "/cache" });
+    run_command({ "mount", "/data" });
+    run_command({ "mount", "-o", "ro", "/efs" });
 
     // Remount as writable (needed for in-app flashing)
     log_mount("", Roms::get_system_partition().c_str(), "", MS_REMOUNT, "");
@@ -337,9 +338,9 @@ bool Installer::create_chroot()
     // there. Also, for whatever reason, bind mounting /sbin results in EINVAL
     // no matter if it's done from here or from busybox.
     if (!log_copy_dir("/sbin", in_chroot("/sbin"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -376,15 +377,15 @@ bool Installer::create_chroot()
 
     // We need /dev/input/* and /dev/graphics/* for AROMA
     if (!log_copy_dir("/dev/input", in_chroot("/dev/input"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
     if (!log_copy_dir("/dev/graphics", in_chroot("/dev/graphics"),
-                      util::COPY_ATTRIBUTES
-                    | util::COPY_XATTRS
-                    | util::COPY_EXCLUDE_TOP_LEVEL)) {
+                      util::CopyFlag::CopyAttributes
+                    | util::CopyFlag::CopyXattrs
+                    | util::CopyFlag::ExcludeTopLevel)) {
         return false;
     }
 
@@ -403,7 +404,7 @@ bool Installer::destroy_chroot() const
     // Disassociate loop devices that the ROM installer may have assigned
     // (grr, SuperSU...)
     std::string dev_block_path(in_chroot("/dev/block"));
-    autoclose::dir dp = autoclose::opendir(dev_block_path.c_str());
+    ScopedDIR dp(opendir(dev_block_path.c_str()), closedir);
     if (dp) {
         std::string path;
         struct dirent *ent;
@@ -477,9 +478,9 @@ bool Installer::mount_efs() const
         if (stat("/twres", &sb) == 0 && S_ISDIR(sb.st_mode)) {
             LOGD("Looking for /efs entry in TWRP-format fstab");
 
-            std::vector<util::twrp_fstab_rec> recs =
+            std::vector<util::TwrpFstabRec> recs =
                     util::read_twrp_fstab("/etc/recovery.fstab");
-            for (const util::twrp_fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0
                         || util::path_compare(rec.mount_point, "/efs1") == 0) {
                     LOGD("Found /efs fstab entry");
@@ -495,9 +496,9 @@ bool Installer::mount_efs() const
         } else {
             LOGE("Looking for /efs entry in non-TWRP-format fstab");
 
-            std::vector<util::fstab_rec> recs =
+            std::vector<util::FstabRec> recs =
                     util::read_fstab("/etc/recovery.fstab");
-            for (const util::fstab_rec &rec : recs) {
+            for (auto const &rec : recs) {
                 if (util::path_compare(rec.mount_point, "/efs") == 0) {
                     LOGD("Found /efs fstab entry");
                     efs_dev = rec.blk_device;
@@ -533,7 +534,7 @@ bool Installer::mount_efs() const
  */
 bool Installer::extract_multiboot_files()
 {
-    std::vector<util::extract_info> files{
+    std::vector<util::ExtractInfo> files{
         {
             "META-INF/com/google/android/update-binary.orig",
             _temp + "/updater"
@@ -599,7 +600,7 @@ bool Installer::extract_multiboot_files()
     for (auto const &item : sigcheck) {
         SigVerifyResult result =
                 verify_signature(item.c_str(), (item + ".sig").c_str());
-        if (result != SigVerifyResult::VALID) {
+        if (result != SigVerifyResult::Valid) {
             LOGE("%s: Signature verification failed", item.c_str());
             return false;
         }
@@ -620,7 +621,8 @@ bool Installer::set_up_busybox_wrapper()
     rename(sbin_busybox.c_str(), in_chroot("/sbin/busybox_orig").c_str());
 
     if (!util::copy_file(temp_busybox, sbin_busybox,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              temp_busybox.c_str(), sbin_busybox.c_str(), strerror(errno));
         return false;
@@ -648,15 +650,18 @@ bool Installer::create_image(const std::string &path, uint64_t size)
     }
 
     auto result = create_ext4_image(path, size);
-    if (result == CreateImageResult::NOT_ENOUGH_SPACE) {
-        uint64_t avail = util::mount_get_avail_size(util::dir_name(path).c_str());
-        display_msg(std::string());
+    if (result == CreateImageResult::NotEnoughSpace) {
+        uint64_t avail;
+        if (!util::mount_get_avail_size(util::dir_name(path), avail)) {
+            avail = 0;
+        }
+        display_msg(std::string{});
         display_msg("There is not enough space to create %s", path.c_str());
         display_msg("- Needed:    %" PRIu64 " bytes", size);
         display_msg("- Available: %" PRIu64 " bytes", avail);
     }
 
-    return result == CreateImageResult::SUCCEEDED;
+    return result == CreateImageResult::Succeeded;
 }
 
 /*!
@@ -675,10 +680,6 @@ bool Installer::system_image_copy(const std::string &source,
 
     struct stat sb;
 
-    auto done = util::finally([&] {
-        util::umount(temp_mnt.c_str());
-    });
-
     if (stat(source.c_str(), &sb) < 0
             && !util::mkdir_recursive(source, 0755)) {
         LOGE("Failed to create %s: %s", source.c_str(), strerror(errno));
@@ -691,10 +692,14 @@ bool Installer::system_image_copy(const std::string &source,
         return false;
     }
 
-    if (!util::mount(image.c_str(), temp_mnt.c_str(), "auto", 0, "")) {
+    if (!util::mount(image, temp_mnt, "auto", 0, "")) {
         LOGE("Failed to mount %s: %s", source.c_str(), strerror(errno));
         return false;
     }
+
+    auto unmount_tmp_dir = finally([&] {
+        util::umount(temp_mnt);
+    });
 
     if (reverse) {
         if (!copy_system(temp_mnt, source)) {
@@ -710,7 +715,7 @@ bool Installer::system_image_copy(const std::string &source,
         }
     }
 
-    if (!util::umount(temp_mnt.c_str())) {
+    if (!util::umount(temp_mnt)) {
         LOGE("Failed to unmount %s: %s", temp_mnt.c_str(), strerror(errno));
         return false;
     }
@@ -737,7 +742,7 @@ bool Installer::mount_dir_or_image(const std::string &source,
     if (is_image) {
         struct stat sb;
         if (stat(source.c_str(), &sb) < 0) {
-            double mib = (double) image_size / 1024 / 1024;
+            double mib = static_cast<double>(image_size) / 1024 / 1024;
 
             display_msg("Creating image (%.1f MiB) at %s",
                         mib, source.c_str());
@@ -793,20 +798,19 @@ bool Installer::change_root(const std::string &path)
     // Unmount everything besides our chroot dir
     {
         std::vector<std::string> to_unmount;
-        struct mntent ent;
-        char buf[1024];
 
-        autoclose::file fp(setmntent("/proc/mounts", "r"), endmntent);
+        ScopedFILE fp(std::fopen(util::PROC_MOUNTS, "r"), std::fclose);
         if (!fp) {
-            LOGE("%s: Failed to read file: %s",
-                 "/proc/mounts", strerror(errno));
+            LOGE("%s: Failed to read file: %s", util::PROC_MOUNTS,
+                 strerror(errno));
             return false;
         }
 
-        while (getmntent_r(fp.get(), &ent, buf, sizeof(buf))) {
-            if (strcmp(ent.mnt_dir, "/") != 0
-                    && !mb_starts_with(ent.mnt_dir, path.c_str())) {
-                to_unmount.push_back(ent.mnt_dir);
+        for (util::MountEntry entry; util::get_mount_entry(fp.get(), entry);) {
+            // TODO: Use util::path_compare() instead of dumb string prefix
+            //       matching
+            if (entry.dir != "/" && !starts_with(entry.dir, path)) {
+                to_unmount.push_back(std::move(entry.dir));
             }
         }
 
@@ -873,7 +877,10 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         // Read program output in child process (stdout, stderr)
         char buf[1024];
 
-        autoclose::file fp(fdopen(stdio_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(stdio_fd, "rb"), fclose);
+        if (!fp) {
+            _exit(EXIT_FAILURE);
+        }
 
         while (fgets(buf, sizeof(buf), fp.get())) {
             command_output(buf);
@@ -887,7 +894,7 @@ bool Installer::updater_fd_reader(int stdio_fd, int command_fd)
         char *save_ptr;
 
         // Similar parsing to AOSP recovery
-        autoclose::file fp(fdopen(command_fd, "rb"), fclose);
+        ScopedFILE fp(fdopen(command_fd, "rb"), fclose);
 
         while (fgets(buf, sizeof(buf), fp.get())) {
             char *cmd = strtok_r(buf, " \n", &save_ptr);
@@ -939,7 +946,8 @@ bool Installer::run_real_updater()
     std::string chroot_updater = in_chroot("/mb/updater");
 
     if (!util::copy_file(updater, chroot_updater,
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              updater.c_str(), chroot_updater.c_str(), strerror(errno));
         return false;
@@ -947,7 +955,8 @@ bool Installer::run_real_updater()
 
 #if DEBUG_USE_UPDATER_WRAPPER
     if (!util::copy_file(DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper"),
-                         util::COPY_ATTRIBUTES | util::COPY_XATTRS)) {
+                         util::CopyFlag::CopyAttributes
+                       | util::CopyFlag::CopyXattrs)) {
         LOGE("Failed to copy %s to %s: %s",
              DEBUG_UPDATER_WRAPPER_PATH, in_chroot("/mb/wrapper").c_str(),
              strerror(errno));
@@ -970,7 +979,7 @@ bool Installer::run_real_updater()
         kill(parent, SIGSTOP);
     }
 
-    auto resume_aroma = util::finally([&]{
+    auto resume_aroma = finally([&]{
         if (aroma) {
             kill(parent, SIGCONT);
         }
@@ -1170,11 +1179,7 @@ void Installer::display_msg(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    char *msg = mb_format_v(fmt, ap);
-    if (msg) {
-        display_msg(std::string(msg));
-        free(msg);
-    }
+    display_msg(format_v(fmt, ap));
     va_end(ap);
 }
 
@@ -1258,11 +1263,11 @@ void Installer::on_cleanup(Installer::ProceedState ret)
 
 Installer::ProceedState Installer::install_stage_initialize()
 {
-    LOGD("Installer version: %s (%s)", mb::version(), mb::git_version());
+    LOGD("Installer version: %s (%s)", version(), git_version());
 
     LOGD("[Installer] Initialization stage");
 
-    std::vector<util::exists_info> info{
+    std::vector<util::ExistsInfo> info{
         { "system.transfer.list", false },
         { "system.new.dat", false },
         { "system.img", false },
@@ -1278,7 +1283,7 @@ Installer::ProceedState Installer::install_stage_initialize()
                 _has_block_image = true;
                 // Flashing an Odin image discards the system image anyway, so
                 // there's no point in copying the data.
-                // TODO: libmbp should be setting this option in info.prop
+                // TODO: libmbpatcher should be setting this option in info.prop
                 if (item.path != "system.img.sparse") {
                     _copy_to_temp_image = true;
                 }
@@ -1336,20 +1341,21 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("[Installer] Device verification stage");
 
     std::vector<unsigned char> contents;
-    if (!util::file_read_all(_temp + "/device.json", &contents)) {
+    if (!util::file_read_all(_temp + "/device.json", contents)) {
         display_msg("Failed to read device.json");
         return ProceedState::Fail;
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    _device = mb_device_new_from_json((const char *) contents.data(), &error);
-    if (!_device) {
+    JsonError error;
+
+    if (!device_from_json(reinterpret_cast<char *>(contents.data()),
+                          _device, error)) {
         display_msg("Error when loading device.json");
         return ProceedState::Fail;
     }
 
-    if (mb_device_validate(_device) != 0) {
+    if (_device.validate()) {
         display_msg("Validation of device.json failed");
         return ProceedState::Fail;
     }
@@ -1364,7 +1370,7 @@ Installer::ProceedState Installer::install_stage_check_device()
     LOGD("ro.product.device = %s", prop_product_device.c_str());
     LOGD("ro.build.product = %s", prop_build_product.c_str());
     LOGD("ro.patcher.device = %s", prop_patcher_device.c_str());
-    LOGD("Target device = %s", mb_device_id(_device));
+    LOGD("Target device = %s", _device.id().c_str());
 
     if (!prop_patcher_device.empty()) {
         _detected_device = prop_patcher_device;
@@ -1382,20 +1388,13 @@ Installer::ProceedState Installer::install_stage_check_device()
     // It's an annoyance, but not a big deal
 
     // Verify codename
-    auto codenames = mb_device_codenames(_device);
-    const char *codename = nullptr;
+    auto const &codenames = _device.codenames();
+    auto it = std::find(codenames.begin(), codenames.end(), _detected_device);
 
-    for (auto iter = codenames; *iter; ++iter) {
-        if (_detected_device == *iter) {
-            codename = *iter;
-            break;
-        }
-    }
-
-    if (!codename) {
+    if (it == codenames.end()) {
         display_msg("Patched zip is for:");
-        for (auto iter = codenames; *iter; ++iter) {
-            display_msg("- %s", *iter);
+        for (auto const &codename : codenames) {
+            display_msg("- %s", codename.c_str());
         }
         display_msg("This device is '%s'", _detected_device.c_str());
 
@@ -1406,39 +1405,14 @@ Installer::ProceedState Installer::install_stage_check_device()
         return access(path.c_str(), R_OK) == 0;
     };
 
-    auto c_boot_devs = mb_device_boot_block_devs(_device);
-    auto c_recovery_devs = mb_device_recovery_block_devs(_device);
-    auto c_system_devs = mb_device_system_block_devs(_device);
-    auto c_extra_devs = mb_device_extra_block_devs(_device);
-    std::vector<std::string> boot_devs;
-    std::vector<std::string> recovery_devs;
-    std::vector<std::string> system_devs;
-    std::vector<std::string> extra_devs;
-
-    if (c_boot_devs) {
-        for (auto it = c_boot_devs; *it; ++it) {
-            boot_devs.push_back(*it);
-        }
-    }
-    if (c_recovery_devs) {
-        for (auto it = c_recovery_devs; *it; ++it) {
-            recovery_devs.push_back(*it);
-        }
-    }
-    if (c_system_devs) {
-        for (auto it = c_system_devs; *it; ++it) {
-            system_devs.push_back(*it);
-        }
-    }
-    if (c_extra_devs) {
-        for (auto it = c_extra_devs; *it; ++it) {
-            extra_devs.push_back(*it);
-        }
-    }
+    auto const &boot_devs = _device.boot_block_devs();
+    auto const &recovery_devs = _device.recovery_block_devs();
+    auto const &system_devs = _device.system_block_devs();
+    auto const &extra_devs = _device.extra_block_devs();
 
     // Find boot blockdev path
-    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
-                           find_existing_path);
+    it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                      find_existing_path);
     if (it == boot_devs.end()) {
         display_msg("Could not determine the boot block device");
         return ProceedState::Fail;
@@ -1485,9 +1459,9 @@ Installer::ProceedState Installer::install_stage_check_device()
         }
 
         // Follow symlinks just in case the symlink source isn't in the list
-        if (!util::copy_file(dev, dev_path, util::COPY_ATTRIBUTES
-                                          | util::COPY_XATTRS
-                                          | util::COPY_FOLLOW_SYMLINKS)) {
+        if (!util::copy_file(dev, dev_path, util::CopyFlag::CopyAttributes
+                                          | util::CopyFlag::CopyXattrs
+                                          | util::CopyFlag::FollowSymlinks)) {
             LOGW("Failed to copy %s. Continuing anyway", dev.c_str());
         } else {
             LOGD("Copied %s to the chroot", dev.c_str());
@@ -1591,11 +1565,8 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     if (access(boot_image_path.c_str(), R_OK) == 0) {
         // Use an empty base dirs list since we don't want to flash any non-boot
         // partitions
-        const char * const *base_dirs = { nullptr };
-
-        auto result = switch_rom(_rom->id.c_str(), _boot_block_dev.c_str(),
-                                 base_dirs, true);
-        if (result != SwitchRomResult::SUCCEEDED) {
+        auto result = switch_rom(_rom->id, _boot_block_dev, {}, true);
+        if (result != SwitchRomResult::Succeeded) {
             display_msg("Failed to switch to target ROM. Continuing anyway...");
             LOGW("Failed to switch to target ROM: %d",
                  static_cast<int>(result));
@@ -1614,16 +1585,19 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 
     // Copy ourself for the real update-binary to use
     util::copy_file(_temp + "/mbtool", in_chroot(HELPER_TOOL),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
     chmod(in_chroot(HELPER_TOOL).c_str(), 0555);
 
     // Copy /default.prop
     util::copy_file("/default.prop", in_chroot("/default.prop"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy file_contexts
     util::copy_file("/file_contexts", in_chroot("/file_contexts"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return on_set_up_chroot();
 }
@@ -1632,7 +1606,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 {
     LOGD("[Installer] Filesystem mounting stage");
 
-    if (_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES) {
+    if (_flags & InstallerFlag::SkipMountingVolumes) {
         LOGV("Skipping filesystem mounting stage");
         return ProceedState::Continue;
     }
@@ -1662,7 +1636,7 @@ Installer::ProceedState Installer::install_stage_mount_filesystems()
 
     // Get desired system image size
     uint64_t system_size;
-    if (!util::get_blockdev_size(_system_block_dev.c_str(), &system_size)) {
+    if (!util::get_blockdev_size(_system_block_dev.c_str(), system_size)) {
         display_msg("Failed to get size of system partition");
         display_msg("Image size will be 4 GiB");
         system_size = DEFAULT_IMAGE_SIZE;
@@ -1794,8 +1768,7 @@ Installer::ProceedState Installer::install_stage_installation()
     // X Pure, which uses the exfat kernel module in all ROMs. This is a more
     // robust solution since the "/system/bin/mount.exfat" string only exists
     // #ifndef CONFIG_KERNEL_HAVE_EXFAT
-    const char *argv[] = { HELPER_TOOL, "mount", "/system", nullptr };
-    run_command_chroot(_chroot.c_str(), argv);
+    run_command_chroot(_chroot, { HELPER_TOOL, "mount", "/system" });
 
     std::string vold_path(in_chroot("/system/bin/vold"));
     _use_fuse_exfat = util::file_find_one_of(vold_path, {
@@ -1813,12 +1786,9 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
     LOGD("[Installer] Filesystem unmounting stage");
 
     // Umount filesystems from inside the chroot
-    const char *argv_unmount_system[] = { HELPER_TOOL, "unmount", "/system", nullptr };
-    const char *argv_unmount_cache[] = { HELPER_TOOL, "unmount", "/cache", nullptr };
-    const char *argv_unmount_data[] = { HELPER_TOOL, "unmount", "/data", nullptr };
-    run_command_chroot(_chroot.c_str(), argv_unmount_system);
-    run_command_chroot(_chroot.c_str(), argv_unmount_cache);
-    run_command_chroot(_chroot.c_str(), argv_unmount_data);
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/system" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/cache" });
+    run_command_chroot(_chroot, { HELPER_TOOL, "unmount", "/data" });
 
     // Disassociate loop devices
     for (const std::string &loop_dev : _associated_loop_devs) {
@@ -1828,11 +1798,11 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
         }
     }
 
-    if (_rom->cache_is_image && !util::umount(in_chroot("/cache").c_str())) {
+    if (_rom->cache_is_image && !util::umount(in_chroot("/cache"))) {
         display_msg("Failed to unmount %s", in_chroot("/cache").c_str());
     }
 
-    if (_rom->data_is_image && !util::umount(in_chroot("/data").c_str())) {
+    if (_rom->data_is_image && !util::umount(in_chroot("/data"))) {
         display_msg("Failed to unmount %s", in_chroot("/data").c_str());
     }
 
@@ -1842,7 +1812,7 @@ Installer::ProceedState Installer::install_stage_unmount_filesystems()
             display_msg("Failed to run e2fsck on image");
         }
     } else {
-        if (!(_flags & InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES)
+        if (!(_flags & InstallerFlag::SkipMountingVolumes)
                 && (_has_block_image || _rom->id == "primary")) {
             display_msg("Copying temporary image to system");
 
@@ -1993,7 +1963,7 @@ bool Installer::start_installation()
 
     ProceedState ret = ProceedState::Fail;
 
-    auto when_finished = util::finally([&] {
+    auto when_finished = finally([&] {
         install_stage_cleanup(ret);
     });
 

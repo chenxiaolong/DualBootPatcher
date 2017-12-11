@@ -1,17 +1,42 @@
-set(MBDEVICE_SOURCES
-    src/device.c
-    src/json.c
-    src/validate.c
-    src/internal/array.c
-    src/internal/structs.c
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+set(MBDEVICE_SCHEMAS
+    schemas/device.json
+    schemas/device_list.json
 )
 
-set(MBDEVICE_TESTS_SOURCES
-    # Helpers
-    tests/main.cpp
-    # Tests
-    tests/test_device.cpp
-    tests/test_json.cpp
+make_directory("${generated_dir}")
+
+# This is a terrible hack
+# - The hosttools target will build schemas2cpp for the host and use it when
+#   building libmbdevice
+# - The desktop target will use the hosttools-compiled schemas2cpp binary to
+#   support cross-compilation
+# - The Android targets will do the same as the desktop target, except that
+#   there will be no dependency on hosttools because the binary path is supplied
+#   by the parent CMake invocation
+if(${MBP_BUILD_TARGET} STREQUAL hosttools)
+    set(schemas2cpp_deps schemas2cpp)
+    set(schemas2cpp_command $<TARGET_FILE:schemas2cpp>)
+elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
+    set(schemas2cpp_deps hosttools)
+    set(schemas2cpp_command ${SCHEMAS2CPP_COMMAND})
+else()
+    set(schemas2cpp_deps)
+    set(schemas2cpp_command ${SCHEMAS2CPP_COMMAND})
+endif()
+
+# Convert schemas to C++ strings
+add_custom_command(
+    OUTPUT "${generated_dir}/schemas_gen.cpp"
+           "${generated_dir}/schemas_gen.h"
+    COMMAND "${schemas2cpp_command}"
+        ${MBDEVICE_SCHEMAS}
+        -o "${generated_dir}/schemas_gen.cpp"
+    DEPENDS ${schemas2cpp_deps} ${MBDEVICE_SCHEMAS}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Generating code for JSON schemas"
+    VERBATIM
 )
 
 set(variants)
@@ -28,13 +53,19 @@ endif()
 # Build libraries
 foreach(variant ${variants})
     set(lib_target mbdevice-${variant})
+    string(TOUPPER ${variant} uvariant)
 
     # Build library
-    if(${variant} STREQUAL shared)
-        add_library(${lib_target} SHARED ${MBDEVICE_SOURCES})
-    elseif(${variant} STREQUAL static)
-        add_library(${lib_target} STATIC ${MBDEVICE_SOURCES})
-    endif()
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/device.cpp
+        src/json.cpp
+        src/schema.cpp
+        src/capi/device.cpp
+        src/capi/json.cpp
+        ${generated_dir}/schemas_gen.cpp
+    )
 
     # Includes
     target_include_directories(
@@ -42,34 +73,12 @@ foreach(variant ${variants})
         PUBLIC
         include
         PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/include
-        ${MBP_JANSSON_INCLUDES}
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
     )
 
     # Only build static library if needed
     if(${variant} STREQUAL static)
         set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
-    endif()
-
-    # Export symbols
-    target_compile_definitions(${lib_target} PRIVATE -DMB_LIBRARY)
-
-    # Win32 DLL export
-    if(${variant} STREQUAL shared)
-        target_compile_definitions(${lib_target} PRIVATE -DMB_DYNAMIC_LINK)
-    endif()
-
-    # Build with -fPIC
-    set_target_properties(${lib_target} PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
-    # Target C99
-    if(NOT MSVC)
-        set_target_properties(
-            ${lib_target}
-            PROPERTIES
-            C_STANDARD 99
-            C_STANDARD_REQUIRED 1
-        )
     endif()
 
     # Set library name
@@ -78,8 +87,14 @@ foreach(variant ${variants})
     # Link dependencies
     target_link_libraries(
         ${lib_target}
-        PUBLIC mbcommon-${variant}
-        PRIVATE ${MBP_JANSSON_LIBRARIES}
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        interface.mbdevice.private-headers
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
+        rapidjson
     )
 
     # Install shared library
@@ -98,32 +113,22 @@ if(variants AND MBP_ENABLE_TESTS)
     # Build tests
     add_executable(
         mbdevice_tests
-        ${MBDEVICE_TESTS_SOURCES}
-    )
-
-    # Includes
-    target_include_directories(
-        mbdevice_tests
-        PRIVATE
-        ${GTEST_INCLUDE_DIRS}
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_device.cpp
+        tests/test_flags.cpp
+        tests/test_json.cpp
     )
 
     # Link dependencies
     target_link_libraries(
         mbdevice_tests
+        interface.global.CXXVersion
         mbdevice-static
-        ${GTEST_BOTH_LIBRARIES}
+        gtest
+        gtest_main
     )
-
-    # Target C++11
-    if(NOT MSVC)
-        set_target_properties(
-            mbdevice_tests
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
 
     # Add to ctest
     add_test(
@@ -131,3 +136,40 @@ if(variants AND MBP_ENABLE_TESTS)
         COMMAND mbdevice_tests
     )
 endif()
+
+# Build schemas2cpp
+if(${MBP_BUILD_TARGET} STREQUAL hosttools)
+    add_executable(schemas2cpp schemas2cpp.cpp)
+
+    target_link_libraries(
+        schemas2cpp
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbdevice.private-headers
+        mbcommon-shared # Headers only
+        rapidjson
+    )
+
+    set_target_properties(
+        schemas2cpp
+        PROPERTIES
+        BUILD_WITH_INSTALL_RPATH OFF
+        INSTALL_RPATH "\$ORIGIN/../lib"
+    )
+
+    install(
+        TARGETS schemas2cpp
+        RUNTIME DESTINATION "${BIN_INSTALL_DIR}/"
+        COMPONENT Applications
+    )
+endif()
+
+# Interfaces
+
+add_library(interface.mbdevice.private-headers INTERFACE)
+
+target_compile_definitions(
+    interface.mbdevice.private-headers
+    INTERFACE
+    -DMBDEVICE_BUILD
+)

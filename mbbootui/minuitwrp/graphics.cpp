@@ -201,8 +201,8 @@ void gr_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a
 {
     GGLContext *gl = gr_context;
     GGLint color[4];
-    if (tw_pixel_format == TW_PXFMT_ABGR_8888
-            || tw_pixel_format == TW_PXFMT_BGRA_8888) {
+    if (tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Abgr8888
+            || tw_device.tw_pixel_format() == mb::device::TwPixelFormat::Bgra8888) {
         color[0] = ((b << 8) | r) + 1;
         color[1] = ((g << 8) | g) + 1;
         color[2] = ((r << 8) | b) + 1;
@@ -323,34 +323,32 @@ int gr_init(void)
 {
     gr_draw = nullptr;
 
-    for (size_t i = 0; i < tw_graphics_backends_length; ++i) {
-        const char *backend = tw_graphics_backends[i];
-
+    for (auto const &backend : tw_device.tw_graphics_backends()) {
         // Find entrypoint
-        backend_init_fn backend_init = get_backend(backend);
+        backend_init_fn backend_init = get_backend(backend.c_str());
         if (!backend_init) {
-            fprintf(stderr, "%s: Backend not found\n", backend);
+            fprintf(stderr, "%s: Backend not found\n", backend.c_str());
             continue;
         }
 
         // Attempt to initialize backend
         gr_backend = backend_init();
         if (!gr_backend) {
-            fprintf(stderr, "%s: backend_init() failed\n", backend);
+            fprintf(stderr, "%s: backend_init() failed\n", backend.c_str());
             continue;
         }
 
         // Attempt to initialize graphics
         gr_draw = gr_backend->init(gr_backend);
         if (!gr_draw) {
-            fprintf(stderr, "%s: Initialization failed\n", backend);
+            fprintf(stderr, "%s: Initialization failed\n", backend.c_str());
             gr_backend->exit(gr_backend);
             gr_backend = nullptr;
             continue;
         }
 
         // Everything is okay (hopefully)
-        printf("%s: Successfully initialized backend\n", backend);
+        printf("%s: Successfully initialized backend\n", backend.c_str());
         break;
     }
 
@@ -359,8 +357,8 @@ int gr_init(void)
         return -1;
     }
 
-    overscan_offset_x = gr_draw->width * tw_overscan_percent / 100;
-    overscan_offset_y = gr_draw->height * tw_overscan_percent / 100;
+    overscan_offset_x = gr_draw->width * tw_device.tw_overscan_percent() / 100;
+    overscan_offset_y = gr_draw->height * tw_device.tw_overscan_percent() / 100;
 
     // Set up pixelflinger
     get_memory_surface(&gr_mem_surface);
@@ -375,7 +373,7 @@ int gr_init(void)
     gr_flip();
     gr_flip();
 
-    if (tw_flags & TW_FLAG_SCREEN_BLANK_ON_BOOT) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::ScreenBlankOnBoot) {
         printf("TW_SCREEN_BLANK_ON_BOOT := true\n");
         gr_fb_blank(true);
         gr_fb_blank(false);
