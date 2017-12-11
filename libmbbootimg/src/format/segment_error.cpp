@@ -52,8 +52,6 @@ const char * SegmentErrorCategory::name() const noexcept
 std::string SegmentErrorCategory::message(int ev) const
 {
     switch (static_cast<SegmentError>(ev)) {
-    case SegmentError::TooManyEntries:
-        return "too many entries";
     case SegmentError::AddEntryInIncorrectState:
         return "adding entry in incorrect state";
     case SegmentError::EntryWouldOverflowOffset:
@@ -62,8 +60,6 @@ std::string SegmentErrorCategory::message(int ev) const
         return "read would overflow integer";
     case SegmentError::WriteWouldOverflowInteger:
         return "write would overflow integer";
-    case SegmentError::EntryIsTruncated:
-        return "entry is truncated";
     case SegmentError::InvalidEntrySize:
         return "invalid entry size";
     default:

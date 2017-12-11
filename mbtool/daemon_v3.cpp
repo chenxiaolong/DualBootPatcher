@@ -863,7 +863,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "Failed to remount / as rw: %s", strerror(errno));
+        error_msg = format("Failed to remount / as rw: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -871,8 +871,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if ((mkdir(temp_dir, 0000) < 0 && errno != EEXIST)
             || chmod(temp_dir, 0000) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "Failed to create temp directory: %s",
-               strerror(errno));
+        error_msg = format("Failed to create temp directory: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -883,8 +883,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("tmpfs", temp_dir, "tmpfs", 0, "mode=000,uid=0,gid=0") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "Failed to mount tmpfs at temp directory: %s",
-               strerror(errno));
+        error_msg = format("Failed to mount tmpfs at temp directory: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -893,8 +893,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy binary to tmpfs
     if (!util::copy_file(request->binary_path()->str(), target_binary, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "%s: Failed to copy binary to tmpfs: %s",
-               request->binary_path()->c_str(), strerror(errno));
+        error_msg = format("%s: Failed to copy binary to tmpfs: %s",
+                           request->binary_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -902,8 +902,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy signature to tmpfs
     if (!util::copy_file(request->signature_path()->str(), target_sig, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "%s: Failed to copy signature to tmpfs: %s",
-               request->signature_path()->c_str(), strerror(errno));
+        error_msg = format("%s: Failed to copy signature to tmpfs: %s",
+                           request->signature_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -913,12 +913,12 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if (sig_result != SigVerifyResult::Valid) {
         if (sig_result == SigVerifyResult::Invalid) {
             result = v3::SignedExecResult_INVALID_SIGNATURE;
-            format(error_msg, "%s: Invalid signature",
-                   request->binary_path()->c_str());
+            error_msg = format("%s: Invalid signature",
+                               request->binary_path()->c_str());
         } else {
             result = v3::SignedExecResult_OTHER_ERROR;
-            format(error_msg, "%s: Failed to verify signature",
-                   request->binary_path()->c_str());
+            error_msg = format("%s: Failed to verify signature",
+                               request->binary_path()->c_str());
         }
 
         LOGE("%s", error_msg.c_str());
@@ -928,8 +928,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Make binary executable
     if (chmod(target_binary.c_str(), 0700) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "Failed to chmod binary in tmpfs: %s",
-               strerror(errno));
+        error_msg = format("Failed to chmod binary in tmpfs: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -962,7 +962,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         term_sig = WTERMSIG(status);
     } else {
         result = v3::SignedExecResult_OTHER_ERROR;
-        format(error_msg, "Failed to execute process: %s", strerror(errno));
+        error_msg = format("Failed to execute process: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
     }
 

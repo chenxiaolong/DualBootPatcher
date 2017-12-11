@@ -35,8 +35,9 @@ namespace patcher
 class FileUtils
 {
 public:
-    static ErrorCode open_file(StandardFile &file, const std::string &path,
-                               FileOpenMode mode);
+    static oc::result<void> open_file(StandardFile &file,
+                                      const std::string &path,
+                                      FileOpenMode mode);
 
     static ErrorCode read_to_memory(const std::string &path,
                                     std::vector<unsigned char> *contents);

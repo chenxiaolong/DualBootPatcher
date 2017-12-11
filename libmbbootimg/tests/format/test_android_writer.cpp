@@ -27,6 +27,7 @@
 #include "mbbootimg/header.h"
 #include "mbbootimg/writer.h"
 
+using namespace mb;
 using namespace mb::bootimg;
 
 struct AndroidWriterSHA1Test : public ::testing::Test
@@ -34,7 +35,7 @@ struct AndroidWriterSHA1Test : public ::testing::Test
 protected:
     void *_buf;
     size_t _buf_size;
-    mb::MemoryFile _file;
+    MemoryFile _file;
     Writer _writer;
 
     AndroidWriterSHA1Test()
@@ -54,8 +55,8 @@ protected:
     {
         ASSERT_TRUE(_file.is_open());
 
-        ASSERT_EQ(_writer.set_format_android(), RET_OK);
-        ASSERT_EQ(_writer.open(&_file), RET_OK);
+        ASSERT_TRUE(_writer.set_format_android());
+        ASSERT_TRUE(_writer.open(&_file));
     }
 
     virtual void TearDown()
@@ -70,27 +71,31 @@ protected:
 
         Header header;
         Entry entry;
-        int ret;
-        size_t n;
 
         // Write dummy header
-        ASSERT_EQ(_writer.get_header(header), RET_OK);
+        ASSERT_TRUE(_writer.get_header(header));
         ASSERT_TRUE(header.set_page_size(2048));
-        ASSERT_EQ(_writer.write_header(header), RET_OK);
+        ASSERT_TRUE(_writer.write_header(header));
 
         // Write specified dummy entries
-        while ((ret = _writer.get_entry(entry)) == RET_OK) {
-            ASSERT_EQ(_writer.write_entry(entry), RET_OK);
+        while (true) {
+            auto ret = _writer.get_entry(entry);
+            if (!ret) {
+                ASSERT_EQ(ret.error(), WriterError::EndOfEntries);
+                break;
+            }
+
+            ASSERT_TRUE(_writer.write_entry(entry));
 
             if (*entry.type() & types) {
-                ASSERT_EQ(_writer.write_data("hello", 5, n), RET_OK);
-                ASSERT_EQ(n, 5u);
+                auto n = _writer.write_data("hello", 5);
+                ASSERT_TRUE(n);
+                ASSERT_EQ(n.value(), 5u);
             }
         }
-        ASSERT_EQ(ret, RET_EOF);
 
         // Close to write header
-        ASSERT_EQ(_writer.close(), RET_OK);
+        ASSERT_TRUE(_writer.close());
 
         // Check SHA1
         ASSERT_EQ(memcmp(static_cast<unsigned char *>(_buf) + 576,

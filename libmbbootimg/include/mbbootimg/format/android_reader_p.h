@@ -36,7 +36,7 @@ namespace bootimg
 namespace android
 {
 
-class AndroidFormatReader : public FormatReader
+class AndroidFormatReader : public detail::FormatReader
 {
 public:
     AndroidFormatReader(Reader &reader, bool is_bump);
@@ -45,44 +45,47 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
 
-    virtual int type() override;
-    virtual std::string name() override;
+    int type() override;
+    std::string name() override;
 
-    virtual int set_option(const char *key, const char *value) override;
-    virtual int bid(File &file, int best_bid) override;
-    virtual int read_header(File &file, Header &header) override;
-    virtual int read_entry(File &file, Entry &entry) override;
-    virtual int go_to_entry(File &file, Entry &entry, int entry_type) override;
-    virtual int read_data(File &file, void *buf, size_t buf_size,
-                          size_t &bytes_read) override;
+    oc::result<void> set_option(const char *key, const char *value) override;
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
+    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<void> read_entry(File &file, Entry &entry) override;
+    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
 
-    static int find_header(Reader &reader, File &file,
-                           uint64_t max_header_offset,
-                           AndroidHeader &header_out, uint64_t &offset_out);
-    static int find_samsung_seandroid_magic(Reader &reader, File &file,
-                                            const AndroidHeader &hdr,
-                                            uint64_t &offset_out);
-    static int find_bump_magic(Reader &reader, File &file,
-                               const AndroidHeader &hdr, uint64_t &offset_out);
-    static int convert_header(const AndroidHeader &hdr, Header &header);
+    static oc::result<void>
+    find_header(Reader &reader, File &file,
+                uint64_t max_header_offset,
+                AndroidHeader &header_out,
+                uint64_t &offset_out);
+    static oc::result<void>
+    find_samsung_seandroid_magic(Reader &reader, File &file,
+                                 const AndroidHeader &hdr,
+                                 uint64_t &offset_out);
+    static oc::result<void>
+    find_bump_magic(Reader &reader, File &file,
+                    const AndroidHeader &hdr,
+                    uint64_t &offset_out);
+    static bool convert_header(const AndroidHeader &hdr, Header &header);
 
 private:
-    int bid_android(File &file, int best_bid);
-    int bid_bump(File &file, int best_bid);
+    oc::result<int> open_android(File &file, int best_bid);
+    oc::result<int> open_bump(File &file, int best_bid);
+
+    const bool m_is_bump;
 
     // Header values
-    AndroidHeader _hdr;
+    AndroidHeader m_hdr;
 
     // Offsets
-    optional<uint64_t> _header_offset;
-    optional<uint64_t> _samsung_offset;
-    optional<uint64_t> _bump_offset;
+    optional<uint64_t> m_header_offset;
 
-    bool _allow_truncated_dt;
+    bool m_allow_truncated_dt;
 
-    bool _is_bump;
-
-    SegmentReader _seg;
+    optional<SegmentReader> m_seg;
 };
 
 }

@@ -40,17 +40,23 @@ namespace mb
 
 bool bi_copy_data_to_fd(Reader &reader, int fd)
 {
-    int ret;
     char buf[BUF_SIZE];
-    size_t n_read;
-    ssize_t n_written;
-    size_t remain;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
-        remain = n_read;
+    while (true) {
+        auto n_read = reader.read_data(buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read boot image entry data: %s",
+                 n_read.error().message().c_str());
+            return false;
+        } else if (n_read.value() == 0) {
+            break;
+        }
+
+        size_t remain = n_read.value();
 
         while (remain > 0) {
-            n_written = write(fd, buf + (n_read - remain), remain);
+            ssize_t n_written = write(
+                    fd, buf + (n_read.value() - remain), remain);
             if (n_written <= 0) {
                 LOGE("Failed to write data: %s", strerror(errno));
                 return false;
@@ -58,12 +64,6 @@ bool bi_copy_data_to_fd(Reader &reader, int fd)
 
             remain -= static_cast<size_t>(n_written);
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     return true;
@@ -84,12 +84,10 @@ bool bi_copy_file_to_data(const std::string &path, Writer &writer)
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        size_t bytes_written;
-
-        if (writer.write_data(buf, n, bytes_written) != RET_OK
-                || bytes_written != n) {
+        auto bytes_written = writer.write_data(buf, n);
+        if (!bytes_written) {
             LOGE("Failed to write entry data: %s",
-                 writer.error_string().c_str());
+                 bytes_written.error().message().c_str());
             return false;
         }
 
@@ -115,22 +113,23 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
         return false;
     }
 
-    int ret;
     char buf[10240];
-    size_t n;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n)) == RET_OK) {
-        if (fwrite(buf, 1, n, fp.get()) != n) {
+    while (true) {
+        auto n = reader.read_data(buf, sizeof(buf));
+        if (!n) {
+            LOGE("Failed to read entry data: %s",
+                 n.error().message().c_str());
+            return false;
+        } else if (n.value() == 0) {
+            break;
+        }
+
+        if (fwrite(buf, 1, n.value(), fp.get()) != n.value()) {
             LOGE("%s: Failed to write data: %s",
                  path.c_str(), strerror(errno));
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     if (fclose(fp.release()) < 0) {
@@ -144,24 +143,24 @@ bool bi_copy_data_to_file(Reader &reader, const std::string &path)
 
 bool bi_copy_data_to_data(Reader &reader, Writer &writer)
 {
-    int ret;
     char buf[10240];
-    size_t n_read;
-    size_t n_written;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n_read)) == RET_OK) {
-        ret = writer.write_data(buf, n_read, n_written);
-        if (ret != RET_OK || n_read != n_written) {
+    while (true) {
+        auto n_read = reader.read_data(buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read boot image entry data: %s",
+                 n_read.error().message().c_str());
+            return false;
+        } else if (n_read.value() == 0) {
+            break;
+        }
+
+        auto n_written = writer.write_data(buf, n_read.value());
+        if (!n_written) {
             LOGE("Failed to write entry data: %s",
-                 writer.error_string().c_str());
+                 n_written.error().message().c_str());
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        LOGE("Failed to read boot image entry data: %s",
-             reader.error_string().c_str());
-        return false;
     }
 
     return true;

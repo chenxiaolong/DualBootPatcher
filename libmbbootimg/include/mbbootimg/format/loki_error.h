@@ -53,10 +53,6 @@ enum class LokiError
     UnsupportedAbootImage               = 42,
     AbootFunctionNotFound               = 43,
     AbootFunctionOutOfRange             = 44,
-
-    // Miscellaneous
-    UnexpectedFileTruncation            = 50,
-    UnexpectedEndOfFile                 = 51,
 };
 
 MB_EXPORT std::error_code make_error_code(LokiError e);

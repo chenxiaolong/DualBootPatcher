@@ -74,8 +74,8 @@ private:
     bool delete_path()
     {
         if (remove(_curr->fts_accpath) < 0) {
-            format(_error_msg, "%s: Failed to remove: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to remove: %s",
+                                _curr->fts_path, strerror(errno));
             LOGE("%s", _error_msg.c_str());
             return false;
         }

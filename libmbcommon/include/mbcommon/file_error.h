@@ -30,8 +30,6 @@ enum class FileError
 {
     ArgumentOutOfRange      = 10,
     CannotConvertEncoding   = 11,
-    InvalidMode             = 12,
-    InvalidWhence           = 13,
 
     InvalidState            = 20,
 
@@ -40,9 +38,9 @@ enum class FileError
     UnsupportedSeek         = 32,
     UnsupportedTruncate     = 33,
 
-    IntegerOverflow         = 40,
+    UnexpectedEof           = 40,
 
-    BadFileFormat           = 50,
+    IntegerOverflow         = 50,
 };
 
 enum class FileErrorC
@@ -50,7 +48,8 @@ enum class FileErrorC
     InvalidArgument         = 10,
     InvalidState            = 20,
     Unsupported             = 30,
-    InternalError           = 40,
+    UnexpectedEof           = 40,
+    InternalError           = 50,
 };
 
 MB_EXPORT std::error_code make_error_code(FileError e);

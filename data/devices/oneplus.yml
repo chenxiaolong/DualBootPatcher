@@ -175,6 +175,11 @@
       - /dev/block/bootdevice/by-name/recovery
       - /dev/block/platform/soc/624000.ufshc/by-name/recovery
       - /dev/block/sde21
+     #Trust Zone
+    extra:
+      - /dev/block/bootdevice/by-name/tz
+      - /dev/block/platform/soc/624000.ufshc/by-name/tz
+      - /dev/block/sde3
 
   boot_ui:
     supported: true

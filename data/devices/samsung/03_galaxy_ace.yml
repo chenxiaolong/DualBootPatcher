@@ -72,7 +72,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-name: Samsung Galaxy Ace 4 Neo
+- name: Samsung Galaxy Ace 4 Neo
   id: vivalto3mve
   codenames:
     - vivalto3mve
@@ -109,4 +109,45 @@ name: Samsung Galaxy Ace 4 Neo
     max_brightness: 255
     default_brightness: 162
     pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Ace 3 Duos (GT-S7272)
+  id: logands
+  codenames:
+    - logands
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdhci.1/by-name
+    system:
+      - /dev/block/platform/sdhci.1/by-name/system
+    cache:
+      - /dev/block/platform/sdhci.1/by-name/CSC
+    data:
+      - /dev/block/platform/sdhci.1/by-name/userdata
+    boot:
+      - /dev/block/platform/sdhci.1/by-name/KERNEL
+    recovery:
+      - /dev/block/platform/sdhci.1/by-name/RECOVERY
+    extra:
+      - /dev/block/platform/sdhci.1/by-name/HIDDEN
+      - /dev/block/platform/sdhci.1/by-name/efs
+      - /dev/block/platform/sdhci.1/by-name/modem
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_NO_SCREEN_TIMEOUT
+      - TW_NO_CPU_TEMP
+      - TW_HAS_DOWNLOAD_MODE
+      - TW_PREFER_LCD_BACKLIGHT
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 168
+    pixel_format: BGRA_8888
+    battery_path: /sys/class/power_supply/battery/capacity
     theme: portrait_hdpi

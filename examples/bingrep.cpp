@@ -99,8 +99,8 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
     return true;
 }
 
-static mb::FileSearchAction search_result_cb(mb::File &file, void *userdata,
-                                             uint64_t offset)
+static mb::oc::result<mb::FileSearchAction>
+search_result_cb(mb::File &file, void *userdata, uint64_t offset)
 {
     (void) file;
     const char *name = static_cast<char *>(userdata);
@@ -113,11 +113,12 @@ static bool search(const char *name, mb::File &file,
                    size_t bsize, const void *pattern,
                    size_t pattern_size, int64_t max_matches)
 {
-    if (!mb::file_search(file, start, end, bsize, pattern, pattern_size,
-                         max_matches, &search_result_cb,
-                         const_cast<char *>(name))) {
+    auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
+                               max_matches, &search_result_cb,
+                               const_cast<char *>(name));
+    if (!ret) {
         fprintf(stderr, "%s: Search failed: %s\n",
-                name, file.error_string().c_str());
+                name, ret.error().message().c_str());
         return false;
     }
     return true;
@@ -127,11 +128,12 @@ static bool search_stdin(int64_t start, int64_t end,
                          size_t bsize, const void *pattern,
                          size_t pattern_size, int64_t max_matches)
 {
-    mb::PosixFile file(stdin, false);
+    mb::PosixFile file;
 
-    if (!file.is_open()) {
+    auto ret = file.open(stdin, false);
+    if (!ret) {
         fprintf(stderr, "Failed to open stdin: %s\n",
-                file.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -143,11 +145,12 @@ static bool search_file(const char *path, int64_t start, int64_t end,
                         size_t bsize, const void *pattern,
                         size_t pattern_size, int64_t max_matches)
 {
-    mb::StandardFile file(path, mb::FileOpenMode::READ_ONLY);
+    mb::StandardFile file;
 
-    if (!file.is_open()) {
+    auto ret = file.open(path, mb::FileOpenMode::ReadOnly);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                path, file.error_string().c_str());
+                path, ret.error().message().c_str());
         return false;
     }
 

@@ -78,7 +78,9 @@ foreach(variant ${variants})
         ${lib_target}
         ${uvariant}
         src/capi/util.cpp
+        src/common.cpp
         src/error.cpp
+        src/error_code.cpp
         src/file/callbacks.cpp
         src/file/fd.cpp
         src/file/memory.cpp
@@ -141,6 +143,7 @@ foreach(variant ${variants})
         ${lib_target}
         PUBLIC
         optional
+        outcome
         PRIVATE
         interface.global.CXXVersion
         interface.mbcommon.library
@@ -180,6 +183,7 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/file/test_memory.cpp
         tests/file/test_posix.cpp
         tests/test_endian.cpp
+        tests/test_error_code.cpp
         tests/test_file.cpp
         tests/test_file_error.cpp
         tests/test_file_util.cpp

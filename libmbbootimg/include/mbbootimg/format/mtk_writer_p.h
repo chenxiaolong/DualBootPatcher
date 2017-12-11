@@ -37,7 +37,7 @@ namespace bootimg
 namespace mtk
 {
 
-class MtkFormatWriter : public FormatWriter
+class MtkFormatWriter : public detail::FormatWriter
 {
 public:
     MtkFormatWriter(Writer &writer);
@@ -46,25 +46,23 @@ public:
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)
     MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MtkFormatWriter)
 
-    virtual int type() override;
-    virtual std::string name() override;
+    int type() override;
+    std::string name() override;
 
-    virtual int get_header(File &file, Header &header) override;
-    virtual int write_header(File &file, const Header &header) override;
-    virtual int get_entry(File &file, Entry &entry) override;
-    virtual int write_entry(File &file, const Entry &entry) override;
-    virtual int write_data(File &file, const void *buf, size_t buf_size,
-                           size_t &bytes_written) override;
-    virtual int finish_entry(File &file) override;
-    virtual int close(File &file) override;
+    oc::result<void> open(File &file) override;
+    oc::result<void> close(File &file) override;
+    oc::result<void> get_header(File &file, Header &header) override;
+    oc::result<void> write_header(File &file, const Header &header) override;
+    oc::result<void> get_entry(File &file, Entry &entry) override;
+    oc::result<void> write_entry(File &file, const Entry &entry) override;
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size) override;
+    oc::result<void> finish_entry(File &file) override;
 
 private:
     // Header values
-    android::AndroidHeader _hdr;
+    android::AndroidHeader m_hdr;
 
-    optional<uint64_t> _file_size;
-
-    SegmentWriter _seg;
+    optional<SegmentWriter> m_seg;
 };
 
 }

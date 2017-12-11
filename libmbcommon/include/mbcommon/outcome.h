@@ -19,6 +19,22 @@
 
 #pragma once
 
-#ifndef MBSPARSE_BUILD
-#error libmbsparse private headers cannot be used
+#pragma GCC diagnostic push
+
+#ifdef __clang__
+#  pragma GCC diagnostic ignored "-Wc++1z-extensions"
+#  pragma GCC diagnostic ignored "-Wdocumentation"
+#  pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
+
+#include "outcome.hpp"
+
+#pragma GCC diagnostic pop
+
+
+namespace mb
+{
+
+namespace oc = OUTCOME_V2_NAMESPACE;
+
+}

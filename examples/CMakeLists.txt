@@ -10,7 +10,7 @@ if(${MBP_BUILD_TARGET} STREQUAL desktop)
         PRIVATE
         interface.global.CXXVersion
         mbpatcher-shared
-        mbpio-static
+        mbpio-shared
         mbdevice-shared
         mblog-shared
     )
