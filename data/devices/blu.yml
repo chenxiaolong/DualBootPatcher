@@ -51,11 +51,11 @@
   boot_ui:
     supported: true
     flags:
-      - (TW_HAS_DOWNLOAD_MODE)
+      - TW_HAS_DOWNLOAD_MODE
     graphics_backends:
       - fbdev
-    brightness_path: (/sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness)
-    max_brightness: (255)
-    default_brightness: (162)
-    pixel_format: (RGBX_8888)
+    brightness_path: /sys/devices/platform/leds-mt65xx/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
     theme: portrait_hdpi
