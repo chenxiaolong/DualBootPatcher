@@ -169,6 +169,50 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
+- name: Samsung Galaxy Tab A 2016 7.0 (LTE)
+  id: gtexslte
+  codenames:
+    - SM-T285
+    - gtexslte
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-num
+      - /dev/block/bootdevice/by-num
+    system:
+      - /dev/block/bootdevice/by-num/system
+      - /dev/block/mmcblk0p25
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-num/cache
+      - /dev/block/mmcblk0p24
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-num/userdata
+      - /dev/block/mmcblk0p27
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-num/boot
+      - /dev/block/mmcblk0p20
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+    recovery:
+      - /dev/block/bootdevice/by-num/recovery
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
+
 - name: Samsung Galaxy Tab Pro 8.4 (Wifi)
   id: mondrianwifi
   codenames:
@@ -413,7 +457,7 @@
     extra:
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
-      
+
   boot_ui:
     supported: true
     flags:
@@ -503,7 +547,7 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
-boot_ui:
+  boot_ui:
     supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
