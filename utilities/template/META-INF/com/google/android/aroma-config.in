@@ -1,4 +1,4 @@
-﻿### LICENSE:
+### LICENSE:
 #
 # Copyright (C) 2011 Ahmad Amarullah ( http://amarullz.com/ )
 # Copyright (C) 2013-2015 Andrew Gunnerson <andrewgunnerson@gmail.com>
@@ -23,6 +23,7 @@ ini_set("rom_device",  "");
 ini_set("rom_date",    "");
 
 # English only for right now
+ini_set("force_colorspace","rgba");
 loadlang("langs/en.lang");
 
 theme("chenxiaolong");
@@ -83,7 +84,8 @@ menubox(
     "Exit",                    "Exit to recovery",                        "@install",
     @ROM_MENU_ITEMS@
     "Save last_kmsg log",      "Copies /proc/last_kmsg to internal SD",   "@default",
-    "Save recovery log",       "Copies /tmp/recovery.log to internal SD", "@default"
+    "Save recovery log",       "Copies /tmp/recovery.log to internal SD", "@default",
+    "Remove lock screen security",       "Clear the lock screen data of the primary system, but will not clear the fingerprint", "@default"
 );
 
 # Reboot
@@ -124,14 +126,16 @@ then
         "romoperations.prop",
 
         "Switch to",    "", "@default",
-        "Wipe ...",     "", "@default"
+        "Wipe ...",     "", "@default",
+        "Remove this system",  "", "@default"
     );
 
     if prop("romoperations.prop", "selected") == "1" then
         write("/tmp/dbu/cmd.sh",
               "#!/sbin/sh\n" +
               "/tmp/dbu/utilities_cmd.sh switch --force " + getvar("romid") + "\n");
-    else
+    endif;
+    if prop("romoperations.prop", "selected") == "2" then
         checkbox(
             "<~operations.title> (" + getvar("romname") + ")",
             "<~operations.desc> (" + getvar("romname") + ")",
@@ -173,6 +177,22 @@ then
                   "/tmp/dbu/utilities_cmd.sh wipe-multiboot " + getvar("romid") + "\n");
         endif;
     endif;
+    if prop("romoperations.prop", "selected") == "3" then
+        if confirm("Warning",
+                   "Are you sure you want to delete this system?",
+                   "@alert") == "yes"
+        then
+            write("/tmp/dbu/cmd.sh", "#!/sbin/sh\n" +
+            "/tmp/dbu/utilities_cmd.sh wipe-system " + getvar("romid") + "\n" + 
+            "/tmp/dbu/utilities_cmd.sh wipe-cache " + getvar("romid") + "\n" + 
+            "/tmp/dbu/utilities_cmd.sh wipe-data " + getvar("romid") + "\n" + 
+            "/tmp/dbu/utilities_cmd.sh wipe-dalvik-cache " + getvar("romid") + "\n" + 
+            "/tmp/dbu/utilities_cmd.sh wipe-multiboot " + getvar("romid") + "\n"
+            );
+        else
+            back("1");
+        endif;
+    endif;
 else
     ini_set("text_next", "Continue");
     ini_set("icon_next", "@installbutton");
@@ -191,6 +211,28 @@ else
               "#!/sbin/sh\n" +
               "echo \"Copying /tmp/recovery.log to internal SD\"\n" +
               "cp /tmp/recovery.log /sdcard/\n");
+    endif;
+
+    # Remove lock screen security
+    if prop("operations.prop", "selected") == cal("@LAST_INDEX@", "+", "3") then
+        if confirm("Warning",
+            "Are you sure you want to clear the main system's locked screen data?",
+            "@alert") == "yes"
+        then
+            write("/tmp/dbu/cmd.sh",
+              "#!/sbin/sh\n" +
+              "echo \"Removing Pin, Password or Pattern security ...\"\n" +
+              "rm -rf /data/system/gatekeeper.gesture.key\n" +
+              "rm -rf /data/system/gatekeeper.pin.key\n" +
+              "rm -rf /data/system/gatekeeper.password.key\n" +
+              "rm -rf /data/system/gatekeeper.pattern.key\n" +
+              "rm -rf /data/system/locksettings.db\n" +
+              "rm -rf /data/system/locksettings.db-shm\n" +
+              "rm -rf /data/system/locksettings.db-wal\n"
+              );
+        else
+            goto("main_menu");
+        endif;
     endif;
 endif;
 
@@ -217,5 +259,14 @@ viewbox(
     "Press Finish to go back to the main menu.",
     "@finish"
 );
+
+if cmp(getvar("exitcode"),"==","0") && cmp(prop("operations.prop", "selected"), "<=", "@LAST_INDEX@") && prop("romoperations.prop", "selected") == "1" then
+    if confirm("Reboot",
+               "Now reboot?",
+               "@warning") == "yes"
+    then
+        reboot("now");
+    endif;
+endif;
 
 goto("main_menu");
