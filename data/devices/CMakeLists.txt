@@ -16,6 +16,7 @@ set(files
     dexp.yml
     doogee.yml
     elephone.yml
+    energy_system.yml
     gionee.yml
     google.yml
     gree.yml
@@ -53,6 +54,7 @@ set(files
     symphony.yml
     tecno.yml
     umi.yml
+    vodafone.yml
     walton.yml
     wiko.yml
     wileyfox.yml
