@@ -134,7 +134,7 @@
       - /dev/block/platform/f9824900.sdhci/by-name/cache
       - /dev/block/bootdevice/by-name/cache
       - /dev/block/mmcblk0p31
-      
+
     data:
       - /dev/block/platform/f9824900.sdhci/by-name/userdata
       - /dev/block/bootdevice/by-name/userdata
