@@ -1,0 +1,93 @@
+ ---
+
+- name: China Mobile A1s
+
+id: m631
+
+codenames:
+
+- M631
+
+- M631
+
+architecture: armeabi-v7a
+
+block_devs:
+
+base_dirs:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name
+
+- /dev/block/bootdevice/by-name
+
+system:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name/system
+
+- /dev/block/bootdevice/by-name/system
+
+- /dev/block/mmcblk0p23
+
+cache:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name/cache
+
+- /dev/block/bootdevice/by-name/cache
+
+- /dev/block/mmcblk0p25
+
+data:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name/userdata
+
+- /dev/block/bootdevice/by-name/userdata
+
+- /dev/block/mmcblk0p30
+
+boot:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name/boot
+
+- /dev/block/bootdevice/by-name/boot
+
+- /dev/block/mmcblk0p22
+
+recovery:
+
+- /dev/block/platform/soc.0/7824900.sdhci/by-name/recovery
+
+- /dev/block/bootdevice/by-name/recovery
+
+- /dev/block/mmcblk0p26
+
+extra:
+
+# modem
+
+- /dev/block/bootdevice/by-name/modem
+
+- /dev/block/mmcblk0p1
+
+# Other
+
+- /dev/block/bootdevice/by-name/aboot
+
+- /dev/block/bootdevice/by-name/abootbak
+
+- /dev/block/bootdevice/by-name/hyp
+
+- /dev/block/bootdevice/by-name/hypbak
+
+- /dev/block/bootdevice/by-name/rpm
+
+- /dev/block/bootdevice/by-name/rpmbak
+
+- /dev/block/bootdevice/by-name/sbl1
+
+- /dev/block/bootdevice/by-name/sbl1bak
+
+- /dev/block/bootdevice/by-name/splash
+
+- /dev/block/bootdevice/by-name/tz
+
+- /dev/block/bootdevice/by-name/tzbak
