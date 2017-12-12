@@ -8,11 +8,6 @@ if(MBP_TOP_LEVEL_BUILD)
         scripts/bb-wrapper.sh
     )
 
-    set(source_files
-        ${CMAKE_CURRENT_BINARY_DIR}/
-        ${CMAKE_CURRENT_BINARY_DIR}/
-    )
-
     set(source_files)
     set(target_files)
 

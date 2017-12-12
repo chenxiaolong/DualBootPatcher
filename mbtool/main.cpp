@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <clocale>
@@ -44,24 +44,20 @@
 #endif
 
 #include "mbcommon/version.h"
-#include "mblog/logging.h"
 #include "mbutil/process.h"
 #include "mbutil/string.h"
 
 
-int main_multicall(int argc, char *argv[]);
-int main_normal(int argc, char *argv[]);
 static int mbtool_main(int argc, char *argv[]);
 
 
-#define TOOL(name) { #name, mb::name##_main }
-
-struct tool {
+struct Tool
+{
     const char *name;
     int (*func)(int, char **);
 };
 
-struct tool tools[] = {
+static Tool g_tools[] = {
     { "mbtool", mbtool_main },
     { "mbtool_recovery", mbtool_main },
     // Tools
@@ -85,14 +81,11 @@ struct tool tools[] = {
     { "sigverify", mb::sigverify_main },
     { "uevent_dump", mb::uevent_dump_main },
 #endif
-    { nullptr, nullptr }
 };
 
 
-static void mbtool_usage(int error)
+static void mbtool_usage(FILE *stream)
 {
-    FILE *stream = error ? stderr : stdout;
-
     fprintf(stream,
             "Version: %s\n"
             "Git version: %s\n\n"
@@ -105,36 +98,26 @@ static void mbtool_usage(int error)
             "Available tools:\n",
             mb::version(),
             mb::git_version());
-    for (int i = 0; tools[i].name; ++i) {
-        if (strcmp(tools[i].name, "mbtool") != 0
-                && strcmp(tools[i].name, "mbtool_recovery") != 0) {
-            fprintf(stream, "  %s\n", tools[i].name);
+    for (auto const &tool : g_tools) {
+        if (strcmp(tool.name, "mbtool") != 0
+                && strcmp(tool.name, "mbtool_recovery") != 0) {
+            fprintf(stream, "  %s\n", tool.name);
         }
     }
 }
 
-static int mbtool_main(int argc, char *argv[])
+static const Tool * find_tool(const char *name)
 {
-    if (argc > 1) {
-        return main_multicall(argc - 1, argv + 1);
-    } else {
-        mbtool_usage(1);
-        return EXIT_FAILURE;
-    }
-}
-
-struct tool * find_tool(const char *name)
-{
-    for (int i = 0; tools[i].name; ++i) {
-        if (strcmp(tools[i].name, name) == 0) {
-            return &tools[i];
+    for (auto const &tool : g_tools) {
+        if (strcmp(tool.name, name) == 0) {
+            return &tool;
         }
     }
 
     return nullptr;
 }
 
-int main_multicall(int argc, char *argv[])
+static int main_multicall(int argc, char *argv[])
 {
     char *name;
     char *prog;
@@ -146,7 +129,7 @@ int main_multicall(int argc, char *argv[])
         name = argv[0];
     }
 
-    struct tool *tool = find_tool(name);
+    const Tool *tool = find_tool(name);
     if (tool) {
         return tool->func(argc, argv);
     } else {
@@ -155,19 +138,29 @@ int main_multicall(int argc, char *argv[])
     }
 }
 
-int main_normal(int argc, char *argv[])
+static int main_normal(int argc, char *argv[])
 {
     if (argc < 2) {
-        mbtool_usage(1);
+        mbtool_usage(stderr);
         return EXIT_FAILURE;
     }
 
     char *name = argv[1];
-    struct tool *tool = find_tool(name);
+    const Tool *tool = find_tool(name);
     if (tool) {
         return tool->func(argc - 1, argv + 1);
     } else {
         fprintf(stderr, "%s: tool not found\n", name);
+        return EXIT_FAILURE;
+    }
+}
+
+static int mbtool_main(int argc, char *argv[])
+{
+    if (argc > 1) {
+        return main_multicall(argc - 1, argv + 1);
+    } else {
+        mbtool_usage(stderr);
         return EXIT_FAILURE;
     }
 }

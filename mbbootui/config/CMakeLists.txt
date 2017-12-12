@@ -1,9 +1,14 @@
 add_library(mbbootui-config STATIC config.cpp)
 
-set_target_properties(
+target_include_directories(
     mbbootui-config
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
+    PRIVATE
+    ..
+)
+
+target_link_libraries(
+    mbbootui-config
+    PUBLIC
+    interface.global.CXXVersion
+    mbdevice-static
 )

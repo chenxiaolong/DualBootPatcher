@@ -13,19 +13,34 @@ if(NOT ${MBP_BUILD_TARGET} STREQUAL android-system)
     return()
 endif()
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# For subdirectories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+# Silence warnings instead of fixing them so we don't deviate from upstream too
+# much
+add_compile_options(
+    -Wno-cast-qual
+    -Wno-conditional-uninitialized
+    -Wno-conversion
+    -Wno-documentation
+    -Wno-double-promotion
+    -Wno-float-equal
+    -Wno-format-nonliteral
+    -Wno-header-hygiene
+    -Wno-implicit-fallthrough
+    -Wno-missing-declarations
+    -Wno-missing-prototypes
+    -Wno-missing-noreturn
+    -Wno-missing-variable-declarations
+    -Wno-old-style-cast
+    -Wno-pedantic
+    -Wno-shadow
+    -Wno-shorten-64-to-32
+    -Wno-sign-conversion
+    -Wno-unreachable-code-return
+)
 
 add_subdirectory(config)
 add_subdirectory(minuitwrp)
 add_subdirectory(minzip)
 add_subdirectory(gui)
-
-include_directories(${MBP_LIBARCHIVE_INCLUDES})
-include_directories(${MBP_LIBCUTILS_INCLUDES})
-include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
 
 add_executable(
     mbbootui
@@ -37,27 +52,35 @@ add_executable(
     twrp-functions.cpp
 )
 
+target_include_directories(
+    mbbootui
+    PRIVATE
+    .
+    ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
+)
+
 set_target_properties(
     mbbootui
     PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
     LINK_FLAGS "-static"
     LINK_SEARCH_START_STATIC ON
 )
 
+android_link_allow_multiple_definitions(mbbootui)
+
 target_link_libraries(
     mbbootui
+    PRIVATE
+    interface.global.CXXVersion
     mbbootui-gui
     mbbootui-config
     mbutil-static
-    mbp-static
+    mbpatcher-static
     mbdevice-static
     mblog-static
     mbcommon-static
-    ${MBP_JANSSON_LIBRARIES}
-    ${MBP_LIBARCHIVE_LIBRARIES}
+    AndroidSystemCore::Cutils
+    LibArchive::LibArchive
 )
 
 install(

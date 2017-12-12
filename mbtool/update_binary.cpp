@@ -1,31 +1,33 @@
 /*
  * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "update_binary.h"
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
 #include "mbutil/archive.h"
@@ -33,7 +35,6 @@
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -41,6 +42,8 @@
 #include "installer.h"
 #include "multiboot.h"
 #include "sepolpatch.h"
+
+#define LOG_TAG "mbtool/update_binary"
 
 
 namespace mb
@@ -96,9 +99,9 @@ Installer::ProceedState RecoveryInstaller::on_initialize()
 {
     struct stat sb;
     if (stat("/sys/fs/selinux", &sb) == 0) {
-        if (!patch_loaded_sepolicy(SELinuxPatch::CWM_RECOVERY)) {
+        if (!patch_loaded_sepolicy(SELinuxPatch::CwmRecovery)) {
             LOGE("Failed to patch sepolicy. Trying to disable SELinux");
-            int fd = open(SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
+            int fd = open(util::SELINUX_ENFORCE_FILE, O_WRONLY | O_CLOEXEC);
             if (fd >= 0) {
                 write(fd, "0", 1);
                 close(fd);
@@ -116,11 +119,13 @@ RecoveryInstaller::ProceedState RecoveryInstaller::on_set_up_chroot()
 {
     // Copy /etc/fstab
     util::copy_file("/etc/fstab", in_chroot("/etc/fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     // Copy /etc/recovery.fstab
     util::copy_file("/etc/recovery.fstab", in_chroot("/etc/recovery.fstab"),
-                    util::COPY_ATTRIBUTES | util::COPY_XATTRS);
+                    util::CopyFlag::CopyAttributes
+                  | util::CopyFlag::CopyXattrs);
 
     return ProceedState::Continue;
 }
@@ -198,24 +203,20 @@ int update_binary_main(int argc, char *argv[])
     int output_fd;
     const char *zip_file;
 
-    char *ptr;
-
-    interface = strtol(argv[1], &ptr, 10);
-    if (*ptr != '\0' || interface < 0) {
-        fprintf(stderr, "Invalid interface");
+    if (!str_to_num(argv[1], 10, interface)) {
+        fprintf(stderr, "Invalid interface: '%s'\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    output_fd = strtol(argv[2], &ptr, 10);
-    if (*ptr != '\0' || output_fd < 0) {
-        fprintf(stderr, "Invalid output fd");
+    if (!str_to_num(argv[2], 10, output_fd)) {
+        fprintf(stderr, "Invalid output fd: '%s'\n", argv[2]);
         return EXIT_FAILURE;
     }
 
     zip_file = argv[3];
 
     // stdout is messed up when it's appended to /tmp/recovery.log
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stderr, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stderr));
 
     RecoveryInstaller ri(zip_file, interface, output_fd);
     return ri.start_installation() ? EXIT_SUCCESS : EXIT_FAILURE;

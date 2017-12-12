@@ -1,0 +1,494 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resources>
+  <!--Name of the app built in release mode-->
+  <string name="app_name_release">Dual Boot Patcher</string>
+  <!--Name of the app built in debug mode-->
+  <string name="app_name_debug">Dual Boot Patcher (Hata Ayıklama)</string>
+  <!--Name of the app built in snapshot mode-->
+  <string name="app_name_snapshot">Dual Boot Patcher (Snapshot)</string>
+  <!--Toast notification telling user to wait if the back button is pressed while an operation is still running (eg. switching or patching)-->
+  <string name="wait_until_finished">Lütfen tüm işlemler bitene kadar bekleyin.</string>
+  <!--Indicate the version of the app on the about screen-->
+  <string name="version">Versiyon %s</string>
+  <!--GitHub source code web page URL-->
+  <!--GitHub source code link text-->
+  <string name="link_source_code">Kaynak Kodu</string>
+  <!--XDA forum thread web page URL-->
+  <!--XDA forum thread link text-->
+  <string name="link_xda_thread">XDA Konu</string>
+  <!--Licenses URL-->
+  <!--Licenses link text-->
+  <string name="link_licenses">Lisanslar</string>
+  <!--Thank you message for contributors and links to relavent URLs-->
+  <string name="credits">Bu yamalı aracı mümkün kılan herkese teşekkürler!</string>
+  <!--Title for card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_title">Mbtool\'a bağlanılamadı</string>
+  <!--Message for the card shown in the switcher when the connection to mbtool failed-->
+  <string name="mbtool_connect_fail_message">Uygulama mbtool\'a bağlanamadı.
+Bu, root erişimi reddedilirse veya ramdisk güncel değilse oluşabilir.\n\nTekrar denemek için dokunun.</string>
+  <!--Navigation drawer item for selecting the ROM-->
+  <string name="title_roms">ROM\'lar</string>
+  <!--Navigation drawer item for patching a zip file-->
+  <string name="title_patch_zip">Yama Zip Dosyası</string>
+  <!--Navigation drawer item for checking free space-->
+  <string name="title_free_space">Boş Alan</string>
+  <!--Navigation drawer item for changing the ROM settings-->
+  <string name="title_rom_settings">Ayarlar</string>
+  <!--Navigation drawer item for changing the app sharing settings-->
+  <string name="title_app_sharing">Uygulama paylaşımı</string>
+  <!--Nagivation drawer item for rebooting the device-->
+  <string name="title_reboot">Yeniden Başlat</string>
+  <!--Navigation drawer item for showing the about screen-->
+  <string name="title_about">Hakkında</string>
+  <!--Nagivation drawer item for exiting the app-->
+  <string name="title_exit">Çıkış</string>
+  <!--Accessibility text for opening the app drawer-->
+  <string name="drawer_open">Gezinme çekmecesini aç</string>
+  <!--Accessibility text for closing the app drawer-->
+  <string name="drawer_close">Gezinme çekmecesini aç</string>
+  <!--Default name for the primary ROM-->
+  <string name="primary">Birincil</string>
+  <!--Default name for the secondary ROM-->
+  <string name="secondary">İkincil</string>
+  <!--Default name for the multi-slot ROMs-->
+  <string name="multislot">Multi Slot %s</string>
+  <!--Default name for the data-slot ROMs-->
+  <string name="dataslot">%s (Data slot)</string>
+  <!--Default name for the extsd-slot ROMs-->
+  <string name="extsdslot">%s (Extsd slot)</string>
+  <!--Text shown when a ROM's version could not be detected-->
+  <string name="couldnt_determine_version">ROM sürümü belirlenemedi</string>
+  <!--Title of progress dialog shown when switching ROMs-->
+  <string name="switching_rom">ROM değiştiriliyor</string>
+  <!--Title of progress dialog shown when setting kernel-->
+  <string name="setting_kernel">Kernel ayarlanıyor</string>
+  <!--Message shown when switching ROMs succeeds-->
+  <string name="choose_rom_success">ROM başarıyla değiştirildi</string>
+  <!--Message shown when switching ROMs failed-->
+  <string name="choose_rom_failure">ROM değiştirme başarısız oldu</string>
+  <!--Message shown when switching ROMs and checksums don't match-->
+  <string name="choose_rom_checksums_invalid">İmaj sağlama toplamları eşleşmiyor</string>
+  <!--Message shown when switching ROMs and checksums are missing-->
+  <string name="choose_rom_checksums_missing">İmaj sağlama toplamaları eksik</string>
+  <!--Message shown when setting the kernel succeeds-->
+  <string name="set_kernel_success">Kernel başarıyla kuruldu</string>
+  <!--Message shown when setting the kernel fails-->
+  <string name="set_kernel_failure">Kernel ayarlanamadı</string>
+  <!--Message shown when another application tries to switch the ROM via an intent-->
+  <string name="confirm_automated_switch_rom">Başka bir uygulama %s\'ye geçmeye çalışıyor.
+Devam et?</string>
+  <!--Message shown if the boot partition could not be detected because the device codename is
+         not recognized-->
+  <string name="unknown_boot_partition">Bu aygıtın kod adı \'%s\' tanınmadığı için boot
+bölümünü belirleyemedi.</string>
+  <!--Dialog message shown if the images' checksums don't match with switching ROMs-->
+  <string name="checksums_invalid">Bu ROM\'un boot.img veya diğer * .img için SHA512 sağlama toplamı
+/sdcard/MultiBoot/%s/ içindeki dosyalar beklenen sağlama toplamlarıyla eşleşmiyor.
+Üçüncü taraf bir uygulama bu imajları kötü amaçla değiştirmiş olabilir.
+ROM\'u değiştirerek devam ettirilsin mi?</string>
+  <!--Dialog message shown if the images' checksums don't exist when switching ROMs-->
+  <string name="checksums_missing">Bu ROM\'un boot.img veya /sdcard/MultiBoot/%s/\'deki diğer *.img dosyalarının SHA512 sağlama toplamları eksik. Bunun nedeni, büyük olasılıkla bu uygulamanın daha eski bir sürümünün yüklü olmasıdır. ROM\'u değiştirerek devam ettirilsin mi?</string>
+  <!--Version text shown on ROM card if the version could not be detected-->
+  <string name="rom_card_unknown_version">Bilinmeyen sürüm</string>
+  <!--Build text shown on ROM card if the build could not be detected-->
+  <string name="rom_card_unknown_build">Bilinmeyen yapı</string>
+  <!--ROM menu item for updating the ramdisk-->
+  <string name="rom_menu_update_ramdisk">Ramdiski güncelle</string>
+  <!--ROM menu item for setting kernel-->
+  <string name="rom_menu_set_kernel">Kernel ayarla</string>
+  <!--ROM menu item for backing up the ROM-->
+  <string name="rom_menu_backup_rom">ROM yedeği al</string>
+  <!--ROM menu item for adding an icon to the home screen-->
+  <string name="rom_menu_add_to_home_screen">Ana ekrana ekle</string>
+  <!--ROM menu item for changing the name-->
+  <string name="rom_menu_edit_name">İsmi düzenle</string>
+  <!--ROM menu item for changing the image-->
+  <string name="rom_menu_change_image">İmajı değiştir</string>
+  <!--ROM menu item for resetting back to the default image-->
+  <string name="rom_menu_reset_image">İmajı sıfırla</string>
+  <!--ROM menu item for wiping the ROM-->
+  <string name="rom_menu_wipe_rom">ROM\'u sil</string>
+  <!--Snack bar message shown when a launcher is successfully created-->
+  <string name="successfully_created_launcher">Ana ekrana %s başarılı bir şekilde eklendi.</string>
+  <!--Dialog shown when adding an icon to the home screen asking whether the device should
+         automatically reboot after switching-->
+  <string name="auto_reboot_after_switching">ROM\'u değiştirdikten sonra cihazın otomatik olarak yeniden başlatılmasını istiyor musunuz?</string>
+  <!--Target for wiping ROM's /system-->
+  <string name="wipe_target_system">Sistem</string>
+  <!--Target for wiping ROM's /cache-->
+  <string name="wipe_target_cache">Önbellek</string>
+  <!--Target for wiping ROM's /data-->
+  <string name="wipe_target_data">Veri</string>
+  <!--Target for wiping ROM's dalvik cache-->
+  <string name="wipe_target_dalvik_cache">Dalvik önbelleği</string>
+  <!--Target for wiping ROM's multiboot files-->
+  <string name="wipe_target_multiboot_files">MultiBoot dosyaları</string>
+  <!--Title of dialog box asking for which targets to wipe-->
+  <string name="wipe_rom_dialog_title">Hedefleri sil</string>
+  <!--Title of progress dialog shown when wiping targets-->
+  <string name="wiping_targets">Hedefler siliniyor</string>
+  <!--Toast message indicating successfully wiped targets-->
+  <string name="wipe_rom_successfully_wiped">Başarıyla silindi: %s</string>
+  <!--Toast message indicating targets that failed to wipe-->
+  <string name="wipe_rom_failed_to_wipe">Silinemedi: %s</string>
+  <!--Toast message indicating that the wipe process failed to start-->
+  <string name="wipe_rom_initiate_fail">ROM silme işlemi başlatılamad</string>
+  <!--Toast message shown if the user did not select any target to wipe-->
+  <string name="wipe_rom_none_selected">Hiçbir silme yapılmadı, çünkü hiçbir hedef belirtilmedi.</string>
+  <!--Toast message shown if the user attempts to wipe any target for the current ROM-->
+  <string name="wipe_rom_no_wipe_current_rom">Çalışmakta olan ROM silinemez.</string>
+  <!--Switcher service notification title-->
+  <string name="switcher_service_background_service">Arkaplan hizmeti</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The ROM name and thumbnail cannot be loaded without being able to access /sdcard/MultiBoot.-->
+  <string name="switcher_storage_permission_required">Depolama izinleri reddedildiğinden, ROM küçük resimleri ve isimleri yüklenemiyor.</string>
+  <!--Accessibility text for the ROM logo images-->
+  <string name="switcher_rom_image">ROM logosu</string>
+  <!--Title for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_title">Kerneli ayarla?</string>
+  <!--Message for the confirmation dialog box shown when trying to set the kernel-->
+  <string name="switcher_ask_set_kernel_desc">Halen çalışan kernel, %s\'nin kerneli olarak kaydedilecektir.</string>
+  <!--Title for the dialog box to rename a ROM-->
+  <string name="rename_rom_title">Yeniden adlandır %s</string>
+  <!--Message asking for a new ROM name (blank for the default) for the dialog box to rename a ROM-->
+  <string name="rename_rom_desc">%s için yeni bir isim girin. Varsayılan adı kullanmak için boş bırakın.</string>
+  <!--Dialog message shown when the kernel has not been set-->
+  <string name="kernel_not_set_desc">Kernel henüz geçerli ROM için ayarlanmamıştır.
+Kerneli şimdi ayarlamak ister misiniz?</string>
+  <!--Dialog message shown when the saved kernel is different from the currently running kernel-->
+  <string name="kernel_different_from_saved_desc">Kaydedilen kernel, halihazırda çalışan kernelden farklı. Kerneli şimdi ayarlamak ister misiniz?</string>
+  <!--Positive dialog button shown for the above two messages-->
+  <string name="set_kernel_now">Şimdi ayarla</string>
+  <!--Negative dialog button shown for the above two messages-->
+  <string name="set_kernel_later">Sonra ayarla</string>
+  <!--Dialog message shown when the user tries to set the kernel for the incorrect ROM-->
+  <string name="set_kernel_mismatched_rom">Halihazırda seçilen ROM %1$s, ancak çekirdeği %2$s için ayarlamaya çalışıyorsunuz. Lütfen bunun sizin istediğiniz olduğunu onaylayın.</string>
+  <!--In-app flashing output activity title - shown when backing up a single ROM-->
+  <string name="in_app_flashing_title_backup_rom">ROM\'u yedekle</string>
+  <!--In-app flashing output activity title - shown when restoring a single ROM-->
+  <string name="in_app_flashing_title_restore_rom">ROM\'u geri yükle</string>
+  <!--In-app flashing output activity title - shown when flashing a single file-->
+  <string name="in_app_flashing_title_flash_file">Flaş dosyası</string>
+  <!--In-app flashing output activity title - shown when flashing multiple files/backups-->
+  <string name="in_app_flashing_title_flash_files">Flaş dosyaları</string>
+  <!--In-app flashing activity title-->
+  <string name="in_app_flashing_title">Uygulamaİçi flaşlanıyor</string>
+  <!--FAB button text for adding a patched file to flash-->
+  <string name="in_app_flashing_fab_add_patched_file">Yamalı dosya ekle</string>
+  <!--FAB button text for adding a backup to flash-->
+  <string name="in_app_flashing_fab_add_backup">Yedek ekle</string>
+  <!--Title of pending action card for flashing a file-->
+  <string name="in_app_flashing_action_flash_file">Flaş dosyası</string>
+  <!--Title of pending action card for restoring a backup-->
+  <string name="in_app_flashing_action_restore_backup">Yedeği geri yükle</string>
+  <!--[Flash file] Subtitle text in pending action card showing the selected filename-->
+  <string name="in_app_flashing_filename">Dosya adı: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the selected backup name-->
+  <string name="in_app_flashing_backup_name">Yedek adı: %s</string>
+  <!--[Restore backup] Subtitle text in pending action card showing the restore targets-->
+  <string name="in_app_flashing_restore_targets">Hedefler: %s</string>
+  <!--Subtitle text in pending action card showing the installation location-->
+  <string name="in_app_flashing_location">ROM Kimliği: %s</string>
+  <!--Title shown in dialog asking for the installation location of a zip file-->
+  <string name="in_app_flashing_dialog_installation_location">Kurulum konumu:</string>
+  <!--Title shown in the progress dialog when verifying if a zip file can be flashed-->
+  <string name="in_app_flashing_dialog_verifying_zip">Zip doğrulanıyor</string>
+  <!--Error message shown when the selected zip file is not found-->
+  <string name="in_app_flashing_error_zip_not_found">Seçili zip dosyası bulunamadı.</string>
+  <!--Error message shown when the selected zip file could not be read-->
+  <string name="in_app_flashing_error_zip_read_fail">Seçilen zip dosyası okunamadı.</string>
+  <!--Error message shown when the selected zip file isn't patched-->
+  <string name="in_app_flashing_error_not_multiboot">Zip dosyası, çoklu önyükleme için düzeltilmiş gibi görünmüyor. Lütfen dosyayı kopyalamadan önce düzeltin.</string>
+  <!--Error message shown when the selected zip file was patched with an old version of the patcher-->
+  <string name="in_app_flashing_error_version_too_old">Uygulamaİçi flaşlama özelliğini kullanmak için zip dosyasının %s veya daha yeni bir sürümle düzeltilmesi gerekiyor.</string>
+  <!--Error message shown when the user tries to flash a zip file to the current ROM-->
+  <string name="in_app_flashing_error_no_overwrite_rom">Mevcut sistemin kilitlenmesini veya yeniden başlatılmasını önlemek için mevcut ROM\'un üst kısmında flaşlamaya izin verilmiyor.</string>
+  <!--Dialog message asking if the user wants to change the installation location of the zip-->
+  <string name="in_app_flashing_change_install_location_desc">Zip orijinal olarak %s\'ye kurulum için eklendi. Kurulum yerini değiştirmek ister misiniz?</string>
+  <!--Dialog button for keeping the current installation location-->
+  <string name="in_app_flashing_keep_current_location">Konumu koru</string>
+  <!--Dialog button for changing the installation location-->
+  <string name="in_app_flashing_change_install_location">Konum değiştir</string>
+  <!--Message shown in the first-use dialog for zip flashing-->
+  <string name="in_app_flashing_dialog_first_use">Uygulama içi flaşçı hem yamalı dosyaları hem de DualBootPatcher yedeklerini flaşlayabilir.\n\nBekleyen eylemler, flaş sırasını değiştirmek veya onları sıradan kaldırmak için sürüklenebilir veya uzaklaştırılabilir.\n\nNOT: Bu özellik hala deneysel bir yöntemdir. Devam etmeden önce lütfen yedekleyin!</string>
+  <!--Dialog description when choosing a backup to restore-->
+  <string name="in_app_flashing_select_backup_dialog_desc">Geri yüklemek için listeden bir yedek seçin.</string>
+  <!--Toast message shown if there are no backups available-->
+  <string name="in_app_flashing_no_backups_available">Geri yüklenebilecek yedek yok.</string>
+  <!--ROM details item showing which slot the ROM is installed to-->
+  <string name="rom_details_info_slot">Bölüm</string>
+  <!--ROM details item showing the version of the ROM-->
+  <string name="rom_details_info_version">Versiyon</string>
+  <!--ROM details item showing the build name of the ROM-->
+  <string name="rom_details_info_build">Yapı</string>
+  <!--ROM details item showing the mbtool version used to boot the ROM-->
+  <string name="rom_details_info_mbtool_status">mtool durumu</string>
+  <!--ROM details item showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts">Uygulamalar</string>
+  <!--ROM details value showing the number of system apps, updated apps, and user apps-->
+  <string name="rom_details_info_apps_counts_value">%1$s sistem uygulamaları, %2$s güncellenmiş uygulamalar,
+%3$s kullanıcı uygulamaları</string>
+  <!--ROM details item showing the path to the system directory or image-->
+  <string name="rom_details_info_system_path">Sistem yolu</string>
+  <!--ROM details item showing the path to the cache directory or image-->
+  <string name="rom_details_info_cache_path">Önbellek yolu</string>
+  <!--ROM details item showing the path to the data directory or image-->
+  <string name="rom_details_info_data_path">Veri yolu</string>
+  <!--ROM details item showing the size of the system directory or image-->
+  <string name="rom_details_info_system_size">Sistem boyutu</string>
+  <!--ROM details item showing the size of the cache directory or image-->
+  <string name="rom_details_info_cache_size">Önbellek boyutu</string>
+  <!--ROM details item showing the size of the data directory or image-->
+  <string name="rom_details_info_data_size">Veri boyutu</string>
+  <!--ROM details item value shown when calculating the directory or image sizes-->
+  <string name="rom_details_info_calculating">Hesaplanıyor...</string>
+  <!--Backup ROM activity title-->
+  <string name="br_backup_title">ROM\'u yedekle</string>
+  <!--Restore ROM activity title-->
+  <string name="br_restore_title">ROM\'u geri yükle</string>
+  <!--Backup targets dialog description-->
+  <string name="br_backup_targets_dialog_desc">Yedeklenecek hedefleri seçin.</string>
+  <!--Restore targets dialog description-->
+  <string name="br_restore_targets_dialog_desc">Geri yüklenecek hedefleri seçin.</string>
+  <!--Backup/restore target for ROM's /system files-->
+  <string name="br_target_system">Sistem</string>
+  <!--Backup/restore target for ROM's /cache files-->
+  <string name="br_target_cache">Önbellek</string>
+  <!--Backup/restore target for ROM's /data files-->
+  <string name="br_target_data">Veri</string>
+  <!--Backup/restore target for ROM's boot image-->
+  <string name="br_target_boot">Boot imajı</string>
+  <!--Backup/restore target for ROM's multiboot configuration files-->
+  <string name="br_target_config">MultiBoot yapılandırmaları</string>
+  <!--Toast message shown if no backup/restore targets are selected-->
+  <string name="br_no_target_selected">Hiçbir yedekleme/geri yükleme hedefi seçilmedi.</string>
+  <!--Backup name input dialog description-->
+  <string name="br_name_dialog_desc">Yedekleme için bir ad girin. Eğik çizgi (\"/\") \".\"  \"..\" içeremez</string>
+  <!--Backup name input field hint for backup name dialog-->
+  <string name="br_name_dialog_hint">Yedek adını gir...</string>
+  <!--Text shown on blank background when no files have been added for patching yet-->
+  <string name="patcher_background_message">FAB yama dosyası eklemek için dokunun.</string>
+  <!--Label for FAB to add a flashable zip-->
+  <string name="patcher_add_flashable_zip">Flaşlı Zip ekle</string>
+  <!--Label for FAB to add an Odin image-->
+  <string name="patcher_add_odin_image">Odin imaj ekle</string>
+  <!--Dialog error message shown if the user denies storage permissions to the app in Android >= 6.0. The patcher cannot patch files if it cannot read and write to the internal storage.-->
+  <string name="patcher_storage_permission_required">Patcher, dahili belleğe okuma ve yazma erişimi olmaksızın dosyaları düzeltemez. Dosyaları düzeltebilmek için lütfen depolama izinlerini verin.</string>
+  <!--Snackbar message shown if the user tries to patch the same file more than once-->
+  <string name="patcher_cannot_add_same_item">Seçilen çıktı dosyası zaten sırada.</string>
+  <!--Title of the device selection box in the patcher-->
+  <string name="patcher_device_title">Cihaz:</string>
+  <!--Title of the partition configuration box in the patcher-->
+  <string name="patcher_partconfig_title">Bölüm yapılandırma:</string>
+  <!--Title of the partition configuration description in the patcher-->
+  <string name="patcher_partconfig_desc_title">Açıklama:</string>
+  <!--Subtitle shown in patch file card indicating the target device and ROM ID-->
+  <!--Subtitle shown in patch file card when patching succeeded-->
+  <string name="patcher_card_subtitle_succeeded">Başarılı:</string>
+  <!--Subtitle shown in patch file card when patching failed-->
+  <string name="patcher_card_subtitle_failed">Başarısız (hata kodu %s)</string>
+  <!--Subtitle shown in patch file card when file is waiting to be patched-->
+  <string name="patcher_card_subtitle_pending">Beklemede</string>
+  <!--Subtitle shown in patch file card when patching has not yet started (queued)-->
+  <string name="patcher_card_subtitle_queued">Sırada</string>
+  <!--Subtitle shown in patch file card when patching has been cancelled-->
+  <string name="patcher_card_subtitle_cancelled">İptal olmuş</string>
+  <!--Patcher options dialog title-->
+  <string name="patcher_options_dialog_title">Düzeltici seçenekler</string>
+  <!--Name for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade">Birincil ROM Yükseltme</string>
+  <!--Description for primary ROM upgrade installation location-->
+  <string name="install_location_primary_upgrade_desc">Birincil ROM\'u diğer ROM\'ları etkilemeden güncelleyin</string>
+  <!--Description for all other installation locations-->
+  <string name="install_location_desc">%s\'ye ROM yükler</string>
+  <!--Text box hint for specifying the data slot ID-->
+  <string name="install_location_named_slot_id_hint">Kimliği girin</string>
+  <!--Description text shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_empty">Yukarıda bir kimlik girin</string>
+  <!--Error tooltip shown if the data slot ID is empty-->
+  <string name="install_location_named_slot_id_error_is_empty">Bölüm Kimliği boş olamaz.</string>
+  <!--Error tooltip shown if the data slot ID contains invalid characters-->
+  <string name="install_location_named_slot_id_error_invalid">Slot kimliği yalnızca küçük harfli İngilizce harfler ve/veya rakamlar içermelidir.</string>
+  <!--Name for the data-slot installation location-->
+  <string name="install_location_data_slot">Veri slot</string>
+  <!--Name for the extsd-slot installation location-->
+  <string name="install_location_extsd_slot">Hafıza kartı slot</string>
+  <!--Title for the dialog box indicating that no file manager is installed-->
+  <string name="filemanager_missing_title">Dosya yöneticisi yok</string>
+  <!--Message telling the user that no file manager is installed and that one needs to be installed to be able to patch a file-->
+  <string name="filemanager_missing_desc">Uygun bir dosya yöneticisi kurulu değil. Düzeltilecek dosyaları seçebilmek için lütfen bir dosya yöneticisi kurun.</string>
+  <!--Text for the details card indicating that the patching is done-->
+  <string name="details_done">Bitti</string>
+  <!--Text for the progress card showing how many files have been added to the new zip-->
+  <string name="overall_progress_files">%1$s/%2$s dosyalar</string>
+  <!--Title for total size of partition-->
+  <string name="free_space_total_size">Toplam boyut:</string>
+  <!--Title for occupied space on partition-->
+  <string name="free_space_occupied_size">Dolu:</string>
+  <!--Title for free space on partition-->
+  <string name="free_space_free_size">Boş:</string>
+  <!--Format string for exbibytes-->
+  <!--Format string for pebibytes-->
+  <!--Format string for tebibytes-->
+  <!--Format string for gibibytes-->
+  <!--Format string for mebibytes-->
+  <!--Format string for kibibytes-->
+  <!--Format string for bytes-->
+  <!--Title for the individual application sharing section of the ROM settings-->
+  <string name="a_s_settings_indiv_app_sharing_section_title">Bireysel uygulama paylaşımı</string>
+  <!--Title for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_title">Bireysel uygulamaları paylaşın</string>
+  <!--Description for the preference to share individual applications-->
+  <string name="a_s_settings_indiv_app_sharing_desc">Bireysel uygulamaları ROM\'lar arasında paylaşın
+(Yeniden başlatma gerektirir)</string>
+  <!--Title for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_title">Paylaşılan uygulamaları yönet</string>
+  <!--Description for the preference to manage shared apps for individual app sharing-->
+  <string name="a_s_settings_manage_shared_apps_desc">Bireysel uygulama paylaşımı için hangi uygulamaları paylaşmanız gerektiğini seçin.</string>
+  <!--Error message shown if the user denies storage permissions to the app in Android >= 6.0. The app sharing settings cannot be saved if it cannot read and write to the internal storage.-->
+  <string name="a_s_settings_storage_permission_required">Depolama izinleri reddedildiği için uygulama paylaşımı ayarları kaydedilemiyor. Lütfen uygulama paylaşımı ayarlarını değiştirmek için depolama izinlerini verin.</string>
+  <!--Dialog message shown the the mbtool version is too old and needs to be updated-->
+  <string name="a_s_settings_version_too_old">Mbtool, uygulama paylaşım özelliklerinden yararlanmak için güncellenmelidir. Lütfen ramdiskini güncelleyin.</string>
+  <!--Preference for updating the ramdisk-->
+  <string name="update_ramdisk_title">Ramdisk\'i güncelle</string>
+  <!--Description for the ramdisk update preference when the ramdisk doesn't contain mbtool-->
+  <string name="update_ramdisk_missing_desc">Ramdisk\'in şu anda herhangi bir mbtool sürümü yok.</string>
+  <!--Description for the ramdisk update preference when the ramdisk is outdated-->
+  <string name="update_ramdisk_outdated_desc">Ramdisk\'in şu anda mbtool\'un eskimiş bir sürümü var</string>
+  <!--Description for the ramdisk update preference when the ramdisk is already up to date-->
+  <string name="update_ramdisk_up_to_date_desc">Ramdisk zaten güncel.</string>
+  <!--Title when ramdisk is successfully updated-->
+  <string name="update_ramdisk_success_title">Ramdisk başarıyla güncellendi</string>
+  <!--Message asking user to reboot when the ramdisk updating succeeds-->
+  <string name="update_ramdisk_reboot_desc">Ramdisk başarıyla güncellendi. Şimdi yeniden başlatmak ister misiniz?</string>
+  <!--Message telling user that the ramdisk updating succeeded-->
+  <string name="update_ramdisk_no_reboot_desc">Ramdisk başarıyla güncellendi.</string>
+  <!--Title when ramdisk failed to update-->
+  <string name="update_ramdisk_failure_title">Ramdisk güncellemesi başarısız</string>
+  <!--Message telling the user that app sharing will not work if the ramdisk updating failed-->
+  <string name="update_ramdisk_failure_desc">Ramdisk güncelleme başarısız oldu. Günlük, dahili depolamaya MultiBoot/ramdisk-update.log\'a kaydedildi.</string>
+  <!--Toast popup message containing the countdown for forcing a ramdisk update-->
+  <plurals name="force_update_ramdisk_countdown">
+    <item quantity="one">Artık, ramdisk\'i güncellemekten %1$d adım uzaktasınız.</item>
+    <item quantity="other">Artık, ramdisk\'i güncellemekten %1$d adım uzaktasınız.</item>
+  </plurals>
+  <!--Toast popup message shown when the user forces a ramdisk update-->
+  <string name="force_updating_ramdisk">Ramdisk\'i güncellemeyi zorla</string>
+  <!--Title for the section in the settings to manage the Boot UI-->
+  <string name="rom_settings_boot_ui_title">Önyükleme UI (DENEYSEL)</string>
+  <!--Title for the preference to install the Boot UI-->
+  <string name="rom_settings_boot_ui_install_title">Boot UI kur</string>
+  <!--Title for the preference to update the Boot UI-->
+  <string name="rom_settings_boot_ui_update_title">Boot UI güncelle</string>
+  <!--Title for the preference to uninstall the Boot UI-->
+  <string name="rom_settings_boot_ui_uninstall_title">Boot UI kaldır</string>
+  <!--Summary for the Update Boot UI preference to indicate that an update is available-->
+  <string name="rom_settings_boot_ui_update_available">Mevcut güncelleme: %s</string>
+  <!--Summary for the Update Boot UI preference to indicate that the Boot UI is up to date-->
+  <string name="rom_settings_boot_ui_up_to_date">güncel</string>
+  <!--Summary for the Uninstall Boot UI preference to indicate that the Boot UI is not installed-->
+  <string name="rom_settings_boot_ui_not_installed">Yüklü değil</string>
+  <!--Summary for all the Boot UI preferences to indicate that the Boot UI is not supported for the device-->
+  <string name="rom_settings_boot_ui_not_supported">Bu cihazda desteklenmiyor</string>
+  <!--Toast message to indicate that the Boot UI was successfully installed-->
+  <string name="rom_settings_boot_ui_install_success">Boot UI başarıyla yüklendi</string>
+  <!--Toast message to indicate that the Boot UI failed to install-->
+  <string name="rom_settings_boot_ui_install_failure">Boot UI yükleme başarısız</string>
+  <!--Toast message to indicate that the Boot UI was successfully uninstalled-->
+  <string name="rom_settings_boot_ui_uninstall_success">Boot UI başarıyla kaldırıldı</string>
+  <!--Toast message to indicate that the Boot UI failed to uninstall-->
+  <string name="rom_settings_boot_ui_uninstall_failure">Boot UI kaldırma başarısız</string>
+  <!--Dialog message shown after the Boot UI has been installed indicating that the ramdisk must be updated-->
+  <string name="rom_settings_boot_ui_update_ramdisk_msg">Boot UI başarıyla yüklendi.\n\nRamdisk\'in her ROM\'da güncellendiğinden emin olun. Aksi halde, önyükleme sırasında Boot UI çalışmaz.</string>
+  <!--Title for the section in ROM Settings to change backup/restore settings-->
+  <string name="rom_settings_backup_title">Yedekleme/Geri yükleme (DENEYSEL)</string>
+  <!--Title for the preference to change the backup directory-->
+  <string name="rom_settings_backup_change_directory">Yedekleme dizinini değiştir</string>
+  <!--Title for the section in ROM Settings to change settings related to the patcher-->
+  <string name="rom_settings_patcher_title">Yamalı</string>
+  <!--Title for the preference to show the exit button in the navigation drawer-->
+  <string name="rom_settings_show_exit_title">Çıkış düğmesini göster</string>
+  <!--Title for the preference to show the reboot button in the navigation drawer-->
+  <string name="rom_settings_show_reboot_title">Yeniden başlatma düğmesini göster</string>
+  <!--Title for the preference to choose the initial screen to show when opening the app-->
+  <string name="rom_settings_initial_screen_title">Başlangıç ​​ekranı</string>
+  <!--Description for the initial screen preference-->
+  <string name="rom_settings_initial_screen_desc">Uygulamayı açarken ilk ekran.</string>
+  <!--Title for the preference to use the dark theme-->
+  <string name="rom_settings_use_dark_theme">Koyu temayı kullan</string>
+  <!--Title for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_title">Niyetlerin alınmasına izin ver</string>
+  <!--Description for the preference to enable receiving intents from third party applications-->
+  <string name="rom_settings_allow_intents_desc">Üçüncü taraf uygulamalarının, ROM\'ları değiştirme ve dosyaları düzeltme gibi işlemleri gerçekleştirmek için bu uygulamaya niyet götürmesine izin verin.</string>
+  <!--Title for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_title">Yeniden başlatma diyaloğunu göster</string>
+  <!--Description for the preference to enable confirmation dialog before rebooting-->
+  <string name="rom_settings_show_reboot_confirm_desc">Android\'in yeniden başlatma diyaloğunu doğrudan yeniden başlatma yerine gösterin. Bu, gelişmiş yeniden başlatma menülerine sahip ROM\'larda kurtarma için yeniden başlatmayı sağlar.</string>
+  <!--Title for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_title">Paralel düzeltme işlemleri</string>
+  <!--Description for the preference to set the number of parallel patching operations-->
+  <string name="rom_settings_parallel_patching_desc">Birden fazla dosya yamalarken, bir kerede %d dosyalarını işleyin.</string>
+  <!--Title for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_title">Bireysel uygulama paylaşımı</string>
+  <!--Description for the dialog box explaining individual application sharing-->
+  <string name="indiv_app_sharing_intro_dialog_desc">Tek bir uygulama paylaşımı, uygulama verilerinin her ROM tarafından erişilebilen paylaşılan bir konumda depolanmasına olanak tanır. Paylaşılan verileri kullanmak, uygulamanın verilerini ROM\'larda senkronize eder (ör. Chrome sekmeleri).\n\nNOT: Değişikliklerin etkili olması için yeniden başlatma işlemi gereklidir.\n\nBireysel uygulama paylaşımını kullanmak için, her bir ROM\'da veri paylaşımı etkinleştirilmelidir. Örneğin: Birincil ROM\'dan, Chrome için veri paylaşımını etkinleştirin. Chrome paylaşılan veri dizinini kullanmaya başlayacak. Ardından, başka bir ROM\'a önyükleyin ve ayrıca Chrome için veri paylaşımını etkinleştirin. Artık aynı paylaşılan dizini kullanacaktır.</string>
+  <!--App label in the individual app sharing screen shown if the app uses shared data-->
+  <string name="indiv_app_sharing_shared_data">Paylaşılan veri</string>
+  <!--App label in the individual app sharing screen shown if the app is not shared-->
+  <string name="indiv_app_sharing_not_shared">Not shared</string>
+  <!--App sharing dialog checkbox text for using shared app data-->
+  <string name="indiv_app_sharing_dialog_share_data">Paylaşılan verileri kullan</string>
+  <!--App sharing dialog message shown by default-->
+  <string name="indiv_app_sharing_dialog_default_message">Uygulamanın paylaşılan bir veri dizini kullanıp kullanmamasını seçin.</string>
+  <!--Message in the app sharing dialog showing the list of ROMs using the shared data-->
+  <string name="indiv_app_sharing_other_roms_using_shared_data">Paylaşılan verileri kullanan diğer ROM\'lar: %s</string>
+  <!--Toast popup message shown when the user leaves the shared apps list indicating that a reboot is needed for the changes to take effect-->
+  <string name="indiv_app_sharing_reboot_needed_message">Değişiklikler sonraki yeniden başlatmada geçerli olur.</string>
+  <!--Toast popup message shown when a shared app is uninstalled (and thus becomes unshared)-->
+  <string name="indiv_app_sharing_app_no_longer_shared">\'%s\' uygulaması artık paylaşılmıyor.</string>
+  <!--Toast popup message shown when a 3rd party app tries to send an intent to this app when the corresponding setting is disabled-->
+  <string name="third_party_intents_not_allowed">Üçüncü tarafların başvurusunu reddetti. Diğer uygulamaların niyet gönderebilmesine izin vermek için DualBootPatcher ayarlarındaki seçeneği etkinleştirin.</string>
+  <!--Progress dialog message shown when starting mbtool (with root)-->
+  <string name="mbtool_dialog_starting_mbtool">Mbtool başlatılıyor...\n(Bu root gerektirir)</string>
+  <!--Progress dialog message shown when updating mbtool (with root)-->
+  <string name="mbtool_dialog_updating_mbtool">Mbtool güncelleniyor...\n(Bu root gerektirir)</string>
+  <!--Yes/no dialog message shown when mbtool rejects the connection due to invalid signatures-->
+  <string name="mbtool_dialog_signature_check_fail">Mbtool bu uygulamanın bağlantısını reddetti. Bu durum, uygulamanın resmi olmayan bir yapı kullanıldığında veya uygulamanın kötü amaçlı olarak değiştirildiğinde olabilir. Yine devam ederseniz mbtool öldürülür ve birlikte verilen mbtool root ile çalıştırılacaktır.</string>
+  <!--Yes/no dialog message shown when mbtool is too old and needs to be updated using root-->
+  <string name="mbtool_dialog_version_too_old">Geçerli mbtool sürümü çok eskidir. ROM\'lar arasında geçiş yapmak gibi belirli işlevlerin çalışması için güncellenmelidir. Bu, kök erişimi gerektirir.</string>
+  <!--Confirm dialog message shown when updating mbtool failed-->
+  <string name="mbtool_dialog_update_failed">Mbtool güncellenemedi. Çoğu işlem, mesela ROM\'ları değiştirmek çalışmaz.</string>
+  <!--Path chooser dialog textbox hint for entering a filename-->
+  <string name="path_chooser_enter_a_filename">Dosya adı girin</string>
+  <!--Path chooser dialog button to select a directory-->
+  <string name="path_chooser_choose_label">Seç</string>
+  <!--Path chooser dialog button to save a file-->
+  <string name="path_chooser_save_label">Kaydet</string>
+  <!--Path chooser dialog button to create a new folder-->
+  <string name="path_chooser_new_folder_label">Yeni dosya</string>
+  <!--Word/phrase for Search (used in action bars)-->
+  <string name="search">Ara</string>
+  <!--Word/phrase for None (used in eg. a list)-->
+  <string name="none">Hiçbiri</string>
+  <!--Word/phrase for OK (used in dialog boxes)-->
+  <string name="ok">Tamam</string>
+  <!--Word/phrase for Cancel (used in dialog boxes)-->
+  <string name="cancel">İptal</string>
+  <!--Word/phrase for Continue (used in dialog boxes)-->
+  <string name="proceed">Devam</string>
+  <!--Word/phrase for Yes (used in dialog boxes)-->
+  <string name="yes">Evet</string>
+  <!--Word/phrase for No (used in dialog boxes)-->
+  <string name="no">Hayır</string>
+  <!--Word/phrase for try again (used in dialog boxes)-->
+  <string name="try_again">Tekrar dene</string>
+  <!--Reboot now (used in dialog boxes)-->
+  <string name="reboot_now">Şimdi yeniden başlat</string>
+  <!--Reboot later (used in dialog boxes)-->
+  <string name="reboot_later">Sonra yeniden başlat</string>
+  <!--Unknown (used when a value cannot be determined)-->
+  <string name="unknown">bilinmeyen</string>
+  <!--Text for checkbox in dialogs indicating that the dialog should not be shown again-->
+  <string name="do_not_show_again">Do not show again</string>
+  <!--Text shown in a progress dialog asking the user to wait-->
+  <string name="please_wait">Lütfen bekle</string>
+</resources>

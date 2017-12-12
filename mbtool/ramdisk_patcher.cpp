@@ -1,23 +1,25 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "ramdisk_patcher.h"
+
+#include <algorithm>
 
 #include <cerrno>
 #include <cstdio>
@@ -27,11 +29,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/copy.h"
+#include "mbutil/path.h"
 
 #include "installer_util.h"
+
+#define LOG_TAG "mbtool/ramdisk_patcher"
 
 namespace mb
 {
@@ -83,57 +89,70 @@ static bool _rp_patch_default_prop(const std::string &dir,
                                    const std::string &device_id,
                                    bool use_fuse_exfat)
 {
-    char *tmp_path = nullptr;
-    int tmp_fd = -1;
-    FILE *fp_in = nullptr;
-    FILE *fp_out = nullptr;
-    char *buf = nullptr;
-    size_t buf_size = 0;
-    ssize_t n;
-    bool ret = false;
-
     std::string path(dir);
     path += "/default.prop";
 
-    tmp_path = mb_format("%s.XXXXXX", path.c_str());
-    if (!tmp_path) {
-        LOGE("Out of memory");
-        goto done;
-    }
+    std::string tmp_path = format("%s.XXXXXX", path.c_str());
 
-    tmp_fd = mkstemp(tmp_path);
+    const int tmp_fd = mkstemp(&tmp_path[0]);
     if (tmp_fd < 0) {
         LOGE("%s: Failed to create temporary file: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_in = fopen(path.c_str(), "rb");
+    auto unlink_tmp_path = finally([&tmp_path] {
+        unlink(tmp_path.c_str());
+    });
+
+    auto close_tmp_fd = finally([&tmp_fd] {
+        close(tmp_fd);
+    });
+
+    FILE *fp_in = fopen(path.c_str(), "rb");
     if (!fp_in) {
         LOGE("%s: Failed to open for reading: %s",
              path.c_str(), strerror(errno));
-        goto done;
+        return false;
     }
 
-    fp_out = fdopen(tmp_fd, "wb");
+    auto close_fp_in = finally([&fp_in] {
+        fclose(fp_in);
+    });
+
+    FILE *fp_out = fdopen(tmp_fd, "wb");
     if (!fp_out) {
         LOGE("%s: Failed to open for writing: %s",
-             tmp_path, strerror(errno));
-        goto done;
+             tmp_path.c_str(), strerror(errno));
+        return false;
     }
 
-    tmp_fd = -1;
+    // fp_out will automatically close the fd
+    close_tmp_fd.dismiss();
+
+    auto close_fp_out = finally([&fp_out] {
+        fclose(fp_out);
+    });
+
+    char *buf = nullptr;
+    size_t buf_size = 0;
+    ssize_t n;
+
+    auto free_buf = finally([&buf] {
+        free(buf);
+    });
 
     while ((n = getline(&buf, &buf_size, fp_in)) >= 0) {
         // Remove old multiboot properties
-        if (mb_starts_with(buf, "ro.patcher.")) {
+        if (starts_with(buf, "ro.patcher.")) {
             continue;
         }
 
-        if (fwrite(buf, 1, n, fp_out) != static_cast<size_t>(n)) {
+        if (fwrite(buf, 1, static_cast<size_t>(n), fp_out)
+                != static_cast<size_t>(n)) {
             LOGE("%s: Failed to write file: %s",
-                 tmp_path, strerror(errno));
-            goto done;
+                 tmp_path.c_str(), strerror(errno));
+            return false;
         }
     }
 
@@ -143,41 +162,24 @@ static bool _rp_patch_default_prop(const std::string &dir,
             || fprintf(fp_out, "ro.patcher.use_fuse_exfat=%s\n",
                        use_fuse_exfat ? "true" : "false") < 0) {
         LOGE("%s: Failed to write properties: %s",
-             tmp_path, strerror(errno));
-        goto done;
+             tmp_path.c_str(), strerror(errno));
+        return false;
     }
+
+    // Manually close file to ensure we catch write errors
+    close_fp_out.dismiss();
 
     if (fclose(fp_out) < 0) {
         LOGE("%s: Failed to close file: %s",
-             tmp_path, strerror(errno));
-        goto done;
+             tmp_path.c_str(), strerror(errno));
+        return false;
     }
-
-    fp_out = nullptr;
 
     if (!InstallerUtil::replace_file(path.c_str(), tmp_path)) {
-        goto done;
+        return false;
     }
 
-    ret = true;
-
-done:
-    if (tmp_fd >= 0) {
-        close(tmp_fd);
-    }
-    if (fp_in) {
-        fclose(fp_in);
-    }
-    if (fp_out) {
-        fclose(fp_out);
-    }
-
-    unlink(tmp_path);
-
-    free(tmp_path);
-    free(buf);
-
-    return ret;
+    return true;
 }
 
 std::function<RamdiskPatcherFn>
@@ -263,28 +265,65 @@ rp_symlink_fuse_exfat()
 
 static bool _rp_symlink_init(const std::string &dir)
 {
-    // Symlink init
-    std::string init(dir);
-    init += "/init";
-    std::string init_orig(init);
-    init_orig += ".orig";
+    std::string target{dir};
+    target += "/init";
+    std::string real_init{dir};
+    real_init += "/init.orig";
 
-    if (access(init_orig.c_str(), R_OK) < 0) {
+    struct stat sb;
+
+    // If this is a Sony device that doesn't use sbin/ramdisk.cpio for the
+    // combined ramdisk, we'll have to explicitly allow their init executable to
+    // run first. We'll use a relatively strong heuristic to prevent false
+    // positives with other devices.
+    //
+    // See:
+    // * https://github.com/chenxiaolong/DualBootPatcher/issues/533
+    // * https://github.com/sonyxperiadev/device-sony-common-init
+    {
+        std::string sony_init_wrapper(dir);
+        sony_init_wrapper += "/sbin/init_sony";
+        std::string sony_real_init(dir);
+        sony_real_init += "/init.real";
+        std::string sony_symlink_target;
+
+        // Check that /init is a symlink and that /init.real exists
+        if (lstat(target.c_str(), &sb) == 0 && S_ISLNK(sb.st_mode)
+                && util::read_link(target, sony_symlink_target)
+                && lstat(sony_real_init.c_str(), &sb) == 0) {
+            std::vector<std::string> haystack{util::path_split(sony_symlink_target)};
+            std::vector<std::string> needle{util::path_split("sbin/init_sony")};
+
+            util::normalize_path(haystack);
+
+            // Check that init points to some path with "sbin/init_sony" in it
+            auto const it = std::search(haystack.cbegin(), haystack.cend(),
+                                        needle.cbegin(), needle.cend());
+            if (it != haystack.cend()) {
+                target.swap(sony_real_init);
+            }
+        }
+    }
+
+    LOGD("[init] Target init path: %s", target.c_str());
+    LOGD("[init] Real init path: %s", real_init.c_str());
+
+    if (lstat(real_init.c_str(), &sb) < 0) {
         if (errno != ENOENT) {
             LOGE("%s: Failed to access file: %s",
-                 init_orig.c_str(), strerror(errno));
+                 real_init.c_str(), strerror(errno));
             return false;
         }
 
-        if (rename(init.c_str(), init_orig.c_str()) < 0) {
+        if (rename(target.c_str(), real_init.c_str()) < 0) {
             LOGE("%s: Failed to rename file: %s",
-                 init.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
             return false;
         }
 
-        if (symlink("mbtool", init.c_str()) < 0) {
+        if (symlink("/mbtool", target.c_str()) < 0) {
             LOGE("%s: Failed to symlink mbtool: %s",
-                 init.c_str(), strerror(errno));
+                 target.c_str(), strerror(errno));
             return false;
         }
     }

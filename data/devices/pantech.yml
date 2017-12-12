@@ -2,6 +2,7 @@
 - name: Pantech Vega Iron 2
   id: A910
   codenames:
+    - ef63
     - ef63s
     - ef63l
     - ef63k
@@ -41,10 +42,10 @@
     default_brightness: 175
     theme: portrait_hdpi
 
-
 - name: Pantech Vega Iron
   id: A870
   codenames:
+    - ef52
     - ef52s
     - ef52l
     - ef52k
@@ -87,8 +88,53 @@
 - name: Pantech Vega Secret Up
   id: A900
   codenames:
+    - ef60
     - ef60s
     - ef61k
+    - ef62l
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/msm_sdcc.1/by-name
+    system:
+      - /dev/block/platform/msm_sdcc.1/by-name/system
+      - /dev/block/mmcblk0p15
+    cache:
+      - /dev/block/platform/msm_sdcc.1/by-name/cache
+      - /dev/block/mmcblk0p17
+    data:
+      - /dev/block/platform/msm_sdcc.1/by-name/userdata
+      - /dev/block/mmcblk0p27
+    boot:
+      - /dev/block/platform/msm_sdcc.1/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/msm_sdcc.1/by-name/recovery
+      - /dev/block/mmcblk0p14
+    extra:
+      - /dev/block/platform/msm_sdcc.1/by-name/tz
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - overlay_msm_old
+    pixel_format: RGBX_8888
+    max_brightness: 255
+    default_brightness: 175
+    theme: portrait_hdpi
+
+
+- name: Pantech Vega Secret Note
+  id: A890
+  codenames:
+    - ef59
+    - ef59s
+    - ef59k
     - ef62l
   architecture: armeabi-v7a
 

@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mainwindow.h"
@@ -23,8 +23,7 @@
 #include <cassert>
 
 #include <mbdevice/json.h>
-#include <mbdevice/validate.h>
-#include <mbp/errors.h>
+#include <mbpatcher/errors.h>
 
 #include <QtCore/QStringBuilder>
 #include <QtWidgets/QApplication>
@@ -44,7 +43,7 @@ MainWindowPrivate::MainWindowPrivate()
 {
 }
 
-MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
+MainWindow::MainWindow(mb::patcher::PatcherConfig *pc, QWidget *parent)
     : QWidget(parent), d_ptr(new MainWindowPrivate())
 {
     Q_D(MainWindow);
@@ -72,9 +71,8 @@ MainWindow::MainWindow(mbp::PatcherConfig *pc, QWidget *parent)
     QString lastDeviceId = d->settings.value(
             QStringLiteral("last_device"), QString()).toString();
     for (size_t i = 0; i < d->devices.size(); ++i) {
-        if (strcmp(mb_device_id(d->devices[i].get()),
-                   lastDeviceId.toUtf8().data()) == 0) {
-            d->deviceSel->setCurrentIndex(i);
+        if (d->devices[i].id() == lastDeviceId.toStdString()) {
+            d->deviceSel->setCurrentIndex(static_cast<int>(i));
             break;
         }
     }
@@ -105,8 +103,8 @@ MainWindow::~MainWindow()
     Q_D(MainWindow);
 
     if (d->patcher) {
-        d->patcher->cancelPatching();
-        d->pc->destroyPatcher(d->patcher);
+        d->patcher->cancel_patching();
+        d->pc->destroy_patcher(d->patcher);
         d->patcher = nullptr;
     }
 
@@ -119,8 +117,8 @@ MainWindow::~MainWindow()
 void MainWindow::onDeviceSelected(int index)
 {
     Q_D(MainWindow);
-    if (index < d->devices.size()) {
-        d->device = d->devices[index].get();
+    if (index < static_cast<int>(d->devices.size())) {
+        d->device = &d->devices[static_cast<size_t>(index)];
     }
 
     if (d->state == MainWindowPrivate::FinishedPatching) {
@@ -160,9 +158,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (!d->devices.empty()) {
         int deviceIndex = d->deviceSel->currentIndex();
-        const char *id = mb_device_id(d->devices[deviceIndex].get());
+        std::string id = d->devices[static_cast<size_t>(deviceIndex)].id();
         d->settings.setValue(QStringLiteral("last_device"),
-                             QString::fromUtf8(id));
+                             QString::fromStdString(id));
     }
 
     QWidget::closeEvent(event);
@@ -205,7 +203,7 @@ void MainWindow::onChooseFileItemClicked(QAction *action)
     Q_D(MainWindow);
 
     if (action == d->chooseFlashableZip) {
-        d->patcherId = QStringLiteral("MultiBootPatcher");
+        d->patcherId = QStringLiteral("ZipPatcher");
         chooseFile(tr("Flashable zips (*.zip)"));
     } else if (action == d->chooseOdinImage) {
         d->patcherId = QStringLiteral("OdinPatcher");
@@ -226,7 +224,8 @@ void MainWindow::onProgressUpdated(uint64_t bytes, uint64_t maxBytes)
         value = 0;
         max = 0;
     } else {
-        value = (double) bytes / maxBytes * normalize;
+        value = static_cast<int>(static_cast<double>(bytes)
+                / static_cast<double>(maxBytes * normalize));
         max = normalize;
     }
 
@@ -260,7 +259,7 @@ void MainWindow::onPatchingFinished(const QString &newFile, bool failed,
 {
     Q_D(MainWindow);
 
-    d->pc->destroyPatcher(d->patcher);
+    d->pc->destroy_patcher(d->patcher);
     d->patcher = nullptr;
 
     d->patcherNewFile = newFile;
@@ -277,7 +276,8 @@ void MainWindow::updateProgressText()
 
     double percentage = 0.0;
     if (d->maxBytes != 0) {
-        percentage = 100.0 * d->bytes / d->maxBytes;
+        percentage = 100.0 * static_cast<double>(d->bytes)
+                / static_cast<double>(d->maxBytes);
     }
 
     d->progressBar->setFormat(tr("%1% - %2 / %3 files")
@@ -426,32 +426,29 @@ void MainWindow::populateDevices()
     Q_D(MainWindow);
 
     // TODO: This shouldn't be done in the GUI thread
-    QString path(QString::fromStdString(d->pc->dataDirectory())
+    QString path(QString::fromStdString(d->pc->data_directory())
             % QStringLiteral("/devices.json"));
     QFile file(path);
 
     if (file.open(QIODevice::ReadOnly)) {
         QByteArray contents = file.readAll();
         file.close();
+        contents.push_back('\0');
 
-        MbDeviceJsonError error;
-        Device **devices =
-                mb_device_new_list_from_json(contents.data(), &error);
+        std::vector<mb::device::Device> devices;
+        mb::device::JsonError error;
 
-        if (devices) {
-            for (Device **iter = devices; *iter; ++iter) {
-                if (mb_device_validate(*iter) == 0) {
+        if (mb::device::device_list_from_json(contents.data(), devices, error)) {
+            for (auto &device : devices) {
+                if (device.validate() == 0) {
                     d->deviceSel->addItem(QStringLiteral("%1 - %2")
-                            .arg(QString::fromUtf8(mb_device_id(*iter)))
-                            .arg(QString::fromUtf8(mb_device_name(*iter))));
-                    d->devices.emplace_back(*iter, mb_device_free);
+                            .arg(QString::fromStdString(device.id()))
+                            .arg(QString::fromStdString(device.name())));
+                    d->devices.push_back(std::move(device));
                 } else {
-                    // Clean up unusable devices
-                    mb_device_free(*iter);
+                    qWarning("Failed validation on a device");
                 }
             }
-            // No need for array anymore
-            free(devices);
         } else {
             qWarning("Failed to load devices");
         }
@@ -617,13 +614,13 @@ void MainWindow::startPatching()
     QString outputPath(QDir::toNativeSeparators(
             qFileInfo.dir().filePath(outputName)));
 
-    FileInfoPtr fileInfo = new mbp::FileInfo();
-    fileInfo->setInputPath(inputPath.toUtf8().constData());
-    fileInfo->setOutputPath(outputPath.toUtf8().constData());
-    fileInfo->setDevice(d->device);
-    fileInfo->setRomId(romId.toUtf8().constData());
+    FileInfoPtr fileInfo = new mb::patcher::FileInfo();
+    fileInfo->set_input_path(inputPath.toUtf8().constData());
+    fileInfo->set_output_path(outputPath.toUtf8().constData());
+    fileInfo->set_device(*d->device);
+    fileInfo->set_rom_id(romId.toUtf8().constData());
 
-    d->patcher = d->pc->createPatcher(d->patcherId.toStdString());
+    d->patcher = d->pc->create_patcher(d->patcherId.toStdString());
 
     emit runThread(d->patcher, fileInfo);
 }
@@ -638,45 +635,45 @@ QWidget * MainWindow::newHorizLine(QWidget *parent)
 }
 
 
-static QString errorToString(const mbp::ErrorCode &error) {
+static QString errorToString(const mb::patcher::ErrorCode &error) {
     switch (error) {
-    case mbp::ErrorCode::NoError:
+    case mb::patcher::ErrorCode::NoError:
         return QObject::tr("No error has occurred");
-    case mbp::ErrorCode::MemoryAllocationError:
+    case mb::patcher::ErrorCode::MemoryAllocationError:
         return QObject::tr("Failed to allocate memory");
-    case mbp::ErrorCode::PatcherCreateError:
+    case mb::patcher::ErrorCode::PatcherCreateError:
         return QObject::tr("Failed to create patcher");
-    case mbp::ErrorCode::AutoPatcherCreateError:
+    case mb::patcher::ErrorCode::AutoPatcherCreateError:
         return QObject::tr("Failed to create autopatcher");
-    case mbp::ErrorCode::FileOpenError:
+    case mb::patcher::ErrorCode::FileOpenError:
         return QObject::tr("Failed to open file");
-    case mbp::ErrorCode::FileCloseError:
+    case mb::patcher::ErrorCode::FileCloseError:
         return QObject::tr("Failed to close file");
-    case mbp::ErrorCode::FileReadError:
+    case mb::patcher::ErrorCode::FileReadError:
         return QObject::tr("Failed to read from file");
-    case mbp::ErrorCode::FileWriteError:
+    case mb::patcher::ErrorCode::FileWriteError:
         return QObject::tr("Failed to write to file");
-    case mbp::ErrorCode::FileSeekError:
+    case mb::patcher::ErrorCode::FileSeekError:
         return QObject::tr("Failed to seek file");
-    case mbp::ErrorCode::FileTellError:
+    case mb::patcher::ErrorCode::FileTellError:
         return QObject::tr("Failed to get file position");
-    case mbp::ErrorCode::ArchiveReadOpenError:
+    case mb::patcher::ErrorCode::ArchiveReadOpenError:
         return QObject::tr("Failed to open archive for reading");
-    case mbp::ErrorCode::ArchiveReadDataError:
+    case mb::patcher::ErrorCode::ArchiveReadDataError:
         return QObject::tr("Failed to read archive data for file");
-    case mbp::ErrorCode::ArchiveReadHeaderError:
+    case mb::patcher::ErrorCode::ArchiveReadHeaderError:
         return QObject::tr("Failed to read archive entry header");
-    case mbp::ErrorCode::ArchiveWriteOpenError:
+    case mb::patcher::ErrorCode::ArchiveWriteOpenError:
         return QObject::tr("Failed to open archive for writing");
-    case mbp::ErrorCode::ArchiveWriteDataError:
+    case mb::patcher::ErrorCode::ArchiveWriteDataError:
         return QObject::tr("Failed to write archive data for file");
-    case mbp::ErrorCode::ArchiveWriteHeaderError:
+    case mb::patcher::ErrorCode::ArchiveWriteHeaderError:
         return QObject::tr("Failed to write archive header for file");
-    case mbp::ErrorCode::ArchiveCloseError:
+    case mb::patcher::ErrorCode::ArchiveCloseError:
         return QObject::tr("Failed to close archive");
-    case mbp::ErrorCode::ArchiveFreeError:
+    case mb::patcher::ErrorCode::ArchiveFreeError:
         return QObject::tr("Failed to free archive header memory");
-    case mbp::ErrorCode::PatchingCancelled:
+    case mb::patcher::ErrorCode::PatchingCancelled:
         return QObject::tr("Patching was cancelled");
     default:
         assert(false);
@@ -713,16 +710,16 @@ static void detailsUpdatedCbWrapper(const std::string &text, void *userData)
 
 void PatcherTask::patch(PatcherPtr patcher, FileInfoPtr info)
 {
-    patcher->setFileInfo(info);
+    patcher->set_file_info(info);
 
-    bool ret = patcher->patchFile(&progressUpdatedCbWrapper,
-                                  &filesUpdatedCbWrapper,
-                                  &detailsUpdatedCbWrapper,
-                                  this);
+    bool ret = patcher->patch_file(&progressUpdatedCbWrapper,
+                                   &filesUpdatedCbWrapper,
+                                   &detailsUpdatedCbWrapper,
+                                   this);
 
-    QString newFile(QString::fromStdString(info->outputPath()));
+    QString newFile(QString::fromStdString(info->output_path()));
 
-    patcher->setFileInfo(nullptr);
+    patcher->set_file_info(nullptr);
     delete info;
 
     if (!ret) {

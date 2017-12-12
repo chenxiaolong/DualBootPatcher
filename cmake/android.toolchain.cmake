@@ -39,6 +39,16 @@
 
 cmake_minimum_required(VERSION 3.6.0)
 
+# CMake invokes the toolchain file twice during the first build, but only once
+# during subsequent rebuilds. This was causing the various flags to be added
+# twice on the first build, and on a rebuild ninja would see only one set of the
+# flags and rebuild the world.
+# https://github.com/android-ndk/ndk/issues/323
+if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
+	return()
+endif(ANDROID_NDK_TOOLCHAIN_INCLUDED)
+set(ANDROID_NDK_TOOLCHAIN_INCLUDED true)
+
 # Android NDK
 get_filename_component(ANDROID_NDK "$ENV{ANDROID_NDK}" ABSOLUTE)
 file(TO_CMAKE_PATH "${ANDROID_NDK}" ANDROID_NDK)
@@ -143,12 +153,12 @@ endif()
 if(NOT ANDROID_ABI)
 	set(ANDROID_ABI armeabi-v7a)
 endif()
-if(ANDROID_PLATFORM MATCHES "^android-([0-8]|10|11)$")
-	set(ANDROID_PLATFORM android-9)
+if(ANDROID_PLATFORM MATCHES "^android-([0-8]|1[0-13])$")
+	set(ANDROID_PLATFORM android-14)
 elseif(ANDROID_PLATFORM STREQUAL android-20)
 	set(ANDROID_PLATFORM android-19)
 elseif(NOT ANDROID_PLATFORM)
-	set(ANDROID_PLATFORM android-9)
+	set(ANDROID_PLATFORM android-14)
 endif()
 string(REPLACE "android-" "" ANDROID_PLATFORM_LEVEL ${ANDROID_PLATFORM})
 if(ANDROID_ABI MATCHES "64(-v8a)?$" AND ANDROID_PLATFORM_LEVEL LESS 21)
@@ -183,16 +193,12 @@ set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
 	ANDROID_DISABLE_NO_EXECUTE
 	ANDROID_DISABLE_RELRO
 	ANDROID_DISABLE_FORMAT_STRING_CHECKS
-	ANDROID_CCACHE)
+	ANDROID_CCACHE
+	ANDROID_DEPRECATED_HEADERS)
 
 # Standard cross-compiling stuff.
 set(ANDROID TRUE)
-if(CMAKE_VERSION VERSION_LESS 3.7)
-    set(CMAKE_SYSTEM_NAME Android)
-else()
-    # Avoid using CMake 3.7's built-in Android platform
-    set(CMAKE_SYSTEM_NAME AndroidCompat)
-endif()
+set(CMAKE_SYSTEM_NAME Android)
 set(CMAKE_SYSTEM_VERSION ${ANDROID_PLATFORM_LEVEL})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -205,6 +211,7 @@ if(ANDROID_ABI MATCHES "^armeabi(-v7a)?$")
 	set(ANDROID_SYSROOT_ABI arm)
 	set(ANDROID_TOOLCHAIN_NAME arm-linux-androideabi)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
+	set(ANDROID_HEADER_TRIPLE arm-linux-androideabi)
 	if(ANDROID_ABI STREQUAL armeabi)
 		set(CMAKE_SYSTEM_PROCESSOR armv5te)
 		set(ANDROID_LLVM_TRIPLE armv5te-none-linux-androideabi)
@@ -218,33 +225,48 @@ elseif(ANDROID_ABI STREQUAL arm64-v8a)
 	set(ANDROID_TOOLCHAIN_NAME aarch64-linux-android)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
 	set(ANDROID_LLVM_TRIPLE aarch64-none-linux-android)
+	set(ANDROID_HEADER_TRIPLE aarch64-linux-android)
 elseif(ANDROID_ABI STREQUAL x86)
 	set(ANDROID_SYSROOT_ABI x86)
 	set(CMAKE_SYSTEM_PROCESSOR i686)
 	set(ANDROID_TOOLCHAIN_NAME i686-linux-android)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_ABI})
 	set(ANDROID_LLVM_TRIPLE i686-none-linux-android)
+	set(ANDROID_HEADER_TRIPLE i686-linux-android)
 elseif(ANDROID_ABI STREQUAL x86_64)
 	set(ANDROID_SYSROOT_ABI x86_64)
 	set(CMAKE_SYSTEM_PROCESSOR x86_64)
 	set(ANDROID_TOOLCHAIN_NAME x86_64-linux-android)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_ABI})
 	set(ANDROID_LLVM_TRIPLE x86_64-none-linux-android)
+	set(ANDROID_HEADER_TRIPLE x86_64-linux-android)
 elseif(ANDROID_ABI STREQUAL mips)
 	set(ANDROID_SYSROOT_ABI mips)
 	set(CMAKE_SYSTEM_PROCESSOR mips)
-	set(ANDROID_TOOLCHAIN_NAME mipsel-linux-android)
+	set(ANDROID_TOOLCHAIN_NAME mips64el-linux-android)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
 	set(ANDROID_LLVM_TRIPLE mipsel-none-linux-android)
+	set(ANDROID_HEADER_TRIPLE mipsel-linux-android)
 elseif(ANDROID_ABI STREQUAL mips64)
 	set(ANDROID_SYSROOT_ABI mips64)
 	set(CMAKE_SYSTEM_PROCESSOR mips64)
 	set(ANDROID_TOOLCHAIN_NAME mips64el-linux-android)
 	set(ANDROID_TOOLCHAIN_ROOT ${ANDROID_TOOLCHAIN_NAME})
 	set(ANDROID_LLVM_TRIPLE mips64el-none-linux-android)
+	set(ANDROID_HEADER_TRIPLE mips64el-linux-android)
 else()
 	message(FATAL_ERROR "Invalid Android ABI: ${ANDROID_ABI}.")
 endif()
+
+set(ANDROID_COMPILER_FLAGS)
+set(ANDROID_COMPILER_FLAGS_CXX)
+set(ANDROID_COMPILER_FLAGS_DEBUG)
+set(ANDROID_COMPILER_FLAGS_RELEASE)
+set(ANDROID_LINKER_FLAGS)
+set(ANDROID_LINKER_FLAGS_EXE)
+
+# Don't re-export libgcc symbols in every binary.
+list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libgcc.a)
 
 # STL.
 set(ANDROID_STL_STATIC_LIBRARIES)
@@ -267,23 +289,70 @@ elseif(ANDROID_STL STREQUAL gnustl_shared)
 	set(ANDROID_STL_SHARED_LIBRARIES
 		gnustl_shared)
 elseif(ANDROID_STL STREQUAL c++_static)
-	set(ANDROID_STL_STATIC_LIBRARIES
-		c++_static
-		c++abi
-		unwind
-		android_support)
+	set(ANDROID_STL_STATIC_LIBRARIES c++)
 elseif(ANDROID_STL STREQUAL c++_shared)
-	set(ANDROID_STL_STATIC_LIBRARIES
-		unwind)
-	set(ANDROID_STL_SHARED_LIBRARIES
-		c++_shared)
+	set(ANDROID_STL_SHARED_LIBRARIES c++)
 elseif(ANDROID_STL STREQUAL none)
 else()
 	message(FATAL_ERROR "Invalid Android STL: ${ANDROID_STL}.")
 endif()
 
+# Behavior of CMAKE_SYSTEM_LIBRARY_PATH and CMAKE_LIBRARY_PATH are really weird
+# when CMAKE_SYSROOT is set. The library path is appended to the sysroot even if
+# the library path is an abspath. Using a relative path from the sysroot doesn't
+# work either, because the relative path is abspath'd relative to the current
+# CMakeLists.txt file before being appended :(
+#
+# We can try to get out of this problem by providing another root path for cmake
+# to check. CMAKE_FIND_ROOT_PATH is intended for this purpose:
+# https://cmake.org/cmake/help/v3.8/variable/CMAKE_FIND_ROOT_PATH.html
+#
+# In theory this should just be our sysroot, but since we don't have a single
+# sysroot that is correct for unified headers (there's only one set of headers,
+# but multiple locations for libraries that need to be handled differently).
+# Some day we'll want to move all the libraries into ${ANDROID_NDK}/sysroot, but
+# we'll need to make some fixes to Clang, various build systems, and possibly
+# CMake itself to get that working.
+list(APPEND CMAKE_FIND_ROOT_PATH "${ANDROID_NDK}")
+
 # Sysroot.
-set(CMAKE_SYSROOT "${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_SYSROOT_ABI}")
+if(ANDROID_DEPRECATED_HEADERS)
+	set(CMAKE_SYSROOT
+		"${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_SYSROOT_ABI}")
+	set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
+else()
+	set(CMAKE_SYSROOT "${ANDROID_NDK}/sysroot")
+	set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
+	# The compiler driver doesn't check any arch specific include locations
+	# (though maybe we should add that). Architecture specific headers like asm/
+	# and machine/ are installed to an arch-$ARCH subdirectory of the sysroot.
+	list(APPEND ANDROID_COMPILER_FLAGS
+		"-isystem ${CMAKE_SYSROOT}/usr/include/${ANDROID_HEADER_TRIPLE}")
+	list(APPEND ANDROID_COMPILER_FLAGS
+		"-D__ANDROID_API__=${ANDROID_PLATFORM_LEVEL}")
+
+	# We need different sysroots for linking and compiling when using unified
+	# headers, but cmake doesn't support that. Pass the sysroot flag manually when
+	# linking.
+	set(ANDROID_SYSTEM_LIBRARY_PATH
+		"${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_SYSROOT_ABI}")
+	list(APPEND ANDROID_LINKER_FLAGS "--sysroot ${ANDROID_SYSTEM_LIBRARY_PATH}")
+
+	# find_library searches a handful of paths as described by
+	# https://cmake.org/cmake/help/v3.6/command/find_library.html. Before unified
+	# headers, we found NDK libraries in the CMAKE_SYSROOT. With unified headers,
+	# we don't have libraries in the CMAKE_SYSROOT any more. Set up
+	# CMAKE_SYSTEM_LIBRARY_PATH
+	# (https://cmake.org/cmake/help/v3.6/variable/CMAKE_SYSTEM_LIBRARY_PATH.html)
+	# instead.
+	#
+	# NB: The suffix is just lib here instead of dealing with lib64 because
+	# apparently CMake does some automatic rewriting of that? I've been testing
+	# by building my own CMake with a bunch of logging added, and that seems to be
+	# the case.
+	list(APPEND CMAKE_SYSTEM_LIBRARY_PATH
+		"${ANDROID_SYSTEM_LIBRARY_PATH}/usr/lib")
+endif()
 
 # Toolchain.
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL Linux)
@@ -299,23 +368,43 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
 	set(ANDROID_TOOLCHAIN_SUFFIX .exe)
 endif()
 
-set(ANDROID_COMPILER_FLAGS)
-set(ANDROID_COMPILER_FLAGS_CXX)
-set(ANDROID_COMPILER_FLAGS_DEBUG)
-set(ANDROID_COMPILER_FLAGS_RELEASE)
-set(ANDROID_LINKER_FLAGS)
-set(ANDROID_LINKER_FLAGS_EXE)
+set(ANDROID_HOST_PREBUILTS "${ANDROID_NDK}/prebuilt/${ANDROID_HOST_TAG}")
 
 if(ANDROID_TOOLCHAIN STREQUAL clang)
 	set(ANDROID_LLVM_TOOLCHAIN_PREFIX "${ANDROID_NDK}/toolchains/llvm/prebuilt/${ANDROID_HOST_TAG}/bin/")
 	set(ANDROID_C_COMPILER   "${ANDROID_LLVM_TOOLCHAIN_PREFIX}clang${ANDROID_TOOLCHAIN_SUFFIX}")
 	set(ANDROID_CXX_COMPILER "${ANDROID_LLVM_TOOLCHAIN_PREFIX}clang++${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(ANDROID_ASM_COMPILER "${ANDROID_LLVM_TOOLCHAIN_PREFIX}clang${ANDROID_TOOLCHAIN_SUFFIX}")
+	# Clang can fail to compile if CMake doesn't correctly supply the target and
+	# external toolchain, but to do so, CMake needs to already know that the
+	# compiler is clang. Tell CMake that the compiler is really clang, but don't
+	# use CMakeForceCompiler, since we still want compile checks. We only want
+	# to skip the compiler ID detection step.
+	#set(CMAKE_C_COMPILER_ID_RUN TRUE)
+	#set(CMAKE_CXX_COMPILER_ID_RUN TRUE)
+	#set(CMAKE_C_COMPILER_ID Clang)
+	#set(CMAKE_CXX_COMPILER_ID Clang)
+	#set(CMAKE_C_COMPILER_VERSION 3.8)
+	#set(CMAKE_CXX_COMPILER_VERSION 3.8)
+	#set(CMAKE_C_STANDARD_COMPUTED_DEFAULT 11)
+	#set(CMAKE_CXX_STANDARD_COMPUTED_DEFAULT 98)
+	#set(CMAKE_C_COMPILER_TARGET   ${ANDROID_LLVM_TRIPLE})
+	#set(CMAKE_CXX_COMPILER_TARGET ${ANDROID_LLVM_TRIPLE})
+	#set(CMAKE_ASM_COMPILER_TARGET ${ANDROID_LLVM_TRIPLE})
+	#set(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN   "${ANDROID_TOOLCHAIN_ROOT}")
+	#set(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN "${ANDROID_TOOLCHAIN_ROOT}")
+	#set(CMAKE_ASM_COMPILER_EXTERNAL_TOOLCHAIN "${ANDROID_TOOLCHAIN_ROOT}")
 	list(APPEND ANDROID_COMPILER_FLAGS
 		-target ${ANDROID_LLVM_TRIPLE}
 		-gcc-toolchain ${ANDROID_TOOLCHAIN_ROOT})
+	set(ANDROID_AR "${ANDROID_TOOLCHAIN_PREFIX}ar${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(ANDROID_RANLIB "${ANDROID_TOOLCHAIN_PREFIX}ranlib${ANDROID_TOOLCHAIN_SUFFIX}")
 elseif(ANDROID_TOOLCHAIN STREQUAL gcc)
 	set(ANDROID_C_COMPILER   "${ANDROID_TOOLCHAIN_PREFIX}gcc${ANDROID_TOOLCHAIN_SUFFIX}")
 	set(ANDROID_CXX_COMPILER "${ANDROID_TOOLCHAIN_PREFIX}g++${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(ANDROID_ASM_COMPILER "${ANDROID_TOOLCHAIN_PREFIX}gcc${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(ANDROID_AR "${ANDROID_TOOLCHAIN_PREFIX}gcc-ar${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(ANDROID_RANLIB "${ANDROID_TOOLCHAIN_PREFIX}gcc-ranlib${ANDROID_TOOLCHAIN_SUFFIX}")
 else()
 	message(FATAL_ERROR "Invalid Android toolchain: ${ANDROID_TOOLCHAIN}.")
 endif()
@@ -334,9 +423,6 @@ list(APPEND ANDROID_COMPILER_FLAGS
 	-funwind-tables
 	-fstack-protector-strong
 	-no-canonical-prefixes)
-list(APPEND ANDROID_COMPILER_FLAGS_CXX
-	-fno-exceptions
-	-fno-rtti)
 list(APPEND ANDROID_LINKER_FLAGS
 	-Wl,--build-id
 	-Wl,--warn-shared-textrel
@@ -377,14 +463,28 @@ if(ANDROID_ABI STREQUAL armeabi-v7a)
 	list(APPEND ANDROID_LINKER_FLAGS
 		-Wl,--fix-cortex-a8)
 endif()
+if(ANDROID_ABI STREQUAL mips)
+	list(APPEND ANDROID_COMPILER_FLAGS
+		-mips32)
+endif()
+if(ANDROID_ABI STREQUAL "mips64" AND ANDROID_TOOLCHAIN STREQUAL clang)
+  list(APPEND ANDROID_COMPILER_FLAGS "-fintegrated-as")
+endif()
 if(ANDROID_ABI MATCHES "^armeabi" AND ANDROID_TOOLCHAIN STREQUAL clang)
 	# Disable integrated-as for better compatibility.
 	list(APPEND ANDROID_COMPILER_FLAGS
 		-fno-integrated-as)
 endif()
 if(ANDROID_ABI STREQUAL mips AND ANDROID_TOOLCHAIN STREQUAL clang)
-	list(APPEND ANDROID_COMPILER_FLAGS
-		-mips32)
+	# Help clang use mips64el multilib GCC
+	list(APPEND ANDROID_LINKER_FLAGS
+		"\"-L${ANDROID_TOOLCHAIN_ROOT}/lib/gcc/${ANDROID_TOOLCHAIN_NAME}/4.9.x/32/mips-r1\"")
+endif()
+if(ANDROID_ABI STREQUAL x86)
+	# http://b.android.com/222239
+	# http://b.android.com/220159 (internal http://b/31809417)
+	# x86 devices have stack alignment issues.
+	list(APPEND ANDROID_COMPILER_FLAGS -mstackrealign)
 endif()
 
 # STL specific flags.
@@ -406,11 +506,7 @@ elseif(ANDROID_STL MATCHES "^gnustl_")
 elseif(ANDROID_STL MATCHES "^c\\+\\+_")
 	set(ANDROID_STL_PREFIX llvm-libc++)
 	if(ANDROID_ABI MATCHES "^armeabi")
-		list(APPEND ANDROID_LINKER_FLAGS
-			-Wl,--exclude-libs,libunwind.a)
-	else()
-		list(REMOVE_ITEM ANDROID_STL_STATIC_LIBRARIES
-			unwind)
+		list(APPEND ANDROID_LINKER_FLAGS -Wl,--exclude-libs,libunwind.a)
 	endif()
 	list(APPEND ANDROID_COMPILER_FLAGS_CXX
 		-std=c++11)
@@ -418,6 +514,12 @@ elseif(ANDROID_STL MATCHES "^c\\+\\+_")
 		list(APPEND ANDROID_COMPILER_FLAGS_CXX
 			-fno-strict-aliasing)
 	endif()
+
+	# Add the libc++ lib directory to the path so the linker scripts can pick up
+	# the extra libraries.
+	list(APPEND ANDROID_LINKER_FLAGS
+		"-L${ANDROID_NDK}/sources/cxx-stl/${ANDROID_STL_PREFIX}/libs/${ANDROID_ABI}")
+
 	set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
 		"${ANDROID_NDK}/sources/cxx-stl/${ANDROID_STL_PREFIX}/include"
 		"${ANDROID_NDK}/sources/android/support/include"
@@ -528,29 +630,37 @@ if(ANDROID_CCACHE)
 endif()
 set(CMAKE_C_COMPILER        "${ANDROID_C_COMPILER}")
 set(CMAKE_CXX_COMPILER      "${ANDROID_CXX_COMPILER}")
+set(CMAKE_AR                "${ANDROID_AR}" CACHE FILEPATH "Archiver")
+set(CMAKE_RANLIB            "${ANDROID_RANLIB}" CACHE FILEPATH "Ranlib")
 set(_CMAKE_TOOLCHAIN_PREFIX "${ANDROID_TOOLCHAIN_PREFIX}")
+
+if(ANDROID_ABI STREQUAL "x86" OR ANDROID_ABI STREQUAL "x86_64")
+	set(CMAKE_ASM_NASM_COMPILER
+		"${ANDROID_HOST_PREBUILTS}/bin/yasm${ANDROID_TOOLCHAIN_SUFFIX}")
+	set(CMAKE_ASM_NASM_COMPILER_ARG1 "-DELF")
+endif()
 
 # Set or retrieve the cached flags.
 # This is necessary in case the user sets/changes flags in subsequent
 # configures. If we included the Android flags in here, they would get
 # overwritten.
-set(CMAKE_ASM_FLAGS ""
-    CACHE STRING "Flags used by the compiler during all build types.")
 set(CMAKE_C_FLAGS ""
 	CACHE STRING "Flags used by the compiler during all build types.")
 set(CMAKE_CXX_FLAGS ""
 	CACHE STRING "Flags used by the compiler during all build types.")
-set(CMAKE_ASM_FLAGS_DEBUG ""
-	CACHE STRING "Flags used by the compiler during debug builds.")
+set(CMAKE_ASM_FLAGS ""
+	CACHE STRING "Flags used by the compiler during all build types.")
 set(CMAKE_C_FLAGS_DEBUG ""
 	CACHE STRING "Flags used by the compiler during debug builds.")
 set(CMAKE_CXX_FLAGS_DEBUG ""
 	CACHE STRING "Flags used by the compiler during debug builds.")
-set(CMAKE_ASM_FLAGS_RELEASE ""
-	CACHE STRING "Flags used by the compiler during release builds.")
+set(CMAKE_ASM_FLAGS_DEBUG ""
+	CACHE STRING "Flags used by the compiler during debug builds.")
 set(CMAKE_C_FLAGS_RELEASE ""
 	CACHE STRING "Flags used by the compiler during release builds.")
 set(CMAKE_CXX_FLAGS_RELEASE ""
+	CACHE STRING "Flags used by the compiler during release builds.")
+set(CMAKE_ASM_FLAGS_RELEASE ""
 	CACHE STRING "Flags used by the compiler during release builds.")
 set(CMAKE_MODULE_LINKER_FLAGS ""
 	CACHE STRING "Flags used by the linker during the creation of modules.")
@@ -559,15 +669,15 @@ set(CMAKE_SHARED_LINKER_FLAGS ""
 set(CMAKE_EXE_LINKER_FLAGS ""
 	CACHE STRING "Flags used by the linker.")
 
-set(CMAKE_ASM_FLAGS           "${ANDROID_COMPILER_FLAGS} ${CMAKE_ASM_FLAGS}")
 set(CMAKE_C_FLAGS             "${ANDROID_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS           "${ANDROID_COMPILER_FLAGS} ${ANDROID_COMPILER_FLAGS_CXX} ${CMAKE_CXX_FLAGS}")
-set(CMAKE_ASM_FLAGS_DEBUG     "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_ASM_FLAGS_DEBUG}")
+set(CMAKE_ASM_FLAGS           "${ANDROID_COMPILER_FLAGS} ${CMAKE_ASM_FLAGS}")
 set(CMAKE_C_FLAGS_DEBUG       "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_DEBUG     "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_DEBUG}")
-set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLAGS_RELEASE}")
+set(CMAKE_ASM_FLAGS_DEBUG     "${ANDROID_COMPILER_FLAGS_DEBUG} ${CMAKE_ASM_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_RELEASE     "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_ASM_FLAGS_RELEASE   "${ANDROID_COMPILER_FLAGS_RELEASE} ${CMAKE_ASM_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS "${ANDROID_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "${ANDROID_LINKER_FLAGS} ${CMAKE_MODULE_LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS    "${ANDROID_LINKER_FLAGS} ${ANDROID_LINKER_FLAGS_EXE} ${CMAKE_EXE_LINKER_FLAGS}")
@@ -624,7 +734,7 @@ elseif(ANDROID_ABI STREQUAL x86_64)
 	set(X86_64 TRUE)
 elseif(ANDROID_ABI STREQUAL mips)
 	set(MIPS TRUE)
-elseif(ANDROID_ABI STREQUAL MIPS64)
+elseif(ANDROID_ABI STREQUAL mips64)
 	set(MIPS64 TRUE)
 endif()
 set(ANDROID_NDK_HOST_SYSTEM_NAME ${ANDROID_HOST_TAG})
@@ -635,4 +745,22 @@ set(ANDROID_SYSROOT "${CMAKE_SYSROOT}")
 set(TOOL_OS_SUFFIX ${ANDROID_TOOLCHAIN_SUFFIX})
 if(ANDROID_TOOLCHAIN STREQUAL clang)
 	set(ANDROID_COMPILER_IS_CLANG TRUE)
+endif()
+
+# CMake 3.7+ compatibility.
+if (CMAKE_VERSION VERSION_GREATER 3.7.0)
+	set(CMAKE_ANDROID_NDK ${ANDROID_NDK})
+
+	if(ANDROID_TOOLCHAIN STREQUAL gcc)
+		set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION 4.9)
+	else()
+		set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION clang)
+	endif()
+
+	set(CMAKE_ANDROID_STL_TYPE ${ANDROID_STL})
+
+	if(ANDROID_ABI MATCHES "^armeabi(-v7a)?$")
+		set(CMAKE_ANDROID_ARM_NEON ${ANDROID_ARM_NEON})
+		set(CMAKE_ANDROID_ARM_MODE ${ANDROID_ARM_MODE})
+	endif()
 endif()

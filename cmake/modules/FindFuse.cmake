@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(FUSE_FOUND)
     set(FUSE_LIBRARIES ${FUSE_LIBRARY})
+
+    add_library(Fuse::Fuse UNKNOWN IMPORTED)
+    set_target_properties(
+        Fuse::Fuse
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${FUSE_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${FUSE_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(FUSE_INCLUDE_DIR FUSE_LIBRARY)

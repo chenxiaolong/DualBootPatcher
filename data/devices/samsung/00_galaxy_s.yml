@@ -1,5 +1,5 @@
 ---
-- name: Samsung Galaxy S 3 Neo (Qcom)
+- name: Samsung Galaxy S3 Neo (Qcom)
   id: s3ve3g
   codenames:
     - s3ve3g
@@ -26,9 +26,21 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
+  
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-
-- name: Samsung Galaxy S 3 (Qcom)
+- name: Samsung Galaxy S3 (Qcom)
   id: d2
   codenames:
     - d2
@@ -70,8 +82,20 @@
     extra:
       - /dev/block/platform/msm_sdcc.1/by-name/aboot
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 (i9300)
+- name: Samsung Galaxy S3 (i9300)
   id: m0
   codenames:
     - m0
@@ -101,8 +125,19 @@
       - /dev/block/platform/dw_mmc/by-name/RADIO
       - /dev/block/mmcblk0p7
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 (i9305)
+- name: Samsung Galaxy S3 (i9305)
   id: m3
   codenames:
     - m3
@@ -132,8 +167,19 @@
     extra:
       - /dev/block/platform/dw_mmc/by-name/RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 3 Mini
+- name: Samsung Galaxy S3 Mini
   id: golden
   codenames:
     - golden
@@ -151,8 +197,19 @@
     recovery:
       - /dev/block/mmcblk0p21
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/mcde_disp_s6e63m0_dsi.0/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 (Qcom)
+- name: Samsung Galaxy S4 (Qcom)
   id: jflte
   codenames:
     # Regular variant
@@ -209,8 +266,7 @@
       - fbdev
     theme: portrait_hdpi
 
-
-- name: Samsung Galaxy S 4 (Exynos)
+- name: Samsung Galaxy S4 (Exynos)
   id: i9500
   codenames:
     # i9500
@@ -245,8 +301,19 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 LTE-A
+- name: Samsung Galaxy S4 LTE-A
   id: ks01lte
   codenames:
     - ks01lte
@@ -273,8 +340,20 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/mdp.0/qcom\x2cmdss_fb_primary.173/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 Active (SKT Variant)
+- name: Samsung Galaxy S4 Active (SKT Variant)
   id: jactivelteskt
   codenames:
     - jactivelteskt
@@ -299,8 +378,20 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/mdp.0/qcom\x2cmdss_fb_primary.181/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 4 Mini
+- name: Samsung Galaxy S4 Mini
   id: serrano
   codenames:
     # Regular variant
@@ -332,8 +423,20 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 (Qcom)
+- name: Samsung Galaxy S5 (Qcom)
   id: klte
   codenames:
     - klte
@@ -380,7 +483,7 @@
     default_brightness: 162
 
 
-- name: Samsung Galaxy S 5 Mini (Qcom)
+- name: Samsung Galaxy S5 Mini (Qcom)
   id: kmini3g
   codenames:
     - kmini3g
@@ -405,8 +508,20 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 (Exynos)
+- name: Samsung Galaxy S5 (Exynos)
   id: k3g
   codenames:
     - k3g
@@ -435,8 +550,19 @@
       - /dev/block/platform/12200000.dwmmc0/by-name/RADIO
       - /dev/block/platform/12200000.dwmmc0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/14400000.fimd_fb/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 Mini LTE (Exynos)
+- name: Samsung Galaxy S5 Mini LTE (Exynos)
   id: kminilte
   codenames:
     - kminilte
@@ -465,8 +591,19 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/s5p-mipi-dsim.0/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 Broadband LTE-A
+- name: Samsung Galaxy S5 Broadband LTE-A
   id: lentislte
   codenames:
     - lentislte
@@ -493,8 +630,20 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 5 4G+
+- name: Samsung Galaxy S5 4G+
   id: kccat6
   codenames:
     - kccat6
@@ -520,8 +669,20 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p18
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Flat/Edge
+- name: Samsung Galaxy S6 Flat/Edge
   id: zerolte
   codenames:
     # Regular variant
@@ -557,8 +718,73 @@
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Flat/Edge (Sprint)
+- name: Samsung Galaxy S6 Flat/Edge (CN/JP Variant)
+  id: zeroltechn
+  codenames:
+    # Flat china variant
+    - zerofltechn
+    - zerofltezh
+    - zerofltezm
+    - zeroflteke
+    - zerofltezt
+    - zerofltezc
+    # Flat japan variant
+    - zerofltedcm
+    # Edge china variant
+    - zeroltechn
+    - zeroltezc
+    - zeroltezt
+    # Edge japan variant
+    - zeroltedcm
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda15
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda19
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda21
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda8
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda9
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+
+- name: Samsung Galaxy S6 Flat/Edge (Sprint)
   id: zeroltespr
   codenames:
     # Regular variant
@@ -588,8 +814,19 @@
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 6 Edge+
+- name: Samsung Galaxy S6 Edge+
   id: zenlte
   codenames:
     - zenlte
@@ -617,8 +854,19 @@
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
 
-- name: Samsung Galaxy S 7 Flat/Edge (Exynos)
+- name: Samsung Galaxy S7 Flat/Edge (Exynos)
   id: herolte
   codenames:
     # Regular variant
@@ -676,4 +924,189 @@
     max_brightness: 255
     default_brightness: 162
     pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy S8 (Exynos)
+  id: dreamlte
+  codenames:
+    # Regular variant
+    - SM-G950F
+    - dreamlte
+    - dreamltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/11120000.ufs/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
+      - /dev/block/sda17
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/11120000.ufs/by-name/CACHE
+      - /dev/block/sda18
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/11120000.ufs/by-name/USERDATA
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/11120000.ufs/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/bootdevice/RECOVERY
+      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/bootdevice/RADIO
+      - /dev/block/platform/11120000.ufs/by-name/RADIO
+      - /dev/block/sda10
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/panel_drv@001/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy S8+ (Exynos)
+  id: dream2lte
+  codenames:
+    # Regular variant
+    - SM-G955F
+    - dream2lte
+    - dream2ltexx
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/11120000.ufs/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
+      - /dev/block/sda17
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/11120000.ufs/by-name/CACHE
+      - /dev/block/sda18
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/11120000.ufs/by-name/USERDATA
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/11120000.ufs/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/bootdevice/RECOVERY
+      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/bootdevice/RADIO
+      - /dev/block/platform/11120000.ufs/by-name/RADIO
+      - /dev/block/sda10
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/panel_drv@001/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy S8 (Snapdragon)
+  id: dreamqlte
+  codenames:
+    # Regular variant
+    - dreamqlte
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/recovery
+    extra:
+      - /dev/block/bootdevice/modem
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 36500
+    default_brightness: 15000
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy S8+ (Snapdragon)
+  id: dream2qlte
+  codenames:
+    # Regular variant
+    - dream2qlte
+    - dream2qltezh
+    - dream2qltezhn
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/soc/1da4000.ufshc/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/system
+      - /dev/block/sda19
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/cache
+      - /dev/block/sda20
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/userdata
+      - /dev/block/sda24
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/boot
+      - /dev/block/sda17
+    recovery:
+      - /dev/block/bootdevice/recovery
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/recovery
+      - /dev/block/sda18
+    extra:
+      - /dev/block/bootdevice/modem
+      - /dev/block/platform/soc/1da4000.ufshc/by-name/modem
+      - /dev/block/sda16
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 36500
+    default_brightness: 15000
+    pixel_format: RGBX_8888
     theme: portrait_hdpi

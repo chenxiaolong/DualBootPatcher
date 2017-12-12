@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/string.h"
@@ -30,8 +30,10 @@
 #  include <windows.h>
 #endif
 
-#include "mbcommon/string_p.h"
+#include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
+#include "mbcommon/string_p.h"
 
 #include "mbcommon/libc/string.h"
 
@@ -91,6 +93,11 @@ void * _mb_mempcpy(void *dest, const void *src, size_t n)
 #endif
 }
 
+MB_END_C_DECLS
+
+namespace mb
+{
+
 // No wide-character version of the format functions is provided because it's
 // impossible to portably create an appropriately sized buffer with swprintf().
 // Passing 0 as the length does not work and not every
@@ -109,19 +116,100 @@ void * _mb_mempcpy(void *dest, const void *src, size_t n)
  * \param fmt Format string
  * \param ... Format arguments
  *
- * \return Resulting string or NULL if out of memory or an error occurs. The
- *         result should be deallocated with `free()` when it is no longer
- *         needed.
+ * \return Resulting formatted string or error.
  */
-char * mb_format(const char *fmt, ...)
+oc::result<std::string> format_safe(const char *fmt, ...)
 {
     va_list ap;
 
     va_start(ap, fmt);
-    char *result = mb_format_v(fmt, ap);
+    auto result = format_v_safe(fmt, ap);
     va_end(ap);
 
     return result;
+}
+
+/*!
+ * \brief Format a string
+ *
+ * \note This uses the `*printf()` family of functions in the system's C
+ *       library. The format string may not be understood the same way by every
+ *       platform.
+ *
+ * \note The value of `errno` and `GetLastError()` (on Win32) are preserved if
+ *       this function does not fail.
+ *
+ * \param fmt Format string
+ * \param ... Format arguments
+ *
+ * \return Resulting formatted string.
+ * \throws std::exception If an error occurs while formatting the string.
+ */
+std::string format(const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    // TODO: This should use exceptions to report errors, but we currently don't
+    // support them due to the substantial size increase of the compiled
+    // binaries.
+    std::string result = format_v(fmt, ap);
+    va_end(ap);
+
+    return result;
+}
+
+/*!
+ * \brief Format a string using a `va_list`
+ *
+ * \note This uses the `*printf()` family of functions in the system's C
+ *       library. The format string may not be understood the same way by every
+ *       platform.
+ *
+ * \note The value of `errno` and `GetLastError()` (on Win32) are always
+ *       preserved.
+ *
+ * \param fmt Format string
+ * \param ap Format arguments as `va_list`
+ *
+ * \return Resulting formatted string or error.
+ */
+oc::result<std::string> format_v_safe(const char *fmt, va_list ap)
+{
+    static_assert(INT_MAX <= SIZE_MAX, "INT_MAX > SIZE_MAX");
+
+    ErrorRestorer restorer;
+    int ret;
+    va_list copy;
+    std::string buf;
+
+    va_copy(copy, ap);
+    ret = vsnprintf(nullptr, 0, fmt, copy);
+    va_end(copy);
+
+    if (ret < 0) {
+        return ec_from_errno();
+    } else if (static_cast<size_t>(ret) == SIZE_MAX) {
+        return std::make_error_code(std::errc::value_too_large);
+    }
+
+    // C++11 guarantees that the memory is contiguous, but does not guarantee
+    // that the internal buffer is NULL-terminated, so we'll make room for '\0'
+    // and then get rid of it.
+    buf.resize(static_cast<size_t>(ret) + 1);
+
+    va_copy(copy, ap);
+    // NOTE: Change `&buf[0]` to `buf.data()` once we target C++17.
+    ret = vsnprintf(&buf[0], buf.size(), fmt, copy);
+    va_end(copy);
+
+    if (ret < 0) {
+        return ec_from_errno();
+    }
+
+    buf.resize(static_cast<size_t>(ret));
+
+    return std::move(buf);
 }
 
 /*!
@@ -137,69 +225,19 @@ char * mb_format(const char *fmt, ...)
  * \param fmt Format string
  * \param ap Format arguments as `va_list`
  *
- * \return Resulting string or NULL if out of memory or an error occurs. The
- *         result should be deallocated with `free()` when it is no longer
- *         needed.
+ * \return Resulting formatted string.
+ * \throws std::exception If an error occurs while formatting the string.
  */
-char * mb_format_v(const char *fmt, va_list ap)
+std::string format_v(const char *fmt, va_list ap)
 {
-#ifdef _WIN32
-    static_assert(INT_MAX <= SIZE_MAX, "INT_MAX > SIZE_MAX");
-
-    int saved_errno;
-    int saved_error;
-    char *buf;
-    size_t buf_size;
-    int ret;
-    va_list copy;
-
-    saved_errno = errno;
-    saved_error = GetLastError();
-
-    va_copy(copy, ap);
-    ret = vsnprintf(nullptr, 0, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0 || ret == INT_MAX) {
-        return nullptr;
+    auto result = format_v_safe(fmt, ap);
+    if (!result) {
+        // TODO: This should use exceptions to report errors, but we currently
+        // don't support them due to the substantial size increase of the
+        // compiled binaries.
+        std::terminate();
     }
-
-    buf_size = ret + 1;
-    buf = static_cast<char *>(malloc(buf_size));
-    if (!buf) {
-        return nullptr;
-    }
-
-    va_copy(copy, ap);
-    ret = vsnprintf(buf, buf_size, fmt, ap);
-    va_end(copy);
-
-    if (ret < 0) {
-        free(buf);
-        return nullptr;
-    }
-
-    // Restore errno and Win32 error on success
-    errno = saved_errno;
-    SetLastError(saved_error);
-
-    return buf;
-#else
-    // Yay, GNU!
-    int saved_errno;
-    char *result;
-
-    saved_errno = errno;
-
-    if (vasprintf(&result, fmt, ap) < 0) {
-        return nullptr;
-    }
-
-    // Restore errno on success
-    errno = saved_errno;
-
-    return result;
-#endif
+    return std::move(result.value());
 }
 
 /*!
@@ -213,8 +251,8 @@ char * mb_format_v(const char *fmt, va_list ap)
  *
  * \return Whether the string starts with the prefix
  */
-bool mb_starts_with_n(const char *string, size_t len_string,
-                      const char *prefix, size_t len_prefix)
+bool starts_with_n(const char *string, size_t len_string,
+                   const char *prefix, size_t len_prefix)
 {
     return len_string < len_prefix
             ? false
@@ -236,8 +274,8 @@ bool mb_starts_with_n(const char *string, size_t len_string,
  *
  * \return Whether the string starts with the prefix
  */
-bool mb_starts_with_icase_n(const char *string, size_t len_string,
-                            const char *prefix, size_t len_prefix)
+bool starts_with_icase_n(const char *string, size_t len_string,
+                         const char *prefix, size_t len_prefix)
 {
     return len_string < len_prefix
             ? false
@@ -253,9 +291,52 @@ bool mb_starts_with_icase_n(const char *string, size_t len_string,
  *
  * \return Whether the string starts with the prefix
  */
-bool mb_starts_with(const char *string, const char *prefix)
+bool starts_with(const char *string, const char *prefix)
 {
-    return mb_starts_with_n(string, strlen(string), prefix, strlen(prefix));
+    return starts_with_n(string, strlen(string), prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with(const std::string &string, const char *prefix)
+{
+    return starts_with_n(string.c_str(), string.size(), prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with(const char *string, const std::string &prefix)
+{
+    return starts_with_n(string, strlen(string), prefix.c_str(), prefix.size());
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with(const std::string &string, const std::string &prefix)
+{
+    return starts_with_n(string.c_str(), string.size(),
+                         prefix.c_str(), prefix.size());
 }
 
 /*!
@@ -271,10 +352,67 @@ bool mb_starts_with(const char *string, const char *prefix)
  *
  * \return Whether the string starts with the prefix
  */
-bool mb_starts_with_icase(const char *string, const char *prefix)
+bool starts_with_icase(const char *string, const char *prefix)
 {
-    return mb_starts_with_icase_n(string, strlen(string),
-                                  prefix, strlen(prefix));
+    return starts_with_icase_n(string, strlen(string),
+                               prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with_icase(const std::string &string, const char *prefix)
+{
+    return starts_with_icase_n(string.c_str(), string.size(),
+                               prefix, strlen(prefix));
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with_icase(const char *string, const std::string &prefix)
+{
+    return starts_with_icase_n(string, strlen(string),
+                               prefix.c_str(), prefix.size());
+}
+
+/*!
+ * \brief Check if string has prefix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param prefix Prefix
+ *
+ * \return Whether the string starts with the prefix
+ */
+bool starts_with_icase(const std::string &string, const std::string &prefix)
+{
+    return starts_with_icase_n(string.c_str(), string.size(),
+                               prefix.c_str(), prefix.size());
 }
 
 /*!
@@ -288,8 +426,8 @@ bool mb_starts_with_icase(const char *string, const char *prefix)
  *
  * \return Whether the string ends with the suffix
  */
-bool mb_ends_with_n(const char *string, size_t len_string,
-                    const char *suffix, size_t len_suffix)
+bool ends_with_n(const char *string, size_t len_string,
+                 const char *suffix, size_t len_suffix)
 {
     return len_string < len_suffix
             ? false
@@ -312,8 +450,8 @@ bool mb_ends_with_n(const char *string, size_t len_string,
  *
  * \return Whether the string ends with the suffix
  */
-bool mb_ends_with_icase_n(const char *string, size_t len_string,
-                          const char *suffix, size_t len_suffix)
+bool ends_with_icase_n(const char *string, size_t len_string,
+                       const char *suffix, size_t len_suffix)
 {
     return len_string < len_suffix
             ? false
@@ -330,9 +468,52 @@ bool mb_ends_with_icase_n(const char *string, size_t len_string,
  *
  * \return Whether the string ends with the suffix
  */
-bool mb_ends_with(const char *string, const char *suffix)
+bool ends_with(const char *string, const char *suffix)
 {
-    return mb_ends_with_n(string, strlen(string), suffix, strlen(suffix));
+    return ends_with_n(string, strlen(string), suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with(const std::string &string, const char *suffix)
+{
+    return ends_with_n(string.c_str(), string.size(), suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with(const char *string, const std::string &suffix)
+{
+    return ends_with_n(string, strlen(string), suffix.c_str(), suffix.size());
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case sensitive)
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with(const std::string &string, const std::string &suffix)
+{
+    return ends_with_n(string.c_str(), string.size(),
+                       suffix.c_str(), suffix.size());
 }
 
 /*!
@@ -348,9 +529,66 @@ bool mb_ends_with(const char *string, const char *suffix)
  *
  * \return Whether the string ends with the suffix
  */
-bool mb_ends_with_icase(const char *string, const char *suffix)
+bool ends_with_icase(const char *string, const char *suffix)
 {
-    return mb_ends_with_icase_n(string, strlen(string), suffix, strlen(suffix));
+    return ends_with_icase_n(string, strlen(string), suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with_icase(const std::string &string, const char *suffix)
+{
+    return ends_with_icase_n(string.c_str(), string.size(),
+                             suffix, strlen(suffix));
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with_icase(const char *string, const std::string &suffix)
+{
+    return ends_with_icase_n(string, strlen(string),
+                             suffix.c_str(), suffix.size());
+}
+
+/*!
+ * \brief Check if string has suffix
+ *        (case insensitive)
+ *
+ * \warning Use with care! The case-insensitive matching behavior is
+ *          platform-dependent and may even fail to properly handle ASCII
+ *          characters depending on the locale.
+ *
+ * \param string String
+ * \param suffix Suffix
+ *
+ * \return Whether the string ends with the suffix
+ */
+bool ends_with_icase(const std::string &string, const std::string &suffix)
+{
+    return ends_with_icase_n(string.c_str(), string.size(),
+                             suffix.c_str(), suffix.size());
 }
 
 /*!
@@ -368,29 +606,25 @@ bool mb_ends_with_icase(const char *string, const char *suffix)
  * \param[in] data New byte sequence to insert
  * \param[in] data_size Size of new byte sequence to insert
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
-                  const void *data, size_t data_size)
+oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
+                            const void *data, size_t data_size)
 {
     void *buf;
     size_t buf_size;
 
     if (pos > *mem_size) {
-        errno = EINVAL;
-        return -1;
+        return std::make_error_code(std::errc::invalid_argument);
     } else if (*mem_size >= SIZE_MAX - data_size) {
-        errno = EOVERFLOW;
-        return -1;
+        return std::make_error_code(std::errc::value_too_large);
     }
 
     buf_size = *mem_size + data_size;
 
     buf = static_cast<char *>(malloc(buf_size));
     if (!buf) {
-        return -1;
+        return ec_from_errno();
     }
 
     void *target_ptr = buf;
@@ -408,7 +642,7 @@ int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
     free(*mem);
     *mem = buf;
     *mem_size = buf_size;
-    return 0;
+    return oc::success();
 }
 
 /*!
@@ -423,28 +657,24 @@ int mb_mem_insert(void **mem, size_t *mem_size, size_t pos,
  *                (0 \<= \p pos \<= \p *mem_size)
  * \param[in] s New string to insert
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mb_str_insert(char **str, size_t pos, const char *s)
+oc::result<void> str_insert(char **str, size_t pos, const char *s)
 {
     size_t str_size;
 
     str_size = strlen(*str);
 
     if (pos > str_size) {
-        errno = EINVAL;
-        return -1;
+        return std::make_error_code(std::errc::invalid_argument);
     } else if (str_size == SIZE_MAX) {
-        errno = EOVERFLOW;
-        return -1;
+        return std::make_error_code(std::errc::value_too_large);
     }
 
     ++str_size;
 
-    return mb_mem_insert(reinterpret_cast<void **>(str), &str_size, pos,
-                         s, strlen(s));
+    return mem_insert(reinterpret_cast<void **>(str), &str_size, pos,
+                      s, strlen(s));
 }
 
 /*!
@@ -467,20 +697,18 @@ int mb_str_insert(char **str, size_t pos, const char *s)
  * \param[in] n Number of replacements to attempt (0 to disable limit)
  * \param[out] n_replaced Pointer to store number of replacements made
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mb_mem_replace(void **mem, size_t *mem_size,
-                   const void *from, size_t from_size,
-                   const void *to, size_t to_size,
-                   size_t n, size_t *n_replaced)
+oc::result<void> mem_replace(void **mem, size_t *mem_size,
+                             const void *from, size_t from_size,
+                             const void *to, size_t to_size,
+                             size_t n, size_t *n_replaced)
 {
     char *buf = nullptr;
     size_t buf_size = 0;
     void *target_ptr;
-    char *base_ptr = static_cast<char *>(*mem);
-    char *ptr = static_cast<char *>(*mem);
+    auto base_ptr = static_cast<char *>(*mem);
+    auto ptr = static_cast<char *>(*mem);
     size_t ptr_remain = *mem_size;
     size_t matches = 0;
 
@@ -489,30 +717,32 @@ int mb_mem_replace(void **mem, size_t *mem_size,
         if (n_replaced) {
             *n_replaced = 0;
         }
-        return 0;
+        return oc::success();
     }
 
     while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
             mb_memmem(ptr, ptr_remain, from, from_size)))) {
         // Resize buffer to accomodate data
-        if (buf_size >= SIZE_MAX - (ptr - base_ptr)
-                || buf_size + (ptr - base_ptr) >= SIZE_MAX - to_size) {
+        if (buf_size >= SIZE_MAX - static_cast<size_t>(ptr - base_ptr)
+                || buf_size + static_cast<size_t>(ptr - base_ptr)
+                        >= SIZE_MAX - to_size) {
             free(buf);
-            errno = EOVERFLOW;
-            return -1;
+            return std::make_error_code(std::errc::value_too_large);
         }
 
-        size_t new_buf_size = buf_size + (ptr - base_ptr) + to_size;
-        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        size_t new_buf_size =
+                buf_size + static_cast<size_t>(ptr - base_ptr) + to_size;
+        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
-            return -1;
+            return ec_from_errno();
         }
 
         target_ptr = new_buf + buf_size;
 
         // Copy data left of the match
-        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr - base_ptr);
+        target_ptr = _mb_mempcpy(target_ptr, base_ptr,
+                                 static_cast<size_t>(ptr - base_ptr));
 
         // Copy replacement
         target_ptr = _mb_mempcpy(target_ptr, to, to_size);
@@ -521,7 +751,7 @@ int mb_mem_replace(void **mem, size_t *mem_size,
         buf_size = new_buf_size;
 
         ptr += from_size;
-        ptr_remain -= ptr - base_ptr;
+        ptr_remain -= static_cast<size_t>(ptr - base_ptr);
         base_ptr = ptr;
 
         ++matches;
@@ -531,15 +761,14 @@ int mb_mem_replace(void **mem, size_t *mem_size,
     if (ptr_remain > 0) {
         if (buf_size >= SIZE_MAX - ptr_remain) {
             free(buf);
-            errno = EOVERFLOW;
-            return -1;
+            return std::make_error_code(std::errc::value_too_large);
         }
 
         size_t new_buf_size = buf_size + ptr_remain;
-        char *new_buf = static_cast<char *>(realloc(buf, new_buf_size));
+        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
         if (!new_buf) {
             free(buf);
-            return -1;
+            return ec_from_errno();
         }
 
         target_ptr = new_buf + buf_size;
@@ -557,7 +786,7 @@ int mb_mem_replace(void **mem, size_t *mem_size,
         *n_replaced = matches;
     }
 
-    return 0;
+    return oc::success();
 }
 
 /*!
@@ -575,17 +804,15 @@ int mb_mem_replace(void **mem, size_t *mem_size,
  * \param[in] n Number of replacements to attempt (0 to disable limit)
  * \param[out] n_replaced Pointer to store number of replacements made
  *
- * \return
- *   * 0 if successful
- *   * -1 if an error occured, with `errno` set accordingly
+ * \return Nothing if successful. Otherwise, the error code.
  */
-int mb_str_replace(char **str, const char *from, const char *to,
-                   size_t n, size_t *n_replaced)
+oc::result<void> str_replace(char **str, const char *from, const char *to,
+                             size_t n, size_t *n_replaced)
 {
     size_t str_size = strlen(*str) + 1;
 
-    return mb_mem_replace(reinterpret_cast<void **>(str), &str_size,
-                          from, strlen(from), to, strlen(to), n, n_replaced);
+    return mem_replace(reinterpret_cast<void **>(str), &str_size,
+                       from, strlen(from), to, strlen(to), n, n_replaced);
 }
 
-MB_END_C_DECLS
+}

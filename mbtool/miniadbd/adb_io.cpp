@@ -16,6 +16,7 @@
 
 #include "sysdeps.h"
 
+#include <cstdlib>
 #include <cstring>
 
 #include "adb_io.h"
@@ -115,15 +116,12 @@ bool WriteFdExactly(int fd, const std::string& str) {
 bool WriteFdFmt(int fd, const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    char *str = mb_format_v(fmt, ap);
+    auto str = mb::format_v_safe(fmt, ap);
     va_end(ap);
 
-    bool ret = false;
-
-    if (str) {
-        ret = WriteFdExactly(fd, str);
-        free(str);
+    if (!str) {
+        return false;
     }
 
-    return ret;
+    return WriteFdExactly(fd, str.value());
 }

@@ -1,25 +1,28 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/chown.h"
 
 #include <cerrno>
+#include <cstdlib>
+#include <cstring>
+
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>
@@ -29,6 +32,8 @@
 #include "mblog/logging.h"
 #include "mbutil/fts.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/chown"
 
 namespace mb
 {
@@ -47,35 +52,35 @@ static bool chown_internal(const std::string &path,
     }
 }
 
-class RecursiveChown : public FTSWrapper {
+class RecursiveChown : public FtsWrapper {
 public:
     RecursiveChown(std::string path, uid_t uid, gid_t gid,
                    bool follow_symlinks)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _uid(uid),
-        _gid(gid),
-        _follow_symlinks(follow_symlinks)
+        : FtsWrapper(std::move(path), FtsFlag::GroupSpecialFiles)
+        , _uid(uid)
+        , _gid(gid)
+        , _follow_symlinks(follow_symlinks)
     {
     }
 
-    virtual int on_reached_directory_post() override
+    Actions on_reached_directory_post() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
-        return chown_path() ? Action::FTS_OK : Action::FTS_Fail;
+        return chown_path() ? Action::Ok : Action::Fail;
     }
 
 private:
@@ -86,12 +91,8 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            char *msg = mb_format("%s: Failed to chown: %s",
-                                  _curr->fts_path, strerror(errno));
-            if (msg) {
-                _error_msg = msg;
-                free(msg);
-            }
+            _error_msg = format("%s: Failed to chown: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -103,7 +104,7 @@ private:
 bool chown(const std::string &path,
            const std::string &user,
            const std::string &group,
-           int flags)
+           ChownFlags flags)
 {
     uid_t uid;
     gid_t gid;
@@ -136,13 +137,13 @@ bool chown(const std::string &path,
 bool chown(const std::string &path,
            uid_t uid,
            gid_t gid,
-           int flags)
+           ChownFlags flags)
 {
-    if (flags & CHOWN_RECURSIVE) {
-        RecursiveChown fts(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
+    if (flags & ChownFlag::Recursive) {
+        RecursiveChown fts(path, uid, gid, flags & ChownFlag::FollowSymlinks);
         return fts.run();
     } else {
-        return chown_internal(path, uid, gid, flags & CHOWN_FOLLOW_SYMLINKS);
+        return chown_internal(path, uid, gid, flags & ChownFlag::FollowSymlinks);
     }
 }
 

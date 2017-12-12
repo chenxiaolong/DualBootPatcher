@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "daemon_v3.h"
@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
@@ -35,7 +36,6 @@
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -51,9 +51,20 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wdocumentation"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
 // flatbuffers
 #include "protocol/request_generated.h"
 #include "protocol/response_generated.h"
+
+#pragma GCC diagnostic pop
+
+#define LOG_TAG "mbtool/daemon_v3"
 
 namespace mb
 {
@@ -98,8 +109,8 @@ static bool v3_file_chmod(int fd, const v3::Request *msg)
     int ffd = fd_map[request->id()];
 
     // Don't allow setting setuid or setgid permissions
-    uint32_t mode = request->mode();
-    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    mode_t mode = static_cast<mode_t>(request->mode());
+    mode_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
     if (masked != mode) {
         return v3_send_response_invalid(fd);
     }
@@ -224,7 +235,7 @@ static bool v3_file_read(int fd, const v3::Request *msg)
 
     int ffd = it->second;
 
-    std::vector<unsigned char> buf(request->count());
+    std::vector<unsigned char> buf(static_cast<size_t>(request->count()));
 
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::FileReadError> error;
@@ -234,7 +245,7 @@ static bool v3_file_read(int fd, const v3::Request *msg)
     int saved_errno = errno;
 
     if (ret >= 0) {
-        data = builder.CreateVector(buf.data(), ret);
+        data = builder.CreateVector(buf.data(), static_cast<size_t>(ret));
     } else {
         error = v3::CreateFileReadErrorDirect(
                 builder, saved_errno, strerror(saved_errno));
@@ -243,7 +254,7 @@ static bool v3_file_read(int fd, const v3::Request *msg)
     auto response = v3::CreateFileReadResponse(
             builder, ret >= 0,
             ret >= 0 ? 0 : builder.CreateString(strerror(saved_errno)),
-            ret, data, error);
+            static_cast<size_t>(ret), data, error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
@@ -279,7 +290,7 @@ static bool v3_file_seek(int fd, const v3::Request *msg)
 
     // Ahh, posix...
     errno = 0;
-    off_t new_offset = lseek(ffd, offset, whence);
+    off64_t new_offset = lseek64(ffd, offset, whence);
     int saved_errno = errno;
     bool ret = new_offset >= 0 && saved_errno == 0;
 
@@ -314,7 +325,7 @@ static bool v3_file_selinux_get_label(int fd, const v3::Request *msg)
     fb::Offset<v3::FileSELinuxGetLabelError> error;
     std::string label;
 
-    bool ret = util::selinux_fget_context(ffd, &label);
+    bool ret = util::selinux_fget_context(ffd, label);
     int saved_errno = errno;
 
     if (!ret) {
@@ -387,19 +398,19 @@ static bool v3_file_stat(int fd, const v3::Request *msg)
 
     if (ret) {
         v3::StructStatBuilder ssb(builder);
-        ssb.add_st_dev(sb.st_dev);
-        ssb.add_st_ino(sb.st_ino);
-        ssb.add_st_mode(sb.st_mode);
-        ssb.add_st_nlink(sb.st_nlink);
-        ssb.add_st_uid(sb.st_uid);
-        ssb.add_st_gid(sb.st_gid);
-        ssb.add_st_rdev(sb.st_rdev);
-        ssb.add_st_size(sb.st_size);
-        ssb.add_st_blksize(sb.st_blksize);
-        ssb.add_st_blocks(sb.st_blocks);
-        ssb.add_st_atime(sb.st_atime);
-        ssb.add_st_mtime(sb.st_mtime);
-        ssb.add_st_ctime(sb.st_ctime);
+        ssb.add_dev(sb.st_dev);
+        ssb.add_ino(sb.st_ino);
+        ssb.add_mode(sb.st_mode);
+        ssb.add_nlink(sb.st_nlink);
+        ssb.add_uid(sb.st_uid);
+        ssb.add_gid(sb.st_gid);
+        ssb.add_rdev(sb.st_rdev);
+        ssb.add_size(static_cast<uint64_t>(sb.st_size));
+        ssb.add_blksize(static_cast<uint64_t>(sb.st_blksize));
+        ssb.add_blocks(static_cast<uint64_t>(sb.st_blocks));
+        ssb.add_atime(static_cast<uint64_t>(sb.st_atime));
+        ssb.add_mtime(static_cast<uint64_t>(sb.st_mtime));
+        ssb.add_ctime(static_cast<uint64_t>(sb.st_ctime));
         statbuf = ssb.Finish();
     } else {
         error = v3::CreateFileStatErrorDirect(
@@ -439,8 +450,8 @@ static bool v3_file_write(int fd, const v3::Request *msg)
     }
 
     auto response = v3::CreateFileWriteResponseDirect(
-            builder, ret >= 0, ret >= 0 ? nullptr : strerror(saved_errno), ret,
-            error);
+            builder, ret >= 0, ret >= 0 ? nullptr : strerror(saved_errno),
+            static_cast<size_t>(ret), error);
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
@@ -457,8 +468,8 @@ static bool v3_path_chmod(int fd, const v3::Request *msg)
     }
 
     // Don't allow setting setuid or setgid permissions
-    uint32_t mode = request->mode();
-    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    mode_t mode = static_cast<mode_t>(request->mode());
+    mode_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
     if (masked != mode) {
         return v3_send_response_invalid(fd);
     }
@@ -570,8 +581,8 @@ static bool v3_path_mkdir(int fd, const v3::Request *msg)
     }
 
     // Don't allow setting setuid or setgid permissions
-    uint32_t mode = request->mode();
-    uint32_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    mode_t mode = static_cast<mode_t>(request->mode());
+    mode_t masked = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
     if (masked != mode) {
         return v3_send_response_invalid(fd);
     }
@@ -610,7 +621,7 @@ static bool v3_path_readlink(int fd, const v3::Request *msg)
     }
 
     std::string target;
-    bool ret = util::read_link(request->path()->c_str(), &target);
+    bool ret = util::read_link(request->path()->c_str(), target);
     int saved_errno = errno;
 
     fb::FlatBufferBuilder builder;
@@ -642,9 +653,9 @@ static bool v3_path_selinux_get_label(int fd, const v3::Request *msg)
     std::string label;
     bool ret;
     if (request->follow_symlinks()) {
-        ret = util::selinux_get_context(request->path()->c_str(), &label);
+        ret = util::selinux_get_context(request->path()->c_str(), label);
     } else {
-        ret = util::selinux_lget_context(request->path()->c_str(), &label);
+        ret = util::selinux_lget_context(request->path()->c_str(), label);
     }
     int saved_errno = errno;
 
@@ -705,43 +716,43 @@ static bool v3_path_selinux_set_label(int fd, const v3::Request *msg)
     return v3_send_response(fd, builder);
 }
 
-class DirectorySizeGetter : public util::FTSWrapper {
+class DirectorySizeGetter : public util::FtsWrapper {
 public:
     DirectorySizeGetter(std::string path, std::vector<std::string> exclusions)
-        : FTSWrapper(path, FTS_GroupSpecialFiles),
-        _exclusions(std::move(exclusions)),
-        _total(0)
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
+        , _exclusions(std::move(exclusions))
+        , _total(0)
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         // Exclude first-level directories
         if (_curr->fts_level == 1) {
             if (std::find(_exclusions.begin(), _exclusions.end(), _curr->fts_name)
                     != _exclusions.end()) {
-                return Action::FTS_Skip;
+                return Action::Skip;
             }
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
-        dev_t dev = _curr->fts_statp->st_dev;
-        ino_t ino = _curr->fts_statp->st_ino;
+        dev_t dev = static_cast<dev_t>(_curr->fts_statp->st_dev);
+        ino_t ino = static_cast<ino_t>(_curr->fts_statp->st_ino);
 
         // If this file has been visited before (hard link), then skip it
         if (_links.find(dev) != _links.end()
                 && _links[dev].find(ino) != _links[dev].end()) {
-            return Action::FTS_OK;
+            return Action::Ok;
         }
 
-        _total += _curr->fts_statp->st_size;
+        _total += static_cast<uint64_t>(_curr->fts_statp->st_size);
         _links[dev].emplace(ino);
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
     uint64_t total() const {
@@ -764,7 +775,7 @@ static bool v3_path_get_directory_size(int fd, const v3::Request *msg)
 
     std::vector<std::string> exclusions;
     if (request->exclusions()) {
-        for (auto const &exclusion : *request->exclusions()) {
+        for (auto const *exclusion : *request->exclusions()) {
             exclusions.push_back(exclusion->c_str());
         }
     }
@@ -797,7 +808,7 @@ static void signed_exec_output_cb(const char *line, bool error, void *userdata)
 {
     (void) error;
 
-    int *fd_ptr = (int *) userdata;
+    int *fd_ptr = static_cast<int *>(userdata);
     // TODO: Send line
 
     fb::FlatBufferBuilder builder;
@@ -828,8 +839,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     std::string target_binary;
     std::string target_sig;
-    size_t nargs;
-    const char **argv;
+    std::vector<std::string> argv;
     int status;
     SigVerifyResult sig_result;
     bool mounted_tmpfs = false;
@@ -845,7 +855,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     target_sig += "/binary.sig";
 
     // Unmount tmpfs when we're done
-    auto unmount_tmpfs = util::finally([&]{
+    auto unmount_tmpfs = finally([&]{
         if (mounted_tmpfs) {
             umount(temp_dir);
         }
@@ -853,11 +863,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("", "/", "", MS_REMOUNT, "") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("Failed to remount / as rw: %s", strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("Failed to remount / as rw: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -865,12 +871,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     if ((mkdir(temp_dir, 0000) < 0 && errno != EEXIST)
             || chmod(temp_dir, 0000) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("Failed to create temp directory: %s",
-                              strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("Failed to create temp directory: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -881,12 +883,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
 
     if (mount("tmpfs", temp_dir, "tmpfs", 0, "mode=000,uid=0,gid=0") < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("Failed to mount tmpfs at temp directory: %s",
-                              strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("Failed to mount tmpfs at temp directory: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -895,13 +893,8 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy binary to tmpfs
     if (!util::copy_file(request->binary_path()->str(), target_binary, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("%s: Failed to copy binary to tmpfs: %s",
-                              request->binary_path()->c_str(),
-                              strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("%s: Failed to copy binary to tmpfs: %s",
+                           request->binary_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -909,36 +902,25 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Copy signature to tmpfs
     if (!util::copy_file(request->signature_path()->str(), target_sig, 0)) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("%s: Failed to copy signature to tmpfs: %s",
-                              request->signature_path()->c_str(),
-                              strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("%s: Failed to copy signature to tmpfs: %s",
+                           request->signature_path()->c_str(), strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
 
     // Verify signature
     sig_result = verify_signature(target_binary.c_str(), target_sig.c_str());
-    if (sig_result != SigVerifyResult::VALID) {
-        char *msg;
-
-        if (sig_result == SigVerifyResult::INVALID) {
+    if (sig_result != SigVerifyResult::Valid) {
+        if (sig_result == SigVerifyResult::Invalid) {
             result = v3::SignedExecResult_INVALID_SIGNATURE;
-            msg = mb_format("%s: Invalid signature",
-                            request->binary_path()->c_str());
+            error_msg = format("%s: Invalid signature",
+                               request->binary_path()->c_str());
         } else {
             result = v3::SignedExecResult_OTHER_ERROR;
-            msg = mb_format("%s: Failed to verify signature",
-                            request->binary_path()->c_str());
+            error_msg = format("%s: Failed to verify signature",
+                               request->binary_path()->c_str());
         }
 
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
         LOGE("%s", error_msg.c_str());
         goto done;
     }
@@ -946,58 +928,32 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
     // Make binary executable
     if (chmod(target_binary.c_str(), 0700) < 0) {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("Failed to chmod binary in tmpfs: %s",
-                              strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("Failed to chmod binary in tmpfs: %s",
+                           strerror(errno));
         LOGE("%s", error_msg.c_str());
         goto done;
     }
 
     // Build arguments
-    nargs = 2; // argv[0] + NULL-terminator
-    if (request->args()) {
-        nargs += request->args()->size();
-    }
-
-    argv = (const char **) malloc(nargs * sizeof(const char *));
-    if (!argv) {
-        result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("%s", strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
-        LOGE("%s", error_msg.c_str());
-        goto done;
-    }
-
     {
-        size_t i = 0;
         if (request->arg0()) {
-            argv[i++] = request->arg0()->c_str();
+            argv.push_back(request->arg0()->str());
         } else {
-            argv[i++] = target_binary.c_str();
+            argv.push_back(target_binary);
         }
         if (request->args()) {
-            for (auto const &arg : *request->args()) {
-                argv[i++] = arg->c_str();
+            for (auto const *arg : *request->args()) {
+                argv.push_back(arg->str());
             }
         }
-        argv[i] = nullptr;
     }
 
     // Run executable
     // TODO: Update libmbutil's command.cpp so the callback can return a bool
     //       Right now, if the connection is broken, the command will continue
     //       executing.
-    status = util::run_command(target_binary.c_str(), argv, nullptr, nullptr,
+    status = util::run_command(target_binary, argv, {}, {},
                                &signed_exec_output_cb, &fd);
-
-    free(argv);
-
     if (status >= 0 && WIFEXITED(status)) {
         result = v3::SignedExecResult_PROCESS_EXITED;
         exit_status = WEXITSTATUS(status);
@@ -1006,11 +962,7 @@ static bool v3_signed_exec(int fd, const v3::Request *msg)
         term_sig = WTERMSIG(status);
     } else {
         result = v3::SignedExecResult_OTHER_ERROR;
-        char *msg = mb_format("Failed to execute process: %s", strerror(errno));
-        if (msg) {
-            error_msg = msg;
-            free(msg);
-        }
+        error_msg = format("Failed to execute process: %s", strerror(errno));
         LOGE("%s", error_msg.c_str());
     }
 
@@ -1133,8 +1085,7 @@ static bool v3_mb_get_version(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
 
     // Get version
-    auto response = v3::CreateMbGetVersionResponseDirect(
-            builder, mb::version());
+    auto response = v3::CreateMbGetVersionResponseDirect(builder, version());
 
     // Wrap response
     builder.Finish(v3::CreateResponse(
@@ -1153,8 +1104,8 @@ static bool v3_mb_set_kernel(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::MbSetKernelError> error;
 
-    bool ret = set_kernel(request->rom_id()->c_str(),
-                          request->boot_blockdev()->c_str());
+    bool ret = set_kernel(request->rom_id()->str(),
+                          request->boot_blockdev()->str());
 
     if (!ret) {
         error = v3::CreateMbSetKernelError(builder);
@@ -1177,11 +1128,11 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    std::vector<const char *> block_dev_dirs;
+    std::vector<std::string> block_dev_dirs;
 
     if (request->blockdev_base_dirs()) {
-        for (auto const &base_dir : *request->blockdev_base_dirs()) {
-            block_dev_dirs.push_back(base_dir->c_str());
+        for (auto const *base_dir : *request->blockdev_base_dirs()) {
+            block_dev_dirs.push_back(base_dir->str());
         }
     }
 
@@ -1190,24 +1141,24 @@ static bool v3_mb_switch_rom(int fd, const v3::Request *msg)
     fb::FlatBufferBuilder builder;
     fb::Offset<v3::MbSwitchRomError> error;
 
-    SwitchRomResult ret = switch_rom(request->rom_id()->c_str(),
-                                     request->boot_blockdev()->c_str(),
-                                     block_dev_dirs.data(),
+    SwitchRomResult ret = switch_rom(request->rom_id()->str(),
+                                     request->boot_blockdev()->str(),
+                                     block_dev_dirs,
                                      force_update_checksums);
 
-    bool success = ret == SwitchRomResult::SUCCEEDED;
+    bool success = ret == SwitchRomResult::Succeeded;
     v3::MbSwitchRomResult fb_ret = v3::MbSwitchRomResult_FAILED;
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         fb_ret = v3::MbSwitchRomResult_SUCCEEDED;
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         fb_ret = v3::MbSwitchRomResult_FAILED;
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         fb_ret = v3::MbSwitchRomResult_CHECKSUM_NOT_FOUND;
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         fb_ret = v3::MbSwitchRomResult_CHECKSUM_INVALID;
         break;
     }
@@ -1332,10 +1283,10 @@ static bool v3_mb_get_packages_count(int fd, const v3::Request *msg)
 
     if (ret) {
         for (std::shared_ptr<Package> pkg : pkgs.pkgs) {
-            bool is_system = (pkg->pkg_flags & Package::FLAG_SYSTEM)
-                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_SYSTEM);
-            bool is_update = (pkg->pkg_flags & Package::FLAG_UPDATED_SYSTEM_APP)
-                    || (pkg->pkg_public_flags & Package::PUBLIC_FLAG_UPDATED_SYSTEM_APP);
+            bool is_system = (pkg->pkg_flags & Package::Flag::SYSTEM)
+                    || (pkg->pkg_public_flags & Package::PublicFlag::SYSTEM);
+            bool is_update = (pkg->pkg_flags & Package::Flag::UPDATED_SYSTEM_APP)
+                    || (pkg->pkg_public_flags & Package::PublicFlag::UPDATED_SYSTEM_APP);
 
             if (is_update) {
                 ++update_pkgs;
@@ -1483,7 +1434,7 @@ bool connection_version_3(int fd)
 {
     std::string command;
 
-    auto close_all_fds = util::finally([&]{
+    auto close_all_fds = finally([&]{
         // Ensure opened fd's are closed if the connection is lost
         for (auto &p : fd_map) {
             close(p.second);
@@ -1493,7 +1444,7 @@ bool connection_version_3(int fd)
 
     while (1) {
         std::vector<uint8_t> data;
-        if (!util::socket_read_bytes(fd, &data)) {
+        if (!util::socket_read_bytes(fd, data)) {
             return false;
         }
 
@@ -1529,8 +1480,6 @@ bool connection_version_3(int fd)
             return false;
         }
     }
-
-    return true;
 }
 
 }

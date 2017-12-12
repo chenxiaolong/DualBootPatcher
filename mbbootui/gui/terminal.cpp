@@ -35,6 +35,8 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/gui/terminal"
+
 #if 0
 #define debug_printf printf
 #else
@@ -578,7 +580,7 @@ private:
     {
         switch (ch) {
         case 7: // BEL
-            DataManager::Vibrate(TW_BUTTON_VIBRATE);
+            DataManager::Vibrate(VAR_TW_BUTTON_VIBRATE);
             break;
         case 8: // BS
             left();

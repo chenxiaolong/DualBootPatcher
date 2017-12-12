@@ -11,19 +11,27 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system
         file-contexts-tool/regex.c
     )
 
-    set_target_properties(
+    target_compile_options(
         file-contexts-tool
-        PROPERTIES
-        COMPILE_FLAGS "-Wno-pedantic"
-        LINK_FLAGS "-pie"
-        C_STANDARD 11
-        C_STANDARD_REQUIRED 1
-        POSITION_INDEPENDENT_CODE 1
+        PRIVATE
+        -Wno-cast-qual
+        -Wno-conversion
+        $<$<CXX_COMPILER_ID:GNU>:-Wno-duplicated-branches>
+        -Wno-implicit-fallthrough
+        -Wno-pedantic
+        -Wno-sign-conversion
+    )
+
+    target_link_libraries(
+        file-contexts-tool
+        PRIVATE
+        interface.global.CVersion
     )
 
     if (${MBP_BUILD_TARGET} STREQUAL hosttools)
         target_link_libraries(
             file-contexts-tool
+            PRIVATE
             dl
         )
     endif()

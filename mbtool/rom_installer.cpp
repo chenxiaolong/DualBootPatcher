@@ -1,26 +1,27 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "rom_installer.h"
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
@@ -28,18 +29,17 @@
 #include <unistd.h>
 
 #include "mbbootimg/entry.h"
+#include "mbbootimg/header.h"
 #include "mbbootimg/reader.h"
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/archive.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/archive.h"
 #include "mbutil/chown.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
 #include "mbutil/string.h"
@@ -49,21 +49,24 @@
 #include "installer.h"
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/rom_installer"
 
 #define DEBUG_LEAVE_STDIN_OPEN 0
 #define DEBUG_ENABLE_PASSTHROUGH 0
 
-
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
+using namespace mb::bootimg;
 
 namespace mb
 {
+
+using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
 
 class RomInstaller : public Installer
 {
 public:
     RomInstaller(std::string zip_file, std::string rom_id, std::FILE *log_fp,
-                 int flags);
+                 InstallerFlags flags);
 
     virtual void display_msg(const std::string& msg) override;
     virtual void updater_print(const std::string &msg) override;
@@ -92,7 +95,7 @@ private:
 
 
 RomInstaller::RomInstaller(std::string zip_file, std::string rom_id,
-                           std::FILE *log_fp, int flags) :
+                           std::FILE *log_fp, InstallerFlags flags) :
     Installer(zip_file, "/chroot", "/multiboot", 3,
 #if DEBUG_ENABLE_PASSTHROUGH
               STDOUT_FILENO,
@@ -164,8 +167,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
 {
     // /sbin is not going to be populated with anything useful in a normal boot
     // image. We can almost guarantee that a recovery image is going to be
-    // installed though, so we'll open the recovery partition with libmbp and
-    // extract its /sbin with libarchive into the chroot's /sbin.
+    // installed though, so we'll open the recovery partition with libmbpatcher
+    // and extract its /sbin with libarchive into the chroot's /sbin.
 
     std::string block_dev(_recovery_block_dev);
     bool using_boot = false;
@@ -173,8 +176,8 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Check if the device has a combined boot/recovery partition. If the
     // FOTAKernel partition is listed, it will be used instead of the combined
     // ramdisk from the boot image
-    bool combined = mb_device_flags(_device)
-            & FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
+    bool combined = _device.flags()
+            & device::DeviceFlag::HasCombinedBootAndRecovery;
     if (combined && block_dev.empty()) {
         block_dev = _boot_block_dev;
         using_boot = true;
@@ -193,26 +196,26 @@ Installer::ProceedState RomInstaller::on_checked_device()
     // Create fake /etc/fstab file to please installers that read the file
     std::string etc_fstab(in_chroot("/etc/fstab"));
     if (access(etc_fstab.c_str(), R_OK) < 0 && errno == ENOENT) {
-        autoclose::file fp(autoclose::fopen(etc_fstab.c_str(), "w"));
+        ScopedFILE fp(fopen(etc_fstab.c_str(), "w"), fclose);
         if (fp) {
-            auto system_devs = mb_device_system_block_devs(_device);
-            auto cache_devs = mb_device_cache_block_devs(_device);
-            auto data_devs = mb_device_data_block_devs(_device);
+            auto system_devs = _device.system_block_devs();
+            auto cache_devs = _device.cache_block_devs();
+            auto data_devs = _device.data_block_devs();
 
             // Set block device if it's provided and non-empty
-            const char *system_dev =
-                    system_devs && system_devs[0] && system_devs[0][0]
+            std::string system_dev =
+                    !system_devs.empty() && !system_devs[0].empty()
                     ? system_devs[0] : "dummy";
-            const char *cache_dev =
-                    cache_devs && cache_devs[0] && cache_devs[0][0]
+            std::string cache_dev =
+                    !cache_devs.empty() && !cache_devs[0].empty()
                     ? cache_devs[0] : "dummy";
-            const char *data_dev =
-                    data_devs && data_devs[0] && data_devs[0][0]
+            std::string data_dev =
+                    !data_devs.empty() && !data_devs[0].empty()
                     ? data_devs[0] : "dummy";
 
-            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev);
-            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev);
-            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev);
+            fprintf(fp.get(), "%s /system ext4 rw 0 0\n", system_dev.c_str());
+            fprintf(fp.get(), "%s /cache ext4 rw 0 0\n", cache_dev.c_str());
+            fprintf(fp.get(), "%s /data ext4 rw 0 0\n", data_dev.c_str());
         }
     }
 
@@ -282,74 +285,61 @@ void RomInstaller::on_cleanup(Installer::ProceedState ret)
 bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
                                    const std::string &output_dir, bool nested)
 {
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    MbBiHeader *header;
-    MbBiEntry *entry;
-    int ret;
-
-    if (!bir) {
-        LOGE("Failed to allocate reader instance");
-        return false;
-    }
+    Reader reader;
+    Header header;
+    Entry entry;
 
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    auto ret = reader.enable_format_all();
+    if (!ret) {
         LOGE("Failed to enable input boot image formats: %s",
-             mb_bi_reader_error_string(bir.get()));
+             ret.error().message().c_str());
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), boot_image_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = reader.open_filename(boot_image_file);
+    if (!ret) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
-    if (ret != MB_BI_OK) {
+    // Read header
+    ret = reader.read_header(header);
+    if (!ret) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             boot_image_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Go to ramdisk
-    ret = mb_bi_reader_go_to_entry(bir.get(), &entry, MB_BI_ENTRY_RAMDISK);
-    if (ret == MB_BI_EOF) {
-        LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
-        return false;
-    } else if (ret != MB_BI_OK) {
-        LOGE("%s: Failed to find ramdisk entry: %s",
-             boot_image_file.c_str(), mb_bi_reader_error_string(bir.get()));
+    ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
+    if (!ret) {
+        if (ret.error() == ReaderError::EndOfEntries) {
+            LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
+        } else {
+            LOGE("%s: Failed to find ramdisk entry: %s",
+                 boot_image_file.c_str(), ret.error().message().c_str());
+        }
         return false;
     }
 
     {
-        char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
-        if (!tmpfile) {
-            LOGE("Out of memory");
-            return false;
-        }
+        std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-        auto free_temp_file = util::finally([&]{
-            free(tmpfile);
-        });
-
-        int tmpfd = mkstemp(tmpfile);
+        int tmpfd = mkstemp(&tmpfile[0]);
         if (tmpfd < 0) {
             LOGE("Failed to create temporary file: %s", strerror(errno));
             return false;
         }
 
         // We don't need the path
-        unlink(tmpfile);
+        unlink(tmpfile.c_str());
 
-        auto close_fd = util::finally([&]{
+        auto close_fd = finally([&]{
             close(tmpfd);
         });
 
-        return bi_copy_data_to_fd(bir.get(), tmpfd)
+        return bi_copy_data_to_fd(reader, tmpfd)
                 && extract_ramdisk_fd(tmpfd, output_dir, nested);
     }
 }
@@ -357,8 +347,8 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
 bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                                       bool nested)
 {
-    autoclose::archive in(archive_read_new(), archive_read_free);
-    autoclose::archive out(archive_write_disk_new(), archive_write_free);
+    ScopedArchive in(archive_read_new(), archive_read_free);
+    ScopedArchive out(archive_write_disk_new(), archive_write_free);
     archive_entry *entry;
     int ret;
 
@@ -374,7 +364,6 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
     }
 
     archive_read_support_filter_gzip(in.get());
-    archive_read_support_filter_lzop(in.get());
     archive_read_support_filter_lz4(in.get());
     archive_read_support_filter_lzma(in.get());
     archive_read_support_filter_xz(in.get());
@@ -406,17 +395,9 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
 
         if (nested) {
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
-                char *tmpfile = mb_format("%s.XXXXXX", output_dir.c_str());
-                if (!tmpfile) {
-                    LOGE("Out of memory");
-                    return false;
-                }
+                std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-                auto free_temp_file = util::finally([&]{
-                    free(tmpfile);
-                });
-
-                int tmpfd = mkstemp(tmpfile);
+                int tmpfd = mkstemp(&tmpfile[0]);
                 if (tmpfd < 0) {
                     LOGE("Failed to create temporary file: %s",
                          strerror(errno));
@@ -424,9 +405,9 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
                 }
 
                 // We don't need the path
-                unlink(tmpfile);
+                unlink(tmpfile.c_str());
 
-                auto close_fd = util::finally([&]{
+                auto close_fd = finally([&]{
                     close(tmpfd);
                 });
 
@@ -436,7 +417,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
         } else {
             if (strcmp(path, "default.prop") == 0) {
                 path = "default.recovery.prop";
-            } else if (!mb_starts_with(path, "sbin/")) {
+            } else if (!starts_with(path, "sbin/")) {
                 continue;
             }
 
@@ -501,7 +482,7 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string rom_id;
     std::string zip_file;
-    int flags = 0;
+    InstallerFlags flags;
     bool allow_overwrite = false;
 
     int opt;
@@ -535,7 +516,7 @@ int rom_installer_main(int argc, char *argv[])
             return EXIT_SUCCESS;
 
         case OPTION_SKIP_MOUNT:
-            flags |= InstallerFlags::INSTALLER_SKIP_MOUNTING_VOLUMES;
+            flags |= InstallerFlag::SkipMountingVolumes;
             break;
 
         case OPTION_ALLOW_OVERWRITE:
@@ -602,14 +583,14 @@ int rom_installer_main(int argc, char *argv[])
 
     std::string context;
     if (util::selinux_get_process_attr(
-            0, util::SELinuxAttr::CURRENT, &context)
+            0, util::SELinuxAttr::Current, context)
             && context != MB_EXEC_CONTEXT) {
         fprintf(stderr, "WARNING: Not running under %s context\n",
                 MB_EXEC_CONTEXT);
     }
 
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_INSTALLER, "wb"));
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_INSTALLER, "wb"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open %s: %s\n",
                 MULTIBOOT_LOG_INSTALLER, strerror(errno));
@@ -628,7 +609,7 @@ int rom_installer_main(int argc, char *argv[])
 #endif
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), false));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     // Start installing!
     RomInstaller ri(zip_file, rom_id, fp.get(), flags);

@@ -30,6 +30,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <sys/mman.h>
 #include <sys/poll.h>
 #include <sys/select.h>
@@ -50,6 +51,8 @@
 #include "mbutil/file.h"
 
 #include "property_service.h"
+
+#define LOG_TAG "mbtool/external/property_service"
 
 #define ALLOW_LOCAL_PROP_OVERRIDE 1
 
@@ -116,7 +119,7 @@ uint32_t property_set(const std::string& name, const std::string& value) {
     prop_info* pi = (prop_info*) mb__system_property_find(name.c_str());
     if (pi != nullptr) {
         // ro.* properties are actually "write-once".
-        if (mb_starts_with(name.c_str(), "ro.")) {
+        if (mb::starts_with(name, "ro.")) {
             LOGE("property_set(\"%s\", \"%s\") failed: property already set",
                  name.c_str(), value.c_str());
             return PROP_ERROR_READ_ONLY_PROPERTY;
@@ -268,7 +271,7 @@ static void handle_property_set(SocketConnection& socket,
     return;
   }
 
-  if (mb_starts_with(name.c_str(), "ctl.")) {
+  if (mb::starts_with(name, "ctl.")) {
     LOGV("Ignoring control message: %s=%s", name.c_str(), value.c_str());
     if (!legacy_protocol) {
       socket.SendUint32(PROP_SUCCESS);
@@ -414,7 +417,7 @@ static void load_properties_from_file(const char* filename, const char* filter) 
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
     std::vector<unsigned char> data;
-    if (!mb::util::file_read_all(filename, &data)) {
+    if (!mb::util::file_read_all(filename, data)) {
         LOGW("Couldn't load properties from %s", filename);
         return;
     }

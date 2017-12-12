@@ -1,6 +1,3 @@
-include_directories(${MBP_LIBPIXELFLINGER_INCLUDES})
-include_directories(${CMAKE_SOURCE_DIR}/external/flatbuffers/include)
-
 add_library(
     mbbootui-gui
     STATIC
@@ -34,12 +31,11 @@ add_library(
     twmsg.cpp
 )
 
-set_target_properties(
+target_include_directories(
     mbbootui-gui
-    PROPERTIES
-    CXX_STANDARD 11
-    CXX_STANDARD_REQUIRED 1
-    POSITION_INDEPENDENT_CODE 1
+    PRIVATE
+    ..
+    ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
 )
 
 target_compile_options(
@@ -70,9 +66,12 @@ set_source_files_properties(
 
 target_link_libraries(
     mbbootui-gui
+    PRIVATE
+    interface.global.CXXVersion
     mbbootui-minui
     mbbootui-minzip
-    ${MBP_LIBPIXELFLINGER_LIBRARIES}
-    ${MBP_LIBUTILS_LIBRARIES}
-    ${MBP_LIBCUTILS_LIBRARIES}
+    mbdevice-static
+    mblog-static
+    mbutil-static
+    AndroidSystemCore::Cutils
 )

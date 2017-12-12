@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbbootimg/format/sony_elf_writer_p.h"
@@ -31,7 +31,7 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/string.h"
+#include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/sony_elf_defs.h"
@@ -39,407 +39,334 @@
 #include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-#define SONY_ELF_ENTRY_CMDLINE              (-1)
-
-
-MB_BEGIN_C_DECLS
-
-int sony_elf_writer_get_header(MbBiWriter *biw, void *userdata,
-                               MbBiHeader *header)
+namespace mb
 {
-    (void) biw;
-    (void) userdata;
+namespace bootimg
+{
+namespace sonyelf
+{
 
-    mb_bi_header_set_supported_fields(header, SONY_ELF_SUPPORTED_FIELDS);
+constexpr int SONY_ELF_ENTRY_CMDLINE = -1;
 
-    return MB_BI_OK;
+SonyElfFormatWriter::SonyElfFormatWriter(Writer &writer)
+    : FormatWriter(writer)
+    , m_hdr()
+    , m_hdr_kernel()
+    , m_hdr_ramdisk()
+    , m_hdr_cmdline()
+    , m_hdr_ipl()
+    , m_hdr_rpm()
+    , m_hdr_appsbl()
+{
 }
 
-int sony_elf_writer_write_header(MbBiWriter *biw, void *userdata,
-                                 MbBiHeader *header)
+SonyElfFormatWriter::~SonyElfFormatWriter() = default;
+
+int SonyElfFormatWriter::type()
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    int ret;
-
-    free(ctx->cmdline);
-    ctx->cmdline = nullptr;
-    ctx->cmdline_size = 0;
-
-    memset(&ctx->hdr, 0, sizeof(ctx->hdr));
-    memset(&ctx->hdr_kernel, 0, sizeof(ctx->hdr_kernel));
-    memset(&ctx->hdr_ramdisk, 0, sizeof(ctx->hdr_ramdisk));
-    memset(&ctx->hdr_cmdline, 0, sizeof(ctx->hdr_cmdline));
-    memset(&ctx->hdr_ipl, 0, sizeof(ctx->hdr_ipl));
-    memset(&ctx->hdr_rpm, 0, sizeof(ctx->hdr_rpm));
-    memset(&ctx->hdr_appsbl, 0, sizeof(ctx->hdr_appsbl));
-
-    // Construct ELF header
-    memcpy(&ctx->hdr.e_ident, SONY_E_IDENT, SONY_EI_NIDENT);
-    ctx->hdr.e_type = 2;
-    ctx->hdr.e_machine = 40;
-    ctx->hdr.e_version = 1;
-    ctx->hdr.e_phoff = 52;
-    ctx->hdr.e_shoff = 0;
-    ctx->hdr.e_flags = 0;
-    ctx->hdr.e_ehsize = sizeof(Sony_Elf32_Ehdr);
-    ctx->hdr.e_phentsize = sizeof(Sony_Elf32_Phdr);
-    ctx->hdr.e_shentsize = 0;
-    ctx->hdr.e_shnum = 0;
-    ctx->hdr.e_shstrndx = 0;
-
-    if (mb_bi_header_entrypoint_address_is_set(header)) {
-        ctx->hdr.e_entry = mb_bi_header_entrypoint_address(header);
-    } else if (mb_bi_header_kernel_address_is_set(header)) {
-        ctx->hdr.e_entry = mb_bi_header_kernel_address(header);
-    }
-
-    // Construct kernel program header
-    ctx->hdr_kernel.p_type = SONY_E_TYPE_KERNEL;
-    ctx->hdr_kernel.p_flags = SONY_E_FLAGS_KERNEL;
-    ctx->hdr_kernel.p_align = 0;
-
-    if (mb_bi_header_kernel_address_is_set(header)) {
-        ctx->hdr_kernel.p_vaddr = mb_bi_header_kernel_address(header);
-        ctx->hdr_kernel.p_paddr = mb_bi_header_kernel_address(header);
-    }
-
-    // Construct ramdisk program header
-    ctx->hdr_ramdisk.p_type = SONY_E_TYPE_RAMDISK;
-    ctx->hdr_ramdisk.p_flags = SONY_E_FLAGS_RAMDISK;
-    ctx->hdr_ramdisk.p_align = 0;
-
-    if (mb_bi_header_ramdisk_address_is_set(header)) {
-        ctx->hdr_ramdisk.p_vaddr = mb_bi_header_ramdisk_address(header);
-        ctx->hdr_ramdisk.p_paddr = mb_bi_header_ramdisk_address(header);
-    }
-
-    // Construct cmdline program header
-    ctx->hdr_cmdline.p_type = SONY_E_TYPE_CMDLINE;
-    ctx->hdr_cmdline.p_vaddr = 0;
-    ctx->hdr_cmdline.p_paddr = 0;
-    ctx->hdr_cmdline.p_flags = SONY_E_FLAGS_CMDLINE;
-    ctx->hdr_cmdline.p_align = 0;
-
-    const char *cmdline = mb_bi_header_kernel_cmdline(header);
-    if (cmdline) {
-        char *dup = strdup(cmdline);
-
-        if (!dup) {
-            mb_bi_writer_set_error(biw, MB_BI_ERROR_INTERNAL_ERROR,
-                                   "Out of memory");
-            return MB_BI_FAILED;
-        }
-
-        ctx->cmdline = dup;
-        ctx->cmdline_size = strlen(dup);
-    }
-
-    // Construct IPL program header
-    ctx->hdr_ipl.p_type = SONY_E_TYPE_IPL;
-    ctx->hdr_ipl.p_flags = SONY_E_FLAGS_IPL;
-    ctx->hdr_ipl.p_align = 0;
-
-    if (mb_bi_header_sony_ipl_address_is_set(header)) {
-        ctx->hdr_ipl.p_vaddr = mb_bi_header_sony_ipl_address(header);
-        ctx->hdr_ipl.p_paddr = mb_bi_header_sony_ipl_address(header);
-    }
-
-    // Construct RPM program header
-    ctx->hdr_rpm.p_type = SONY_E_TYPE_RPM;
-    ctx->hdr_rpm.p_flags = SONY_E_FLAGS_RPM;
-    ctx->hdr_rpm.p_align = 0;
-
-    if (mb_bi_header_sony_rpm_address_is_set(header)) {
-        ctx->hdr_rpm.p_vaddr = mb_bi_header_sony_rpm_address(header);
-        ctx->hdr_rpm.p_paddr = mb_bi_header_sony_rpm_address(header);
-    }
-
-    // Construct APPSBL program header
-    ctx->hdr_appsbl.p_type = SONY_E_TYPE_APPSBL;
-    ctx->hdr_appsbl.p_flags = SONY_E_FLAGS_APPSBL;
-    ctx->hdr_appsbl.p_align = 0;
-
-    if (mb_bi_header_sony_appsbl_address_is_set(header)) {
-        ctx->hdr_appsbl.p_vaddr = mb_bi_header_sony_appsbl_address(header);
-        ctx->hdr_appsbl.p_paddr = mb_bi_header_sony_appsbl_address(header);
-    }
-
-    // Clear existing entries (none should exist unless this function fails and
-    // the user reattempts to call it)
-    _segment_writer_entries_clear(&ctx->segctx);
-
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_KERNEL,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_RAMDISK,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = _segment_writer_entries_add(&ctx->segctx, SONY_ELF_ENTRY_CMDLINE,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_IPL,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_RPM,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    ret = _segment_writer_entries_add(&ctx->segctx, MB_BI_ENTRY_SONY_APPSBL,
-                                      0, false, 0, biw);
-    if (ret != MB_BI_OK) return ret;
-
-    // Start writing at offset 4096
-    ret = mb_file_seek(biw->file, 4096, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
-        mb_bi_writer_set_error(biw, mb_file_error(biw->file),
-                               "Failed to seek to first page: %s",
-                               mb_file_error_string(biw->file));
-        return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-    }
-
-    return MB_BI_OK;
+    return FORMAT_SONY_ELF;
 }
 
-int sony_elf_writer_get_entry(MbBiWriter *biw, void *userdata,
-                              MbBiEntry *entry)
+std::string SonyElfFormatWriter::name()
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
-    int ret;
-
-    ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
-    if (ret != MB_BI_OK) {
-        return ret;
-    }
-
-    swentry = _segment_writer_entry(&ctx->segctx);
-
-    // Silently handle cmdline entry
-    if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
-        size_t n;
-
-        mb_bi_entry_clear(entry);
-
-        ret = mb_bi_entry_set_size(entry, ctx->cmdline_size);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
-
-        ret = sony_elf_writer_write_entry(biw, userdata, entry);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
-
-        ret = sony_elf_writer_write_data(biw, userdata, ctx->cmdline,
-                                         ctx->cmdline_size, &n);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
-
-        ret = sony_elf_writer_finish_entry(biw, userdata);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
-
-        ret = _segment_writer_get_entry(&ctx->segctx, biw->file, entry, biw);
-        if (ret != MB_BI_OK) return MB_BI_FATAL;
-    }
-
-    return MB_BI_OK;
+    return FORMAT_NAME_SONY_ELF;
 }
 
-int sony_elf_writer_write_entry(MbBiWriter *biw, void *userdata,
-                                MbBiEntry *entry)
+oc::result<void> SonyElfFormatWriter::open(File &file)
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
+    (void) file;
 
-    return _segment_writer_write_entry(&ctx->segctx, biw->file, entry, biw);
+    m_seg = SegmentWriter();
+
+    return oc::success();
 }
 
-int sony_elf_writer_write_data(MbBiWriter *biw, void *userdata,
-                               const void *buf, size_t buf_size,
-                               size_t *bytes_written)
+oc::result<void> SonyElfFormatWriter::close(File &file)
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
+    auto reset_state = finally([&] {
+        m_hdr = {};
+        m_hdr_kernel = {};
+        m_hdr_ramdisk = {};
+        m_hdr_cmdline = {};
+        m_hdr_ipl = {};
+        m_hdr_rpm = {};
+        m_hdr_appsbl = {};
+        m_cmdline.clear();
+        m_seg = {};
+    });
 
-    return _segment_writer_write_data(&ctx->segctx, biw->file, buf, buf_size,
-                                      bytes_written, biw);
-}
+    if (m_writer.is_open()) {
+        auto swentry = m_seg->entry();
 
-int sony_elf_writer_finish_entry(MbBiWriter *biw, void *userdata)
-{
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
-    int ret;
+        // If successful, finish up the boot image
+        if (swentry == m_seg->entries().end()) {
+            // Write headers
+            struct {
+                const void *ptr;
+                size_t size;
+                bool can_write;
+            } headers[] = {
+                { &m_hdr, sizeof(m_hdr), true },
+                { &m_hdr_kernel, sizeof(m_hdr_kernel), m_hdr_kernel.p_filesz > 0 },
+                { &m_hdr_ramdisk, sizeof(m_hdr_ramdisk), m_hdr_ramdisk.p_filesz > 0 },
+                { &m_hdr_cmdline, sizeof(m_hdr_cmdline), m_hdr_cmdline.p_filesz > 0 },
+                { &m_hdr_ipl, sizeof(m_hdr_ipl), m_hdr_ipl.p_filesz > 0 },
+                { &m_hdr_rpm, sizeof(m_hdr_rpm), m_hdr_rpm.p_filesz > 0 },
+                { &m_hdr_appsbl, sizeof(m_hdr_appsbl), m_hdr_appsbl.p_filesz > 0 },
+            };
 
-    ret = _segment_writer_finish_entry(&ctx->segctx, biw->file, biw);
-    if (ret != MB_BI_OK) {
-        return ret;
-    }
+            sony_elf_fix_ehdr_byte_order(m_hdr);
+            sony_elf_fix_phdr_byte_order(m_hdr_kernel);
+            sony_elf_fix_phdr_byte_order(m_hdr_ramdisk);
+            sony_elf_fix_phdr_byte_order(m_hdr_cmdline);
+            sony_elf_fix_phdr_byte_order(m_hdr_ipl);
+            sony_elf_fix_phdr_byte_order(m_hdr_rpm);
+            sony_elf_fix_phdr_byte_order(m_hdr_appsbl);
 
-    swentry = _segment_writer_entry(&ctx->segctx);
+            // Seek back to beginning to write headers
+            auto seek_ret = file.seek(0, SEEK_SET);
+            if (!seek_ret) {
+                if (file.is_fatal()) { m_writer.set_fatal(); }
+                return seek_ret.as_failure();
+            }
 
-    switch (swentry->type) {
-    case MB_BI_ENTRY_KERNEL:
-        ctx->hdr_kernel.p_offset = swentry->offset;
-        ctx->hdr_kernel.p_filesz = swentry->size;
-        ctx->hdr_kernel.p_memsz = swentry->size;
-        break;
-    case MB_BI_ENTRY_RAMDISK:
-        ctx->hdr_ramdisk.p_offset = swentry->offset;
-        ctx->hdr_ramdisk.p_filesz = swentry->size;
-        ctx->hdr_ramdisk.p_memsz = swentry->size;
-        break;
-    case MB_BI_ENTRY_SONY_IPL:
-        ctx->hdr_ipl.p_offset = swentry->offset;
-        ctx->hdr_ipl.p_filesz = swentry->size;
-        ctx->hdr_ipl.p_memsz = swentry->size;
-        break;
-    case MB_BI_ENTRY_SONY_RPM:
-        ctx->hdr_rpm.p_offset = swentry->offset;
-        ctx->hdr_rpm.p_filesz = swentry->size;
-        ctx->hdr_rpm.p_memsz = swentry->size;
-        break;
-    case MB_BI_ENTRY_SONY_APPSBL:
-        ctx->hdr_appsbl.p_offset = swentry->offset;
-        ctx->hdr_appsbl.p_filesz = swentry->size;
-        ctx->hdr_appsbl.p_memsz = swentry->size;
-        break;
-    case SONY_ELF_ENTRY_CMDLINE:
-        ctx->hdr_cmdline.p_offset = swentry->offset;
-        ctx->hdr_cmdline.p_filesz = swentry->size;
-        ctx->hdr_cmdline.p_memsz = swentry->size;
-        break;
-    }
-
-    if (swentry->size > 0) {
-        ++ctx->hdr.e_phnum;
-    }
-
-    return MB_BI_OK;
-}
-
-int sony_elf_writer_close(MbBiWriter *biw, void *userdata)
-{
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    SegmentWriterEntry *swentry;
-    int ret;
-    size_t n;
-
-    if (!ctx->have_file_size) {
-        ret = mb_file_seek(biw->file, 0, SEEK_CUR, &ctx->file_size);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
-                                   "Failed to get file offset: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-        }
-
-        ctx->have_file_size = true;
-    }
-
-    swentry = _segment_writer_entry(&ctx->segctx);
-
-    // If successful, finish up the boot image
-    if (!swentry) {
-        // Write headers
-        Sony_Elf32_Ehdr hdr = ctx->hdr;
-        Sony_Elf32_Phdr hdr_kernel = ctx->hdr_kernel;
-        Sony_Elf32_Phdr hdr_ramdisk = ctx->hdr_ramdisk;
-        Sony_Elf32_Phdr hdr_cmdline = ctx->hdr_cmdline;
-        Sony_Elf32_Phdr hdr_ipl = ctx->hdr_ipl;
-        Sony_Elf32_Phdr hdr_rpm = ctx->hdr_rpm;
-        Sony_Elf32_Phdr hdr_appsbl = ctx->hdr_appsbl;
-
-        struct {
-            const void *ptr;
-            size_t size;
-            bool can_write;
-        } headers[] = {
-            { &hdr, sizeof(hdr), true },
-            { &hdr_kernel, sizeof(hdr_kernel), hdr_kernel.p_filesz > 0 },
-            { &hdr_ramdisk, sizeof(hdr_ramdisk), hdr_ramdisk.p_filesz > 0 },
-            { &hdr_cmdline, sizeof(hdr_cmdline), hdr_cmdline.p_filesz > 0 },
-            { &hdr_ipl, sizeof(hdr_ipl), hdr_ipl.p_filesz > 0 },
-            { &hdr_rpm, sizeof(hdr_rpm), hdr_rpm.p_filesz > 0 },
-            { &hdr_appsbl, sizeof(hdr_appsbl), hdr_appsbl.p_filesz > 0 },
-            { nullptr, 0, false },
-        };
-
-        sony_elf_fix_ehdr_byte_order(&hdr);
-        sony_elf_fix_phdr_byte_order(&hdr_kernel);
-        sony_elf_fix_phdr_byte_order(&hdr_ramdisk);
-        sony_elf_fix_phdr_byte_order(&hdr_cmdline);
-        sony_elf_fix_phdr_byte_order(&hdr_ipl);
-        sony_elf_fix_phdr_byte_order(&hdr_rpm);
-        sony_elf_fix_phdr_byte_order(&hdr_appsbl);
-
-        // Seek back to beginning to write headers
-        ret = mb_file_seek(biw->file, 0, SEEK_SET, nullptr);
-        if (ret != MB_FILE_OK) {
-            mb_bi_writer_set_error(biw, mb_file_error(biw->file),
-                                   "Failed to seek to beginning: %s",
-                                   mb_file_error_string(biw->file));
-            return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
-        }
-
-        // Write headers
-        for (auto it = headers; it->ptr && it->can_write; ++it) {
-            ret = mb_file_write_fully(biw->file, it->ptr, it->size, &n);
-            if (ret != MB_FILE_OK || n != it->size) {
-                mb_bi_writer_set_error(biw, mb_file_error(biw->file),
-                                       "Failed to write header: %s",
-                                       mb_file_error_string(biw->file));
-                return ret == MB_FILE_FATAL ? MB_BI_FATAL : MB_BI_FAILED;
+            // Write headers
+            for (auto const &header : headers) {
+                if (header.can_write) {
+                    auto ret = file_write_exact(file, header.ptr, header.size);
+                    if (!ret) {
+                        if (file.is_fatal()) { m_writer.set_fatal(); }
+                        return ret.as_failure();
+                    }
+                }
             }
         }
     }
 
-    return MB_BI_OK;
+    return oc::success();
 }
 
-int sony_elf_writer_free(MbBiWriter *bir, void *userdata)
+oc::result<void> SonyElfFormatWriter::get_header(File &file, Header &header)
 {
-    (void) bir;
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(userdata);
-    _segment_writer_deinit(&ctx->segctx);
-    free(ctx->cmdline);
-    free(ctx);
-    return MB_BI_OK;
+    (void) file;
+
+    header.set_supported_fields(SUPPORTED_FIELDS);
+
+    return oc::success();
+}
+
+oc::result<void> SonyElfFormatWriter::write_header(File &file,
+                                                   const Header &header)
+{
+    m_cmdline.clear();
+
+    m_hdr = {};
+    m_hdr_kernel = {};
+    m_hdr_ramdisk = {};
+    m_hdr_cmdline = {};
+    m_hdr_ipl = {};
+    m_hdr_rpm = {};
+    m_hdr_appsbl = {};
+
+    // Construct ELF header
+    memcpy(&m_hdr.e_ident, SONY_E_IDENT, SONY_EI_NIDENT);
+    m_hdr.e_type = 2;
+    m_hdr.e_machine = 40;
+    m_hdr.e_version = 1;
+    m_hdr.e_phoff = 52;
+    m_hdr.e_shoff = 0;
+    m_hdr.e_flags = 0;
+    m_hdr.e_ehsize = sizeof(Sony_Elf32_Ehdr);
+    m_hdr.e_phentsize = sizeof(Sony_Elf32_Phdr);
+    m_hdr.e_shentsize = 0;
+    m_hdr.e_shnum = 0;
+    m_hdr.e_shstrndx = 0;
+
+    if (auto entrypoint_address = header.entrypoint_address()) {
+        m_hdr.e_entry = *entrypoint_address;
+    } else if (auto kernel_address = header.kernel_address()) {
+        m_hdr.e_entry = *kernel_address;
+    }
+
+    // Construct kernel program header
+    m_hdr_kernel.p_type = SONY_E_TYPE_KERNEL;
+    m_hdr_kernel.p_flags = SONY_E_FLAGS_KERNEL;
+    m_hdr_kernel.p_align = 0;
+
+    if (auto address = header.kernel_address()) {
+        m_hdr_kernel.p_vaddr = *address;
+        m_hdr_kernel.p_paddr = *address;
+    }
+
+    // Construct ramdisk program header
+    m_hdr_ramdisk.p_type = SONY_E_TYPE_RAMDISK;
+    m_hdr_ramdisk.p_flags = SONY_E_FLAGS_RAMDISK;
+    m_hdr_ramdisk.p_align = 0;
+
+    if (auto address = header.ramdisk_address()) {
+        m_hdr_ramdisk.p_vaddr = *address;
+        m_hdr_ramdisk.p_paddr = *address;
+    }
+
+    // Construct cmdline program header
+    m_hdr_cmdline.p_type = SONY_E_TYPE_CMDLINE;
+    m_hdr_cmdline.p_vaddr = 0;
+    m_hdr_cmdline.p_paddr = 0;
+    m_hdr_cmdline.p_flags = SONY_E_FLAGS_CMDLINE;
+    m_hdr_cmdline.p_align = 0;
+
+    if (auto cmdline = header.kernel_cmdline()) {
+        m_cmdline = *cmdline;
+    }
+
+    // Construct IPL program header
+    m_hdr_ipl.p_type = SONY_E_TYPE_IPL;
+    m_hdr_ipl.p_flags = SONY_E_FLAGS_IPL;
+    m_hdr_ipl.p_align = 0;
+
+    if (auto address = header.sony_ipl_address()) {
+        m_hdr_ipl.p_vaddr = *address;
+        m_hdr_ipl.p_paddr = *address;
+    }
+
+    // Construct RPM program header
+    m_hdr_rpm.p_type = SONY_E_TYPE_RPM;
+    m_hdr_rpm.p_flags = SONY_E_FLAGS_RPM;
+    m_hdr_rpm.p_align = 0;
+
+    if (auto address = header.sony_rpm_address()) {
+        m_hdr_rpm.p_vaddr = *address;
+        m_hdr_rpm.p_paddr = *address;
+    }
+
+    // Construct APPSBL program header
+    m_hdr_appsbl.p_type = SONY_E_TYPE_APPSBL;
+    m_hdr_appsbl.p_flags = SONY_E_FLAGS_APPSBL;
+    m_hdr_appsbl.p_align = 0;
+
+    if (auto address = header.sony_appsbl_address()) {
+        m_hdr_appsbl.p_vaddr = *address;
+        m_hdr_appsbl.p_paddr = *address;
+    }
+
+    std::vector<SegmentWriterEntry> entries;
+
+    entries.push_back({ ENTRY_TYPE_KERNEL, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_RAMDISK, 0, {}, 0 });
+    entries.push_back({ SONY_ELF_ENTRY_CMDLINE, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_IPL, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_RPM, 0, {}, 0 });
+    entries.push_back({ ENTRY_TYPE_SONY_APPSBL, 0, {}, 0 });
+
+    OUTCOME_TRYV(m_seg->set_entries(std::move(entries)));
+
+    // Start writing at offset 4096
+    auto seek_ret = file.seek(4096, SEEK_SET);
+    if (!seek_ret) {
+        if (file.is_fatal()) { m_writer.set_fatal(); }
+        return seek_ret.as_failure();
+    }
+
+    return oc::success();
+}
+
+oc::result<void> SonyElfFormatWriter::get_entry(File &file, Entry &entry)
+{
+    OUTCOME_TRYV(m_seg->get_entry(file, entry, m_writer));
+
+    auto swentry = m_seg->entry();
+
+    // Silently handle cmdline entry
+    if (swentry->type == SONY_ELF_ENTRY_CMDLINE) {
+        entry.clear();
+
+        entry.set_size(m_cmdline.size());
+
+        auto set_as_fatal = finally([&] {
+            m_writer.set_fatal();
+        });
+
+        OUTCOME_TRYV(write_entry(file, entry));
+        OUTCOME_TRYV(write_data(file, m_cmdline.data(), m_cmdline.size()));
+        OUTCOME_TRYV(finish_entry(file));
+        OUTCOME_TRYV(get_entry(file, entry));
+
+        set_as_fatal.dismiss();
+    }
+
+    return oc::success();
+}
+
+oc::result<void> SonyElfFormatWriter::write_entry(File &file,
+                                                  const Entry &entry)
+{
+    return m_seg->write_entry(file, entry, m_writer);
+}
+
+oc::result<size_t> SonyElfFormatWriter::write_data(File &file, const void *buf,
+                                                   size_t buf_size)
+{
+    return m_seg->write_data(file, buf, buf_size, m_writer);
+}
+
+oc::result<void> SonyElfFormatWriter::finish_entry(File &file)
+{
+    OUTCOME_TRYV(m_seg->finish_entry(file, m_writer));
+
+    auto swentry = m_seg->entry();
+
+    switch (swentry->type) {
+    case ENTRY_TYPE_KERNEL:
+        m_hdr_kernel.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_kernel.p_filesz = *swentry->size;
+        m_hdr_kernel.p_memsz = *swentry->size;
+        break;
+    case ENTRY_TYPE_RAMDISK:
+        m_hdr_ramdisk.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_ramdisk.p_filesz = *swentry->size;
+        m_hdr_ramdisk.p_memsz = *swentry->size;
+        break;
+    case ENTRY_TYPE_SONY_IPL:
+        m_hdr_ipl.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_ipl.p_filesz = *swentry->size;
+        m_hdr_ipl.p_memsz = *swentry->size;
+        break;
+    case ENTRY_TYPE_SONY_RPM:
+        m_hdr_rpm.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_rpm.p_filesz = *swentry->size;
+        m_hdr_rpm.p_memsz = *swentry->size;
+        break;
+    case ENTRY_TYPE_SONY_APPSBL:
+        m_hdr_appsbl.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_appsbl.p_filesz = *swentry->size;
+        m_hdr_appsbl.p_memsz = *swentry->size;
+        break;
+    case SONY_ELF_ENTRY_CMDLINE:
+        m_hdr_cmdline.p_offset = static_cast<Elf32_Off>(swentry->offset);
+        m_hdr_cmdline.p_filesz = *swentry->size;
+        m_hdr_cmdline.p_memsz = *swentry->size;
+        break;
+    }
+
+    if (*swentry->size > 0) {
+        ++m_hdr.e_phnum;
+    }
+
+    return oc::success();
+}
+
 }
 
 /*!
  * \brief Set Sony ELF boot image output format
  *
- * \param biw MbBiWriter
- *
- * \return
- *   * #MB_BI_OK if the format is successfully enabled
- *   * #MB_BI_WARN if the format is already enabled
- *   * \<= #MB_BI_FAILED if an error occurs
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-int mb_bi_writer_set_format_sony_elf(MbBiWriter *biw)
+oc::result<void> Writer::set_format_sony_elf()
 {
-    SonyElfWriterCtx *const ctx = static_cast<SonyElfWriterCtx *>(
-            calloc(1, sizeof(SonyElfWriterCtx)));
-    if (!ctx) {
-        mb_bi_writer_set_error(biw, -errno,
-                               "Failed to allocate SonyElfWriterCtx: %s",
-                               strerror(errno));
-        return MB_BI_FAILED;
-    }
-
-    _segment_writer_init(&ctx->segctx);
-
-    return _mb_bi_writer_register_format(biw,
-                                         ctx,
-                                         MB_BI_FORMAT_SONY_ELF,
-                                         MB_BI_FORMAT_NAME_SONY_ELF,
-                                         nullptr,
-                                         &sony_elf_writer_get_header,
-                                         &sony_elf_writer_write_header,
-                                         &sony_elf_writer_get_entry,
-                                         &sony_elf_writer_write_entry,
-                                         &sony_elf_writer_write_data,
-                                         &sony_elf_writer_finish_entry,
-                                         &sony_elf_writer_close,
-                                         &sony_elf_writer_free);
+    return register_format(
+            std::make_unique<sonyelf::SonyElfFormatWriter>(*this));
 }
 
-MB_END_C_DECLS
+}
+}

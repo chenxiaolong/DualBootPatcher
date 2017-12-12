@@ -1,25 +1,31 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <cstddef>
+
+#include "mbcommon/optional.h"
 
 namespace mb
 {
@@ -65,13 +71,13 @@ struct CommandCtxPriv;
 struct CommandCtx
 {
     /*! Path to executable */
-    const char *path = nullptr;
+    std::string path;
     /*! Argument list */
-    const char * const *argv = nullptr;
+    std::vector<std::string> argv;
     /*! Environment variable list */
-    const char * const *envp = nullptr;
+    optional<std::vector<std::string>> envp;
     /*! Directory to chroot before execution */
-    const char *chroot_dir = nullptr;
+    std::string chroot_dir;
     /*! Whether to redirect stdio fds */
     bool redirect_stdio = false;
 
@@ -82,22 +88,19 @@ struct CommandCtx
 
     // Private variables
 
-    CommandCtxPriv *_priv = nullptr;
+    std::unique_ptr<CommandCtxPriv> _priv;
 };
 
-bool command_start(struct CommandCtx *ctx);
-int command_wait(struct CommandCtx *ctx);
+bool command_start(CommandCtx &ctx);
+int command_wait(CommandCtx &ctx);
 
-bool command_raw_reader(struct CommandCtx *ctx, CmdRawCb cb, void *userdata);
-bool command_line_reader(struct CommandCtx *ctx, CmdLineCb cb, void *userdata);
+bool command_raw_reader(CommandCtx &ctx, CmdRawCb cb, void *userdata);
+bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata);
 
-void command_line_reader(const char *data, size_t size, bool error,
-                         void *userdata);
-
-int run_command(const char *path,
-                const char * const *argv,
-                const char * const *envp,
-                const char *chroot_dir,
+int run_command(const std::string &path,
+                const std::vector<std::string> &argv,
+                const optional<std::vector<std::string>> &envp,
+                const std::string &chroot_dir,
                 CmdLineCb cb,
                 void *userdata);
 

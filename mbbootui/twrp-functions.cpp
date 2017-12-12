@@ -40,11 +40,13 @@
 #include "data.hpp"
 #include "variables.h"
 
+#define LOG_TAG "mbbootui/twrp-functions"
+
 std::string TWFunc::get_resource_path(const std::string &res_path)
 {
     std::string result;
 
-    if (tw_resource_path) {
+    if (!tw_resource_path.empty()) {
         result += tw_resource_path;
         if (!result.empty() && result.back() != '/') {
             result += '/';
@@ -79,7 +81,7 @@ static bool convertToUint64(const char *str, uint64_t *out)
 
 void TWFunc::Fixup_Time_On_Boot()
 {
-    if (tw_flags & TW_FLAG_QCOM_RTC_FIX) {
+    if (tw_device.tw_flags() & mb::device::TwFlag::QcomRtcFix) {
         LOGI("TWFunc::Fixup_Time: Pre-fix date and time: %s",
              current_date_time().c_str());
 
@@ -88,7 +90,7 @@ void TWFunc::Fixup_Time_On_Boot()
         std::string offset_str;
         std::string sepoch = "/sys/class/rtc/rtc0/since_epoch";
 
-        if (mb::util::file_first_line(sepoch, &offset_str)
+        if (mb::util::file_first_line(sepoch, offset_str)
                 && convertToUint64(offset_str.c_str(), &offset)) {
             LOGI("TWFunc::Fixup_Time: Setting time offset from file %s", sepoch.c_str());
 
@@ -195,10 +197,10 @@ int TWFunc::Set_Brightness(std::string brightness_value)
     int result = -1;
     std::string secondary_brightness_file;
 
-    if (DataManager::GetIntValue(TW_HAS_BRIGHTNESS_FILE)) {
+    if (DataManager::GetIntValue(VAR_TW_HAS_BRIGHTNESS_FILE)) {
         LOGI("Setting brightness control to %s", brightness_value.c_str());
         result = mb::util::file_write_data(
-                DataManager::GetStrValue(TW_BRIGHTNESS_FILE),
+                DataManager::GetStrValue(VAR_TW_BRIGHTNESS_FILE),
                 brightness_value.data(), brightness_value.size())
                 ? 0 : -1;
         if (!secondary_brightness_file.empty()) {

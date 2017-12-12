@@ -381,10 +381,10 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     private void hideFragments(boolean animate) {
         FragmentManager fm = getFragmentManager();
 
-        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.TAG);
-        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
-        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
-        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
+        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.FRAGMENT_TAG);
+        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.FRAGMENT_TAG);
+        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.FRAGMENT_TAG);
+        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.FRAGMENT_TAG);
 
         FragmentTransaction ft = fm.beginTransaction();
 
@@ -412,10 +412,10 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     private void showFragment() {
         FragmentManager fm = getFragmentManager();
 
-        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.TAG);
-        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.TAG);
-        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.TAG);
-        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.TAG);
+        Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.FRAGMENT_TAG);
+        Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.FRAGMENT_TAG);
+        Fragment prevFreeSpace = fm.findFragmentByTag(FreeSpaceFragment.FRAGMENT_TAG);
+        Fragment prevAbout = fm.findFragmentByTag(AboutFragment.FRAGMENT_TAG);
 
         FragmentTransaction ft = fm.beginTransaction();
         ft.setCustomAnimations(R.animator.fragment_in, 0);
@@ -428,7 +428,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             if (prevRoms == null) {
                 Fragment f = SwitcherListFragment.newInstance();
                 ft.add(R.id.content_frame, f,
-                        SwitcherListFragment.TAG);
+                        SwitcherListFragment.FRAGMENT_TAG);
             } else {
                 ft.show(prevRoms);
             }
@@ -441,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
             if (prevPatchFile == null) {
                 Fragment f = PatchFileFragment.newInstance();
-                ft.add(R.id.content_frame, f, PatchFileFragment.TAG);
+                ft.add(R.id.content_frame, f, PatchFileFragment.FRAGMENT_TAG);
             } else {
                 ft.show(prevPatchFile);
             }
@@ -454,7 +454,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
             if (prevFreeSpace == null) {
                 Fragment f = FreeSpaceFragment.newInstance();
-                ft.add(R.id.content_frame, f, FreeSpaceFragment.TAG);
+                ft.add(R.id.content_frame, f, FreeSpaceFragment.FRAGMENT_TAG);
             } else {
                 ft.show(prevFreeSpace);
             }
@@ -467,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
 
             if (prevAbout == null) {
                 Fragment f = AboutFragment.newInstance();
-                ft.add(R.id.content_frame, f, AboutFragment.TAG);
+                ft.add(R.id.content_frame, f, AboutFragment.FRAGMENT_TAG);
             } else {
                 ft.show(prevAbout);
             }

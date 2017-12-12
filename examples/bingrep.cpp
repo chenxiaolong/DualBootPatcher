@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/file_util.h"
@@ -31,8 +31,9 @@
 
 #include <getopt.h>
 
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
 #include "mbcommon/file/posix.h"
+#include "mbcommon/integer.h"
 
 static void usage(FILE *stream, const char *prog_name)
 {
@@ -49,54 +50,6 @@ static void usage(FILE *stream, const char *prog_name)
                     "  --end-offset    Ending boundary offset for search\n"
                     "  --buffer-size   Buffer size\n",
                     prog_name);
-}
-
-template<typename SIntType>
-static inline bool str_to_snum(const char *str, int base, SIntType *out)
-{
-    static_assert(std::is_signed<SIntType>::value,
-                  "Integer type is not signed");
-    static_assert(std::numeric_limits<SIntType>::min() >= LLONG_MIN
-                  && std::numeric_limits<SIntType>::max() <= LLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoll(str, &end, base);
-    if (errno == ERANGE
-            || num < std::numeric_limits<SIntType>::min()
-            || num > std::numeric_limits<SIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<SIntType>(num);
-    return true;
-}
-
-template<typename UIntType>
-static inline bool str_to_unum(const char *str, int base, UIntType *out)
-{
-    static_assert(!std::is_signed<UIntType>::value,
-                  "Integer type is not unsigned");
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    *out = static_cast<UIntType>(num);
-    return true;
 }
 
 static int ascii_to_hex(char c)
@@ -137,7 +90,7 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
             return false;
         }
 
-        buf[i / 2] = (hi << 4) | lo;
+        buf[i / 2] = static_cast<unsigned char>((hi << 4) | lo);
     }
 
     *data = buf;
@@ -146,26 +99,26 @@ static bool hex_to_binary(const char *hex, void **data, size_t *data_size)
     return true;
 }
 
-static int search_result_cb(struct MbFile *file, void *userdata,
-                            uint64_t offset)
+static mb::oc::result<mb::FileSearchAction>
+search_result_cb(mb::File &file, void *userdata, uint64_t offset)
 {
     (void) file;
     const char *name = static_cast<char *>(userdata);
     printf("%s: 0x%016" PRIx64 "\n", name, offset);
-    return MB_FILE_OK;
+    return mb::FileSearchAction::Continue;
 }
 
-static bool search(const char *name, struct MbFile *file,
+static bool search(const char *name, mb::File &file,
                    int64_t start, int64_t end,
                    size_t bsize, const void *pattern,
                    size_t pattern_size, int64_t max_matches)
 {
-    int ret = mb_file_search(file, start, end, bsize, pattern, pattern_size,
-                             max_matches, &search_result_cb,
-                             const_cast<char *>(name));
-    if (ret != MB_FILE_OK) {
+    auto ret = mb::file_search(file, start, end, bsize, pattern, pattern_size,
+                               max_matches, &search_result_cb,
+                               const_cast<char *>(name));
+    if (!ret) {
         fprintf(stderr, "%s: Search failed: %s\n",
-                name, mb_file_error_string(file));
+                name, ret.error().message().c_str());
         return false;
     }
     return true;
@@ -175,48 +128,34 @@ static bool search_stdin(int64_t start, int64_t end,
                          size_t bsize, const void *pattern,
                          size_t pattern_size, int64_t max_matches)
 {
-    MbFile *file = mb_file_new();
-    if (!file) {
-        fprintf(stderr, "Failed to allocate file: %s\n", strerror(errno));
-        return false;
-    }
+    mb::PosixFile file;
 
-    if (mb_file_open_FILE(file, stdin, false) < 0) {
+    auto ret = file.open(stdin, false);
+    if (!ret) {
         fprintf(stderr, "Failed to open stdin: %s\n",
-                mb_file_error_string(file));
-        mb_file_free(file);
+                ret.error().message().c_str());
         return false;
     }
 
-    bool ret = search("stdin", file, start, end, bsize, pattern, pattern_size,
-                      max_matches);
-
-    mb_file_free(file);
-    return ret;
+    return search("stdin", file, start, end, bsize, pattern, pattern_size,
+                  max_matches);
 }
 
 static bool search_file(const char *path, int64_t start, int64_t end,
                         size_t bsize, const void *pattern,
                         size_t pattern_size, int64_t max_matches)
 {
-    MbFile *file = mb_file_new();
-    if (!file) {
-        fprintf(stderr, "Failed to allocate file: %s\n", strerror(errno));
-        return false;
-    }
+    mb::StandardFile file;
 
-    if (mb_file_open_filename(file, path, MB_FILE_OPEN_READ_ONLY) < 0) {
+    auto ret = file.open(path, mb::FileOpenMode::ReadOnly);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open file: %s\n",
-                path, mb_file_error_string(file));
-        mb_file_free(file);
+                path, ret.error().message().c_str());
         return false;
     }
 
-    bool ret = search(path, file, start, end, bsize, pattern, pattern_size,
-                      max_matches);
-
-    mb_file_free(file);
-    return ret;
+    return search(path, file, start, end, bsize, pattern, pattern_size,
+                  max_matches);
 }
 
 int main(int argc, char *argv[])
@@ -246,15 +185,15 @@ int main(int argc, char *argv[])
 
     static struct option long_options[] = {
         // Arguments with short versions
-        {"help",         no_argument,       0, 'h'},
-        {"num-matches",  required_argument, 0, 'n'},
-        {"hex",          required_argument, 0, 'p'},
-        {"text",         required_argument, 0, 't'},
+        {"help",         no_argument,       nullptr, 'h'},
+        {"num-matches",  required_argument, nullptr, 'n'},
+        {"hex",          required_argument, nullptr, 'p'},
+        {"text",         required_argument, nullptr, 't'},
         // Arguments without short versions
-        {"start-offset", required_argument, 0, OPT_START_OFFSET},
-        {"end-offset",   required_argument, 0, OPT_END_OFFSET},
-        {"buffer-size",  required_argument, 0, OPT_BUFFER_SIZE},
-        {0, 0, 0, 0}
+        {"start-offset", required_argument, nullptr, OPT_START_OFFSET},
+        {"end-offset",   required_argument, nullptr, OPT_END_OFFSET},
+        {"buffer-size",  required_argument, nullptr, OPT_BUFFER_SIZE},
+        {nullptr,        0,                 nullptr, 0},
     };
 
     int long_index = 0;
@@ -263,7 +202,7 @@ int main(int argc, char *argv[])
                               long_options, &long_index)) != -1) {
         switch (opt) {
         case 'n':
-            if (!str_to_snum(optarg, 10, &max_matches)) {
+            if (!mb::str_to_num(optarg, 10, max_matches)) {
                 fprintf(stderr, "Invalid value for -n/--num-matches: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -279,7 +218,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_START_OFFSET:
-            if (!str_to_snum(optarg, 0, &start)) {
+            if (!mb::str_to_num(optarg, 0, start)) {
                 fprintf(stderr, "Invalid value for --start-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -287,7 +226,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_END_OFFSET:
-            if (!str_to_snum(optarg, 0, &end)) {
+            if (!mb::str_to_num(optarg, 0, end)) {
                 fprintf(stderr, "Invalid value for --end-offset: %s\n",
                         optarg);
                 return EXIT_FAILURE;
@@ -295,7 +234,7 @@ int main(int argc, char *argv[])
             break;
 
         case OPT_BUFFER_SIZE:
-            if (!str_to_unum(optarg, 10, &bsize)) {
+            if (!mb::str_to_num(optarg, 10, bsize)) {
                 fprintf(stderr, "Invalid value for --buffer-size: %s\n",
                         optarg);
                 return EXIT_FAILURE;

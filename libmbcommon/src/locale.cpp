@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbcommon/locale.h"
@@ -30,6 +30,13 @@
 #else
 #include <iconv.h>
 #endif
+
+#include "mbcommon/error.h"
+#include "mbcommon/error_code.h"
+#include "mbcommon/finally.h"
+
+namespace mb
+{
 
 #ifdef _WIN32
 
@@ -51,18 +58,21 @@ static wchar_t * win32_convert_to_wcs(UINT code_page,
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, nullptr, 0);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<wchar_t *>(malloc((n + 1) * sizeof(wchar_t)));
+    out_buf = static_cast<wchar_t *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(wchar_t)));
     if (!out_buf) {
         goto done;
     }
 
-    n = MultiByteToWideChar(code_page, 0, in_buf, in_size, out_buf, n);
+    n = MultiByteToWideChar(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n);
     if (n == 0) {
         goto done;
     }
@@ -73,13 +83,11 @@ static wchar_t * win32_convert_to_wcs(UINT code_page,
     result = out_buf;
 
 done:
-    DWORD saved_error = GetLastError();
+    ErrorRestorer restorer;
 
     if (!result) {
         free(out_buf);
     }
-
-    SetLastError(saved_error);
 
     return result;
 }
@@ -102,20 +110,21 @@ static char * win32_convert_to_mbs(UINT code_page,
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, nullptr, 0, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            nullptr, 0, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
 
     // n does not include the NULL-terminator if the input did not contain one
-    out_buf = static_cast<char *>(malloc((n + 1) * sizeof(char)));
+    out_buf = static_cast<char *>(malloc(
+            static_cast<size_t>(n + 1) * sizeof(char)));
     if (!out_buf) {
         goto done;
     }
 
-    n = WideCharToMultiByte(code_page, 0, in_buf, in_size, out_buf, n, nullptr,
-                            nullptr);
+    n = WideCharToMultiByte(code_page, 0, in_buf, static_cast<int>(in_size),
+                            out_buf, n, nullptr, nullptr);
     if (n == 0) {
         goto done;
     }
@@ -126,15 +135,18 @@ static char * win32_convert_to_mbs(UINT code_page,
     result = out_buf;
 
 done:
-    DWORD saved_error = GetLastError();
+    ErrorRestorer restorer;
 
     if (!result) {
         free(out_buf);
     }
 
-    SetLastError(saved_error);
-
     return result;
+}
+
+static inline std::error_code get_system_error_code()
+{
+    return ec_from_win32();
 }
 
 #else
@@ -247,7 +259,7 @@ static char * iconv_convert(const char *from_code, const char *to_code,
     result = out_buf;
 
 done:
-    int saved_errno = errno;
+    ErrorRestorer restorer;
 
     if (cd) {
         iconv_close(cd);
@@ -256,79 +268,126 @@ done:
         free(out_buf);
     }
 
-    errno = saved_errno;
+    return result;
+}
+
+static inline std::error_code get_system_error_code()
+{
+    return ec_from_errno();
+}
+
+#endif
+
+oc::result<std::wstring> mbs_to_wcs_n(const char *str, size_t len)
+{
+#ifdef _WIN32
+    wchar_t *result = win32_convert_to_wcs(CP_ACP, str, len);
+#else
+    char *c_result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
+                                   str, len * sizeof(char));
+    auto result = reinterpret_cast<wchar_t *>(c_result);
+#endif
+    auto free_result = finally([&] { free(result); });
+
+    if (!result) {
+        return get_system_error_code();
+    }
 
     return result;
 }
 
-#endif
-
-MB_BEGIN_C_DECLS
-
-wchar_t * mb_mbs_to_wcs(const char *str)
-{
-    return mb_mbs_to_wcs_len(str, strlen(str));
-}
-
-char * mb_wcs_to_mbs(const wchar_t *str)
-{
-    return mb_wcs_to_mbs_len(str, wcslen(str));
-}
-
-wchar_t * mb_utf8_to_wcs(const char *str)
-{
-    return mb_utf8_to_wcs_len(str, strlen(str));
-}
-
-char * mb_wcs_to_utf8(const wchar_t *str)
-{
-    return mb_wcs_to_utf8_len(str, wcslen(str));
-}
-
-wchar_t * mb_mbs_to_wcs_len(const char *str, size_t size)
+oc::result<std::string> wcs_to_mbs_n(const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_wcs(CP_ACP, str, size);
-#else
-    char *result = iconv_convert(ICONV_CODE_DEFAULT, ICONV_CODE_WCHAR_T,
-                                 str, size * sizeof(char));
-    return reinterpret_cast<wchar_t *>(result);
-#endif
-}
-
-char * mb_wcs_to_mbs_len(const wchar_t *str, size_t size)
-{
-#ifdef _WIN32
-    return win32_convert_to_mbs(CP_ACP, str, size);
+    char *result = win32_convert_to_mbs(CP_ACP, str, len);
 #else
     char *result = iconv_convert(ICONV_CODE_WCHAR_T, ICONV_CODE_DEFAULT,
                                  reinterpret_cast<const char *>(str),
-                                 size * sizeof(wchar_t));
+                                 len * sizeof(wchar_t));
+#endif
+    auto free_result = finally([&] { free(result); });
+
+    if (!result) {
+        return get_system_error_code();
+    }
+
     return result;
-#endif
 }
 
-wchar_t * mb_utf8_to_wcs_len(const char *str, size_t size)
+oc::result<std::wstring> utf8_to_wcs_n(const char *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_wcs(CP_UTF8, str, size);
+    wchar_t *result = win32_convert_to_wcs(CP_UTF8, str, len);
 #else
-    char *result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
-                                 str, size * sizeof(char));
-    return reinterpret_cast<wchar_t *>(result);
+    char *c_result = iconv_convert(ICONV_CODE_UTF_8, ICONV_CODE_WCHAR_T,
+                                   str, len * sizeof(char));
+    auto result = reinterpret_cast<wchar_t *>(c_result);
 #endif
+    auto free_result = finally([&] { free(result); });
+
+    if (!result) {
+        return get_system_error_code();
+    }
+
+    return result;
 }
 
-char * mb_wcs_to_utf8_len(const wchar_t *str, size_t size)
+oc::result<std::string> wcs_to_utf8_n(const wchar_t *str, size_t len)
 {
 #ifdef _WIN32
-    return win32_convert_to_mbs(CP_UTF8, str, size);
+    char *result = win32_convert_to_mbs(CP_UTF8, str, len);
 #else
     char *result = iconv_convert(ICONV_CODE_WCHAR_T, ICONV_CODE_UTF_8,
                                  reinterpret_cast<const char *>(str),
-                                 size * sizeof(wchar_t));
-    return result;
+                                 len * sizeof(wchar_t));
 #endif
+    auto free_result = finally([&] { free(result); });
+
+    if (!result) {
+        return get_system_error_code();
+    }
+
+    return result;
 }
 
-MB_END_C_DECLS
+oc::result<std::wstring> mbs_to_wcs(const char *str)
+{
+    return mbs_to_wcs_n(str, strlen(str));
+}
+
+oc::result<std::wstring> mbs_to_wcs(const std::string &str)
+{
+    return mbs_to_wcs_n(str.data(), str.size());
+}
+
+oc::result<std::string> wcs_to_mbs(const wchar_t *str)
+{
+    return wcs_to_mbs_n(str, wcslen(str));
+}
+
+oc::result<std::string> wcs_to_mbs(const std::wstring &str)
+{
+    return wcs_to_mbs_n(str.data(), str.size());
+}
+
+oc::result<std::wstring> utf8_to_wcs(const char *str)
+{
+    return utf8_to_wcs_n(str, strlen(str));
+}
+
+oc::result<std::wstring> utf8_to_wcs(const std::string &str)
+{
+    return utf8_to_wcs_n(str.data(), str.size());
+}
+
+oc::result<std::string> wcs_to_utf8(const wchar_t *str)
+{
+    return wcs_to_utf8_n(str, wcslen(str));
+}
+
+oc::result<std::string> wcs_to_utf8(const std::wstring &str)
+{
+    return wcs_to_utf8_n(str.data(), str.size());
+}
+
+}

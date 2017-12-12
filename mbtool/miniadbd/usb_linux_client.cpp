@@ -16,8 +16,10 @@
 
 #include "sysdeps.h"
 
+#include <cstdlib>
 #include <cstring>
 
+#include <endian.h>
 #include <sys/ioctl.h>
 #include <linux/usb/ch9.h>
 #include <linux/usb/functionfs.h>

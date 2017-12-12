@@ -1,22 +1,23 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -31,17 +32,22 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+// libmbcommon
+#include "mbcommon/error_code.h"
+#include "mbcommon/file/callbacks.h"
+#include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
+
 // libmbsparse
 #include "mbsparse/sparse.h"
 
 // libmbdevice
 #include "mbdevice/json.h"
-#include "mbdevice/validate.h"
 
 // libmbutil
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
-#include "mbutil/finally.h"
 #include "mbutil/mount.h"
 #include "mbutil/properties.h"
 
@@ -71,13 +77,14 @@
 #define PROP_BOOT_DEV           "boot"
 
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
-typedef std::unique_ptr<SparseCtx, decltype(sparseCtxFree) *> ScopedSparseCtx;
 
-enum class ExtractResult
+using namespace mb::device;
+
+enum class ExtractResult : uint8_t
 {
-    OK,
-    MISSING,
-    ERROR
+    Ok,
+    Missing,
+    Error,
 };
 
 static int interface;
@@ -89,7 +96,7 @@ static std::string system_block_dev;
 static std::string boot_block_dev;
 
 MB_PRINTF(1, 2)
-void ui_print(const char *fmt, ...)
+static void ui_print(const char *fmt, ...)
 {
     va_list ap;
     va_list copy;
@@ -111,13 +118,13 @@ void ui_print(const char *fmt, ...)
     va_end(ap);
 }
 
-void set_progress(double frac)
+static void set_progress(double frac)
 {
     dprintf(output_fd, "set_progress %f\n", frac);
 }
 
 MB_PRINTF(1, 2)
-void error(const char *fmt, ...)
+static void error(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -127,7 +134,7 @@ void error(const char *fmt, ...)
 }
 
 MB_PRINTF(1, 2)
-void info(const char *fmt, ...)
+static void info(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -139,9 +146,8 @@ void info(const char *fmt, ...)
 static bool mount_system()
 {
     // mbtool will redirect the call
-    const char *argv[] = { "mount", "/system", nullptr };
-    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
-                                       nullptr, nullptr);
+    std::vector<std::string> argv{ "mount", "/system" };
+    int status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -156,9 +162,8 @@ static bool mount_system()
 static bool umount_system()
 {
     // mbtool will redirect the call
-    const char *argv[] = { "umount", "/system", nullptr };
-    int status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
-                                       nullptr, nullptr);
+    std::vector<std::string> argv{ "umount", "/system" };
+    int status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
         return false;
@@ -195,20 +200,20 @@ static ExtractResult la_skip_to(archive *a, const char *filename,
         const char *name = archive_entry_pathname(*entry);
         if (!name) {
             error("libarchive: Failed to get filename");
-            return ExtractResult::ERROR;
+            return ExtractResult::Error;
         }
 
         if (strcmp(filename, name) == 0) {
-            return ExtractResult::OK;
+            return ExtractResult::Ok;
         }
     }
     if (ret != ARCHIVE_EOF) {
         error("libarchive: Failed to read header: %s", archive_error_string(a));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     error("libarchive: Failed to find %s in zip", filename);
-    return ExtractResult::MISSING;
+    return ExtractResult::Missing;
 }
 
 static bool load_sales_code()
@@ -248,7 +253,7 @@ static bool load_block_devs()
     system_block_dev.clear();
     boot_block_dev.clear();
 
-    Device *device;
+    Device device;
 
     {
         archive *a = archive_read_new();
@@ -257,7 +262,7 @@ static bool load_block_devs()
             return false;
         }
 
-        auto close_archive = mb::util::finally([&]{
+        auto close_archive = mb::finally([&]{
             archive_read_free(a);
         });
 
@@ -266,13 +271,13 @@ static bool load_block_devs()
         }
 
         archive_entry *entry;
-        if (la_skip_to(a, DEVICE_JSON_FILE, &entry) != ExtractResult::OK) {
+        if (la_skip_to(a, DEVICE_JSON_FILE, &entry) != ExtractResult::Ok) {
             return false;
         }
 
-        static const size_t max_size = 10240;
+        static constexpr size_t max_size = 10240;
 
-        if (archive_entry_size(entry) >= max_size) {
+        if (archive_entry_size(entry) >= static_cast<int64_t>(max_size)) {
             error("%s is too large", DEVICE_JSON_FILE);
             return false;
         }
@@ -288,57 +293,46 @@ static bool load_block_devs()
         }
 
         // Buffer is already NULL-terminated
-        MbDeviceJsonError ret;
-        device = mb_device_new_from_json(buf.data(), &ret);
-        if (!device) {
+        JsonError ret;
+        if (!device_from_json(buf.data(), device, ret)) {
             error("Failed to load %s", DEVICE_JSON_FILE);
             return false;
         }
     }
 
-    auto free_device = mb::util::finally([&]{
-        mb_device_free(device);
-    });
-
-    auto flags = mb_device_validate(device);
-    if (flags != 0) {
-        error("Device definition file is invalid: %" PRIu64, flags);
+    auto flags = device.validate();
+    if (flags) {
+        error("Device definition file is invalid: %" PRIu64,
+              static_cast<uint64_t>(flags));
         return false;
     }
 
-    auto system_devs = mb_device_system_block_devs(device);
-    auto boot_devs = mb_device_boot_block_devs(device);
-
-    struct stat sb;
-
-    if (system_devs) {
-        for (auto it = system_devs; *it; ++it) {
-            if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
-                system_block_dev = *it;
-                break;
-            }
-        }
-    }
-    if (boot_devs) {
-        for (auto it = boot_devs; *it; ++it) {
-            if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
-                boot_block_dev = *it;
-                break;
-            }
-        }
-    }
+    auto is_blk_device = [](const std::string &path) {
+        struct stat sb;
+        return stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode);
+    };
 
 #if !DEBUG_SKIP_FLASH_SYSTEM
-    if (system_block_dev.empty()) {
-        error("%s: No system block device specified", DEVICE_JSON_FILE);
-        return false;
+    {
+        auto devs = device.system_block_devs();
+        auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
+        if (it == devs.end()) {
+            error("%s: No system block device specified", DEVICE_JSON_FILE);
+            return false;
+        }
+        system_block_dev = *it;
     }
 #endif
 
 #if !DEBUG_SKIP_FLASH_BOOT
-    if (boot_block_dev.empty()) {
-        error("%s: No boot block device specified", DEVICE_JSON_FILE);
-        return false;
+    {
+        auto devs = device.boot_block_devs();
+        auto it = std::find_if(devs.begin(), devs.end(), is_blk_device);
+        if (it == devs.end()) {
+            error("%s: No boot block device specified", DEVICE_JSON_FILE);
+            return false;
+        }
+        boot_block_dev = *it;
     }
 #endif
 
@@ -348,10 +342,12 @@ static bool load_block_devs()
     return true;
 }
 
-static bool cb_zip_read(void *buf, uint64_t size, uint64_t *bytes_read,
-                        void *user_data)
+static mb::oc::result<size_t> cb_zip_read(mb::File &file, void *userdata,
+                                          void *buf, size_t size)
 {
-    archive *a = (archive *) user_data;
+    (void) file;
+
+    archive *a = static_cast<archive *>(userdata);
     uint64_t total = 0;
 
     while (size > 0) {
@@ -359,18 +355,17 @@ static bool cb_zip_read(void *buf, uint64_t size, uint64_t *bytes_read,
         if (n < 0) {
             error("libarchive: Failed to read data: %s",
                   archive_error_string(a));
-            return false;
+            return mb::ec_from_errno(archive_errno(a));
         } else if (n == 0) {
             break;
         }
 
-        total += n;
-        size -= n;
-        buf = (char *) buf + n;
+        total += static_cast<size_t>(n);
+        size -= static_cast<size_t>(n);
+        buf = static_cast<char *>(buf) + n;
     }
 
-    *bytes_read = total;
-    return true;
+    return static_cast<size_t>(total);
 }
 
 #if DEBUG_SKIP_FLASH_SYSTEM
@@ -380,83 +375,96 @@ static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
 {
     ScopedArchive a{archive_read_new(), &archive_read_free};
-    ScopedSparseCtx ctx{sparseCtxNew(), &sparseCtxFree};
-    char buf[10240];
-    uint64_t n;
-    bool sparse_ret;
-    int fd;
-    uint64_t cur_bytes = 0;
-    uint64_t max_bytes = 0;
-    uint64_t old_bytes = 0;
-    double old_ratio;
-    double new_ratio;
+    mb::CallbackFile file;
+    mb::sparse::SparseFile sparse_file;
+    mb::StandardFile out_file;
 
-    if (!a || !ctx) {
+    if (!a) {
         error("Out of memory");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!la_open_zip(a.get(), zip_file)) {
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     archive_entry *entry;
     auto result = la_skip_to(a.get(), zip_filename, &entry);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
-    if (!sparseOpen(ctx.get(), nullptr, nullptr, &cb_zip_read, nullptr, nullptr,
-                    a.get())) {
-        error("Failed to open sparse file");
-        return ExtractResult::ERROR;
+    auto open_ret = file.open(nullptr, nullptr, &cb_zip_read, nullptr, nullptr,
+                              nullptr, a.get());
+    if (!open_ret) {
+        error("Failed to open sparse file in zip: %s",
+              open_ret.error().message().c_str());
+        return ExtractResult::Error;
     }
 
-    fd = open64(out_filename,
-                O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC | O_LARGEFILE, 0600);
-    if (fd < 0) {
-        error("%s: Failed to open: %s", out_filename, strerror(errno));
-        return ExtractResult::ERROR;
+    open_ret = sparse_file.open(&file);
+    if (!open_ret) {
+        error("Failed to open sparse file: %s",
+              open_ret.error().message().c_str());
+        return ExtractResult::Error;
     }
 
-    auto close_fd = mb::util::finally([fd]{
-        close(fd);
-    });
+    open_ret = out_file.open(out_filename, mb::FileOpenMode::WriteOnly);
+    if (!open_ret) {
+        error("%s: Failed to open for writing: %s",
+              out_filename, open_ret.error().message().c_str());
+        return ExtractResult::Error;
+    }
 
-    sparseSize(ctx.get(), &max_bytes);
+    char buf[10240];
+    uint64_t cur_bytes = 0;
+    uint64_t max_bytes = sparse_file.size();
+    uint64_t old_bytes = 0;
 
     set_progress(0);
 
-    while ((sparse_ret = sparseRead(ctx.get(), buf, sizeof(buf), &n)) && n > 0) {
+    while (true) {
+        auto n = sparse_file.read(buf, sizeof(buf));
+        if (!n) {
+            error("Failed to read sparse file %s: %s",
+                  zip_filename, n.error().message().c_str());
+            return ExtractResult::Error;
+        } else if (n.value() == 0) {
+            break;
+        }
+
         // Rate limit: update progress only after difference exceeds 0.1%
-        old_ratio = (double) old_bytes / max_bytes;
-        new_ratio = (double) cur_bytes / max_bytes;
+        double old_ratio = static_cast<double>(old_bytes) / max_bytes;
+        double new_ratio = static_cast<double>(cur_bytes) / max_bytes;
         if (new_ratio - old_ratio >= 0.001) {
             set_progress(new_ratio);
             old_bytes = cur_bytes;
         }
 
         char *out_ptr = buf;
-        ssize_t nwritten;
 
-        do {
-            if ((nwritten = write(fd, out_ptr, n)) < 0) {
-                error("%s: Failed to write: %s",
-                      out_filename, strerror(errno));
-                return ExtractResult::ERROR;
+        while (n.value() > 0) {
+            auto n_written = out_file.write(buf, n.value());
+            if (!n_written) {
+                error("%s: Failed to write file: %s",
+                      out_filename, n_written.error().message().c_str());
+                return ExtractResult::Error;
             }
 
-            n -= nwritten;
-            out_ptr += nwritten;
-            cur_bytes += nwritten;
-        } while (n > 0);
-    }
-    if (!sparse_ret) {
-        error("Failed to read sparse file %s", zip_filename);
-        return ExtractResult::ERROR;
+            n.value() -= n_written.value();
+            out_ptr += n_written.value();
+            cur_bytes += n_written.value();
+        }
     }
 
-    return ExtractResult::OK;
+    auto close_ret = out_file.close();
+    if (!close_ret) {
+        error("%s: Failed to close file: %s",
+              out_filename, close_ret.error().message().c_str());
+        return ExtractResult::Error;
+    }
+
+    return ExtractResult::Ok;
 }
 
 static ExtractResult extract_raw_file(const char *zip_filename,
@@ -474,29 +482,29 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 
     if (!a) {
         error("Out of memory");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!la_open_zip(a.get(), zip_file)) {
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     archive_entry *entry;
     auto result = la_skip_to(a.get(), zip_filename, &entry);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
-    max_bytes = archive_entry_size(entry);
+    max_bytes = static_cast<uint64_t>(archive_entry_size(entry));
 
     fd = open64(out_filename,
                 O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC | O_LARGEFILE, 0600);
     if (fd < 0) {
         error("%s: Failed to open: %s", out_filename, strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    auto close_fd = mb::util::finally([fd]{
+    auto close_fd = mb::finally([fd]{
         close(fd);
     });
 
@@ -504,8 +512,8 @@ static ExtractResult extract_raw_file(const char *zip_filename,
 
     while ((n = archive_read_data(a.get(), buf, sizeof(buf))) > 0) {
         // Rate limit: update progress only after difference exceeds 0.1%
-        old_ratio = (double) old_bytes / max_bytes;
-        new_ratio = (double) cur_bytes / max_bytes;
+        old_ratio = static_cast<double>(old_bytes) / max_bytes;
+        new_ratio = static_cast<double>(cur_bytes) / max_bytes;
         if (new_ratio - old_ratio >= 0.001) {
             set_progress(new_ratio);
             old_bytes = cur_bytes;
@@ -515,10 +523,10 @@ static ExtractResult extract_raw_file(const char *zip_filename,
         ssize_t nwritten;
 
         do {
-            if ((nwritten = write(fd, out_ptr, n)) < 0) {
+            if ((nwritten = write(fd, out_ptr, static_cast<size_t>(n))) < 0) {
                 error("%s: Failed to write: %s",
                       out_filename, strerror(errno));
-                return ExtractResult::ERROR;
+                return ExtractResult::Error;
             }
 
             n -= nwritten;
@@ -528,10 +536,10 @@ static ExtractResult extract_raw_file(const char *zip_filename,
     if (n != 0) {
         error("libarchive: %s: Failed to read %s: %s",
               zip_file, zip_filename, archive_error_string(a.get()));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    return ExtractResult::OK;
+    return ExtractResult::Ok;
 }
 
 static bool copy_dir_if_exists(const char *source_dir,
@@ -555,9 +563,9 @@ static bool copy_dir_if_exists(const char *source_dir,
     }
 
     bool ret = mb::util::copy_dir(source_dir, target_dir,
-                                  mb::util::COPY_ATTRIBUTES
-                                | mb::util::COPY_XATTRS
-                                | mb::util::COPY_EXCLUDE_TOP_LEVEL);
+                                  mb::util::CopyFlag::CopyAttributes
+                                | mb::util::CopyFlag::CopyXattrs
+                                | mb::util::CopyFlag::ExcludeTopLevel);
     if (!ret) {
         error("Failed to copy %s to %s: %s",
               source_dir, target_dir, strerror(errno));
@@ -730,19 +738,19 @@ static ExtractResult flash_csc()
     ExtractResult result;
 
     result = extract_raw_file(CACHE_SPARSE_FILE, TEMP_CACHE_SPARSE_FILE);
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         return result;
     }
 
     result = extract_raw_file(FUSE_SPARSE_FILE, TEMP_FUSE_SPARSE_FILE);
-    if (result != ExtractResult::OK) {
-        return ExtractResult::ERROR;
+    if (result != ExtractResult::Ok) {
+        return ExtractResult::Error;
     }
 
     if (chmod(TEMP_FUSE_SPARSE_FILE, 0700) < 0) {
         error("%s: Failed to chmod: %s",
               TEMP_FUSE_SPARSE_FILE, strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     // Create temporary file for fuse
@@ -750,27 +758,25 @@ static ExtractResult flash_csc()
 
     // Mount sparse file with fuse-sparse
     {
-        const char *argv[] = {
+        std::vector<std::string> argv{
             TEMP_FUSE_SPARSE_FILE,
             TEMP_CACHE_SPARSE_FILE,
-            TEMP_CACHE_MOUNT_FILE,
-            nullptr
+            TEMP_CACHE_MOUNT_FILE
         };
-        status = mb::util::run_command(argv[0], argv, nullptr, nullptr,
-                                       nullptr, nullptr);
+        status = mb::util::run_command(argv[0], argv, {}, {}, nullptr, nullptr);
     }
     if (status < 0) {
         error("Failed to run command: %s", strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     } else if (WIFSIGNALED(status)) {
         error("Command killed by signal: %d", WTERMSIG(status));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     } else if (WEXITSTATUS(status) != 0) {
         error("Command returned non-zero exit status: %d", WEXITSTATUS(status));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    auto unmount_fuse_file = mb::util::finally([]{
+    auto unmount_fuse_file = mb::finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_FILE, 5);
     });
 
@@ -784,34 +790,34 @@ static ExtractResult flash_csc()
         error("Failed to mount (%s) %s at %s: %s",
               TEMP_CACHE_MOUNT_FILE, "ext4", TEMP_CACHE_MOUNT_DIR,
               strerror(errno));
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    auto unmount_dir = mb::util::finally([]{
+    auto unmount_dir = mb::finally([]{
         retry_unmount(TEMP_CACHE_MOUNT_DIR, 5);
     });
 
     // Mount system
     if (!mount_system()) {
         error("Failed to mount system");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    auto unmount_system_dir = mb::util::finally([]{
+    auto unmount_system_dir = mb::finally([]{
         umount_system();
     });
 
     if (!flash_csc_zip()) {
         error("Failed to flash CSC zip");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
     if (!apply_multi_csc()) {
         error("Failed to apply Multi-CSC");
-        return ExtractResult::ERROR;
+        return ExtractResult::Error;
     }
 
-    return ExtractResult::OK;
+    return ExtractResult::Ok;
 }
 
 static bool flash_zip()
@@ -856,13 +862,13 @@ static bool flash_zip()
     ui_print("Flashing system image");
     result = extract_sparse_file(SYSTEM_SPARSE_FILE, system_block_dev.c_str());
     switch (result) {
-    case ExtractResult::ERROR:
+    case ExtractResult::Error:
         ui_print("Failed to flash system image");
         return false;
-    case ExtractResult::MISSING:
+    case ExtractResult::Missing:
         ui_print("[WARNING] System image not found");
         break;
-    case ExtractResult::OK:
+    case ExtractResult::Ok:
         ui_print("Successfully flashed system image");
         break;
     }
@@ -875,13 +881,13 @@ static bool flash_zip()
     ui_print("Flashing CSC from cache image");
     result = flash_csc();
     switch (result) {
-    case ExtractResult::ERROR:
+    case ExtractResult::Error:
         ui_print("Failed to flash CSC");
         return false;
-    case ExtractResult::MISSING:
+    case ExtractResult::Missing:
         ui_print("[WARNING] Cache image not found. Won't flash CSC");
         break;
-    case ExtractResult::OK:
+    case ExtractResult::Ok:
         ui_print("Successfully flashed CSC");
         break;
     }
@@ -893,7 +899,7 @@ static bool flash_zip()
 #else
     ui_print("Flashing boot image");
     result = extract_raw_file(BOOT_IMAGE_FILE, boot_block_dev.c_str());
-    if (result != ExtractResult::OK) {
+    if (result != ExtractResult::Ok) {
         ui_print("Failed to flash boot image");
         return false;
     }
@@ -915,17 +921,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    char *ptr;
-
-    interface = strtol(argv[1], &ptr, 10);
-    if (*ptr != '\0' || interface < 0) {
-        error("Invalid interface");
+    if (!mb::str_to_num(argv[1], 10, interface)) {
+        error("Invalid interface: '%s'", argv[1]);
         return EXIT_FAILURE;
     }
 
-    output_fd = strtol(argv[2], &ptr, 10);
-    if (*ptr != '\0' || output_fd < 0) {
-        error("Invalid output fd");
+    if (!mb::str_to_num(argv[2], 10, output_fd)) {
+        error("Invalid output fd: '%s'", argv[2]);
         return EXIT_FAILURE;
     }
 

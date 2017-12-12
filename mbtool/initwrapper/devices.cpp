@@ -28,6 +28,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include "mbcommon/common.h"
@@ -40,6 +41,8 @@
 
 #include "initwrapper/cutils/uevent.h"
 #include "initwrapper/util.h"
+
+#define LOG_TAG "mbtool/initwrapper/devices"
 
 #define DEVPATH_LEN 96
 
@@ -329,7 +332,7 @@ static void parse_event(const char *msg, struct uevent *uevent)
 static std::vector<std::string> get_character_device_symlinks(struct uevent *uevent)
 {
     const char *parent;
-    char *slash;
+    const char *slash;
     int width;
     std::vector<struct platform_node *> pdevs;
 
@@ -365,12 +368,8 @@ static std::vector<std::string> get_character_device_symlinks(struct uevent *uev
                 continue;
             }
 
-            char *path = mb_format("/dev/usb/%s%.*s",
-                                   uevent->subsystem, width, parent);
-            if (path) {
-                links.push_back(path);
-                free(path);
-            }
+            links.push_back(mb::format("/dev/usb/%s%.*s",
+                                       uevent->subsystem, width, parent));
 
             if (!dry_run) {
                 mkdir("/dev/usb", 0755);
@@ -385,7 +384,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 {
     std::vector<std::string> devices;
     std::vector<struct platform_node *> pdevs;
-    char *slash;
+    const char *slash;
     const char *type;
     char buf[256];
     char link_path[256];
@@ -444,11 +443,7 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
             p = strdup(mtd_name);
             sanitize(p);
 
-            char *path = mb_format("/dev/block/%s/by-name/%s", type, p);
-            if (path) {
-                links.push_back(path);
-                free(path);
-            }
+            links.push_back(mb::format("/dev/block/%s/by-name/%s", type, p));
 
             free(p);
         }
@@ -473,47 +468,28 @@ static std::vector<std::string> get_block_device_symlinks(struct uevent *uevent)
 #endif
             }
 
-            char *path = mb_format("%s/by-name/%s", link_path, p);
-            if (path) {
-                links.push_back(path);
-                free(path);
-            }
+            links.push_back(mb::format("%s/by-name/%s", link_path, p));
 
             if (is_bootdevice) {
-                path = mb_format("/dev/block/bootdevice/by-name/%s", p);
-                if (path) {
-                    links.push_back(path);
-                    free(path);
-                }
+                links.push_back(mb::format(
+                        "/dev/block/bootdevice/by-name/%s", p));
             }
             free(p);
         }
 
         if (uevent->partition_num >= 0) {
-            char *path = mb_format("%s/by-num/p%d",
-                                   link_path, uevent->partition_num);
-            if (path) {
-                links.push_back(path);
-                free(path);
-            }
+            links.push_back(mb::format("%s/by-num/p%d",
+                                       link_path, uevent->partition_num));
 
             if (is_bootdevice) {
-                path = mb_format("/dev/block/bootdevice/by-num/p%d",
-                                 uevent->partition_num);
-                if (path) {
-                    links.push_back(path);
-                    free(path);
-                }
+                links.push_back(mb::format("/dev/block/bootdevice/by-num/p%d",
+                                           uevent->partition_num));
             }
         }
 
         slash = strrchr(uevent->path, '/');
 
-        char *path = mb_format("%s/%s", link_path, slash + 1);
-        if (path) {
-            links.push_back(path);
-            free(path);
-        }
+        links.push_back(mb::format("%s/%s", link_path, slash + 1));
     }
 
     return links;
@@ -875,9 +851,10 @@ void device_init(bool dry_run_)
     dry_run = dry_run_;
 
     bootdevice[0] = '\0';
-    std::string value;
-    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", &value)) {
-        strlcpy(bootdevice, value.c_str(), sizeof(bootdevice));
+    mb::optional<std::string> value;
+    if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", value)
+            && value) {
+        strlcpy(bootdevice, value->c_str(), sizeof(bootdevice));
     }
 
     // Is 256K enough? udev uses 16MB!

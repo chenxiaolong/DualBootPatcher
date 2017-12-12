@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(ICONV_FOUND)
     set(ICONV_LIBRARIES ${ICONV_LIBRARY})
+
+    add_library(Iconv::Iconv UNKNOWN IMPORTED)
+    set_target_properties(
+        Iconv::Iconv
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${ICONV_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ICONV_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(ICONV_INCLUDE_DIR ICONV_LIBRARY)

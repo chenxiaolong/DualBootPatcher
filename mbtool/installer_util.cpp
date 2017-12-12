@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "installer_util.h"
@@ -38,24 +38,26 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/file/filename.h"
+#include "mbcommon/file/standard.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
 
 #include "mbutil/delete.h"
-#include "mbutil/finally.h"
 #include "mbutil/path.h"
 
 #include "bootimg_util.h"
 #include "multiboot.h"
 
+#define LOG_TAG "mbtool/installer_util"
+
+using namespace mb::bootimg;
+
 typedef std::unique_ptr<archive, decltype(archive_free) *> ScopedArchive;
 typedef std::unique_ptr<archive_entry, decltype(archive_entry_free) *> ScopedArchiveEntry;
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
-typedef std::unique_ptr<MbFile, decltype(mb_file_free) *> ScopedMbFile;
-typedef std::unique_ptr<MbBiReader, decltype(mb_bi_reader_free) *> ScopedReader;
-typedef std::unique_ptr<MbBiWriter, decltype(mb_bi_writer_free) *> ScopedWriter;
 
 namespace mb
 {
@@ -77,7 +79,6 @@ bool InstallerUtil::unpack_ramdisk(const std::string &input_file,
     }
 
     archive_read_support_filter_gzip(ain.get());
-    archive_read_support_filter_lzop(ain.get());
     archive_read_support_filter_lz4(ain.get());
     archive_read_support_filter_lzma(ain.get());
     archive_read_support_filter_xz(ain.get());
@@ -236,7 +237,7 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
         const char *curpath = archive_entry_pathname(entry.get());
         if (curpath && !input_dir.empty()) {
             std::string relpath;
-            if (!util::relative_path(curpath, input_dir, &relpath)) {
+            if (!util::relative_path(curpath, input_dir, relpath)) {
                 LOGE("Failed to compute relative path of %s starting at %s: %s",
                      curpath, input_dir.c_str(), strerror(errno));
                 return false;
@@ -262,7 +263,8 @@ bool InstallerUtil::pack_ramdisk(const std::string &input_dir,
 
         if (archive_entry_size(entry.get()) > 0) {
             while ((n = archive_read_data(ain.get(), buf, sizeof(buf))) > 0) {
-                if (archive_write_data(aout.get(), buf, n) != n) {
+                if (archive_write_data(aout.get(), buf, static_cast<size_t>(n))
+                        != n) {
                     LOGE("Failed to write archive entry data: %s",
                          archive_error_string(aout.get()));
                     return false;
@@ -291,63 +293,49 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                                      const std::string &output_file,
                                      std::vector<std::function<RamdiskPatcherFn>> &rps)
 {
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    // std::string is guaranteed to be contiguous in C++11
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 
-    ScopedReader bir(mb_bi_reader_new(), &mb_bi_reader_free);
-    ScopedWriter biw(mb_bi_writer_new(), &mb_bi_writer_free);
-    MbBiHeader *header;
-    MbBiEntry *in_entry;
-    MbBiEntry *out_entry;
-    int ret;
-
-    if (!bir || !biw) {
-        LOGE("Failed to allocate reader or writer instance");
-        return false;
-    }
+    Reader reader;
+    Writer writer;
+    Header header;
+    Entry in_entry;
+    Entry out_entry;
 
     // Open input boot image
-    ret = mb_bi_reader_enable_format_all(bir.get());
-    if (ret != MB_BI_OK) {
+    auto ret = reader.enable_format_all();
+    if (!ret) {
         LOGE("Failed to enable input boot image formats: %s",
-             mb_bi_reader_error_string(bir.get()));
+             ret.error().message().c_str());
         return false;
     }
-    ret = mb_bi_reader_open_filename(bir.get(), input_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = reader.open_filename(input_file);
+    if (!ret) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Open output boot image
-    ret = mb_bi_writer_set_format_by_code(
-            biw.get(), mb_bi_reader_format_code(bir.get()));
-    if (ret != MB_BI_OK) {
+    ret = writer.set_format_by_code(reader.format_code());
+    if (!ret) {
         LOGE("Failed to set output boot image format: %s",
-             mb_bi_writer_error_string(biw.get()));
+             ret.error().message().c_str());
         return false;
     }
-    ret = mb_bi_writer_open_filename(biw.get(), output_file.c_str());
-    if (ret != MB_BI_OK) {
+    ret = writer.open_filename(output_file);
+    if (!ret) {
         LOGE("%s: Failed to open boot image for writing: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -355,63 +343,75 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     LOGD("Patching boot image");
     LOGD("- Input: %s", input_file.c_str());
     LOGD("- Output: %s", output_file.c_str());
-    LOGD("- Format: %s", mb_bi_reader_format_name(bir.get()));
+    LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
-    ret = mb_bi_reader_read_header(bir.get(), &header);
-    if (ret != MB_BI_OK) {
+    ret = reader.read_header(header);
+    if (!ret) {
         LOGE("%s: Failed to read header: %s",
-             input_file.c_str(), mb_bi_reader_error_string(bir.get()));
+             input_file.c_str(), ret.error().message().c_str());
         return false;
     }
-    ret = mb_bi_writer_write_header(biw.get(), header);
-    if (ret != MB_BI_OK) {
+    ret = writer.write_header(header);
+    if (!ret) {
         LOGE("%s: Failed to write header: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Write entries
-    while ((ret = mb_bi_writer_get_entry(biw.get(), &out_entry)) == MB_BI_OK) {
-        int type = mb_bi_entry_type(out_entry);
+    while (true) {
+        ret = writer.get_entry(out_entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
+                break;
+            }
+            LOGE("%s: Failed to get entry: %s",
+                 output_file.c_str(), ret.error().message().c_str());
+            return false;
+        }
+
+        auto type = out_entry.type();
 
         // Write entry metadata
-        ret = mb_bi_writer_write_entry(biw.get(), out_entry);
-        if (ret != MB_BI_OK) {
+        ret = writer.write_entry(out_entry);
+        if (!ret) {
             LOGE("%s: Failed to write entry: %s",
-                 output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
 
         // Special case for loki aboot
-        if (type == MB_BI_ENTRY_ABOOT) {
-            if (bi_copy_file_to_data(ABOOT_PARTITION, biw.get())) {
+        if (*type == ENTRY_TYPE_ABOOT) {
+            if (bi_copy_file_to_data(ABOOT_PARTITION, writer)) {
                 return false;
             }
         } else {
-            ret = mb_bi_reader_go_to_entry(bir.get(), &in_entry, type);
-            if (ret == MB_BI_EOF) {
-                LOGV("Skipping non existent boot image entry: %d", type);
-                continue;
-            } else if (ret != MB_BI_OK) {
-                LOGE("%s: Failed to go to entry: %d: %s",
-                     input_file.c_str(), type,
-                     mb_bi_reader_error_string(bir.get()));
-                return false;
+            ret = reader.go_to_entry(in_entry, *type);
+            if (!ret) {
+                if (ret.error() == ReaderError::EndOfEntries) {
+                    LOGV("Skipping non existent boot image entry: %d", *type);
+                    continue;
+                } else {
+                    LOGE("%s: Failed to go to entry: %d: %s",
+                         input_file.c_str(), *type,
+                         ret.error().message().c_str());
+                    return false;
+                }
             }
 
-            if (type == MB_BI_ENTRY_RAMDISK) {
+            if (type == ENTRY_TYPE_RAMDISK) {
                 std::string ramdisk_in(tmpdir);
                 ramdisk_in += "/ramdisk.in";
                 std::string ramdisk_out(tmpdir);
                 ramdisk_out += "/ramdisk.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(ramdisk_in.c_str());
                     unlink(ramdisk_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), ramdisk_in)) {
+                if (!bi_copy_data_to_file(reader, ramdisk_in)) {
                     return false;
                 }
 
@@ -419,21 +419,21 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(ramdisk_out, biw.get())) {
+                if (!bi_copy_file_to_data(ramdisk_out, writer)) {
                     return false;
                 }
-            } else if (type == MB_BI_ENTRY_KERNEL) {
+            } else if (type == ENTRY_TYPE_KERNEL) {
                 std::string kernel_in(tmpdir);
                 kernel_in += "/kernel.in";
                 std::string kernel_out(tmpdir);
                 kernel_out += "/kernel.out";
 
-                auto delete_temp_files = util::finally([&]{
+                auto delete_temp_files = finally([&]{
                     unlink(kernel_in.c_str());
                     unlink(kernel_out.c_str());
                 });
 
-                if (!bi_copy_data_to_file(bir.get(), kernel_in)) {
+                if (!bi_copy_data_to_file(reader, kernel_in)) {
                     return false;
                 }
 
@@ -441,21 +441,22 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
                     return false;
                 }
 
-                if (!bi_copy_file_to_data(kernel_out, biw.get())) {
+                if (!bi_copy_file_to_data(kernel_out, writer)) {
                     return false;
                 }
             } else {
                 // Copy entry directly
-                if (!bi_copy_data_to_data(bir.get(), biw.get())) {
+                if (!bi_copy_data_to_data(reader, writer)) {
                     return false;
                 }
             }
         }
     }
 
-    if (mb_bi_writer_close(biw.get()) != MB_BI_OK) {
+    ret = writer.close();
+    if (!ret) {
         LOGE("%s: Failed to close boot image: %s",
-             output_file.c_str(), mb_bi_writer_error_string(biw.get()));
+             output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -472,22 +473,14 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
         return true;
     }
 
-    char *tmpdir = mb_format("%s.XXXXXX", output_file.c_str());
-    if (!tmpdir) {
-        LOGE("Out of memory");
-        return false;
-    }
+    std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    auto free_temp_dir = util::finally([&]{
-        free(tmpdir);
-    });
-
-    if (!mkdtemp(tmpdir)) {
+    if (!mkdtemp(&tmpdir[0])) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
 
-    auto delete_temp_dir = util::finally([&]{
+    auto delete_temp_dir = finally([&]{
         util::delete_recursive(tmpdir);
     });
 
@@ -558,92 +551,83 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         0x40, 0xB9, 0x1F, 0xA0, 0x0F, 0x71, 0x81, 0x01, 0x00, 0x54,
     };
 
-    ScopedMbFile fin(mb_file_new(), &mb_file_free);
-    ScopedMbFile fout(mb_file_new(), &mb_file_free);
-    // TODO: Replace with std::optional after switching to C++17
-    std::pair<bool, uint64_t> offset;
-    int ret;
-
-    if (!fin || !fout) {
-        LOGE("Failed to allocate input or output MbFile handle");
-        return false;
-    }
+    StandardFile fin;
+    StandardFile fout;
+    optional<uint64_t> offset;
 
     // Open input file
-    if (mb_file_open_filename(fin.get(), input_file.c_str(),
-                              MB_FILE_OPEN_READ_ONLY) != MB_FILE_OK) {
+    auto open_ret = fin.open(input_file, FileOpenMode::ReadOnly);
+    if (!open_ret) {
         LOGE("%s: Failed to open for reading: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), open_ret.error().message().c_str());
         return false;
     }
 
     // Open output file
-    if (mb_file_open_filename(fout.get(), output_file.c_str(),
-                              MB_FILE_OPEN_WRITE_ONLY) != MB_FILE_OK) {
+    open_ret = fout.open(output_file, FileOpenMode::WriteOnly);
+    if (!open_ret) {
         LOGE("%s: Failed to open for writing: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), open_ret.error().message().c_str());
         return false;
     }
 
     // Replace pattern
-    auto result_cb = [](MbFile *file, void *userdata, uint64_t offset) -> int {
+    auto result_cb = [](File &file, void *userdata, uint64_t offset_)
+            -> oc::result<FileSearchAction> {
         (void) file;
-        std::pair<bool, uint64_t> *ptr =
-                static_cast<std::pair<bool, uint64_t> *>(userdata);
-        ptr->first = true;
-        ptr->second = offset;
-        return MB_FILE_OK;
+        auto ptr = static_cast<optional<uint64_t> *>(userdata);
+        *ptr = offset_;
+        return FileSearchAction::Stop;
     };
 
-    ret = mb_file_search(fin.get(), -1, -1, 0, source_pattern,
-                         sizeof(source_pattern), 1, result_cb, &offset);
-    if (ret < 0) {
+    auto search_ret = file_search(fin, -1, -1, 0, source_pattern,
+                                  sizeof(source_pattern), 1, result_cb,
+                                  &offset);
+    if (!search_ret) {
         LOGE("%s: Error when searching for pattern: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), search_ret.error().message().c_str());
         return false;
     }
 
     // Copy data
-    ret = mb_file_seek(fin.get(), 0, SEEK_SET, nullptr);
-    if (ret != MB_FILE_OK) {
+    auto seek_ret = fin.seek(0, SEEK_SET);
+    if (!seek_ret) {
         LOGE("%s: Failed to seek to beginning: %s",
-             input_file.c_str(), mb_file_error_string(fin.get()));
+             input_file.c_str(), seek_ret.error().message().c_str());
         return false;
     }
 
-    if (offset.first) {
-        LOGD("RKP pattern found at offset: 0x%" PRIx64, offset.second);
+    if (offset) {
+        LOGD("RKP pattern found at offset: 0x%" PRIx64, *offset);
 
-        if (!copy_file_to_file(fin.get(), fout.get(), offset.second)) {
+        if (!copy_file_to_file(fin, fout, *offset)) {
             return false;
         }
 
-        ret = mb_file_seek(fin.get(), sizeof(source_pattern), SEEK_CUR,
-                           nullptr);
-        if (ret != MB_FILE_OK) {
+        seek_ret = fin.seek(sizeof(source_pattern), SEEK_CUR);
+        if (!seek_ret) {
             LOGE("%s: Failed to skip pattern: %s",
-                 input_file.c_str(), mb_file_error_string(fin.get()));
+                 input_file.c_str(), seek_ret.error().message().c_str());
             return false;
         }
 
-        size_t n;
-        ret = mb_file_write_fully(fout.get(), target_pattern,
-                                  sizeof(target_pattern), &n);
-        if (ret != MB_FILE_OK || n != sizeof(target_pattern)) {
+        auto ret = file_write_exact(fout, target_pattern,
+                                    sizeof(target_pattern));
+        if (!ret) {
             LOGE("%s: Failed to write target pattern: %s",
-                 output_file.c_str(), mb_file_error_string(fout.get()));
+                 output_file.c_str(), ret.error().message().c_str());
             return false;
         }
     }
 
-    if (!copy_file_to_file_eof(fin.get(), fout.get())) {
+    if (!copy_file_to_file_eof(fin, fout)) {
         return false;
     }
 
-    ret = mb_file_close(fout.get());
-    if (ret != MB_FILE_OK) {
+    auto close_ret = fout.close();
+    if (!close_ret) {
         LOGE("%s: Failed to close file: %s",
-             output_file.c_str(), mb_file_error_string(fout.get()));
+             output_file.c_str(), close_ret.error().message().c_str());
         return false;
     }
 
@@ -686,25 +670,23 @@ bool InstallerUtil::replace_file(const std::string &replace,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
-                                      uint64_t to_copy)
+bool InstallerUtil::copy_file_to_file(File &fin, File &fout, uint64_t to_copy)
 {
     char buf[10240];
-    size_t n;
-    int ret;
 
     while (to_copy > 0) {
-        size_t to_read = std::min<uint64_t>(to_copy, sizeof(buf));
+        size_t to_read = static_cast<size_t>(
+                std::min<uint64_t>(to_copy, sizeof(buf)));
 
-        ret = mb_file_read_fully(fin, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        auto n = file_read_retry(fin, buf, to_read);
+        if (!n || n.value() != to_read) {
+            LOGE("Failed to read data: %s", n.error().message().c_str());
             return false;
         }
 
-        ret = mb_file_write_fully(fout, buf, to_read, &n);
-        if (ret != MB_FILE_OK || n != to_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        n = file_write_retry(fout, buf, to_read);
+        if (!n || n.value() != to_read) {
+            LOGE("Failed to write data: %s", n.error().message().c_str());
             return false;
         }
 
@@ -714,25 +696,23 @@ bool InstallerUtil::copy_file_to_file(MbFile *fin, MbFile *fout,
     return true;
 }
 
-bool InstallerUtil::copy_file_to_file_eof(MbFile *fin, MbFile *fout)
+bool InstallerUtil::copy_file_to_file_eof(File &fin, File &fout)
 {
     char buf[10240];
-    size_t n_read;
-    size_t n_written;
-    int ret;
 
     while (true) {
-        ret = mb_file_read_fully(fin, buf, sizeof(buf), &n_read);
-        if (ret != MB_FILE_OK) {
-            LOGE("Failed to read data: %s", mb_file_error_string(fin));
+        auto n_read = file_read_retry(fin, buf, sizeof(buf));
+        if (!n_read) {
+            LOGE("Failed to read data: %s", n_read.error().message().c_str());
             return false;
-        } else if (n_read == 0) {
+        } else if (n_read.value() == 0) {
             break;
         }
 
-        ret = mb_file_write_fully(fout, buf, n_read, &n_written);
-        if (ret != MB_FILE_OK || n_written != n_read) {
-            LOGE("Failed to write data: %s", mb_file_error_string(fout));
+        auto n_written = file_write_retry(fout, buf, n_read.value());
+        if (!n_written || n_written.value() != n_read.value()) {
+            LOGE("Failed to write data: %s",
+                 n_written.error().message().c_str());
             return false;
         }
     }

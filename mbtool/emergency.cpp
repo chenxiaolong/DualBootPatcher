@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "emergency.h"
@@ -28,12 +28,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "mbcommon/finally.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/mount.h"
 #include "mbutil/time.h"
@@ -42,18 +41,24 @@
 #include "multiboot.h"
 #include "reboot.h"
 
+#define LOG_TAG "mbtool/emergency"
+
+using namespace mb::device;
+
 namespace mb
 {
 
-class BlockDevFinder : public util::FTSWrapper {
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
+class BlockDevFinder : public util::FtsWrapper {
 public:
     BlockDevFinder(std::string path, std::vector<std::string> names)
-        : FTSWrapper(path, 0),
-        _names(std::move(names))
+        : FtsWrapper(path, 0)
+        , _names(std::move(names))
     {
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         struct stat sb;
 
@@ -64,17 +69,17 @@ public:
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_block_device() override
+    Actions on_reached_block_device() override
     {
         if (std::find(_names.begin(), _names.end(), _curr->fts_name)
                 != _names.end()) {
             _results.push_back(_curr->fts_path);
         }
 
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
     const std::vector<std::string> & results() const
@@ -95,23 +100,15 @@ static bool dump_kernel_log(const char *file)
         return false;
     }
 
-    char *buf = (char *) malloc(len);
-    if (!buf) {
-        LOGE("Failed to allocate %d bytes: %s", len, strerror(errno));
-        return false;
-    }
+    std::vector<char> buf(static_cast<size_t>(len));
 
-    auto free_buf = util::finally([&]{
-        free(buf);
-    });
-
-    len = klogctl(KLOG_READ_ALL, buf, len);
+    len = klogctl(KLOG_READ_ALL, buf.data(), static_cast<int>(buf.size()));
     if (len < 0) {
         LOGE("Failed to read kernel log buffer: %s", strerror(errno));
         return false;
     }
 
-    autoclose::file fp(autoclose::fopen(file, "wb"));
+    ScopedFILE fp(fopen(file, "wb"), fclose);
     if (!fp) {
         LOGE("%s: Failed to open for writing: %s", file, strerror(errno));
         return false;
@@ -124,11 +121,11 @@ static bool dump_kernel_log(const char *file)
     }
 
     if (len > 0) {
-        if (fwrite(buf, len, 1, fp.get()) != 1) {
+        if (fwrite(buf.data(), static_cast<size_t>(len), 1, fp.get()) != 1) {
             LOGE("%s: Failed to write data: %s", file, strerror(errno));
             return false;
         }
-        if (buf[len - 1] != '\n') {
+        if (buf[static_cast<size_t>(len - 1)] != '\n') {
             if (fputc('\n', fp.get()) == EOF) {
                 LOGE("%s: Failed to write data: %s", file, strerror(errno));
                 return false;
@@ -157,17 +154,15 @@ bool emergency_reboot()
     LOGW("--- EMERGENCY REBOOT FROM MBTOOL ---");
 
     std::vector<EmergencyMount> ems;
-    MbDeviceJsonError error;
+    Device device;
+    JsonError error;
 
     std::vector<unsigned char> contents;
-    util::file_read_all(DEVICE_JSON_PATH, &contents);
+    util::file_read_all(DEVICE_JSON_PATH, contents);
     contents.push_back('\0');
 
-    Device *device = mb_device_new_from_json(
-            (char *) contents.data(), &error);
-    auto free_device = util::finally([&]{
-        mb_device_free(device);
-    });
+    bool loaded_json = device_from_json(
+            reinterpret_cast<char *>(contents.data()), device, error);
 
     // /data
     {
@@ -181,13 +176,10 @@ bool emergency_reboot()
 
         LOGV("Searching for data partition block device paths");
 
-        if (device) {
-            auto devs = mb_device_data_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    LOGV("- %s", *it);
-                    em.paths.push_back(*it);
-                }
+        if (loaded_json) {
+            for (auto const &path : device.data_block_devs()) {
+                LOGV("- %s", path.c_str());
+                em.paths.push_back(path);
             }
         }
 
@@ -212,13 +204,10 @@ bool emergency_reboot()
 
         LOGV("Searching for cache partition block device paths");
 
-        if (device) {
-            auto devs = mb_device_cache_block_devs(device);
-            if (devs) {
-                for (auto it = devs; *it; ++it) {
-                    LOGV("- %s", *it);
-                    em.paths.push_back(*it);
-                }
+        if (loaded_json) {
+            for (auto const &path : device.cache_block_devs()) {
+                LOGV("- %s", path.c_str());
+                em.paths.push_back(path);
             }
         }
 
@@ -239,8 +228,7 @@ bool emergency_reboot()
 
         if (!util::is_mounted(em.mount_point)) {
             for (const std::string &path : em.paths) {
-                if (util::mount(path.c_str(), em.mount_point.c_str(),
-                                "auto", 0, "")) {
+                if (util::mount(path, em.mount_point, "auto", 0, "")) {
                     LOGV("%s: Mounted %s",
                          em.mount_point.c_str(), path.c_str());
                     break;
@@ -268,7 +256,7 @@ bool emergency_reboot()
         dump_kernel_log(log_path.c_str());
         sync();
 
-        util::umount(em.mount_point.c_str());
+        util::umount(em.mount_point);
     }
 
     fix_multiboot_permissions();

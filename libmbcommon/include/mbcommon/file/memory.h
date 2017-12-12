@@ -1,31 +1,66 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "mbcommon/file.h"
 
-MB_BEGIN_C_DECLS
+namespace mb
+{
 
-MB_EXPORT int mb_file_open_memory_static(struct MbFile *file,
-                                         const void *buf, size_t size);
-MB_EXPORT int mb_file_open_memory_dynamic(struct MbFile *file,
-                                          void **buf_ptr, size_t *size_ptr);
+class MB_EXPORT MemoryFile : public File
+{
+public:
+    MemoryFile();
+    MemoryFile(const void *buf, size_t size);
+    MemoryFile(void **buf_ptr, size_t *size_ptr);
+    virtual ~MemoryFile();
 
-MB_END_C_DECLS
+    MemoryFile(MemoryFile &&other) noexcept;
+    MemoryFile & operator=(MemoryFile &&rhs) noexcept;
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
+
+    oc::result<void> open(const void *buf, size_t size);
+    oc::result<void> open(void **buf_ptr, size_t *size_ptr);
+
+protected:
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
+
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    void *m_data;
+    size_t m_size;
+
+    void **m_data_ptr;
+    size_t *m_size_ptr;
+
+    size_t m_pos;
+
+    bool m_fixed_size;
+    /*! \endcond */
+};
+
+}

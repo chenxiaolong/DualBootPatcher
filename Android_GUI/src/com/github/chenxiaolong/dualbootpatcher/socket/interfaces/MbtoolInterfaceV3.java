@@ -419,19 +419,19 @@ public class MbtoolInterfaceV3 implements MbtoolInterface {
 
         StructStat ss = response.stat();
         StatBuf sb = new StatBuf();
-        sb.st_dev = ss.stDev();
-        sb.st_ino = ss.stIno();
-        sb.st_mode = (int) ss.stMode();
-        sb.st_nlink = ss.stNlink();
-        sb.st_uid = (int) ss.stUid();
-        sb.st_gid = (int) ss.stGid();
-        sb.st_rdev = ss.stRdev();
-        sb.st_size = ss.stSize();
-        sb.st_blksize = ss.stBlksize();
-        sb.st_blocks = ss.stBlocks();
-        sb.st_atime = ss.stAtime();
-        sb.st_mtime = ss.stMtime();
-        sb.st_ctime = ss.stCtime();
+        sb.st_dev = ss.dev();
+        sb.st_ino = ss.ino();
+        sb.st_mode = (int) ss.mode();
+        sb.st_nlink = ss.nlink();
+        sb.st_uid = (int) ss.uid();
+        sb.st_gid = (int) ss.gid();
+        sb.st_rdev = ss.rdev();
+        sb.st_size = ss.size();
+        sb.st_blksize = ss.blksize();
+        sb.st_blocks = ss.blocks();
+        sb.st_atime = ss.atime();
+        sb.st_mtime = ss.mtime();
+        sb.st_ctime = ss.ctime();
         return sb;
     }
 

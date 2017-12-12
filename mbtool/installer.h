@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "mbcommon/common.h"
+#include "mbcommon/flags.h"
 #include "mbdevice/device.h"
 #include "mbutil/hash.h"
 
@@ -32,17 +33,20 @@
 namespace mb
 {
 
-enum InstallerFlags : int
+enum class InstallerFlag : uint8_t
 {
-    INSTALLER_SKIP_MOUNTING_VOLUMES = 1 << 0,
+    SkipMountingVolumes     = 1 << 0,
 };
+MB_DECLARE_FLAGS(InstallerFlags, InstallerFlag)
+MB_DECLARE_OPERATORS_FOR_FLAGS(InstallerFlags)
 
 class Installer
 {
 public:
     Installer(std::string zip_file, std::string chroot_dir,
-              std::string temp_dir, int interface, int output_fd, int flags);
-    ~Installer();
+              std::string temp_dir, int interface, int output_fd,
+              InstallerFlags flags);
+    virtual ~Installer();
 
     bool start_installation();
 
@@ -50,7 +54,8 @@ public:
 protected:
     static const std::string CANCELLED;
 
-    enum class ProceedState {
+    enum class ProceedState
+    {
         Continue,
         Fail,
         Cancel
@@ -79,10 +84,10 @@ protected:
     std::string _temp;
     int _interface;
     int _output_fd;
-    int _flags;
+    InstallerFlags _flags;
     bool _passthrough;
 
-    Device *_device = nullptr;
+    device::Device _device;
     std::string _detected_device;
     std::string _boot_block_dev;
     std::string _recovery_block_dev;
@@ -113,9 +118,9 @@ private:
     bool _ran;
 
     static void output_cb(const char *line, bool error, void *userdata);
-    int run_command(const char * const *argv);
-    int run_command_chroot(const char *dir,
-                           const char * const *argv);
+    int run_command(const std::vector<std::string> &argv);
+    int run_command_chroot(const std::string &dir,
+                           const std::vector<std::string> &argv);
 
     bool create_chroot();
     bool destroy_chroot() const;

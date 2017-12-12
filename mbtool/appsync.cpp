@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "appsync.h"
@@ -37,21 +37,19 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <jansson.h>
-
 #include "mbcommon/common.h"
+#include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbutil/autoclose/file.h"
 #include "mbutil/chown.h"
 #include "mbutil/command.h"
 #include "mbutil/copy.h"
 #include "mbutil/delete.h"
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/properties.h"
 #include "mbutil/selinux.h"
@@ -64,6 +62,8 @@
 #include "packages.h"
 #include "romconfig.h"
 #include "roms.h"
+
+#define LOG_TAG "mbtool/appsync"
 
 #define ANDROID_SOCKET_ENV_PREFIX       "ANDROID_SOCKET_"
 #define ANDROID_SOCKET_DIR              "/dev/socket"
@@ -86,6 +86,8 @@
 namespace mb
 {
 
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
 static RomConfig config;
 static Packages packages;
 
@@ -107,12 +109,8 @@ static bool load_config_files()
 
     for (const std::shared_ptr<Rom> &rom : roms.roms) {
         std::string config_path = rom->config_path();
-        char *packages_path = mb_format(PACKAGES_XML_PATH_FMT,
-                                        rom->full_data_path().c_str());
-        if (!packages_path) {
-            LOGW("Out of memory");
-            continue;
-        }
+        std::string packages_path = format(PACKAGES_XML_PATH_FMT,
+                                           rom->full_data_path().c_str());
 
         cfg_pkgs_list.emplace_back();
         cfg_pkgs_list.back().rom = rom;
@@ -126,15 +124,13 @@ static bool load_config_files()
         }
         if (!rom_packages.load_xml(packages_path)) {
             LOGW("%s: Failed to load packages for ROM %s",
-                 packages_path, rom->id.c_str());
+                 packages_path.c_str(), rom->id.c_str());
         }
 
         if (rom->id == current_rom->id) {
             config = rom_config;
             packages = rom_packages;
         }
-
-        free(packages_path);
     }
 
     LOGD("[Config] ROM ID:                    %s", config.id.c_str());
@@ -238,13 +234,8 @@ static int get_socket_from_env(const char *name)
         return -1;
     }
 
-    errno = 0;
-    int fd = strtol(value, nullptr, 10);
-    if (errno) {
-        return -1;
-    }
-
-    return fd;
+    int fd;
+    return str_to_num(value, 10, fd) ? fd : -1;
 }
 
 /*!
@@ -286,7 +277,7 @@ static int create_new_socket()
         return -1;
     }
 
-    if (bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    if (bind(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
         LOGE("Failed to bind socket: %s", strerror(errno));
         unlink(addr.sun_path);
         close(fd);
@@ -313,20 +304,18 @@ static int create_new_socket()
  * \brief Receive a message from a socket
  */
 static bool receive_message(int fd, char *buf, std::size_t size,
-                            bool is_async, int *async_id)
+                            bool is_async, int &async_id)
 {
     unsigned short count;
 
     if (is_async) {
-        assert(async_id != nullptr);
-
         if (!util::socket_read_int32(fd, async_id)) {
             LOGE("Failed to receive async command ID: %s", strerror(errno));
             return false;
         }
     }
 
-    if (!util::socket_read_uint16(fd, &count)) {
+    if (!util::socket_read_uint16(fd, count)) {
         LOGE("Failed to read command size: %s", strerror(errno));
         return false;
     }
@@ -352,7 +341,7 @@ static bool receive_message(int fd, char *buf, std::size_t size,
 static bool send_message(int fd, const char *command,
                          bool is_async, int async_id)
 {
-    unsigned short count = strlen(command);
+    auto count = static_cast<uint16_t>(strlen(command));
 
     if (is_async) {
         if (!util::socket_write_int32(fd, async_id)) {
@@ -401,7 +390,7 @@ static int connect_to_installd()
     int attempt;
     for (attempt = 0; attempt < 5; ++attempt) {
         LOGV("Connecting to installd [Attempt %d/%d]", attempt + 1, 5);
-        if (connect(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
             LOGW("Failed: %s", strerror(errno));
             sleep(1);
         } else {
@@ -479,7 +468,8 @@ static bool do_remove(const std::vector<std::string> &args)
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
     MB_UNUSED
-    const int userid = strtol(args[1].c_str(), nullptr, 10);
+    int userid;
+    str_to_num(args[1].c_str(), 10, userid);
 
     for (auto it = config.shared_pkgs.begin();
             it != config.shared_pkgs.end(); ++it) {
@@ -556,7 +546,7 @@ static bool handle_installd_event(int client_fd, int installd_fd,
 
     time_start_installd = util::current_time_ms();
     if (!receive_message(
-            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+            installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
@@ -599,7 +589,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
 
     int async_id;
 
-    if (!receive_message(client_fd, buf, sizeof(buf), is_async, &async_id)) {
+    if (!receive_message(client_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive request from client");
         return false;
     }
@@ -670,7 +660,7 @@ static bool handle_android_event(int client_fd, int installd_fd,
         return false;
     }
     if (!receive_message(
-            installd_fd, buf, sizeof(buf), is_async, &async_id)) {
+            installd_fd, buf, sizeof(buf), is_async, async_id)) {
         LOGE("Failed to receive reply from installd");
         return false;
     }
@@ -736,7 +726,7 @@ static bool proxy_process(int fd, bool can_appsync)
             return false;
         }
 
-        auto close_client_fd = util::finally([&]{
+        auto close_client_fd = finally([&]{
             LOGD("Closing client connection");
             close(client_fd);
         });
@@ -749,7 +739,7 @@ static bool proxy_process(int fd, bool can_appsync)
             return false;
         }
 
-        auto close_installd_fd = util::finally([&]{
+        auto close_installd_fd = finally([&]{
             LOGD("Closing installd connection");
             close(installd_fd);
         });
@@ -791,9 +781,6 @@ static bool proxy_process(int fd, bool can_appsync)
             }
         }
     }
-
-    // Not reached
-    return true;
 }
 
 /*!
@@ -826,7 +813,7 @@ static bool hijack_socket(bool can_appsync)
         return false;
     }
 
-    auto close_new_fd = util::finally([&]{
+    auto close_new_fd = finally([&]{
         close(new_fd);
     });
 
@@ -842,7 +829,7 @@ static bool hijack_socket(bool can_appsync)
     }
 
     // Kill installd when we exit
-    auto kill_installd = util::finally([&]{
+    auto kill_installd = finally([&]{
         kill(pid, SIGINT);
 
         int status;
@@ -933,7 +920,7 @@ int appsync_main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    autoclose::file fp(autoclose::fopen(MULTIBOOT_LOG_APPSYNC, "we"));
+    ScopedFILE fp(fopen(MULTIBOOT_LOG_APPSYNC, "we"), fclose);
     if (!fp) {
         fprintf(stderr, "Failed to open log file %s: %s\n",
                 MULTIBOOT_LOG_APPSYNC, strerror(errno));
@@ -943,15 +930,15 @@ int appsync_main(int argc, char *argv[])
     fix_multiboot_permissions();
 
     // mbtool logging
-    log::log_set_logger(std::make_shared<log::StdioLogger>(fp.get(), true));
+    log::set_logger(std::make_shared<log::StdioLogger>(fp.get()));
 
     LOGI("=== APPSYNC VERSION %s ===", version());
 
     LOGI("Calling restorecon on /data/media/obb");
-    const char *restorecon[] =
-            { "restorecon", "-R", "-F", "/data/media/obb", nullptr };
-    util::run_command(restorecon[0], restorecon, nullptr, nullptr, nullptr,
-                      nullptr);
+    std::vector<std::string> restorecon{
+        "restorecon", "-R", "-F", "/data/media/obb"
+    };
+    util::run_command(restorecon[0], restorecon, {}, {}, nullptr, nullptr);
 
     bool can_appsync = false;
 

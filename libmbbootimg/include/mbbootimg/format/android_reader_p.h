@@ -1,76 +1,93 @@
 /*
  * Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
 
 #include "mbbootimg/guard_p.h"
 
+#include "mbcommon/optional.h"
+
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
 #include "mbbootimg/reader.h"
+#include "mbbootimg/reader_p.h"
 
 
-MB_BEGIN_C_DECLS
-
-struct AndroidReaderCtx
+namespace mb
 {
+namespace bootimg
+{
+namespace android
+{
+
+class AndroidFormatReader : public detail::FormatReader
+{
+public:
+    AndroidFormatReader(Reader &reader, bool is_bump);
+    virtual ~AndroidFormatReader();
+
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(AndroidFormatReader)
+
+    int type() override;
+    std::string name() override;
+
+    oc::result<void> set_option(const char *key, const char *value) override;
+    oc::result<int> open(File &file, int best_bid) override;
+    oc::result<void> close(File &file) override;
+    oc::result<void> read_header(File &file, Header &header) override;
+    oc::result<void> read_entry(File &file, Entry &entry) override;
+    oc::result<void> go_to_entry(File &file, Entry &entry, int entry_type) override;
+    oc::result<size_t> read_data(File &file, void *buf, size_t buf_size) override;
+
+    static oc::result<void>
+    find_header(Reader &reader, File &file,
+                uint64_t max_header_offset,
+                AndroidHeader &header_out,
+                uint64_t &offset_out);
+    static oc::result<void>
+    find_samsung_seandroid_magic(Reader &reader, File &file,
+                                 const AndroidHeader &hdr,
+                                 uint64_t &offset_out);
+    static oc::result<void>
+    find_bump_magic(Reader &reader, File &file,
+                    const AndroidHeader &hdr,
+                    uint64_t &offset_out);
+    static bool convert_header(const AndroidHeader &hdr, Header &header);
+
+private:
+    oc::result<int> open_android(File &file, int best_bid);
+    oc::result<int> open_bump(File &file, int best_bid);
+
+    const bool m_is_bump;
+
     // Header values
-    struct AndroidHeader hdr;
+    AndroidHeader m_hdr;
 
     // Offsets
-    bool have_header_offset;
-    uint64_t header_offset;
-    bool have_samsung_offset;
-    uint64_t samsung_offset;
-    bool have_bump_offset;
-    uint64_t bump_offset;
+    optional<uint64_t> m_header_offset;
 
-    bool allow_truncated_dt;
+    bool m_allow_truncated_dt;
 
-    bool is_bump;
-
-    struct SegmentReaderCtx segctx;
+    optional<SegmentReader> m_seg;
 };
 
-int find_android_header(struct MbBiReader *bir, struct MbFile *file,
-                        uint64_t max_header_offset,
-                        struct AndroidHeader *header_out, uint64_t *offset_out);
-int find_samsung_seandroid_magic(struct MbBiReader *bir, struct MbFile *file,
-                                 struct AndroidHeader *hdr,
-                                 uint64_t *offset_out);
-int find_bump_magic(struct MbBiReader *bir, struct MbFile *file,
-                    struct AndroidHeader *hdr, uint64_t *offset_out);
-int android_set_header(struct AndroidHeader *hdr, struct MbBiHeader *header);
-
-int android_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int bump_reader_bid(struct MbBiReader *bir, void *userdata, int best_bid);
-int android_reader_set_option(struct MbBiReader *bir, void *userdata,
-                              const char *key, const char *value);
-int android_reader_read_header(struct MbBiReader *bir, void *userdata,
-                               struct MbBiHeader *header);
-int android_reader_read_entry(struct MbBiReader *bir, void *userdata,
-                              struct MbBiEntry *entry);
-int android_reader_go_to_entry(struct MbBiReader *bir, void *userdata,
-                               struct MbBiEntry *entry, int entry_type);
-int android_reader_read_data(struct MbBiReader *bir, void *userdata,
-                             void *buf, size_t buf_size,
-                             size_t *bytes_read);
-int android_reader_free(struct MbBiReader *bir, void *userdata);
-
-MB_END_C_DECLS
+}
+}
+}

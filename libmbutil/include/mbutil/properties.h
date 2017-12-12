@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #pragma once
@@ -22,7 +22,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "mbutil/integer.h"
+#include "mbcommon/integer.h"
+
 #include "mbutil/external/system_properties.h"
 
 struct timespec;
@@ -60,28 +61,28 @@ std::string property_get_string(const std::string &key,
                                 const std::string &default_value);
 bool property_get_bool(const std::string &key, bool default_value);
 
-template<typename SNumType>
-inline SNumType property_get_snum(const std::string &key,
-                                  SNumType default_value)
+template<typename SIntType>
+inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
+property_get_num(const std::string &key, SIntType default_value)
 {
     std::string value;
-    SNumType result;
+    SIntType result;
 
-    if (property_get(key, value) && str_to_snum(value.c_str(), 10, &result)) {
+    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
     return default_value;
 }
 
-template<typename UNumType>
-inline UNumType property_get_unum(const std::string &key,
-                                  UNumType default_value)
+template<typename UIntType>
+inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
+property_get_num(const std::string &key, UIntType default_value)
 {
     std::string value;
-    UNumType result;
+    UIntType result;
 
-    if (property_get(key, value) && str_to_unum(value.c_str(), 10, &result)) {
+    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
@@ -105,32 +106,32 @@ std::string property_file_get_string(const std::string &path,
 bool property_file_get_bool(const std::string &path, const std::string &key,
                             bool default_value);
 
-template<typename SNumType>
-inline SNumType property_file_get_snum(const std::string &path,
-                                       const std::string &key,
-                                       SNumType default_value)
+template<typename SIntType>
+inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
+property_file_get_num(const std::string &path, const std::string &key,
+                      SIntType default_value)
 {
     std::string value;
-    SNumType result;
+    SIntType result;
 
     if (property_file_get(path, key, value)
-            && str_to_snum(value.c_str(), 10, &result)) {
+            && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 
     return default_value;
 }
 
-template<typename UNumType>
-inline UNumType property_file_get_unum(const std::string &path,
-                                       const std::string &key,
-                                       UNumType default_value)
+template<typename UIntType>
+inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
+property_file_get_num(const std::string &path, const std::string &key,
+                      UIntType default_value)
 {
     std::string value;
-    UNumType result;
+    UIntType result;
 
     if (property_file_get(path, key, value)
-            && str_to_unum(value.c_str(), 10, &result)) {
+            && str_to_num(value.c_str(), 10, result)) {
         return result;
     }
 

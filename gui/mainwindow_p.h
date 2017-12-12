@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef MAINWINDOW_P_H
@@ -23,8 +23,8 @@
 #include "mainwindow.h"
 
 #include <mbdevice/device.h>
-#include <mbp/patcherconfig.h>
-#include <mbp/patcherinterface.h>
+#include <mbpatcher/patcherconfig.h>
+#include <mbpatcher/patcherinterface.h>
 
 #include <memory>
 #include <vector>
@@ -41,7 +41,6 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QRadioButton>
 
-typedef std::unique_ptr<Device, void (*)(Device *)> ScopedDevice;
 
 class InstallLocation
 {
@@ -78,11 +77,11 @@ public:
     QString fileName;
     bool autoMode;
 
-    mbp::PatcherConfig *pc = nullptr;
-    std::vector<ScopedDevice> devices;
+    mb::patcher::PatcherConfig *pc = nullptr;
+    std::vector<mb::device::Device> devices;
 
     // Selected patcher
-    mbp::Patcher *patcher = nullptr;
+    mb::patcher::Patcher *patcher = nullptr;
 
     // Patcher finish status and error message
     QString patcherNewFile;
@@ -94,7 +93,7 @@ public:
     PatcherTask *task;
 
     // Selected device
-    Device *device = nullptr;
+    mb::device::Device *device = nullptr;
 
     // List of installation locations
     QList<InstallLocation> instLocs;

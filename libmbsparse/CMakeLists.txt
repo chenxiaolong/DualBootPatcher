@@ -1,96 +1,85 @@
-if(MBP_ENABLE_TESTS)
-    include_directories(${GTEST_INCLUDE_DIRS})
+set(variants)
+
+if(MBP_TARGET_HAS_BUILDS)
+    list(APPEND variants static)
+endif()
+if(${MBP_BUILD_TARGET} STREQUAL desktop)
+    list(APPEND variants shared)
 endif()
 
-set(MBSPARSE_SOURCES
-    src/sparse.cpp
-)
+# Build libraries
+foreach(variant ${variants})
+    set(lib_target mbsparse-${variant})
+    string(TOUPPER ${variant} uvariant)
 
-if(${MBP_BUILD_TARGET} STREQUAL android-system)
-    # Build static library
-
-    add_library(mbsparse-static STATIC ${MBSPARSE_SOURCES})
-
-    target_compile_definitions(
-        mbsparse-static
-        PRIVATE
-        -DMB_LIBRARY
+    # Build library
+    add_library(
+        ${lib_target}
+        ${uvariant}
+        src/sparse.cpp
+        src/sparse_error.cpp
     )
 
-    set_target_properties(
-        mbsparse-static
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
+    # Includes
+    target_include_directories(
+        ${lib_target}
+        PUBLIC include
     )
 
-    if(NOT MSVC)
-        set_target_properties(
-            mbsparse-static
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
-    endif()
-elseif(${MBP_BUILD_TARGET} STREQUAL desktop)
-    # Build shared library
-
-    add_library(mbsparse-shared SHARED ${MBSPARSE_SOURCES})
-
-    target_compile_definitions(
-        mbsparse-shared
-        PRIVATE
-        -DMB_DYNAMIC_LINK
-        -DMB_LIBRARY
-    )
-
-    set_target_properties(
-        mbsparse-shared
-        PROPERTIES
-        POSITION_INDEPENDENT_CODE 1
-        OUTPUT_NAME mbsparse
-    )
-
-    if(NOT MSVC)
-        set_target_properties(
-            mbsparse-shared
-            PROPERTIES
-            CXX_STANDARD 11
-            CXX_STANDARD_REQUIRED 1
-        )
+    # Only build static library if needed
+    if(${variant} STREQUAL static)
+        set_target_properties(${lib_target} PROPERTIES EXCLUDE_FROM_ALL 1)
     endif()
 
+    # Set library name
+    set_target_properties(${lib_target} PROPERTIES OUTPUT_NAME mbsparse)
+
+    # Link dependencies
     target_link_libraries(
-        mbsparse-shared
-        mblog-shared
+        ${lib_target}
+        PUBLIC
+        mbcommon-${variant}
+        PRIVATE
+        interface.global.CXXVersion
+        interface.mbcommon.library
+        $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
+        mblog-${variant}
     )
 
     # Install shared library
-    install(
-        TARGETS mbsparse-shared
-        LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
-        #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+    if(${variant} STREQUAL shared)
+        install(
+            TARGETS ${lib_target}
+            LIBRARY DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            RUNTIME DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+            #ARCHIVE DESTINATION ${LIB_INSTALL_DIR} COMPONENT Libraries
+        )
+    endif()
+endforeach()
+
+# Build tests
+if(variants AND MBP_ENABLE_TESTS)
+    # Build tests
+    add_executable(
+        mbsparse_tests
+        # Helpers
+        tests/main.cpp
+        # Tests
+        tests/test_sparse.cpp
     )
 
-    if(MBP_ENABLE_TESTS)
-        add_executable(test_sparse tests/test_sparse.cpp)
-        target_link_libraries(
-            test_sparse
-            mbsparse-shared
-            ${GTEST_BOTH_LIBRARIES}
-        )
+    # Link dependencies
+    target_link_libraries(
+        mbsparse_tests
+        interface.global.CXXVersion
+        mbsparse-static
+        gtest
+        gtest_main
+    )
 
-        if(NOT MSVC)
-            set_target_properties(
-                test_sparse
-                PROPERTIES
-                CXX_STANDARD 11
-                CXX_STANDARD_REQUIRED 1
-                C_STANDARD 99
-                C_STANDARD_REQUIRED 1
-            )
-        endif()
-
-        add_test(NAME test_sparse COMMAND test_sparse)
-    endif()
+    # Add to ctest
+    add_test(
+        NAME mbsparse_tests
+        COMMAND mbsparse_tests
+    )
 endif()

@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "appsyncmanager.h"
@@ -33,6 +33,8 @@
 #include "mbutil/fts.h"
 #include "mbutil/selinux.h"
 
+#define LOG_TAG "mbtool/appsyncmanager"
+
 #define APP_SHARING_DATA_DIR            "/data/multiboot/_appsharing/data"
 
 #define USER_DATA_DIR                   "/data/data"
@@ -47,29 +49,29 @@ namespace mb
  * Recursively chmod directories to 755 and files to 0644 and chown everything
  * system:system.
  */
-class FixPermissions : public util::FTSWrapper {
+class FixPermissions : public util::FtsWrapper {
 public:
     FixPermissions(std::string path)
-        : FTSWrapper(path, FTS_GroupSpecialFiles)
+        : FtsWrapper(path, util::FtsFlag::GroupSpecialFiles)
     {
     }
 
-    virtual int on_changed_path() override
+    Actions on_changed_path() override
     {
         util::chown(_curr->fts_accpath, "system", "system", 0);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         chmod(_curr->fts_accpath, 0644);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_directory_pre() override
+    Actions on_reached_directory_pre() override
     {
         chmod(_curr->fts_accpath, 0755);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 };
 
@@ -121,7 +123,7 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
         return false;
     }
 
-    if (!util::chown(data_path, uid, uid, util::CHOWN_RECURSIVE)) {
+    if (!util::chown(data_path, uid, uid, util::ChownFlag::Recursive)) {
         LOGW("[%s] %s: Failed to chown: %s",
              pkg.c_str(), data_path.c_str(), strerror(errno));
         return false;
@@ -133,7 +135,7 @@ bool AppSyncManager::create_shared_data_directory(const std::string &pkg, uid_t 
 bool AppSyncManager::fix_shared_data_permissions()
 {
     std::string context("u:object_r:app_data_file:s0");
-    util::selinux_lget_context("/data/data/com.android.systemui", &context);
+    util::selinux_lget_context("/data/data/com.android.systemui", context);
 
     if (!util::selinux_lset_context_recursive(_as_data_dir, context)) {
         LOGW("%s: Failed to set context recursively to %s: %s",
@@ -156,7 +158,7 @@ bool AppSyncManager::mount_shared_directory(const std::string &pkg, uid_t uid)
              pkg.c_str(), target.c_str(), strerror(errno));
         return false;
     }
-    if (!util::chown(target, uid, uid, util::CHOWN_RECURSIVE)) {
+    if (!util::chown(target, uid, uid, util::ChownFlag::Recursive)) {
         LOGW("[%s] %s: Failed to chown: %s",
              pkg.c_str(), target.c_str(), strerror(errno));
         return false;

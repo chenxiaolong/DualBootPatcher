@@ -17,6 +17,15 @@ find_package_handle_standard_args(
 
 if(SAFE_IOP_FOUND)
     set(SAFE_IOP_LIBRARIES ${SAFE_IOP_LIBRARY})
+
+    add_library(SafeIop::SafeIop UNKNOWN IMPORTED)
+    set_target_properties(
+        SafeIop::SafeIop
+        PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+        IMPORTED_LOCATION "${SAFE_IOP_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${SAFE_IOP_INCLUDE_DIR}"
+    )
 endif()
 
 mark_as_advanced(SAFE_IOP_INCLUDE_DIR SAFE_IOP_LIBRARY)

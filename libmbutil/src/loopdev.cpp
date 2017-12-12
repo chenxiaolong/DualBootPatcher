@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/loopdev.h"
@@ -26,12 +26,13 @@
 #include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <unistd.h>
 
 #include <linux/loop.h>
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
-#include "mbutil/finally.h"
 #include "mbutil/string.h"
 
 
@@ -55,7 +56,7 @@ namespace util
  * \return Loopdev number or -1 if loop-control does not exist or the ioctl
  *         failed
  */
-static int find_loopdev_by_loop_control(void)
+static int find_loopdev_by_loop_control()
 {
     int fd = -1;
 
@@ -75,7 +76,8 @@ static int find_loopdev_by_loop_control(void)
     char loopdev[64];
     sprintf(loopdev, LOOP_FMT, n);
 
-    if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0 && errno != EEXIST) {
+    if (mknod(loopdev, S_IFBLK | 0644, static_cast<dev_t>(makedev(7, n))) < 0
+            && errno != EEXIST) {
         return -1;
     }
 
@@ -104,7 +106,8 @@ static int find_loopdev_by_scanning(void)
 
         sprintf(loopdev, LOOP_FMT, n);
 
-        if (mknod(loopdev, S_IFBLK | 0644, makedev(7, n)) < 0) {
+        if (mknod(loopdev, S_IFBLK | 0644,
+                  static_cast<dev_t>(makedev(7, n))) < 0) {
             if (errno != EEXIST) {
                 continue;
             }
@@ -158,15 +161,7 @@ std::string loopdev_find_unused(void)
         return {};
     }
 
-    std::string result;
-
-    char *path = mb_format(LOOP_FMT, n);
-    if (path) {
-        result = path;
-        free(path);
-    }
-
-    return result;
+    return format(LOOP_FMT, n);
 }
 
 bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
@@ -194,7 +189,8 @@ bool loopdev_set_up_device(const std::string &loopdev, const std::string &file,
     });
 
     memset(&loopinfo, 0, sizeof(struct loop_info64));
-    strlcpy((char *) loopinfo.lo_file_name, file.c_str(), LO_NAME_SIZE);
+    strlcpy(reinterpret_cast<char *>(loopinfo.lo_file_name), file.c_str(),
+            LO_NAME_SIZE);
     loopinfo.lo_offset = offset;
 
     if (ioctl(lfd, LOOP_SET_FD, ffd) < 0) {

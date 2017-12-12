@@ -1,417 +1,415 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
 
 #include "mbdevice/device.h"
 #include "mbdevice/json.h"
+#include "mbdevice/capi/json.h"
 
-static const char sample_complete[] =
-    "{"
-        "\"name\": \"Test Device\","
-        "\"id\": \"test\","
-        "\"codenames\": ["
-            "\"test1\","
-            "\"test2\","
-            "\"test3\","
-            "\"test4\""
-        "],"
-        "\"architecture\": \"arm64-v8a\","
-        "\"flags\": ["
-            "\"HAS_COMBINED_BOOT_AND_RECOVERY\""
-        "],"
-        "\"block_devs\": {"
-            "\"base_dirs\": ["
-                "\"/dev/block/bootdevice/by-name\""
-            "],"
-            "\"system\": ["
-                "\"/dev/block/bootdevice/by-name/system\","
-                "\"/dev/block/sda1\""
-            "],"
-            "\"cache\": ["
-                "\"/dev/block/bootdevice/by-name/cache\","
-                "\"/dev/block/sda2\""
-            "],"
-            "\"data\": ["
-                "\"/dev/block/bootdevice/by-name/userdata\","
-                "\"/dev/block/sda3\""
-            "],"
-            "\"boot\": ["
-                "\"/dev/block/bootdevice/by-name/boot\","
-                "\"/dev/block/sda4\""
-            "],"
-            "\"recovery\": ["
-                "\"/dev/block/bootdevice/by-name/recovery\","
-                "\"/dev/block/sda5\""
-            "],"
-            "\"extra\": ["
-                "\"/dev/block/bootdevice/by-name/modem\","
-                "\"/dev/block/sda6\""
-            "]"
-        "},"
-        "\"boot_ui\": {"
-            "\"supported\": true,"
-            "\"flags\": ["
-                "\"TW_TOUCHSCREEN_SWAP_XY\","
-                "\"TW_TOUCHSCREEN_FLIP_X\","
-                "\"TW_TOUCHSCREEN_FLIP_Y\","
-                "\"TW_GRAPHICS_FORCE_USE_LINELENGTH\","
-                "\"TW_SCREEN_BLANK_ON_BOOT\","
-                "\"TW_BOARD_HAS_FLIPPED_SCREEN\","
-                "\"TW_IGNORE_MAJOR_AXIS_0\","
-                "\"TW_IGNORE_MT_POSITION_0\","
-                "\"TW_IGNORE_ABS_MT_TRACKING_ID\","
-                "\"TW_NEW_ION_HEAP\","
-                "\"TW_NO_SCREEN_BLANK\","
-                "\"TW_NO_SCREEN_TIMEOUT\","
-                "\"TW_ROUND_SCREEN\","
-                "\"TW_NO_CPU_TEMP\","
-                "\"TW_QCOM_RTC_FIX\","
-                "\"TW_HAS_DOWNLOAD_MODE\","
-                "\"TW_PREFER_LCD_BACKLIGHT\""
-            "],"
-            "\"pixel_format\": \"RGBA_8888\","
-            "\"force_pixel_format\": \"RGB_565\","
-            "\"overscan_percent\": 10,"
-            "\"default_x_offset\": 20,"
-            "\"default_y_offset\": 30,"
-            "\"brightness_path\": \"/sys/class/backlight\","
-            "\"secondary_brightness_path\": \"/sys/class/lcd-backlight\","
-            "\"max_brightness\": 255,"
-            "\"default_brightness\": 100,"
-            "\"battery_path\": \"/sys/class/battery\","
-            "\"cpu_temp_path\": \"/sys/class/cputemp\","
-            "\"input_blacklist\": \"foo\","
-            "\"input_whitelist\": \"bar\","
-            "\"graphics_backends\": ["
-                "\"overlay_msm_old\","
-                "\"fbdev\""
-            "],"
-            "\"theme\": \"portrait_hdpi\""
-        "}"
-    "}";
+#define TO_U(TYPE, VALUE) \
+    static_cast<std::underlying_type_t<TYPE>>(TYPE::VALUE)
 
-static const char sample_invalid_root[] =
-    "["
-        "\"foo\","
-        "\"bar\""
-    "]";
+using namespace mb::device;
 
-static const char sample_invalid_key[] =
-    "{"
-        "\"foo\": \"bar\""
-    "}";
-
-static const char sample_invalid_device_flags[] =
-    "{"
-        "\"flags\": ["
-            "\"FOO_BAR\""
-        "]"
-    "}";
-
-static const char sample_invalid_tw_flags[] =
-    "{"
-        "\"boot_ui\": {"
-            "\"flags\": ["
-                "\"TW_FOO_BAR\""
-            "]"
-        "}"
-    "}";
-
-static const char sample_invalid_tw_pixel_format[] =
-    "{"
-        "\"boot_ui\": {"
-            "\"pixel_format\": \"FOO_BAR\""
-        "}"
-    "}";
-
-static const char sample_invalid_tw_force_pixel_format[] =
-    "{"
-        "\"boot_ui\": {"
-            "\"force_pixel_format\": \"FOO_BAR\""
-        "}"
-    "}";
-
-static const char sample_invalid_type[] =
-    "{"
-        "\"boot_ui\": \"FOO_BAR\""
-    "}";
-
-static const char sample_malformed[] =
-    "{";
-
-static const char sample_multiple[] =
-    "["
-        "{"
-            "\"id\": \"test1\""
-        "},"
-        "{"
-            "\"id\": \"test2\""
-        "}"
-    "]";
-
-
-struct ScopedDevice
-{
-    Device *device;
-    MbDeviceJsonError error;
-
-    ScopedDevice(const char *json)
+static constexpr char sample_complete[] = R"json(
     {
-        device = mb_device_new_from_json(json, &error);
+        "name": "Test Device",
+        "id": "test",
+        "codenames": [
+            "test1",
+            "test2",
+            "test3",
+            "test4"
+        ],
+        "architecture": "arm64-v8a",
+        "flags": [
+            "HAS_COMBINED_BOOT_AND_RECOVERY"
+        ],
+        "block_devs": {
+            "base_dirs": [
+                "/dev/block/bootdevice/by-name"
+            ],
+            "system": [
+                "/dev/block/bootdevice/by-name/system",
+                "/dev/block/sda1"
+            ],
+            "cache": [
+                "/dev/block/bootdevice/by-name/cache",
+                "/dev/block/sda2"
+            ],
+            "data": [
+                "/dev/block/bootdevice/by-name/userdata",
+                "/dev/block/sda3"
+            ],
+            "boot": [
+                "/dev/block/bootdevice/by-name/boot",
+                "/dev/block/sda4"
+            ],
+            "recovery": [
+                "/dev/block/bootdevice/by-name/recovery",
+                "/dev/block/sda5"
+            ],
+            "extra": [
+                "/dev/block/bootdevice/by-name/modem",
+                "/dev/block/sda6"
+            ]
+        },
+        "boot_ui": {
+            "supported": true,
+            "flags": [
+                "TW_TOUCHSCREEN_SWAP_XY",
+                "TW_TOUCHSCREEN_FLIP_X",
+                "TW_TOUCHSCREEN_FLIP_Y",
+                "TW_GRAPHICS_FORCE_USE_LINELENGTH",
+                "TW_SCREEN_BLANK_ON_BOOT",
+                "TW_BOARD_HAS_FLIPPED_SCREEN",
+                "TW_IGNORE_MAJOR_AXIS_0",
+                "TW_IGNORE_MT_POSITION_0",
+                "TW_IGNORE_ABS_MT_TRACKING_ID",
+                "TW_NEW_ION_HEAP",
+                "TW_NO_SCREEN_BLANK",
+                "TW_NO_SCREEN_TIMEOUT",
+                "TW_ROUND_SCREEN",
+                "TW_NO_CPU_TEMP",
+                "TW_QCOM_RTC_FIX",
+                "TW_HAS_DOWNLOAD_MODE",
+                "TW_PREFER_LCD_BACKLIGHT"
+            ],
+            "pixel_format": "RGBA_8888",
+            "force_pixel_format": "RGB_565",
+            "overscan_percent": 10,
+            "default_x_offset": 20,
+            "default_y_offset": 30,
+            "brightness_path": "/sys/class/backlight",
+            "secondary_brightness_path": "/sys/class/lcd-backlight",
+            "max_brightness": 255,
+            "default_brightness": 100,
+            "battery_path": "/sys/class/battery",
+            "cpu_temp_path": "/sys/class/cputemp",
+            "input_blacklist": "foo",
+            "input_whitelist": "bar",
+            "graphics_backends": [
+                "overlay_msm_old",
+                "fbdev"
+            ],
+            "theme": "portrait_hdpi"
+        }
     }
+)json";
 
-    ~ScopedDevice()
+static constexpr char sample_invalid_root[] = R"json(
+    [
+        "foo",
+        "bar"
+    ]
+)json";
+
+static constexpr char sample_invalid_key[] = R"json(
     {
-        mb_device_free(device);
+        "foo": "bar"
     }
-};
+)json";
 
-struct ScopedDevices
-{
-    Device **devices;
-    MbDeviceJsonError error;
-
-    ScopedDevices(const char *json)
+static constexpr char sample_invalid_device_flags[] = R"json(
     {
-        devices = mb_device_new_list_from_json(json, &error);
+        "flags": [
+            "FOO_BAR"
+        ]
     }
+)json";
 
-    ~ScopedDevices()
+static constexpr char sample_invalid_tw_flags[] = R"json(
     {
-        if (devices) {
-            for (struct Device **iter = devices; *iter; ++iter) {
-                mb_device_free(*iter);
+        "boot_ui": {
+            "flags": [
+                "TW_FOO_BAR"
+            ]
+        }
+    }
+)json";
+
+static constexpr char sample_invalid_tw_pixel_format[] = R"json(
+    {
+        "boot_ui": {
+            "pixel_format": "FOO_BAR"
+        }
+    }
+)json";
+
+static constexpr char sample_invalid_tw_force_pixel_format[] = R"json(
+    {
+        "boot_ui": {
+            "force_pixel_format": "FOO_BAR"
+        }
+    }
+)json";
+
+static constexpr char sample_invalid_type[] = R"json(
+    {
+        "boot_ui": "FOO_BAR"
+    }
+)json";
+
+static constexpr char sample_malformed[] = R"json(
+    {
+)json";
+
+static constexpr char sample_multiple[] = R"json(
+    [
+        {
+            "name": "test1",
+            "id": "test1",
+            "codenames": ["test1"],
+            "architecture": "armeabi-v7a",
+            "block_devs": {
+                "system": ["/dev/blah"],
+                "cache": ["/dev/blah"],
+                "data": ["/dev/blah"],
+                "boot": ["/dev/blah"]
             }
-            free(devices);
+        },
+        {
+            "name": "test2",
+            "id": "test2",
+            "codenames": ["test2"],
+            "architecture": "arm64-v8a",
+            "block_devs": {
+                "system": ["/dev/blah"],
+                "cache": ["/dev/blah"],
+                "data": ["/dev/blah"],
+                "boot": ["/dev/blah"]
+            }
         }
-    }
-};
+    ]
+)json";
 
-static bool string_array_eq(char const * const *a, char const * const *b)
-{
-    while (*a && *b) {
-        if (strcmp(*a, *b) != 0) {
-            return false;
-        }
-        ++a;
-        ++b;
-    }
-    return !*a && !*b;
-}
 
 TEST(JsonTest, LoadCompleteDefinition)
 {
-    ScopedDevice sd(sample_complete);
+    Device device;
+    JsonError error;
+    ASSERT_TRUE(device_from_json(sample_complete, device, error));
 
-    ASSERT_NE(sd.device, nullptr);
+    ASSERT_EQ(device.id(), "test");
 
-    ASSERT_STREQ(mb_device_id(sd.device), "test");
+    std::vector<std::string> codenames{"test1", "test2", "test3", "test4"};
+    ASSERT_EQ(device.codenames(), codenames);
 
-    const char *codenames[] = { "test1", "test2", "test3", "test4", nullptr };
-    ASSERT_TRUE(string_array_eq(mb_device_codenames(sd.device), codenames));
+    ASSERT_EQ(device.name(), "Test Device");
+    ASSERT_EQ(device.architecture(), "arm64-v8a");
 
-    ASSERT_STREQ(mb_device_name(sd.device), "Test Device");
-    ASSERT_STREQ(mb_device_architecture(sd.device), "arm64-v8a");
+    DeviceFlags device_flags = DeviceFlag::HasCombinedBootAndRecovery;
+    ASSERT_EQ(device.flags(), device_flags);
 
-    uint64_t device_flags = FLAG_HAS_COMBINED_BOOT_AND_RECOVERY;
-    ASSERT_EQ(mb_device_flags(sd.device), device_flags);
+    std::vector<std::string> base_dirs{"/dev/block/bootdevice/by-name"};
+    ASSERT_EQ(device.block_dev_base_dirs(), base_dirs);
 
-    const char *base_dirs[] = { "/dev/block/bootdevice/by-name", nullptr };
-    ASSERT_TRUE(string_array_eq(mb_device_block_dev_base_dirs(sd.device), base_dirs));
-
-    const char *system_devs[] = {
+    std::vector<std::string> system_devs{
         "/dev/block/bootdevice/by-name/system",
         "/dev/block/sda1",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_system_block_devs(sd.device), system_devs));
+    ASSERT_EQ(device.system_block_devs(), system_devs);
 
-    const char *cache_devs[] = {
+    std::vector<std::string> cache_devs{
         "/dev/block/bootdevice/by-name/cache",
         "/dev/block/sda2",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_cache_block_devs(sd.device), cache_devs));
+    ASSERT_EQ(device.cache_block_devs(), cache_devs);
 
-    const char *data_devs[] = {
+    std::vector<std::string> data_devs{
         "/dev/block/bootdevice/by-name/userdata",
         "/dev/block/sda3",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_data_block_devs(sd.device), data_devs));
+    ASSERT_EQ(device.data_block_devs(), data_devs);
 
-    const char *boot_devs[] = {
+    std::vector<std::string> boot_devs{
         "/dev/block/bootdevice/by-name/boot",
         "/dev/block/sda4",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_boot_block_devs(sd.device), boot_devs));
+    ASSERT_EQ(device.boot_block_devs(), boot_devs);
 
-    const char *recovery_devs[] = {
+    std::vector<std::string> recovery_devs{
         "/dev/block/bootdevice/by-name/recovery",
         "/dev/block/sda5",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_recovery_block_devs(sd.device), recovery_devs));
+    ASSERT_EQ(device.recovery_block_devs(), recovery_devs);
 
-    const char *extra_devs[] = {
+    std::vector<std::string> extra_devs{
         "/dev/block/bootdevice/by-name/modem",
         "/dev/block/sda6",
-        nullptr
     };
-    ASSERT_TRUE(string_array_eq(mb_device_extra_block_devs(sd.device), extra_devs));
+    ASSERT_EQ(device.extra_block_devs(), extra_devs);
 
     /* Boot UI */
 
-    ASSERT_EQ(mb_device_tw_supported(sd.device), true);
+    ASSERT_TRUE(device.tw_supported());
 
-    uint64_t flags =
-            FLAG_TW_TOUCHSCREEN_SWAP_XY
-            | FLAG_TW_TOUCHSCREEN_FLIP_X
-            | FLAG_TW_TOUCHSCREEN_FLIP_Y
-            | FLAG_TW_GRAPHICS_FORCE_USE_LINELENGTH
-            | FLAG_TW_SCREEN_BLANK_ON_BOOT
-            | FLAG_TW_BOARD_HAS_FLIPPED_SCREEN
-            | FLAG_TW_IGNORE_MAJOR_AXIS_0
-            | FLAG_TW_IGNORE_MT_POSITION_0
-            | FLAG_TW_IGNORE_ABS_MT_TRACKING_ID
-            | FLAG_TW_NEW_ION_HEAP
-            | FLAG_TW_NO_SCREEN_BLANK
-            | FLAG_TW_NO_SCREEN_TIMEOUT
-            | FLAG_TW_ROUND_SCREEN
-            | FLAG_TW_NO_CPU_TEMP
-            | FLAG_TW_QCOM_RTC_FIX
-            | FLAG_TW_HAS_DOWNLOAD_MODE
-            | FLAG_TW_PREFER_LCD_BACKLIGHT;
-    ASSERT_EQ(mb_device_tw_flags(sd.device), flags);
+    TwFlags flags =
+            TwFlag::TouchscreenSwapXY
+            | TwFlag::TouchscreenFlipX
+            | TwFlag::TouchscreenFlipY
+            | TwFlag::GraphicsForceUseLineLength
+            | TwFlag::ScreenBlankOnBoot
+            | TwFlag::BoardHasFlippedScreen
+            | TwFlag::IgnoreMajorAxis0
+            | TwFlag::IgnoreMtPosition0
+            | TwFlag::IgnoreAbsMtTrackingId
+            | TwFlag::NewIonHeap
+            | TwFlag::NoScreenBlank
+            | TwFlag::NoScreenTimeout
+            | TwFlag::RoundScreen
+            | TwFlag::NoCpuTemp
+            | TwFlag::QcomRtcFix
+            | TwFlag::HasDownloadMode
+            | TwFlag::PreferLcdBacklight;
+    ASSERT_EQ(device.tw_flags(), flags);
 
-    ASSERT_EQ(mb_device_tw_pixel_format(sd.device), TW_PIXEL_FORMAT_RGBA_8888);
-    ASSERT_EQ(mb_device_tw_force_pixel_format(sd.device), TW_FORCE_PIXEL_FORMAT_RGB_565);
-    ASSERT_EQ(mb_device_tw_overscan_percent(sd.device), 10);
-    ASSERT_EQ(mb_device_tw_default_x_offset(sd.device), 20);
-    ASSERT_EQ(mb_device_tw_default_y_offset(sd.device), 30);
-    ASSERT_STREQ(mb_device_tw_brightness_path(sd.device), "/sys/class/backlight");
-    ASSERT_STREQ(mb_device_tw_secondary_brightness_path(sd.device), "/sys/class/lcd-backlight");
-    ASSERT_EQ(mb_device_tw_max_brightness(sd.device), 255);
-    ASSERT_EQ(mb_device_tw_default_brightness(sd.device), 100);
-    ASSERT_STREQ(mb_device_tw_battery_path(sd.device), "/sys/class/battery");
-    ASSERT_STREQ(mb_device_tw_cpu_temp_path(sd.device), "/sys/class/cputemp");
-    ASSERT_STREQ(mb_device_tw_input_blacklist(sd.device), "foo");
-    ASSERT_STREQ(mb_device_tw_input_whitelist(sd.device), "bar");
+    ASSERT_EQ(device.tw_pixel_format(), TwPixelFormat::Rgba8888);
+    ASSERT_EQ(device.tw_force_pixel_format(), TwForcePixelFormat::Rgb565);
+    ASSERT_EQ(device.tw_overscan_percent(), 10);
+    ASSERT_EQ(device.tw_default_x_offset(), 20);
+    ASSERT_EQ(device.tw_default_y_offset(), 30);
+    ASSERT_EQ(device.tw_brightness_path(), "/sys/class/backlight");
+    ASSERT_EQ(device.tw_secondary_brightness_path(),
+              "/sys/class/lcd-backlight");
+    ASSERT_EQ(device.tw_max_brightness(), 255);
+    ASSERT_EQ(device.tw_default_brightness(), 100);
+    ASSERT_EQ(device.tw_battery_path(), "/sys/class/battery");
+    ASSERT_EQ(device.tw_cpu_temp_path(), "/sys/class/cputemp");
+    ASSERT_EQ(device.tw_input_blacklist(), "foo");
+    ASSERT_EQ(device.tw_input_whitelist(), "bar");
 
-    const char *graphics_backends[] = {
-        "overlay_msm_old",
-        "fbdev",
-        nullptr
-    };
-    ASSERT_TRUE(string_array_eq(mb_device_tw_graphics_backends(sd.device), graphics_backends));
+    std::vector<std::string> graphics_backends{"overlay_msm_old", "fbdev"};
+    ASSERT_EQ(device.tw_graphics_backends(), graphics_backends);
 
-    ASSERT_STREQ(mb_device_tw_theme(sd.device), "portrait_hdpi");
+    ASSERT_EQ(device.tw_theme(), "portrait_hdpi");
 }
 
 TEST(JsonTest, LoadInvalidKey)
 {
-    ScopedDevice sd(sample_invalid_key);
-
-    ASSERT_EQ(sd.device, nullptr);
-    ASSERT_EQ(sd.error.type, MB_DEVICE_JSON_UNKNOWN_KEY);
-    ASSERT_STREQ(sd.error.context, ".foo");
+    Device device;
+    JsonError error;
+    ASSERT_FALSE(device_from_json(sample_invalid_key, device, error));
+    ASSERT_EQ(error.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(error.schema_uri, "#");
+    ASSERT_EQ(error.schema_keyword, "additionalProperties");
+    ASSERT_EQ(error.document_uri, "#/foo");
 }
 
 TEST(JsonTest, LoadInvalidValue)
 {
-    ScopedDevice sd1(sample_invalid_device_flags);
-    ASSERT_EQ(sd1.device, nullptr);
-    ASSERT_EQ(sd1.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd1.error.context, ".flags[0]");
+    Device d1;
+    JsonError e1;
+    ASSERT_FALSE(device_from_json(sample_invalid_device_flags, d1, e1));
+    ASSERT_EQ(e1.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e1.schema_uri, "#/properties/flags/items");
+    ASSERT_EQ(e1.schema_keyword, "enum");
+    ASSERT_EQ(e1.document_uri, "#/flags/0");
 
-    ScopedDevice sd2(sample_invalid_tw_flags);
-    ASSERT_EQ(sd2.device, nullptr);
-    ASSERT_EQ(sd2.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd2.error.context, ".boot_ui.flags[0]");
+    Device d2;
+    JsonError e2;
+    ASSERT_FALSE(device_from_json(sample_invalid_tw_flags, d2, e2));
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui/properties/flags/items");
+    ASSERT_EQ(e2.schema_keyword, "enum");
+    ASSERT_EQ(e2.document_uri, "#/boot_ui/flags/0");
 
-    ScopedDevice sd3(sample_invalid_tw_pixel_format);
-    ASSERT_EQ(sd3.device, nullptr);
-    ASSERT_EQ(sd3.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd3.error.context, ".boot_ui.pixel_format");
+    Device d3;
+    JsonError e3;
+    ASSERT_FALSE(device_from_json(sample_invalid_tw_pixel_format, d3, e3));
+    ASSERT_EQ(e3.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e3.schema_uri, "#/properties/boot_ui/properties/pixel_format");
+    ASSERT_EQ(e3.schema_keyword, "enum");
+    ASSERT_EQ(e3.document_uri, "#/boot_ui/pixel_format");
 
-    ScopedDevice sd4(sample_invalid_tw_force_pixel_format);
-    ASSERT_EQ(sd4.device, nullptr);
-    ASSERT_EQ(sd4.error.type, MB_DEVICE_JSON_UNKNOWN_VALUE);
-    ASSERT_STREQ(sd4.error.context, ".boot_ui.force_pixel_format");
+    Device d4;
+    JsonError e4;
+    ASSERT_FALSE(device_from_json(sample_invalid_tw_force_pixel_format, d4, e4));
+    ASSERT_EQ(e4.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e4.schema_uri, "#/properties/boot_ui/properties/force_pixel_format");
+    ASSERT_EQ(e4.schema_keyword, "enum");
+    ASSERT_EQ(e4.document_uri, "#/boot_ui/force_pixel_format");
 }
 
 TEST(JsonTest, LoadInvalidType)
 {
-    ScopedDevice sd1(sample_invalid_root);
-    ASSERT_EQ(sd1.device, nullptr);
-    ASSERT_EQ(sd1.error.type, MB_DEVICE_JSON_MISMATCHED_TYPE);
-    ASSERT_STREQ(sd1.error.context, ".");
-    ASSERT_STREQ(sd1.error.actual_type, "array");
-    ASSERT_STREQ(sd1.error.expected_type, "object");
+    Device d1;
+    JsonError e1;
+    ASSERT_FALSE(device_from_json(sample_invalid_root, d1, e1));
+    ASSERT_EQ(e1.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e1.schema_uri, "#");
+    ASSERT_EQ(e1.schema_keyword, "type");
+    ASSERT_EQ(e1.document_uri, "#");
 
-    ScopedDevice sd2(sample_invalid_type);
-    ASSERT_EQ(sd2.device, nullptr);
-    ASSERT_EQ(sd2.error.type, MB_DEVICE_JSON_MISMATCHED_TYPE);
-    ASSERT_STREQ(sd2.error.context, ".boot_ui");
-    ASSERT_STREQ(sd2.error.actual_type, "string");
-    ASSERT_STREQ(sd2.error.expected_type, "object");
+    Device d2;
+    JsonError e2;
+    ASSERT_FALSE(device_from_json(sample_invalid_type, d2, e2));
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#/properties/boot_ui");
+    ASSERT_EQ(e2.schema_keyword, "type");
+    ASSERT_EQ(e2.document_uri, "#/boot_ui");
 }
 
 TEST(JsonTest, LoadMalformed)
 {
-    ScopedDevice sd1(sample_malformed);
-    ASSERT_EQ(sd1.device, nullptr);
-    ASSERT_EQ(sd1.error.type, MB_DEVICE_JSON_PARSE_ERROR);
-    ASSERT_EQ(sd1.error.line, 1);
-    ASSERT_EQ(sd1.error.column, 1);
+    Device d1;
+    JsonError e1;
+    ASSERT_FALSE(device_from_json(sample_malformed, d1, e1));
+    ASSERT_EQ(e1.type, JsonErrorType::ParseError);
 }
 
 TEST(JsonTest, LoadMultiple)
 {
-    ScopedDevices sd1(sample_multiple);
-    ASSERT_NE(sd1.devices, nullptr);
+    std::vector<Device> d1;
+    JsonError e1;
+    ASSERT_TRUE(device_list_from_json(sample_multiple, d1, e1));
 
-    ScopedDevices sd2(sample_complete);
-    ASSERT_EQ(sd2.devices, nullptr);
-    ASSERT_EQ(sd2.error.type, MB_DEVICE_JSON_MISMATCHED_TYPE);
-    ASSERT_STREQ(sd2.error.context, ".");
-    ASSERT_STREQ(sd2.error.actual_type, "object");
-    ASSERT_STREQ(sd2.error.expected_type, "array");
+    std::vector<Device> d2;
+    JsonError e2;
+    ASSERT_FALSE(device_list_from_json(sample_complete, d2, e2));
+    ASSERT_EQ(e2.type, JsonErrorType::SchemaValidationFailure);
+    ASSERT_EQ(e2.schema_uri, "#");
+    ASSERT_EQ(e2.schema_keyword, "type");
+    ASSERT_EQ(e2.document_uri, "#");
 }
 
 TEST(JsonTest, CreateJson)
 {
-    ScopedDevice sd1(sample_complete);
-    ASSERT_NE(sd1.device, nullptr);
+    Device d1;
+    JsonError e1;
+    ASSERT_TRUE(device_from_json(sample_complete, d1, e1));
 
-    std::unique_ptr<char, void (*)(void *)> json(
-            mb_device_to_json(sd1.device), free);
-    ASSERT_TRUE(json.operator bool());
+    std::string json;
+    ASSERT_TRUE(device_to_json(d1, json));
 
-    ScopedDevice sd2(json.get());
-    ASSERT_TRUE(mb_device_equals(sd1.device, sd2.device));
+    Device d2;
+    JsonError e2;
+    ASSERT_TRUE(device_from_json(json, d2, e2));
+
+    ASSERT_EQ(d1, d2);
 }
 
-int main(int argc, char *argv[])
+TEST(JsonTest, CheckCapiFlagsEqual)
 {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    ASSERT_EQ(TO_U(JsonErrorType, ParseError),
+              MB_DEVICE_JSON_PARSE_ERROR);
+    ASSERT_EQ(TO_U(JsonErrorType, SchemaValidationFailure),
+              MB_DEVICE_JSON_SCHEMA_VALIDATION_FAILURE);
 }

@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/fstab.h"
@@ -30,10 +30,12 @@
 
 #include <sys/mount.h>
 
+#include "mbcommon/finally.h"
+#include "mbcommon/integer.h"
 #include "mblog/logging.h"
-#include "mbutil/autoclose/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/string.h"
+
+#define LOG_TAG "mbutil/fstab"
 
 
 namespace mb
@@ -41,13 +43,15 @@ namespace mb
 namespace util
 {
 
-struct mount_flag
+using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
+
+struct MountFlag
 {
     const char *name;
-    int flag;
+    unsigned long flag;
 };
 
-static struct mount_flag mount_flags[] =
+static struct MountFlag g_mount_flags[] =
 {
     { "active",         MS_ACTIVE },
     { "bind",           MS_BIND },
@@ -59,7 +63,7 @@ static struct mount_flag mount_flags[] =
     { "nodiratime",     MS_NODIRATIME },
     { "noexec",         MS_NOEXEC },
     { "nosuid",         MS_NOSUID },
-    { "nouser",         MS_NOUSER },
+    { "nouser",         static_cast<unsigned long>(MS_NOUSER) }, // 1 << 31
     { "posixacl",       MS_POSIXACL },
     { "rec",            MS_REC },
     { "ro",             MS_RDONLY },
@@ -78,53 +82,64 @@ static struct mount_flag mount_flags[] =
     { nullptr,          0 }
 };
 
-static struct mount_flag fs_mgr_flags[] =
+static struct MountFlag g_fs_mgr_flags[] =
 {
-    { "wait",           MF_WAIT },
-    { "check",          MF_CHECK },
-    { "encryptable=",   MF_CRYPT },
-    { "forceencrypt=",  MF_FORCECRYPT },
-    { "fileencryption", MF_FILEENCRYPTION },
-    { "nonremovable",   MF_NONREMOVABLE },
-    { "voldmanaged=",   MF_VOLDMANAGED},
-    { "length=",        MF_LENGTH },
-    { "recoveryonly",   MF_RECOVERYONLY },
-    { "swapprio=",      MF_SWAPPRIO },
-    { "zramsize=",      MF_ZRAMSIZE },
-    { "verify",         MF_VERIFY },
-    { "noemulatedsd",   MF_NOEMULATEDSD },
-    { "notrim",         MF_NOTRIM },
-    { "formattable",    MF_FORMATTABLE },
-    { "slotselect",     MF_SLOTSELECT },
-    { "defaults",       0 },
-    { nullptr,          0 }
+    { "wait",               MF_WAIT },
+    { "check",              MF_CHECK },
+    { "encryptable=",       MF_CRYPT },
+    { "forceencrypt=",      MF_FORCECRYPT },
+    { "fileencryption=",    MF_FILEENCRYPTION },
+    { "forcefdeorfbe=",     MF_FORCEFDEORFBE },
+    { "nonremovable",       MF_NONREMOVABLE },
+    { "voldmanaged=",       MF_VOLDMANAGED},
+    { "length=",            MF_LENGTH },
+    { "recoveryonly",       MF_RECOVERYONLY },
+    { "swapprio=",          MF_SWAPPRIO },
+    { "zramsize=",          MF_ZRAMSIZE },
+    { "max_comp_streams=",  MF_MAX_COMP_STREAMS },
+    { "verifyatboot",       MF_VERIFYATBOOT },
+    { "verify",             MF_VERIFY },
+    { "avb",                MF_AVB },
+    { "noemulatedsd",       MF_NOEMULATEDSD },
+    { "notrim",             MF_NOTRIM },
+    { "formattable",        MF_FORMATTABLE },
+    { "slotselect",         MF_SLOTSELECT },
+    { "nofail",             MF_NOFAIL },
+    { "latemount",          MF_LATEMOUNT },
+    { "reservedsize=",      MF_RESERVEDSIZE },
+    { "quota",              MF_QUOTA },
+    { "eraseblk=",          MF_ERASEBLKSIZE },
+    { "logicalblk=",        MF_LOGICALBLKSIZE },
+    { "defaults",           0 },
+    { nullptr,              0 },
 };
 
-static int options_to_flags(struct mount_flag *flags_map, char *args,
-                            char *new_args, int size)
+static unsigned long options_to_flags(const MountFlag *flags_map,
+                                      std::string args,
+                                      std::string *new_args_out)
 {
-    char *temp;
+    unsigned long flags = 0;
     char *save_ptr;
-    int flags = 0;
-    int i;
 
-    if (new_args && size > 0) {
-        new_args[0] = '\0';
+    if (new_args_out) {
+        new_args_out->clear();
     }
 
-    temp = strtok_r(args, ",", &save_ptr);
+    char *temp = strtok_r(&args[0], ",", &save_ptr);
     while (temp) {
-        for (i = 0; flags_map[i].name; ++i) {
-            if (strncmp(temp, flags_map[i].name, strlen(flags_map[i].name)) == 0) {
-                flags |= flags_map[i].flag;
+        const MountFlag *it;
+
+        for (it = flags_map; it->name; ++it) {
+            if (strncmp(temp, it->name, strlen(it->name)) == 0) {
+                flags |= it->flag;
                 break;
             }
         }
 
-        if (!flags_map[i].name) {
-            if (new_args) {
-                strlcat(new_args, temp, size);
-                strlcat(new_args, ",", size);
+        if (!it->name) {
+            if (new_args_out) {
+                *new_args_out += temp;
+                *new_args_out += ',';
             } else {
                 LOGW("Only universal mount options expected, but found %s", temp);
             }
@@ -133,152 +148,17 @@ static int options_to_flags(struct mount_flag *flags_map, char *args,
         temp = strtok_r(nullptr, ",", &save_ptr);
     }
 
-    if (new_args && new_args[0]) {
-        new_args[strlen(new_args) - 1] = '\0';
+    if (new_args_out && !new_args_out->empty()) {
+        new_args_out->pop_back();
     }
 
     return flags;
 }
 
 // Much simplified version of fs_mgr's fstab parsing code
-std::vector<fstab_rec> read_fstab(const std::string &path)
+std::vector<FstabRec> read_fstab(const std::string &path)
 {
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
-    if (!fp) {
-        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
-        return std::vector<fstab_rec>();
-    }
-
-    int count, entries;
-    char *line = nullptr;
-    size_t len = 0; // allocated memory size
-    ssize_t bytes_read; // number of bytes read
-    char *temp;
-    char *save_ptr;
-    const char *delim = " \t";
-    std::vector<fstab_rec> fstab;
-    char temp_mount_args[1024];
-
-    auto free_line = finally([&] {
-        free(line);
-    });
-
-    entries = 0;
-    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
-        // Strip newlines
-        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
-            line[bytes_read - 1] = '\0';
-        }
-
-        // Strip leading
-        temp = line;
-        while (isspace(*temp)) {
-            ++temp;
-        }
-
-        // Skip empty lines and comments
-        if (*temp == '\0' || *temp == '#') {
-            continue;
-        }
-
-        ++entries;
-    }
-
-    if (entries == 0) {
-        LOGE("fstab contains no entries");
-        return std::vector<fstab_rec>();
-    }
-
-    std::fseek(fp.get(), 0, SEEK_SET);
-
-    count = 0;
-    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
-        // Strip newlines
-        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
-            line[bytes_read - 1] = '\0';
-        }
-
-        // Strip leading
-        temp = line;
-        while (isspace(*temp)) {
-            ++temp;
-        }
-
-        // Skip empty lines and comments
-        if (*temp == '\0' || *temp == '#') {
-            continue;
-        }
-
-        // Avoid possible overflow if the file was changed
-        if (count >= entries) {
-            LOGE("Found more fstab entries on second read than first read");
-            break;
-        }
-
-        fstab_rec rec;
-
-        rec.orig_line = line;
-
-        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
-            LOGE("No source path/device found in entry: %s", line);
-            return std::vector<fstab_rec>();
-        }
-        rec.blk_device = temp;
-
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount point found in entry: %s", line);
-            return std::vector<fstab_rec>();
-        }
-        rec.mount_point = temp;
-
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No filesystem type found in entry: %s", line);
-            return std::vector<fstab_rec>();
-        }
-        rec.fs_type = temp;
-
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No mount options found in entry: %s", line);
-            return std::vector<fstab_rec>();
-        }
-        rec.mount_args = temp;
-        rec.flags = options_to_flags(mount_flags, temp, temp_mount_args, 1024);
-
-        if (temp_mount_args[0]) {
-            rec.fs_options = temp_mount_args;
-        }
-
-        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
-            LOGE("No fs_mgr/vold options found in entry: %s", line);
-            return std::vector<fstab_rec>();
-        }
-        rec.vold_args = temp;
-        rec.fs_mgr_flags = options_to_flags(fs_mgr_flags, temp, nullptr, 0);
-
-        fstab.push_back(std::move(rec));
-
-        ++count;
-    }
-
-    return fstab;
-}
-
-static bool convert_to_int(const char *str, int *out)
-{
-    char *end;
-    errno = 0;
-    long num = strtol(str, &end, 10);
-    if (errno == ERANGE || num < INT_MIN || num > INT_MAX
-            || *str == '\0' || *end != '\0') {
-        return false;
-    }
-    *out = (int) num;
-    return true;
-}
-
-std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
-{
-    autoclose::file fp(autoclose::fopen(path.c_str(), "rb"));
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
         LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
         return {};
@@ -287,10 +167,86 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
     char *line = nullptr;
     size_t len = 0; // allocated memory size
     ssize_t bytes_read; // number of bytes read
-    char *temp;
-    char *save_ptr;
-    const char *delim = " \t";
-    std::vector<twrp_fstab_rec> fstab;
+    constexpr char delim[] = " \t";
+    std::vector<FstabRec> fstab;
+
+    auto free_line = finally([&] {
+        free(line);
+    });
+
+    while ((bytes_read = getline(&line, &len, fp.get())) != -1) {
+        // Strip newlines
+        if (bytes_read > 0 && line[bytes_read - 1] == '\n') {
+            line[bytes_read - 1] = '\0';
+        }
+
+        // Strip leading
+        char *temp = line;
+        while (isspace(*temp)) {
+            ++temp;
+        }
+
+        // Skip empty lines and comments
+        if (*temp == '\0' || *temp == '#') {
+            continue;
+        }
+
+        FstabRec rec;
+        char *save_ptr;
+
+        rec.orig_line = line;
+
+        if ((temp = strtok_r(line, delim, &save_ptr)) == nullptr) {
+            LOGE("No source path/device found in entry: %s", line);
+            return {};
+        }
+        rec.blk_device = temp;
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No mount point found in entry: %s", line);
+            return {};
+        }
+        rec.mount_point = temp;
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No filesystem type found in entry: %s", line);
+            return {};
+        }
+        rec.fs_type = temp;
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No mount options found in entry: %s", line);
+            return {};
+        }
+        rec.mount_args = temp;
+        rec.flags = options_to_flags(g_mount_flags, temp, &rec.fs_options);
+
+        if ((temp = strtok_r(nullptr, delim, &save_ptr)) == nullptr) {
+            LOGE("No fs_mgr/vold options found in entry: %s", line);
+            return {};
+        }
+        rec.vold_args = temp;
+        rec.fs_mgr_flags = options_to_flags(g_fs_mgr_flags, temp, nullptr);
+
+        fstab.push_back(std::move(rec));
+    }
+
+    return fstab;
+}
+
+std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
+{
+    ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
+    if (!fp) {
+        LOGE("Failed to open file %s: %s", path.c_str(), strerror(errno));
+        return {};
+    }
+
+    char *line = nullptr;
+    size_t len = 0; // allocated memory size
+    ssize_t bytes_read; // number of bytes read
+    constexpr char delim[] = " \t";
+    std::vector<TwrpFstabRec> fstab;
 
     auto free_line = finally([&] {
         free(line);
@@ -303,7 +259,7 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
         }
 
         // Strip leading whitespace
-        temp = line;
+        char *temp = line;
         while (isspace(*temp)) {
             ++temp;
         }
@@ -313,7 +269,8 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
             continue;
         }
 
-        twrp_fstab_rec rec;
+        TwrpFstabRec rec;
+        char *save_ptr;
 
         rec.orig_line = line;
 
@@ -342,14 +299,14 @@ std::vector<twrp_fstab_rec> read_twrp_fstab(const std::string &path)
             } else if (strncmp(temp, "length=", 7) == 0) {
                 // Length of partition
                 temp += 7;
-                if (!convert_to_int(temp, &rec.length)) {
+                if (!str_to_num(temp, 10, rec.length)) {
                     LOGE("Invalid length: %s", temp);
                     return {};
                 }
             } else if (strncmp(temp, "flags=", 6) == 0) {
                 // TWRP flags
                 temp += 6;
-                rec.twrp_flags = util::tokenize(temp, ";");
+                rec.twrp_flags = tokenize(temp, ";");
             } else if (strncmp(temp, "null", 4) == 0
                     || strncmp(temp, "NULL", 4) == 0) {
                 // Skip

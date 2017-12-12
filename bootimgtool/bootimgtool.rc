@@ -1,0 +1,4 @@
+#include <windows.h>
+
+IDI_ICON1 ICON DISCARDABLE "../icons/icon.ico"
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "bootimgtool.manifest"

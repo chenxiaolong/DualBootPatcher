@@ -1,20 +1,20 @@
 /*
- * Copyright (C) 2015-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/reboot.h"
@@ -30,6 +30,8 @@
 #include "mbutil/properties.h"
 
 #include "external/android_reboot.h"
+
+#define LOG_TAG "mbutil/reboot"
 
 namespace mb
 {
@@ -55,27 +57,23 @@ static void log_output(const char *line, bool error, void *userdata)
 
 bool reboot_via_framework(bool show_confirm_dialog)
 {
-    const char *argv[] = {
+    std::vector<std::string> argv{
         "am", "start",
         //"-W",
         "--ez", "android.intent.extra.KEY_CONFIRM",
             show_confirm_dialog ? "true" : "false",
         "-a", "android.intent.action.REBOOT",
-        nullptr
     };
 
-    int status = run_command(argv[0], argv, nullptr, nullptr, &log_output,
-                             nullptr);
+    int status = run_command(argv[0], argv, {}, {}, &log_output, nullptr);
 
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-bool reboot_via_init(const char *reboot_arg)
+bool reboot_via_init(const std::string &reboot_arg)
 {
     std::string prop_value{"reboot,"};
-    if (reboot_arg) {
-        prop_value += reboot_arg;
-    }
+    prop_value += reboot_arg;
 
     if (!property_set(ANDROID_RB_PROPERTY, prop_value)) {
         LOGE("Failed to set property '%s'='%s'",
@@ -86,12 +84,13 @@ bool reboot_via_init(const char *reboot_arg)
     return true;
 }
 
-bool reboot_via_syscall(const char *reboot_arg)
+bool reboot_via_syscall(const std::string &reboot_arg)
 {
-    // Reboot to system if arg is null
-    int reason = reboot_arg ? ANDROID_RB_RESTART2 : ANDROID_RB_RESTART;
+    // Reboot to system if arg is empty
+    unsigned int reason = reboot_arg.empty()
+            ? ANDROID_RB_RESTART : ANDROID_RB_RESTART2;
 
-    if (android_reboot(reason, reboot_arg) < 0) {
+    if (android_reboot(reason, reboot_arg.c_str()) < 0) {
         LOGE("Failed to reboot via syscall: %s", strerror(errno));
         return false;
     }

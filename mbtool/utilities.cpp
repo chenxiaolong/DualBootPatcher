@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "utilities.h"
@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "minizip/zip.h"
 #include "minizip/ioandroid.h"
@@ -33,14 +34,11 @@
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/device.h"
-#include "mbdevice/validate.h"
 #include "mbdevice/json.h"
 #include "mblog/logging.h"
 #include "mblog/stdio_logger.h"
-#include "mbp/patcherconfig.h"
 #include "mbutil/delete.h"
 #include "mbutil/file.h"
-#include "mbutil/finally.h"
 #include "mbutil/fts.h"
 #include "mbutil/path.h"
 #include "mbutil/properties.h"
@@ -52,12 +50,16 @@
 #include "switcher.h"
 #include "wipe.h"
 
+#define LOG_TAG "mbtool/utilities"
+
+using namespace mb::device;
+
 namespace mb
 {
 
-const char *devices_file = nullptr;
+static const char *devices_file = nullptr;
 
-static Device * get_device(const char *path)
+static bool get_device(const char *path, Device &device)
 {
     std::string prop_product_device =
             util::property_get_string("ro.product.device", {});
@@ -68,103 +70,87 @@ static Device * get_device(const char *path)
     LOGD("ro.build.product = %s", prop_build_product.c_str());
 
     std::vector<unsigned char> contents;
-    if (!util::file_read_all(path, &contents)) {
+    if (!util::file_read_all(path, contents)) {
         LOGE("%s: Failed to read file: %s", path, strerror(errno));
-        return nullptr;
+        return false;
     }
     contents.push_back('\0');
 
-    MbDeviceJsonError error;
-    Device **devices = mb_device_new_list_from_json(
-            (const char *) contents.data(), &error);
-    if (!devices) {
+    std::vector<Device> devices;
+    JsonError error;
+
+    if (!device_list_from_json(reinterpret_cast<const char *>(contents.data()),
+                               devices, error)) {
         LOGE("%s: Failed to load devices", path);
-        return nullptr;
+        return false;
     }
 
-    Device *device = nullptr;
-
-    for (auto it = devices; *it; ++it) {
-        if (mb_device_validate(*it) != 0) {
+    for (auto &d : devices) {
+        if (d.validate()) {
             LOGW("Skipping invalid device");
             continue;
         }
 
-        auto codenames = mb_device_codenames(*it);
+        auto const &codenames = d.codenames();
+        auto it = std::find_if(codenames.begin(), codenames.end(),
+                               [&](const std::string &item) {
+            return item == prop_product_device || item == prop_build_product;
+        });
 
-        for (auto it2 = codenames; *it2; ++it2) {
-            if (prop_product_device == *it2 || prop_build_product == *it2) {
-                device = *it;
-                break;
-            }
-        }
-
-        // Free any devices we don't need
-        if (device != *it) {
-            mb_device_free(*it);
+        if (it != codenames.end()) {
+            device = std::move(d);
+            return true;
         }
     }
 
-    free(devices);
-
-    if (!device) {
-        LOGE("Unknown device: %s", prop_product_device.c_str());
-        return nullptr;
-    }
-
-    return device;
+    LOGE("Unknown device: %s", prop_product_device.c_str());
+    return false;
 }
 
 static bool utilities_switch_rom(const char *rom_id, bool force)
 {
-    const char *block_dev = nullptr;
-    struct stat sb;
+    Device device;
 
     if (!devices_file) {
         LOGE("No device definitions file specified");
         return false;
     }
 
-    Device *device = get_device(devices_file);
-    if (!device) {
+    if (!get_device(devices_file, device)) {
         LOGE("Failed to detect device");
         return false;
     }
 
-    auto free_device = util::finally([&]{
-        mb_device_free(device);
+    auto const &boot_devs = device.boot_block_devs();
+    auto it = std::find_if(boot_devs.begin(), boot_devs.end(),
+                           [&](const std::string &path) {
+        struct stat sb;
+        return stat(path.c_str(), &sb) == 0 && S_ISBLK(sb.st_mode);
     });
 
-    for (auto it = mb_device_boot_block_devs(device); *it; ++it) {
-        if (stat(*it, &sb) == 0 && S_ISBLK(sb.st_mode)) {
-            block_dev = *it;
-            break;
-        }
-    }
-
-    if (!block_dev) {
+    if (it == boot_devs.end()) {
         LOGE("All specified boot partition paths could not be found");
         return false;
     }
 
     SwitchRomResult ret = switch_rom(
-            rom_id, block_dev, mb_device_block_dev_base_dirs(device), force);
+            rom_id, *it, device.block_dev_base_dirs(), force);
     switch (ret) {
-    case SwitchRomResult::SUCCEEDED:
+    case SwitchRomResult::Succeeded:
         LOGD("SUCCEEDED");
         break;
-    case SwitchRomResult::FAILED:
+    case SwitchRomResult::Failed:
         LOGD("FAILED");
         break;
-    case SwitchRomResult::CHECKSUM_INVALID:
+    case SwitchRomResult::ChecksumInvalid:
         LOGD("CHECKSUM_INVALID");
         break;
-    case SwitchRomResult::CHECKSUM_NOT_FOUND:
+    case SwitchRomResult::ChecksumNotFound:
         LOGD("CHECKSUM_NOT_FOUND");
         break;
     }
 
-    return ret == SwitchRomResult::SUCCEEDED;
+    return ret == SwitchRomResult::Succeeded;
 }
 
 static bool utilities_wipe_system(const char *rom_id)
@@ -238,59 +224,44 @@ static void generate_aroma_config(std::vector<unsigned char> *data)
             name = config.name;
         }
 
-        char *menu_item = mb_format("\"%s\", \"\", \"@default\",\n",
-                                    name.c_str());
-        if (menu_item) {
-            rom_menu_items += menu_item;
-            free(menu_item);
-        }
+        rom_menu_items += format("\"%s\", \"\", \"@default\",\n", name.c_str());
 
-        char *selection_item = mb_format(
+        rom_selection_items += format(
                 "if prop(\"operations.prop\", \"selected\") == \"%zu\" then\n"
                 "    setvar(\"romid\", \"%s\");\n"
                 "    setvar(\"romname\", \"%s\");\n"
                 "endif;\n",
                 i + 2 + 1, rom->id.c_str(), name.c_str());
-        if (selection_item) {
-            rom_selection_items += selection_item;
-            free(selection_item);
-        }
     }
 
-    char *first_index = mb_format("%d", 2 + 1);
-    char *last_index = mb_format("%zu", 2 + roms.roms.size());
+    std::string first_index = format("%d", 2 + 1);
+    std::string last_index = format("%zu", 2 + roms.roms.size());
 
-    util::replace_all(&str_data, "\t", "\\t");
-    util::replace_all(&str_data, "@MBTOOL_VERSION@", version());
-    util::replace_all(&str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
-    util::replace_all(&str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
-    if (first_index) {
-        util::replace_all(&str_data, "@FIRST_INDEX@", first_index);
-        free(first_index);
-    }
-    if (last_index) {
-        util::replace_all(&str_data, "@LAST_INDEX@", last_index);
-        free(last_index);
-    }
+    util::replace_all(str_data, "\t", "\\t");
+    util::replace_all(str_data, "@MBTOOL_VERSION@", version());
+    util::replace_all(str_data, "@ROM_MENU_ITEMS@", rom_menu_items);
+    util::replace_all(str_data, "@ROM_SELECTION_ITEMS@", rom_selection_items);
+    util::replace_all(str_data, "@FIRST_INDEX@", first_index);
+    util::replace_all(str_data, "@LAST_INDEX@", last_index);
 
-    util::replace_all(&str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
-    util::replace_all(&str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());
-    util::replace_all(&str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
-    util::replace_all(&str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
+    util::replace_all(str_data, "@SYSTEM_MOUNT_POINT@", Roms::get_system_partition());
+    util::replace_all(str_data, "@CACHE_MOUNT_POINT@", Roms::get_cache_partition());
+    util::replace_all(str_data, "@DATA_MOUNT_POINT@", Roms::get_data_partition());
+    util::replace_all(str_data, "@EXTSD_MOUNT_POINT@", Roms::get_extsd_partition());
 
     data->assign(str_data.begin(), str_data.end());
 }
 
-class AromaGenerator : public util::FTSWrapper
+class AromaGenerator : public util::FtsWrapper
 {
 public:
     AromaGenerator(std::string path, std::string zippath)
-        : FTSWrapper(std::move(path), FTS_GroupSpecialFiles),
+        : FtsWrapper(std::move(path), util::FtsFlag::GroupSpecialFiles),
         _zippath(std::move(zippath))
     {
     }
 
-    virtual bool on_pre_execute() override
+    bool on_pre_execute() override
     {
         zlib_filefunc64_def zFunc;
         memset(&zFunc, 0, sizeof(zFunc));
@@ -304,45 +275,45 @@ public:
         return true;
     }
 
-    virtual bool on_post_execute(bool success) override
+    bool on_post_execute(bool success) override
     {
         (void) success;
         return zipClose(_zf, nullptr) == ZIP_OK;
     }
 
-    virtual int on_reached_file() override
+    Actions on_reached_file() override
     {
         std::string name = std::string(_curr->fts_path).substr(_path.size() + 1);
         LOGD("%s -> %s", _curr->fts_path, name.c_str());
 
         if (name == "META-INF/com/google/android/aroma-config.in") {
             std::vector<unsigned char> data;
-            if (!util::file_read_all(_curr->fts_accpath, &data)) {
+            if (!util::file_read_all(_curr->fts_accpath, data)) {
                 LOGE("Failed to read: %s", _curr->fts_path);
-                return false;
+                return Action::Fail;
             }
 
             generate_aroma_config(&data);
 
             name = "META-INF/com/google/android/aroma-config";
             bool ret = add_file(name, data);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         } else {
             bool ret = add_file(name, _curr->fts_accpath);
-            return ret ? Action::FTS_OK : Action::FTS_Fail;
+            return ret ? Action::Ok : Action::Fail;
         }
     }
 
-    virtual int on_reached_symlink() override
+    Actions on_reached_symlink() override
     {
         LOGW("Ignoring symlink when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
-    virtual int on_reached_special_file() override
+    Actions on_reached_special_file() override
     {
         LOGW("Ignoring special file when creating zip: %s", _curr->fts_path);
-        return Action::FTS_OK;
+        return Action::Ok;
     }
 
 private:
@@ -353,7 +324,8 @@ private:
                   const std::vector<unsigned char> &contents)
     {
         // Obviously never true, but we'll keep it here just in case
-        bool zip64 = (uint64_t) contents.size() >= ((1ull << 32) - 1);
+        bool zip64 = static_cast<uint64_t>(contents.size())
+                >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -380,7 +352,8 @@ private:
         }
 
         // Write data to file
-        ret = zipWriteInFileInZip(_zf, contents.data(), contents.size());
+        ret = zipWriteInFileInZip(_zf, contents.data(),
+                                  static_cast<uint32_t>(contents.size()));
         if (ret != ZIP_OK) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
             zipCloseFileInZip(_zf);
@@ -410,12 +383,18 @@ private:
             return false;
         }
 
-        uint64_t size;
+        off64_t size;
         lseek64(fd, 0, SEEK_END);
         size = lseek64(fd, 0, SEEK_CUR);
         lseek64(fd, 0, SEEK_SET);
 
-        bool zip64 = size >= ((1ull << 32) - 1);
+        if (size < 0) {
+            LOGE("%s: Failed to seek: %s",
+                 path.c_str(), strerror(errno));
+            return false;
+        }
+
+        bool zip64 = static_cast<uint64_t>(size) >= ((1ull << 32) - 1);
 
         zip_fileinfo zi;
         memset(&zi, 0, sizeof(zi));
@@ -447,7 +426,7 @@ private:
         ssize_t n;
 
         while ((n = read(fd, buf, sizeof(buf))) > 0) {
-            ret = zipWriteInFileInZip(_zf, buf, n);
+            ret = zipWriteInFileInZip(_zf, buf, static_cast<uint32_t>(n));
             if (ret != ZIP_OK) {
                 LOGW("minizip: Failed to write data (error code: %d): %s",
                      ret, path.c_str());
@@ -494,7 +473,7 @@ int utilities_main(int argc, char *argv[])
     // Make stdout unbuffered
     setvbuf(stdout, nullptr, _IONBF, 0);
 
-    log::log_set_logger(std::make_shared<log::StdioLogger>(stdout, false));
+    log::set_logger(std::make_shared<log::StdioLogger>(stdout));
 
     bool force = false;
 

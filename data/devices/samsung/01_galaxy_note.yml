@@ -33,6 +33,59 @@
     extra:
       - /dev/block/platform/dw_mmc/by-name/RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Note 2 (Exynos)
+  id: t03g
+  codenames:
+    - t03g
+    - t03gxx
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/dw_mmc/by-name
+    system:
+      - /dev/block/platform/dw_mmc/by-name/SYSTEM
+      - /dev/block/mmcblk0p13
+    cache:
+      - /dev/block/platform/dw_mmc/by-name/CACHE
+      - /dev/block/mmcblk0p12
+    data:
+      - /dev/block/platform/dw_mmc/by-name/USERDATA
+      - /dev/block/mmcblk0p16
+    boot:
+      - /dev/block/platform/dw_mmc/by-name/BOOT
+      - /dev/block/mmcblk0p8
+    recovery:
+      - /dev/block/platform/dw_mmc/by-name/RECOVERY
+      - /dev/block/mmcblk0p9
+    extra:
+      - /dev/block/platform/dw_mmc/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    pixel_format: BGRA_8888
+    brightness_path: /sys/devices/platform/s5p-dsim.0/ea8061/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    theme: portrait_hdpi
+
 
 - name: Samsung Galaxy Note 3 (Snapdragon)
   id: hlte
@@ -78,7 +131,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Samsung Galaxy Note 3 (Exynos)
   id: ha3g
   codenames:
@@ -107,6 +159,17 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/s5p-mipi-dsim.1/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 3 LTE-A
   id: hlteskt
@@ -146,7 +209,6 @@
     default_brightness: 162
     theme: portrait_hdpi
 
-
 - name: Samsung Galaxy Note 3 Neo
   id: hllte
   codenames:
@@ -178,6 +240,18 @@
       - /dev/block/platform/dw_mmc.0/by-name/RADIO
       - /dev/block/platform/dw_mmc.0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 Edge
   id: tblte
@@ -212,6 +286,17 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 (Snapdragon)
   id: trlte
@@ -246,6 +331,18 @@
     recovery:
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/fd900000.qcom\x2cmdss_mdp/qcom\x2cmdss_fb_primary.174/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 4 (Exynos)
   id: trelte
@@ -284,6 +381,17 @@
       - /dev/block/platform/15540000.dwmmc0/by-name/RADIO
       - /dev/block/platform/15540000.dwmmc0/by-name/CDMA-RADIO
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13800000.decon_fb/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
 
 - name: Samsung Galaxy Note 5 (Sprint)
   id: nobleltespr
@@ -314,3 +422,99 @@
       - /dev/block/sda8
     extra:
       - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Note 5 (China)
+  id: nobleltechn
+  # TODO: May be merged with china mobile once I get the list of partitions from
+  #       someone with the device
+  codenames:
+    - nobleltechn
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/15570000.ufs/by-name
+    system:
+      - /dev/block/platform/15570000.ufs/by-name/SYSTEM
+      - /dev/block/sda16
+    cache:
+      - /dev/block/platform/15570000.ufs/by-name/CACHE
+      - /dev/block/sda17
+    data:
+      - /dev/block/platform/15570000.ufs/by-name/USERDATA
+      - /dev/block/sda18
+    boot:
+      - /dev/block/platform/15570000.ufs/by-name/BOOT
+      - /dev/block/sda7
+    recovery:
+      - /dev/block/platform/15570000.ufs/by-name/RECOVERY
+      - /dev/block/sda8
+    extra:
+      - /dev/block/platform/15570000.ufs/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/13900000.dsim/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi
+
+- name: Samsung Galaxy Note 8 (Exynos)
+  id: greatlte
+  codenames:
+    - greatlte
+    - greatltexx
+    - greatlteks
+  architecture: arm64-v8a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+      - /dev/block/platform/11120000.ufs/by-name
+    system:
+      - /dev/block/bootdevice/by-name/SYSTEM
+      - /dev/block/platform/11120000.ufs/by-name/SYSTEM
+    cache:
+      - /dev/block/bootdevice/by-name/CACHE
+      - /dev/block/platform/11120000.ufs/by-name/CACHE
+    data:
+      - /dev/block/bootdevice/by-name/USERDATA
+      - /dev/block/platform/11120000.ufs/by-name/USERDATA
+    boot:
+      - /dev/block/bootdevice/by-name/BOOT
+      - /dev/block/platform/11120000.ufs/by-name/BOOT
+    recovery:
+      - /dev/block/bootdevice/by-name/RECOVERY
+      - /dev/block/platform/11120000.ufs/by-name/RECOVERY
+    extra:
+      - /dev/block/bootdevice/by-name/RADIO
+      - /dev/block/platform/11120000.ufs/by-name/RADIO
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_HAS_DOWNLOAD_MODE
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 36600
+    default_brightness: 16200
+    pixel_format: ABGR_8888
+    theme: portrait_hdpi

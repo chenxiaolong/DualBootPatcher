@@ -1,25 +1,26 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "mbutil/string.h"
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 
 #include <cstdarg>
@@ -30,7 +31,7 @@ namespace mb
 namespace util
 {
 
-static void replace_internal(std::string *source,
+static void replace_internal(std::string &source,
                              const std::string &from, const std::string &to,
                              bool replace_first_only)
 {
@@ -39,8 +40,8 @@ static void replace_internal(std::string *source,
     }
 
     std::size_t pos = 0;
-    while ((pos = source->find(from, pos)) != std::string::npos) {
-        source->replace(pos, from.size(), to);
+    while ((pos = source.find(from, pos)) != std::string::npos) {
+        source.replace(pos, from.size(), to);
         if (replace_first_only) {
             return;
         }
@@ -48,13 +49,13 @@ static void replace_internal(std::string *source,
     }
 }
 
-void replace(std::string *source,
+void replace(std::string &source,
              const std::string &from, const std::string &to)
 {
     replace_internal(source, from, to, true);
 }
 
-void replace_all(std::string *source,
+void replace_all(std::string &source,
                  const std::string &from, const std::string &to)
 {
     replace_internal(source, from, to, false);
@@ -77,7 +78,7 @@ std::vector<std::string> split(const std::string &str, const std::string &delim)
     return result;
 }
 
-std::string join(const std::vector<std::string> &list, std::string delim)
+std::string join(const std::vector<std::string> &list, const std::string &delim)
 {
     std::string result;
     bool first = true;
@@ -106,7 +107,7 @@ std::vector<std::string> tokenize(const std::string &str,
 
     token = strtok_r(linebuf.data(), delims.c_str(), &temp);
     while (token != nullptr) {
-        tokens.push_back(token);
+        tokens.emplace_back(token);
 
         token = strtok_r(nullptr, delims.c_str(), &temp);
     }
@@ -208,7 +209,7 @@ char ** dup_cstring_list(const char * const *list)
     for (items = 0; list[items]; ++items);
     size_t size = (items + 1) * sizeof(list[0]);
 
-    copy = (char **) malloc(size);
+    copy = static_cast<char **>(malloc(size));
     if (!copy) {
         return nullptr;
     }

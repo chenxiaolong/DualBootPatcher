@@ -1,37 +1,37 @@
 /*
  * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
- * This file is part of MultiBootPatcher
+ * This file is part of DualBootPatcher
  *
- * MultiBootPatcher is free software: you can redistribute it and/or modify
+ * DualBootPatcher is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * MultiBootPatcher is distributed in the hope that it will be useful,
+ * DualBootPatcher is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MultiBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
+ * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <mbp/fileinfo.h>
-#include <mbp/patcherconfig.h>
-#include <mbp/patcherinterface.h>
+#include <mbpatcher/fileinfo.h>
+#include <mbpatcher/patcherconfig.h>
+#include <mbpatcher/patcherinterface.h>
 
 #include <QtCore/QMetaType>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QWidget>
 
 
-typedef mbp::Patcher * PatcherPtr;
+typedef mb::patcher::Patcher * PatcherPtr;
 Q_DECLARE_METATYPE(PatcherPtr)
-typedef mbp::FileInfo * FileInfoPtr;
+typedef mb::patcher::FileInfo * FileInfoPtr;
 Q_DECLARE_METATYPE(FileInfoPtr)
 
 class MainWindowPrivate;
@@ -41,7 +41,7 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(mbp::PatcherConfig *pc, QWidget* parent = 0);
+    MainWindow(mb::patcher::PatcherConfig *pc, QWidget* parent = 0);
     ~MainWindow();
 
 signals:
