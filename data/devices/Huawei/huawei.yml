@@ -5,6 +5,7 @@
       - CRO-U00
       - HWCRO-U6580M
   architecture: armeabi-v7a
+  
   block_devs:
     base_dirs:
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
