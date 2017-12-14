@@ -420,3 +420,30 @@
     recovery:
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
+
+- name: HUAWEI CRO-U00
+  id: HWCRO-U6580M
+  codenames:
+      - CRO-U00
+      - HWCRO-U6580M
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name
+    system:
+      - /dev/block/mmcblk0p22
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/system
+    cache:
+      - /dev/block/mmcblk0p23
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/cache
+    data:
+      - /dev/block/mmcblk0p24
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/userdata
+    boot:
+      - /dev/block/mmcblk0p7
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/boot
+    recovery:
+      - /dev/block/mmcblk0p8
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
+    
