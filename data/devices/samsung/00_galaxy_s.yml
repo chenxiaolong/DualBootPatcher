@@ -695,6 +695,7 @@
     - zeroltebmc
     - zeroltetmo
     - zeroltexx
+    - zeroltexxx
   architecture: arm64-v8a
 
   block_devs:
