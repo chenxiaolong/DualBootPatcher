@@ -421,6 +421,7 @@
       - /dev/block/platform/hi_mci.0/by-name/recovery
       - /dev/block/mmcblk0p29
 
+
 - name: HUAWEI CRO-U00
   id: HWCRO-U6580M
   codenames:
@@ -446,8 +447,32 @@
     recovery:
       - /dev/block/mmcblk0p8
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
-    
-boot_ui:
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bak
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bakraw
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/custom
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/expdb
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/flashinfo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/frp
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/keystore
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/lk
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/logo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/metadata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/nvdata
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/nvram
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/oemkeystore
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/para
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/proinfo
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/protect1
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/protect2
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/seccfg
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/secro
+      - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/simlock
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
     supported: true
     flags:
       - TW_GRAPHICS_FORCE_USE_LINELENGTH
