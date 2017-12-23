@@ -145,18 +145,18 @@ dependencies {
     implementation 'com.android.support:design:27.0.2'
     implementation 'com.android.support:recyclerview-v7:27.0.2'
     implementation 'com.android.support:support-v13:27.0.2'
-    implementation 'com.google.code.gson:gson:2.7'
+    implementation 'com.google.code.gson:gson:2.8.0'
     implementation 'com.squareup.picasso:picasso:2.5.2'
-    implementation 'com.afollestad.material-dialogs:core:0.8.6.1'
-    implementation 'com.afollestad.material-dialogs:commons:0.8.6.1'
+    implementation 'com.afollestad.material-dialogs:core:0.9.6.0'
+    implementation 'com.afollestad.material-dialogs:commons:0.9.6.0'
     implementation 'com.github.clans:fab:1.6.4'
-    implementation 'org.apache.commons:commons-lang3:3.4'
-    implementation 'commons-io:commons-io:2.4'
-    implementation 'net.java.dev.jna:jna:4.4.0@aar'
+    implementation 'org.apache.commons:commons-lang3:3.7'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'net.java.dev.jna:jna:4.5.0@aar'
     implementation project(":emulatorview")
     implementation project(":rootshell")
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.1'
-    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'
-    ciImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.5.4'
+    releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
+    ciImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
 }
