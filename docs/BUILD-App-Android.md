@@ -46,7 +46,7 @@ If you don't have docker installed, the following packages are needed:
 6. Package the system components into a tarball.
 
     ```sh
-    rm -rf assets && cpack -G TXZ
+    rm -rf assets && cpack
     ```
 
 7. Build the APK.
