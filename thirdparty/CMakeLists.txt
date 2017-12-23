@@ -272,13 +272,13 @@ endif()
 # boringssl for Android
 ################################################################################
 
-set(BORINGSSL_VER "r3955.bbfe603-1")
+set(BORINGSSL_VER "r4872.0a54e9984-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(boringssl ${BORINGSSL_VER} armeabi-v7a SHA512=472b281a4bc380bf96acc392333410b89d3102c20d4a30e150a4c295bcec386f288c6aa1469f59e54e588d33c3d130905560b3b9bb701370b5bb3226523430d6)
-    get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=e96210ddeb12b4d90c6baac6eeb122485fd84f9ba984100a0f8e978c1eab383b59dc11aef35d4acb7e3388c2214aedc8b891acb3ed1bc429a1361d0907eb8049)
-    get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=118ba17765bc8168a1ab62642f6707354f39d12e09768ede2fd63c1d370d89f5594ed045756d57eb0a9b031da45f5234eff0dc51f0de99365145758e63c71129)
-    get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=f335b1c6c49e83ffefdc4e41fcad7ab83e49346eeacfffa0b240831aa25c08204201711a9309aa45f8530ad3545b6808c68def27432c07317dc4ae5601213c04)
+    get_prebuilt(boringssl ${BORINGSSL_VER} armeabi-v7a SHA512=3cb0278e7363c9766e9dfe41599a5a36480c7612ebf80672b75d5cc75d7cb63c7026686b19a07cbf678a82b7d919ce8f468e555ed7dfb1b5b71e59dbac76a516)
+    get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=d24c8bc1ca17a9050869a62567af894c0e433209967d16adfd0516ac69f8513c7ab351aa7d11216fd85aced7e413bff697d89d7c50f84055647b3757bcaffc9f)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=a0134cf29d07925ea0fe959f186df1ce50041f5e15ebb6f16cd61c374d284b4d94885bbdff2613a329e2d5717af767cd76bd112a20cc2bde6fd863933cfb05f2)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=cbe301865a0e2603450c0a571cf8a757890aafb3cabfb14a5da03e97c7069cecf29626de396bfa4c75d5919dd2b72fa0099b689b3f195853c2ccf6c134353be6)
 else()
     set(THIRD_PARTY_BORINGSSL_DIR "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
 endif()
