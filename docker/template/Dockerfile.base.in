@@ -31,7 +31,7 @@ RUN dnf -y install gnupg \
     && dnf clean all
 
 # Install tini
-ENV TINI_VERSION v0.14.0
+ENV TINI_VERSION v0.16.1
 RUN dnf -y install gnupg \
     && curl -Lo /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini" \
     && curl -Lo /tmp/tini.asc "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc" \
