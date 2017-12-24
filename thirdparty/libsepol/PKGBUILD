@@ -15,7 +15,7 @@
 
 pkgname=libsepol
 pkgver=8.1.0_r2
-pkgrel=1
+pkgrel=2
 pkgdesc="SELinux binary policy manipulation library"
 arch=(armv7 aarch64 x86 x86_64)
 url="https://android.googlesource.com/platform/external/selinux/"
@@ -44,7 +44,7 @@ build() {
         NDK_TOOLCHAIN_VERSION=clang \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM=android-24 \
+        APP_PLATFORM=android-21 \
         "${MAKEFLAGS}"
 }
 
