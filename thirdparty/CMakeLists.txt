@@ -212,13 +212,13 @@ endif()
 # freetype2 for Android
 ################################################################################
 
-set(FREETYPE2_VER "7.1.1_r28-1")
+set(FREETYPE2_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} armeabi-v7a SHA512=35a25bc2ba2f6b25db6bd603f38797be8c5ab4a40e9c261e6e3e9647fe73e6a6d1ffe219e9b2432f5449b0de0a6a0442a7add6de2746ec43bb3ae618cb3c9778)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=6b6d7f5b9df89adf8d696d6b133e5003b186952d923a3db1031b643add0945e25eb312e8b378a7f878a955d353ffd90040ebd1b1ee9cb660aa8a3b81c0996d33)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=96797a3c2e20e7c5455721d55090d45960ae61c381786647db2ef7757713e54e7130a2735af2b2d9ee34058c8cbcbe1d51c1927915df9a34070a776325ac832a)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=0de6b6735f4b9c2b2e6de5eb622752ca089c2629ea03f1396ec49397de517fe3ba55ae4c955cfc80f5227de226f2742f2360b28b5bcae437e63725cc03927afd)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} armeabi-v7a SHA512=af1277a2c4422640e8de4c0406e590b06a18227cfe35799f3939e65fb50c08de3376e58175583771b802e5a03bacd90fb2bf5a13c1369296084ab6f8c8240696)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=bfba808fd55e7ccf5ce4ca88ff496fc2a3a6aa6c5f68079a2a3b5ec88133aa0f053cbfe200f3e76d3ecaafe2ca4ce3a5d70d795c25bdb17233a163dde878b47e )
+    get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=3897a468cb66f8b47325d45cbe197a7feb34e3d8297db6ae1f601ade112cb78d8056ca68d0bd98af2a1facd714de414e747d561e9ca4ffb615d2ccec00a81d7b)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=3bbe49a9ff35b1965d36f7747c04568458f7030fb23f0684c9ff0cf704ec9510a17aa2c0fc7d71ec3bb43b7736d703e9ceffeeb8404a795ec3abe079eca04d57)
 else()
     set(THIRD_PARTY_FREETYPE2_DIR "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}" PARENT_SCOPE)
 endif()
