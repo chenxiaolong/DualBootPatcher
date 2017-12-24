@@ -37,7 +37,7 @@ after_success:
   - ls -l /home/travis/build/yshalsager/DualBootPatcher/builder/utilities/DualBootUtilities-9.3.0.zip
   - md5sum /home/travis/build/yshalsager/DualBootPatcher/builder/utilities/DualBootUtilities-9.3.0.zip
   - ls -l /home/travis/build/yshalsager/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
-  - md5sum /home/travis/build/yshalsager/DualBootPatcher/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
+  - md5sum /home/travis/build/yshalsager/DualBootPatcher/builder/DualBootPatcher-9.3.0-Linux.tar.xz
   # Upload to transfer.sh
   - cd /home/travis/build/yshalsager/DualBootPatcher/Android_GUI/build/outputs/apk/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-${TRAVIS_CURRENT_DATE}.apk
   - cd /home/travis/build/yshalsager/DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0-${TRAVIS_CURRENT_DATE}.zip
