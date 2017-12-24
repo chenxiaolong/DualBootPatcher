@@ -182,13 +182,13 @@ endif()
 # libsepol for Android
 ################################################################################
 
-set(LIBSEPOL_VER "7.1.1_r28-1")
+set(LIBSEPOL_VER "8.1.0_r2-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} armeabi-v7a SHA512=2e18d72ca987552355fe97238692e271402c44e893cd0fdae5bb4730dec608c6b34639d5080f2dccbf4cf8abe6f329a9139679b75c4fd1905ad92fc079d262ff)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} arm64-v8a   SHA512=dac3da7bff81f6bb363bd93875715860f78e984a66ead4a6610de92f128a8815d603484dc099800d61a2b261e30bd6962a7f6e36075804bd0a981b1b98d74eda)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=d846ca9a48c1b4880aa61598c2dd62bebe9497e8c24720b8e5fb11be4770ec90d3f01a7e60b1d6e19c5b27e89540449f6eb1402b6bd1fdb291d1f03e18d0e307)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=3c6f16f22b3d63ca3818809c9c03f9dc13ab6516194d716bb30bd07d38ba0c47d840d02b4dab34cac6d92d5bd50e7c41c70f7c8fb2981875c65f7a46ee2cde9d)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} armeabi-v7a SHA512=10869a22e56b8b58624fef45849fac29d386ecb738e5733900ef26244f6747662e65dad40fb3bed845cc1d30f98a441d71da03a6edf837f4a6bcc904f662bd7c)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} arm64-v8a   SHA512=fc3229d925d973165bea2dba1f892ef8b4f97811bd8b6b266be533e0ca36e07c519c72f41b85eb4a053eb0719f6a234dd2f1ecd234ad8b18a3bf06f5e8856815)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=4be6f8592836cebb965c22f29a2028cfd07a1a5467d3aa781d0c9c08d058b2e80eac79e92946a9d1b6e0d314d68d76c421a7997fff7e956fc3b2259823cf0156)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=6384a4ef8d44c122064049fc8668a02c97e8bacf9c39bdbdb5fa4f9397485becfbb6799d63a3490c65a362b2a41fc41020d23b31f144efb0125133434098952e)
 else()
     set(THIRD_PARTY_LIBSEPOL_DIR "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}" PARENT_SCOPE)
 endif()
