@@ -1,7 +1,7 @@
-From ca4c3b1c43cd37d42c34042652f75140d1832ff5 Mon Sep 17 00:00:00 2001
+From a6067c2cd7a87e13be65a08a02685043d855a766 Mon Sep 17 00:00:00 2001
 From: Jorrit Jongma <git@jongma.org>
 Date: Fri, 11 Mar 2016 13:43:25 +0100
-Subject: [PATCH] Support Android/M and official v30 sepolicy format
+Subject: [PATCH 2/2] Support Android/M and official v30 sepolicy format
 
 Some Android M devices use a slightly different format for the sepolicy file. Compatibility for this is not present in SELinuxProject/selinux master. Google does provide a patch for the kernel itself to be able to handle both formats - https://android-review.googlesource.com/#/c/179568/ - but not for libsepol. This patch is a port of the kernel patch to libsepol.
 ---
@@ -15,11 +15,11 @@ Some Android M devices use a slightly different format for the sepolicy file. Co
  create mode 100644 libsepol/src/android_m_compat.h
 
 diff --git a/libsepol/Android.mk b/libsepol/Android.mk
-index 58443b3..eecf3ad 100644
+index c5e20f57..f1ad3c1b 100644
 --- a/libsepol/Android.mk
 +++ b/libsepol/Android.mk
-@@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
- common_src_files := \
+@@ -19,6 +19,7 @@ LOCAL_CFLAGS := \
+ LOCAL_SRC_FILES := \
  	src/assertion.c \
  	src/avrule_block.c \
 +	src/android_m_compat.c \
@@ -28,7 +28,7 @@ index 58443b3..eecf3ad 100644
  	src/booleans.c \
 diff --git a/libsepol/src/android_m_compat.c b/libsepol/src/android_m_compat.c
 new file mode 100644
-index 0000000..63e6da7
+index 00000000..63e6da72
 --- /dev/null
 +++ b/libsepol/src/android_m_compat.c
 @@ -0,0 +1,13 @@
@@ -47,7 +47,7 @@ index 0000000..63e6da7
 +}
 diff --git a/libsepol/src/android_m_compat.h b/libsepol/src/android_m_compat.h
 new file mode 100644
-index 0000000..9f1a563
+index 00000000..9f1a5638
 --- /dev/null
 +++ b/libsepol/src/android_m_compat.h
 @@ -0,0 +1,18 @@
@@ -70,7 +70,7 @@ index 0000000..9f1a563
 +
 +void avtab_android_m_compat_set(void);
 diff --git a/libsepol/src/avtab.c b/libsepol/src/avtab.c
-index 3854d6f..f48ae76 100644
+index 3854d6f5..f48ae76a 100644
 --- a/libsepol/src/avtab.c
 +++ b/libsepol/src/avtab.c
 @@ -48,6 +48,7 @@
@@ -134,7 +134,7 @@ index 3854d6f..f48ae76 100644
  		if (rc < 0) {
  			ERR(fp->handle, "truncated entry");
 diff --git a/libsepol/src/write.c b/libsepol/src/write.c
-index d87ea61..503fb20 100644
+index e75b9abc..e5c383ec 100644
 --- a/libsepol/src/write.c
 +++ b/libsepol/src/write.c
 @@ -44,6 +44,7 @@
@@ -176,5 +176,5 @@ index d87ea61..503fb20 100644
  		items = put_entry(&buf8, sizeof(uint8_t),1,fp);
  		if (items != 1)
 -- 
-2.9.3
+2.14.3
 
