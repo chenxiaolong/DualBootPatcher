@@ -42,37 +42,29 @@ prepare() {
 }
 
 build() {
-    local abi api toolchain toolchain_ver sysroot_dir
+    local abi api
     abi=$(android_get_abi_name)
-    api=android-21
-    toolchain=$(android_get_toolchain_name "${abi}")
-    toolchain_ver=4.9
-    sysroot_dir=$(android_get_ndk_sysroot "${api}" "${abi}")
+    api=21
 
-    mkdir -p "build_${abi}"
-    pushd "build_${abi}"
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+    export PATH="${srcdir}/toolchain/bin:${PATH}"
 
-    local cflags="--sysroot=${sysroot_dir}"
-    local cxxflags="--sysroot=${sysroot_dir}"
-    local cppflags="--sysroot=${sysroot_dir}"
+    local triplet
+    triplet=$("${srcdir}"/toolchain/bin/*-gcc -dumpmachine)
 
-    android_enter_toolchain_env "${toolchain}" "${toolchain_ver}"
+    mkdir -p build
+    pushd build
 
-    CFLAGS="${cflags}" CXXFLAGS="${cxxflags}" CPPFLAGS="${cppflags}" \
-    ../exfat/configure \
-        --host="${toolchain}"
-
-    android_leave_toolchain_env
+    ../exfat/configure --host="${triplet}"
 
     popd
 
     ndk-build \
         NDK_PROJECT_PATH=. \
-        NDK_TOOLCHAIN_VERSION="${toolchain_ver}" \
         APP_BUILD_SCRIPT=Android.mk \
         APP_ABI="${abi}" \
-        APP_PLATFORM="${api}" \
-        LIBEXFAT_CONFIGURE_DIR="${srcdir}/build_${abi}/libexfat" \
+        APP_PLATFORM="android-${api}" \
+        LIBEXFAT_CONFIGURE_DIR="${srcdir}/build/libexfat" \
         "${MAKEFLAGS}"
 }
 
