@@ -73,10 +73,6 @@ foreach(variant ${variants})
         LibArchive::LibArchive
     )
 
-    if(${MBP_BUILD_TARGET} STREQUAL android-app)
-        target_link_libraries(${lib_target} PRIVATE c_compat)
-    endif()
-
     if(UNIX AND NOT ANDROID)
         target_link_libraries(${lib_target} PRIVATE pthread)
     endif()
