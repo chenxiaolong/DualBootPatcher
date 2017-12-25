@@ -30,7 +30,7 @@ script:
     exit
     EOF
 after_success:
-  - export TRAVIS_CURRENT_DATE=$(date +"%m/%d/%Y-%H:%M")
+  - export TRAVIS_CURRENT_DATE=$(date +"%d%m%y-%Hh%Mm")
   # Check output & md5sum
   - ls -l /home/travis/build/yshalsager/DualBootPatcher/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
   - md5sum /home/travis/build/yshalsager/DualBootPatcher/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk
