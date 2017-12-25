@@ -49,7 +49,7 @@
 #define LOG_TAG "mbtool/sepolpatch"
 
 
-extern "C" int policydb_index_decls(policydb_t *p);
+extern "C" int policydb_index_decls(sepol_handle_t *handle, policydb_t *p);
 
 namespace mb
 {
@@ -327,7 +327,7 @@ bool selinux_raw_reindex(policydb_t *pdb)
 {
     // Recreate maps like type_val_to_struct. libsepol will handle memory
     // deallocation for the old maps
-    return policydb_index_decls(pdb) == 0
+    return policydb_index_decls(nullptr, pdb) == 0
             && policydb_index_classes(pdb) == 0
             && policydb_index_others(nullptr, pdb, 0) == 0;
 }

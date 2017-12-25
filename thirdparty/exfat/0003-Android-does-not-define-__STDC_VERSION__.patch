@@ -1,4 +1,4 @@
-From c31199c9b2219403263dca80f44672b39f931045 Mon Sep 17 00:00:00 2001
+From cc038e262dde2dfea4cb102f67d5ac7067c06d0f Mon Sep 17 00:00:00 2001
 From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
 Date: Thu, 2 Feb 2017 20:00:31 -0500
 Subject: [PATCH 3/3] Android does not define __STDC_VERSION__
@@ -21,5 +21,5 @@ index e4f40de..299d888 100644
  #endif
  
 -- 
-2.11.0
+2.14.3
 

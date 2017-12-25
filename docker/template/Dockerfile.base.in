@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-FROM registry.fedoraproject.org/fedora:26
+FROM registry.fedoraproject.org/fedora:27
 
 # Install gosu
 ENV GOSU_VERSION 1.10
