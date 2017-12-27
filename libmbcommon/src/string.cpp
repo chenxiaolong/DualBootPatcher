@@ -240,354 +240,73 @@ std::string format_v(const char *fmt, va_list ap)
 }
 
 /*!
- * \brief Check if string has prefix (allows non-NULL-terminated strings)
- *        (case sensitive)
+ * \brief Check if string has prefix (case sensitive)
  *
  * \param string String
- * \param len_string String length
  * \param prefix Prefix
- * \param len_prefix Prefix length
  *
  * \return Whether the string starts with the prefix
  */
-bool starts_with_n(const char *string, size_t len_string,
-                   const char *prefix, size_t len_prefix)
+bool starts_with(std::string_view string, std::string_view prefix)
 {
-    return len_string < len_prefix
+    return string.size() < prefix.size()
             ? false
-            : strncmp(string, prefix, len_prefix) == 0;
+            : strncmp(string.data(), prefix.data(), prefix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has prefix (allows non-NULL-terminated strings)
- *        (case insensitive)
+ * \brief Check if string has prefix (case insensitive)
  *
  * \warning Use with care! The case-insensitive matching behavior is
  *          platform-dependent and may even fail to properly handle ASCII
  *          characters depending on the locale.
  *
  * \param string String
- * \param len_string String length
  * \param prefix Prefix
- * \param len_prefix Prefix length
  *
  * \return Whether the string starts with the prefix
  */
-bool starts_with_icase_n(const char *string, size_t len_string,
-                         const char *prefix, size_t len_prefix)
+bool starts_with_icase(std::string_view string, std::string_view prefix)
 {
-    return len_string < len_prefix
+    return string.size() < prefix.size()
             ? false
-            : strncasecmp(string, prefix, len_prefix) == 0;
+            : strncasecmp(string.data(), prefix.data(), prefix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has prefix
- *        (case sensitive)
+ * \brief Check if string has suffix (case sensitive)
  *
  * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const char *string, const char *prefix)
-{
-    return starts_with_n(string, strlen(string), prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const std::string &string, const char *prefix)
-{
-    return starts_with_n(string.c_str(), string.size(), prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const char *string, const std::string &prefix)
-{
-    return starts_with_n(string, strlen(string), prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const std::string &string, const std::string &prefix)
-{
-    return starts_with_n(string.c_str(), string.size(),
-                         prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const char *string, const char *prefix)
-{
-    return starts_with_icase_n(string, strlen(string),
-                               prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const std::string &string, const char *prefix)
-{
-    return starts_with_icase_n(string.c_str(), string.size(),
-                               prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const char *string, const std::string &prefix)
-{
-    return starts_with_icase_n(string, strlen(string),
-                               prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const std::string &string, const std::string &prefix)
-{
-    return starts_with_icase_n(string.c_str(), string.size(),
-                               prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has suffix (allows non-NULL-terminated strings)
- *        (case sensitive)
- *
- * \param string String
- * \param len_string String length
  * \param suffix Suffix
- * \param len_suffix Suffix length
  *
  * \return Whether the string ends with the suffix
  */
-bool ends_with_n(const char *string, size_t len_string,
-                 const char *suffix, size_t len_suffix)
+bool ends_with(std::string_view string, std::string_view suffix)
 {
-    return len_string < len_suffix
+    return string.size() < suffix.size()
             ? false
-            : strncmp(string + len_string - len_suffix,
-                      suffix, len_suffix) == 0;
+            : strncmp(string.data() + string.size() - suffix.size(),
+                      suffix.data(), suffix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has suffix (allows non-NULL-terminated strings)
- *        (case insensitive)
+ * \brief Check if string has suffix (case insensitive)
  *
  * \warning Use with care! The case-insensitive matching behavior is
  *          platform-dependent and may even fail to properly handle ASCII
  *          characters depending on the locale.
  *
  * \param string String
- * \param len_string String length
  * \param suffix Suffix
- * \param len_suffix Suffix length
  *
  * \return Whether the string ends with the suffix
  */
-bool ends_with_icase_n(const char *string, size_t len_string,
-                       const char *suffix, size_t len_suffix)
+bool ends_with_icase(std::string_view string, std::string_view suffix)
 {
-    return len_string < len_suffix
+    return string.size() < suffix.size()
             ? false
-            : strncasecmp(string + len_string - len_suffix,
-                          suffix, len_suffix) == 0;
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case sensitive)
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with(const char *string, const char *suffix)
-{
-    return ends_with_n(string, strlen(string), suffix, strlen(suffix));
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case sensitive)
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with(const std::string &string, const char *suffix)
-{
-    return ends_with_n(string.c_str(), string.size(), suffix, strlen(suffix));
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case sensitive)
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with(const char *string, const std::string &suffix)
-{
-    return ends_with_n(string, strlen(string), suffix.c_str(), suffix.size());
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case sensitive)
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with(const std::string &string, const std::string &suffix)
-{
-    return ends_with_n(string.c_str(), string.size(),
-                       suffix.c_str(), suffix.size());
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const char *string, const char *suffix)
-{
-    return ends_with_icase_n(string, strlen(string), suffix, strlen(suffix));
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const std::string &string, const char *suffix)
-{
-    return ends_with_icase_n(string.c_str(), string.size(),
-                             suffix, strlen(suffix));
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const char *string, const std::string &suffix)
-{
-    return ends_with_icase_n(string, strlen(string),
-                             suffix.c_str(), suffix.size());
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const std::string &string, const std::string &suffix)
-{
-    return ends_with_icase_n(string.c_str(), string.size(),
-                             suffix.c_str(), suffix.size());
+            : strncasecmp(string.data() + string.size() - suffix.size(),
+                          suffix.data(), suffix.size()) == 0;
 }
 
 /*!

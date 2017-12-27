@@ -74,10 +74,10 @@ TEST(StringTest, CheckStartsWithNotNullTerminated)
     size_t prefix3_len = sizeof(prefix3) / sizeof(char);
     size_t prefix4_len = sizeof(prefix4) / sizeof(char);
 
-    ASSERT_TRUE(starts_with_n(source, source_len, prefix1, prefix1_len));
-    ASSERT_FALSE(starts_with_n(source, source_len, prefix2, prefix2_len));
-    ASSERT_TRUE(starts_with_icase_n(source, source_len, prefix3, prefix3_len));
-    ASSERT_FALSE(starts_with_icase_n(source, source_len, prefix4, prefix4_len));
+    ASSERT_TRUE(starts_with({source, source_len}, {prefix1, prefix1_len}));
+    ASSERT_FALSE(starts_with({source, source_len}, {prefix2, prefix2_len}));
+    ASSERT_TRUE(starts_with_icase({source, source_len}, {prefix3, prefix3_len}));
+    ASSERT_FALSE(starts_with_icase({source, source_len}, {prefix4, prefix4_len}));
 }
 
 TEST(StringTest, CheckStartsWithEmpty)
@@ -123,10 +123,10 @@ TEST(StringTest, CheckEndsWithNotNullTerminated)
     size_t suffix3_len = sizeof(suffix3) / sizeof(char);
     size_t suffix4_len = sizeof(suffix4) / sizeof(char);
 
-    ASSERT_TRUE(ends_with_n(source, source_len, suffix1, suffix1_len));
-    ASSERT_FALSE(ends_with_n(source, source_len, suffix2, suffix2_len));
-    ASSERT_TRUE(ends_with_icase_n(source, source_len, suffix3, suffix3_len));
-    ASSERT_FALSE(ends_with_icase_n(source, source_len, suffix4, suffix4_len));
+    ASSERT_TRUE(ends_with({source, source_len}, {suffix1, suffix1_len}));
+    ASSERT_FALSE(ends_with({source, source_len}, {suffix2, suffix2_len}));
+    ASSERT_TRUE(ends_with_icase({source, source_len}, {suffix3, suffix3_len}));
+    ASSERT_FALSE(ends_with_icase({source, source_len}, {suffix4, suffix4_len}));
 }
 
 TEST(StringTest, CheckEndsWithEmpty)

@@ -22,6 +22,7 @@
 #include "mbcommon/common.h"
 
 #include <string>
+#include <string_view>
 
 #include <cstdarg>
 #include <cstdbool>
@@ -58,32 +59,12 @@ MB_EXPORT oc::result<std::string> format_v_safe(const char *fmt, va_list ap);
 MB_EXPORT std::string format_v(const char *fmt, va_list ap);
 
 // String starts with
-MB_EXPORT bool starts_with_n(const char *string, size_t len_string,
-                             const char *prefix, size_t len_prefix);
-MB_EXPORT bool starts_with_icase_n(const char *string, size_t len_string,
-                                   const char *prefix, size_t len_prefix);
-MB_EXPORT bool starts_with(const char *string, const char *prefix);
-MB_EXPORT bool starts_with(const std::string &string, const char *prefix);
-MB_EXPORT bool starts_with(const char *string, const std::string &prefix);
-MB_EXPORT bool starts_with(const std::string &string, const std::string &prefix);
-MB_EXPORT bool starts_with_icase(const char *string, const char *prefix);
-MB_EXPORT bool starts_with_icase(const std::string &string, const char *prefix);
-MB_EXPORT bool starts_with_icase(const char *string, const std::string &prefix);
-MB_EXPORT bool starts_with_icase(const std::string &string, const std::string &prefix);
+MB_EXPORT bool starts_with(std::string_view string, std::string_view prefix);
+MB_EXPORT bool starts_with_icase(std::string_view string, std::string_view prefix);
 
 // String ends with
-MB_EXPORT bool ends_with_n(const char *string, size_t len_string,
-                           const char *suffix, size_t len_suffix);
-MB_EXPORT bool ends_with_icase_n(const char *string, size_t len_string,
-                                 const char *suffix, size_t len_suffix);
-MB_EXPORT bool ends_with(const char *string, const char *suffix);
-MB_EXPORT bool ends_with(const std::string &string, const char *suffix);
-MB_EXPORT bool ends_with(const char *string, const std::string &suffix);
-MB_EXPORT bool ends_with(const std::string &string, const std::string &suffix);
-MB_EXPORT bool ends_with_icase(const char *string, const char *suffix);
-MB_EXPORT bool ends_with_icase(const std::string &string, const char *suffix);
-MB_EXPORT bool ends_with_icase(const char *string, const std::string &suffix);
-MB_EXPORT bool ends_with_icase(const std::string &string, const std::string &suffix);
+MB_EXPORT bool ends_with(std::string_view string, std::string_view suffix);
+MB_EXPORT bool ends_with_icase(std::string_view string, std::string_view suffix);
 
 // String insert
 MB_EXPORT oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
