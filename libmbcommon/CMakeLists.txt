@@ -142,7 +142,6 @@ foreach(variant ${variants})
     target_link_libraries(
         ${lib_target}
         PUBLIC
-        optional
         outcome
         PRIVATE
         interface.global.CXXVersion
