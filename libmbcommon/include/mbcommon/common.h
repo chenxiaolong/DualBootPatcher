@@ -75,27 +75,9 @@
 #  ifndef MB_NO_RETURN
 #    define MB_NO_RETURN __attribute__((noreturn))
 #  endif
-#  if __cplusplus > 201402L
-#    error Remove MB_NO_DISCARD after switching to C++17
-#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
-#  elif defined(__clang__)
-#    define MB_NO_DISCARD [[clang::warn_unused_result]]
-#    define MB_NO_DISCARD_FUNC [[clang::warn_unused_result]]
-#  elif defined(__GNUC__)
-     // GCC does not support warn_unused_result on types
-#    define MB_NO_DISCARD
-#    define MB_NO_DISCARD_FUNC [[gnu::warn_unused_result]]
-#  endif
 #elif defined(_MSC_VER)
 #  ifndef MB_NO_RETURN
 #    define MB_NO_RETURN __declspec(noreturn)
-#  endif
-#  if __cplusplus > 201402L
-#    error Remove MB_NO_DISCARD after switching to C++17
-#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
-#  else
-#    define MB_NO_DISCARD _Check_return_
-#    define MB_NO_DISCARD_FUNC _Check_return_
 #  endif
 #endif
 
