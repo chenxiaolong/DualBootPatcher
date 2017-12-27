@@ -115,14 +115,20 @@ std::vector<std::string> tokenize(const std::string &str,
     return tokens;
 }
 
+template<typename Iterator>
+static Iterator find_first_non_space(Iterator begin, Iterator end)
+{
+    return std::find_if(begin, end, [](char c) {
+        return !std::isspace(c);
+    });
+}
+
 /*!
  * \brief Trim whitespace from the left (in place)
  */
 void trim_left(std::string &s)
 {
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
-    s.erase(s.begin(), nonspace);
+    s.erase(s.begin(), find_first_non_space(s.begin(), s.end()));
 }
 
 /*!
@@ -130,9 +136,7 @@ void trim_left(std::string &s)
  */
 void trim_right(std::string &s)
 {
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
-    s.erase(nonspace.base(), s.end());
+    s.erase(find_first_non_space(s.rbegin(), s.rend()).base(), s.end());
 }
 
 /*!
@@ -149,9 +153,7 @@ void trim(std::string &s)
  */
 std::string trimmed_left(const std::string &s)
 {
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
-    return std::string(nonspace, s.end());
+    return {find_first_non_space(s.begin(), s.end()), s.end()};
 }
 
 /*!
@@ -159,9 +161,7 @@ std::string trimmed_left(const std::string &s)
  */
 std::string trimmed_right(const std::string &s)
 {
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
-    return std::string(s.begin(), nonspace.base());
+    return {s.begin(), find_first_non_space(s.rbegin(), s.rend()).base()};
 }
 
 /*!
@@ -169,11 +169,10 @@ std::string trimmed_right(const std::string &s)
  */
 std::string trimmed(const std::string &s)
 {
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto begin = std::find_if(s.begin(), s.end(), isspace_fn);
+    auto begin = find_first_non_space(s.begin(), s.end());
     auto search_end = std::string::const_reverse_iterator(begin);
-    auto end = std::find_if(s.rbegin(), search_end, isspace_fn);
-    return std::string(begin, end.base());
+    auto end = find_first_non_space(s.rbegin(), search_end);
+    return {begin, end.base()};
 }
 
 /*!
