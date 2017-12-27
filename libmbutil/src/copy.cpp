@@ -285,8 +285,7 @@ bool copy_file(const std::string &source, const std::string &target,
         }
 
         // Treat as file
-        [[gnu::fallthrough]];
-        [[clang::fallthrough]];
+        [[fallthrough]];
 
     case S_IFREG:
         if (!copy_data(source, target)) {
