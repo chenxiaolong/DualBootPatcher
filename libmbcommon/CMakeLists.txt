@@ -186,6 +186,7 @@ if(variants AND MBP_ENABLE_TESTS)
         tests/test_file.cpp
         tests/test_file_error.cpp
         tests/test_file_util.cpp
+        tests/test_integer.cpp
         tests/test_locale.cpp
         tests/test_string.cpp
     )
