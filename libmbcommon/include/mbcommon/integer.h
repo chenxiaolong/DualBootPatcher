@@ -30,7 +30,7 @@ namespace mb
 {
 
 template<typename SIntType>
-inline typename std::enable_if_t<std::is_signed<SIntType>::value, bool>
+inline typename std::enable_if_t<std::is_signed_v<SIntType>, bool>
 str_to_num(const char *str, int base, SIntType &out)
 {
     static_assert(std::numeric_limits<SIntType>::min() >= LLONG_MIN
@@ -54,7 +54,7 @@ str_to_num(const char *str, int base, SIntType &out)
 }
 
 template<typename UIntType>
-inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, bool>
+inline typename std::enable_if_t<std::is_unsigned_v<UIntType>, bool>
 str_to_num(const char *str, int base, UIntType &out)
 {
     static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
