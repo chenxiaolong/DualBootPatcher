@@ -296,7 +296,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     // std::string is guaranteed to be contiguous in C++11
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -475,7 +475,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
 
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }

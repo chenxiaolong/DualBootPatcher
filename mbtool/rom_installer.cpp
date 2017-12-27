@@ -326,7 +326,7 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     {
         std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-        int tmpfd = mkstemp(&tmpfile[0]);
+        int tmpfd = mkstemp(tmpfile.data());
         if (tmpfd < 0) {
             LOGE("Failed to create temporary file: %s", strerror(errno));
             return false;
@@ -397,7 +397,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
                 std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-                int tmpfd = mkstemp(&tmpfile[0]);
+                int tmpfd = mkstemp(tmpfile.data());
                 if (tmpfd < 0) {
                     LOGE("Failed to create temporary file: %s",
                          strerror(errno));

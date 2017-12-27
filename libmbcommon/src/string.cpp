@@ -199,8 +199,7 @@ oc::result<std::string> format_v_safe(const char *fmt, va_list ap)
     buf.resize(static_cast<size_t>(ret) + 1);
 
     va_copy(copy, ap);
-    // NOTE: Change `&buf[0]` to `buf.data()` once we target C++17.
-    ret = vsnprintf(&buf[0], buf.size(), fmt, copy);
+    ret = vsnprintf(buf.data(), buf.size(), fmt, copy);
     va_end(copy);
 
     if (ret < 0) {

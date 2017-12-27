@@ -125,7 +125,7 @@ static unsigned long options_to_flags(const MountFlag *flags_map,
         new_args_out->clear();
     }
 
-    char *temp = strtok_r(&args[0], ",", &save_ptr);
+    char *temp = strtok_r(args.data(), ",", &save_ptr);
     while (temp) {
         const MountFlag *it;
 

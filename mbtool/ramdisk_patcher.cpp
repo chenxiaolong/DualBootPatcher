@@ -94,7 +94,7 @@ static bool _rp_patch_default_prop(const std::string &dir,
 
     std::string tmp_path = format("%s.XXXXXX", path.c_str());
 
-    const int tmp_fd = mkstemp(&tmp_path[0]);
+    const int tmp_fd = mkstemp(tmp_path.data());
     if (tmp_fd < 0) {
         LOGE("%s: Failed to create temporary file: %s",
              path.c_str(), strerror(errno));
