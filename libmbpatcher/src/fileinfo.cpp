@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -25,17 +25,6 @@ namespace mb
 namespace patcher
 {
 
-/*! \cond INTERNAL */
-class FileInfoPrivate
-{
-public:
-    device::Device device;
-    std::string input_path;
-    std::string output_path;
-    std::string rom_id;
-};
-/*! \endcond */
-
 
 /*!
  * \class FileInfo
@@ -49,14 +38,6 @@ public:
  */
 
 
-FileInfo::FileInfo() : _priv_ptr(new FileInfoPrivate())
-{
-}
-
-FileInfo::~FileInfo()
-{
-}
-
 /*!
  * \brief File to be patched
  *
@@ -64,8 +45,7 @@ FileInfo::~FileInfo()
  */
 const std::string & FileInfo::input_path() const
 {
-    MB_PRIVATE(const FileInfo);
-    return priv->input_path;
+    return m_input_path;
 }
 
 /*!
@@ -75,20 +55,17 @@ const std::string & FileInfo::input_path() const
  */
 void FileInfo::set_input_path(std::string path)
 {
-    MB_PRIVATE(FileInfo);
-    priv->input_path = std::move(path);
+    m_input_path = std::move(path);
 }
 
 const std::string & FileInfo::output_path() const
 {
-    MB_PRIVATE(const FileInfo);
-    return priv->output_path;
+    return m_output_path;
 }
 
 void FileInfo::set_output_path(std::string path)
 {
-    MB_PRIVATE(FileInfo);
-    priv->output_path = std::move(path);
+    m_output_path = std::move(path);
 }
 
 /*!
@@ -98,8 +75,7 @@ void FileInfo::set_output_path(std::string path)
  */
 const device::Device & FileInfo::device() const
 {
-    MB_PRIVATE(const FileInfo);
-    return priv->device;
+    return m_device;
 }
 
 /*!
@@ -109,20 +85,17 @@ const device::Device & FileInfo::device() const
  */
 void FileInfo::set_device(device::Device device)
 {
-    MB_PRIVATE(FileInfo);
-    priv->device = std::move(device);
+    m_device = std::move(device);
 }
 
 const std::string & FileInfo::rom_id() const
 {
-    MB_PRIVATE(const FileInfo);
-    return priv->rom_id;
+    return m_rom_id;
 }
 
 void FileInfo::set_rom_id(std::string id)
 {
-    MB_PRIVATE(FileInfo);
-    priv->rom_id = std::move(id);
+    m_rom_id = std::move(id);
 }
 
 }

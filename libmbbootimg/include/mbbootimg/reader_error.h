@@ -32,15 +32,19 @@ enum class ReaderError
 {
     InvalidState            = 10,
 
+    UnknownOption           = 20,
+
     // Format errors
-    InvalidFormatCode       = 20,
-    InvalidFormatName       = 21,
-    EnabledFormatNotFound   = 22,
-    NoFormatSelected        = 23,
-    TooManyFormats          = 24,
-    FormatAlreadyEnabled    = 25,
-    NoFormatsRegistered     = 26,
-    UnknownFileFormat       = 27,
+    InvalidFormatCode       = 30,
+    InvalidFormatName       = 31,
+    NoFormatSelected        = 32,
+    FormatAlreadyEnabled    = 33,
+    NoFormatsRegistered     = 34,
+    UnknownFileFormat       = 35,
+
+    EndOfEntries            = 40,
+
+    UnsupportedGoTo         = 50,
 };
 
 MB_EXPORT std::error_code make_error_code(ReaderError e);

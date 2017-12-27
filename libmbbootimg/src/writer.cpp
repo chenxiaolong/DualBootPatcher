@@ -27,31 +27,20 @@
 
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
-#include "mbcommon/string.h"
+#include "mbcommon/finally.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
-#include "mbbootimg/writer_p.h"
-
-#define GET_PIMPL_OR_RETURN(RETVAL) \
-    MB_PRIVATE(Writer); \
-    do { \
-        if (!priv) { \
-            return RETVAL; \
-        } \
-    } while (0)
 
 #define ENSURE_STATE_OR_RETURN(STATES, RETVAL) \
     do { \
-        if (!(priv->state & (STATES))) { \
-            set_error(make_error_code(WriterError::InvalidState), \
-                      "%s: Invalid state: "\
-                      "expected 0x%" PRIx8 ", actual: 0x%" PRIx8, \
-                      __func__, static_cast<uint8_t>(STATES), \
-                      static_cast<uint8_t>(priv->state)); \
+        if (!(m_state & (STATES))) { \
             return RETVAL; \
         } \
     } while (0)
+
+#define ENSURE_STATE_OR_RETURN_ERROR(STATES) \
+    ENSURE_STATE_OR_RETURN(STATES, WriterError::InvalidState)
 
 /*!
  * \file mbbootimg/writer.h
@@ -64,132 +53,134 @@
  */
 
 /*!
- * \defgroup MB_BI_WRITER_FORMAT_CALLBACKS Format writer callbacks
- */
-
-/*!
- * \typedef FormatWriterSetOption
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::set_option
  *
  * \brief Format writer callback to set option
  *
- * \param biw MbBiWriter
- * \param userdata User callback data
+ * \note This is currently not exposed in the public API. There is no way to
+ *       access this function.
+ *
  * \param key Option key
  * \param value Option value
  *
  * \return
- *   * Return #RET_OK if the option is handled successfully
- *   * Return #RET_WARN if the option cannot be handled
- *   * Return \<= #RET_FAILED if an error occurs
+ *   * Return nothing if the option is handled successfully
+ *   * Return WriterError::UnknownOption if the option cannot be handled
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterGetHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::open
+ *
+ * \brief Format writer callback to initialize a boot image
+ *
+ * If this function returns an error code, close() will be called in
+ * Writer::open() to clean up any state. Otherwise, close() will be called in
+ * Writer::close() when the user closes the Writer.
+ *
+ * \param file Reference to file handle
+ *
+ * \return
+ *   * Return nothing if no errors occur while initializing the boot image
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatWriter::close
+ *
+ * \brief Format writer callback to finalize and close boot image
+ *
+ * This function will be called to clean up the state regardless of whether the
+ * file is successfully opened. It is guaranteed that this function will only
+ * ever be called once after a call to open(). If an error code is returned, the
+ * user cannot reattempt the close operation.
+ *
+ * \param file Reference to file handle
+ *
+ * \return
+ *   * Return nothing if no errors occur while closing the boot image
+ *   * Return a specific error code if an error occurs
+ */
+
+/*!
+ * \fn FormatWriter::get_header
  *
  * \brief Format writer callback to get Header instance
  *
- * \param[in] biw MbBiWriter
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] header Pointer to store Header instance
  *
  * \return
- *   * Return #RET_OK if successful
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return nothing if successful
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterWriteHeader
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_header
  *
  * \brief Format writer callback to write header
  *
- * \param biw MbBiWriter
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param header Header instance to write
  *
  * \return
- *   * Return #RET_OK if the header is successfully written
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return nothing if the header is successfully written
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterGetEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::get_entry
  *
  * \brief Format writer callback to get Entry instance
  *
- * \param[in] biw MbBiWriter
- * \param[in] userdata User callback data
+ * \param[in] file Reference to file handle
  * \param[out] entry Pointer to store Entry instance
  *
  * \return
- *   * Return #RET_OK if successful
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return nothing if successful
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterWriteEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_entry
  *
  * \brief Format writer callback to write entry
  *
- * \param biw MbBiWriter
- * \param userdata User callback data
+ * \param file Reference to file handle
  * \param entry Entry instance to write
  *
  * \return
- *   * Return #RET_OK if the entry is successfully written
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return nothing if the entry is successfully written
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterWriteData
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::write_data
  *
  * \brief Format writer callback to write entry data
  *
  * \note The callback function *must* write \p buf_size bytes or return an error
  *       if it cannot do so.
  *
- * \param[in] biw MbBiWriter
- * \param[in] userdata User callback data
- * \param[in] buf Input buffer
- * \param[in] buf_size Size of input buffer
- * \param[out] bytes_written Output number of bytes that were written
+ * \param file Reference to file handle
+ * \param buf Input buffer
+ * \param buf_size Size of input buffer
  *
  * \return
- *   * Return #RET_OK if the entry is successfully written
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return number of bytes written if the entry is successfully written
+ *   * Return a specific error code if an error occurs
  */
 
 /*!
- * \typedef FormatWriterFinishEntry
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
+ * \fn FormatWriter::finish_entry
  *
  * \brief Format writer callback to complete the writing of an entry
  *
- * \param biw MbBiWriter
- * \param userdata User callback data
+ * \param file Reference to file handle
  *
  * \return
- *   * Return #RET_OK if successful
- *   * Return \<= #RET_WARN if an error occurs
- */
-
-/*!
- * \typedef FormatWriterClose
- * \ingroup MB_BI_WRITER_FORMAT_CALLBACKS
- *
- * \brief Format writer callback to finalize and close boot image
- *
- * \param biw MbBiWriter
- * \param userdata User callback data
- *
- * \return
- *   * Return #RET_OK if no errors occur while closing the boot image
- *   * Return \<= #RET_WARN if an error occurs
+ *   * Return nothing if successful
+ *   * Return a specific error code if an error occurs
  */
 
 ///
@@ -199,12 +190,14 @@ namespace mb
 namespace bootimg
 {
 
+using namespace detail;
+
 static struct
 {
     int code;
     const char *name;
-    int (Writer::*func)();
-} writer_formats[] = {
+    oc::result<void> (Writer::*func)();
+} g_writer_formats[] = {
     {
         FORMAT_ANDROID,
         FORMAT_NAME_ANDROID,
@@ -225,92 +218,49 @@ static struct
         FORMAT_SONY_ELF,
         FORMAT_NAME_SONY_ELF,
         &Writer::set_format_sony_elf
-    }, {
-        0,
-        nullptr,
-        nullptr
     },
 };
 
 FormatWriter::FormatWriter(Writer &writer)
-    : _writer(writer)
+    : m_writer(writer)
 {
 }
 
 FormatWriter::~FormatWriter() = default;
 
-int FormatWriter::init()
-{
-    return RET_OK;
-}
-
-int FormatWriter::set_option(const char *key, const char *value)
+oc::result<void> FormatWriter::set_option(const char *key, const char *value)
 {
     (void) key;
     (void) value;
-    return RET_OK;
+    return WriterError::UnknownOption;
 }
 
-int FormatWriter::finish_entry(File &file)
+oc::result<void> FormatWriter::open(File &file)
 {
     (void) file;
-    return RET_OK;
+    return oc::success();
 }
 
-int FormatWriter::close(File &file)
+oc::result<void> FormatWriter::close(File &file)
 {
     (void) file;
-    return RET_OK;
+    return oc::success();
 }
 
-WriterPrivate::WriterPrivate(Writer *writer)
-    : _pub_ptr(writer)
-    , state(WriterState::New)
-    , owned_file()
-    , file()
-    , format()
+oc::result<void> FormatWriter::finish_entry(File &file)
 {
-}
-
-/*!
- * \brief Register a format writer
- *
- * Register a format writer with a Writer. The Writer will take ownership of
- * \p format.
- *
- * \param format_ FormatWriter to register
- *
- * \return
- *   * #RET_OK if the format is successfully registered
- *   * \<= #RET_FAILED if an error occurs
- */
-int WriterPrivate::register_format(std::unique_ptr<FormatWriter> format_)
-{
-    MB_PUBLIC(Writer);
-
-    if (state != WriterState::New) {
-        pub->set_error(make_error_code(WriterError::InvalidState),
-                       "%s: Invalid state: expected 0x%" PRIx8
-                       ", actual: 0x%" PRIx8,
-                       __func__, static_cast<uint8_t>(WriterState::New),
-                       static_cast<uint8_t>(state));
-        return RET_FAILED;
-    }
-
-    int ret = format_->init();
-    if (ret != RET_OK) {
-        return ret;
-    }
-
-    format = std::move(format_);
-    return RET_OK;
+    (void) file;
+    return oc::success();
 }
 
 /*!
  * \brief Construct new Writer.
  */
 Writer::Writer()
-    : _priv_ptr(new WriterPrivate(this))
+    : m_state(WriterState::New)
+    , m_owned_file()
+    , m_file()
+    , m_format()
 {
 }
 
@@ -323,25 +273,28 @@ Writer::Writer()
  */
 Writer::~Writer()
 {
-    MB_PRIVATE(Writer);
-
-    if (priv) {
-        if (priv->state != WriterState::Closed) {
-            close();
-        }
-    }
+    (void) close();
 }
 
 Writer::Writer(Writer &&other) noexcept
-    : _priv_ptr(std::move(other._priv_ptr))
+    : m_state(other.m_state)
+    , m_owned_file(std::move(other.m_owned_file))
+    , m_file(other.m_file)
+    , m_format(std::move(other.m_format))
 {
+    other.m_state = WriterState::Moved;
 }
 
 Writer & Writer::operator=(Writer &&rhs) noexcept
 {
-    close();
+    (void) close();
 
-    _priv_ptr = std::move(rhs._priv_ptr);
+    m_state = rhs.m_state;
+    m_owned_file.swap(rhs.m_owned_file);
+    m_file = rhs.m_file;
+    m_format.swap(rhs.m_format);
+
+    rhs.m_state = WriterState::Moved;
 
     return *this;
 }
@@ -351,25 +304,16 @@ Writer & Writer::operator=(Writer &&rhs) noexcept
  *
  * \param filename MBS filename
  *
- * \return
- *   * #RET_OK if the boot image is successfully opened
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-int Writer::open_filename(const std::string &filename)
+oc::result<void> Writer::open_filename(const std::string &filename)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadWriteTrunc));
-
+    auto file = std::make_unique<StandardFile>();
     // Open in read/write mode since some formats need to reread the file
-    if (!file->is_open()) {
-        set_error(file->error(),
-                  "Failed to open for writing: %s",
-                  file->error_string().c_str());
-        return RET_FAILED;
-    }
+    OUTCOME_TRYV(file->open(filename, FileOpenMode::ReadWriteTrunc));
 
     return open(std::move(file));
 }
@@ -379,25 +323,16 @@ int Writer::open_filename(const std::string &filename)
  *
  * \param filename WCS filename
  *
- * \return
- *   * #RET_OK if the boot image is successfully opened
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-int Writer::open_filename_w(const std::wstring &filename)
+oc::result<void> Writer::open_filename_w(const std::wstring &filename)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    std::unique_ptr<File> file(
-            new StandardFile(filename, FileOpenMode::ReadWriteTrunc));
-
+    auto file = std::make_unique<StandardFile>();
     // Open in read/write mode since some formats need to reread the file
-    if (!file->is_open()) {
-        set_error(file->error(),
-                  "Failed to open for writing: %s",
-                  file->error_string().c_str());
-        return RET_FAILED;
-    }
+    OUTCOME_TRYV(file->open(filename, FileOpenMode::ReadWriteTrunc));
 
     return open(std::move(file));
 }
@@ -410,22 +345,18 @@ int Writer::open_filename_w(const std::wstring &filename)
  *
  * \param file File handle
  *
- * \return
- *   * #RET_OK if the boot image is successfully opened
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-int Writer::open(std::unique_ptr<File> file)
+oc::result<void> Writer::open(std::unique_ptr<File> file)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    int ret = open(file.get());
-    if (ret != RET_OK) {
-        return ret;
-    }
+    OUTCOME_TRYV(open(file.get()));
 
     // Underlying pointer is not invalidated during a move
-    priv->owned_file = std::move(file);
-    return RET_OK;
+    m_owned_file = std::move(file);
+    return oc::success();
 }
 
 /*!
@@ -436,24 +367,27 @@ int Writer::open(std::unique_ptr<File> file)
  *
  * \param file File handle
  *
- * \return
- *   * #RET_OK if the boot image is successfully opened
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image is successfully opened. Otherwise, a
+ *         specific error code.
  */
-int Writer::open(File *file)
+oc::result<void> Writer::open(File *file)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatRegistered));
-        return RET_FAILED;
+    if (!m_format) {
+        return WriterError::NoFormatRegistered;
     }
 
-    priv->state = WriterState::Header;
-    priv->file = file;
+    auto ret = m_format->open(*file);
+    if (!ret) {
+        (void) m_format->close(*file);
+        return ret.as_failure();
+    }
 
-    return RET_OK;
+    m_state = WriterState::Header;
+    m_file = file;
+
+    return oc::success();
 }
 
 /*!
@@ -462,41 +396,36 @@ int Writer::open(File *file)
  * This function will close a Writer if it is open. Regardless of the return
  * value, the writer is closed and can no longer be used for further operations.
  *
- * \return
- *   * #RET_OK if no error is encountered when closing the writer
- *   * \<= #RET_WARN if the writer is opened and an error occurs while
- *     closing the writer
+ * It is important to check the return value of this function instead of relying
+ * on the destructor since some formats require steps to finalize the boot image
+ * when the writer is closed.
+ *
+ * \return Nothing if the writer is successfully closed. Otherwise, a specific
+ *         error code.
  */
-int Writer::close()
+oc::result<void> Writer::close()
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(~WriterStates(WriterState::Moved));
 
-    int ret = RET_OK;
+    auto reset_state = finally([&] {
+        m_state = WriterState::New;
 
-    // Avoid double-closing or closing nothing
-    if (!(priv->state & (WriterState::Closed | WriterState::New))) {
-        if (!!priv->format) {
-            ret = priv->format->close(*priv->file);
-        }
+        m_owned_file.reset();
+        m_file = nullptr;
+    });
 
-        if (priv->owned_file) {
-            if (!priv->owned_file->close()) {
-                if (RET_FAILED < ret) {
-                    ret = RET_FAILED;
-                }
+    oc::result<void> ret = oc::success();
+
+    if (m_state != WriterState::New) {
+        ret = m_format->close(*m_file);
+
+        if (m_owned_file) {
+            auto close_ret = m_owned_file->close();
+            if (ret && !close_ret) {
+                ret = std::move(close_ret);
             }
         }
-
-        priv->owned_file.reset();
-        priv->file = nullptr;
-
-        // Don't change state to WriterState::FATAL if RET_FATAL is returned.
-        // Otherwise, we risk double-closing the boot image. CLOSED and FATAL
-        // are the same anyway, aside from the fact that boot images can be
-        // closed in the latter state.
     }
-
-    priv->state = WriterState::Closed;
 
     return ret;
 }
@@ -508,26 +437,17 @@ int Writer::close()
  *
  * \param[out] header Header instance to initialize
  *
- * \return
- *   * #RET_OK if no error occurs
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the header instance is successfully fetched. Otherwise, a
+ *         specific error code.
  */
-int Writer::get_header(Header &header)
+oc::result<void> Writer::get_header(Header &header)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::Header, RET_FATAL);
-    int ret;
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::Header);
 
     header.clear();
 
-    ret = priv->format->get_header(*priv->file, header);
-    if (ret == RET_OK) {
-        // Don't alter state
-    } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
-    }
-
-    return ret;
+    // Don't alter state
+    return m_format->get_header(*m_file, header);
 }
 
 /*!
@@ -540,24 +460,17 @@ int Writer::get_header(Header &header)
  *
  * \param header Header instance to write
  *
- * \return
- *   * #RET_OK if the boot image header is successfully written
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image header is successfully written. Otherwise,
+ *         a specific error code.
  */
-int Writer::write_header(const Header &header)
+oc::result<void> Writer::write_header(const Header &header)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::Header, RET_FATAL);
-    int ret;
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::Header);
 
-    ret = priv->format->write_header(*priv->file, header);
-    if (ret == RET_OK) {
-        priv->state = WriterState::Entry;
-    } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
-    }
+    OUTCOME_TRYV(m_format->write_header(*m_file, header));
 
-    return ret;
+    m_state = WriterState::Entry;
+    return oc::success();
 }
 
 /*!
@@ -565,46 +478,33 @@ int Writer::write_header(const Header &header)
  *
  * Prepare an Entry instance for the next entry.
  *
- * This function will return #RET_EOF when there are no more entries to write.
- * It is *strongly* recommended to check the return value of Writer::close()
- * when closing the boot image as additional steps for finalizing the boot image
- * could fail.
+ * This function will return WriterError::EndOfEntries when there are no more
+ * entries to write. It is strongly* recommended to check the return value of
+ * Writer::close() when closing the boot image as additional steps for
+ * finalizing the boot image could fail.
  *
  * \param[out] entry Entry instance to initialize
  *
- * \return
- *   * #RET_OK if no error occurs
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the next entry is successfully fetched. Otherwise, a
+ *         specific error code.
  */
-int Writer::get_entry(Entry &entry)
+oc::result<void> Writer::get_entry(Entry &entry)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::Entry | WriterState::Data, RET_FATAL);
-    int ret;
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::Entry | WriterState::Data);
 
     // Finish current entry
-    if (priv->state == WriterState::Data) {
-        ret = priv->format->finish_entry(*priv->file);
-        if (ret == RET_OK) {
-            priv->state = WriterState::Entry;
-        } else if (ret <= RET_FATAL) {
-            priv->state = WriterState::Fatal;
-            return ret;
-        } else {
-            return ret;
-        }
+    if (m_state == WriterState::Data) {
+        OUTCOME_TRYV(m_format->finish_entry(*m_file));
+
+        m_state = WriterState::Entry;
     }
 
     entry.clear();
 
-    ret = priv->format->get_entry(*priv->file, entry);
-    if (ret == RET_OK) {
-        priv->state = WriterState::Entry;
-    } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
-    }
+    OUTCOME_TRYV(m_format->get_entry(*m_file, entry));
 
-    return ret;
+    m_state = WriterState::Entry;
+    return oc::success();
 }
 
 /*!
@@ -617,25 +517,17 @@ int Writer::get_entry(Entry &entry)
  *
  * \param entry Entry instance to write
  *
- * \return
- *   * #RET_OK if the boot image entry is successfully written
- *   * #RET_EOF if the boot image has no more entries
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the boot image entry is successfully written. Otherwise,
+ *         a specific error code.
  */
-int Writer::write_entry(const Entry &entry)
+oc::result<void> Writer::write_entry(const Entry &entry)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::Entry, RET_FATAL);
-    int ret;
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::Entry);
 
-    ret = priv->format->write_entry(*priv->file, entry);
-    if (ret == RET_OK) {
-        priv->state = WriterState::Data;
-    } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
-    }
+    OUTCOME_TRYV(m_format->write_entry(*m_file, entry));
 
-    return ret;
+    m_state = WriterState::Data;
+    return oc::success();
 }
 
 /*!
@@ -643,26 +535,17 @@ int Writer::write_entry(const Entry &entry)
  *
  * \param[in] buf Input buffer
  * \param[in] size Size of input buffer
- * \param[out] bytes_written Pointer to store number of bytes written
  *
- * \return
- *   * #RET_OK if data is successfully written
- *   * \<= #RET_WARN if an error occurs
+ * \return Number of bytes written. If EOF is reached, FileError::UnexpectedEof
+ *         will be returned. If any other error occurs, a specific error code
+ *         will be returned.
  */
-int Writer::write_data(const void *buf, size_t size, size_t &bytes_written)
+oc::result<size_t> Writer::write_data(const void *buf, size_t size)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::Data, RET_FATAL);
-    int ret;
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::Data);
 
-    ret = priv->format->write_data(*priv->file, buf, size, bytes_written);
-    if (ret == RET_OK) {
-        // Do not alter state. Stay in WriterState::DATA
-    } else if (ret <= RET_FATAL) {
-        priv->state = WriterState::Fatal;
-    }
-
-    return ret;
+    // Do not alter state. Stay in WriterState::DATA
+    return m_format->write_data(*m_file, buf, size);
 }
 
 /*!
@@ -672,14 +555,14 @@ int Writer::write_data(const void *buf, size_t size, size_t &bytes_written)
  */
 int Writer::format_code()
 {
-    GET_PIMPL_OR_RETURN(-1);
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), -1);
 
-    if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatSelected));
+    if (!m_format) {
+        // WriterError::NoFormatSelected
         return -1;
     }
 
-    return priv->format->type();
+    return m_format->type();
 }
 
 /*!
@@ -689,14 +572,14 @@ int Writer::format_code()
  */
 std::string Writer::format_name()
 {
-    GET_PIMPL_OR_RETURN({});
+    ENSURE_STATE_OR_RETURN(~WriterStates(WriterState::Moved), {});
 
-    if (!priv->format) {
-        set_error(make_error_code(WriterError::NoFormatSelected));
+    if (!m_format) {
+        // WriterError::NoFormatSelected
         return {};
     }
 
-    return priv->format->name();
+    return m_format->name();
 }
 
 /*!
@@ -704,24 +587,19 @@ std::string Writer::format_name()
  *
  * \param code Boot image format code (\ref MB_BI_FORMAT_CODES)
  *
- * \return
- *   * #RET_OK if the format is successfully enabled
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-int Writer::set_format_by_code(int code)
+oc::result<void> Writer::set_format_by_code(int code)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    for (auto it = writer_formats; it->func; ++it) {
-        if ((code & FORMAT_BASE_MASK) == (it->code & FORMAT_BASE_MASK)) {
-            return (this->*it->func)();
+    for (auto const &format : g_writer_formats) {
+        if ((code & FORMAT_BASE_MASK) == (format.code & FORMAT_BASE_MASK)) {
+            return (this->*format.func)();
         }
     }
 
-    set_error(make_error_code(WriterError::InvalidFormatCode),
-              "Invalid format code: %d", code);
-    return RET_FAILED;
+    return WriterError::InvalidFormatCode;
 }
 
 /*!
@@ -729,122 +607,76 @@ int Writer::set_format_by_code(int code)
  *
  * \param name Boot image format name (\ref MB_BI_FORMAT_NAMES)
  *
- * \return
- *   * #RET_OK if the format is successfully enabled
- *   * \<= #RET_WARN if an error occurs
+ * \return Nothing if the format is successfully set. Otherwise, the error code.
  */
-int Writer::set_format_by_name(const std::string &name)
+oc::result<void> Writer::set_format_by_name(const std::string &name)
 {
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-    ENSURE_STATE_OR_RETURN(WriterState::New, RET_FATAL);
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    for (auto it = writer_formats; it->func; ++it) {
-        if (name == it->name) {
-            return (this->*it->func)();
+    for (auto const &format : g_writer_formats) {
+        if (name == format.name) {
+            return (this->*format.func)();
         }
     }
 
-    set_error(make_error_code(WriterError::InvalidFormatName),
-              "Invalid format name: %s", name.c_str());
-    return RET_FAILED;
+    return WriterError::InvalidFormatName;
 }
 
 /*!
- * \brief Get error code for a failed operation.
+ * \brief Check whether writer is opened
  *
- * \note The return value is undefined if an operation did not fail.
- *
- * \return Error code for failed operation.
+ * \return Whether writer is opened
  */
-std::error_code Writer::error()
+bool Writer::is_open()
 {
-    GET_PIMPL_OR_RETURN({});
-
-    return priv->error_code;
+    return m_state != WriterState::New;
 }
 
 /*!
- * \brief Get error string for a failed operation.
+ * \brief Check whether the writer is in a fatal state
  *
- * \note The return value is undefined if an operation did not fail.
+ * If the writer is in a fatal state, the only valid operation is to call
+ * close().
  *
- * \return Error string for failed operation. The string contents may be
- *         undefined, but will never be NULL or an invalid string.
+ * \return Whether writer is in a fatal state
  */
-std::string Writer::error_string()
+bool Writer::is_fatal()
 {
-    GET_PIMPL_OR_RETURN({});
-
-    return priv->error_string;
+    return m_state == WriterState::Fatal;
 }
 
 /*!
- * \brief Set error string for a failed operation.
+ * \brief Set whether writer is in a fatal state
  *
- * \sa Writer::set_error_v()
+ * This function only has an effect if the writer is opened.
  *
- * \param ec Error code
- *
- * \return RET_OK if the error is successfully set or RET_FAILED if an
- *         error occurs
+ * If the writer is in a fatal state, the only valid operation is to call
+ * close().
  */
-int Writer::set_error(std::error_code ec)
+void Writer::set_fatal()
 {
-    return set_error(ec, "%s", "");
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa Writer::set_error_v()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ... `printf()`-style format arguments
- *
- * \return RET_OK if the error is successfully set or RET_FAILED if an
- *         error occurs
- */
-int Writer::set_error(std::error_code ec, const char *fmt, ...)
-{
-    int ret;
-    va_list ap;
-
-    va_start(ap, fmt);
-    ret = set_error_v(ec, fmt, ap);
-    va_end(ap);
-
-    return ret;
-}
-
-/*!
- * \brief Set error string for a failed operation.
- *
- * \sa Writer::set_error()
- *
- * \param ec Error code
- * \param fmt `printf()`-style format string
- * \param ap `printf()`-style format arguments as a va_list
- *
- * \return RET_OK if the error is successfully set or RET_FAILED if an
- *         error occurs
- */
-int Writer::set_error_v(std::error_code ec, const char *fmt, va_list ap)
-{
-    GET_PIMPL_OR_RETURN(RET_FATAL);
-
-    priv->error_code = ec;
-
-    if (!format_v(priv->error_string, fmt, ap)) {
-        return RET_FAILED;
+    if (!(m_state & (WriterState::New | WriterState::Moved))) {
+        m_state = WriterState::Fatal;
     }
+}
 
-    if (!priv->error_string.empty()) {
-        priv->error_string += ": ";
-    }
-    priv->error_string += ec.message();
+/*!
+ * \brief Register a format writer
+ *
+ * Register a format writer with a Writer. The Writer will take ownership of
+ * \p format.
+ *
+ * \param format FormatWriter to register
+ *
+ * \return Nothing if the format is successfully registered. Otherwise, the
+ *         error code.
+ */
+oc::result<void> Writer::register_format(std::unique_ptr<FormatWriter> format)
+{
+    ENSURE_STATE_OR_RETURN_ERROR(WriterState::New);
 
-    return RET_OK;
+    m_format = std::move(format);
+    return oc::success();
 }
 
 }

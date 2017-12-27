@@ -22,17 +22,15 @@
 #include "mbcommon/file.h"
 
 #include "mbcommon/file/open_mode.h"
+#include "mbcommon/file/win32_p.h"
 
 #include <windows.h>
 
 namespace mb
 {
 
-class Win32FilePrivate;
 class MB_EXPORT Win32File : public File
 {
-    MB_DECLARE_PRIVATE(Win32File)
-
 public:
     Win32File();
     Win32File(HANDLE handle, bool owned, bool append);
@@ -40,33 +38,49 @@ public:
     Win32File(const std::wstring &filename, FileOpenMode mode);
     virtual ~Win32File();
 
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32File)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Win32File)
+    Win32File(Win32File &&other) noexcept;
+    Win32File & operator=(Win32File &&rhs) noexcept;
 
-    bool open(HANDLE handle, bool owned, bool append);
-    bool open(const std::string &filename, FileOpenMode mode);
-    bool open(const std::wstring &filename, FileOpenMode mode);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(Win32File)
+
+    oc::result<void> open(HANDLE handle, bool owned, bool append);
+    oc::result<void> open(const std::string &filename, FileOpenMode mode);
+    oc::result<void> open(const std::wstring &filename, FileOpenMode mode);
 
 protected:
     /*! \cond INTERNAL */
-    Win32File(Win32FilePrivate *priv);
-    Win32File(Win32FilePrivate *priv,
+    Win32File(detail::Win32FileFuncs *funcs);
+    Win32File(detail::Win32FileFuncs *funcs,
               HANDLE handle, bool owned, bool append);
-    Win32File(Win32FilePrivate *priv,
+    Win32File(detail::Win32FileFuncs *funcs,
               const std::string &filename, FileOpenMode mode);
-    Win32File(Win32FilePrivate *priv,
+    Win32File(detail::Win32FileFuncs *funcs,
               const std::wstring &filename, FileOpenMode mode);
     /*! \endcond */
 
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+    oc::result<void> on_open() override;
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
+
+private:
+    void clear();
+
+    detail::Win32FileFuncs *m_funcs;
+
+    HANDLE m_handle;
+    bool m_owned;
+    std::wstring m_filename;
+
+    DWORD m_access;
+    DWORD m_sharing;
+    SECURITY_ATTRIBUTES m_sa;
+    DWORD m_creation;
+    DWORD m_attrib;
+
+    bool m_append;
 };
 
 }

@@ -20,47 +20,81 @@
 
 #pragma once
 
+#include <vector>
+
 #include "mbcommon/file.h"
+
+#include "mbsparse/sparse_p.h"
 
 namespace mb
 {
 namespace sparse
 {
 
-class SparseFilePrivate;
 class MB_EXPORT SparseFile : public File
 {
-    MB_DECLARE_PRIVATE(SparseFile)
-
 public:
     SparseFile();
     SparseFile(File *file);
     virtual ~SparseFile();
 
+    SparseFile(SparseFile &&other) noexcept;
+    SparseFile & operator=(SparseFile &&rhs) noexcept;
+
     MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(SparseFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(SparseFile)
 
     // File open
-    bool open(File *file);
+    oc::result<void> open(File *file);
 
     // File size
     uint64_t size();
 
 protected:
-    /*! \cond INTERNAL */
-    SparseFile(SparseFilePrivate *priv);
-    SparseFile(SparseFilePrivate *priv, File *file);
-    /*! \endcond */
-
-    virtual bool on_open() override;
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
+    oc::result<void> on_open() override;
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
 
 private:
-    std::unique_ptr<SparseFilePrivate> _priv_ptr;
+    void clear();
+
+    oc::result<void> wread(void *buf, size_t size);
+    oc::result<void> wseek(int64_t offset);
+    oc::result<void> skip_bytes(uint64_t bytes);
+
+    oc::result<void> process_sparse_header(const void *preread_data,
+                                           size_t preread_size);
+
+    oc::result<detail::ChunkInfo>
+    process_raw_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<detail::ChunkInfo>
+    process_fill_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<detail::ChunkInfo>
+    process_skip_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<detail::ChunkInfo>
+    process_crc32_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+    oc::result<detail::ChunkInfo>
+    process_chunk(const detail::ChunkHeader &chdr, uint64_t tgt_offset);
+
+    oc::result<void> move_to_chunk(uint64_t offset);
+
+    File *m_file;
+    detail::Seekability m_seekability;
+
+    // Expected CRC32 checksum. We currently do *not* validate this. It would
+    // only work if the entire file was read sequentially anyway.
+    uint32_t m_expected_crc32;
+    // Relative offset in input file
+    uint64_t m_cur_src_offset;
+    // Absolute offset in output file
+    uint64_t m_cur_tgt_offset;
+    // Expected file size
+    uint64_t m_file_size;
+
+    detail::SparseHeader m_shdr;
+
+    std::vector<detail::ChunkInfo> m_chunks;
+    decltype(m_chunks)::iterator m_chunk;
 };
 
 }

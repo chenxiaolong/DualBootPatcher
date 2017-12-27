@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include "mbdevice/guard_p.h"
-
-#include "mbdevice/device.h"
+#include "mbdevice/flags.h"
 
 namespace mb
 {
 namespace device
+{
+namespace detail
 {
 
 struct BaseOptions
@@ -78,12 +78,6 @@ struct TwOptions
     bool operator==(const TwOptions &other) const;
 };
 
-class DevicePrivate
-{
-public:
-    BaseOptions base;
-    TwOptions tw;
-};
-
+}
 }
 }

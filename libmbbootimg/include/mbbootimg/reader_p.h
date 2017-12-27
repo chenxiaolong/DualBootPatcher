@@ -19,25 +19,25 @@
 
 #pragma once
 
-#include "mbbootimg/guard_p.h"
-
 #include <string>
-#include <vector>
 
 #include <cstddef>
 
 #include "mbcommon/common.h"
-#include "mbcommon/file.h"
 
 #include "mbbootimg/entry.h"
 #include "mbbootimg/header.h"
 
 namespace mb
 {
+class File;
+
 namespace bootimg
 {
+class Reader;
 
-constexpr size_t MAX_FORMATS = 10;
+namespace detail
+{
 
 class FormatReader
 {
@@ -51,17 +51,23 @@ public:
     virtual int type() = 0;
     virtual std::string name() = 0;
 
-    virtual int init();
-    virtual int set_option(const char *key, const char *value);
-    virtual int bid(File &file, int best_bid) = 0;
-    virtual int read_header(File &file, Header &header) = 0;
-    virtual int read_entry(File &file, Entry &entry) = 0;
-    virtual int go_to_entry(File &file, Entry &entry, int entry_type);
-    virtual int read_data(File &file, void *buf, size_t buf_size,
-                          size_t &bytes_read) = 0;
+    virtual oc::result<void>
+    set_option(const char *key, const char *value);
+    virtual oc::result<int>
+    open(File &file, int best_bid) = 0;
+    virtual oc::result<void>
+    close(File &file);
+    virtual oc::result<void>
+    read_header(File &file, Header &header) = 0;
+    virtual oc::result<void>
+    read_entry(File &file, Entry &entry) = 0;
+    virtual oc::result<void>
+    go_to_entry(File &file, Entry &entry, int entry_type);
+    virtual oc::result<size_t>
+    read_data(File &file, void *buf, size_t buf_size) = 0;
 
 protected:
-    Reader &_reader;
+    Reader &m_reader;
 };
 
 enum class ReaderState : uint8_t
@@ -70,37 +76,12 @@ enum class ReaderState : uint8_t
     Header  = 1u << 2,
     Entry   = 1u << 3,
     Data    = 1u << 4,
-    Closed  = 1u << 5,
-    Fatal   = 1u << 6,
+    Fatal   = 1u << 5,
+    Moved   = 1u << 6,
 };
 MB_DECLARE_FLAGS(ReaderStates, ReaderState)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ReaderStates)
 
-class ReaderPrivate
-{
-    MB_DECLARE_PUBLIC(Reader)
-
-public:
-    ReaderPrivate(Reader *reader);
-
-    int register_format(std::unique_ptr<FormatReader> format);
-
-    Reader *_pub_ptr;
-
-    // Global state
-    ReaderState state;
-
-    // File
-    std::unique_ptr<File> owned_file;
-    File *file;
-
-    // Error
-    std::error_code error_code;
-    std::string error_string;
-
-    std::vector<std::unique_ptr<FormatReader>> formats;
-    FormatReader *format;
-};
-
+}
 }
 }

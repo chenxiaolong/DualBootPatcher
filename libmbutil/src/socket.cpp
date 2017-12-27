@@ -19,9 +19,11 @@
 
 #include "mbutil/socket.h"
 
+#include <cerrno>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/socket.h>
 #include <unistd.h>
 

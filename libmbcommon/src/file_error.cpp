@@ -64,10 +64,10 @@ std::string FileErrorCategory::message(int ev) const
         return "seek not supported";
     case FileError::UnsupportedTruncate:
         return "truncate not supported";
+    case FileError::UnexpectedEof:
+        return "unexpected end of file";
     case FileError::IntegerOverflow:
         return "integer overflowed";
-    case FileError::BadFileFormat:
-        return "bad file format";
     default:
         return "(unknown file error)";
     }
@@ -107,6 +107,8 @@ std::string FileErrorCCategory::message(int ev) const
         return "invalid state";
     case FileErrorC::Unsupported:
         return "unsupported operation";
+    case FileErrorC::UnexpectedEof:
+        return "unexpected end of file";
     case FileErrorC::InternalError:
         return "internal error";
     default:

@@ -1,29 +1,3 @@
-# Compatibility library for nftw()/ftw() on API 17
-if(${MBP_BUILD_TARGET} STREQUAL android-app)
-    add_library(
-        c_compat
-        STATIC
-        external/android-libc/ftw.cpp
-    )
-
-    target_compile_options(
-        c_compat
-        PRIVATE
-        -Wno-shorten-64-to-32 -Wno-sign-conversion
-    )
-
-    target_include_directories(
-        c_compat
-        PRIVATE external/android-libc
-    )
-
-    target_link_libraries(
-        c_compat
-        PRIVATE
-        interface.global.CXXVersion
-    )
-endif()
-
 set(variants)
 
 if(MBP_TARGET_HAS_BUILDS

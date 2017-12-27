@@ -43,19 +43,14 @@ constexpr int ENTRY_TYPE_SONY_IPL           = 1 << 7;
 constexpr int ENTRY_TYPE_SONY_RPM           = 1 << 8;
 constexpr int ENTRY_TYPE_SONY_APPSBL        = 1 << 9;
 
-class EntryPrivate;
 class MB_EXPORT Entry
 {
-    MB_DECLARE_PRIVATE(Entry)
-
 public:
     Entry();
-    Entry(const Entry &entry);
-    Entry(Entry &&entry) noexcept;
     ~Entry();
 
-    Entry & operator=(const Entry &entry);
-    Entry & operator=(Entry &&entry) noexcept;
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Entry)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Entry)
 
     bool operator==(const Entry &rhs) const;
     bool operator!=(const Entry &rhs) const;
@@ -72,7 +67,9 @@ public:
     void set_size(optional<uint64_t> size);
 
 private:
-    std::unique_ptr<EntryPrivate> _priv_ptr;
+    optional<int> m_type;
+    optional<std::string> m_name;
+    optional<uint64_t> m_size;
 };
 
 }

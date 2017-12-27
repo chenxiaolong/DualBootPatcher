@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-_commit=bbfe603519bc54fbc4c8dd87efe1ed385df550b4
+_commit=0a54e998481b0b5a8abd9717c5f7301a3b18b628
 
 pkgname=boringssl
-pkgver=r3955.bbfe603
+pkgver=r4872.0a54e9984
 pkgrel=1
 pkgdesc="BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs."
 arch=(armv7 aarch64 x86 x86_64)
 url="https://boringssl.googlesource.com/boringssl/"
 license=(custom:BSD)
 source=("git+https://boringssl.googlesource.com/boringssl#commit=${_commit}"
-        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.1.0/cmake/android.toolchain.cmake')
+        'https://raw.githubusercontent.com/chenxiaolong/DualBootPatcher/v9.3.0/cmake/android.toolchain.cmake')
 sha512sums=('SKIP'
-            '918d01b63c935b735874c16ea5396f084a43bc2e66669c244b7e816669a900fcb25e19021377941a5b662150df585a8b52226d6ab20ea3e328e219d02ff24e14')
+            '52b53f4132fad8a21d5c766b56a2f36790eb2199bc1f5f3c08c3d9ca1c89862c047d2886ffecc76e90e7bcfbd40d7386621da47c0d9d1c619d8284979fd4412e')
 
 pkgver() {
     cd "${pkgname}"

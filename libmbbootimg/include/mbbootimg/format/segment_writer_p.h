@@ -21,7 +21,11 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <vector>
+
 #include <cstdint>
+
+#include "mbcommon/optional.h"
 
 #include "mbbootimg/writer.h"
 
@@ -29,8 +33,6 @@ namespace mb
 {
 namespace bootimg
 {
-
-constexpr size_t SEGMENT_WRITER_MAX_ENTRIES = 10;
 
 enum class SegmentWriterState
 {
@@ -43,8 +45,7 @@ struct SegmentWriterEntry
 {
     int type;
     uint64_t offset;
-    uint32_t size;
-    bool size_set;
+    optional<uint32_t> size;
     uint64_t align;
 };
 
@@ -53,35 +54,29 @@ struct SegmentWriter
 public:
     SegmentWriter();
 
-    size_t entries_size() const;
-    void entries_clear();
-    int entries_add(int type, uint32_t size, bool size_set, uint64_t align,
-                    Writer &writer);
-    const SegmentWriterEntry * entries_get(size_t index);
+    const std::vector<SegmentWriterEntry> & entries() const;
+    oc::result<void> set_entries(std::vector<SegmentWriterEntry> entries);
 
-    const SegmentWriterEntry * entry() const;
-    SegmentWriterEntry * next_entry();
-    const SegmentWriterEntry * next_entry() const;
+    std::vector<SegmentWriterEntry>::const_iterator entry() const;
 
     void update_size_if_unset(uint32_t size);
 
-    int get_entry(File &file, Entry &entry, Writer &writer);
-    int write_entry(File &file, const Entry &entry, Writer &writer);
-    int write_data(File &file, const void *buf, size_t buf_size,
-                   size_t &bytes_written, Writer &writer);
-    int finish_entry(File &file, Writer &writer);
+    oc::result<void> get_entry(File &file, Entry &entry, Writer &writer);
+    oc::result<void> write_entry(File &file, const Entry &entry,
+                                 Writer &writer);
+    oc::result<size_t> write_data(File &file, const void *buf, size_t buf_size,
+                                  Writer &writer);
+    oc::result<void> finish_entry(File &file, Writer &writer);
 
 private:
-    SegmentWriterState _state;
+    SegmentWriterState m_state;
 
-    SegmentWriterEntry _entries[SEGMENT_WRITER_MAX_ENTRIES];
-    size_t _entries_len;
-    SegmentWriterEntry *_entry;
+    std::vector<SegmentWriterEntry> m_entries;
+    decltype(m_entries)::iterator m_entry;
 
-    uint32_t _entry_size;
+    uint32_t m_entry_size;
 
-    bool _have_pos;
-    uint64_t _pos;
+    optional<uint64_t> m_pos;
 };
 
 }

@@ -77,19 +77,14 @@ constexpr HeaderFields ALL_FIELDS =
         | HeaderField::Id
         | HeaderField::Entrypoint;
 
-class HeaderPrivate;
 class MB_EXPORT Header
 {
-    MB_DECLARE_PRIVATE(Header)
-
 public:
     Header();
-    Header(const Header &header);
-    Header(Header &&header) noexcept;
     ~Header();
 
-    Header & operator=(const Header &header);
-    Header & operator=(Header &&header) noexcept;
+    MB_DEFAULT_COPY_CONSTRUCT_AND_ASSIGN(Header)
+    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(Header)
 
     bool operator==(const Header &rhs) const;
     bool operator!=(const Header &rhs) const;
@@ -133,7 +128,31 @@ public:
     bool set_entrypoint_address(optional<uint32_t> address);
 
 private:
-    std::unique_ptr<HeaderPrivate> _priv_ptr;
+    // Bitmap of fields that are supported
+    HeaderFields m_fields_supported;
+
+    // Used in:                               | Android | Loki | Bump | Mtk | Sony |
+    optional<uint32_t> m_kernel_addr;      // | X       | X    | X    | X   | X    |
+    optional<uint32_t> m_ramdisk_addr;     // | X       | X    | X    | X   | X    |
+    optional<uint32_t> m_second_addr;      // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_tags_addr;        // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_ipl_addr;         // |         |      |      |     | X    |
+    optional<uint32_t> m_rpm_addr;         // |         |      |      |     | X    |
+    optional<uint32_t> m_appsbl_addr;      // |         |      |      |     | X    |
+    optional<uint32_t> m_page_size;        // | X       | X    | X    | X   |      |
+    optional<std::string> m_board_name;    // | X       | X    | X    | X   |      |
+    optional<std::string> m_cmdline;       // | X       | X    | X    | X   |      |
+    // Raw header values                      |---------|------|------|-----|------|
+
+    // TODO TODO TODO
+    optional<uint32_t> m_hdr_kernel_size;  // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_ramdisk_size; // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_second_size;  // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_dt_size;      // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_unused;       // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_id[8];        // | X       | X    | X    | X   |      |
+    optional<uint32_t> m_hdr_entrypoint;   // |         |      |      |     | X    |
+    // TODO TODO TODO
 };
 
 }
