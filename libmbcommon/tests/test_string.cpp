@@ -344,3 +344,74 @@ TEST(StringTest, ReplaceString)
         free(buf);
     }
 }
+
+TEST(StringTest, CheckSplit)
+{
+    using VS = std::vector<std::string>;
+
+    // Empty delimiter or string
+    ASSERT_EQ(split("", ""), VS({""}));
+    ASSERT_EQ(split("abc", ""), VS({"abc"}));
+    ASSERT_EQ(split("", ':'), VS({""}));
+
+    // Normal split
+    ASSERT_EQ(split(":a:b:c:", ':'), VS({"", "a", "b", "c", ""}));
+
+    // Repeated delimiters in source
+    ASSERT_EQ(split("a:::b", ':'), VS({"a", "", "", "b"}));
+
+    // Multiple delimiters
+    ASSERT_EQ(split("a:b;c,d", ",:;"), VS({"a", "b", "c", "d"}));
+
+    // Multiple repeated delimiters
+    ASSERT_EQ(split("a:,:;b", ",:;"), VS({"a", "", "", "", "b"}));
+}
+
+TEST(StringTest, CheckSplitStringView)
+{
+    using VSV = std::vector<std::string_view>;
+
+    // Empty delimiter or string
+    ASSERT_EQ(split_sv("", ""), VSV({""}));
+    ASSERT_EQ(split_sv("abc", ""), VSV({"abc"}));
+    ASSERT_EQ(split_sv("", ':'), VSV({""}));
+
+    // Normal split
+    ASSERT_EQ(split_sv(":a:b:c:", ':'), VSV({"", "a", "b", "c", ""}));
+
+    // Repeated delimiters in source
+    ASSERT_EQ(split_sv("a:::b", ':'), VSV({"a", "", "", "b"}));
+
+    // Multiple delimiters
+    ASSERT_EQ(split_sv("a:b;c,d", ",:;"), VSV({"a", "b", "c", "d"}));
+
+    // Multiple repeated delimiters
+    ASSERT_EQ(split_sv("a:,:;b", ",:;"), VSV({"a", "", "", "", "b"}));
+}
+
+TEST(StringTest, CheckJoin)
+{
+    using VS = std::vector<std::string>;
+    using VSV = std::vector<std::string_view>;
+
+    // Empty delimiter
+    ASSERT_EQ(join(VS(), ""), "");
+    ASSERT_EQ(join(VS({"a", "b"}), ""), "ab");
+
+    // Empty list
+    ASSERT_EQ(join(VS(), ','), "");
+
+    // One-element list
+    ASSERT_EQ(join(VS({"a"}), ','), "a");
+
+    // List of empty strings
+    ASSERT_EQ(join(VS({"", "", ""}), ','), ",,");
+
+    // Normal
+    ASSERT_EQ(join(VS({"a", "b", "c"}), ','), "a,b,c");
+    ASSERT_EQ(join(VSV({"a", "b", "c"}), ','), "a,b,c");
+
+    // String delimiter
+    ASSERT_EQ(join(VS({"a", "b", "c"}), ", "), "a, b, c");
+    ASSERT_EQ(join(VSV({"a", "b", "c"}), ", "), "a, b, c");
+}

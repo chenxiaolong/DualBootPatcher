@@ -29,7 +29,6 @@ foreach(variant ${variants})
         # Private classes
         src/private/fileutils.cpp
         src/private/miniziputils.cpp
-        src/private/stringutils.cpp
         # Autopatchers
         src/autopatchers/standardpatcher.cpp
         src/autopatchers/mountcmdpatcher.cpp

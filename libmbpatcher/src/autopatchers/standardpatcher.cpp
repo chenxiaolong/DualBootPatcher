@@ -26,7 +26,6 @@
 
 #include "mbpatcher/edify/tokenizer.h"
 #include "mbpatcher/private/fileutils.h"
-#include "mbpatcher/private/stringutils.h"
 
 #define LOG_TAG "mbpatcher/autopatchers/standardpatcher"
 
@@ -634,7 +633,6 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
 {
     std::string contents;
     std::string path;
-    std::vector<std::string> lines;
 
     path += directory;
     path += "/";
@@ -645,7 +643,7 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
         return ret == ErrorCode::FileOpenError;
     }
 
-    lines = StringUtils::split(contents, '\n');
+    auto lines = split_sv(contents, '\n');
 
     for (auto it = lines.begin(); it != lines.end();) {
         if (starts_with(*it, "erase ")) {
@@ -655,7 +653,7 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
         }
     }
 
-    contents = StringUtils::join(lines, "\n");
+    contents = join(lines, "\n");
     FileUtils::write_from_string(path, contents);
 
     return true;

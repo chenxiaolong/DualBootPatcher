@@ -40,9 +40,9 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
-#include "mbutil/string.h"
 
 #include "multiboot.h"
 
@@ -972,7 +972,7 @@ static bool fix_data_media_rules(policydb_t *pdb)
         }
     }
 
-    std::vector<std::string> pieces = util::split(context, ":");
+    std::vector<std::string> pieces = split(context, ':');
     if (pieces.size() < 3) {
         LOGE("%s: Malformed context string: %s", path, context.c_str());
         return false;

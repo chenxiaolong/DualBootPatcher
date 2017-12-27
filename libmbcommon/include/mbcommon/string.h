@@ -23,6 +23,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <cstdarg>
 #include <cstdbool>
@@ -78,5 +79,85 @@ MB_EXPORT oc::result<void> mem_replace(void **mem, size_t *mem_size,
                                        size_t n, size_t *n_replaced);
 MB_EXPORT oc::result<void> str_replace(char **str, const char *from, const char *to,
                                        size_t n, size_t *n_replaced);
+
+// String split/join
+
+/*!
+ * \brief Split a string by one or more delimiters
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components. If \p str or \p delim is empty, then
+ *         a vector consisting a single element equal to \p str is returned.
+ */
+template<typename DelimType>
+std::vector<std::string> split(std::string_view str, const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        result.emplace_back(str.substr(begin, end - begin));
+        begin = end + 1;
+    }
+    result.emplace_back(str.substr(begin));
+
+    return result;
+}
+
+/*!
+ * \brief Split a string by one or more delimiters as string views
+ *
+ * \param str Input string
+ * \param delim `char` delimiter or string of delimiters
+ *
+ * \return Vector of split components as string views. If \p str or \p delim is
+ *         empty, then a vector consisting a single element equal to \p str is
+ *         returned.
+ */
+template<typename DelimType>
+std::vector<std::string_view> split_sv(std::string_view str, const DelimType &delim)
+{
+    std::size_t begin = 0;
+    std::size_t end;
+    std::vector<std::string_view> result;
+
+    while ((end = str.find_first_of(delim, begin)) != std::string::npos) {
+        result.push_back(str.substr(begin, end - begin));
+        begin = end + 1;
+    }
+    result.push_back(str.substr(begin));
+
+    return result;
+}
+
+/*!
+ * \brief Join a string from a vector of components
+ *
+ * \param list Vector of strings or string views
+ * \param delim Delimiter to join the strings. Can be any type accepted by
+ *              `std::string`'s operator+=().
+ *
+ * \return Joined string
+ */
+template<typename StringType, typename DelimType>
+std::string join(const std::vector<StringType> &list, const DelimType &delim)
+{
+    std::string result;
+    bool first = true;
+
+    for (auto const &str : list) {
+        if (!first) {
+            result += delim;
+        } else {
+            first = false;
+        }
+        result += str;
+    }
+
+    return result;
+}
 
 }

@@ -34,7 +34,6 @@
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
-#include "mbpatcher/private/stringutils.h"
 
 // minizip
 #include "minizip/unzip.h"

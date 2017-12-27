@@ -26,8 +26,6 @@
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 
-#include "mbpatcher/private/stringutils.h"
-
 #define LOG_TAG "mbpatcher/edify/tokenizer"
 
 namespace mb::patcher

@@ -43,7 +43,6 @@
 #include "mbpatcher/patchers/zippatcher.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
-#include "mbpatcher/private/stringutils.h"
 
 // minizip
 #include "minizip/zip.h"
