@@ -21,7 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include "mbcommon/optional.h"
+#include <optional>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/loki_p.h"
@@ -104,10 +104,10 @@ private:
     LokiHeader m_loki_hdr;
 
     // Offsets
-    optional<uint64_t> m_header_offset;
-    optional<uint64_t> m_loki_offset;
+    std::optional<uint64_t> m_header_offset;
+    std::optional<uint64_t> m_loki_offset;
 
-    optional<SegmentReader> m_seg;
+    std::optional<SegmentReader> m_seg;
 };
 
 }

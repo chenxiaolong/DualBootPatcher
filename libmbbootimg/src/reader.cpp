@@ -19,6 +19,7 @@
 
 #include "mbbootimg/reader.h"
 
+#include <cassert>
 #include <cerrno>
 #include <cinttypes>
 #include <cstdio>

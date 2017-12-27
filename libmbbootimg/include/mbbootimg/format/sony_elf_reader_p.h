@@ -61,7 +61,7 @@ private:
     // Header values
     Sony_Elf32_Ehdr m_hdr;
 
-    optional<SegmentReader> m_seg;
+    std::optional<SegmentReader> m_seg;
 };
 
 }

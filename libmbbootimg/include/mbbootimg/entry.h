@@ -20,12 +20,12 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <cstdint>
 
 #include "mbcommon/common.h"
-#include "mbcommon/optional.h"
 
 namespace mb
 {
@@ -57,19 +57,19 @@ public:
 
     void clear();
 
-    optional<int> type() const;
-    void set_type(optional<int> type);
+    std::optional<int> type() const;
+    void set_type(std::optional<int> type);
 
-    optional<std::string> name() const;
-    void set_name(optional<std::string> name);
+    std::optional<std::string> name() const;
+    void set_name(std::optional<std::string> name);
 
-    optional<uint64_t> size() const;
-    void set_size(optional<uint64_t> size);
+    std::optional<uint64_t> size() const;
+    void set_size(std::optional<uint64_t> size);
 
 private:
-    optional<int> m_type;
-    optional<std::string> m_name;
-    optional<uint64_t> m_size;
+    std::optional<int> m_type;
+    std::optional<std::string> m_name;
+    std::optional<uint64_t> m_size;
 };
 
 }

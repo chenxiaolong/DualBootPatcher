@@ -19,9 +19,8 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
-
-#include "mbcommon/optional.h"
 
 namespace mb
 {
@@ -36,13 +35,13 @@ enum class CmdlineIterAction
 };
 
 typedef CmdlineIterAction (*CmdlineIterFn)(const std::string &name,
-                                           const optional<std::string> &value,
+                                           const std::optional<std::string> &value,
                                            void *userdata);
 
 bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata);
 
 bool kernel_cmdline_get_option(const std::string &option,
-                               optional<std::string> &value);
+                               std::optional<std::string> &value);
 
 }
 }

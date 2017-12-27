@@ -134,7 +134,8 @@ static ssize_t read_all(int fd, void *buf, size_t size)
     return static_cast<ssize_t>(total);
 }
 
-bool blkid_get_fs_type(const std::string &path, optional<std::string> &type)
+bool blkid_get_fs_type(const std::string &path,
+                       std::optional<std::string> &type)
 {
     std::vector<unsigned char> buf(1024 * 1024);
 

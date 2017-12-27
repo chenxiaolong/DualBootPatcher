@@ -21,11 +21,10 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <optional>
 #include <vector>
 
 #include <openssl/sha.h>
-
-#include "mbcommon/optional.h"
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
@@ -69,7 +68,7 @@ private:
 
     SHA_CTX m_sha_ctx;
 
-    optional<SegmentWriter> m_seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
 }

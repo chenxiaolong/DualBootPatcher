@@ -21,7 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include "mbcommon/optional.h"
+#include <optional>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
@@ -62,7 +62,7 @@ private:
     // Header values
     android::AndroidHeader m_hdr;
 
-    optional<SegmentWriter> m_seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
 }

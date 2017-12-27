@@ -20,6 +20,7 @@
 #include "mbbootimg/format/loki_reader_p.h"
 
 #include <algorithm>
+#include <optional>
 
 #include <cerrno>
 #include <cinttypes>
@@ -29,7 +30,6 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -358,8 +358,8 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 {
     struct SearchResult
     {
-        optional<uint64_t> flag0_offset;
-        optional<uint64_t> flag8_offset;
+        std::optional<uint64_t> flag0_offset;
+        std::optional<uint64_t> flag8_offset;
     };
 
     // gzip header:

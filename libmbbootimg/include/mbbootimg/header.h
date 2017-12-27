@@ -20,13 +20,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <cstdint>
 
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
-#include "mbcommon/optional.h"
 
 namespace mb
 {
@@ -94,64 +94,64 @@ public:
     HeaderFields supported_fields() const;
     void set_supported_fields(HeaderFields fields);
 
-    optional<std::string> board_name() const;
-    bool set_board_name(optional<std::string> name);
+    std::optional<std::string> board_name() const;
+    bool set_board_name(std::optional<std::string> name);
 
-    optional<std::string> kernel_cmdline() const;
-    bool set_kernel_cmdline(optional<std::string> cmdline);
+    std::optional<std::string> kernel_cmdline() const;
+    bool set_kernel_cmdline(std::optional<std::string> cmdline);
 
-    optional<uint32_t> page_size() const;
-    bool set_page_size(optional<uint32_t> page_size);
+    std::optional<uint32_t> page_size() const;
+    bool set_page_size(std::optional<uint32_t> page_size);
 
-    optional<uint32_t> kernel_address() const;
-    bool set_kernel_address(optional<uint32_t> address);
+    std::optional<uint32_t> kernel_address() const;
+    bool set_kernel_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> ramdisk_address() const;
-    bool set_ramdisk_address(optional<uint32_t> address);
+    std::optional<uint32_t> ramdisk_address() const;
+    bool set_ramdisk_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> secondboot_address() const;
-    bool set_secondboot_address(optional<uint32_t> address);
+    std::optional<uint32_t> secondboot_address() const;
+    bool set_secondboot_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> kernel_tags_address() const;
-    bool set_kernel_tags_address(optional<uint32_t> address);
+    std::optional<uint32_t> kernel_tags_address() const;
+    bool set_kernel_tags_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> sony_ipl_address() const;
-    bool set_sony_ipl_address(optional<uint32_t> address);
+    std::optional<uint32_t> sony_ipl_address() const;
+    bool set_sony_ipl_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> sony_rpm_address() const;
-    bool set_sony_rpm_address(optional<uint32_t> address);
+    std::optional<uint32_t> sony_rpm_address() const;
+    bool set_sony_rpm_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> sony_appsbl_address() const;
-    bool set_sony_appsbl_address(optional<uint32_t> address);
+    std::optional<uint32_t> sony_appsbl_address() const;
+    bool set_sony_appsbl_address(std::optional<uint32_t> address);
 
-    optional<uint32_t> entrypoint_address() const;
-    bool set_entrypoint_address(optional<uint32_t> address);
+    std::optional<uint32_t> entrypoint_address() const;
+    bool set_entrypoint_address(std::optional<uint32_t> address);
 
 private:
     // Bitmap of fields that are supported
     HeaderFields m_fields_supported;
 
-    // Used in:                               | Android | Loki | Bump | Mtk | Sony |
-    optional<uint32_t> m_kernel_addr;      // | X       | X    | X    | X   | X    |
-    optional<uint32_t> m_ramdisk_addr;     // | X       | X    | X    | X   | X    |
-    optional<uint32_t> m_second_addr;      // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_tags_addr;        // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_ipl_addr;         // |         |      |      |     | X    |
-    optional<uint32_t> m_rpm_addr;         // |         |      |      |     | X    |
-    optional<uint32_t> m_appsbl_addr;      // |         |      |      |     | X    |
-    optional<uint32_t> m_page_size;        // | X       | X    | X    | X   |      |
-    optional<std::string> m_board_name;    // | X       | X    | X    | X   |      |
-    optional<std::string> m_cmdline;       // | X       | X    | X    | X   |      |
-    // Raw header values                      |---------|------|------|-----|------|
+    // Used in:                                    | Android | Loki | Bump | Mtk | Sony |
+    std::optional<uint32_t> m_kernel_addr;      // | X       | X    | X    | X   | X    |
+    std::optional<uint32_t> m_ramdisk_addr;     // | X       | X    | X    | X   | X    |
+    std::optional<uint32_t> m_second_addr;      // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_tags_addr;        // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_ipl_addr;         // |         |      |      |     | X    |
+    std::optional<uint32_t> m_rpm_addr;         // |         |      |      |     | X    |
+    std::optional<uint32_t> m_appsbl_addr;      // |         |      |      |     | X    |
+    std::optional<uint32_t> m_page_size;        // | X       | X    | X    | X   |      |
+    std::optional<std::string> m_board_name;    // | X       | X    | X    | X   |      |
+    std::optional<std::string> m_cmdline;       // | X       | X    | X    | X   |      |
+    // Raw header values                           |---------|------|------|-----|------|
 
     // TODO TODO TODO
-    optional<uint32_t> m_hdr_kernel_size;  // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_ramdisk_size; // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_second_size;  // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_dt_size;      // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_unused;       // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_id[8];        // | X       | X    | X    | X   |      |
-    optional<uint32_t> m_hdr_entrypoint;   // |         |      |      |     | X    |
+    std::optional<uint32_t> m_hdr_kernel_size;  // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_ramdisk_size; // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_second_size;  // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_dt_size;      // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_unused;       // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_id[8];        // | X       | X    | X    | X   |      |
+    std::optional<uint32_t> m_hdr_entrypoint;   // |         |      |      |     | X    |
     // TODO TODO TODO
 };
 

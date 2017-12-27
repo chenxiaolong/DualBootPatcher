@@ -851,7 +851,7 @@ void device_init(bool dry_run_)
     dry_run = dry_run_;
 
     bootdevice[0] = '\0';
-    mb::optional<std::string> value;
+    std::optional<std::string> value;
     if (mb::util::kernel_cmdline_get_option("androidboot.bootdevice", value)
             && value) {
         strlcpy(bootdevice, value->c_str(), sizeof(bootdevice));

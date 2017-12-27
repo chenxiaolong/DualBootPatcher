@@ -19,16 +19,16 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
-
-#include "mbcommon/optional.h"
 
 namespace mb
 {
 namespace util
 {
 
-bool blkid_get_fs_type(const std::string &path, optional<std::string> &type);
+bool blkid_get_fs_type(const std::string &path,
+                       std::optional<std::string> &type);
 
 }
 }

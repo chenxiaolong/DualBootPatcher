@@ -54,32 +54,32 @@ void Entry::clear()
 
 // Fields
 
-optional<int> Entry::type() const
+std::optional<int> Entry::type() const
 {
     return m_type;
 }
 
-void Entry::set_type(optional<int> type)
+void Entry::set_type(std::optional<int> type)
 {
     m_type = std::move(type);
 }
 
-optional<std::string> Entry::name() const
+std::optional<std::string> Entry::name() const
 {
     return m_name;
 }
 
-void Entry::set_name(optional<std::string> name)
+void Entry::set_name(std::optional<std::string> name)
 {
     m_name = std::move(name);
 }
 
-optional<uint64_t> Entry::size() const
+std::optional<uint64_t> Entry::size() const
 {
     return m_size;
 }
 
-void Entry::set_size(optional<uint64_t> size)
+void Entry::set_size(std::optional<uint64_t> size)
 {
     m_size = std::move(size);
 

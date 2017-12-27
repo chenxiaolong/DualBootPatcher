@@ -20,6 +20,7 @@
 #include "installer_util.h"
 
 #include <memory>
+#include <optional>
 
 #include <cerrno>
 #include <cstdio>
@@ -40,7 +41,6 @@
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
-#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -553,7 +553,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     StandardFile fin;
     StandardFile fout;
-    optional<uint64_t> offset;
+    std::optional<uint64_t> offset;
 
     // Open input file
     auto open_ret = fin.open(input_file, FileOpenMode::ReadOnly);
@@ -575,7 +575,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     auto result_cb = [](File &file, void *userdata, uint64_t offset_)
             -> oc::result<FileSearchAction> {
         (void) file;
-        auto ptr = static_cast<optional<uint64_t> *>(userdata);
+        auto ptr = static_cast<std::optional<uint64_t> *>(userdata);
         *ptr = offset_;
         return FileSearchAction::Stop;
     };

@@ -21,6 +21,7 @@
 
 #include <mutex>
 #include <new>
+#include <optional>
 
 #include <cerrno>
 #include <cinttypes>
@@ -58,7 +59,6 @@
 // libmbcommon
 #include "mbcommon/file.h"
 #include "mbcommon/file/standard.h"
-#include "mbcommon/optional.h"
 
 // libmbsparse
 #include "mbsparse/sparse.h"
@@ -79,7 +79,7 @@ struct context
     std::mutex mutex;
 };
 
-static mb::optional<int> extract_errno(std::error_code ec)
+static std::optional<int> extract_errno(std::error_code ec)
 {
     if (ec.category() == std::generic_category()
             || ec.category() == std::system_category()) {
