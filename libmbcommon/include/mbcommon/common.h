@@ -55,10 +55,6 @@
 #  define MB_END_C_DECLS
 #endif
 
-#ifdef __cplusplus
-#  define MB_NO_RETURN [[noreturn]]
-#endif
-
 #if defined(__GNUC__) || defined(__clang__)
 #  if _WIN32
 #    define MB_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
@@ -72,13 +68,6 @@
 #  define MB_SCANF(fmt_arg, var_arg) \
     __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
 #  define MB_UNUSED __attribute__((unused))
-#  ifndef MB_NO_RETURN
-#    define MB_NO_RETURN __attribute__((noreturn))
-#  endif
-#elif defined(_MSC_VER)
-#  ifndef MB_NO_RETURN
-#    define MB_NO_RETURN __declspec(noreturn)
-#  endif
 #endif
 
 #ifndef MB_PRINTF
@@ -89,9 +78,6 @@
 #endif
 #ifndef MB_UNUSED
 #  define MB_UNUSED
-#endif
-#ifndef MB_NO_RETURN
-#  define MB_NO_RETURN
 #endif
 
 #if defined(__GNUC__)
@@ -114,7 +100,8 @@
  * Use the MB_UNREACHABLE macro (that adds location info), instead of
  * calling this function directly.
  */
-MB_NO_RETURN MB_EXPORT
+[[noreturn]]
+MB_EXPORT
 // stdio.h might not have been included yet, which would make
 // __MINGW_PRINTF_FORMAT undefined on mingw
 #if !defined(_WIN32) || defined(__MINGW_PRINTF_FORMAT)

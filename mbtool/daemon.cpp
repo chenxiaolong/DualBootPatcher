@@ -381,7 +381,7 @@ static bool daemon_init()
     return true;
 }
 
-MB_NO_RETURN
+[[noreturn]]
 static void run_daemon_fork()
 {
     pid_t pid = fork();
