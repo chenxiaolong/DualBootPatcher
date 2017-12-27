@@ -26,9 +26,7 @@
 
 #include "mbsparse/sparse_p.h"
 
-namespace mb
-{
-namespace sparse
+namespace mb::sparse
 {
 
 class MB_EXPORT SparseFile : public File
@@ -97,5 +95,4 @@ private:
     decltype(m_chunks)::iterator m_chunk;
 };
 
-}
 }

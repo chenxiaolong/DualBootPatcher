@@ -32,9 +32,7 @@
 #include "mbbootimg/entry.h"
 #include "mbbootimg/format/segment_error_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 SegmentReader::SegmentReader()
@@ -176,5 +174,4 @@ oc::result<size_t> SegmentReader::read_data(File &file, void *buf,
     return n.value();
 }
 
-}
 }

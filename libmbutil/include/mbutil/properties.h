@@ -28,9 +28,7 @@
 
 struct timespec;
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 typedef void (*PropertyListCb)(const std::string &key,
@@ -147,5 +145,4 @@ bool property_file_get_all(const std::string &path,
 bool property_file_write_all(const std::string &path,
                              const std::unordered_map<std::string, std::string> &map);
 
-}
 }

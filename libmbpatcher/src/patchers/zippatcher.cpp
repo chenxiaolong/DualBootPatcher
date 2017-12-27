@@ -43,11 +43,8 @@
 #define LOG_TAG "mbpatcher/patchers/zippatcher"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string ZipPatcher::Id("ZipPatcher");
 
@@ -565,5 +562,4 @@ std::string ZipPatcher::create_info_prop(const std::string &rom_id,
     return out;
 }
 
-}
 }

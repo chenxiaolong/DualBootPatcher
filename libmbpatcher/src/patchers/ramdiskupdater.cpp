@@ -34,11 +34,8 @@
 #define LOG_TAG "mbpatcher/patchers/ramdiskupdater"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string RamdiskUpdater::Id("RamdiskUpdater");
 
@@ -242,5 +239,4 @@ void RamdiskUpdater::close_output_archive()
     m_z_output = nullptr;
 }
 
-}
 }

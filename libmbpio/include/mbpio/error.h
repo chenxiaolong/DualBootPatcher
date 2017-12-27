@@ -23,9 +23,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 enum class Error
@@ -41,5 +39,4 @@ MB_EXPORT std::string last_error_string();
 // TODO: Put in private header
 MB_EXPORT void set_last_error(Error error, std::string error_string);
 
-}
 }

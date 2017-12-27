@@ -38,9 +38,7 @@
 #define LOG_TAG "mbutil/fstab"
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -323,5 +321,4 @@ std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
     return fstab;
 }
 
-}
 }

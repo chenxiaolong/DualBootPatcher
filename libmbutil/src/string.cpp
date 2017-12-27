@@ -26,9 +26,7 @@
 #include <cstdarg>
 #include <cstring>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static void replace_internal(std::string &source,
@@ -237,5 +235,4 @@ void free_cstring_list(char **list)
     }
 }
 
-}
 }

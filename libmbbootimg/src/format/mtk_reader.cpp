@@ -42,9 +42,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace mtk
 {
@@ -366,5 +364,4 @@ oc::result<void> Reader::enable_format_mtk()
     return register_format(std::make_unique<mtk::MtkFormatReader>(*this));
 }
 
-}
 }

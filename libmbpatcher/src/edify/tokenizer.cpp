@@ -30,9 +30,7 @@
 
 #define LOG_TAG "mbpatcher/edify/tokenizer"
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 EdifyToken::~EdifyToken()
@@ -577,5 +575,4 @@ void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
     }
 }
 
-}
 }

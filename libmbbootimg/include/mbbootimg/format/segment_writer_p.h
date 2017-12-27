@@ -28,9 +28,7 @@
 
 #include "mbbootimg/writer.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class SegmentWriterState
@@ -78,5 +76,4 @@ private:
     std::optional<uint64_t> m_pos;
 };
 
-}
 }

@@ -42,9 +42,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace android
 {
@@ -309,5 +307,4 @@ oc::result<void> Writer::set_format_android()
             std::make_unique<android::AndroidFormatWriter>(*this, false));
 }
 
-}
 }

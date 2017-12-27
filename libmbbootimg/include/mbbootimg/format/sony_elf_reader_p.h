@@ -27,11 +27,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 class SonyElfFormatReader : public detail::FormatReader
@@ -64,6 +60,4 @@ private:
     std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

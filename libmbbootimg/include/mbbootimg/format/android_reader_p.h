@@ -29,11 +29,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 class AndroidFormatReader : public detail::FormatReader
@@ -88,6 +84,4 @@ private:
     std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

@@ -32,11 +32,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 class LokiFormatWriter : public detail::FormatWriter
@@ -71,6 +67,4 @@ private:
     std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

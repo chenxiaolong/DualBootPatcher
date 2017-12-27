@@ -28,9 +28,7 @@
 #include "mbdevice/flags.h"
 
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 class MB_EXPORT Device
@@ -138,5 +136,4 @@ private:
     detail::TwOptions m_tw;
 };
 
-}
 }

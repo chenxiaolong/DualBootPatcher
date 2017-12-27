@@ -21,9 +21,7 @@
 
 #include <android/log.h>
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 void AndroidLogger::log(const LogRecord &rec)
@@ -58,5 +56,4 @@ bool AndroidLogger::formatted()
     return false;
 }
 
-}
 }

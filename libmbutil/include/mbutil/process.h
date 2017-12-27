@@ -25,13 +25,10 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool set_process_title_init(int argc, char *argv[]);
 bool set_process_title(const std::string &title, size_t *size_out);
 
-}
 }

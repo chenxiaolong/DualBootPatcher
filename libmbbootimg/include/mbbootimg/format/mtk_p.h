@@ -28,11 +28,7 @@
 
 #include "mbbootimg/format/mtk_defs.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 struct MtkHeader
@@ -48,6 +44,4 @@ static inline void mtk_fix_header_byte_order(MtkHeader &header)
     header.size = mb_le32toh(header.size);
 }
 
-}
-}
 }

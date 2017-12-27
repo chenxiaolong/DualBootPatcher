@@ -43,9 +43,7 @@
 #include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace loki
 {
@@ -327,5 +325,4 @@ oc::result<void> Writer::set_format_loki()
     return register_format(std::make_unique<loki::LokiFormatWriter>(*this));
 }
 
-}
 }

@@ -23,9 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class WriterError
@@ -47,7 +45,6 @@ MB_EXPORT std::error_code make_error_code(WriterError e);
 
 MB_EXPORT const std::error_category & writer_error_category();
 
-}
 }
 
 namespace std

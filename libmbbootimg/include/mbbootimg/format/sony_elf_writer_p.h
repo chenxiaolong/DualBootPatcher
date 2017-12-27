@@ -30,11 +30,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 class SonyElfFormatWriter : public detail::FormatWriter
@@ -73,6 +69,4 @@ private:
     std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

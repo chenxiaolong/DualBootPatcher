@@ -28,9 +28,7 @@
 #include "mbpatcher/fileinfo.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class Patcher;
@@ -76,5 +74,4 @@ private:
     std::vector<std::unique_ptr<AutoPatcher>> m_auto_patchers;
 };
 
-}
 }

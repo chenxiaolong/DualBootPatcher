@@ -31,9 +31,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 static constexpr std::size_t KMSG_BUF_SIZE                  = 512;
@@ -128,5 +126,4 @@ bool KmsgLogger::formatted()
     return true;
 }
 
-}
 }

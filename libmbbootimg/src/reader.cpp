@@ -177,9 +177,7 @@
 
 ///
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 using namespace detail;
@@ -802,5 +800,4 @@ oc::result<void> Reader::register_format(std::unique_ptr<FormatReader> format)
     return oc::success();
 }
 
-}
 }

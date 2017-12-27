@@ -24,9 +24,7 @@
 #include <cstring>
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 Entry::Entry() = default;
@@ -85,5 +83,4 @@ void Entry::set_size(std::optional<uint64_t> size)
 
 }
 
-}
 }

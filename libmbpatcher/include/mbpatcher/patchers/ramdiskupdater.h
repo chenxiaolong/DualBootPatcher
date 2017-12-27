@@ -23,9 +23,7 @@
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 struct ZipCtx;
@@ -72,5 +70,4 @@ private:
     void close_output_archive();
 };
 
-}
 }

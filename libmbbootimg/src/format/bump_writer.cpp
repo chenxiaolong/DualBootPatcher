@@ -21,9 +21,7 @@
 
 #include "mbbootimg/writer_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 /*!
@@ -37,5 +35,4 @@ oc::result<void> Writer::set_format_bump()
             std::make_unique<android::AndroidFormatWriter>(*this, true));
 }
 
-}
 }

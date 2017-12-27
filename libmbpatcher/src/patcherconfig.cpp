@@ -34,9 +34,7 @@
 #include "mbpatcher/patchers/zippatcher.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 /*!
@@ -231,5 +229,4 @@ void PatcherConfig::destroy_auto_patcher(AutoPatcher *patcher)
     m_auto_patchers.erase(it);
 }
 
-}
 }

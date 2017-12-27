@@ -23,11 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 enum class SonyElfError
@@ -42,8 +38,6 @@ MB_EXPORT std::error_code make_error_code(SonyElfError e);
 
 MB_EXPORT const std::error_category & sony_elf_error_category();
 
-}
-}
 }
 
 namespace std

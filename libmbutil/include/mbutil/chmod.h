@@ -24,9 +24,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class ChmodFlag : uint8_t
@@ -38,5 +36,4 @@ MB_DECLARE_OPERATORS_FOR_FLAGS(ChmodFlags)
 
 bool chmod(const std::string &path, mode_t perms, ChmodFlags flags);
 
-}
 }

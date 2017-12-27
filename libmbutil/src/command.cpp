@@ -39,9 +39,7 @@
 
 #define LOG_COMMANDS 0
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static inline int safely_close(int &fd)
@@ -449,5 +447,4 @@ int run_command(const std::string &path,
     return command_wait(ctx);
 }
 
-}
 }

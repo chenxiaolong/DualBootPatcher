@@ -25,11 +25,8 @@
 #include "mbpatcher/private/stringutils.h"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string MountCmdPatcher::Id = "MountCmdPatcher";
 
@@ -112,5 +109,4 @@ bool MountCmdPatcher::patch_files(const std::string &directory)
     return true;
 }
 
-}
 }

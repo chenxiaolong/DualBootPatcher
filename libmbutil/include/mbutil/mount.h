@@ -23,9 +23,7 @@
 
 #include <cstdio>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 constexpr char PROC_MOUNTS[] = "/proc/mounts";
@@ -52,5 +50,4 @@ bool umount(const std::string &target);
 bool mount_get_total_size(const std::string &path, uint64_t &size);
 bool mount_get_avail_size(const std::string &path, uint64_t &size);
 
-}
 }

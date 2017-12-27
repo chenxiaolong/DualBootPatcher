@@ -22,13 +22,10 @@
 #include <optional>
 #include <string>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool blkid_get_fs_type(const std::string &path,
                        std::optional<std::string> &type);
 
-}
 }

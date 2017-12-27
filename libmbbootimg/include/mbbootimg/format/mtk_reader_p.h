@@ -30,11 +30,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 class MtkFormatReader : public detail::FormatReader
@@ -70,6 +66,4 @@ private:
     std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

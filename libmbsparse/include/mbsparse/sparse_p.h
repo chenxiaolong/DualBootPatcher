@@ -22,11 +22,7 @@
 
 #include <cstdint>
 
-namespace mb
-{
-namespace sparse
-{
-namespace detail
+namespace mb::sparse::detail
 {
 
 /*! \cond INTERNAL */
@@ -103,6 +99,4 @@ enum class Seekability : uint8_t
 
 /*! \endcond */
 
-}
-}
 }

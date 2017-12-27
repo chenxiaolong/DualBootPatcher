@@ -31,11 +31,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 class AndroidFormatWriter : public detail::FormatWriter
@@ -70,6 +66,4 @@ private:
     std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

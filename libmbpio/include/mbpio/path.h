@@ -24,9 +24,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 MB_EXPORT std::string base_name(const std::string &path);
@@ -34,5 +32,4 @@ MB_EXPORT std::string dir_name(const std::string &path);
 
 MB_EXPORT std::string path_join(const std::vector<std::string> &components);
 
-}
 }

@@ -33,9 +33,7 @@
 
 #define LOG_TAG "mbutil/cmdline"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata)
@@ -130,5 +128,4 @@ bool kernel_cmdline_get_option(const std::string &option,
     return true;
 }
 
-}
 }

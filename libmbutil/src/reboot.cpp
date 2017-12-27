@@ -33,9 +33,7 @@
 
 #define LOG_TAG "mbutil/reboot"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static void log_output(const char *line, bool error, void *userdata)
@@ -121,5 +119,4 @@ bool shutdown_via_syscall()
     return true;
 }
 
-}
 }

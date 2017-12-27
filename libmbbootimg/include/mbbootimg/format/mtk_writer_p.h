@@ -30,11 +30,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 class MtkFormatWriter : public detail::FormatWriter
@@ -65,6 +61,4 @@ private:
     std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

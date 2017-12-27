@@ -50,13 +50,9 @@
 
 #define LOG_TAG "mbpatcher/patchers/odinpatcher"
 
-class ar;
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string OdinPatcher::Id("OdinPatcher");
 
@@ -722,5 +718,4 @@ int OdinPatcher::la_close_cb(archive *a, void *userdata)
     return 0;
 }
 
-}
 }

@@ -24,9 +24,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 void replace(std::string &source,
@@ -53,5 +51,4 @@ std::string trimmed(const std::string &s);
 char ** dup_cstring_list(const char * const *list);
 void free_cstring_list(char **list);
 
-}
 }

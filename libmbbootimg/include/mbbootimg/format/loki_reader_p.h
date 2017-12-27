@@ -30,11 +30,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 class LokiFormatReader : public detail::FormatReader
@@ -110,6 +106,4 @@ private:
     std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

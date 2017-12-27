@@ -28,9 +28,7 @@
 #include "mbcommon/common.h"
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class HeaderField : uint64_t
@@ -155,5 +153,4 @@ private:
     // TODO TODO TODO
 };
 
-}
 }

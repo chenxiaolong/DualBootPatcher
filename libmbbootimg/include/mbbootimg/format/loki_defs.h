@@ -34,11 +34,7 @@
 
 #include "mbbootimg/header.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 constexpr char LOKI_MAGIC[] = "LOKI";
@@ -113,6 +109,4 @@ constexpr HeaderFields NEW_SUPPORTED_FIELDS =
         | HeaderField::KernelCmdline
         | HeaderField::Id;
 
-}
-}
 }

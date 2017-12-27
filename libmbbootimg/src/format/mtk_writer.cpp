@@ -41,9 +41,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace mtk
 {
@@ -409,5 +407,4 @@ oc::result<void> Writer::set_format_mtk()
     return register_format(std::make_unique<mtk::MtkFormatWriter>(*this));
 }
 
-}
 }

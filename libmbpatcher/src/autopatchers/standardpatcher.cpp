@@ -33,11 +33,8 @@
 #define DUMP_DEBUG 0
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string StandardPatcher::Id
         = "StandardPatcher";
@@ -664,5 +661,4 @@ bool StandardPatcher::patch_transfer_list(const std::string &directory)
     return true;
 }
 
-}
 }

@@ -33,9 +33,7 @@
 // NOTE: We don't use libblkid from util-linux because we don't need most of its
 // features and it increases mbtool's binary size more than 200KiB (armeabi-v7a)
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static inline bool check_magic(const void *data, size_t data_size,
@@ -165,5 +163,4 @@ bool blkid_get_fs_type(const std::string &path,
     return true;
 }
 
-}
 }

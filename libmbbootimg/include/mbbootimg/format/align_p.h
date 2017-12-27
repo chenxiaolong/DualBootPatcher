@@ -23,9 +23,7 @@
 
 #include <type_traits>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 template<typename T>
@@ -42,5 +40,4 @@ static inline T align_page_size(const T item_size, const T page_size)
     return page_size - (item_size & mask);
 }
 
-}
 }

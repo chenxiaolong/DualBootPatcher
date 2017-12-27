@@ -21,9 +21,7 @@
 
 #include "mblog/base_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT AndroidLogger : public BaseLogger
@@ -34,5 +32,4 @@ public:
     virtual bool formatted() override;
 };
 
-}
 }

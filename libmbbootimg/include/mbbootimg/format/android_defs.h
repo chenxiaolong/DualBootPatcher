@@ -24,11 +24,7 @@
 
 #include "mbbootimg/header.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 constexpr char     BOOT_MAGIC[]                 = "ANDROID!";
@@ -63,6 +59,4 @@ constexpr HeaderFields SUPPORTED_FIELDS         =
         | HeaderField::KernelCmdline
         | HeaderField::Id;
 
-}
-}
 }

@@ -46,9 +46,7 @@
 #define LIBARCHIVE_DISK_READER_FLAGS \
     ARCHIVE_READDISK_MAC_COPYFILE
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
@@ -825,5 +823,4 @@ bool archive_exists(const std::string &filename,
     return true;
 }
 
-}
 }

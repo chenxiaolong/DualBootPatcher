@@ -117,11 +117,7 @@ constexpr size_t ABOOT_PATTERN_SIZE = 8;
 constexpr size_t MIN_ABOOT_SIZE     = ABOOT_SEARCH_LIMIT + ABOOT_PATTERN_SIZE;
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 static bool _patch_shellcode(uint32_t header, uint32_t ramdisk,
@@ -431,6 +427,4 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
     return oc::success();
 }
 
-}
-}
 }

@@ -23,9 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class SegmentError
@@ -41,7 +39,6 @@ MB_EXPORT std::error_code make_error_code(SegmentError e);
 
 MB_EXPORT const std::error_category & segment_error_category();
 
-}
 }
 
 namespace std

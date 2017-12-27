@@ -42,9 +42,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace android
 {
@@ -554,5 +552,4 @@ oc::result<void> Reader::enable_format_android()
             std::make_unique<android::AndroidFormatReader>(*this, false));
 }
 
-}
 }

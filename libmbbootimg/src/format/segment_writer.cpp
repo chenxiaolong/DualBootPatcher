@@ -33,9 +33,7 @@
 #include "mbbootimg/format/align_p.h"
 #include "mbbootimg/format/segment_error_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 SegmentWriter::SegmentWriter()
@@ -182,5 +180,4 @@ oc::result<void> SegmentWriter::finish_entry(File &file, Writer &writer)
     return oc::success();
 }
 
-}
 }

@@ -46,7 +46,8 @@
  * \sa PatcherConfig
  */
 
-extern "C" {
+extern "C"
+{
 
 /*!
  * \brief Create a new CPatcherConfig object.

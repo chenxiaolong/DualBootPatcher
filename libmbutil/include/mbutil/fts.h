@@ -26,9 +26,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class FtsFlag : uint8_t
@@ -103,5 +101,4 @@ private:
 
 MB_DECLARE_OPERATORS_FOR_FLAGS(FtsWrapper::Actions)
 
-}
 }

@@ -39,9 +39,7 @@
 #include "mbbootimg/writer.h"
 #include "mbbootimg/writer_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace sonyelf
 {
@@ -368,5 +366,4 @@ oc::result<void> Writer::set_format_sony_elf()
             std::make_unique<sonyelf::SonyElfFormatWriter>(*this));
 }
 
-}
 }

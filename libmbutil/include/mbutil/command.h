@@ -26,9 +26,7 @@
 
 #include <cstddef>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 /*!
@@ -103,5 +101,4 @@ int run_command(const std::string &path,
                 CmdLineCb cb,
                 void *userdata);
 
-}
 }

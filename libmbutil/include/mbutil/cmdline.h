@@ -22,9 +22,7 @@
 #include <optional>
 #include <string>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class CmdlineIterAction
@@ -43,5 +41,4 @@ bool kernel_cmdline_iter(CmdlineIterFn fn, void *userdata);
 bool kernel_cmdline_get_option(const std::string &option,
                                std::optional<std::string> &value);
 
-}
 }

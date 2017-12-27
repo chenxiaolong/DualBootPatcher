@@ -48,9 +48,7 @@
 
 #define DELETED_SUFFIX " (deleted)"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -340,5 +338,4 @@ bool mount_get_avail_size(const std::string &path, uint64_t &size)
     return true;
 }
 
-}
 }

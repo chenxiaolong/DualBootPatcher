@@ -38,9 +38,7 @@
 #define LOG_TAG "mbpatcher/private/fileutils"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 oc::result<void> FileUtils::open_file(StandardFile &file,
@@ -365,5 +363,4 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
 #endif
 }
 
-}
 }

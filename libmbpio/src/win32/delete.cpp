@@ -30,11 +30,7 @@
 
 #include "mbpio/error.h"
 
-namespace mb
-{
-namespace io
-{
-namespace win32
+namespace mb::io::win32
 {
 
 using ScopedFindHandle = std::unique_ptr<std::remove_pointer_t<HANDLE>, decltype(FindClose) *>;
@@ -126,6 +122,4 @@ bool delete_recursively(const std::string &path)
     return _win32_recursive_delete(w_path.value());
 }
 
-}
-}
 }

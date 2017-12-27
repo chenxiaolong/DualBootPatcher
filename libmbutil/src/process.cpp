@@ -27,9 +27,7 @@
 
 #include "mbutil/string.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static char * args_mem_start = nullptr;
@@ -126,5 +124,4 @@ bool set_process_title(const std::string &title, size_t *size_out)
     return true;
 }
 
-}
 }

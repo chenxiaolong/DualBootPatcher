@@ -29,9 +29,7 @@
 
 #define LOG_TAG "mbutil/hash"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -87,5 +85,4 @@ bool sha512_hash(const std::string &path,
     return true;
 }
 
-}
 }

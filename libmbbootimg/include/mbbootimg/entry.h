@@ -27,9 +27,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 constexpr int ENTRY_TYPE_KERNEL             = 1 << 0;
@@ -72,5 +70,4 @@ private:
     std::optional<uint64_t> m_size;
 };
 
-}
 }

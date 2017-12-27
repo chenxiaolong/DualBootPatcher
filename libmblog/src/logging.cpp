@@ -48,9 +48,7 @@
 #include "mblog/log_record.h"
 #include "mblog/stdio_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 #if defined(_WIN32)
@@ -427,5 +425,4 @@ void set_format(std::string fmt)
     g_format = std::move(fmt);
 }
 
-}
 }

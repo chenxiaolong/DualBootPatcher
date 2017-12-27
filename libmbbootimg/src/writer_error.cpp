@@ -21,9 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 struct WriterErrorCategory : std::error_category
@@ -71,5 +69,4 @@ std::string WriterErrorCategory::message(int ev) const
     }
 }
 
-}
 }

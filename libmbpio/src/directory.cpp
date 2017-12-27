@@ -34,9 +34,7 @@
 #  include <sys/stat.h>
 #endif
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 bool create_directories(const std::string &path)
@@ -105,5 +103,4 @@ bool create_directories(const std::string &path)
     return true;
 }
 
-}
 }

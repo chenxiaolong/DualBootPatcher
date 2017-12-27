@@ -34,9 +34,7 @@
     } while (0)
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 Header::Header()
@@ -253,5 +251,4 @@ bool Header::set_entrypoint_address(std::optional<uint32_t> address)
     return true;
 }
 
-}
 }
