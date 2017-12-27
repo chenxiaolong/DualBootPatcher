@@ -90,7 +90,7 @@ static mode_t get_device_perm(const char *path,
 }
 
 static void make_device(const char *path,
-                        const char *upath MB_UNUSED,
+                        const char *upath [[maybe_unused]],
                         int block, int major, int minor,
                         const std::vector<std::string> &links)
 {

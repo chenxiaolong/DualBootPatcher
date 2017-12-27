@@ -67,7 +67,6 @@
     __attribute__((format(MB_PRINTF_FORMAT, fmt_arg, var_arg)))
 #  define MB_SCANF(fmt_arg, var_arg) \
     __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
-#  define MB_UNUSED __attribute__((unused))
 #endif
 
 #ifndef MB_PRINTF
@@ -75,9 +74,6 @@
 #endif
 #ifndef MB_SCANF
 #  define MB_SCANF(fmtarg, firstvararg)
-#endif
-#ifndef MB_UNUSED
-#  define MB_UNUSED
 #endif
 
 #if defined(__GNUC__)

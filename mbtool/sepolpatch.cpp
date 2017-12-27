@@ -824,7 +824,7 @@ static inline bool add_rules(policydb_t *pdb,
     return true;
 }
 
-MB_UNUSED
+[[maybe_unused]]
 static inline bool remove_rules(policydb_t *pdb,
                                 const char *source,
                                 const char *target,

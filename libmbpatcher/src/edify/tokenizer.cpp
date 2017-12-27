@@ -172,7 +172,7 @@ EdifyTokenWhitespace::EdifyTokenWhitespace(std::string str)
 {
     assert(!str.empty());
 
-    for (char c MB_UNUSED : str) {
+    for (char c [[maybe_unused]] : str) {
         // Should never fail
         assert(std::isspace(c));
     }

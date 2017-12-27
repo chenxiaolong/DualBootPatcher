@@ -369,7 +369,7 @@ static mb::oc::result<size_t> cb_zip_read(mb::File &file, void *userdata,
 }
 
 #if DEBUG_SKIP_FLASH_SYSTEM
-MB_UNUSED
+[[maybe_unused]]
 #endif
 static ExtractResult extract_sparse_file(const char *zip_filename,
                                          const char *out_filename)
