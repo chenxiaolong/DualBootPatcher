@@ -580,7 +580,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
         return FileSearchAction::Stop;
     };
 
-    auto search_ret = file_search(fin, -1, -1, 0, source_pattern,
+    auto search_ret = file_search(fin, {}, {}, 0, source_pattern,
                                   sizeof(source_pattern), 1, result_cb,
                                   &offset);
     if (!search_ret) {

@@ -264,39 +264,38 @@ oc::result<uint64_t> file_read_discard(File &file, uint64_t size)
  *       operations.
  *
  * \param file File handle
- * \param start Start offset or negative number for beginning of file
- * \param end End offset or negative number for end of file
+ * \param start Start offset or nothing for beginning of file
+ * \param end End offset or nothing for end of file
  * \param bsize Buffer size or 0 to automatically choose a size
  * \param pattern Pattern to search
  * \param pattern_size Size of pattern
- * \param max_matches Maximum number of matches or -1 to find all matches
+ * \param max_matches Maximum number of matches or nothing to find all matches
  * \param result_cb Callback to invoke upon finding a match
  * \param userdata User callback data
  *
  * \return Nothing if the search completes successfully. Otherwise, the error
  *         code.
  */
-oc::result<void> file_search(File &file, int64_t start, int64_t end,
+oc::result<void> file_search(File &file,
+                             std::optional<uint64_t> start,
+                             std::optional<uint64_t> end,
                              size_t bsize, const void *pattern,
-                             size_t pattern_size, int64_t max_matches,
+                             size_t pattern_size,
+                             std::optional<uint64_t> max_matches,
                              FileSearchResultCallback result_cb,
                              void *userdata)
 {
     size_t buf_size;
-    unsigned char *ptr;
-    size_t ptr_remain;
-    unsigned char *match;
-    size_t match_remain;
     uint64_t offset;
 
     // Check boundaries
-    if (start >= 0 && end >= 0 && end < start) {
+    if (start && end && *end < *start) {
         // End offset < start offset
         return FileError::ArgumentOutOfRange;
     }
 
     // Trivial case
-    if (max_matches == 0 || pattern_size == 0) {
+    if ((max_matches && *max_matches == 0) || pattern_size == 0) {
         return oc::success();
     }
 
@@ -319,10 +318,10 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
         return FileError::ArgumentOutOfRange;
     }
 
-    std::vector<unsigned char> buf(buf_size);
+    std::vector<std::byte> buf(buf_size);
 
-    if (start >= 0) {
-        offset = static_cast<uint64_t>(start);
+    if (start) {
+        offset = *start;
     } else {
         offset = 0;
     }
@@ -344,8 +343,8 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
     }
 
     // Initially read to beginning of buffer
-    ptr = buf.data();
-    ptr_remain = buf.size();
+    std::byte *ptr = buf.data();
+    size_t ptr_remain = buf.size();
 
     while (true) {
         OUTCOME_TRY(n, file_read_retry(file, ptr, ptr_remain));
@@ -356,7 +355,7 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
         if (n < pattern_size) {
             // Reached EOF
             return oc::success();
-        } else if (end >= 0 && offset >= static_cast<uint64_t>(end)) {
+        } else if (end && offset >= *end) {
             // Artificial EOF
             return oc::success();
         }
@@ -369,14 +368,14 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
         }
 
         // Search from beginning of buffer
-        match = buf.data();
-        match_remain = n;
+        std::byte *match = buf.data();
+        size_t match_remain = n;
 
-        while ((match = static_cast<unsigned char *>(
+        while ((match = static_cast<std::byte *>(
                 mb_memmem(match, match_remain, pattern, pattern_size)))) {
             // Stop if match falls outside of ending boundary
-            if (end >= 0 && offset + static_cast<size_t>(match - buf.data())
-                    + pattern_size > static_cast<uint64_t>(end)) {
+            if (end && offset + static_cast<size_t>(match - buf.data())
+                    + pattern_size > *end) {
                 return oc::success();
             }
 
@@ -390,9 +389,9 @@ oc::result<void> file_search(File &file, int64_t start, int64_t end,
                 return oc::success();
             }
 
-            if (max_matches > 0) {
-                --max_matches;
-                if (max_matches == 0) {
+            if (max_matches && *max_matches > 0) {
+                --*max_matches;
+                if (*max_matches == 0) {
                     return oc::success();
                 }
             }

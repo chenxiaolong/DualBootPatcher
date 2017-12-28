@@ -283,7 +283,7 @@ LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
             return FileSearchAction::Continue;
         };
 
-        auto ret = file_search(file, -1, -1, 0, LOKI_SHELLCODE,
+        auto ret = file_search(file, {}, {}, 0, LOKI_SHELLCODE,
                                LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset);
         if (!ret) {
             if (file.is_fatal()) { reader.set_fatal(); }
@@ -411,8 +411,8 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         return FileSearchAction::Continue;
     };
 
-    auto ret = file_search(file, start_offset, -1, 0, gzip_deflate_magic,
-                           sizeof(gzip_deflate_magic), -1, result_cb, &result);
+    auto ret = file_search(file, start_offset, {}, 0, gzip_deflate_magic,
+                           sizeof(gzip_deflate_magic), {}, result_cb, &result);
     if (!ret) {
         if (file.is_fatal()) { reader.set_fatal(); }
         return ret.as_failure();
