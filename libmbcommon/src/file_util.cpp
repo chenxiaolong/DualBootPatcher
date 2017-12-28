@@ -20,7 +20,12 @@
 #include "mbcommon/file_util.h"
 
 #include <algorithm>
+#include <functional>
 #include <vector>
+#ifdef __ANDROID__
+#  include <experimental/algorithm>
+#  include <experimental/functional>
+#endif
 
 #include <cerrno>
 #include <cstdio>
@@ -38,6 +43,12 @@
 
 namespace mb
 {
+
+#ifdef __ANDROID__
+namespace std2 = std::experimental;
+#else
+namespace std2 = std;
+#endif
 
 /*!
  * \brief Read from a File handle.
@@ -318,7 +329,7 @@ oc::result<void> file_search(File &file,
         return FileError::ArgumentOutOfRange;
     }
 
-    std::vector<std::byte> buf(buf_size);
+    std::vector<unsigned char> buf(buf_size);
 
     if (start) {
         offset = *start;
@@ -343,8 +354,13 @@ oc::result<void> file_search(File &file,
     }
 
     // Initially read to beginning of buffer
-    std::byte *ptr = buf.data();
+    unsigned char *ptr = buf.data();
     size_t ptr_remain = buf.size();
+
+    // Boyer-Moore searcher for pattern
+    auto pattern_searcher = std2::boyer_moore_searcher<const unsigned char *>(
+            static_cast<const unsigned char *>(pattern),
+            static_cast<const unsigned char *>(pattern) + pattern_size);
 
     while (true) {
         OUTCOME_TRY(n, file_read_retry(file, ptr, ptr_remain));
@@ -368,11 +384,17 @@ oc::result<void> file_search(File &file,
         }
 
         // Search from beginning of buffer
-        std::byte *match = buf.data();
+        unsigned char *match = buf.data();
         size_t match_remain = n;
 
-        while ((match = static_cast<std::byte *>(
-                mb_memmem(match, match_remain, pattern, pattern_size)))) {
+        while (true) {
+            auto it = std2::search(match, match + match_remain,
+                                   pattern_searcher);
+            if (it == match + match_remain) {
+                break;
+            }
+            match = it;
+
             // Stop if match falls outside of ending boundary
             if (end && offset + static_cast<size_t>(match - buf.data())
                     + pattern_size > *end) {
