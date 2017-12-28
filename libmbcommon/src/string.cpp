@@ -36,8 +36,6 @@
 #include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
 
-#include "mbcommon/libc/string.h"
-
 #ifdef _WIN32
 #  define strncasecmp _strnicmp
 #endif

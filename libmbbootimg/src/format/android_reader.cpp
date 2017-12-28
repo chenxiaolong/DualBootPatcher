@@ -35,7 +35,6 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/libc/string.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"

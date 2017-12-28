@@ -32,7 +32,6 @@
 #include <cstring>
 
 #include "mbcommon/error_code.h"
-#include "mbcommon/libc/string.h"
 
 #define DEFAULT_BUFFER_SIZE             (8 * 1024 * 1024)
 

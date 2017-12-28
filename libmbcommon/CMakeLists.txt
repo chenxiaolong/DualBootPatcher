@@ -24,13 +24,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         "-Wno-format-nonliteral"
     )
 
-    set_source_files_properties(
-        src/external/musl/memmem.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-cast-qual -Wno-comma -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
-
     if(ANDROID)
         set_source_files_properties(
             src/external/gnulib/getdelim.c
@@ -42,13 +35,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 if(WIN32)
-    set_source_files_properties(
-        src/external/musl/memmem.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-cast-qual -Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
-
     set_source_files_properties(
         src/external/gnulib/getdelim.c
         PROPERTIES
@@ -91,15 +77,12 @@ foreach(variant ${variants})
         src/file_error.cpp
         src/file_util.cpp
         src/libc/stdio.cpp
-        src/libc/string.cpp
         src/locale.cpp
         src/string.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     )
 
     if(ANDROID)
-        target_sources(${lib_target} PRIVATE src/external/musl/memmem.c)
-
         if(${ANDROID_PLATFORM_LEVEL} LESS 21)
             target_sources(
                 ${lib_target}
@@ -115,7 +98,6 @@ foreach(variant ${variants})
             src/file/win32.cpp
             src/external/gnulib/getdelim.c
             src/external/gnulib/getline.c
-            src/external/musl/memmem.c
         )
     endif()
 
