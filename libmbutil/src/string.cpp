@@ -79,66 +79,6 @@ std::vector<std::string> tokenize(const std::string &str,
     return tokens;
 }
 
-template<typename Iterator>
-static Iterator find_first_non_space(Iterator begin, Iterator end)
-{
-    return std::find_if(begin, end, [](char c) {
-        return !std::isspace(c);
-    });
-}
-
-/*!
- * \brief Trim whitespace from the left (in place)
- */
-void trim_left(std::string &s)
-{
-    s.erase(s.begin(), find_first_non_space(s.begin(), s.end()));
-}
-
-/*!
- * \brief Trim whitespace from the right (in place)
- */
-void trim_right(std::string &s)
-{
-    s.erase(find_first_non_space(s.rbegin(), s.rend()).base(), s.end());
-}
-
-/*!
- * \brief Trim whitespace from the left and the right (in place)
- */
-void trim(std::string &s)
-{
-    trim_left(s);
-    trim_right(s);
-}
-
-/*!
- * \brief Trim whitespace from the left (one copy)
- */
-std::string trimmed_left(const std::string &s)
-{
-    return {find_first_non_space(s.begin(), s.end()), s.end()};
-}
-
-/*!
- * \brief Trim whitespace from the right (one copy)
- */
-std::string trimmed_right(const std::string &s)
-{
-    return {s.begin(), find_first_non_space(s.rbegin(), s.rend()).base()};
-}
-
-/*!
- * \brief Trim whitespace from the left and the right (one copy)
- */
-std::string trimmed(const std::string &s)
-{
-    auto begin = find_first_non_space(s.begin(), s.end());
-    auto search_end = std::string::const_reverse_iterator(begin);
-    auto end = find_first_non_space(s.rbegin(), search_end);
-    return {begin, end.base()};
-}
-
 /*!
  * \brief Convert binary data to its hex string representation
  *

@@ -19,6 +19,8 @@
 
 #include "mbcommon/string.h"
 
+#include <algorithm>
+
 #include <cerrno>
 #include <climits>
 #include <cstdint>
@@ -531,6 +533,77 @@ oc::result<void> str_replace(char **str, const char *from, const char *to,
 
     return mem_replace(reinterpret_cast<void **>(str), &str_size,
                        from, strlen(from), to, strlen(to), n, n_replaced);
+}
+
+template<typename Iterator>
+static Iterator find_first_non_space(Iterator begin, Iterator end)
+{
+    return std::find_if(begin, end, [](char c) {
+        return !std::isspace(c);
+    });
+}
+
+/*!
+ * \brief Trim whitespace from the left (in place)
+ *
+ * \param s Reference to string to trim
+ */
+void trim_left(std::string &s)
+{
+    s.erase(s.begin(), find_first_non_space(s.begin(), s.end()));
+}
+
+/*!
+ * \brief Trim whitespace from the right (in place)
+ *
+ * \param s Reference to string to trim
+ */
+void trim_right(std::string &s)
+{
+    s.erase(find_first_non_space(s.rbegin(), s.rend()).base(), s.end());
+}
+
+/*!
+ * \brief Trim whitespace from the left and the right (in place)
+ *
+ * \param s Reference to string to trim
+ */
+void trim(std::string &s)
+{
+    trim_left(s);
+    trim_right(s);
+}
+
+/*!
+ * \brief Trim whitespace from the left
+ *
+ * \param s String view to trim
+ */
+std::string_view trimmed_left(std::string_view s)
+{
+    return s.substr(static_cast<size_t>(
+            find_first_non_space(s.begin(), s.end()) - s.begin()));
+}
+
+/*!
+ * \brief Trim whitespace from the right
+ *
+ * \param s String view to trim
+ */
+std::string_view trimmed_right(std::string_view s)
+{
+    return s.substr(0, static_cast<size_t>(find_first_non_space(
+            s.rbegin(), s.rend()).base() - s.begin()));
+}
+
+/*!
+ * \brief Trim whitespace from the left and the right
+ *
+ * \param s String view to trim
+ */
+std::string_view trimmed(std::string_view s)
+{
+    return trimmed_left(trimmed_right(s));
 }
 
 }

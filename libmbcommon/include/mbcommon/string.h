@@ -80,6 +80,14 @@ MB_EXPORT oc::result<void> mem_replace(void **mem, size_t *mem_size,
 MB_EXPORT oc::result<void> str_replace(char **str, const char *from, const char *to,
                                        size_t n, size_t *n_replaced);
 
+// String trim
+MB_EXPORT void trim_left(std::string &s);
+MB_EXPORT void trim_right(std::string &s);
+MB_EXPORT void trim(std::string &s);
+MB_EXPORT std::string_view trimmed_left(std::string_view s);
+MB_EXPORT std::string_view trimmed_right(std::string_view s);
+MB_EXPORT std::string_view trimmed(std::string_view s);
+
 // String split/join
 
 /*!

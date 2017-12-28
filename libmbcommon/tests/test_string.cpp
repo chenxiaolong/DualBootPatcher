@@ -345,6 +345,47 @@ TEST(StringTest, ReplaceString)
     }
 }
 
+TEST(StringTest, TrimInPlace)
+{
+    std::string s;
+
+    trim_left(s);
+    ASSERT_EQ(s, "");
+    trim_right(s);
+    ASSERT_EQ(s, "");
+    trim(s);
+    ASSERT_EQ(s, "");
+
+    s = " \t abcd \t ";
+    trim_left(s);
+    ASSERT_EQ(s, "abcd \t ");
+    trim_right(s);
+    ASSERT_EQ(s, "abcd");
+
+    s = " \f\n\r\t\v";
+    trim(s);
+    ASSERT_EQ(s, "");
+
+    s = "abcd";
+    trim(s);
+    ASSERT_EQ(s, "abcd");
+}
+
+TEST(StringTest, TrimStringView)
+{
+    ASSERT_EQ(trimmed_left(""), "");
+    ASSERT_EQ(trimmed_right(""), "");
+    ASSERT_EQ(trimmed(""), "");
+
+    ASSERT_EQ(trimmed_left(" \t abcd \t "), "abcd \t ");
+    ASSERT_EQ(trimmed_right(" \t abcd \t "), " \t abcd");
+    ASSERT_EQ(trimmed(" \t abcd \t "), "abcd");
+
+    ASSERT_EQ(trimmed(" \f\n\r\t\v"), "");
+
+    ASSERT_EQ(trimmed("abcd"), "abcd");
+}
+
 TEST(StringTest, CheckSplit)
 {
     using VS = std::vector<std::string>;
