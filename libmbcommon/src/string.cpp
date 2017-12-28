@@ -35,7 +35,6 @@
 #include "mbcommon/error.h"
 #include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
-#include "mbcommon/string_p.h"
 
 #include "mbcommon/libc/string.h"
 
@@ -83,19 +82,6 @@
  *
  * \brief printf format argument to convert `size_t` to uppercase hex
  */
-
-MB_BEGIN_C_DECLS
-
-void * _mb_mempcpy(void *dest, const void *src, size_t n)
-{
-#if defined(_WIN32) || defined(__ANDROID__)
-    return static_cast<char *>(memcpy(dest, src, n)) + n;
-#else
-    return mempcpy(dest, src, n);
-#endif
-}
-
-MB_END_C_DECLS
 
 namespace mb
 {
@@ -309,92 +295,6 @@ bool ends_with_icase(std::string_view string, std::string_view suffix)
             ? false
             : strncasecmp(string.data() + string.size() - suffix.size(),
                           suffix.data(), suffix.size()) == 0;
-}
-
-/*!
- * \brief Insert byte sequence into byte sequence
- *
- * Insert (\p data, \p data_pos) into (\p *mem, \p *mem_size). It the function
- * succeeds, \p *mem will be passed to `free()` and \p *mem and \p *mem_size
- * will be updated to point to the newly allocated block of memory and its size.
- * If the function fails, \p *mem will be left unchanged.
- *
- * \param[in,out] mem Pointer to byte sequence to modify
- * \param[in,out] mem_size Pointer to size of bytes sequence to modify
- * \param[in] pos Position in which to insert new byte sequence
- *                (0 \<= \p pos \<= \p *mem_size)
- * \param[in] data New byte sequence to insert
- * \param[in] data_size Size of new byte sequence to insert
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
-                            const void *data, size_t data_size)
-{
-    void *buf;
-    size_t buf_size;
-
-    if (pos > *mem_size) {
-        return std::make_error_code(std::errc::invalid_argument);
-    } else if (*mem_size >= SIZE_MAX - data_size) {
-        return std::make_error_code(std::errc::value_too_large);
-    }
-
-    buf_size = *mem_size + data_size;
-
-    buf = static_cast<char *>(malloc(buf_size));
-    if (!buf) {
-        return ec_from_errno();
-    }
-
-    void *target_ptr = buf;
-
-    // Copy data left of the insertion point
-    target_ptr = _mb_mempcpy(target_ptr, *mem, pos);
-
-    // Copy new data
-    target_ptr = _mb_mempcpy(target_ptr, data, data_size);
-
-    // Copy data right of the insertion point
-    target_ptr = _mb_mempcpy(target_ptr, static_cast<char*>(*mem) + pos,
-                             *mem_size - pos);
-
-    free(*mem);
-    *mem = buf;
-    *mem_size = buf_size;
-    return oc::success();
-}
-
-/*!
- * \brief Insert string into string
- *
- * Insert \p s into \p *str. It the function succeeds. \p *str will be passed to
- * `free()` and \p *str will be updated to point to the newly allocated string.
- * If the function fails, \p *str will be left unchanged.
- *
- * \param[in,out] str Pointer to string to modify
- * \param[in] pos Position in which to insert new string
- *                (0 \<= \p pos \<= \p *mem_size)
- * \param[in] s New string to insert
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> str_insert(char **str, size_t pos, const char *s)
-{
-    size_t str_size;
-
-    str_size = strlen(*str);
-
-    if (pos > str_size) {
-        return std::make_error_code(std::errc::invalid_argument);
-    } else if (str_size == SIZE_MAX) {
-        return std::make_error_code(std::errc::value_too_large);
-    }
-
-    ++str_size;
-
-    return mem_insert(reinterpret_cast<void **>(str), &str_size, pos,
-                      s, strlen(s));
 }
 
 template<typename Iterator>

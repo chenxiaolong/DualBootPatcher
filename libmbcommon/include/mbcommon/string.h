@@ -67,11 +67,6 @@ MB_EXPORT bool starts_with_icase(std::string_view string, std::string_view prefi
 MB_EXPORT bool ends_with(std::string_view string, std::string_view suffix);
 MB_EXPORT bool ends_with_icase(std::string_view string, std::string_view suffix);
 
-// String insert
-MB_EXPORT oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
-                                      const void *data, size_t data_size);
-MB_EXPORT oc::result<void> str_insert(char **str, size_t pos, const char *s);
-
 // String trim
 MB_EXPORT void trim_left(std::string &s);
 MB_EXPORT void trim_right(std::string &s);
