@@ -72,14 +72,6 @@ MB_EXPORT oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
                                       const void *data, size_t data_size);
 MB_EXPORT oc::result<void> str_insert(char **str, size_t pos, const char *s);
 
-// String replace
-MB_EXPORT oc::result<void> mem_replace(void **mem, size_t *mem_size,
-                                       const void *from, size_t from_size,
-                                       const void *to, size_t to_size,
-                                       size_t n, size_t *n_replaced);
-MB_EXPORT oc::result<void> str_replace(char **str, const char *from, const char *to,
-                                       size_t n, size_t *n_replaced);
-
 // String trim
 MB_EXPORT void trim_left(std::string &s);
 MB_EXPORT void trim_right(std::string &s);
