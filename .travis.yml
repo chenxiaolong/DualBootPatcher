@@ -1,4 +1,4 @@
-# Vew Travis CI configuration
+# New Travis CI configuration
 #Thanks to @yshalsager
 
 sudo: required
@@ -20,13 +20,13 @@ script:
   - mkdir -p DualBootPatcher/builder/ && cd DualBootPatcher/
   # Build APK
   - |
-    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" Mysteryagr/dualbootpatcher:9.3.0-4-android bash << EOF
+    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.3.0-4-android bash << EOF
     cd DualBootPatcher/builder && cmake .. -DMBP_BUILD_TARGET=android -DMBP_BUILD_TYPE=debug && make -j16 && rm -rf assets && cpack && make apk -j16
     make android-system_armeabi-v7a -j16 && make -C data/devices -j16
     exit
     EOF
   - |
-    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" Mysteryagr/dualbootpatcher:9.3.0-4-linux bash << EOF
+    docker run --rm -i -e USER_ID=$(id -u) -e GROUP_ID=$(id -g) -v "$(pwd):/builder/DualBootPatcher:rw,z" -v "${HOME}/.android:/builder/.android:rw,z" yshalsager/dualbootpatcher:9.3.0-4-linux bash << EOF
     # Build Utilities Zip
     cd ~/DualBootPatcher/builder && ./utilities/create.sh
     # Build Linux
