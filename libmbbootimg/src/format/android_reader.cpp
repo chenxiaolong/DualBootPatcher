@@ -20,7 +20,12 @@
 #include "mbbootimg/format/android_reader_p.h"
 
 #include <algorithm>
+#include <functional>
 #include <type_traits>
+#ifdef __ANDROID__
+#  include <experimental/algorithm>
+#  include <experimental/functional>
+#endif
 
 #include <cerrno>
 #include <cinttypes>
@@ -46,6 +51,12 @@ namespace mb::bootimg
 {
 namespace android
 {
+
+#ifdef __ANDROID__
+namespace std2 = std::experimental;
+#else
+namespace std2 = std;
+#endif
 
 AndroidFormatReader::AndroidFormatReader(Reader &reader, bool is_bump)
     : FormatReader(reader)
@@ -228,7 +239,6 @@ AndroidFormatReader::find_header(Reader &reader, File &file,
                                  uint64_t &offset_out)
 {
     unsigned char buf[MAX_HEADER_OFFSET + sizeof(AndroidHeader)];
-    void *ptr;
     size_t offset;
 
     if (max_header_offset > MAX_HEADER_OFFSET) {
@@ -250,14 +260,17 @@ AndroidFormatReader::find_header(Reader &reader, File &file,
         return n.as_failure();
     }
 
-    ptr = mb_memmem(buf, n.value(), BOOT_MAGIC, BOOT_MAGIC_SIZE);
-    if (!ptr) {
+    auto buf_end = buf + n.value();
+    auto it = std2::search(
+            buf, buf_end, std2::boyer_moore_searcher<const unsigned char *>(
+                    BOOT_MAGIC, BOOT_MAGIC + BOOT_MAGIC_SIZE));
+    if (it == buf_end) {
         //DEBUG("Android magic not found in first %" MB_PRIzu " bytes",
         //      MAX_HEADER_OFFSET);
         return AndroidError::HeaderNotFound;
     }
 
-    offset = static_cast<size_t>(static_cast<unsigned char *>(ptr) - buf);
+    offset = static_cast<size_t>(it - buf);
 
     if (n.value() - offset < sizeof(AndroidHeader)) {
         //DEBUG("Android header at %" MB_PRIzu " exceeds file size", offset);
@@ -265,7 +278,7 @@ AndroidFormatReader::find_header(Reader &reader, File &file,
     }
 
     // Copy header
-    memcpy(&header_out, ptr, sizeof(AndroidHeader));
+    memcpy(&header_out, it, sizeof(AndroidHeader));
     android_fix_header_byte_order(header_out);
     offset_out = offset;
 
