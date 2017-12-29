@@ -34,9 +34,7 @@
 #  include <sys/stat.h>
 #endif
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 bool create_directories(const std::string &path)
@@ -66,7 +64,7 @@ bool create_directories(const std::string &path)
         temp += path[0];
     }
 
-    p = strtok_r(&copy[0], delim, &save_ptr);
+    p = strtok_r(copy.data(), delim, &save_ptr);
     while (p != nullptr) {
         temp += p;
         temp += pathsep;
@@ -105,5 +103,4 @@ bool create_directories(const std::string &path)
     return true;
 }
 
-}
 }

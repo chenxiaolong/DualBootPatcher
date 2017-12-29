@@ -20,16 +20,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include <cstddef>
 
-#include "mbcommon/optional.h"
-
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 /*!
@@ -75,7 +72,7 @@ struct CommandCtx
     /*! Argument list */
     std::vector<std::string> argv;
     /*! Environment variable list */
-    optional<std::vector<std::string>> envp;
+    std::optional<std::vector<std::string>> envp;
     /*! Directory to chroot before execution */
     std::string chroot_dir;
     /*! Whether to redirect stdio fds */
@@ -99,10 +96,9 @@ bool command_line_reader(CommandCtx &ctx, CmdLineCb cb, void *userdata);
 
 int run_command(const std::string &path,
                 const std::vector<std::string> &argv,
-                const optional<std::vector<std::string>> &envp,
+                const std::optional<std::vector<std::string>> &envp,
                 const std::string &chroot_dir,
                 CmdLineCb cb,
                 void *userdata);
 
-}
 }

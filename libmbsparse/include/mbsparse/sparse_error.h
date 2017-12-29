@@ -23,9 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace sparse
+namespace mb::sparse
 {
 
 enum class SparseFileError
@@ -52,7 +50,6 @@ MB_EXPORT std::error_code make_error_code(SparseFileError e);
 
 MB_EXPORT const std::error_category & sparse_file_error_category();
 
-}
 }
 
 namespace std

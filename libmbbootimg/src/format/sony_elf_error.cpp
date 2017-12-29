@@ -21,11 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 struct SonyElfErrorCategory : std::error_category
@@ -67,6 +63,4 @@ std::string SonyElfErrorCategory::message(int ev) const
     }
 }
 
-}
-}
 }

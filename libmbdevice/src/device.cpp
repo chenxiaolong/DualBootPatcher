@@ -20,9 +20,7 @@
 #include "mbdevice/device.h"
 
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 Device::Device()
@@ -551,5 +549,4 @@ bool Device::operator==(const Device &other) const
     return m_base == other.m_base && m_tw == other.m_tw;
 }
 
-}
 }

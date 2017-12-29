@@ -61,9 +61,7 @@ struct SigHeader
     uint32_t unused;
 };
 
-namespace mb
-{
-namespace sign
+namespace mb::sign
 {
 
 /*!
@@ -633,5 +631,4 @@ error:
     return false;
 }
 
-}
 }

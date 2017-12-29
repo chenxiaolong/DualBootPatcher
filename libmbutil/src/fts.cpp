@@ -29,9 +29,7 @@
 #include "mbutil/string.h"
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 FtsWrapper::FtsWrapper(std::string path, FtsFlags flags)
@@ -238,5 +236,4 @@ FtsWrapper::Actions FtsWrapper::on_reached_socket()
     return Action::Ok;
 }
 
-}
 }

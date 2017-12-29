@@ -23,13 +23,10 @@
 
 #include <openssl/sha.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool sha512_hash(const std::string &path,
                  unsigned char digest[SHA512_DIGEST_LENGTH]);
 
-}
 }

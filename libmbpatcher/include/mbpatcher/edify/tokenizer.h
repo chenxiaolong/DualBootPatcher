@@ -24,9 +24,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 enum class EdifyTokenType
@@ -291,5 +289,4 @@ private:
     MB_DISABLE_MOVE_CONSTRUCT_AND_ASSIGN(EdifyTokenizer)
 };
 
-}
 }

@@ -23,9 +23,7 @@
 #include "mbdevice/capi/device.h"
 #include "mbpatcher/cwrapper/ctypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+MB_BEGIN_C_DECLS
 
 MB_EXPORT CFileInfo * mbpatcher_fileinfo_create(void);
 MB_EXPORT void mbpatcher_fileinfo_destroy(CFileInfo *info);
@@ -42,6 +40,4 @@ MB_EXPORT void mbpatcher_fileinfo_set_device(CFileInfo *info, CDevice *device);
 MB_EXPORT char * mbpatcher_fileinfo_rom_id(const CFileInfo *info);
 MB_EXPORT void mbpatcher_fileinfo_set_rom_id(CFileInfo *info, const char *id);
 
-#ifdef __cplusplus
-}
-#endif
+MB_END_C_DECLS

@@ -200,7 +200,7 @@ static bool stop_daemon()
 }
 
 static util::CmdlineIterAction set_kernel_properties_cb(const std::string &name,
-                                                        const optional<std::string> &value,
+                                                        const std::optional<std::string> &value,
                                                         void *userdata)
 {
     (void) userdata;

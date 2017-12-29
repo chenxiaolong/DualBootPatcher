@@ -19,9 +19,7 @@
 
 #pragma once
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 // Formats
@@ -39,5 +37,4 @@ constexpr char FORMAT_NAME_LOKI[]       = "loki";
 constexpr char FORMAT_NAME_MTK[]        = "mtk";
 constexpr char FORMAT_NAME_SONY_ELF[]   = "sony_elf";
 
-}
 }

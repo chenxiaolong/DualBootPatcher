@@ -21,9 +21,7 @@
 
 #include "mblog/base_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 class MB_EXPORT KmsgLogger : public BaseLogger
@@ -41,5 +39,4 @@ private:
     bool _force_error_prio;
 };
 
-}
 }

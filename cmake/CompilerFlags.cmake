@@ -187,11 +187,11 @@ if(NOT MSVC)
         c_std_11
     )
 
-    # Target C++14
+    # Target C++17
     target_compile_features(
         interface.global.CXXVersion
         INTERFACE
-        cxx_std_14
+        cxx_std_17
     )
 endif()
 

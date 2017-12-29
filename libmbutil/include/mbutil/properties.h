@@ -28,9 +28,7 @@
 
 struct timespec;
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 typedef void (*PropertyListCb)(const std::string &key,
@@ -61,26 +59,11 @@ std::string property_get_string(const std::string &key,
                                 const std::string &default_value);
 bool property_get_bool(const std::string &key, bool default_value);
 
-template<typename SIntType>
-inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
-property_get_num(const std::string &key, SIntType default_value)
+template<typename IntType>
+inline IntType property_get_num(const std::string &key, IntType default_value)
 {
     std::string value;
-    SIntType result;
-
-    if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
-        return result;
-    }
-
-    return default_value;
-}
-
-template<typename UIntType>
-inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
-property_get_num(const std::string &key, UIntType default_value)
-{
-    std::string value;
-    UIntType result;
+    IntType result;
 
     if (property_get(key, value) && str_to_num(value.c_str(), 10, result)) {
         return result;
@@ -106,29 +89,13 @@ std::string property_file_get_string(const std::string &path,
 bool property_file_get_bool(const std::string &path, const std::string &key,
                             bool default_value);
 
-template<typename SIntType>
-inline typename std::enable_if_t<std::is_signed<SIntType>::value, SIntType>
-property_file_get_num(const std::string &path, const std::string &key,
-                      SIntType default_value)
+template<typename IntType>
+inline IntType property_file_get_num(const std::string &path,
+                                     const std::string &key,
+                                     IntType default_value)
 {
     std::string value;
-    SIntType result;
-
-    if (property_file_get(path, key, value)
-            && str_to_num(value.c_str(), 10, result)) {
-        return result;
-    }
-
-    return default_value;
-}
-
-template<typename UIntType>
-inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, UIntType>
-property_file_get_num(const std::string &path, const std::string &key,
-                      UIntType default_value)
-{
-    std::string value;
-    UIntType result;
+    IntType result;
 
     if (property_file_get(path, key, value)
             && str_to_num(value.c_str(), 10, result)) {
@@ -147,5 +114,4 @@ bool property_file_get_all(const std::string &path,
 bool property_file_write_all(const std::string &path,
                              const std::unordered_map<std::string, std::string> &map);
 
-}
 }

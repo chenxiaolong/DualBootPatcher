@@ -21,15 +21,13 @@
 
 #include <cstring>
 
+#include "mbcommon/string.h"
+
 #include "mbpatcher/private/fileutils.h"
-#include "mbpatcher/private/stringutils.h"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string MountCmdPatcher::Id = "MountCmdPatcher";
 
@@ -83,9 +81,9 @@ static bool patch_file(const std::string &path)
         return false;
     }
 
-    std::vector<std::string> lines = StringUtils::split(contents, '\n');
+    auto lines = split(contents, '\n');
 
-    for (std::string &line : lines) {
+    for (auto &line : lines) {
         const char *ptr = line.data();
 
         // Skip whitespace
@@ -97,7 +95,7 @@ static bool patch_file(const std::string &path)
         }
     }
 
-    contents = StringUtils::join(lines, "\n");
+    contents = join(lines, "\n");
     FileUtils::write_from_string(path, contents);
 
     return true;
@@ -112,5 +110,4 @@ bool MountCmdPatcher::patch_files(const std::string &directory)
     return true;
 }
 
-}
 }

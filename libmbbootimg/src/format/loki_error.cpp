@@ -21,11 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 struct LokiErrorCategory : std::error_category
@@ -87,6 +83,4 @@ std::string LokiErrorCategory::message(int ev) const
     }
 }
 
-}
-}
 }

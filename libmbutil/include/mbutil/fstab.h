@@ -22,9 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 constexpr unsigned long MF_WAIT             = 1 << 0;
@@ -90,5 +88,4 @@ struct TwrpFstabRec
 std::vector<FstabRec> read_fstab(const std::string &path);
 std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path);
 
-}
 }

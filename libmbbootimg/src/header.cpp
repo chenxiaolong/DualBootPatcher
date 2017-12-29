@@ -34,9 +34,7 @@
     } while (0)
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 Header::Header()
@@ -121,137 +119,136 @@ void Header::set_supported_fields(HeaderFields fields)
 
 // Fields
 
-optional<std::string> Header::board_name() const
+std::optional<std::string> Header::board_name() const
 {
     return m_board_name;
 }
 
-bool Header::set_board_name(optional<std::string> name)
+bool Header::set_board_name(std::optional<std::string> name)
 {
     ENSURE_SUPPORTED(HeaderField::BoardName);
     m_board_name = std::move(name);
     return true;
 }
 
-optional<std::string> Header::kernel_cmdline() const
+std::optional<std::string> Header::kernel_cmdline() const
 {
     return m_cmdline;
 }
 
-bool Header::set_kernel_cmdline(optional<std::string> cmdline)
+bool Header::set_kernel_cmdline(std::optional<std::string> cmdline)
 {
     ENSURE_SUPPORTED(HeaderField::KernelCmdline);
     m_cmdline = std::move(cmdline);
     return true;
 }
 
-optional<uint32_t> Header::page_size() const
+std::optional<uint32_t> Header::page_size() const
 {
     return m_page_size;
 }
 
-bool Header::set_page_size(optional<uint32_t> page_size)
+bool Header::set_page_size(std::optional<uint32_t> page_size)
 {
     ENSURE_SUPPORTED(HeaderField::PageSize);
     m_page_size = std::move(page_size);
     return true;
 }
 
-optional<uint32_t> Header::kernel_address() const
+std::optional<uint32_t> Header::kernel_address() const
 {
     return m_kernel_addr;
 }
 
-bool Header::set_kernel_address(optional<uint32_t> address)
+bool Header::set_kernel_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::KernelAddress);
     m_kernel_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::ramdisk_address() const
+std::optional<uint32_t> Header::ramdisk_address() const
 {
     return m_ramdisk_addr;
 }
 
-bool Header::set_ramdisk_address(optional<uint32_t> address)
+bool Header::set_ramdisk_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::RamdiskAddress);
     m_ramdisk_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::secondboot_address() const
+std::optional<uint32_t> Header::secondboot_address() const
 {
     return m_second_addr;
 }
 
-bool Header::set_secondboot_address(optional<uint32_t> address)
+bool Header::set_secondboot_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::SecondbootAddress);
     m_second_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::kernel_tags_address() const
+std::optional<uint32_t> Header::kernel_tags_address() const
 {
     return m_tags_addr;
 }
 
-bool Header::set_kernel_tags_address(optional<uint32_t> address)
+bool Header::set_kernel_tags_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::KernelTagsAddress);
     m_tags_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_ipl_address() const
+std::optional<uint32_t> Header::sony_ipl_address() const
 {
     return m_ipl_addr;
 }
 
-bool Header::set_sony_ipl_address(optional<uint32_t> address)
+bool Header::set_sony_ipl_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::SonyIplAddress);
     m_ipl_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_rpm_address() const
+std::optional<uint32_t> Header::sony_rpm_address() const
 {
     return m_rpm_addr;
 }
 
-bool Header::set_sony_rpm_address(optional<uint32_t> address)
+bool Header::set_sony_rpm_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::SonyRpmAddress);
     m_rpm_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::sony_appsbl_address() const
+std::optional<uint32_t> Header::sony_appsbl_address() const
 {
     return m_appsbl_addr;
 }
 
-bool Header::set_sony_appsbl_address(optional<uint32_t> address)
+bool Header::set_sony_appsbl_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::SonyAppsblAddress);
     m_appsbl_addr = std::move(address);
     return true;
 }
 
-optional<uint32_t> Header::entrypoint_address() const
+std::optional<uint32_t> Header::entrypoint_address() const
 {
     return m_hdr_entrypoint;
 }
 
-bool Header::set_entrypoint_address(optional<uint32_t> address)
+bool Header::set_entrypoint_address(std::optional<uint32_t> address)
 {
     ENSURE_SUPPORTED(HeaderField::Entrypoint);
     m_hdr_entrypoint = std::move(address);
     return true;
 }
 
-}
 }

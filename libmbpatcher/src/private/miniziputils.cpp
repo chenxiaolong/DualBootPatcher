@@ -60,9 +60,7 @@
 #define LOG_TAG "mbpatcher/private/miniziputils"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 static std::string zlib_error_string(int ret)
@@ -792,5 +790,4 @@ ErrorCode MinizipUtils::add_file(zipFile zf,
     return ErrorCode::NoError;
 }
 
-}
 }

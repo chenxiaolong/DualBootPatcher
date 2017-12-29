@@ -25,9 +25,7 @@
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 struct UnzCtx;
@@ -104,5 +102,4 @@ private:
     static void la_progress_cb(uint64_t bytes, void *userdata);
 };
 
-}
 }

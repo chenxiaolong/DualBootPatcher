@@ -21,9 +21,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 constexpr char ARCH_ARMEABI_V7A[]   = "armeabi-v7a";
@@ -101,5 +99,4 @@ enum class ValidateFlag : uint32_t
 MB_DECLARE_FLAGS(ValidateFlags, ValidateFlag)
 MB_DECLARE_OPERATORS_FOR_FLAGS(ValidateFlags)
 
-}
 }

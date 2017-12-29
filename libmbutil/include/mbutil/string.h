@@ -24,9 +24,7 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 void replace(std::string &source,
@@ -34,24 +32,12 @@ void replace(std::string &source,
 void replace_all(std::string &source,
                  const std::string &from, const std::string &to);
 
-std::vector<std::string> split(const std::string &str,
-                               const std::string &delim);
-std::string join(const std::vector<std::string> &list,
-                 const std::string &delim);
 std::vector<std::string> tokenize(const std::string &str,
                                   const std::string &delims);
 
 std::string hex_string(const unsigned char *data, size_t size);
 
-void trim_left(std::string &s);
-void trim_right(std::string &s);
-void trim(std::string &s);
-std::string trimmed_left(const std::string &s);
-std::string trimmed_right(const std::string &s);
-std::string trimmed(const std::string &s);
-
 char ** dup_cstring_list(const char * const *list);
 void free_cstring_list(char **list);
 
-}
 }

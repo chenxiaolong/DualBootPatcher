@@ -34,9 +34,7 @@
 #endif
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 struct ZipCtx;
@@ -118,5 +116,4 @@ private:
     static int la_close_cb(archive *a, void *userdata);
 };
 
-}
 }

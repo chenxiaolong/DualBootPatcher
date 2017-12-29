@@ -19,9 +19,7 @@
 
 #include "mbpio/path.h"
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 #ifdef _WIN32
@@ -80,5 +78,4 @@ std::string path_join(const std::vector<std::string> &components)
     return path;
 }
 
-}
 }

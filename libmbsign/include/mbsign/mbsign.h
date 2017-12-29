@@ -23,9 +23,7 @@
 
 #include <openssl/evp.h>
 
-namespace mb
-{
-namespace sign
+namespace mb::sign
 {
 
 enum {
@@ -46,5 +44,4 @@ MB_EXPORT bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
 MB_EXPORT bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
                            EVP_PKEY *pkey, bool *result_out);
 
-}
 }

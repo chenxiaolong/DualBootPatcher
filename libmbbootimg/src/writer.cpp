@@ -185,9 +185,7 @@
 
 ///
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 using namespace detail;
@@ -679,5 +677,4 @@ oc::result<void> Writer::register_format(std::unique_ptr<FormatWriter> format)
     return oc::success();
 }
 
-}
 }

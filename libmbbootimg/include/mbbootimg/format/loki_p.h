@@ -29,11 +29,7 @@
 #include "mbbootimg/format/loki_defs.h"
 #include "mbbootimg/writer.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 struct LokiHeader
@@ -58,6 +54,4 @@ static inline void loki_fix_header_byte_order(LokiHeader &header)
 oc::result<void> _loki_patch_file(Writer &writer, File &file,
                                   const void *aboot, size_t aboot_size);
 
-}
-}
 }

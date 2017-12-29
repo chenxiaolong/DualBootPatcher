@@ -26,11 +26,7 @@
 
 #include "mbbootimg/format/sony_elf_glibc_p.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 static inline void sony_elf_fix_ehdr_byte_order(Sony_Elf32_Ehdr &header)
@@ -62,6 +58,4 @@ static inline void sony_elf_fix_phdr_byte_order(Sony_Elf32_Phdr &header)
     header.p_align = mb_le32toh(header.p_align);
 }
 
-}
-}
 }

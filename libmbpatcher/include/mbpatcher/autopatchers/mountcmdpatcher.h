@@ -23,9 +23,7 @@
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class MountCmdPatcher : public AutoPatcher
@@ -49,5 +47,4 @@ public:
     bool patch_files(const std::string &directory) override;
 };
 
-}
 }

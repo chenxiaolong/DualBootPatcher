@@ -21,7 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include "mbcommon/optional.h"
+#include <optional>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
@@ -30,11 +30,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 class MtkFormatWriter : public detail::FormatWriter
@@ -62,9 +58,7 @@ private:
     // Header values
     android::AndroidHeader m_hdr;
 
-    optional<SegmentWriter> m_seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

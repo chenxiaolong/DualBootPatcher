@@ -21,7 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include "mbcommon/optional.h"
+#include <optional>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/mtk_p.h"
@@ -30,11 +30,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 class MtkFormatReader : public detail::FormatReader
@@ -63,13 +59,11 @@ private:
     MtkHeader m_mtk_ramdisk_hdr;
 
     // Offsets
-    optional<uint64_t> m_header_offset;
-    optional<uint64_t> m_mtk_kernel_offset;
-    optional<uint64_t> m_mtk_ramdisk_offset;
+    std::optional<uint64_t> m_header_offset;
+    std::optional<uint64_t> m_mtk_kernel_offset;
+    std::optional<uint64_t> m_mtk_ramdisk_offset;
 
-    optional<SegmentReader> m_seg;
+    std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

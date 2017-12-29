@@ -25,9 +25,7 @@
 #  include "mbpio/posix/delete.h"
 #endif
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 bool delete_recursively(const std::string &path)
@@ -39,5 +37,4 @@ bool delete_recursively(const std::string &path)
 #endif
 }
 
-}
 }

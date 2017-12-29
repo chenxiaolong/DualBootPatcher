@@ -61,6 +61,5 @@ endif()
 
 # Needed for every target
 include(cmake/dependencies/openssl.cmake)
-include(cmake/dependencies/optional.cmake)
 include(cmake/dependencies/outcome.cmake)
 include(cmake/dependencies/rapidjson.cmake)

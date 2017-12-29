@@ -31,9 +31,7 @@
 
 #define LOG_TAG "mbutil/delete"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 class RecursiveDeleter : public FtsWrapper {
@@ -95,5 +93,4 @@ bool delete_recursive(const std::string &path)
     return deleter.run();
 }
 
-}
 }

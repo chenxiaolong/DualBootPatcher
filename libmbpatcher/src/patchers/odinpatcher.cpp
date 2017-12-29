@@ -43,20 +43,15 @@
 #include "mbpatcher/patchers/zippatcher.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
-#include "mbpatcher/private/stringutils.h"
 
 // minizip
 #include "minizip/zip.h"
 
 #define LOG_TAG "mbpatcher/patchers/odinpatcher"
 
-class ar;
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 const std::string OdinPatcher::Id("OdinPatcher");
 
@@ -722,5 +717,4 @@ int OdinPatcher::la_close_cb(archive *a, void *userdata)
     return 0;
 }
 
-}
 }

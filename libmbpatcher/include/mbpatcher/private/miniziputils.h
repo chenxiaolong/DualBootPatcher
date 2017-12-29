@@ -28,9 +28,7 @@
 #include "mbpatcher/errors.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 struct UnzCtx;
@@ -91,5 +89,4 @@ public:
                               const std::string &path);
 };
 
-}
 }

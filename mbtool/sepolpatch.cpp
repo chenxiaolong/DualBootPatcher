@@ -40,9 +40,9 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
-#include "mbutil/string.h"
 
 #include "multiboot.h"
 
@@ -431,8 +431,7 @@ bool selinux_make_permissive(policydb_t *pdb,
         return true;
     case SELinuxResult::Error:
         LOGE("Failed to set type %s to permissive", type_str);
-        [[gnu::fallthrough]];
-        [[clang::fallthrough]];
+        [[fallthrough]];
     default:
         return false;
     }
@@ -825,7 +824,7 @@ static inline bool add_rules(policydb_t *pdb,
     return true;
 }
 
-MB_UNUSED
+[[maybe_unused]]
 static inline bool remove_rules(policydb_t *pdb,
                                 const char *source,
                                 const char *target,
@@ -973,7 +972,7 @@ static bool fix_data_media_rules(policydb_t *pdb)
         }
     }
 
-    std::vector<std::string> pieces = util::split(context, ":");
+    std::vector<std::string> pieces = split(context, ':');
     if (pieces.size() < 3) {
         LOGE("%s: Malformed context string: %s", path, context.c_str());
         return false;

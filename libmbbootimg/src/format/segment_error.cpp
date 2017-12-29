@@ -21,9 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 struct SegmentErrorCategory : std::error_category
@@ -67,5 +65,4 @@ std::string SegmentErrorCategory::message(int ev) const
     }
 }
 
-}
 }

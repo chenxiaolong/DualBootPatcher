@@ -23,9 +23,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class CopyFlag : uint8_t
@@ -45,5 +43,4 @@ bool copy_contents(const std::string &source, const std::string &target);
 bool copy_file(const std::string &source, const std::string &target, CopyFlags flags);
 bool copy_dir(const std::string &source, const std::string &target, CopyFlags flags);
 
-}
 }

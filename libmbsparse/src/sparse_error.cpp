@@ -21,9 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace sparse
+namespace mb::sparse
 {
 
 struct SparseFileErrorCategory : std::error_category
@@ -81,5 +79,4 @@ std::error_code make_error_code(SparseFileError e)
     return {static_cast<int>(e), sparse_file_error_category()};
 }
 
-}
 }

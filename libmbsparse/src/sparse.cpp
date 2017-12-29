@@ -59,12 +59,9 @@
 #  define OPER(...)
 #endif
 
-namespace mb
+namespace mb::sparse
 {
-using namespace detail;
-
-namespace sparse
-{
+using namespace mb::detail;
 using namespace detail;
 
 static void fix_sparse_header_byte_order(SparseHeader &header)
@@ -1000,5 +997,4 @@ oc::result<void> SparseFile::move_to_chunk(uint64_t offset)
     return oc::success();
 }
 
-}
 }

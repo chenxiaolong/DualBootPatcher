@@ -25,9 +25,7 @@
 
 #include "mbcommon/flags.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 enum class ChownFlag : uint8_t
@@ -47,5 +45,4 @@ bool chown(const std::string &path,
            gid_t group,
            ChownFlags flags);
 
-}
 }

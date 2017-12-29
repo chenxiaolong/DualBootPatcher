@@ -28,11 +28,7 @@
 
 #include "mbpio/error.h"
 
-namespace mb
-{
-namespace io
-{
-namespace posix
+namespace mb::io::posix
 {
 
 static int _delete_cb(const char *fpath, const struct stat *sb,
@@ -55,6 +51,4 @@ bool delete_recursively(const std::string &path)
     return nftw(path.c_str(), _delete_cb, 64, FTW_DEPTH | FTW_PHYS) == 0;
 }
 
-}
-}
 }

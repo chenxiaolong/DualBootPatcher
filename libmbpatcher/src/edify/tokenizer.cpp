@@ -26,13 +26,9 @@
 #include "mbcommon/string.h"
 #include "mblog/logging.h"
 
-#include "mbpatcher/private/stringutils.h"
-
 #define LOG_TAG "mbpatcher/edify/tokenizer"
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 EdifyToken::~EdifyToken()
@@ -172,7 +168,7 @@ EdifyTokenWhitespace::EdifyTokenWhitespace(std::string str)
 {
     assert(!str.empty());
 
-    for (char c MB_UNUSED : str) {
+    for (char c [[maybe_unused]] : str) {
         // Should never fail
         assert(std::isspace(c));
     }
@@ -577,5 +573,4 @@ void EdifyTokenizer::dump(const std::vector<EdifyToken *> &tokens)
     }
 }
 
-}
 }

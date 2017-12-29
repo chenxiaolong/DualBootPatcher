@@ -55,10 +55,6 @@
 #  define MB_END_C_DECLS
 #endif
 
-#ifdef __cplusplus
-#  define MB_NO_RETURN [[noreturn]]
-#endif
-
 #if defined(__GNUC__) || defined(__clang__)
 #  if _WIN32
 #    define MB_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
@@ -71,32 +67,6 @@
     __attribute__((format(MB_PRINTF_FORMAT, fmt_arg, var_arg)))
 #  define MB_SCANF(fmt_arg, var_arg) \
     __attribute__((format(MB_SCANF_FORMAT, fmt_arg, var_arg)))
-#  define MB_UNUSED __attribute__((unused))
-#  ifndef MB_NO_RETURN
-#    define MB_NO_RETURN __attribute__((noreturn))
-#  endif
-#  if __cplusplus > 201402L
-#    error Remove MB_NO_DISCARD after switching to C++17
-#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
-#  elif defined(__clang__)
-#    define MB_NO_DISCARD [[clang::warn_unused_result]]
-#    define MB_NO_DISCARD_FUNC [[clang::warn_unused_result]]
-#  elif defined(__GNUC__)
-     // GCC does not support warn_unused_result on types
-#    define MB_NO_DISCARD
-#    define MB_NO_DISCARD_FUNC [[gnu::warn_unused_result]]
-#  endif
-#elif defined(_MSC_VER)
-#  ifndef MB_NO_RETURN
-#    define MB_NO_RETURN __declspec(noreturn)
-#  endif
-#  if __cplusplus > 201402L
-#    error Remove MB_NO_DISCARD after switching to C++17
-#    error Remove MB_NO_DISCARD_FUNC after switching to C++17
-#  else
-#    define MB_NO_DISCARD _Check_return_
-#    define MB_NO_DISCARD_FUNC _Check_return_
-#  endif
 #endif
 
 #ifndef MB_PRINTF
@@ -104,12 +74,6 @@
 #endif
 #ifndef MB_SCANF
 #  define MB_SCANF(fmtarg, firstvararg)
-#endif
-#ifndef MB_UNUSED
-#  define MB_UNUSED
-#endif
-#ifndef MB_NO_RETURN
-#  define MB_NO_RETURN
 #endif
 
 #if defined(__GNUC__)
@@ -132,7 +96,8 @@
  * Use the MB_UNREACHABLE macro (that adds location info), instead of
  * calling this function directly.
  */
-MB_NO_RETURN MB_EXPORT
+[[noreturn]]
+MB_EXPORT
 // stdio.h might not have been included yet, which would make
 // __MINGW_PRINTF_FORMAT undefined on mingw
 #if !defined(_WIN32) || defined(__MINGW_PRINTF_FORMAT)

@@ -200,15 +200,15 @@ void parse_banner(const char* banner, atransport* t) {
 
     // The format is something like:
     // "device::ro.product.name=x;ro.product.model=y;ro.product.device=z;".
-    std::vector<std::string> pieces = mb::util::split(banner, ":");
+    std::vector<std::string> pieces = mb::split(banner, ':');
 
     if (pieces.size() > 2) {
         const std::string& props = pieces[2];
-        for (auto& prop : mb::util::split(props, ";")) {
+        for (auto& prop : mb::split(props, ';')) {
             // The list of properties was traditionally ;-terminated rather than ;-separated.
             if (prop.empty()) continue;
 
-            std::vector<std::string> key_value = mb::util::split(prop, "=");
+            std::vector<std::string> key_value = mb::split(prop, '=');
             if (key_value.size() != 2) continue;
 
             const std::string& key = key_value[0];

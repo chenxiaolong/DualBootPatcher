@@ -25,10 +25,7 @@
 #include "mbcommon/common.h"
 #include "mbpatcher/cwrapper/ctypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+MB_BEGIN_C_DECLS
 
 typedef void (*ProgressUpdatedCallback) (uint64_t, uint64_t, void *);
 typedef void (*FilesUpdatedCallback) (uint64_t, uint64_t, void *);
@@ -51,7 +48,4 @@ MB_EXPORT char ** mbpatcher_autopatcher_new_files(const CAutoPatcher *patcher);
 MB_EXPORT char ** mbpatcher_autopatcher_existing_files(const CAutoPatcher *patcher);
 MB_EXPORT bool mbpatcher_autopatcher_patch_files(CAutoPatcher *patcher, const char *directory);
 
-
-#ifdef __cplusplus
-}
-#endif
+MB_END_C_DECLS

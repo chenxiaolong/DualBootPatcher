@@ -396,7 +396,7 @@ static bool try_extsd_mount(const char *block_dev, const char *mount_point)
         }
     }
 
-    optional<std::string> fstype;
+    std::optional<std::string> fstype;
     if (!util::blkid_get_fs_type(block_dev, fstype)) {
         LOGE("%s: Failed to detect filesystem type: %s",
              block_dev, strerror(errno));
