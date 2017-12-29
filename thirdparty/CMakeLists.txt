@@ -299,6 +299,21 @@ else()
 endif()
 
 ################################################################################
+# Boost for Android
+################################################################################
+
+set(BOOST_VER "1.66.0-1")
+
+if(MBP_TOP_LEVEL_BUILD)
+    get_prebuilt(boost ${BOOST_VER} armeabi-v7a SHA512=8c9911c288125c8315e00d78ca779f555ef11358aa89b0eebb318ceea95d1ce12d2c4e6ce948712e6b8674a550f33ca9e43221abb2869f643916cb2a8add1964)
+    get_prebuilt(boost ${BOOST_VER} arm64-v8a   SHA512=dde62093932d0b2a81a7357c7f8f4b803fd2239b43c10a95e64ffe8bcc442e4787d2bffd0d3e59eeba12095318f54be232a3be88f17f1fbd9458c39d50a727bc)
+    get_prebuilt(boost ${BOOST_VER} x86         SHA512=d815968ec16a645460f79922850f330f125fd372abc1740e5e50b0576f8203c2988fac217f15cea5f8f7050479e4f53abfc897fb579af220cf3612fe7034aacf)
+    get_prebuilt(boost ${BOOST_VER} x86_64      SHA512=e4664b635350c2e43dd6c7a38e3d668f3d4ec3c16c5100baa6e30c06179593cf157c148fc8591005a6e205f104d38785797ebfe0943e39d59773fd0f75ae6ed2)
+else()
+    set(THIRD_PARTY_BOOST_DIR "${MBP_PREBUILTS_BINARY_DIR}/boost/${BOOST_VER}" PARENT_SCOPE)
+endif()
+
+################################################################################
 # procps-ng for Android
 ################################################################################
 
