@@ -1,0 +1,41 @@
+From 08a9babeb68b3b6c9d7065c9fbf5742d6315425a Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Thu, 28 Dec 2017 18:33:00 -0500
+Subject: [PATCH] Call truncate64 syscall directly
+
+---
+ libs/filesystem/src/operations.cpp | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/libs/filesystem/src/operations.cpp b/libs/filesystem/src/operations.cpp
+index 4114e02..ac16cc6 100644
+--- a/libs/filesystem/src/operations.cpp
++++ b/libs/filesystem/src/operations.cpp
+@@ -80,6 +80,7 @@ using std::wstring;
+ #     ifdef __OpenBSD__
+ #       include <sys/param.h>
+ #     elif defined(__ANDROID__)
++#       include <sys/syscall.h>
+ #       include <sys/vfs.h>
+ #     endif
+ #     if !defined(__VXWORKS__)
+@@ -221,7 +222,15 @@ typedef int err_t;
+          || ::mkdir(to.c_str(),from_stat.st_mode)!= 0))
+ #   define BOOST_COPY_FILE(F,T,FailIfExistsBool)copy_file_api(F, T, FailIfExistsBool)
+ #   define BOOST_MOVE_FILE(OLD,NEW)(::rename(OLD, NEW)== 0)
+-#   define BOOST_RESIZE_FILE(P,SZ)(::truncate(P, SZ)== 0)
++#   ifdef __ANDROID__
++#     ifdef __NR_truncate64
++#       define BOOST_RESIZE_FILE(P,SZ)(::syscall(__NR_truncate64, P, SZ)== 0)
++#     else
++#       define BOOST_RESIZE_FILE(P,SZ)(::syscall(__NR_truncate, P, SZ)== 0)
++#     endif
++#   else
++#     define BOOST_RESIZE_FILE(P,SZ)(::truncate(P, SZ)== 0)
++#   endif
+ 
+ #   define BOOST_ERROR_NOT_SUPPORTED ENOSYS
+ #   define BOOST_ERROR_ALREADY_EXISTS EEXIST
+-- 
+2.14.3
+

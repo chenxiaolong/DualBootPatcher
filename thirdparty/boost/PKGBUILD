@@ -1,0 +1,83 @@
+# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=boost
+pkgver=1.66.0
+_boostver=${pkgver//./_}
+pkgrel=1
+pkgdesc='Free peer-reviewed portable C++ source libraries'
+arch=(armv7 aarch64 x86 x86_64)
+url='http://www.boost.org/'
+license=('custom')
+source=("https://dl.bintray.com/boostorg/release/${pkgver}/source/boost_${_boostver}.tar.bz2"
+        0001-Call-truncate64-syscall-directly.patch)
+sha256sums=('5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9'
+            'f1e8a93c34eb684b575412934dca36e768954b010ad42bcfa9f9c73ba1e78bf2')
+
+prepare() {
+    cd "${pkgname}_${_boostver}"
+
+    patch -p1 -i ../0001-Call-truncate64-syscall-directly.patch
+}
+
+build() {
+    export _stagedir="${srcdir}/stagedir"
+    local jobs=$(sed -e 's/.*\(-j *[0-9]\+\).*/\1/' <<< ${MAKEFLAGS})
+
+    local api
+
+    case "${CARCH}" in
+    armv7|x86)
+        api=17
+        ;;
+    aarch64|x86_64)
+        api=21
+        ;;
+    esac
+
+    cd "${pkgname}_${_boostver}"
+
+    ./bootstrap.sh --with-toolset=clang
+
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+
+    local args=(
+        # Target
+        target-os=android
+        toolset=clang
+        # Build type
+        link=shared,static
+        threading=multi
+        variant=release
+        debug-symbols=off
+        # Compiler/linker flags
+        cflags="-ffunction-sections -fdata-sections -fPIC -O3 -fstack-protector-strong" \
+        cxxflags="-ffunction-sections -fdata-sections -fPIC -O3 -fstack-protector-strong -D_FORTIFY_SOURCE=2 -std=c++14" \
+        linkflags="-Wl,--gc-sections" \
+        # Installation
+        --layout=system
+        --prefix="${_stagedir}"
+        # Libraries
+        --without-python
+        ${jobs}
+        install
+    )
+
+    PATH="${srcdir}/toolchain/bin:${PATH}" ./bjam -q "${args[@]}"
+}
+
+package() {
+    cp -a "${_stagedir}"/{lib,include} "${pkgdir}"/
+}
