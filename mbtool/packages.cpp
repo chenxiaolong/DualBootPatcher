@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cinttypes>
 #include <cstring>
 #include <ctime>
 
@@ -144,8 +145,8 @@ void Package::dump()
 {
     static const char *fmt_string = "- %-22s %s";
     static const char *fmt_int    = "- %-22s %d";
-    static const char *fmt_hex    = "- %-22s 0x%x";
-    static const char *fmt_flag   = "- %-22s %s (0x%x)";
+    static const char *fmt_hex    = "- %-22s 0x%" PRIx64;
+    static const char *fmt_flag   = "- %-22s %s (0x%" PRIx64 ")";
 
 #define DUMP_FLAG(FLAG) \
     LOGD(fmt_flag, "", "FLAG_" #FLAG, \
