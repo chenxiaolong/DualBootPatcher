@@ -128,9 +128,12 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=51e31086eb84aea93daec5099c3060e9c35e1689cf6144b1e7000c302d1afd2411cabbcba4c2d655225704fdfeb51fa855547067c3ac2d5e5c55ef5789c5b4ea)
     get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=bf7321187e753b5596ed0f3385b7b76f2f4b4e028a7f4a907593e839451226b1639affcb018c2538c991d8c92af2b02d5035491d0e176335461a38432fb1bb91)
     get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=455c6061df7a9c9625fb7b383e4852908d64b191c2386b19cfd769ccb569b8bce45a884419c0b483273cb2659e0a5ae03506ca3ee900ef478feae586ccacf357)
-else()
-    set(THIRD_PARTY_LIBARCHIVE_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}" PARENT_SCOPE)
-    set(THIRD_PARTY_LIBARCHIVE_LOWAPI_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}" PARENT_SCOPE)
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    # Use API 17 version of the library
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}/${ANDROID_ABI}")
+elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
+    # Use API 21 version of the library
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -144,8 +147,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255)
     get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556)
     get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3)
-else()
-    set(THIRD_PARTY_LIBICONV_DIR "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}/${ANDROID_ABI}")
 endif()
 
 ###############################################################################
@@ -159,8 +162,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092)
-else()
-    set(THIRD_PARTY_LIBLZMA_DIR "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -174,8 +177,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(lz4 ${LZ4_VER} arm64-v8a   SHA512=534a6f6c39bc25f89d328dc937ade807a041f863bcac5653e405d23509357ea3f0bd4ea948b878b69a97925c46d40b943ee5fa63f2ccf4f3e42030eb1dd21d2e)
     get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=b8f491d9bd164f4cf3b114117f42b1a6f28381516e517d059e19036d2e86e6e5522a9e63d9ce778553ef8743c7f9a02a7cdf4b5eb7f171b94954b4be9f364c52)
     get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=d29bfa4508136cb4fae29216ca1dd6fbc2fc5d09b6472ffc462f2a782602021ed9c12296cf27f6aa7eefa968130eb232b9aab90c9c6afebe9efe77e321667cdc)
-else()
-    set(THIRD_PARTY_LZ4_DIR "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -189,8 +192,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libsepol ${LIBSEPOL_VER} arm64-v8a   SHA512=fc3229d925d973165bea2dba1f892ef8b4f97811bd8b6b266be533e0ca36e07c519c72f41b85eb4a053eb0719f6a234dd2f1ecd234ad8b18a3bf06f5e8856815)
     get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=4be6f8592836cebb965c22f29a2028cfd07a1a5467d3aa781d0c9c08d058b2e80eac79e92946a9d1b6e0d314d68d76c421a7997fff7e956fc3b2259823cf0156)
     get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=6384a4ef8d44c122064049fc8668a02c97e8bacf9c39bdbdb5fa4f9397485becfbb6799d63a3490c65a362b2a41fc41020d23b31f144efb0125133434098952e)
-else()
-    set(THIRD_PARTY_LIBSEPOL_DIR "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -204,8 +207,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=fb5110df17096581e0b2faf6d1ff3e6abfe080380a1d87877c3fee854b2ac4719440107e3b6f5eb9a390c226ead8f726765e2062cd098c3fc3ac22443d1506f9)
     get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=b3fff96d96e43d6776b61007146e54138cc41c25b10ed14e2b75ff82ac07c244f66d34d2097f6708d5ebf08d8eae7acb5105131d303208d4e1f5023b6410ad7e)
     get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=7551c14005976f505c301f6470ca777f5505d9e1e99e2d7457917e31855e04fc3cf7f6f1d1ec8fb1c64b71bfdf11d9c035aa40046a2e61d67676949ea0d93f39)
-else()
-    set(THIRD_PARTY_LIBPNG_DIR "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -219,8 +222,14 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=bfba808fd55e7ccf5ce4ca88ff496fc2a3a6aa6c5f68079a2a3b5ec88133aa0f053cbfe200f3e76d3ecaafe2ca4ce3a5d70d795c25bdb17233a163dde878b47e )
     get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=3897a468cb66f8b47325d45cbe197a7feb34e3d8297db6ae1f601ade112cb78d8056ca68d0bd98af2a1facd714de414e747d561e9ca4ffb615d2ccec00a81d7b)
     get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=3bbe49a9ff35b1965d36f7747c04568458f7030fb23f0684c9ff0cf704ec9510a17aa2c0fc7d71ec3bb43b7736d703e9ceffeeb8404a795ec3abe079eca04d57)
-else()
-    set(THIRD_PARTY_FREETYPE2_DIR "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    set(freetype_root "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}/${ANDROID_ABI}")
+    list(APPEND CMAKE_FIND_ROOT_PATH "${freetype_root}")
+
+    # AOSP calls the library libft2 instead of libfreetype for some reason
+    set(FREETYPE_LIBRARY "${freetype_root}/lib/libft2.a" PARENT_SCOPE)
+
+    unset(freetype_root)
 endif()
 
 ################################################################################
@@ -234,8 +243,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=71e310ba96825699907c97d8dd2d0b738bd54f080c4838e965e322ad6329c36439efbc9594e519593c3590e7b0ea4d2a256603d4d3c1e114b14c5b5098b9b2eb)
     get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=f045f2c33a0bd287eb2ddf3f1ddc375c061db4ec9149300e38e2783f72de795716219213f9f3368860893e69ca1384cba1ffdecc5b25ab04c3e3b1ce0e7ec49d)
     get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=715a2cc39f7dd057764bff715ce1f60509bda182780c1c63a941d1ea1a3729ace097ef79370174da1e7f89ed2c217338979e57bcafca9e7ace2c01bed9c60542)
-else()
-    set(THIRD_PARTY_LIBDRM_DIR "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -249,8 +258,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(safe-iop ${SAFE_IOP_VER} arm64-v8a   SHA512=97688da51630653470e6a8cc5dbc23c1bb5f6bb6866ab9fd6726c4062f77c14b28f0723f33d28c5e493b33449fd28305332245fdfe22c6ab6c86df24cdd18f19)
     get_prebuilt(safe-iop ${SAFE_IOP_VER} x86         SHA512=f846ed837ac644bfa6d2cbf5dcef86126a8b1ce02b3f740f028e37b25d882c6b0d28018450796796ceef5426155d2c990e9ee1903f7cd3b8c9760247a6dbffbe)
     get_prebuilt(safe-iop ${SAFE_IOP_VER} x86_64      SHA512=4b6cf93ac93b575bb0c0c909643f844fda52adff491ff27631f4698348c11e751b5ade69a58d9247734c3c5c2e7092b82ae6d6d04ddd3d011979dddb0329a691)
-else()
-    set(THIRD_PARTY_SAFE_IOP_DIR "${MBP_PREBUILTS_BINARY_DIR}/safe-iop/${SAFE_IOP_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/safe-iop/${SAFE_IOP_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -264,8 +273,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=70c0d1e878c21b83c83c1cc02dc4d1e63c03ec68659bd7dd79379d5a6dc24c084307673ed16d36c0d7d4c3d85bcb5f9a3cc4d6a08bea0d0ced03c68cb4c035b6)
     get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=a1d36212b478a82ea7784510fef0a370c407db45c587aa54e41e524fb13f9a9ffc84082e74b72442424ec1994ce430cf356a16d28abd875cc7ea8fddd9bc74c9)
     get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=4bfc8c00ded97f37a9c3ce64f6517f48b8291aacbc80ecb18b906b8366d77086d2f679d8032f16f133d222e8d88a6dda0c6f9215349f71bf88530fec406ed581)
-else()
-    set(THIRD_PARTY_ANDROID_SYSTEM_CORE_DIR "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -279,8 +288,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=d24c8bc1ca17a9050869a62567af894c0e433209967d16adfd0516ac69f8513c7ab351aa7d11216fd85aced7e413bff697d89d7c50f84055647b3757bcaffc9f)
     get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=a0134cf29d07925ea0fe959f186df1ce50041f5e15ebb6f16cd61c374d284b4d94885bbdff2613a329e2d5717af767cd76bd112a20cc2bde6fd863933cfb05f2)
     get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=cbe301865a0e2603450c0a571cf8a757890aafb3cabfb14a5da03e97c7069cecf29626de396bfa4c75d5919dd2b72fa0099b689b3f195853c2ccf6c134353be6)
-else()
-    set(THIRD_PARTY_BORINGSSL_DIR "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -294,8 +303,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(fuse ${FUSE_VER} arm64-v8a   SHA512=f75435a8696067711b50959458180fbeb5e50e39de91b521411fa93ea184172c98b9029c11f9c9d01683e4d13e798bba7322c62e5ca3d19686e24f47eaf1fa71)
     get_prebuilt(fuse ${FUSE_VER} x86         SHA512=9c91b9eddf12400f5fab8859bd0fc728db318caaf75ce493c309a0f8b48879c80ed519ff6d1c6c7900a76a3c2db5240dce44c5a232c9982c7bf6b0309c7061be)
     get_prebuilt(fuse ${FUSE_VER} x86_64      SHA512=55228d906f8f414203e32b923f298e390270b99d0fc039fabf480354657586d4704ffb420b7a163a7224cf2fc7cfab4ca3726ef346a1d66a6f0740a11495f6bf)
-else()
-    set(THIRD_PARTY_FUSE_DIR "${MBP_PREBUILTS_BINARY_DIR}/fuse/${FUSE_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/fuse/${FUSE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -359,3 +368,6 @@ if(MBP_TOP_LEVEL_BUILD)
     file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
 endif()
 ################################################################################
+
+# Ensure parent scope can see the changes to CMAKE_FIND_ROOT_PATH
+set(CMAKE_FIND_ROOT_PATH "${CMAKE_FIND_ROOT_PATH}" PARENT_SCOPE)
