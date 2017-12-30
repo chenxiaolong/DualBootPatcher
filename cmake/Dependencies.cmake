@@ -39,6 +39,7 @@ elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 
     include(cmake/dependencies/android-system-core.cmake)
+    include(cmake/dependencies/boost.cmake)
     include(cmake/dependencies/freetype2.cmake)
     include(cmake/dependencies/fuse.cmake)
     include(cmake/dependencies/iconv.cmake)
