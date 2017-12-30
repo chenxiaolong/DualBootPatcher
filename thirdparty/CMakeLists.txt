@@ -311,34 +311,15 @@ endif()
 # procps-ng for Android
 ################################################################################
 
-# TODO: TO BE REMOVED SOON!
-
-set(PROCPS_NG_VER "3.3.10")
+set(PROCPS_NG_VER "3.3.12-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    file(
-        DOWNLOAD
-        https://dbp.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-        ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-        EXPECTED_HASH MD5=38489848300b3ac68297142ae943cfb5
-        EXPECTED_HASH SHA512=3eb49e02b0372669f4683aa4003f97a285ba2106ed2e847c022f9db2c5a92b8be3611f1409d5fcb75c0789b03df8faeeb453e3625d26c28f2c4c842daedc1e77
-        TLS_VERIFY ON
-        SHOW_PROGRESS
-    )
-
-    if(NOT EXISTS ${MBP_PREBUILTS_BINARY_DIR}/procps-ng)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
-        )
-
-        message(STATUS "Extracting procps-ng for Android ...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-            WORKING_DIRECTORY ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
-        )
-    endif()
-else()
-    set(THIRD_PARTY_PROCPS_NG_DIR "${MBP_PREBUILTS_BINARY_DIR}/procps-ng" PARENT_SCOPE)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} armeabi-v7a SHA512=b9ad536720a8832eefe2a6a685f1ab9b5897c455569ff6c080b0345a82e217dc550144d6a0351801e31e215e1682e0aa6b4cb806101ffb57e4a29a3ac41db4f0)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} arm64-v8a   SHA512=43c46843d7f1aad136806562f79b6772d5f20cf8ff58d3f77e5d0b9c1b34f49a86c5180c1f6df79e0a5cbcca62c76372e58b01770112780a40cae9c71b773fab)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86         SHA512=f8ad8cff112b2e9165fc1bf9df876abc8180a4f79c626413955c394c3f18c656310008eace93e00df5d46aac0db0f3cfb672290486cd8ff0f4b3205900e672be)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86_64      SHA512=fbfc19f9b7ee14f68d7d19a946eb0e229831fc8ff79484ad95d56e0c86b10ed99801be1f5f91b777c6d7341f62e57eb56dc5435314d9cf5b7ac2bee49bf1eb69)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/procps-ng/${PROCPS_NG_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
