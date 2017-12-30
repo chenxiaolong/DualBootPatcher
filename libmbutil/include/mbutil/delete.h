@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -19,11 +19,13 @@
 
 #pragma once
 
-#include <string>
+#include <boost/filesystem/path.hpp>
+
+#include "mbcommon/outcome.h"
 
 namespace mb::util
 {
 
-bool delete_recursive(const std::string &path);
+oc::result<void> delete_recursive(const boost::filesystem::path &path);
 
 }

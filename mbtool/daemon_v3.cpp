@@ -531,8 +531,8 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
         return v3_send_response_invalid(fd);
     }
 
-    bool ret;
-    int saved_errno;
+    bool ret = true;
+    int saved_errno = 0;
 
     switch (request->flag()) {
     case v3::PathDeleteFlag_REMOVE:
@@ -548,8 +548,10 @@ static bool v3_path_delete(int fd, const v3::Request *msg)
         saved_errno = errno;
         break;
     case v3::PathDeleteFlag_RECURSIVE:
-        ret = util::delete_recursive(request->path()->c_str());
-        saved_errno = errno;
+        if (auto r = util::delete_recursive(request->path()->c_str()); !r) {
+            ret = false;
+            saved_errno = r.error().value();
+        }
         break;
     default:
         return v3_send_response_invalid(fd);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -198,9 +198,13 @@ static bool log_wipe_directory(const std::string &mountpoint,
 static bool log_delete_recursive(const std::string &path)
 {
     LOGV("Recursively deleting %s", path.c_str());
-    bool ret = util::delete_recursive(path);
-    LOGV("-> %s", ret ? "Succeeded" : "Failed");
-    return ret;
+    if (auto ret = util::delete_recursive(path); !ret) {
+        LOGV("-> Failed: %s", ret.error().message().c_str());
+        return false;
+    } else {
+        LOGV("-> Succeeded");
+        return true;
+    }
 }
 
 bool wipe_system(const std::shared_ptr<Rom> &rom)
