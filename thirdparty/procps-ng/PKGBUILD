@@ -1,0 +1,72 @@
+# Copyright (C) 2017  Andrew Gunnerson <andrewgunnerson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+pkgname=procps-ng
+pkgver=3.3.12
+pkgrel=1
+pkgdesc="Utilities that provide information out of /proc"
+arch=(armv7 aarch64 x86 x86_64)
+url="https://gitlab.com/procps-ng/procps"
+license=(GPL LGPL)
+source=("https://downloads.sourceforge.net/project/procps-ng/Production/procps-ng-${pkgver}.tar.xz")
+sha512sums=('ea816740ff72cc53d99b5d2e78a511b627ea5b295e0efff67605c56d1ab075abc6b0e2da3df4facbfe903fc9d679e892d351b6884a966d37c6f4bfd9141a924b')
+
+prepare() {
+    cd "${pkgname}-${pkgver}"
+
+    sed -i \
+        -e '/AC_FUNC_MALLOC/d' \
+        -e '/AC_FUNC_REALLOC/d' \
+        configure.ac
+
+    autoreconf -vfi
+}
+
+build() {
+    local abi api
+    abi=$(android_get_abi_name)
+    api=21
+
+    android_build_standalone_toolchain "${srcdir}/toolchain" "${api}"
+    export PATH="${srcdir}/toolchain/bin:${PATH}"
+
+    # __ANDROID_API__ is automatically set only for clang
+    local cflags=" -D__ANDROID_API__=${api}"
+
+    local triplet
+    triplet=$("${srcdir}"/toolchain/bin/*-gcc -dumpmachine)
+
+    cd "${pkgname}-${pkgver}"
+
+    CFLAGS="${cflags}" \
+    ./configure \
+        --host="${triplet}" \
+        --prefix=/ \
+        --without-ncurses
+
+    # We only need the library
+    CFLAGS="${cflags}" \
+    make ./proc/libprocps.la
+}
+
+package() {
+    cd "${pkgname}-${pkgver}"
+
+    make DESTDIR="${pkgdir}" \
+        install-libLTLIBRARIES \
+        install-proc_libprocps_la_includeHEADERS
+
+    find "${pkgdir}" -name '*.la' -delete
+}

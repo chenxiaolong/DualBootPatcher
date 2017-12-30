@@ -5,7 +5,7 @@
 # LIBDRM_FOUND       - True if libdrm found
 
 # Find include directory
-find_path(LIBDRM_INCLUDE_DIR NAMES libdrm/drm.h)
+find_path(LIBDRM_INCLUDE_DIR NAMES drm/drm.h)
 
 # Find library
 find_library(LIBDRM_LIBRARY NAMES drm libdrm)
