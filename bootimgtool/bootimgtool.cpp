@@ -34,6 +34,7 @@
 
 // libmbcommon
 #include <mbcommon/common.h>
+#include <mbcommon/finally.h>
 #include <mbcommon/integer.h>
 #include <mbcommon/libc/stdio.h>
 
@@ -232,28 +233,6 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "        bootimgtool pack boot.img -i /tmp/android --input-kernel /tmp/newkernel\n" \
     "\n"
 
-template <typename F>
-class Finally {
-public:
-    Finally(F f) : _f(f)
-    {
-    }
-
-    ~Finally()
-    {
-        _f();
-    }
-
-private:
-    F _f;
-};
-
-template <typename F>
-Finally<F> finally(F f)
-{
-    return Finally<F>(f);
-}
-
 struct Paths
 {
     std::string header;
@@ -423,7 +402,7 @@ static bool read_header(const std::string &path, Header &header)
     size_t len = 0;
     ssize_t read;
 
-    auto free_line = finally([&]{
+    auto free_line = mb::finally([&]{
         free(line);
     });
 
