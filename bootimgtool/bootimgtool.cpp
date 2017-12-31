@@ -42,7 +42,6 @@
 // libmbcommon
 #include <mbcommon/common.h>
 #include <mbcommon/integer.h>
-#include <mbcommon/libc/stdio.h>
 #include <mbcommon/string.h>
 
 // libmbbootimg

@@ -23,24 +23,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         COMPILE_FLAGS
         "-Wno-format-nonliteral"
     )
-
-    if(ANDROID)
-        set_source_files_properties(
-            src/external/gnulib/getdelim.c
-            PROPERTIES
-            COMPILE_FLAGS
-            "-Wno-conditional-uninitialized -Wno-conversion -Wno-sign-conversion"
-        )
-    endif()
-endif()
-
-if(WIN32)
-    set_source_files_properties(
-        src/external/gnulib/getdelim.c
-        PROPERTIES
-        COMPILE_FLAGS
-        "-Wno-conversion -Wno-sign-compare -Wno-sign-conversion"
-    )
 endif()
 
 set(variants)
@@ -76,28 +58,16 @@ foreach(variant ${variants})
         src/file.cpp
         src/file_error.cpp
         src/file_util.cpp
-        src/libc/stdio.cpp
         src/locale.cpp
         src/string.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/gen/version.cpp
     )
 
-    if(ANDROID)
-        if(${ANDROID_PLATFORM_LEVEL} LESS 21)
-            target_sources(
-                ${lib_target}
-                PRIVATE
-                src/external/gnulib/getdelim.c
-                src/external/gnulib/getline.c
-            )
-        endif()
-    elseif(WIN32)
+    if(WIN32)
         target_sources(
             ${lib_target}
             PRIVATE
             src/file/win32.cpp
-            src/external/gnulib/getdelim.c
-            src/external/gnulib/getline.c
         )
     endif()
 
