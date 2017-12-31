@@ -699,7 +699,7 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     theme: portrait_hdpi
 
-- name: HUAWEI CRO-U00
+- name: Huawei Y3 (2017)
   id: HWCRO-U6580M
   codenames:
     - CRO-U00
