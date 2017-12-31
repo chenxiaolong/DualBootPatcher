@@ -45,9 +45,7 @@
 #define MAX_LOOPDEVS    1024
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 /*!
@@ -216,5 +214,4 @@ bool loopdev_remove_device(const std::string &loopdev)
     return ret == 0;
 }
 
-}
 }

@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <cinttypes>
 #include <cstring>
 #include <ctime>
 
@@ -144,8 +145,8 @@ void Package::dump()
 {
     static const char *fmt_string = "- %-22s %s";
     static const char *fmt_int    = "- %-22s %d";
-    static const char *fmt_hex    = "- %-22s 0x%x";
-    static const char *fmt_flag   = "- %-22s %s (0x%x)";
+    static const char *fmt_hex    = "- %-22s 0x%" PRIx64;
+    static const char *fmt_flag   = "- %-22s %s (0x%" PRIx64 ")";
 
 #define DUMP_FLAG(FLAG) \
     LOGD(fmt_flag, "", "FLAG_" #FLAG, \
@@ -426,21 +427,21 @@ static bool parse_tag_package(pugi::xml_node node, Packages *pkgs)
         } else if (strcmp(name, ATTR_CPU_ABI_OVERRIDE) == 0) {
             pkg->cpu_abi_override = value;
         } else if (strcmp(name, ATTR_FLAGS) == 0) {
-            uint64_t flags;
+            int64_t flags; // Parse as signed integer
             if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid flags: '%s'", value);
                 return false;
             }
             pkg->pkg_flags = static_cast<Package::Flag>(flags);
         } else if (strcmp(name, ATTR_PUBLIC_FLAGS) == 0) {
-            uint64_t flags;
+            int64_t flags; // Parse as signed integer
             if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid public flags: '%s'", value);
                 return false;
             }
             pkg->pkg_public_flags = static_cast<Package::PublicFlag>(flags);
         } else if (strcmp(name, ATTR_PRIVATE_FLAGS) == 0) {
-            uint64_t flags;
+            int64_t flags; // Parse as signed integer
             if (!str_to_num(value, 10, flags)) {
                 LOGE("Invalid private flags: '%s'", value);
                 return false;

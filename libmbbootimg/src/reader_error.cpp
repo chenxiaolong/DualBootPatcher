@@ -19,9 +19,9 @@
 
 #include "mbbootimg/reader_error.h"
 
-namespace mb
-{
-namespace bootimg
+#include <string>
+
+namespace mb::bootimg
 {
 
 struct ReaderErrorCategory : std::error_category
@@ -52,26 +52,27 @@ std::string ReaderErrorCategory::message(int ev) const
     switch (static_cast<ReaderError>(ev)) {
     case ReaderError::InvalidState:
         return "invalid state";
+    case ReaderError::UnknownOption:
+        return "unknown option";
     case ReaderError::InvalidFormatCode:
         return "invalid format code";
     case ReaderError::InvalidFormatName:
         return "invalid format name";
-    case ReaderError::EnabledFormatNotFound:
-        return "enabled format not found";
     case ReaderError::NoFormatSelected:
         return "no format selected";
-    case ReaderError::TooManyFormats:
-        return "too many formats";
     case ReaderError::FormatAlreadyEnabled:
         return "format already enabled";
     case ReaderError::NoFormatsRegistered:
         return "no formats registered";
     case ReaderError::UnknownFileFormat:
         return "unknown file format";
+    case ReaderError::EndOfEntries:
+        return "end of entries";
+    case ReaderError::UnsupportedGoTo:
+        return "go to entry not supported";
     default:
         return "(unknown reader error)";
     }
 }
 
-}
 }

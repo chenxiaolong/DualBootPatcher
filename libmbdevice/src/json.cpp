@@ -19,6 +19,8 @@
 
 #include "mbdevice/json.h"
 
+#include <array>
+
 #include <cassert>
 #include <cstring>
 
@@ -34,9 +36,7 @@
 
 using namespace rapidjson;
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 using DeviceFlagMapping = std::pair<const char *, DeviceFlag>;
@@ -615,5 +615,4 @@ bool device_to_json(const Device &device, std::string &json)
     return true;
 }
 
-}
 }

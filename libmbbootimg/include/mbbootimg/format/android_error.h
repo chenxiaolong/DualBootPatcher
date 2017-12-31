@@ -23,11 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 enum class AndroidError
@@ -58,8 +54,6 @@ MB_EXPORT std::error_code make_error_code(AndroidError e);
 
 MB_EXPORT const std::error_category & android_error_category();
 
-}
-}
 }
 
 namespace std

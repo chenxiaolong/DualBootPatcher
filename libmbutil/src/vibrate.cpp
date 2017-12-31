@@ -33,9 +33,7 @@
 
 #define VIBRATOR_PATH           "/sys/class/timed_output/vibrator/enable"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
@@ -67,5 +65,4 @@ bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms)
     return true;
 }
 
-}
 }

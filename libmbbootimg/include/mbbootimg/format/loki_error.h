@@ -23,11 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 enum class LokiError
@@ -53,18 +49,12 @@ enum class LokiError
     UnsupportedAbootImage               = 42,
     AbootFunctionNotFound               = 43,
     AbootFunctionOutOfRange             = 44,
-
-    // Miscellaneous
-    UnexpectedFileTruncation            = 50,
-    UnexpectedEndOfFile                 = 51,
 };
 
 MB_EXPORT std::error_code make_error_code(LokiError e);
 
 MB_EXPORT const std::error_category & loki_error_category();
 
-}
-}
 }
 
 namespace std

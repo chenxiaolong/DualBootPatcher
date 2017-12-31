@@ -23,11 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 enum class MtkError
@@ -46,8 +42,6 @@ MB_EXPORT std::error_code make_error_code(MtkError e);
 
 MB_EXPORT const std::error_category & mtk_error_category();
 
-}
-}
 }
 
 namespace std

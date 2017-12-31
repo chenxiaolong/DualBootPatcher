@@ -23,9 +23,7 @@
 
 #include <sepol/policydb/policydb.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 constexpr char SELINUX_ENFORCE_FILE[]           = "/sys/fs/selinux/enforce";
@@ -65,5 +63,4 @@ bool selinux_get_process_attr(pid_t pid, SELinuxAttr attr,
 bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
                               const std::string &context);
 
-}
 }

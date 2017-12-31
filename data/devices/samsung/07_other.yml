@@ -363,3 +363,25 @@
       - fbdev
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+
+- name: Samsung Galaxy J2 3G
+  id: Galaxy-J2
+  codenames:
+    - j2
+    - j23g
+    - Galaxy-J2
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sdio_emmc/by-name
+    system:
+      - /dev/block/platform/sdio_emmc/by-name/SYSTEM
+    cache:
+      - /dev/block/platform/sdio_emmc/by-name/CACHE
+    data:
+      - /dev/block/platform/sdio_emmc/by-name/userdata
+    boot:
+      - /dev/block/platform/sdio_emmc/by-name/KERNEL
+    recovery:
+      - /dev/block/platform/sdio_emmc/by-name/RECOVERY

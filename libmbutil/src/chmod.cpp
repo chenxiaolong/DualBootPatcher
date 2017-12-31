@@ -33,9 +33,7 @@
 
 #define LOG_TAG "mbutil/chmod"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 class RecursiveChmod : public FtsWrapper {
@@ -82,8 +80,8 @@ private:
     bool chmod_path()
     {
         if (::chmod(_curr->fts_accpath, _perms) < 0) {
-            format(_error_msg, "%s: Failed to chmod: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to chmod: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -102,5 +100,4 @@ bool chmod(const std::string &path, mode_t perms, ChmodFlags flags)
     }
 }
 
-}
 }

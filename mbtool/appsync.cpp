@@ -467,8 +467,7 @@ static bool do_remove(const std::vector<std::string> &args)
 {
 #define TAG "[remove] "
     const std::string &pkgname = args[0];
-    MB_UNUSED
-    int userid;
+    int userid [[maybe_unused]];
     str_to_num(args[1].c_str(), 10, userid);
 
     for (auto it = config.shared_pkgs.begin();
@@ -781,9 +780,6 @@ static bool proxy_process(int fd, bool can_appsync)
             }
         }
     }
-
-    // Not reached
-    return true;
 }
 
 /*!

@@ -19,9 +19,7 @@
 
 #include "mblog/base_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 BaseLogger::BaseLogger()
@@ -32,5 +30,4 @@ BaseLogger::~BaseLogger()
 {
 }
 
-}
 }

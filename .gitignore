@@ -37,6 +37,7 @@
 /thirdparty/*/src/
 /thirdparty/*/pkg/
 /thirdparty/*/*.pkg.tar.xz
+/thirdparty/*/*.pkg.tar.xz.sig
 /thirdparty/*/*.src.tar.gz
 
 ################################################################################

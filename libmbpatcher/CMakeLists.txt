@@ -29,7 +29,6 @@ foreach(variant ${variants})
         # Private classes
         src/private/fileutils.cpp
         src/private/miniziputils.cpp
-        src/private/stringutils.cpp
         # Autopatchers
         src/autopatchers/standardpatcher.cpp
         src/autopatchers/mountcmdpatcher.cpp
@@ -38,10 +37,6 @@ foreach(variant ${variants})
         src/patchers/ramdiskupdater.cpp
         src/patchers/zippatcher.cpp
     )
-
-    if(WIN32)
-        target_sources(${lib_target} PRIVATE src/private/win32.cpp)
-    endif()
 
     # Includes
     target_include_directories(
@@ -71,15 +66,11 @@ foreach(variant ${variants})
         interface.global.CXXVersion
         interface.mbcommon.library
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
-        mbpio-static
+        mbpio-${variant}
         mblog-${variant}
         minizip-${variant}
         LibArchive::LibArchive
     )
-
-    if(${MBP_BUILD_TARGET} STREQUAL android-app)
-        target_link_libraries(${lib_target} PRIVATE c_compat)
-    endif()
 
     if(UNIX AND NOT ANDROID)
         target_link_libraries(${lib_target} PRIVATE pthread)

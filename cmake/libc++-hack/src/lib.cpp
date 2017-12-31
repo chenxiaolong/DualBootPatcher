@@ -17,23 +17,22 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <dlfcn.h>
 
-#include "mbcommon/common.h"
+// Hack to fix linking issues with libunwind. We don't actually care if
+// libunwind works.
+//
+// [ 45%] Linking CXX executable mbtool
+// /usr/local/google/buildbot/src/android/ndk-r15-release/external/libcxx/../../external/libunwind_llvm/src/AddressSpace.hpp:467: error: undefined reference to 'dladdr'
+// clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+extern "C"
+{
 
-#ifdef __cplusplus
-#  include <cstdarg>
-#  include <cstdbool>
-#  include <cstddef>
-#else
-#  include <stdarg.h>
-#  include <stdbool.h>
-#  include <stddef.h>
-#endif
+int dladdr(const void *addr, Dl_info *info)
+{
+    (void) addr;
+    (void) info;
+    return 0;
+}
 
-MB_BEGIN_C_DECLS
-
-MB_EXPORT void * mb_memmem(const void *haystack, size_t haystacklen,
-                           const void *needle, size_t needlelen);
-
-MB_END_C_DECLS
+}

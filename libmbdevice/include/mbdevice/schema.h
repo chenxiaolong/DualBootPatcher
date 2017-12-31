@@ -27,9 +27,7 @@
 
 #include <rapidjson/schema.h>
 
-namespace mb
-{
-namespace device
+namespace mb::device
 {
 
 MB_EXPORT const char * find_schema(const std::string &uri);
@@ -102,5 +100,4 @@ private:
     std::vector<std::pair<std::string, std::unique_ptr<SchemaDocumentType>>> _schema_docs;
 };
 
-}
 }

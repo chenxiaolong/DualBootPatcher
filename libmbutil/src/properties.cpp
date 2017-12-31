@@ -37,9 +37,7 @@
 
 typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static bool initialized = false;
@@ -399,5 +397,4 @@ bool property_file_write_all(const std::string &path,
     return true;
 }
 
-}
 }

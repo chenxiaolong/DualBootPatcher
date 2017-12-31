@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-FROM fedora:26
+FROM registry.fedoraproject.org/fedora:27
 
 # Install gosu
 ENV GOSU_VERSION 1.10
@@ -31,7 +31,7 @@ RUN dnf -y install gnupg \
     && dnf clean all
 
 # Install tini
-ENV TINI_VERSION v0.14.0
+ENV TINI_VERSION v0.16.1
 RUN dnf -y install gnupg \
     && curl -Lo /usr/local/bin/tini "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini" \
     && curl -Lo /tmp/tini.asc "https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc" \
@@ -45,8 +45,8 @@ RUN dnf -y install gnupg \
     && dnf clean all
 
 # Install Android NDK
-ARG ANDROID_NDK_VERSION=r15c
-ARG ANDROID_NDK_CHECKSUM=0bf02d4e8b85fd770fd7b9b2cdec57f9441f27a2
+ARG ANDROID_NDK_VERSION=r16b
+ARG ANDROID_NDK_CHECKSUM=42aa43aae89a50d1c66c3f9fdecd676936da6128
 ENV ANDROID_NDK_HOME /opt/android-ndk
 ENV ANDROID_NDK ${ANDROID_NDK_HOME}
 

@@ -40,16 +40,16 @@
 
 #include "mbcommon/common.h"
 #include "mbcommon/finally.h"
+#include "mbcommon/string.h"
 #include "mblog/logging.h"
 #include "mbutil/selinux.h"
-#include "mbutil/string.h"
 
 #include "multiboot.h"
 
 #define LOG_TAG "mbtool/sepolpatch"
 
 
-extern "C" int policydb_index_decls(policydb_t *p);
+extern "C" int policydb_index_decls(sepol_handle_t *handle, policydb_t *p);
 
 namespace mb
 {
@@ -327,7 +327,7 @@ bool selinux_raw_reindex(policydb_t *pdb)
 {
     // Recreate maps like type_val_to_struct. libsepol will handle memory
     // deallocation for the old maps
-    return policydb_index_decls(pdb) == 0
+    return policydb_index_decls(nullptr, pdb) == 0
             && policydb_index_classes(pdb) == 0
             && policydb_index_others(nullptr, pdb, 0) == 0;
 }
@@ -431,8 +431,7 @@ bool selinux_make_permissive(policydb_t *pdb,
         return true;
     case SELinuxResult::Error:
         LOGE("Failed to set type %s to permissive", type_str);
-        [[gnu::fallthrough]];
-        [[clang::fallthrough]];
+        [[fallthrough]];
     default:
         return false;
     }
@@ -825,7 +824,7 @@ static inline bool add_rules(policydb_t *pdb,
     return true;
 }
 
-MB_UNUSED
+[[maybe_unused]]
 static inline bool remove_rules(policydb_t *pdb,
                                 const char *source,
                                 const char *target,
@@ -973,7 +972,7 @@ static bool fix_data_media_rules(policydb_t *pdb)
         }
     }
 
-    std::vector<std::string> pieces = util::split(context, ":");
+    std::vector<std::string> pieces = split(context, ':');
     if (pieces.size() < 3) {
         LOGE("%s: Malformed context string: %s", path, context.c_str());
         return false;

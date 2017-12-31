@@ -21,29 +21,20 @@
 
 #include "mbbootimg/reader_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 /*!
  * \brief Enable support for Bump boot image format
  *
- * \return
- *   * #RET_OK if the format is successfully enabled
- *   * #RET_WARN if the format is already enabled
- *   * \<= #RET_FAILED if an error occurs
+ * \return Nothing if the format is successfully enabled. Otherwise, the error
+ *         code.
  */
-int Reader::enable_format_bump()
+oc::result<void> Reader::enable_format_bump()
 {
-    using namespace android;
-
-    MB_PRIVATE(Reader);
-
-    std::unique_ptr<FormatReader> format{new AndroidFormatReader(*this, true)};
-    return priv->register_format(std::move(format));
+    return register_format(
+            std::make_unique<android::AndroidFormatReader>(*this, true));
 }
 
 
-}
 }

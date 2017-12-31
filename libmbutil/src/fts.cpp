@@ -29,9 +29,7 @@
 #include "mbutil/string.h"
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 FtsWrapper::FtsWrapper(std::string path, FtsFlags flags)
@@ -87,7 +85,7 @@ bool FtsWrapper::run()
 
     _ftsp = fts_open(files, fts_flags, nullptr);
     if (!_ftsp) {
-        format(_error_msg, "fts_open failed: %s", strerror(errno));
+        _error_msg = format("fts_open failed: %s", strerror(errno));
         ret = false;
     }
 
@@ -96,8 +94,8 @@ bool FtsWrapper::run()
         case FTS_NS:  // no stat()
         case FTS_DNR: // directory not read
         case FTS_ERR: { // other error
-            format(_error_msg, "fts_read error: %s",
-                   strerror(_curr->fts_errno));
+            _error_msg = format("fts_read error: %s",
+                                strerror(_curr->fts_errno));
             ret = false;
             break;
         }
@@ -238,5 +236,4 @@ FtsWrapper::Actions FtsWrapper::on_reached_socket()
     return Action::Ok;
 }
 
-}
 }

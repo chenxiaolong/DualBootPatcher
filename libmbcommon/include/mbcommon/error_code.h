@@ -19,18 +19,25 @@
 
 #pragma once
 
-#include "mbcommon/guard_p.h"
-
-#include <cstddef>
-
 #include "mbcommon/common.h"
 
-/*! \cond INTERNAL */
-MB_BEGIN_C_DECLS
+#include <system_error>
 
-// Wrap libc functions that aren't available on some platforms
+#ifdef _WIN32
+#  include <windef.h>
+#endif
 
-void * _mb_mempcpy(void *dest, const void *src, size_t n);
+namespace mb
+{
 
-MB_END_C_DECLS
-/*! \endcond */
+MB_EXPORT std::error_code ec_from_errno(int errno_value);
+MB_EXPORT std::error_code ec_from_errno();
+
+#ifdef _WIN32
+MB_EXPORT const std::error_category & win32_error_category();
+
+MB_EXPORT std::error_code ec_from_win32(DWORD error_value);
+MB_EXPORT std::error_code ec_from_win32();
+#endif
+
+}

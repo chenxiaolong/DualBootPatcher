@@ -28,10 +28,11 @@
 #include "mbpatcher/errors.h"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
+
+struct UnzCtx;
+struct ZipCtx;
 
 class MinizipUtils
 {
@@ -44,9 +45,6 @@ public:
     static std::string unz_error_string(int ret);
 
     static std::string zip_error_string(int ret);
-
-    struct UnzCtx;
-    struct ZipCtx;
 
     static unzFile ctx_get_unz_file(UnzCtx *ctx);
 
@@ -91,5 +89,4 @@ public:
                               const std::string &path);
 };
 
-}
 }

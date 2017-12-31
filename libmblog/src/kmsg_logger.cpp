@@ -31,22 +31,20 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
-static constexpr std::size_t KMSG_BUF_SIZE            = 512;
+static constexpr std::size_t KMSG_BUF_SIZE                  = 512;
 
-static constexpr char KMSG_LEVEL_DEBUG[]              = "<7>";
-static constexpr char KMSG_LEVEL_INFO[]               = "<6>";
-static constexpr char KMSG_LEVEL_NOTICE[] MB_UNUSED   = "<5>";
-static constexpr char KMSG_LEVEL_WARNING[]            = "<4>";
-static constexpr char KMSG_LEVEL_ERROR[]              = "<3>";
-static constexpr char KMSG_LEVEL_CRITICAL[] MB_UNUSED = "<2>";
-static constexpr char KMSG_LEVEL_ALERT[] MB_UNUSED    = "<1>";
-static constexpr char KMSG_LEVEL_EMERG[] MB_UNUSED    = "<0>";
-static constexpr char KMSG_LEVEL_DEFAULT[]            = "<d>";
+static constexpr char KMSG_LEVEL_DEBUG[]                    = "<7>";
+static constexpr char KMSG_LEVEL_INFO[]                     = "<6>";
+static constexpr char KMSG_LEVEL_NOTICE[[maybe_unused]][]   = "<5>";
+static constexpr char KMSG_LEVEL_WARNING[]                  = "<4>";
+static constexpr char KMSG_LEVEL_ERROR[]                    = "<3>";
+static constexpr char KMSG_LEVEL_CRITICAL[[maybe_unused]][] = "<2>";
+static constexpr char KMSG_LEVEL_ALERT[[maybe_unused]][]    = "<1>";
+static constexpr char KMSG_LEVEL_EMERG[[maybe_unused]][]    = "<0>";
+static constexpr char KMSG_LEVEL_DEFAULT[]                  = "<d>";
 
 KmsgLogger::KmsgLogger(bool force_error_prio)
     : _force_error_prio(force_error_prio)
@@ -128,5 +126,4 @@ bool KmsgLogger::formatted()
     return true;
 }
 
-}
 }

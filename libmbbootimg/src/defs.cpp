@@ -26,9 +26,7 @@
  * \brief Boot image reader API
  */
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 // Formats documentation
@@ -122,70 +120,4 @@ namespace bootimg
  * \brief Format name for Sony ELF boot images
  */
 
-// Return values documentation
-
-/*!
- * \defgroup MB_BI_RETURN_VALS Return values
- *
- * \brief Common return values for most functions
- */
-
-/*!
- * \def RET_EOF
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Reached EOF
- *
- * Reached end-of-file.
- */
-
-/*!
- * \def RET_OK
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Success error code
- *
- * Success error code.
- */
-
-/*!
- * \def RET_WARN
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Warning
- *
- * The operation raised a warning. The instance can still be used although the
- * functionality may be degraded.
- */
-
-/*!
- * \def RET_FAILED
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Non-fatal error
- *
- * The operation failed non-fatally. The instance can still be used for further
- * operations.
- */
-
-/*!
- * \def RET_FATAL
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Fatal error
- *
- * The operation failed fatally. The instance can no longer be used and should
- * be freed.
- */
-
-/*!
- * \def RET_UNSUPPORTED
- * \ingroup MB_BI_RETURN_VALS
- *
- * \brief Operation not supported
- *
- * The operation is not supported.
- */
-
-}
 }

@@ -17,6 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cerrno>
 #include <clocale>
 #include <cstdio>
 #include <cstdlib>

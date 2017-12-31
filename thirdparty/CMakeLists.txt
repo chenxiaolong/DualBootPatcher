@@ -90,13 +90,13 @@ endif()
 # fuse-exfat for Android
 ################################################################################
 
-set(EXFAT_VER "1.2.6-1")
+set(EXFAT_VER "1.2.7-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=fae530acf2a405291282d7d070a50e7b6788fa09d0e0fde0fcb700c6c1a943099751343104023bcb2f97322f0b61bcbed4ae147eec01401b8a9149a0967998a8)
-    get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=307ac5e3a5c48d8caa29efd050365aad7615e889235dd11b8530e119a03e7562ce5f43e639bdeffd6b0222030c3448ecccf3fd03b4323e214b7212509430e842)
-    get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=deb7d0d6571a0d93f5cb13ab7a7d66b61f52306153a431fc8a73553421ff4918cb582007fbaec7a397a63c38894f3c1f9854e5ceae7cc2b43e0b0a96ae83bf11)
-    get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=a61ef02a2a2df3db573dd7f4fca8acad700686337c1866de968a85fd7d686a760eff1c471899670bd655be89059de7a11f3573a70758275afedd147b4bd6e470)
+    get_prebuilt(exfat ${EXFAT_VER} armeabi-v7a SHA512=f60375270c90430486fd653a1bc59f08822e1864463637542ce36b1beecb2330bce473533004f20498ae8213b338f91f39d2e6649c16343502a2ab1eae6b12c2)
+    get_prebuilt(exfat ${EXFAT_VER} arm64-v8a   SHA512=bf9bde23604e47faea482cea81f14c7901459da35666c862ee40fb5de0c8329578aded2339a3cb7b1559586a5995e9b8a8a06ca7996c16c134c548cd035c99c6)
+    get_prebuilt(exfat ${EXFAT_VER} x86         SHA512=d26d41aa3e1ee03163e7b72065a1ad4ff3ada040877afb4d964991f92357f3bc6e704863e811b44d6325d0745c7a5d39ee0415715d5289a79c7f552528e59512)
+    get_prebuilt(exfat ${EXFAT_VER} x86_64      SHA512=6ea70d0ad356be6e3795645b8eaa2d9b5ce845ea28fdf028a1b5f2b363c09bc5453f72fbaa52082bb1436e4a9842f92db1e22e14c7c3a491bc233164df5c85e8)
 
     foreach(abi armeabi-v7a arm64-v8a x86 x86_64)
         add_sign_files_target(
@@ -117,20 +117,23 @@ endif()
 # libarchive for Android
 ################################################################################
 
-set(LIBARCHIVE_VER "3.3.1-2")
+set(LIBARCHIVE_VER "3.3.2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=95a704e0145b623882b477b0dba1415d37f850105d0526d3b6f73e345781aadd189fcaaafb40f8d835b078dced6316c84fdbf1527501241250200c9130fae88f)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=ac8f260c88930ac58901531c61681ba1c2cf51826b716dffa0394d057437fe0854930bf6d2593b1d690ef525c57bfc1e22b31e90c7342f48d0911ad7368fa597)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=6cb1de2d77cf164c1ef26a29587d361c4a183af9e13fe4ce6b72c77c19556b447c2faa10482e9d657c95a63f3d4e8a723592d79ca8c8f0c54afda5c7b89d3d4f)
-    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=5b199df7af0e9c103ee0968ffa01b9f1971a0cacf4c80a802e64b948b41e8a4c80f1555b422cf85d6403e05db88ca929b1c8a531e78ed19181348a1f9053798c)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=2b2c7ae240d148e6a3e04648a65a81db35455338b4c474320f6881652d0ddc435f19a3d16b1f5e0609da25970c9bc233b5e3a2b833e41c5672e6a25fddfc5d5f)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=5b0091cd7b737c7a0eef4efaec20c5ec0129dbf230336ded9a4a14a15f7c31e0472807b34823c9d9df99e966269593586f560846f793156675ce815690ec4e89)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=6b5911cb6e277c866d747b74d89a0e78fe1c090bcc4ac061c0d2d6903888d375c0cb31bdc9576b97df212e1d8223306742a8dd741c4b14650d1d66b3a36b7fdd)
-    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=e52029e66b4f05f1e275ec0e4471c636af48ad18d80e89bf39797d1d925a6591ca046fe947c717b19bf4ae8d8630fd3b0156ce1bb4adc10ab09aee29d1a87951)
-else()
-    set(THIRD_PARTY_LIBARCHIVE_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}" PARENT_SCOPE)
-    set(THIRD_PARTY_LIBARCHIVE_LOWAPI_DIR "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}" PARENT_SCOPE)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} armeabi-v7a SHA512=d856695ce2332c416e24faea4ac579cbf7fc87605a5f0f4f70b17154178aeccb92f8bb8e6581576df019788f01374929ab639eb7663756b86011c443ae793242)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} arm64-v8a   SHA512=7a1c6a6aee80c9581c1b824c0c395896e211bb0cc188a097cbd26f4ad02879f3662596fc391b806d85d1c350891f6d958573f768e00e610595e7bc966127d136)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86         SHA512=1a500fa7ad3fbb72a341cf0493d2694c0d51ae6d1de8f2de62f227095200c89d71f4d2d455d2c314e49318a2aa719501d8dd0c97792323d1d39e9f8d91670ce0)
+    get_prebuilt(libarchive ${LIBARCHIVE_VER} x86_64      SHA512=eb73f6eec0b4af4ae3e4efcde8bf7235cd0cab017935f5c6c379830dadce115512114220673b1bb344bdd925c1901bd10b450b059130cf19b40029c49b19834f)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} armeabi-v7a SHA512=2f3ef295acee3186aae37475a238026f57493e9173bf445a2cb11d4dd17c67244f6c81dc1f21cf238dd25a4455c96b4fe6898f0cb22162315ae8a32363a257ee)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} arm64-v8a   SHA512=51e31086eb84aea93daec5099c3060e9c35e1689cf6144b1e7000c302d1afd2411cabbcba4c2d655225704fdfeb51fa855547067c3ac2d5e5c55ef5789c5b4ea)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86         SHA512=bf7321187e753b5596ed0f3385b7b76f2f4b4e028a7f4a907593e839451226b1639affcb018c2538c991d8c92af2b02d5035491d0e176335461a38432fb1bb91)
+    get_prebuilt(libarchive-lowapi ${LIBARCHIVE_VER} x86_64      SHA512=455c6061df7a9c9625fb7b383e4852908d64b191c2386b19cfd769ccb569b8bce45a884419c0b483273cb2659e0a5ae03506ca3ee900ef478feae586ccacf357)
+elseif(${MBP_BUILD_TARGET} STREQUAL android-app)
+    # Use API 17 version of the library
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libarchive-lowapi/${LIBARCHIVE_VER}/${ANDROID_ABI}")
+elseif(${MBP_BUILD_TARGET} STREQUAL android-system)
+    # Use API 21 version of the library
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libarchive/${LIBARCHIVE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -144,8 +147,8 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(libiconv ${LIBICONV_VER} arm64-v8a   SHA512=ce1229780ecd372d014ef8a876eba0ec3942f494cd2532985961c827b92ae9853f99e8bd06566bac218619e384bfe7edcb9eaf4da8efbc159d6b5763cbd56255)
     get_prebuilt(libiconv ${LIBICONV_VER} x86         SHA512=6fff503771eab5e021eaf8bbc7952d0d4d1d358f9f7a24ebb2e8e72613d51be04eee0824a10b5271dc32f00f1432b0320758678b4462c7b056ebb543f9ca8556)
     get_prebuilt(libiconv ${LIBICONV_VER} x86_64      SHA512=5da1a7282e9cae8bd9d73efcec61163c740a1d04e513f24445b03b3ef1bab97b4fa2fc5bed245519c0a62ab521484e07eca0ea09696dd7922184380cdb596ec3)
-else()
-    set(THIRD_PARTY_LIBICONV_DIR "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libiconv/${LIBICONV_VER}/${ANDROID_ABI}")
 endif()
 
 ###############################################################################
@@ -159,128 +162,134 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(liblzma ${LIBLZMA_VER} arm64-v8a   SHA512=aacf52a9779c448182f0dcb011bbe0b658019d4b8b6a436070b8c57140787a8638a7696c9cbc5a04c0947b2d309d78a7aa98a85d28a67329a34c0fb01018608b)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86         SHA512=c685fe430601bb35609e9159427a98db4d8e9e5b1f414335216366b643b154c978a02815e5c2507cf73f2fcad32956e4dcc243c3fafbe6afd8e4a948e78d9a67)
     get_prebuilt(liblzma ${LIBLZMA_VER} x86_64      SHA512=e48433585641d3caf86d17fd2ecac8fdeacd236705997303a06ba9a45ecdba94f6d9713386e1d5fa1413743cb459222fd37c3334d10e29e88ff90d1915e34092)
-else()
-    set(THIRD_PARTY_LIBLZMA_DIR "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/liblzma/${LIBLZMA_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # lz4 for Android
 ################################################################################
 
-set(LZ4_VER "131-1")
+set(LZ4_VER "1.8.0-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(lz4 ${LZ4_VER} armeabi-v7a SHA512=e3806e50e89527de9b4061a35ac6ef4be372ec4321a53a19a343ad5c5a29059582d0cdc48baffbd2dfd39332f116b1ea8d32d4662174ad0fdacebaac133edb58)
-    get_prebuilt(lz4 ${LZ4_VER} arm64-v8a   SHA512=262925a98d27ca0afd5dc579b7eca522ae6d15bed80294f34a6ed9b58ce51e321f755260a5f4723af26addf4856e52a8fb490db82b7a1e309dca50e6656bc5fb)
-    get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=4047ddb609ff1b228c8075c70347fab91119e3d5324cfe03eb616ebb6238f3ac9b77b6fdfad79eedb3f0faf81fb1ddd0a7dfd1e0d9012059fa2bed025ac8e5a1)
-    get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=51129cf86be6c5f0b50262be15f3113fc08123df00e12d3474d5fb38c95ea5d0b6ddf5c83ca752d076ddc56920901174bbf2e9a29a3b8072eac3d60259f51334)
-else()
-    set(THIRD_PARTY_LZ4_DIR "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}" PARENT_SCOPE)
+    get_prebuilt(lz4 ${LZ4_VER} armeabi-v7a SHA512=b3dc0e3eca7f81fb7aa20257f37d2ae873af62981b16554f1d022643fcbfe6e7aaa22864c26be9091acc5449a0bc08039c9e0bd5fed04f10e7060456b807311d)
+    get_prebuilt(lz4 ${LZ4_VER} arm64-v8a   SHA512=534a6f6c39bc25f89d328dc937ade807a041f863bcac5653e405d23509357ea3f0bd4ea948b878b69a97925c46d40b943ee5fa63f2ccf4f3e42030eb1dd21d2e)
+    get_prebuilt(lz4 ${LZ4_VER} x86         SHA512=b8f491d9bd164f4cf3b114117f42b1a6f28381516e517d059e19036d2e86e6e5522a9e63d9ce778553ef8743c7f9a02a7cdf4b5eb7f171b94954b4be9f364c52)
+    get_prebuilt(lz4 ${LZ4_VER} x86_64      SHA512=d29bfa4508136cb4fae29216ca1dd6fbc2fc5d09b6472ffc462f2a782602021ed9c12296cf27f6aa7eefa968130eb232b9aab90c9c6afebe9efe77e321667cdc)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/lz4/${LZ4_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # libsepol for Android
 ################################################################################
 
-set(LIBSEPOL_VER "7.1.1_r28-1")
+set(LIBSEPOL_VER "8.1.0_r2-2")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} armeabi-v7a SHA512=2e18d72ca987552355fe97238692e271402c44e893cd0fdae5bb4730dec608c6b34639d5080f2dccbf4cf8abe6f329a9139679b75c4fd1905ad92fc079d262ff)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} arm64-v8a   SHA512=dac3da7bff81f6bb363bd93875715860f78e984a66ead4a6610de92f128a8815d603484dc099800d61a2b261e30bd6962a7f6e36075804bd0a981b1b98d74eda)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=d846ca9a48c1b4880aa61598c2dd62bebe9497e8c24720b8e5fb11be4770ec90d3f01a7e60b1d6e19c5b27e89540449f6eb1402b6bd1fdb291d1f03e18d0e307)
-    get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=3c6f16f22b3d63ca3818809c9c03f9dc13ab6516194d716bb30bd07d38ba0c47d840d02b4dab34cac6d92d5bd50e7c41c70f7c8fb2981875c65f7a46ee2cde9d)
-else()
-    set(THIRD_PARTY_LIBSEPOL_DIR "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}" PARENT_SCOPE)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} armeabi-v7a SHA512=10869a22e56b8b58624fef45849fac29d386ecb738e5733900ef26244f6747662e65dad40fb3bed845cc1d30f98a441d71da03a6edf837f4a6bcc904f662bd7c)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} arm64-v8a   SHA512=fc3229d925d973165bea2dba1f892ef8b4f97811bd8b6b266be533e0ca36e07c519c72f41b85eb4a053eb0719f6a234dd2f1ecd234ad8b18a3bf06f5e8856815)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} x86         SHA512=4be6f8592836cebb965c22f29a2028cfd07a1a5467d3aa781d0c9c08d058b2e80eac79e92946a9d1b6e0d314d68d76c421a7997fff7e956fc3b2259823cf0156)
+    get_prebuilt(libsepol ${LIBSEPOL_VER} x86_64      SHA512=6384a4ef8d44c122064049fc8668a02c97e8bacf9c39bdbdb5fa4f9397485becfbb6799d63a3490c65a362b2a41fc41020d23b31f144efb0125133434098952e)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libsepol/${LIBSEPOL_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # libpng for Android
 ################################################################################
 
-set(LIBPNG_VER "7.1.1_r28-1")
+set(LIBPNG_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=793d430c17a4bc7db9f57e7c12032c64c648d266d05f7f519f3aa63ca33178e81e012c1c4be4be7dde6baaad61fbe641e48547a9b88643098d22d056607a2dd3)
-    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=b61ec5cd83644bdc0ae1f5562fdb590bbd64cbd4175296bd3ddbe7d11d269031a91cb77c24cc240dd0f9318116c6d9c299796cbaee744585e521d24f5f54c09b)
-    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=12001cdf6684bfe5ec2f1c19fa85363a1a25480f44724de47ba5530b8ae34d18e81b5c8701a920317c16d53bc2250ae9794aa83d2bd3965df9113db5cc7f9653)
-    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=1cd2e27bfa43c3cce484a2e1ecd1e8fd53cb54d26535e0c5fcd113a2c3ad203087af06f56cc6b66d51a8a4236b9bea0e963cb9d1ab8b6ae8a0f9699b02957b5a)
-else()
-    set(THIRD_PARTY_LIBPNG_DIR "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}" PARENT_SCOPE)
+    get_prebuilt(libpng ${LIBPNG_VER} armeabi-v7a SHA512=0f1a34e27b39cb54aea366c9ba496ccec5faca4dcdb03ba75e91b5e8cadb4f6c88a6feb48e00df136561df360e0a7ce5540a300223f7377b3fc93df1c8f07958)
+    get_prebuilt(libpng ${LIBPNG_VER} arm64-v8a   SHA512=fb5110df17096581e0b2faf6d1ff3e6abfe080380a1d87877c3fee854b2ac4719440107e3b6f5eb9a390c226ead8f726765e2062cd098c3fc3ac22443d1506f9)
+    get_prebuilt(libpng ${LIBPNG_VER} x86         SHA512=b3fff96d96e43d6776b61007146e54138cc41c25b10ed14e2b75ff82ac07c244f66d34d2097f6708d5ebf08d8eae7acb5105131d303208d4e1f5023b6410ad7e)
+    get_prebuilt(libpng ${LIBPNG_VER} x86_64      SHA512=7551c14005976f505c301f6470ca777f5505d9e1e99e2d7457917e31855e04fc3cf7f6f1d1ec8fb1c64b71bfdf11d9c035aa40046a2e61d67676949ea0d93f39)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libpng/${LIBPNG_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # freetype2 for Android
 ################################################################################
 
-set(FREETYPE2_VER "7.1.1_r28-1")
+set(FREETYPE2_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} armeabi-v7a SHA512=35a25bc2ba2f6b25db6bd603f38797be8c5ab4a40e9c261e6e3e9647fe73e6a6d1ffe219e9b2432f5449b0de0a6a0442a7add6de2746ec43bb3ae618cb3c9778)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=6b6d7f5b9df89adf8d696d6b133e5003b186952d923a3db1031b643add0945e25eb312e8b378a7f878a955d353ffd90040ebd1b1ee9cb660aa8a3b81c0996d33)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=96797a3c2e20e7c5455721d55090d45960ae61c381786647db2ef7757713e54e7130a2735af2b2d9ee34058c8cbcbe1d51c1927915df9a34070a776325ac832a)
-    get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=0de6b6735f4b9c2b2e6de5eb622752ca089c2629ea03f1396ec49397de517fe3ba55ae4c955cfc80f5227de226f2742f2360b28b5bcae437e63725cc03927afd)
-else()
-    set(THIRD_PARTY_FREETYPE2_DIR "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}" PARENT_SCOPE)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} armeabi-v7a SHA512=af1277a2c4422640e8de4c0406e590b06a18227cfe35799f3939e65fb50c08de3376e58175583771b802e5a03bacd90fb2bf5a13c1369296084ab6f8c8240696)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} arm64-v8a   SHA512=bfba808fd55e7ccf5ce4ca88ff496fc2a3a6aa6c5f68079a2a3b5ec88133aa0f053cbfe200f3e76d3ecaafe2ca4ce3a5d70d795c25bdb17233a163dde878b47e )
+    get_prebuilt(freetype2 ${FREETYPE2_VER} x86         SHA512=3897a468cb66f8b47325d45cbe197a7feb34e3d8297db6ae1f601ade112cb78d8056ca68d0bd98af2a1facd714de414e747d561e9ca4ffb615d2ccec00a81d7b)
+    get_prebuilt(freetype2 ${FREETYPE2_VER} x86_64      SHA512=3bbe49a9ff35b1965d36f7747c04568458f7030fb23f0684c9ff0cf704ec9510a17aa2c0fc7d71ec3bb43b7736d703e9ceffeeb8404a795ec3abe079eca04d57)
+elseif(ANDROID)
+    set(freetype_root "${MBP_PREBUILTS_BINARY_DIR}/freetype2/${FREETYPE2_VER}/${ANDROID_ABI}")
+    list(APPEND CMAKE_FIND_ROOT_PATH "${freetype_root}")
+
+    # AOSP calls the library libft2 instead of libfreetype for some reason
+    set(FREETYPE_LIBRARY "${freetype_root}/lib/libft2.a" PARENT_SCOPE)
+
+    unset(freetype_root)
 endif()
 
 ################################################################################
 # libdrm for Android
 ################################################################################
 
-set(LIBDRM_VER "7.1.1_r28-1")
+set(LIBDRM_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=7bc3683546d387bacf706c872566211afb22b01ed479e7eccf8906cbe767e497e20c437e8249835db1308d3b189dc7245b70620edc465014e35d7861d52d4407)
-    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=9c5d37c5973d9442d2eb1808fb0195936cf91c320a908b7305e64d3b8672d7f22ebe6b2ab20b5a201c648633db667bfef50ca15d416d63e353dca777fc0581bc)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=be1cfca18cef6bb8dc8c37036cf578ad9f137ca5c27a6b55f316ed291258145f97126a6ddd387110f2125c3b8cd3af9d7dde0a8f669bc3057b3661133cda8b6d)
-    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=6a3c99878dfd4a3bd9896fa3f71431c48f2703cef5bce5f448cb44098330cd46795308605027db54668791aba0ef0448b76c1fd3211f891379017374fbf72417)
-else()
-    set(THIRD_PARTY_LIBDRM_DIR "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}" PARENT_SCOPE)
+    get_prebuilt(libdrm ${LIBDRM_VER} armeabi-v7a SHA512=ddc784d7a4289ca86fe98fb524a1a1fa5d087b38dd2bd94f7eb3bc5396cc39237cd0cac681a6b7fc14af27828d9723ddc0181fce0cf1db732bb54ccb42cd33d3)
+    get_prebuilt(libdrm ${LIBDRM_VER} arm64-v8a   SHA512=71e310ba96825699907c97d8dd2d0b738bd54f080c4838e965e322ad6329c36439efbc9594e519593c3590e7b0ea4d2a256603d4d3c1e114b14c5b5098b9b2eb)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86         SHA512=f045f2c33a0bd287eb2ddf3f1ddc375c061db4ec9149300e38e2783f72de795716219213f9f3368860893e69ca1384cba1ffdecc5b25ab04c3e3b1ce0e7ec49d)
+    get_prebuilt(libdrm ${LIBDRM_VER} x86_64      SHA512=715a2cc39f7dd057764bff715ce1f60509bda182780c1c63a941d1ea1a3729ace097ef79370174da1e7f89ed2c217338979e57bcafca9e7ace2c01bed9c60542)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/libdrm/${LIBDRM_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # safe-iop for Android
 ################################################################################
 
-set(SAFE_IOP_VER "7.1.1_r28-1")
+set(SAFE_IOP_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} armeabi-v7a SHA512=3202b5e9b88c1bee4dd5291f43fcd130f3d2335432b9c2fbaa988afa9456c1490c293d04d7bcf4390eb3643000668167f3a79db8b5ed615020eff020fc2dc095)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} arm64-v8a   SHA512=d3c3d689d4f14ad239178ecb57e4d4d04568793b20ae34470889d617017237228a58576f3954a6b328153632cb4076b92f0d0cab6e095c329cfce417ada02400)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86         SHA512=d4172e8d253c60bde5586e9de3d591885b8c73de46ef3f6ddabab0519828b20701610daade253699943c0e0b7e4d3378f7e7815a5fd6ca59ee202c590254be55)
-    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86_64      SHA512=c823420e85ed4919efb3afa38de855e1393a06d81e8fe293d3ae26c098b859b9f7df7fe6e0847027d5628293af4924b04e708d8e01e4d01705a2bdc223740ea3)
-else()
-    set(THIRD_PARTY_SAFE_IOP_DIR "${MBP_PREBUILTS_BINARY_DIR}/safe-iop/${SAFE_IOP_VER}" PARENT_SCOPE)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} armeabi-v7a SHA512=420ed2ad3734c0424166802b5db626393aab45dbaaa3482d318555d97c97a62a6a2221b80123eab9ff2338d10333efa7c408a52560d84153a4eb6b28d1ee2270)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} arm64-v8a   SHA512=97688da51630653470e6a8cc5dbc23c1bb5f6bb6866ab9fd6726c4062f77c14b28f0723f33d28c5e493b33449fd28305332245fdfe22c6ab6c86df24cdd18f19)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86         SHA512=f846ed837ac644bfa6d2cbf5dcef86126a8b1ce02b3f740f028e37b25d882c6b0d28018450796796ceef5426155d2c990e9ee1903f7cd3b8c9760247a6dbffbe)
+    get_prebuilt(safe-iop ${SAFE_IOP_VER} x86_64      SHA512=4b6cf93ac93b575bb0c0c909643f844fda52adff491ff27631f4698348c11e751b5ade69a58d9247734c3c5c2e7092b82ae6d6d04ddd3d011979dddb0329a691)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/safe-iop/${SAFE_IOP_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # AOSP system/core libraries
 ################################################################################
 
-set(ANDROID_SYSTEM_CORE_VER "7.1.1_r28-1")
+set(ANDROID_SYSTEM_CORE_VER "8.1.0_r2-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} armeabi-v7a SHA512=d8799859df657420516002eceb7e2e6f340f569db7028d5df2923650ba42f37fd9770fe15c329686cf06033235b80cf8365fe0f2c3e9ed1a48962f33ae550092)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=24be099388ebe69bc7fec2570d18f8a2dc5b9f4241d306a6d35ffb56cc1f698b55802847bc3cf73197c720056e424521ac42bc401b5040c90ac5ce594c4f7405)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=d13a4916eb0fe674f8ea267c5d3b2e01bab6675f12cddd9a37b46e409b98e4708474e9f5fbf1f25a8af4f6cf9fb8e6031b39311fa55b41573a080e5b368be32a)
-    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=899656a0adc8de35e2cfc3762c4bebec07cc44afa77aa58f714301385ba2aedb4d37f04849cb03507e7b7b833c6e47f37e8c75866f89be84daf4df4c85d991f2)
-else()
-    set(THIRD_PARTY_ANDROID_SYSTEM_CORE_DIR "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}" PARENT_SCOPE)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} armeabi-v7a SHA512=970ab64fd94a20df0f597c11322475a150bd1b89f1f2115b14213e571d53637e9ca66e78f9612e6c5228a0c80f9b6e6de6307b03cef7fd9ab35b23ffaa8b8b6d)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} arm64-v8a   SHA512=70c0d1e878c21b83c83c1cc02dc4d1e63c03ec68659bd7dd79379d5a6dc24c084307673ed16d36c0d7d4c3d85bcb5f9a3cc4d6a08bea0d0ced03c68cb4c035b6)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86         SHA512=a1d36212b478a82ea7784510fef0a370c407db45c587aa54e41e524fb13f9a9ffc84082e74b72442424ec1994ce430cf356a16d28abd875cc7ea8fddd9bc74c9)
+    get_prebuilt(android-system-core ${ANDROID_SYSTEM_CORE_VER} x86_64      SHA512=4bfc8c00ded97f37a9c3ce64f6517f48b8291aacbc80ecb18b906b8366d77086d2f679d8032f16f133d222e8d88a6dda0c6f9215349f71bf88530fec406ed581)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/android-system-core/${ANDROID_SYSTEM_CORE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # boringssl for Android
 ################################################################################
 
-set(BORINGSSL_VER "r3955.bbfe603-1")
+set(BORINGSSL_VER "r4872.0a54e9984-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    get_prebuilt(boringssl ${BORINGSSL_VER} armeabi-v7a SHA512=472b281a4bc380bf96acc392333410b89d3102c20d4a30e150a4c295bcec386f288c6aa1469f59e54e588d33c3d130905560b3b9bb701370b5bb3226523430d6)
-    get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=e96210ddeb12b4d90c6baac6eeb122485fd84f9ba984100a0f8e978c1eab383b59dc11aef35d4acb7e3388c2214aedc8b891acb3ed1bc429a1361d0907eb8049)
-    get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=118ba17765bc8168a1ab62642f6707354f39d12e09768ede2fd63c1d370d89f5594ed045756d57eb0a9b031da45f5234eff0dc51f0de99365145758e63c71129)
-    get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=f335b1c6c49e83ffefdc4e41fcad7ab83e49346eeacfffa0b240831aa25c08204201711a9309aa45f8530ad3545b6808c68def27432c07317dc4ae5601213c04)
-else()
-    set(THIRD_PARTY_BORINGSSL_DIR "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}" PARENT_SCOPE)
+    get_prebuilt(boringssl ${BORINGSSL_VER} armeabi-v7a SHA512=3cb0278e7363c9766e9dfe41599a5a36480c7612ebf80672b75d5cc75d7cb63c7026686b19a07cbf678a82b7d919ce8f468e555ed7dfb1b5b71e59dbac76a516)
+    get_prebuilt(boringssl ${BORINGSSL_VER} arm64-v8a   SHA512=d24c8bc1ca17a9050869a62567af894c0e433209967d16adfd0516ac69f8513c7ab351aa7d11216fd85aced7e413bff697d89d7c50f84055647b3757bcaffc9f)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86         SHA512=a0134cf29d07925ea0fe959f186df1ce50041f5e15ebb6f16cd61c374d284b4d94885bbdff2613a329e2d5717af767cd76bd112a20cc2bde6fd863933cfb05f2)
+    get_prebuilt(boringssl ${BORINGSSL_VER} x86_64      SHA512=cbe301865a0e2603450c0a571cf8a757890aafb3cabfb14a5da03e97c7069cecf29626de396bfa4c75d5919dd2b72fa0099b689b3f195853c2ccf6c134353be6)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/boringssl/${BORINGSSL_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -294,42 +303,23 @@ if(MBP_TOP_LEVEL_BUILD)
     get_prebuilt(fuse ${FUSE_VER} arm64-v8a   SHA512=f75435a8696067711b50959458180fbeb5e50e39de91b521411fa93ea184172c98b9029c11f9c9d01683e4d13e798bba7322c62e5ca3d19686e24f47eaf1fa71)
     get_prebuilt(fuse ${FUSE_VER} x86         SHA512=9c91b9eddf12400f5fab8859bd0fc728db318caaf75ce493c309a0f8b48879c80ed519ff6d1c6c7900a76a3c2db5240dce44c5a232c9982c7bf6b0309c7061be)
     get_prebuilt(fuse ${FUSE_VER} x86_64      SHA512=55228d906f8f414203e32b923f298e390270b99d0fc039fabf480354657586d4704ffb420b7a163a7224cf2fc7cfab4ca3726ef346a1d66a6f0740a11495f6bf)
-else()
-    set(THIRD_PARTY_FUSE_DIR "${MBP_PREBUILTS_BINARY_DIR}/fuse/${FUSE_VER}" PARENT_SCOPE)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/fuse/${FUSE_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
 # procps-ng for Android
 ################################################################################
 
-# TODO: TO BE REMOVED SOON!
-
-set(PROCPS_NG_VER "3.3.10")
+set(PROCPS_NG_VER "3.3.12-1")
 
 if(MBP_TOP_LEVEL_BUILD)
-    file(
-        DOWNLOAD
-        https://dbp.noobdev.io/misc/prebuilts/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-        ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-        EXPECTED_HASH MD5=38489848300b3ac68297142ae943cfb5
-        EXPECTED_HASH SHA512=3eb49e02b0372669f4683aa4003f97a285ba2106ed2e847c022f9db2c5a92b8be3611f1409d5fcb75c0789b03df8faeeb453e3625d26c28f2c4c842daedc1e77
-        TLS_VERIFY ON
-        SHOW_PROGRESS
-    )
-
-    if(NOT EXISTS ${MBP_PREBUILTS_BINARY_DIR}/procps-ng)
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
-        )
-
-        message(STATUS "Extracting procps-ng for Android ...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf ${MBP_PREBUILTS_DIR}/procps-ng-${PROCPS_NG_VER}_android.tar.bz2
-            WORKING_DIRECTORY ${MBP_PREBUILTS_BINARY_DIR}/procps-ng
-        )
-    endif()
-else()
-    set(THIRD_PARTY_PROCPS_NG_DIR "${MBP_PREBUILTS_BINARY_DIR}/procps-ng" PARENT_SCOPE)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} armeabi-v7a SHA512=b9ad536720a8832eefe2a6a685f1ab9b5897c455569ff6c080b0345a82e217dc550144d6a0351801e31e215e1682e0aa6b4cb806101ffb57e4a29a3ac41db4f0)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} arm64-v8a   SHA512=43c46843d7f1aad136806562f79b6772d5f20cf8ff58d3f77e5d0b9c1b34f49a86c5180c1f6df79e0a5cbcca62c76372e58b01770112780a40cae9c71b773fab)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86         SHA512=f8ad8cff112b2e9165fc1bf9df876abc8180a4f79c626413955c394c3f18c656310008eace93e00df5d46aac0db0f3cfb672290486cd8ff0f4b3205900e672be)
+    get_prebuilt(procps-ng ${PROCPS_NG_VER} x86_64      SHA512=fbfc19f9b7ee14f68d7d19a946eb0e229831fc8ff79484ad95d56e0c86b10ed99801be1f5f91b777c6d7341f62e57eb56dc5435314d9cf5b7ac2bee49bf1eb69)
+elseif(ANDROID)
+    list(APPEND CMAKE_FIND_ROOT_PATH "${MBP_PREBUILTS_BINARY_DIR}/procps-ng/${PROCPS_NG_VER}/${ANDROID_ABI}")
 endif()
 
 ################################################################################
@@ -359,3 +349,6 @@ if(MBP_TOP_LEVEL_BUILD)
     file(LOCK ${MBP_PREBUILTS_DIR} DIRECTORY RELEASE)
 endif()
 ################################################################################
+
+# Ensure parent scope can see the changes to CMAKE_FIND_ROOT_PATH
+set(CMAKE_FIND_ROOT_PATH "${CMAKE_FIND_ROOT_PATH}" PARENT_SCOPE)

@@ -23,11 +23,7 @@
 
 #include "mbbootimg/header.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 constexpr HeaderFields SUPPORTED_FIELDS =
@@ -39,6 +35,4 @@ constexpr HeaderFields SUPPORTED_FIELDS =
         | HeaderField::KernelCmdline
         | HeaderField::Entrypoint;
 
-}
-}
 }

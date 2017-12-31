@@ -105,6 +105,9 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     "  rpm             Rpm image                                     [    S]\n" \
     "  appsbl          Appsbl image                                  [    S]\n"
 
+#define HELP_IMAGES_ABOOT \
+    "  aboot           Aboot image                                   [  L  ]\n"
+
 #define HELP_LEGEND \
     "Legend:\n" \
     "  [A B L M S]\n" \
@@ -196,6 +199,7 @@ typedef std::unique_ptr<FILE, decltype(fclose) *> ScopedFILE;
     HELP_HEADERS \
     "\n" \
     HELP_IMAGES \
+    HELP_IMAGES_ABOOT \
     "\n" \
     HELP_LEGEND \
     "\n" \
@@ -269,27 +273,27 @@ static void prepend_if_empty(Paths &paths, const std::string &dir,
                              const std::string &prefix)
 {
     if (paths.header.empty())
-        paths.header = io::pathJoin({dir, prefix + "header.txt"});
+        paths.header = mb::io::path_join({dir, prefix + "header.txt"});
     if (paths.kernel.empty())
-        paths.kernel = io::pathJoin({dir, prefix + IMAGE_KERNEL});
+        paths.kernel = mb::io::path_join({dir, prefix + IMAGE_KERNEL});
     if (paths.ramdisk.empty())
-        paths.ramdisk = io::pathJoin({dir, prefix + IMAGE_RAMDISK});
+        paths.ramdisk = mb::io::path_join({dir, prefix + IMAGE_RAMDISK});
     if (paths.second.empty())
-        paths.second = io::pathJoin({dir, prefix + IMAGE_SECOND});
+        paths.second = mb::io::path_join({dir, prefix + IMAGE_SECOND});
     if (paths.dt.empty())
-        paths.dt = io::pathJoin({dir, prefix + IMAGE_DT});
+        paths.dt = mb::io::path_join({dir, prefix + IMAGE_DT});
     if (paths.aboot.empty())
-        paths.aboot = io::pathJoin({dir, prefix + IMAGE_ABOOT});
+        paths.aboot = mb::io::path_join({dir, prefix + IMAGE_ABOOT});
     if (paths.kernel_mtkhdr.empty())
-        paths.kernel_mtkhdr = io::pathJoin({dir, prefix + IMAGE_KERNEL_MTKHDR});
+        paths.kernel_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_KERNEL_MTKHDR});
     if (paths.ramdisk_mtkhdr.empty())
-        paths.ramdisk_mtkhdr = io::pathJoin({dir, prefix + IMAGE_RAMDISK_MTKHDR});
+        paths.ramdisk_mtkhdr = mb::io::path_join({dir, prefix + IMAGE_RAMDISK_MTKHDR});
     if (paths.ipl.empty())
-        paths.ipl = io::pathJoin({dir, prefix + IMAGE_IPL});
+        paths.ipl = mb::io::path_join({dir, prefix + IMAGE_IPL});
     if (paths.rpm.empty())
-        paths.rpm = io::pathJoin({dir, prefix + IMAGE_RPM});
+        paths.rpm = mb::io::path_join({dir, prefix + IMAGE_RPM});
     if (paths.appsbl.empty())
-        paths.appsbl = io::pathJoin({dir, prefix + IMAGE_APPSBL});
+        paths.appsbl = mb::io::path_join({dir, prefix + IMAGE_APPSBL});
 }
 
 static void absolute_to_offset(uint32_t *base_ptr,
@@ -662,12 +666,10 @@ static bool write_data_file_to_entry(const std::string &path, Writer &writer)
     while (true) {
         n = fread(buf, 1, sizeof(buf), fp.get());
 
-        size_t bytes_written;
-
-        if (writer.write_data(buf, n, bytes_written) != RET_OK
-                || bytes_written != n) {
+        auto bytes_written = writer.write_data(buf, n);
+        if (!bytes_written) {
             fprintf(stderr, "Failed to write entry data: %s\n",
-                    writer.error_string().c_str());
+                    bytes_written.error().message().c_str());
             return false;
         }
 
@@ -693,22 +695,23 @@ static bool write_data_entry_to_file(const std::string &path, Reader &reader)
         return false;
     }
 
-    int ret;
     char buf[10240];
-    size_t n;
 
-    while ((ret = reader.read_data(buf, sizeof(buf), n)) == RET_OK) {
-        if (fwrite(buf, 1, n, fp.get()) != n) {
+    while (true) {
+        auto n = reader.read_data(buf, sizeof(buf));
+        if (!n) {
+            fprintf(stderr, "Failed to read entry data: %s\n",
+                    n.error().message().c_str());
+            return false;
+        } else if (n.value() == 0) {
+            break;
+        }
+
+        if (fwrite(buf, 1, n.value(), fp.get()) != n.value()) {
             fprintf(stderr, "%s: Failed to write data: %s\n",
                     path.c_str(), strerror(errno));
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        fprintf(stderr, "Failed to read entry data: %s\n",
-                reader.error_string().c_str());
-        return false;
     }
 
     if (fclose(fp.release()) < 0) {
@@ -768,9 +771,10 @@ static bool write_file_to_entry(const Paths &paths, Writer &writer,
         return false;
     }
 
-    if (writer.write_entry(entry) != RET_OK) {
+    auto ret = writer.write_entry(entry);
+    if (!ret) {
         fprintf(stderr, "Failed to write entry: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -918,7 +922,7 @@ static bool unpack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(input_file);
+        prefix = mb::io::base_name(input_file);
         prefix += "-";
     }
 
@@ -928,9 +932,9 @@ static bool unpack_main(int argc, char *argv[])
 
     prepend_if_empty(paths, output_dir, prefix);
 
-    if (!io::createDirectories(output_dir)) {
+    if (!mb::io::create_directories(output_dir)) {
         fprintf(stderr, "%s: Failed to create directory: %s\n",
-                output_dir.c_str(), io::lastErrorString().c_str());
+                output_dir.c_str(), mb::io::last_error_string().c_str());
         return false;
     }
 
@@ -938,35 +942,34 @@ static bool unpack_main(int argc, char *argv[])
     Reader reader;
     Header header;
     Entry entry;
-    int ret;
 
     if (type) {
-        ret = reader.enable_format_by_name(type);
-        if (ret != RET_OK) {
+        auto ret = reader.enable_format_by_name(type);
+        if (!ret) {
             fprintf(stderr, "Failed to enable format '%s': %s\n",
-                    type, reader.error_string().c_str());
+                    type, ret.error().message().c_str());
             return false;
         }
     } else {
-        ret = reader.enable_format_all();
-        if (ret != RET_OK) {
+        auto ret = reader.enable_format_all();
+        if (!ret) {
             fprintf(stderr, "Failed to enable all formats: %s\n",
-                    reader.error_string().c_str());
+                    ret.error().message().c_str());
             return false;
         }
     }
 
-    ret = reader.open_filename(input_file);
-    if (ret != RET_OK) {
+    auto ret = reader.open_filename(input_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for reading: %s\n",
-                input_file.c_str(), reader.error_string().c_str());
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     ret = reader.read_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                input_file.c_str(), reader.error_string().c_str());
+                input_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
@@ -974,16 +977,20 @@ static bool unpack_main(int argc, char *argv[])
         return false;
     }
 
-    while ((ret = reader.read_entry(entry)) == RET_OK) {
+    while (true) {
+        ret = reader.read_entry(entry);
+        if (!ret) {
+            if (ret.error() == ReaderError::EndOfEntries) {
+                break;
+            }
+            fprintf(stderr, "Failed to read entry: %s\n",
+                    ret.error().message().c_str());
+            return false;
+        }
+
         if (!write_entry_to_file(paths, reader, entry)) {
             return false;
         }
-    }
-
-    if (ret != RET_EOF) {
-        fprintf(stderr, "Failed to read entry: %s\n",
-                reader.error_string().c_str());
-        return false;
     }
 
     return true;
@@ -1083,7 +1090,7 @@ static bool pack_main(int argc, char *argv[])
     if (no_prefix) {
         prefix.clear();
     } else if (prefix.empty()) {
-        prefix = io::baseName(output_file);
+        prefix = mb::io::base_name(output_file);
         prefix += "-";
     }
 
@@ -1097,25 +1104,23 @@ static bool pack_main(int argc, char *argv[])
     Writer writer;
     Header header;
     Entry entry;
-    int ret;
 
-    ret = writer.set_format_by_name(type);
-    if (ret != RET_OK) {
+    if (!writer.set_format_by_name(type)) {
         fprintf(stderr, "Invalid boot image type: %s\n", type);
         return false;
     }
 
-    ret = writer.open_filename(output_file);
-    if (ret != RET_OK) {
+    auto ret = writer.open_filename(output_file);
+    if (!ret) {
         fprintf(stderr, "%s: Failed to open for writing: %s\n",
-                output_file.c_str(), writer.error_string().c_str());
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     ret = writer.get_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         fprintf(stderr, "Failed to get header instance: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 
@@ -1124,28 +1129,32 @@ static bool pack_main(int argc, char *argv[])
     }
 
     ret = writer.write_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         fprintf(stderr, "%s: Failed to read header: %s\n",
-                output_file.c_str(), writer.error_string().c_str());
+                output_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    while ((ret = writer.get_entry(entry)) == RET_OK) {
+    while (true) {
+        ret = writer.get_entry(entry);
+        if (!ret) {
+            if (ret.error() == WriterError::EndOfEntries) {
+                break;
+            }
+            fprintf(stderr, "Failed to get next entry: %s\n",
+                    ret.error().message().c_str());
+            return false;
+        }
+
         if (!write_file_to_entry(paths, writer, entry)) {
             return false;
         }
     }
 
-    if (ret != RET_EOF) {
-        fprintf(stderr, "Failed to get next entry: %s\n",
-                writer.error_string().c_str());
-        return false;
-    }
-
     ret = writer.close();
-    if (ret != RET_OK) {
+    if (!ret) {
         fprintf(stderr, "Failed to close boot image: %s\n",
-                writer.error_string().c_str());
+                ret.error().message().c_str());
         return false;
     }
 

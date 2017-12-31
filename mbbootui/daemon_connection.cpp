@@ -17,6 +17,7 @@
 
 #include "daemon_connection.h"
 
+#include <cerrno>
 #include <cstring>
 
 #include <sys/socket.h>

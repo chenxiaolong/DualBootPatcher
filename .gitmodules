@@ -19,6 +19,6 @@
 [submodule "external/rapidjson"]
 	path = external/rapidjson
 	url = https://github.com/miloyip/rapidjson.git
-[submodule "external/Optional"]
-	path = external/Optional
-	url = https://github.com/chenxiaolong/Optional.git
+[submodule "external/outcome"]
+	path = external/outcome
+	url = https://github.com/chenxiaolong/outcome.git

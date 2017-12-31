@@ -66,8 +66,11 @@ set_target_properties(
     LINK_SEARCH_START_STATIC ON
 )
 
+android_link_allow_multiple_definitions(mbbootui)
+
 target_link_libraries(
     mbbootui
+    PRIVATE
     interface.global.CXXVersion
     mbbootui-gui
     mbbootui-config

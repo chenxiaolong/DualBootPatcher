@@ -24,40 +24,43 @@
 namespace mb
 {
 
-class MemoryFilePrivate;
 class MB_EXPORT MemoryFile : public File
 {
-    MB_DECLARE_PRIVATE(MemoryFile)
-
 public:
     MemoryFile();
     MemoryFile(const void *buf, size_t size);
     MemoryFile(void **buf_ptr, size_t *size_ptr);
     virtual ~MemoryFile();
 
-    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
-    MB_DEFAULT_MOVE_CONSTRUCT_AND_ASSIGN(MemoryFile)
+    MemoryFile(MemoryFile &&other) noexcept;
+    MemoryFile & operator=(MemoryFile &&rhs) noexcept;
 
-    bool open(const void *buf, size_t size);
-    bool open(void **buf_ptr, size_t *size_ptr);
+    MB_DISABLE_COPY_CONSTRUCT_AND_ASSIGN(MemoryFile)
+
+    oc::result<void> open(const void *buf, size_t size);
+    oc::result<void> open(void **buf_ptr, size_t *size_ptr);
 
 protected:
-    /*! \cond INTERNAL */
-    MemoryFile(MemoryFilePrivate *priv);
-    MemoryFile(MemoryFilePrivate *priv,
-               const void *buf, size_t size);
-    MemoryFile(MemoryFilePrivate *priv,
-               void **buf_ptr, size_t *size_ptr);
-    /*! \endcond */
+    oc::result<void> on_close() override;
+    oc::result<size_t> on_read(void *buf, size_t size) override;
+    oc::result<size_t> on_write(const void *buf, size_t size) override;
+    oc::result<uint64_t> on_seek(int64_t offset, int whence) override;
+    oc::result<void> on_truncate(uint64_t size) override;
 
-    virtual bool on_close() override;
-    virtual bool on_read(void *buf, size_t size,
-                         size_t &bytes_read) override;
-    virtual bool on_write(const void *buf, size_t size,
-                          size_t &bytes_written) override;
-    virtual bool on_seek(int64_t offset, int whence,
-                         uint64_t &new_offset) override;
-    virtual bool on_truncate(uint64_t size) override;
+private:
+    /*! \cond INTERNAL */
+    void clear();
+
+    void *m_data;
+    size_t m_size;
+
+    void **m_data_ptr;
+    size_t *m_size_ptr;
+
+    size_t m_pos;
+
+    bool m_fixed_size;
+    /*! \endcond */
 };
 
 }

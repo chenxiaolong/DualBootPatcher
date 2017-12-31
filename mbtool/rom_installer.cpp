@@ -21,6 +21,7 @@
 
 #include <fcntl.h>
 #include <getopt.h>
+#include <sched.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
@@ -287,45 +288,45 @@ bool RomInstaller::extract_ramdisk(const std::string &boot_image_file,
     Reader reader;
     Header header;
     Entry entry;
-    int ret;
 
     // Open input boot image
-    ret = reader.enable_format_all();
-    if (ret != RET_OK) {
+    auto ret = reader.enable_format_all();
+    if (!ret) {
         LOGE("Failed to enable input boot image formats: %s",
-             reader.error_string().c_str());
+             ret.error().message().c_str());
         return false;
     }
     ret = reader.open_filename(boot_image_file);
-    if (ret != RET_OK) {
+    if (!ret) {
         LOGE("%s: Failed to open boot image for reading: %s",
-             boot_image_file.c_str(), reader.error_string().c_str());
+             boot_image_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
-    // Copy header
+    // Read header
     ret = reader.read_header(header);
-    if (ret != RET_OK) {
+    if (!ret) {
         LOGE("%s: Failed to read header: %s",
-             boot_image_file.c_str(), reader.error_string().c_str());
+             boot_image_file.c_str(), ret.error().message().c_str());
         return false;
     }
 
     // Go to ramdisk
     ret = reader.go_to_entry(entry, ENTRY_TYPE_RAMDISK);
-    if (ret == RET_EOF) {
-        LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
-        return false;
-    } else if (ret != RET_OK) {
-        LOGE("%s: Failed to find ramdisk entry: %s",
-             boot_image_file.c_str(), reader.error_string().c_str());
+    if (!ret) {
+        if (ret.error() == ReaderError::EndOfEntries) {
+            LOGE("%s: Boot image is missing ramdisk", boot_image_file.c_str());
+        } else {
+            LOGE("%s: Failed to find ramdisk entry: %s",
+                 boot_image_file.c_str(), ret.error().message().c_str());
+        }
         return false;
     }
 
     {
         std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-        int tmpfd = mkstemp(&tmpfile[0]);
+        int tmpfd = mkstemp(tmpfile.data());
         if (tmpfd < 0) {
             LOGE("Failed to create temporary file: %s", strerror(errno));
             return false;
@@ -396,7 +397,7 @@ bool RomInstaller::extract_ramdisk_fd(int fd, const std::string &output_dir,
             if (strcmp(path, "sbin/ramdisk.cpio") == 0) {
                 std::string tmpfile = format("%s.XXXXXX", output_dir.c_str());
 
-                int tmpfd = mkstemp(&tmpfile[0]);
+                int tmpfd = mkstemp(tmpfile.data());
                 if (tmpfd < 0) {
                     LOGE("Failed to create temporary file: %s",
                          strerror(errno));

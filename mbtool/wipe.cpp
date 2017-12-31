@@ -95,8 +95,8 @@ private:
     bool delete_path()
     {
         if (_curr->fts_level >= 1 && remove(_curr->fts_accpath) < 0) {
-            format(_error_msg, "%s: Failed to remove: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to remove: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -172,7 +172,7 @@ static bool log_wipe_directory(const std::string &mountpoint,
         LOGV("Wiping directory %s", mountpoint.c_str());
     } else {
         LOGV("Wiping directory %s (excluding %s)", mountpoint.c_str(),
-             util::join(exclusions, ", ").c_str());
+             join(exclusions, ", ").c_str());
     }
 
     struct stat sb;

@@ -35,9 +35,7 @@
 
 #define LOG_TAG "mbutil/chown"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static bool chown_internal(const std::string &path,
@@ -91,8 +89,8 @@ private:
     bool chown_path()
     {
         if (!chown_internal(_curr->fts_accpath, _uid, _gid, _follow_symlinks)) {
-            format(_error_msg, "%s: Failed to chown: %s",
-                   _curr->fts_path, strerror(errno));
+            _error_msg = format("%s: Failed to chown: %s",
+                                _curr->fts_path, strerror(errno));
             LOGW("%s", _error_msg.c_str());
             return false;
         }
@@ -147,5 +145,4 @@ bool chown(const std::string &path,
     }
 }
 
-}
 }

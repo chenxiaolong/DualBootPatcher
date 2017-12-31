@@ -25,9 +25,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 struct ExtractInfo
@@ -42,12 +40,12 @@ struct ExistsInfo
     bool exists;
 };
 
-enum class CompressionType
+enum class CompressionType : uint8_t
 {
-    NONE,
-    LZ4,
-    GZIP,
-    XZ
+    None,
+    Lz4,
+    Gzip,
+    Xz,
 };
 
 int libarchive_copy_data(archive *in, archive *out, archive_entry *entry);
@@ -72,5 +70,4 @@ bool extract_files2(const std::string &filename,
 bool archive_exists(const std::string &filename,
                     std::vector<ExistsInfo> &files);
 
-}
 }

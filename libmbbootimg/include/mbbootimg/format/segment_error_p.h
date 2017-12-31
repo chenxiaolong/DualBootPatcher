@@ -23,27 +23,22 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class SegmentError
 {
-    TooManyEntries              = 10,
-    AddEntryInIncorrectState    = 11,
-    EntryWouldOverflowOffset    = 12,
-    ReadWouldOverflowInteger    = 13,
-    WriteWouldOverflowInteger   = 14,
-    EntryIsTruncated            = 15,
-    InvalidEntrySize            = 16,
+    AddEntryInIncorrectState    = 10,
+    EntryWouldOverflowOffset    = 11,
+    ReadWouldOverflowInteger    = 12,
+    WriteWouldOverflowInteger   = 13,
+    InvalidEntrySize            = 14,
 };
 
 MB_EXPORT std::error_code make_error_code(SegmentError e);
 
 MB_EXPORT const std::error_category & segment_error_category();
 
-}
 }
 
 namespace std

@@ -46,7 +46,8 @@
  * \sa PatcherConfig
  */
 
-extern "C" {
+extern "C"
+{
 
 /*!
  * \brief Create a new CPatcherConfig object.
@@ -221,7 +222,7 @@ CAutoPatcher * mbpatcher_config_create_autopatcher(CPatcherConfig *pc,
 {
     CAST(pc);
     auto const *fi = reinterpret_cast<const mb::patcher::FileInfo *>(info);
-    auto *ap = config->create_auto_patcher(id, fi);
+    auto *ap = config->create_auto_patcher(id, *fi);
     return reinterpret_cast<CAutoPatcher *>(ap);
 }
 

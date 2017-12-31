@@ -51,6 +51,12 @@ struct ArgN<N, R(As...)>
     using type = typename TypeN<N, As...>::type;
 };
 
+template <std::size_t N, typename R, typename... As>
+struct ArgN<N, R(As...) noexcept>
+{
+    using type = typename TypeN<N, As...>::type;
+};
+
 // Get function return type
 
 template <typename>
@@ -62,9 +68,21 @@ struct ReturnType<R(As...)>
     using type = R;
 };
 
+template <typename R, typename... As>
+struct ReturnType<R(As...) noexcept>
+{
+    using type = R;
+};
+
 #ifdef _WIN32
 template <typename R, typename... As>
 struct ReturnType<__stdcall R(As...)>
+{
+    using type = R;
+};
+
+template <typename R, typename... As>
+struct ReturnType<__stdcall R(As...) noexcept>
 {
     using type = R;
 };

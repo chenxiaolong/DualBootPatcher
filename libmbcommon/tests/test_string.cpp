@@ -21,14 +21,16 @@
 
 #include "mbcommon/string.h"
 
+using namespace mb;
+
 TEST(StringTest, FormatString)
 {
-    ASSERT_EQ(mb::format("Hello, %s!", "World"), "Hello, World!");
+    ASSERT_EQ(format("Hello, %s!", "World"), "Hello, World!");
 }
 
 TEST(StringTest, FormatEmptyString)
 {
-    ASSERT_EQ(mb::format(""), "");
+    ASSERT_EQ(format(""), "");
 }
 
 TEST(StringTest, FormatSizeT)
@@ -36,27 +38,27 @@ TEST(StringTest, FormatSizeT)
     ptrdiff_t signed_val = 0x7FFFFFFF;
     size_t unsigned_val = 0xFFFFFFFFu;
 
-    ASSERT_EQ(mb::format("%" MB_PRIzd, signed_val), "2147483647");
-    ASSERT_EQ(mb::format("%" MB_PRIzi, signed_val), "2147483647");
-    ASSERT_EQ(mb::format("%" MB_PRIzo, unsigned_val), "37777777777");
-    ASSERT_EQ(mb::format("%" MB_PRIzu, unsigned_val), "4294967295");
-    ASSERT_EQ(mb::format("%" MB_PRIzx, unsigned_val), "ffffffff");
-    ASSERT_EQ(mb::format("%" MB_PRIzX, unsigned_val), "FFFFFFFF");
+    ASSERT_EQ(format("%" MB_PRIzd, signed_val), "2147483647");
+    ASSERT_EQ(format("%" MB_PRIzi, signed_val), "2147483647");
+    ASSERT_EQ(format("%" MB_PRIzo, unsigned_val), "37777777777");
+    ASSERT_EQ(format("%" MB_PRIzu, unsigned_val), "4294967295");
+    ASSERT_EQ(format("%" MB_PRIzx, unsigned_val), "ffffffff");
+    ASSERT_EQ(format("%" MB_PRIzX, unsigned_val), "FFFFFFFF");
 }
 
 TEST(StringTest, CheckStartsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb::starts_with("Hello, World!", "Hello, World!"));
-    ASSERT_TRUE(mb::starts_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(starts_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", "HELLO, WORLD!"));
 
     // Check matching prefix
-    ASSERT_TRUE(mb::starts_with("Hello, World!", "Hello"));
-    ASSERT_TRUE(mb::starts_with_icase("Hello, World!", "HELLO"));
+    ASSERT_TRUE(starts_with("Hello, World!", "Hello"));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", "HELLO"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb::starts_with("abcd", "abcde"));
-    ASSERT_FALSE(mb::starts_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(starts_with("abcd", "abcde"));
+    ASSERT_FALSE(starts_with_icase("abcd", "ABCDE"));
 }
 
 TEST(StringTest, CheckStartsWithNotNullTerminated)
@@ -72,44 +74,40 @@ TEST(StringTest, CheckStartsWithNotNullTerminated)
     size_t prefix3_len = sizeof(prefix3) / sizeof(char);
     size_t prefix4_len = sizeof(prefix4) / sizeof(char);
 
-    ASSERT_TRUE(mb::starts_with_n(source, source_len,
-                                  prefix1, prefix1_len));
-    ASSERT_FALSE(mb::starts_with_n(source, source_len,
-                                   prefix2, prefix2_len));
-    ASSERT_TRUE(mb::starts_with_icase_n(source, source_len,
-                                        prefix3, prefix3_len));
-    ASSERT_FALSE(mb::starts_with_icase_n(source, source_len,
-                                         prefix4, prefix4_len));
+    ASSERT_TRUE(starts_with({source, source_len}, {prefix1, prefix1_len}));
+    ASSERT_FALSE(starts_with({source, source_len}, {prefix2, prefix2_len}));
+    ASSERT_TRUE(starts_with_icase({source, source_len}, {prefix3, prefix3_len}));
+    ASSERT_FALSE(starts_with_icase({source, source_len}, {prefix4, prefix4_len}));
 }
 
 TEST(StringTest, CheckStartsWithEmpty)
 {
     // Empty prefix
-    ASSERT_TRUE(mb::starts_with("Hello, World!", ""));
-    ASSERT_TRUE(mb::starts_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(starts_with("Hello, World!", ""));
+    ASSERT_TRUE(starts_with_icase("Hello, World!", ""));
 
     // Empty source
-    ASSERT_FALSE(mb::starts_with("", "abcde"));
-    ASSERT_FALSE(mb::starts_with_icase("", "abcde"));
+    ASSERT_FALSE(starts_with("", "abcde"));
+    ASSERT_FALSE(starts_with_icase("", "abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb::starts_with("", ""));
-    ASSERT_TRUE(mb::starts_with_icase("", ""));
+    ASSERT_TRUE(starts_with("", ""));
+    ASSERT_TRUE(starts_with_icase("", ""));
 }
 
 TEST(StringTest, CheckEndsWithNormal)
 {
     // Check equal strings
-    ASSERT_TRUE(mb::ends_with("Hello, World!", "Hello, World!"));
-    ASSERT_TRUE(mb::ends_with_icase("Hello, World!", "HELLO, WORLD!"));
+    ASSERT_TRUE(ends_with("Hello, World!", "Hello, World!"));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", "HELLO, WORLD!"));
 
     // Check matching suffix
-    ASSERT_TRUE(mb::ends_with("Hello, World!", "World!"));
-    ASSERT_TRUE(mb::ends_with_icase("Hello, World!", "WORLD!"));
+    ASSERT_TRUE(ends_with("Hello, World!", "World!"));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", "WORLD!"));
 
     // Check non-matching prefix
-    ASSERT_FALSE(mb::ends_with("abcd", "abcde"));
-    ASSERT_FALSE(mb::ends_with_icase("abcd", "ABCDE"));
+    ASSERT_FALSE(ends_with("abcd", "abcde"));
+    ASSERT_FALSE(ends_with_icase("abcd", "ABCDE"));
 }
 
 TEST(StringTest, CheckEndsWithNotNullTerminated)
@@ -125,226 +123,135 @@ TEST(StringTest, CheckEndsWithNotNullTerminated)
     size_t suffix3_len = sizeof(suffix3) / sizeof(char);
     size_t suffix4_len = sizeof(suffix4) / sizeof(char);
 
-    ASSERT_TRUE(mb::ends_with_n(source, source_len,
-                                suffix1, suffix1_len));
-    ASSERT_FALSE(mb::ends_with_n(source, source_len,
-                                 suffix2, suffix2_len));
-    ASSERT_TRUE(mb::ends_with_icase_n(source, source_len,
-                                      suffix3, suffix3_len));
-    ASSERT_FALSE(mb::ends_with_icase_n(source, source_len,
-                                       suffix4, suffix4_len));
+    ASSERT_TRUE(ends_with({source, source_len}, {suffix1, suffix1_len}));
+    ASSERT_FALSE(ends_with({source, source_len}, {suffix2, suffix2_len}));
+    ASSERT_TRUE(ends_with_icase({source, source_len}, {suffix3, suffix3_len}));
+    ASSERT_FALSE(ends_with_icase({source, source_len}, {suffix4, suffix4_len}));
 }
 
 TEST(StringTest, CheckEndsWithEmpty)
 {
     // Empty suffix
-    ASSERT_TRUE(mb::ends_with("Hello, World!", ""));
-    ASSERT_TRUE(mb::ends_with_icase("Hello, World!", ""));
+    ASSERT_TRUE(ends_with("Hello, World!", ""));
+    ASSERT_TRUE(ends_with_icase("Hello, World!", ""));
 
     // Empty source
-    ASSERT_FALSE(mb::ends_with("", "abcde"));
-    ASSERT_FALSE(mb::ends_with_icase("", "abcde"));
+    ASSERT_FALSE(ends_with("", "abcde"));
+    ASSERT_FALSE(ends_with_icase("", "abcde"));
 
     // Empty source and prefix
-    ASSERT_TRUE(mb::ends_with("", ""));
-    ASSERT_TRUE(mb::ends_with_icase("", ""));
+    ASSERT_TRUE(ends_with("", ""));
+    ASSERT_TRUE(ends_with_icase("", ""));
 }
 
-TEST(StringTest, InsertMemory)
+TEST(StringTest, TrimInPlace)
 {
-    struct {
-        const void *source;
-        size_t source_size;
-        const void *target;
-        size_t target_size;
-        size_t pos;
-        const void *data;
-        size_t data_size;
-    } test_cases[] = {
-        // Insert in middle
-        { "abcd", 4, "abecd", 5, 2, "e", 1 },
-        // Insert at beginning
-        { "abcd", 4, "eabcd", 5, 0, "e", 1 },
-        // Insert at end
-        { "abcd", 4, "abcde", 5, 4, "e", 1 },
-        // Insert nothing
-        { "abcd", 4, "abcd", 4, 0, "", 0 },
-        // Insert into nothing
-        { "", 0, "a", 1, 0, "a", 1 },
-        // Insert nothing into nothing
-        { "", 0, "", 0, 0, "", 0 },
-        // End
-        { nullptr, 0, nullptr, 0, 0, nullptr, 0 },
-    };
+    std::string s;
 
-    for (auto it = test_cases; it->source; ++it) {
-        size_t buf_size = it->source_size;
-        void *buf = malloc(buf_size);
-        ASSERT_NE(buf, nullptr);
-        memcpy(buf, it->source, buf_size);
+    trim_left(s);
+    ASSERT_EQ(s, "");
+    trim_right(s);
+    ASSERT_EQ(s, "");
+    trim(s);
+    ASSERT_EQ(s, "");
 
-        ASSERT_EQ(mb::mem_insert(&buf, &buf_size, it->pos,
-                                 it->data, it->data_size), 0);
+    s = " \t abcd \t ";
+    trim_left(s);
+    ASSERT_EQ(s, "abcd \t ");
+    trim_right(s);
+    ASSERT_EQ(s, "abcd");
 
-        // Ensure target string matches
-        ASSERT_EQ(buf_size, it->target_size);
-        ASSERT_EQ(memcmp(it->target, buf, buf_size), 0);
+    s = " \f\n\r\t\v";
+    trim(s);
+    ASSERT_EQ(s, "");
 
-        free(buf);
-    }
+    s = "abcd";
+    trim(s);
+    ASSERT_EQ(s, "abcd");
 }
 
-TEST(StringTest, InsertMemoryOutOfRange)
+TEST(StringTest, TrimStringView)
 {
-    void *buf = nullptr;
-    size_t buf_size = 0;
+    ASSERT_EQ(trimmed_left(""), "");
+    ASSERT_EQ(trimmed_right(""), "");
+    ASSERT_EQ(trimmed(""), "");
 
-    ASSERT_LT(mb::mem_insert(&buf, &buf_size, 1, "", 0), 0);
+    ASSERT_EQ(trimmed_left(" \t abcd \t "), "abcd \t ");
+    ASSERT_EQ(trimmed_right(" \t abcd \t "), " \t abcd");
+    ASSERT_EQ(trimmed(" \t abcd \t "), "abcd");
+
+    ASSERT_EQ(trimmed(" \f\n\r\t\v"), "");
+
+    ASSERT_EQ(trimmed("abcd"), "abcd");
 }
 
-TEST(StringTest, InsertString)
+TEST(StringTest, CheckSplit)
 {
-    struct {
-        const char *source;
-        const char *target;
-        size_t pos;
-        const char *data;
-    } test_cases[] = {
-        // Insert in middle
-        { "abcd", "abecd", 2, "e" },
-        // Insert at beginning
-        { "abcd", "eabcd", 0, "e" },
-        // Insert at end
-        { "abcd", "abcde", 4, "e" },
-        // Insert nothing
-        { "abcd", "abcd", 0, "" },
-        // Insert into nothing
-        { "", "a", 0, "a" },
-        // Insert nothing into nothing
-        { "", "", 0, "" },
-        // End
-        { nullptr, nullptr, 0, nullptr },
-    };
+    using VS = std::vector<std::string>;
 
-    for (auto it = test_cases; it->source; ++it) {
-        char *buf = strdup(it->source);
-        ASSERT_NE(buf, nullptr);
+    // Empty delimiter or string
+    ASSERT_EQ(split("", ""), VS({""}));
+    ASSERT_EQ(split("abc", ""), VS({"abc"}));
+    ASSERT_EQ(split("", ':'), VS({""}));
 
-        ASSERT_EQ(mb::str_insert(&buf, it->pos, it->data), 0);
+    // Normal split
+    ASSERT_EQ(split(":a:b:c:", ':'), VS({"", "a", "b", "c", ""}));
 
-        // Ensure target string matches
-        ASSERT_STREQ(buf, it->target);
+    // Repeated delimiters in source
+    ASSERT_EQ(split("a:::b", ':'), VS({"a", "", "", "b"}));
 
-        free(buf);
-    }
+    // Multiple delimiters
+    ASSERT_EQ(split("a:b;c,d", ",:;"), VS({"a", "b", "c", "d"}));
+
+    // Multiple repeated delimiters
+    ASSERT_EQ(split("a:,:;b", ",:;"), VS({"a", "", "", "", "b"}));
 }
 
-TEST(StringTest, ReplaceMemory)
+TEST(StringTest, CheckSplitStringView)
 {
-    struct {
-        const void *source;
-        size_t source_size;
-        const void *target;
-        size_t target_size;
-        const void *from;
-        size_t from_size;
-        const void *to;
-        size_t to_size;
-        size_t n;
-        size_t n_expected;
-    } test_cases[] = {
-        // Match not at beginning
-        { "abcd", 4, "aefg", 4, "bcd", 3, "efg", 3, 0, 1 },
-        // Match not at end
-        { "abcd", 4, "efgd", 4, "abc", 3, "efg", 3, 0, 1 },
-        // Full string replacement
-        { "abc", 3, "def", 3, "abc", 3, "def", 3, 0, 1 },
-        // Multiple instances
-        { "abcabcabc", 9, "defdefdef", 9, "abc", 3, "def", 3, 0, 3 },
-        // Multiple instances with limited replacements
-        { "abcabcabc", 9, "defdefabc", 9, "abc", 3, "def", 3, 2, 2 },
-        // No matches
-        { "abcabcabc", 9, "abcabcabc", 9, "def", 3, "ghi", 3, 0, 0 },
-        // Empty data
-        { "", 0, "", 0, "abc", 3, "def", 3, 0, 0 },
-        // Empty source
-        { "abc", 3, "abc", 3, "", 0, "def", 3, 0, 0 },
-        // Empty target
-        { "abc", 3, "", 0, "abc", 3, "", 0, 0, 1 },
-        // Empty everything
-        { "", 0, "", 0, "", 0, "", 0, 0, 0 },
-        // End
-        { nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, 0, 0 },
-    };
+    using VSV = std::vector<std::string_view>;
 
-    for (auto it = test_cases; it->source; ++it) {
-        size_t buf_size = it->source_size;
-        void *buf = malloc(buf_size);
-        ASSERT_NE(buf, nullptr);
-        memcpy(buf, it->source, buf_size);
+    // Empty delimiter or string
+    ASSERT_EQ(split_sv("", ""), VSV({""}));
+    ASSERT_EQ(split_sv("abc", ""), VSV({"abc"}));
+    ASSERT_EQ(split_sv("", ':'), VSV({""}));
 
-        size_t matches;
-        ASSERT_EQ(mb::mem_replace(&buf, &buf_size, it->from, it->from_size,
-                                  it->to, it->to_size, it->n, &matches), 0);
+    // Normal split
+    ASSERT_EQ(split_sv(":a:b:c:", ':'), VSV({"", "a", "b", "c", ""}));
 
-        // Ensure target string matches
-        ASSERT_EQ(buf_size, it->target_size);
-        ASSERT_EQ(memcmp(it->target, buf, buf_size), 0);
+    // Repeated delimiters in source
+    ASSERT_EQ(split_sv("a:::b", ':'), VSV({"a", "", "", "b"}));
 
-        // Ensure number of replacements matches
-        ASSERT_EQ(matches, it->n_expected);
+    // Multiple delimiters
+    ASSERT_EQ(split_sv("a:b;c,d", ",:;"), VSV({"a", "b", "c", "d"}));
 
-        free(buf);
-    }
+    // Multiple repeated delimiters
+    ASSERT_EQ(split_sv("a:,:;b", ",:;"), VSV({"a", "", "", "", "b"}));
 }
 
-TEST(StringTest, ReplaceString)
+TEST(StringTest, CheckJoin)
 {
-    struct {
-        const char *source;
-        const char *target;
-        const char *from;
-        const char *to;
-        size_t n;
-        size_t n_expected;
-    } test_cases[] = {
-        // Match not at beginning
-        { "abcd", "aefg", "bcd", "efg", 0, 1 },
-        // Match not at end
-        { "abcd", "efgd", "abc", "efg", 0, 1 },
-        // Full string replacement
-        { "abc", "def", "abc", "def", 0, 1 },
-        // Multiple instances
-        { "abcabcabc", "defdefdef", "abc", "def", 0, 3 },
-        // Multiple instances with limited replacements
-        { "abcabcabc", "defdefabc", "abc", "def", 2, 2 },
-        // No matches
-        { "abcabcabc", "abcabcabc", "def", "ghi", 0, 0 },
-        // Empty data
-        { "", "", "abc", "def", 0, 0 },
-        // Empty source
-        { "abc", "abc", "", "def", 0, 0 },
-        // Empty target
-        { "abc", "", "abc", "", 0, 1 },
-        // Empty everything
-        { "", "", "", "", 0, 0 },
-        // End
-        { nullptr, nullptr, nullptr, nullptr, 0, 0 },
-    };
+    using VS = std::vector<std::string>;
+    using VSV = std::vector<std::string_view>;
 
-    for (auto it = test_cases; it->source; ++it) {
-        char *buf = strdup(it->source);
-        ASSERT_NE(buf, nullptr);
+    // Empty delimiter
+    ASSERT_EQ(join(VS(), ""), "");
+    ASSERT_EQ(join(VS({"a", "b"}), ""), "ab");
 
-        size_t matches;
-        ASSERT_EQ(mb::str_replace(&buf, it->from, it->to, it->n, &matches), 0);
+    // Empty list
+    ASSERT_EQ(join(VS(), ','), "");
 
-        // Ensure target string matches
-        ASSERT_STREQ(buf, it->target);
+    // One-element list
+    ASSERT_EQ(join(VS({"a"}), ','), "a");
 
-        // Ensure number of replacements matches
-        ASSERT_EQ(matches, it->n_expected);
+    // List of empty strings
+    ASSERT_EQ(join(VS({"", "", ""}), ','), ",,");
 
-        free(buf);
-    }
+    // Normal
+    ASSERT_EQ(join(VS({"a", "b", "c"}), ','), "a,b,c");
+    ASSERT_EQ(join(VSV({"a", "b", "c"}), ','), "a,b,c");
+
+    // String delimiter
+    ASSERT_EQ(join(VS({"a", "b", "c"}), ", "), "a, b, c");
+    ASSERT_EQ(join(VSV({"a", "b", "c"}), ", "), "a, b, c");
 }
