@@ -559,7 +559,7 @@
     default_brightness: 190
     theme: portrait_hdpi
     
-   - name: Samsung Galaxy Tab S3 9.7 
+- name: Samsung Galaxy Tab S3 9.7 
   id: tab_s3
   codenames:
     - gts3lwifi
