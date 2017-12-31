@@ -725,7 +725,6 @@
       - /dev/block/mmcblk0p8
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/recovery
     extra:
-      - /dev/block/mmcblk1p1
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bak
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/bakraw
       - /dev/block/platform/mtk-msdc.0/11120000.msdc0/by-name/custom
