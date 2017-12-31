@@ -35,7 +35,7 @@ script:
     EOF
 deploy:
   provider: releases
-  api_key: "$GIT_OAUTH_TOKEN_RAHMYAPK"
+  api_key: "$GIT_OAUTH_TOKEN_DUALBOOT"
   file: "$PWD/Mysteryagr/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
   skip_cleanup: true
   on:
