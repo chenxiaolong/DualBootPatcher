@@ -24,6 +24,15 @@ enum RebootType {
   RebootType_MAX = RebootType_DIRECT
 };
 
+inline RebootType (&EnumValuesRebootType())[3] {
+  static RebootType values[] = {
+    RebootType_FRAMEWORK,
+    RebootType_INIT,
+    RebootType_DIRECT
+  };
+  return values;
+}
+
 inline const char **EnumNamesRebootType() {
   static const char *names[] = {
     "FRAMEWORK",
@@ -49,13 +58,13 @@ struct RebootError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct RebootErrorBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  RebootErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit RebootErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   RebootErrorBuilder &operator=(const RebootErrorBuilder &);
   flatbuffers::Offset<RebootError> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<RebootError>(end);
     return o;
   }
@@ -84,7 +93,7 @@ struct RebootRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ARG) &&
+           VerifyOffset(verifier, VT_ARG) &&
            verifier.Verify(arg()) &&
            VerifyField<int16_t>(verifier, VT_TYPE) &&
            VerifyField<uint8_t>(verifier, VT_CONFIRM) &&
@@ -104,13 +113,13 @@ struct RebootRequestBuilder {
   void add_confirm(bool confirm) {
     fbb_.AddElement<uint8_t>(RebootRequest::VT_CONFIRM, static_cast<uint8_t>(confirm), 0);
   }
-  RebootRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit RebootRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   RebootRequestBuilder &operator=(const RebootRequestBuilder &);
   flatbuffers::Offset<RebootRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<RebootRequest>(end);
     return o;
   }
@@ -154,7 +163,7 @@ struct RebootResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -169,13 +178,13 @@ struct RebootResponseBuilder {
   void add_error(flatbuffers::Offset<RebootError> error) {
     fbb_.AddOffset(RebootResponse::VT_ERROR, error);
   }
-  RebootResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit RebootResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   RebootResponseBuilder &operator=(const RebootResponseBuilder &);
   flatbuffers::Offset<RebootResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<RebootResponse>(end);
     return o;
   }

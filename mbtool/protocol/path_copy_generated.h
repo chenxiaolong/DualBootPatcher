@@ -30,7 +30,7 @@ struct PathCopyError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathCopyErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathCopyError::VT_MSG, msg);
   }
-  PathCopyErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathCopyErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathCopyErrorBuilder &operator=(const PathCopyErrorBuilder &);
   flatbuffers::Offset<PathCopyError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathCopyError>(end);
     return o;
   }
@@ -90,9 +90,9 @@ struct PathCopyRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_SOURCE) &&
+           VerifyOffset(verifier, VT_SOURCE) &&
            verifier.Verify(source()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_TARGET) &&
+           VerifyOffset(verifier, VT_TARGET) &&
            verifier.Verify(target()) &&
            verifier.EndTable();
   }
@@ -107,13 +107,13 @@ struct PathCopyRequestBuilder {
   void add_target(flatbuffers::Offset<flatbuffers::String> target) {
     fbb_.AddOffset(PathCopyRequest::VT_TARGET, target);
   }
-  PathCopyRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathCopyRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathCopyRequestBuilder &operator=(const PathCopyRequestBuilder &);
   flatbuffers::Offset<PathCopyRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathCopyRequest>(end);
     return o;
   }
@@ -157,9 +157,9 @@ struct PathCopyResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -177,13 +177,13 @@ struct PathCopyResponseBuilder {
   void add_error(flatbuffers::Offset<PathCopyError> error) {
     fbb_.AddOffset(PathCopyResponse::VT_ERROR, error);
   }
-  PathCopyResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathCopyResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathCopyResponseBuilder &operator=(const PathCopyResponseBuilder &);
   flatbuffers::Offset<PathCopyResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 3);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathCopyResponse>(end);
     return o;
   }

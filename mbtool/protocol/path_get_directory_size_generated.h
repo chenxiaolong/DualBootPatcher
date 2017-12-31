@@ -30,7 +30,7 @@ struct PathGetDirectorySizeError FLATBUFFERS_FINAL_CLASS : private flatbuffers::
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_ERRNO_VALUE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_MSG) &&
+           VerifyOffset(verifier, VT_MSG) &&
            verifier.Verify(msg()) &&
            verifier.EndTable();
   }
@@ -45,13 +45,13 @@ struct PathGetDirectorySizeErrorBuilder {
   void add_msg(flatbuffers::Offset<flatbuffers::String> msg) {
     fbb_.AddOffset(PathGetDirectorySizeError::VT_MSG, msg);
   }
-  PathGetDirectorySizeErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathGetDirectorySizeErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathGetDirectorySizeErrorBuilder &operator=(const PathGetDirectorySizeErrorBuilder &);
   flatbuffers::Offset<PathGetDirectorySizeError> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathGetDirectorySizeError>(end);
     return o;
   }
@@ -90,9 +90,9 @@ struct PathGetDirectorySizeRequest FLATBUFFERS_FINAL_CLASS : private flatbuffers
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_PATH) &&
+           VerifyOffset(verifier, VT_PATH) &&
            verifier.Verify(path()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_EXCLUSIONS) &&
+           VerifyOffset(verifier, VT_EXCLUSIONS) &&
            verifier.Verify(exclusions()) &&
            verifier.VerifyVectorOfStrings(exclusions()) &&
            verifier.EndTable();
@@ -108,13 +108,13 @@ struct PathGetDirectorySizeRequestBuilder {
   void add_exclusions(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> exclusions) {
     fbb_.AddOffset(PathGetDirectorySizeRequest::VT_EXCLUSIONS, exclusions);
   }
-  PathGetDirectorySizeRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathGetDirectorySizeRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathGetDirectorySizeRequestBuilder &operator=(const PathGetDirectorySizeRequestBuilder &);
   flatbuffers::Offset<PathGetDirectorySizeRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathGetDirectorySizeRequest>(end);
     return o;
   }
@@ -162,10 +162,10 @@ struct PathGetDirectorySizeResponse FLATBUFFERS_FINAL_CLASS : private flatbuffer
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR_MSG) &&
+           VerifyOffset(verifier, VT_ERROR_MSG) &&
            verifier.Verify(error_msg()) &&
            VerifyField<uint64_t>(verifier, VT_SIZE) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -186,13 +186,13 @@ struct PathGetDirectorySizeResponseBuilder {
   void add_error(flatbuffers::Offset<PathGetDirectorySizeError> error) {
     fbb_.AddOffset(PathGetDirectorySizeResponse::VT_ERROR, error);
   }
-  PathGetDirectorySizeResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit PathGetDirectorySizeResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   PathGetDirectorySizeResponseBuilder &operator=(const PathGetDirectorySizeResponseBuilder &);
   flatbuffers::Offset<PathGetDirectorySizeResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 4);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<PathGetDirectorySizeResponse>(end);
     return o;
   }

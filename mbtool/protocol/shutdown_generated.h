@@ -23,6 +23,14 @@ enum ShutdownType {
   ShutdownType_MAX = ShutdownType_DIRECT
 };
 
+inline ShutdownType (&EnumValuesShutdownType())[2] {
+  static ShutdownType values[] = {
+    ShutdownType_INIT,
+    ShutdownType_DIRECT
+  };
+  return values;
+}
+
 inline const char **EnumNamesShutdownType() {
   static const char *names[] = {
     "INIT",
@@ -47,13 +55,13 @@ struct ShutdownError FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct ShutdownErrorBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  ShutdownErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShutdownErrorBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   ShutdownErrorBuilder &operator=(const ShutdownErrorBuilder &);
   flatbuffers::Offset<ShutdownError> Finish() {
-    const auto end = fbb_.EndTable(start_, 0);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ShutdownError>(end);
     return o;
   }
@@ -85,13 +93,13 @@ struct ShutdownRequestBuilder {
   void add_type(ShutdownType type) {
     fbb_.AddElement<int16_t>(ShutdownRequest::VT_TYPE, static_cast<int16_t>(type), 0);
   }
-  ShutdownRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShutdownRequestBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   ShutdownRequestBuilder &operator=(const ShutdownRequestBuilder &);
   flatbuffers::Offset<ShutdownRequest> Finish() {
-    const auto end = fbb_.EndTable(start_, 1);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ShutdownRequest>(end);
     return o;
   }
@@ -119,7 +127,7 @@ struct ShutdownResponse FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SUCCESS) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, VT_ERROR) &&
+           VerifyOffset(verifier, VT_ERROR) &&
            verifier.VerifyTable(error()) &&
            verifier.EndTable();
   }
@@ -134,13 +142,13 @@ struct ShutdownResponseBuilder {
   void add_error(flatbuffers::Offset<ShutdownError> error) {
     fbb_.AddOffset(ShutdownResponse::VT_ERROR, error);
   }
-  ShutdownResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+  explicit ShutdownResponseBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
   ShutdownResponseBuilder &operator=(const ShutdownResponseBuilder &);
   flatbuffers::Offset<ShutdownResponse> Finish() {
-    const auto end = fbb_.EndTable(start_, 2);
+    const auto end = fbb_.EndTable(start_);
     auto o = flatbuffers::Offset<ShutdownResponse>(end);
     return o;
   }
