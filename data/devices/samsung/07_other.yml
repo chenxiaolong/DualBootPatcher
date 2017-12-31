@@ -25,8 +25,8 @@
       - /dev/block/platform/msm_sdcc.1/by-name/recovery
       - /dev/block/mmcblk0p15
 
-  boot_ui:
-    supported: true
+   boot_ui:
+   supported: true
     flags:
       - TW_HAS_DOWNLOAD_MODE
     graphics_backends:
