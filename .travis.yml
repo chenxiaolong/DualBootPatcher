@@ -36,7 +36,7 @@ script:
 deploy:
   provider: releases
   api_key: "$GIT_OAUTH_TOKEN_DUALBOOT"
-  file: "$PWD/Mysteryagr/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
+  file: "$PWD/Raibatsu/DualBootPatcher/Android_GUI/build/outputs/apk/Android_GUI-debug.apk"
   skip_cleanup: true
   on:
     tags: true
