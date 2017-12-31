@@ -176,14 +176,15 @@
     pixel_format: RGBA_8888
     theme: portrait_hdpi
 
-- name: Walton Primo NF2
+- name: Walton Primo NF2/NF2+
   id: Primo_NF2
   codenames:
-    - NF2
     - nf2
-    - walton_nf2
     - Primo_NF2
-    - primo_nf2
+    - nf2+
+    - Primo_NF2+
+    - vsun6580_we_m
+    - vsun6580_we_l
   architecture: armeabi-v7a
 
   block_devs:
