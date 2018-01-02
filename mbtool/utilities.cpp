@@ -28,9 +28,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "minizip/zip.h"
-#include "minizip/ioandroid.h"
+#include "mz.h"
+#include "mz_strm_android.h"
+#include "mz_strm_buf.h"
+#include "mz_zip.h"
 
+#include "mbcommon/finally.h"
 #include "mbcommon/string.h"
 #include "mbcommon/version.h"
 #include "mbdevice/device.h"
@@ -263,14 +266,48 @@ public:
 
     bool on_pre_execute() override
     {
-        zlib_filefunc64_def zFunc;
-        memset(&zFunc, 0, sizeof(zFunc));
-        fill_android_filefunc64(&zFunc);
-        _zf = zipOpen2_64(_zippath.c_str(), 0, nullptr, &zFunc);
-        if (!_zf) {
-            LOGE("%s: Failed to open for writing", _zippath.c_str());
+        if (!mz_stream_android_create(&_stream)) {
+            LOGE("Failed to create base stream");
             return false;
         }
+
+        auto destroy_stream = finally([&] {
+            mz_stream_delete(&_stream);
+        });
+
+        if (!mz_stream_buffered_create(&_buf_stream)) {
+            LOGE("Failed to create buffered stream");
+            return false;
+        }
+
+        auto destroy_buf_stream = finally([&] {
+            mz_stream_delete(&_buf_stream);
+        });
+
+        if (mz_stream_open(_buf_stream, _zippath.c_str(),
+                           MZ_OPEN_MODE_READWRITE | MZ_OPEN_MODE_CREATE) != MZ_OK) {
+            LOGE("%s: Failed to open stream", _zippath.c_str());
+            return false;
+        }
+
+        auto close_stream = finally([&] {
+            mz_stream_close(_buf_stream);
+        });
+
+        auto *handle = mz_zip_open(_buf_stream, MZ_OPEN_MODE_WRITE);
+        if (!handle) {
+            LOGE("%s: Failed to open zip", _zippath.c_str());
+            return false;
+        }
+
+        auto close_zip = finally([&]{
+            mz_zip_close(handle);
+        });
+
+        close_zip.dismiss();
+        close_stream.dismiss();
+        destroy_buf_stream.dismiss();
+        destroy_stream.dismiss();
 
         return true;
     }
@@ -278,7 +315,11 @@ public:
     bool on_post_execute(bool success) override
     {
         (void) success;
-        return zipClose(_zf, nullptr) == ZIP_OK;
+        bool ret = mz_zip_close(_handle) == MZ_OK
+                && mz_stream_close(_buf_stream) == MZ_OK;
+        mz_stream_delete(&_buf_stream);
+        mz_stream_delete(&_stream);
+        return ret;
     }
 
     Actions on_reached_file() override
@@ -317,51 +358,45 @@ public:
     }
 
 private:
-    zipFile _zf;
+    void *_stream;
+    void *_buf_stream;
+    void *_handle;
     std::string _zippath;
 
     bool add_file(const std::string &name,
                   const std::vector<unsigned char> &contents)
     {
-        // Obviously never true, but we'll keep it here just in case
-        bool zip64 = static_cast<uint64_t>(contents.size())
-                >= ((1ull << 32) - 1);
+        mz_zip_file file_info = {};
+        file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
+        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename_size = static_cast<uint16_t>(name.size());
 
-        zip_fileinfo zi;
-        memset(&zi, 0, sizeof(zi));
-
-        int ret = zipOpenNewFileInZip2_64(
-            _zf,                    // file
-            name.c_str(),           // filename
-            &zi,                    // zip_fileinfo
-            nullptr,                // extrafield_local
-            0,                      // size_extrafield_local
-            nullptr,                // extrafield_global
-            0,                      // size_extrafield_global
-            nullptr,                // comment
-            Z_DEFLATED,             // method
-            Z_DEFAULT_COMPRESSION,  // level
-            0,                      // raw
-            zip64                   // zip64
-        );
-
-        if (ret != ZIP_OK) {
+        int ret = mz_zip_entry_write_open(_handle, &file_info,
+                                          MZ_COMPRESS_LEVEL_DEFAULT, nullptr);
+        if (ret != MZ_OK) {
             LOGW("minizip: Failed to add file (error code: %d): [memory]", ret);
-
             return false;
         }
+
+        auto close_inner_write = finally([&] {
+            mz_zip_entry_close(_handle);
+        });
 
         // Write data to file
-        ret = zipWriteInFileInZip(_zf, contents.data(),
-                                  static_cast<uint32_t>(contents.size()));
-        if (ret != ZIP_OK) {
+        int n = mz_zip_entry_write(_handle, contents.data(),
+                                   static_cast<uint32_t>(contents.size()));
+        if (n < 0 || static_cast<size_t>(n) != contents.size()) {
             LOGW("minizip: Failed to write data (error code: %d): [memory]", ret);
-            zipCloseFileInZip(_zf);
-
             return false;
         }
 
-        zipCloseFileInZip(_zf);
+        close_inner_write.dismiss();
+
+        ret = mz_zip_entry_close(_handle);
+        if (ret != MZ_OK) {
+            LOGE("minizip: Failed to close inner file (error code: %d): [memory]", ret);
+            return false;
+        }
 
         return true;
     }
@@ -383,68 +418,50 @@ private:
             return false;
         }
 
-        off64_t size;
-        lseek64(fd, 0, SEEK_END);
-        size = lseek64(fd, 0, SEEK_CUR);
-        lseek64(fd, 0, SEEK_SET);
+        mz_zip_file file_info = {};
+        file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
+        file_info.filename = const_cast<char *>(name.c_str());
+        file_info.filename_size = static_cast<uint16_t>(name.size());
+        file_info.external_fa = (sb.st_mode & 0777) << 16;
 
-        if (size < 0) {
-            LOGE("%s: Failed to seek: %s",
-                 path.c_str(), strerror(errno));
-            return false;
-        }
-
-        bool zip64 = static_cast<uint64_t>(size) >= ((1ull << 32) - 1);
-
-        zip_fileinfo zi;
-        memset(&zi, 0, sizeof(zi));
-        zi.external_fa = (sb.st_mode & 0777) << 16;
-
-        int ret = zipOpenNewFileInZip2_64(
-            _zf,                    // file
-            name.c_str(),           // filename
-            &zi,                    // zip_fileinfo
-            nullptr,                // extrafield_local
-            0,                      // size_extrafield_local
-            nullptr,                // extrafield_global
-            0,                      // size_extrafield_global
-            nullptr,                // comment
-            Z_DEFLATED,             // method
-            Z_DEFAULT_COMPRESSION,  // level
-            0,                      // raw
-            zip64                   // zip64
-        );
-
-        if (ret != ZIP_OK) {
+        int  ret = mz_zip_entry_write_open(_handle, &file_info,
+                                           MZ_COMPRESS_LEVEL_DEFAULT, nullptr);
+        if (ret != MZ_OK) {
             LOGW("minizip: Failed to add file (error code: %d): %s",
                  ret, path.c_str());
             return false;
         }
 
+        auto close_inner_write = finally([&] {
+            mz_zip_entry_close(_handle);
+        });
+
         // Write data to file
-        char buf[32768];
+        char buf[UINT16_MAX];
         ssize_t n;
 
         while ((n = read(fd, buf, sizeof(buf))) > 0) {
-            ret = zipWriteInFileInZip(_zf, buf, static_cast<uint32_t>(n));
-            if (ret != ZIP_OK) {
-                LOGW("minizip: Failed to write data (error code: %d): %s",
-                     ret, path.c_str());
-                zipCloseFileInZip(_zf);
-
+            auto n_written = mz_zip_entry_write(
+                    _handle, buf, static_cast<uint32_t>(n));
+            if (static_cast<int>(n) != n_written) {
+                LOGW("minizip: Failed to write data: %s", path.c_str());
                 return false;
             }
         }
 
         if (n < 0) {
-            zipCloseFileInZip(_zf);
-
             LOGE("%s: Failed to read file: %s",
                  path.c_str(), strerror(errno));
             return false;
         }
 
-        zipCloseFileInZip(_zf);
+        close_inner_write.dismiss();
+
+        ret = mz_zip_entry_close(_handle);
+        if (ret != MZ_OK) {
+            LOGE("minizip: Failed to close inner file: %s", path.c_str());
+            return false;
+        }
 
         return true;
     }

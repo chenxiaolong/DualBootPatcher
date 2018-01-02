@@ -80,7 +80,7 @@ private:
     void *m_userdata;
 
     // Patching
-    UnzCtx *m_z_input = nullptr;
+    ZipCtx *m_z_input = nullptr;
     ZipCtx *m_z_output = nullptr;
     std::vector<AutoPatcher *> m_auto_patchers;
 
