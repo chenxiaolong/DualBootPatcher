@@ -125,6 +125,7 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
     theme: portrait_hdpi
+
 - name: OPPO F1f
  -   id: f1f
  -   codenames: f1f
