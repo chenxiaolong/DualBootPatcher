@@ -132,27 +132,33 @@
  -
  -   architecture: armeabi-v7a
  -
- -  block_devs:
- -    base_dirs:
- -      - /dev/block/bootdevice/by-name
- -    system:
- -      - /dev/block/bootdevice/by-name/system
- -    cache:
- -      - /dev/block/bootdevice/by-name/cache
- -    data:
- -      - /dev/block/bootdevice/by-name/userdata
- -    boot:
- -      - /dev/block/bootdevice/by-name/boot
- -    recovery:
- -      - /dev/block/bootdevice/by-name/recovery
- -
- -     boot_ui:
- -     supported: true
- -     flags:
- -          - TW_QCOM_RTC_FIX
- -      graphics_backends:
- -          - fbdev
- -      brightness_path: /sys/class/backlight/panel/brightness
- -      pixel_format: RGBX_8888
- -      theme: portrait_hdpi
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p30
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p31
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p26
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p28
 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
