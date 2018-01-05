@@ -126,6 +126,7 @@
     pixel_format: RGBA_8888
     theme: portrait_hdpi
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
  -   name: OPPO F1f
@@ -170,3 +171,5 @@
     default_brightness: 162
     pixel_format: RGBX_8888
     theme: portrait_hdpi
+=======
+>>>>>>> parent of 871390a2... Add support for oppo F1f
