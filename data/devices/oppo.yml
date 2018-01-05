@@ -125,3 +125,48 @@
     brightness_path: /sys/class/leds/lcd-backlight/brightness
     pixel_format: RGBA_8888
     theme: portrait_hdpi
+<<<<<<< HEAD
+
+<<<<<<< HEAD
+ -   name: OPPO F1f
+=======
+- name: OPPO F1f
+>>>>>>> parent of 51a49ddb... Update oppo.yml
+=======
+- name: OPPO F1f
+>>>>>>> parent of d49a9666... Update oppo.yml
+ -   id: f1f
+ -   codenames: f1f
+ -
+ -   architecture: armeabi-v7a
+ -
+  block_devs:
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p27
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p30
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p31
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/mmcblk0p26
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p28
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    pixel_format: RGBX_8888
+    theme: portrait_hdpi
