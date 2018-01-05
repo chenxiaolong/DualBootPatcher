@@ -127,10 +127,14 @@
     theme: portrait_hdpi
 <<<<<<< HEAD
 
+<<<<<<< HEAD
  -   name: OPPO F1f
 =======
 - name: OPPO F1f
 >>>>>>> parent of 51a49ddb... Update oppo.yml
+=======
+- name: OPPO F1f
+>>>>>>> parent of d49a9666... Update oppo.yml
  -   id: f1f
  -   codenames: f1f
  -
