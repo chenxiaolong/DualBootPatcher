@@ -43,8 +43,8 @@ build() {
     cd "build_${abi}"
 
     local asflags='-fno-integrated-as'
-    local cflags='-ffunction-sections -fdata-sections'
-    local cxxflags='-ffunction-sections -fdata-sections'
+    local cflags='-ffunction-sections -fdata-sections -DOPENSSL_SMALL'
+    local cxxflags='-ffunction-sections -fdata-sections -DOPENSSL_SMALL'
 
     if [[ "${abi}" == 'arm64-v8a' ]]; then
         asflags+=' -Wa,-march=armv8-a+crypto'
