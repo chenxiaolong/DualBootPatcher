@@ -45,7 +45,7 @@
 #include "mbpatcher/private/miniziputils.h"
 
 // minizip
-#include "minizip/zip.h"
+#include "mz_zip.h"
 
 #define LOG_TAG "mbpatcher/patchers/odinpatcher"
 
@@ -255,7 +255,7 @@ bool OdinPatcher::patch_tar()
                           "multiboot/binaries/" + binary});
     }
 
-    zipFile zf = MinizipUtils::ctx_get_zip_file(m_z_output);
+    void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
     ErrorCode result;
 
@@ -264,7 +264,7 @@ bool OdinPatcher::patch_tar()
 
         update_details(spec.target);
 
-        result = MinizipUtils::add_file(zf, spec.target, spec.source);
+        result = MinizipUtils::add_file(handle, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             m_error = result;
             return false;
@@ -278,7 +278,7 @@ bool OdinPatcher::patch_tar()
     const std::string info_prop =
             ZipPatcher::create_info_prop(m_info->rom_id(), false);
     result = MinizipUtils::add_file(
-            zf, "multiboot/info.prop",
+            handle, "multiboot/info.prop",
             std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
     if (result != ErrorCode::NoError) {
         m_error = result;
@@ -296,7 +296,7 @@ bool OdinPatcher::patch_tar()
     }
 
     result = MinizipUtils::add_file(
-            zf, "multiboot/device.json",
+            handle, "multiboot/device.json",
             std::vector<unsigned char>(json.begin(), json.end()));
     if (result != ErrorCode::NoError) {
         m_error = result;
@@ -320,32 +320,18 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
         zip_name += ".sparse";
     }
 
-    // Ha! I'll be impressed if a Samsung firmware image does NOT need zip64
-    int zip64 = archive_entry_size(entry) > ((1ll << 32) - 1);
+    mz_zip_file file_info = {};
+    file_info.compression_method = MZ_COMPRESS_METHOD_DEFLATE;
+    file_info.filename = const_cast<char *>(zip_name.c_str());
+    file_info.filename_size = static_cast<uint16_t>(zip_name.size());
 
-    zip_fileinfo zi;
-    memset(&zi, 0, sizeof(zi));
-
-    zipFile zf = MinizipUtils::ctx_get_zip_file(m_z_output);
+    void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
     // Open file in output zip
-    int mz_ret = zipOpenNewFileInZip2_64(
-        zf,                    // file
-        zip_name.c_str(),      // filename
-        &zi,                   // zip_fileinfo
-        nullptr,               // extrafield_local
-        0,                     // size_extrafield_local
-        nullptr,               // extrafield_global
-        0,                     // size_extrafield_global
-        nullptr,               // comment
-        Z_DEFLATED,            // method
-        Z_DEFAULT_COMPRESSION, // level
-        0,                     // raw
-        zip64                  // zip64
-    );
-    if (mz_ret != ZIP_OK) {
-        LOGE("minizip: Failed to open new file in output zip: %s",
-             MinizipUtils::zip_error_string(mz_ret).c_str());
+    int mz_ret = mz_zip_entry_write_open(handle, &file_info,
+                                         MZ_COMPRESS_LEVEL_DEFAULT, nullptr);
+    if (mz_ret != MZ_OK) {
+        LOGE("minizip: Failed to open new file in output zip: %d", mz_ret);
         m_error = ErrorCode::ArchiveWriteHeaderError;
         return false;
     }
@@ -355,13 +341,12 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
     while ((n_read = archive_read_data(a, buf, sizeof(buf))) > 0) {
         if (m_cancelled) return false;
 
-        mz_ret = zipWriteInFileInZip(zf, buf, static_cast<uint32_t>(n_read));
-        if (mz_ret != ZIP_OK) {
-            LOGE("minizip: Failed to write %s in output zip: %s",
-                 zip_name.c_str(),
-                 MinizipUtils::zip_error_string(mz_ret).c_str());
+        int n_written = mz_zip_entry_write(
+                handle, buf, static_cast<uint32_t>(n_read));
+        if (static_cast<la_ssize_t>(n_written) != n_read) {
+            LOGE("minizip: Failed to write %s in output zip", zip_name.c_str());
             m_error = ErrorCode::ArchiveWriteDataError;
-            zipCloseFileInZip(zf);
+            mz_zip_entry_close(handle);
             return false;
         }
     }
@@ -370,15 +355,14 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
         LOGE("libarchive: Failed to read %s: %s",
              name, archive_error_string(a));
         m_error = ErrorCode::ArchiveReadDataError;
-        zipCloseFileInZip(zf);
+        mz_zip_entry_close(handle);
         return false;
     }
 
     // Close file in output zip
-    mz_ret = zipCloseFileInZip(zf);
-    if (mz_ret != ZIP_OK) {
-        LOGE("minizip: Failed to close file in output zip: %s",
-             MinizipUtils::zip_error_string(mz_ret).c_str());
+    mz_ret = mz_zip_entry_close(handle);
+    if (mz_ret != MZ_OK) {
+        LOGE("minizip: Failed to close file in output zip: %d", mz_ret);
         m_error = ErrorCode::ArchiveWriteDataError;
         return false;
     }
@@ -557,7 +541,8 @@ bool OdinPatcher::open_output_archive()
 {
     assert(m_z_output == nullptr);
 
-    m_z_output = MinizipUtils::open_output_file(m_info->output_path());
+    m_z_output = MinizipUtils::open_zip_file(m_info->output_path(),
+                                             ZipOpenMode::Write);
 
     if (!m_z_output) {
         LOGE("minizip: Failed to open for writing: %s",
@@ -573,10 +558,9 @@ bool OdinPatcher::close_output_archive()
 {
     assert(m_z_output != nullptr);
 
-    int ret = MinizipUtils::close_output_file(m_z_output);
-    if (ret != ZIP_OK) {
-        LOGW("minizip: Failed to close archive: %s",
-             MinizipUtils::zip_error_string(ret).c_str());
+    int ret = MinizipUtils::close_zip_file(m_z_output);
+    if (ret != MZ_OK) {
+        LOGW("minizip: Failed to close archive: %d", ret);
         // Don't clobber previous error
         //m_error = ErrorCode::ArchiveCloseError;
         return false;
