@@ -76,6 +76,7 @@ public class FreeSpaceFragment extends Fragment {
         SKIPPED_FSTYPES.add("selinuxfs");
         SKIPPED_FSTYPES.add("sysfs");
         SKIPPED_FSTYPES.add("tmpfs");
+        SKIPPED_FSTYPES.add("tracefs");
 
         SKIPPED_FSNAMES.add("debugfs");
         SKIPPED_FSNAMES.add("devpts");
@@ -86,6 +87,7 @@ public class FreeSpaceFragment extends Fragment {
         SKIPPED_FSNAMES.add("selinuxfs");
         SKIPPED_FSNAMES.add("sysfs");
         SKIPPED_FSNAMES.add("tmpfs");
+        SKIPPED_FSNAMES.add("tracefs");
     }
 
     public static FreeSpaceFragment newInstance() {
@@ -98,7 +100,7 @@ public class FreeSpaceFragment extends Fragment {
 
         mAdapter = new MountInfoAdapter(getActivity(), mMounts, COLORS);
 
-        RecyclerView rv = (RecyclerView) getActivity().findViewById(R.id.mountpoints);
+        RecyclerView rv = getActivity().findViewById(R.id.mountpoints);
         rv.setHasFixedSize(true);
         rv.setAdapter(mAdapter);
 
@@ -106,8 +108,7 @@ public class FreeSpaceFragment extends Fragment {
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         rv.setLayoutManager(llm);
 
-        final SwipeRefreshLayout srl =
-                (SwipeRefreshLayout) getActivity().findViewById(R.id.swiperefresh);
+        final SwipeRefreshLayout srl = getActivity().findViewById(R.id.swiperefresh);
         srl.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -181,25 +182,25 @@ public class FreeSpaceFragment extends Fragment {
     }
 
     private static class MountInfo {
-        public String mountpoint;
-        public String fsname;
-        public String fstype;
-        public long totalSpace;
-        public long availSpace;
+        String mountpoint;
+        String fsname;
+        String fstype;
+        long totalSpace;
+        long availSpace;
     }
 
-    protected static class MountInfoViewHolder extends ViewHolder {
-        protected TextView vMountPoint;
-        protected TextView vTotalSize;
-        protected TextView vAvailSize;
-        protected CircularProgressBar vProgress;
+    static class MountInfoViewHolder extends ViewHolder {
+        TextView vMountPoint;
+        TextView vTotalSize;
+        TextView vAvailSize;
+        CircularProgressBar vProgress;
 
-        public MountInfoViewHolder(View v) {
+        MountInfoViewHolder(View v) {
             super(v);
-            vMountPoint = (TextView) v.findViewById(R.id.mount_point);
-            vTotalSize = (TextView) v.findViewById(R.id.size_total);
-            vAvailSize = (TextView) v.findViewById(R.id.size_free);
-            vProgress = (CircularProgressBar) v.findViewById(R.id.mountpoint_usage);
+            vMountPoint = v.findViewById(R.id.mount_point);
+            vTotalSize = v.findViewById(R.id.size_total);
+            vAvailSize = v.findViewById(R.id.size_free);
+            vProgress = v.findViewById(R.id.mountpoint_usage);
         }
     }
 
@@ -209,7 +210,7 @@ public class FreeSpaceFragment extends Fragment {
         private int[] mColors;
         private int mStartingColorIndex;
 
-        public MountInfoAdapter(Context context, List<MountInfo> mounts, int[] colors) {
+        MountInfoAdapter(Context context, List<MountInfo> mounts, int[] colors) {
             mContext = context;
             mMounts = mounts;
             mColors = colors;
