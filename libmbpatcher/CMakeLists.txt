@@ -68,7 +68,7 @@ foreach(variant ${variants})
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mbpio-${variant}
         mblog-${variant}
-        libminizip-${variant}
+        libminizip
         LibArchive::LibArchive
     )
 

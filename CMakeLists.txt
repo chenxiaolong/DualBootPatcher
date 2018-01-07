@@ -173,6 +173,9 @@ include(${MBP_TARGET_CONFIG_FILE})
 # Implicit system include directories
 include(cmake/ImplicitIncludeDirs.cmake)
 
+# Helper functions to backup/restore variables
+include(cmake/VariableBackup.cmake)
+
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)
 

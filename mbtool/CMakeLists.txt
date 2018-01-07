@@ -230,7 +230,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbbootimg-static
         mbcommon-static
-        libminizip-static
+        libminizip
         rapidjson
         Procps::Procps
     )
@@ -245,7 +245,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbdevice-static
         mbbootimg-static
         mbcommon-static
-        libminizip-static
+        libminizip
         rapidjson
         LibArchive::LibArchive
         Procps::Procps # TODO
