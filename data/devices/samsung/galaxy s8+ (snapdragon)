@@ -1,0 +1,58 @@
+---
+# This is a complete sample device definition file DualBootPatcher.
+
+# To add a device definition
+# - Copy the section below to the appropriate device definition file
+# - Set the fields to the correct values for the device
+# - Remove unnecessary sections/fields
+# - Remove unnecessary comments and whitespace
+
+
+# Human readable device name (required)
+- name: Samsung Galaxy S8+ (Snapdragon)
+  # Device ID (required). Must be unique, but can be any string. It is good
+  # practice to set this value similar to the device's codename if possible.
+  id: dream2qltechn
+
+  # List of device codenames (required). The codename is the value of
+  # 'ro.product.device' or 'ro.build.product' in the /system/build.prop file.
+  # WARNING: All of the devices listed MUST have the same partition table.
+  #          Otherwise, there's a chance of hard-bricking the device.
+  codenames:
+    - dream2qltechn
+
+  # Device architecture (required). For example, armeabi-v7a, arm64-v8a, or x86.
+  architecture: arm64-v8a
+
+  # Block device paths section (required).
+  block_devs:
+    # Base directories (optional). This is a list of the 'by-name' directories
+    # in /dev/ that contain the partition block devices.
+    base_dirs:
+      - /dev/block/bootdevice/by-name
+
+    # System partition block device paths (required).
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/sda19
+
+    # Cache partition block device paths (required).
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/sda20
+
+    # Data partition block device paths (required).
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/sda24
+
+    # Boot partition block device paths (required).
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/sda17
+
+    # Recovery partition block device paths (required).
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/sda18
+
