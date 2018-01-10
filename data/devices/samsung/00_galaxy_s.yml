@@ -1067,6 +1067,7 @@
   codenames:
     # Regular variant
     - dream2qlte
+    - dream2qltechn
     - dream2qltezh
     - dream2qltezhn
   architecture: arm64-v8a
