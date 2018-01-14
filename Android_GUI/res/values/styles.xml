@@ -36,10 +36,10 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="preferenceTheme">@style/PreferenceTheme</item>
     </style>
 
-    <style name="DrawerActivityTheme" parent="AppTheme">
-    </style>
+    <style name="DrawerActivityTheme" parent="AppTheme" />
 
     <style name="TransparentActivityTheme" parent="AppTheme">
         <item name="android:backgroundDimEnabled">false</item>
@@ -48,6 +48,15 @@
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- Preference theme -->
+    <style name="PreferenceTheme" parent="PreferenceThemeOverlay.v14.Material">
+        <item name="preferenceCategoryStyle">@style/preference_category_compat</item>
+    </style>
+
+    <style name="preference_category_compat" parent="Preference.Category.Material">
+        <item name="android:layout">@layout/preference_category_material_compat</item>
     </style>
 
     <!-- Toolbar theme -->

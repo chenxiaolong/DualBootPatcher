@@ -18,16 +18,16 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
-import android.app.LoaderManager.LoaderCallbacks;
-import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.AppCompatEditText;
 import android.support.v7.widget.AppCompatSpinner;
 import android.text.Editable;
@@ -134,10 +134,11 @@ public class PatcherOptionsDialog extends DialogFragment implements LoaderCallba
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        getActivity().getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         mIsInitial = savedInstanceState == null;
 

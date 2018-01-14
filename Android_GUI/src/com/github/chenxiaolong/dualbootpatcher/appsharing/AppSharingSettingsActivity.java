@@ -31,11 +31,11 @@ public class AppSharingSettingsActivity extends AppCompatActivity {
         setContentView(R.layout.rom_settings);
 
         if (savedInstanceState == null) {
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, new AppSharingSettingsFragment()).commit();
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }

@@ -18,12 +18,12 @@
 package com.github.chenxiaolong.dualbootpatcher.dialogs;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -58,6 +58,7 @@ public class GenericConfirmDialog extends DialogFragment implements SingleButton
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Bundle args = getArguments();
         mBuilder = (Builder) args.getSerializable(ARG_BUILDER);

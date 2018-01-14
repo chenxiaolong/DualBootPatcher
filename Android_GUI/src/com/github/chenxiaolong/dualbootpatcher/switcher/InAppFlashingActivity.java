@@ -38,7 +38,7 @@ public class InAppFlashingActivity extends AppCompatActivity implements OnReadyS
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_in_app_flashing);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
@@ -67,7 +67,7 @@ public class InAppFlashingActivity extends AppCompatActivity implements OnReadyS
             return true;
         case R.id.check_item:
             InAppFlashingFragment frag = (InAppFlashingFragment)
-                    getFragmentManager().findFragmentById(R.id.zip_flashing_fragment);
+                    getSupportFragmentManager().findFragmentById(R.id.zip_flashing_fragment);
             frag.onActionBarCheckItemClicked();
             return true;
         }

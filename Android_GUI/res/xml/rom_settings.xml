@@ -17,60 +17,65 @@
    * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<android.support.v7.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory android:title="@string/rom_settings_boot_ui_title">
-        <Preference
+    <android.support.v7.preference.PreferenceCategory
+        android:title="@string/rom_settings_boot_ui_title">
+
+        <android.support.v7.preference.Preference
             android:key="boot_ui_install"
             android:title="@string/rom_settings_boot_ui_install_title" />
-        <Preference
+        <android.support.v7.preference.Preference
             android:key="boot_ui_uninstall"
             android:title="@string/rom_settings_boot_ui_uninstall_title" />
-    </PreferenceCategory>
+    </android.support.v7.preference.PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/rom_settings_backup_title">
-        <Preference
+    <android.support.v7.preference.PreferenceCategory
+        android:title="@string/rom_settings_backup_title">
+
+        <android.support.v7.preference.Preference
             android:key="backup_directory"
             android:title="@string/rom_settings_backup_change_directory" />
-    </PreferenceCategory>
+    </android.support.v7.preference.PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/rom_settings_patcher_title">
-        <!-- com.afollestad.materialdialogs.prefs.MaterialListPreference -->
-        <ListPreference
+    <android.support.v7.preference.PreferenceCategory
+        android:title="@string/rom_settings_patcher_title">
+
+        <android.support.v7.preference.ListPreference
             android:entries="@array/initial_screen_values"
             android:entryValues="@array/initial_screen_entry_values"
             android:key="initial_screen"
             android:persistent="true"
             android:summary="@string/rom_settings_initial_screen_desc"
             android:title="@string/rom_settings_initial_screen_title" />
-        <CheckBoxPreference
+        <android.support.v7.preference.CheckBoxPreference
             android:defaultValue="false"
             android:key="use_dark_theme"
             android:title="@string/rom_settings_use_dark_theme" />
-        <!-- com.afollestad.materialdialogs.prefs.MaterialEditTextPreference -->
-        <EditTextPreference
+        <android.support.v7.preference.EditTextPreference
             android:key="parallel_patching_threads"
             android:title="@string/rom_settings_parallel_patching_title"
             android:persistent="false"
             android:inputType="number" />
-        <CheckBoxPreference
+        <android.support.v7.preference.CheckBoxPreference
             android:defaultValue="false"
             android:key="allow_3rd_party_intents"
             android:summary="@string/rom_settings_allow_intents_desc"
             android:title="@string/rom_settings_allow_intents_title" />
-        <CheckBoxPreference
+        <android.support.v7.preference.CheckBoxPreference
             android:defaultValue="false"
             android:key="confirm_reboot"
             android:summary="@string/rom_settings_show_reboot_confirm_desc"
             android:title="@string/rom_settings_show_reboot_confirm_title" />
-        <CheckBoxPreference
+        <android.support.v7.preference.CheckBoxPreference
             android:defaultValue="true"
             android:key="show_reboot"
             android:title="@string/rom_settings_show_reboot_title" />
-        <CheckBoxPreference
+        <android.support.v7.preference.CheckBoxPreference
             android:defaultValue="false"
             android:key="show_exit"
             android:title="@string/rom_settings_show_exit_title" />
-    </PreferenceCategory>
+    </android.support.v7.preference.PreferenceCategory>
 
-</PreferenceScreen>
+</android.support.v7.preference.PreferenceScreen>

@@ -18,9 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.view.View;
 
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -65,6 +66,7 @@ public class RomIdSelectionDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         final ArrayList<RomInformation> infos = getArguments().getParcelableArrayList(ARG_INFOS);
         final String[] names = new String[infos.size() + 2];

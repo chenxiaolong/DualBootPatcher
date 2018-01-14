@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -31,7 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
-import android.support.v13.app.FragmentCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -326,8 +325,7 @@ public class SwitcherListFragment extends Fragment implements
     }
 
     private void requestPermissions() {
-        FragmentCompat.requestPermissions(
-                this, PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+        requestPermissions(PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
     }
 
     private void onPermissionsGranted() {

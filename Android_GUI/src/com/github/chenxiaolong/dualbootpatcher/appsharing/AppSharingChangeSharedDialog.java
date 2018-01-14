@@ -18,9 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.appsharing;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.MaterialDialog.ListCallbackMultiChoice;
@@ -67,12 +68,12 @@ public class AppSharingChangeSharedDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Bundle args = getArguments();
         final String pkg = args.getString(ARG_PKG);
         final String name = args.getString(ARG_NAME);
         final boolean shareData = args.getBoolean(ARG_SHARE_DATA);
-        final boolean isSystemApp = args.getBoolean(ARG_IS_SYSTEM_APP);
         final ArrayList<String> romsUsingSharedData =
                 args.getStringArrayList(ARG_ROMS_USING_SHARED_DATA);
 

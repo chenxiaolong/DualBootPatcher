@@ -604,7 +604,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
     private void onSelectedEditName() {
         RomNameInputDialog d = RomNameInputDialog.newInstanceFromActivity(mRomInfo);
-        d.show(getFragmentManager(), CONFIRM_DIALOG_ROM_NAME);
+        d.show(getSupportFragmentManager(), CONFIRM_DIALOG_ROM_NAME);
     }
 
     private void onSelectedChangeImage() {
@@ -627,7 +627,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     public void onSelectedAddToHomeScreen() {
         AddToHomeScreenOptionsDialog d =
                 AddToHomeScreenOptionsDialog.newInstanceFromActivity(mRomInfo);
-        d.show(getFragmentManager(), CONFIRM_DIALOG_ADD_TO_HOME_SCREEN);
+        d.show(getSupportFragmentManager(), CONFIRM_DIALOG_ADD_TO_HOME_SCREEN);
     }
 
     public void onSelectedUpdateRamdisk() {
@@ -676,17 +676,17 @@ public class RomDetailActivity extends AppCompatActivity implements
             ConfirmMismatchedSetKernelDialog d =
                     ConfirmMismatchedSetKernelDialog.newInstanceFromActivity(
                             mActiveRomId, mRomInfo.getId());
-            d.show(getFragmentManager(), CONFIRM_DIALOG_MISMATCHED_KERNEL);
+            d.show(getSupportFragmentManager(), CONFIRM_DIALOG_MISMATCHED_KERNEL);
         } else {
             SetKernelConfirmDialog d = SetKernelConfirmDialog.newInstanceFromActivity(mRomInfo);
-            d.show(getFragmentManager(), CONFIRM_DIALOG_SET_KERNEL);
+            d.show(getSupportFragmentManager(), CONFIRM_DIALOG_SET_KERNEL);
         }
     }
 
     public void onSelectedBackupRom() {
         BackupRestoreTargetsSelectionDialog d =
                 BackupRestoreTargetsSelectionDialog.newInstanceFromActivity(Action.BACKUP);
-        d.show(getFragmentManager(), CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS);
+        d.show(getSupportFragmentManager(), CONFIRM_DIALOG_BACKUP_RESTORE_TARGETS);
     }
 
     public void onSelectedWipeRom() {
@@ -694,7 +694,7 @@ public class RomDetailActivity extends AppCompatActivity implements
             createSnackbar(R.string.wipe_rom_no_wipe_current_rom, Snackbar.LENGTH_LONG).show();
         } else {
             WipeTargetsSelectionDialog d = WipeTargetsSelectionDialog.newInstanceFromActivity();
-            d.show(getFragmentManager(), CONFIRM_DIALOG_WIPE_TARGETS);
+            d.show(getSupportFragmentManager(), CONFIRM_DIALOG_WIPE_TARGETS);
         }
     }
 
@@ -739,7 +739,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         if (reboot) {
             GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
             builder.message(R.string.please_wait);
-            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
+            builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_REBOOT);
 
             new Thread() {
                 @Override
@@ -764,7 +764,7 @@ public class RomDetailActivity extends AppCompatActivity implements
 
         // Prompt for back up name
         BackupNameInputDialog d = BackupNameInputDialog.newInstanceFromActivity(suggestedName);
-        d.show(getFragmentManager(), INPUT_DIALOG_BACKUP_NAME);
+        d.show(getSupportFragmentManager(), INPUT_DIALOG_BACKUP_NAME);
     }
 
     @Override
@@ -875,7 +875,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         removeCachedTaskId(mTaskIdSwitchRom);
         mTaskIdSwitchRom = -1;
 
-        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+        GenericProgressDialog d = (GenericProgressDialog) getSupportFragmentManager()
                 .findFragmentByTag(PROGRESS_DIALOG_SWITCH_ROM);
         if (d != null) {
             d.dismiss();
@@ -910,7 +910,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         removeCachedTaskId(mTaskIdSetKernel);
         mTaskIdSetKernel = -1;
 
-        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+        GenericProgressDialog d = (GenericProgressDialog) getSupportFragmentManager()
                 .findFragmentByTag(PROGRESS_DIALOG_SET_KERNEL);
         if (d != null) {
             d.dismiss();
@@ -956,7 +956,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         removeCachedTaskId(mTaskIdWipeRom);
         mTaskIdWipeRom = -1;
 
-        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+        GenericProgressDialog d = (GenericProgressDialog) getSupportFragmentManager()
                 .findFragmentByTag(PROGRESS_DIALOG_WIPE_ROM);
         if (d != null) {
             d.dismiss();
@@ -1037,7 +1037,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
         builder.title(R.string.switching_rom);
         builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
+        builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_SWITCH_ROM);
 
         mTaskIdSwitchRom = mService.switchRom(mRomInfo.getId(), forceChecksumsUpdate);
         mService.addCallback(mTaskIdSwitchRom, mCallback);
@@ -1048,7 +1048,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
         builder.title(R.string.setting_kernel);
         builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
+        builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_SET_KERNEL);
 
         mTaskIdSetKernel = mService.setKernel(mRomInfo.getId());
         mService.addCallback(mTaskIdSetKernel, mCallback);
@@ -1080,7 +1080,7 @@ public class RomDetailActivity extends AppCompatActivity implements
         GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
         builder.title(R.string.wiping_targets);
         builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
+        builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_WIPE_ROM);
 
         mTaskIdWipeRom = mService.wipeRom(mRomInfo.getId(), targets);
         mService.addCallback(mTaskIdWipeRom, mCallback);
@@ -1090,7 +1090,7 @@ public class RomDetailActivity extends AppCompatActivity implements
     private void showChecksumIssueDialog(int issue, String romId) {
         ConfirmChecksumIssueDialog d =
                 ConfirmChecksumIssueDialog.newInstanceFromActivity(issue, romId);
-        d.show(getFragmentManager(), CONFIRM_DIALOG_CHECKSUM_ISSUE);
+        d.show(getSupportFragmentManager(), CONFIRM_DIALOG_CHECKSUM_ISSUE);
     }
 
     private void showUnknownBootPartitionDialog() {
@@ -1100,17 +1100,17 @@ public class RomDetailActivity extends AppCompatActivity implements
         GenericConfirmDialog.Builder builder = new GenericConfirmDialog.Builder();
         builder.message(message);
         builder.buttonText(R.string.ok);
-        builder.build().show(getFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
+        builder.build().show(getSupportFragmentManager(), CONFIRM_DIALOG_UNKNOWN_BOOT_PARTITION);
     }
 
     private void showRamdiskUpdateProgressDialog() {
         GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
         builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
+        builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_UPDATE_RAMDISK);
     }
 
     private void hideRamdiskUpdateProgressDialog() {
-        GenericProgressDialog d = (GenericProgressDialog) getFragmentManager()
+        GenericProgressDialog d = (GenericProgressDialog) getSupportFragmentManager()
                 .findFragmentByTag(PROGRESS_DIALOG_UPDATE_RAMDISK);
         if (d != null) {
             d.dismiss();
@@ -1122,7 +1122,7 @@ public class RomDetailActivity extends AppCompatActivity implements
                 mBootedRomInfo.getId().equals(mRomInfo.getId());
         UpdateRamdiskResultDialog dialog =
                 UpdateRamdiskResultDialog.newInstanceFromActivity(success, isCurrentRom);
-        dialog.show(getFragmentManager(), CONFIRM_DIALOG_UPDATED_RAMDISK);
+        dialog.show(getSupportFragmentManager(), CONFIRM_DIALOG_UPDATED_RAMDISK);
     }
 
     private Snackbar createSnackbar(String text, int duration) {
