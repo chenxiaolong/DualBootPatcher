@@ -62,6 +62,7 @@ public:
         _f = std::move(rhs._f);
         _dismissed = rhs._dismissed;
         rhs.dismiss();
+        return *this;
     }
 
     void dismiss() noexcept
