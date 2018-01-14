@@ -645,7 +645,7 @@
 - name: Lenovo A536
   id: A536
   codenames:
-      - A536
+    - A536
   architecture: armeabi-v7a
   block_devs:
     base_dirs:
