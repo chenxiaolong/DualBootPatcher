@@ -667,7 +667,6 @@
       - /dev/block/bootdevice/by-num/recovery
       - /dev/recovery
     extra:
-      - /dev/block/mmcblk1p1
       - /dev/block/platform/mtk-msdc.0/by-num/p1
       - /dev/block/platform/mtk-msdc.0/by-num/p2
       - /dev/block/platform/mtk-msdc.0/by-num/p3
