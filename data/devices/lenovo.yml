@@ -654,15 +654,12 @@
     system:
       - /dev/block/bootdevice/by-num/system
       - /dev/block/mmcblk0p5
-      - /emmc@android
     cache:
       - /dev/block/bootdevice/by-num/cache
       - /dev/block/mmcblk0p6
-      - /emmc@cache
     data:
       - /dev/block/bootdevice/by-num/userdata
       - /dev/block/mmcblk0p7
-      - /emmc@usrdata
     boot:
       - /dev/block/bootdevice/by-num/boot
       - /dev/bootimg
@@ -683,9 +680,6 @@
       - /dev/nvram
       - /dev/pro_info
       - /dev/uboot
-      - /emmc@protect_f
-      - /emmc@protect_s
-      - /emmc@sec_ro
       - /dev/block/mmcblk1
       - /dev/block/mmcblk1p1
  
