@@ -37,14 +37,14 @@ public class MbtoolTaskOutputActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             mFragment = new MbtoolTaskOutputFragment();
             mFragment.setArguments(getIntent().getExtras());
-            getFragmentManager().beginTransaction().add(
+            getSupportFragmentManager().beginTransaction().add(
                     R.id.content_frame, mFragment, MbtoolTaskOutputFragment.FRAGMENT_TAG).commit();
         } else {
             mFragment = (MbtoolTaskOutputFragment)
-                    getFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.FRAGMENT_TAG);
+                    getSupportFragmentManager().findFragmentByTag(MbtoolTaskOutputFragment.FRAGMENT_TAG);
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 

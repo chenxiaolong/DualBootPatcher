@@ -18,9 +18,9 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
@@ -56,6 +56,7 @@ public class ConfirmAutomatedSwitchRomDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         String romId = getArguments().getString(ARG_ROM_ID);
 

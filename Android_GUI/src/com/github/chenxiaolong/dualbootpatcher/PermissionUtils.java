@@ -18,12 +18,11 @@
 package com.github.chenxiaolong.dualbootpatcher;
 
 import android.Manifest;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.v13.app.FragmentCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 
 public class PermissionUtils {
@@ -68,7 +67,7 @@ public class PermissionUtils {
     public static boolean shouldShowRationales(@NonNull Fragment fragment,
                                                @NonNull String[] permissions) {
         for (String permission : permissions) {
-            if (FragmentCompat.shouldShowRequestPermissionRationale(fragment, permission)) {
+            if (fragment.shouldShowRequestPermissionRationale(permission)) {
                 return true;
             }
         }

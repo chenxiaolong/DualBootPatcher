@@ -17,10 +17,10 @@
 
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
-import android.app.Fragment;
-import android.app.FragmentTransaction;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
@@ -47,7 +47,7 @@ public class AutomatedPatcherActivity extends AppCompatActivity /* implements Pa
             return;
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         Bundle args = getIntent().getExtras();
@@ -56,7 +56,7 @@ public class AutomatedPatcherActivity extends AppCompatActivity /* implements Pa
         }
 
         if (savedInstanceState == null) {
-            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
             Fragment frag = PatchFileFragment.newInstance();
             frag.setArguments(args);
             ft.replace(R.id.content_frame, frag);

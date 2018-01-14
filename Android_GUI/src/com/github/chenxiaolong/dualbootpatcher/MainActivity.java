@@ -17,9 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher;
 
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -29,8 +26,12 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.NavigationView.OnNavigationItemSelectedListener;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -105,10 +106,10 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             mTitle = savedInstanceState.getInt(EXTRA_TITLE);
         }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                 R.string.drawer_open, R.string.drawer_close) {
             @Override
@@ -122,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             }
         };
 
-        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
         mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -130,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
             actionBar.setHomeButtonEnabled(true);
         }
 
-        mDrawerView = (NavigationView) findViewById(R.id.left_drawer);
+        mDrawerView = findViewById(R.id.left_drawer);
         mDrawerView.setNavigationItemSelectedListener(this);
 
         // There's a weird performance issue when the drawer is first opened, no matter if we set
@@ -139,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         // method with any dimensions (even the original) works around the performance issue. Maybe
         // something doesn't like PNGs exported from GIMP?
         View header = mDrawerView.inflateHeaderView(R.layout.nav_header);
-        ImageView navImage = (ImageView) header.findViewById(R.id.nav_header_image);
+        ImageView navImage = header.findViewById(R.id.nav_header_image);
         BitmapFactory.Options dimensions = new BitmapFactory.Options();
         dimensions.inJustDecodeBounds = true;
         BitmapFactory.decodeResource(getResources(), R.drawable.material, dimensions);
@@ -147,9 +148,9 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
                 .resize(dimensions.outWidth, dimensions.outHeight).into(navImage);
 
         // Set nav drawer header text
-        TextView appName = (TextView) header.findViewById(R.id.nav_header_app_name);
+        TextView appName = header.findViewById(R.id.nav_header_app_name);
         appName.setText(BuildConfig.APP_NAME_RESOURCE);
-        TextView appVersion = (TextView) header.findViewById(R.id.nav_header_app_version);
+        TextView appVersion = header.findViewById(R.id.nav_header_app_version);
         appVersion.setText(String.format(getString(R.string.version), BuildConfig.VERSION_NAME));
 
         // Nav drawer width according to material design guidelines
@@ -266,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     }
 
     @Override
-    public boolean onNavigationItemSelected(MenuItem menuItem) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         onDrawerItemClicked(menuItem.getItemId(), true);
         return false;
     }
@@ -359,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
         case R.id.nav_reboot:
             GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
             builder.message(R.string.please_wait);
-            builder.build().show(getFragmentManager(), PROGRESS_DIALOG_REBOOT);
+            builder.build().show(getSupportFragmentManager(), PROGRESS_DIALOG_REBOOT);
 
             SwitcherUtils.reboot(this);
             break;
@@ -379,7 +380,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     }
 
     private void hideFragments(boolean animate) {
-        FragmentManager fm = getFragmentManager();
+        FragmentManager fm = getSupportFragmentManager();
 
         Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.FRAGMENT_TAG);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.FRAGMENT_TAG);
@@ -410,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements OnNavigationItemS
     }
 
     private void showFragment() {
-        FragmentManager fm = getFragmentManager();
+        FragmentManager fm = getSupportFragmentManager();
 
         Fragment prevRoms = fm.findFragmentByTag(SwitcherListFragment.FRAGMENT_TAG);
         Fragment prevPatchFile = fm.findFragmentByTag(PatchFileFragment.FRAGMENT_TAG);

@@ -17,17 +17,17 @@
 
 package com.github.chenxiaolong.dualbootpatcher.appsharing;
 
-import android.app.Fragment;
-import android.app.LoaderManager.LoaderCallbacks;
-import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -97,12 +97,12 @@ public class AppListFragment extends Fragment implements
 
         setHasOptionsMenu(true);
 
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
+        mProgressBar = getActivity().findViewById(R.id.loading);
 
         mAppInfos = new ArrayList<>();
         mAdapter = new AppCardAdapter(mAppInfos, this);
 
-        mAppsList = (RecyclerView) getActivity().findViewById(R.id.apps);
+        mAppsList = getActivity().findViewById(R.id.apps);
         mAppsList.setHasFixedSize(true);
         mAppsList.setAdapter(mAdapter);
 
@@ -126,7 +126,7 @@ public class AppListFragment extends Fragment implements
             mSearchQuery = savedInstanceState.getString(EXTRA_SEARCH_QUERY);
         }
 
-        getActivity().getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
