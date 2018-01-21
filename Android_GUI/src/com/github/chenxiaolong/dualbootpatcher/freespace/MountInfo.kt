@@ -17,7 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.freespace
 
-internal class MountInfo(
+internal data class MountInfo(
         val mountPoint: String,
         val fsName: String,
         val fsType: String,

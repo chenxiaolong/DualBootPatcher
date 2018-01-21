@@ -24,6 +24,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.ViewHolder
@@ -48,9 +49,31 @@ class FreeSpaceFragment : Fragment() {
 
         val model = ViewModelProviders.of(this).get(FreeSpaceViewModel::class.java)
         model.mounts.observe(this, Observer { mounts ->
+            mounts!!
+
+            val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                    return this@FreeSpaceFragment.mounts[oldItemPosition].mountPoint ==
+                            mounts[newItemPosition].mountPoint
+                }
+
+                override fun getOldListSize(): Int {
+                    return this@FreeSpaceFragment.mounts.size
+                }
+
+                override fun getNewListSize(): Int {
+                    return mounts.size
+                }
+
+                override fun areContentsTheSame(oldItemPosition: Int,
+                                                newItemPosition: Int): Boolean {
+                    return this@FreeSpaceFragment.mounts[oldItemPosition] == mounts[newItemPosition]
+                }
+            })
+
             this.mounts.clear()
-            this.mounts.addAll(mounts!!)
-            adapter.notifyDataSetChanged()
+            this.mounts.addAll(mounts)
+            result.dispatchUpdatesTo(adapter)
         })
 
         adapter = MountInfoAdapter(activity!!, mounts, COLORS)
