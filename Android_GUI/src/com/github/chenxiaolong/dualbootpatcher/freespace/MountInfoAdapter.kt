@@ -17,17 +17,12 @@
 
 package com.github.chenxiaolong.dualbootpatcher.freespace
 
-import android.content.Context
 import android.support.v7.util.DiffUtil
 import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.github.chenxiaolong.dualbootpatcher.FileUtils
-import com.github.chenxiaolong.dualbootpatcher.R
 import java.util.*
 
 internal class MountInfoAdapter constructor(
-        private val context: Context,
         private val colors: IntArray
 ) : RecyclerView.Adapter<MountInfoViewHolder>() {
     private var mounts = emptyList<MountInfo>()
@@ -35,31 +30,14 @@ internal class MountInfoAdapter constructor(
     // Choose random color to start from (and go down the list)
     private val startingColorIndex: Int = Random().nextInt(colors.size)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MountInfoViewHolder {
-        val view = LayoutInflater
-                .from(parent.context)
-                .inflate(R.layout.card_v7_free_space, parent, false)
-        return MountInfoViewHolder(view)
-    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MountInfoViewHolder =
+            MountInfoViewHolder.create(parent)
 
     override fun onBindViewHolder(holder: MountInfoViewHolder, position: Int) {
         val mount = mounts[position]
-
-        val strTotal = FileUtils.toHumanReadableSize(context, mount.totalSpace, 2)
-        val strAvail = FileUtils.toHumanReadableSize(context, mount.availSpace, 2)
-
-        holder.vMountPoint.text = mount.mountPoint
-        holder.vTotalSize.text = strTotal
-        holder.vAvailSize.text = strAvail
-
-        if (mount.totalSpace == 0L) {
-            holder.vProgress.progress = 0f
-        } else {
-            holder.vProgress.progress = 1.0f - mount.availSpace.toFloat() / mount.totalSpace
-        }
-
         val color = colors[(startingColorIndex + position) % colors.size]
-        holder.vProgress.progressColor = color
+
+        holder.bindTo(mount, color)
     }
 
     override fun getItemCount(): Int {

@@ -17,15 +17,45 @@
 
 package com.github.chenxiaolong.dualbootpatcher.freespace
 
+import android.support.annotation.ColorInt
 import android.support.v7.widget.RecyclerView
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
+import com.github.chenxiaolong.dualbootpatcher.FileUtils
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar
 
-internal class MountInfoViewHolder(v: View) : RecyclerView.ViewHolder(v) {
-    var vMountPoint: TextView = v.findViewById(R.id.mount_point)
-    var vTotalSize: TextView = v.findViewById(R.id.size_total)
-    var vAvailSize: TextView = v.findViewById(R.id.size_free)
-    var vProgress: CircularProgressBar = v.findViewById(R.id.mountpoint_usage)
+internal class MountInfoViewHolder(val v: View) : RecyclerView.ViewHolder(v) {
+    private var vMountPoint: TextView = v.findViewById(R.id.mount_point)
+    private var vTotalSize: TextView = v.findViewById(R.id.size_total)
+    private var vAvailSize: TextView = v.findViewById(R.id.size_free)
+    private var vProgress: CircularProgressBar = v.findViewById(R.id.mountpoint_usage)
+
+    fun bindTo(mount: MountInfo, @ColorInt color: Int) {
+        val strTotal = FileUtils.toHumanReadableSize(v.context, mount.totalSpace, 2)
+        val strAvail = FileUtils.toHumanReadableSize(v.context, mount.availSpace, 2)
+
+        vMountPoint.text = mount.mountPoint
+        vTotalSize.text = strTotal
+        vAvailSize.text = strAvail
+
+        if (mount.totalSpace == 0L) {
+            vProgress.progress = 0f
+        } else {
+            vProgress.progress = 1.0f - mount.availSpace.toFloat() / mount.totalSpace
+        }
+
+        vProgress.progressColor = color
+    }
+
+    companion object {
+        fun create(parent: ViewGroup): MountInfoViewHolder {
+            val view = LayoutInflater
+                    .from(parent.context)
+                    .inflate(R.layout.card_v7_free_space, parent, false)
+            return MountInfoViewHolder(view)
+        }
+    }
 }

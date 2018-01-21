@@ -41,7 +41,7 @@ class FreeSpaceFragment : Fragment() {
             adapter.setList(mounts!!)
         })
 
-        adapter = MountInfoAdapter(activity!!, COLORS)
+        adapter = MountInfoAdapter(COLORS)
 
         val rv = activity!!.findViewById<RecyclerView>(R.id.mountpoints)
         rv.setHasFixedSize(true)
