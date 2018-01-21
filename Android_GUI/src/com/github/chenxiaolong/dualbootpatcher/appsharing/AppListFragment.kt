@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
     private lateinit var appsList: RecyclerView
     private lateinit var progressBar: ProgressBar
 
-    private var appInfos: ArrayList<AppInformation>? = null
+    private var appInfos = ArrayList<AppInformation>()
     private var config: RomConfig? = null
 
     private var searchQuery: String? = null
@@ -80,8 +80,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
 
         progressBar = activity!!.findViewById(R.id.loading)
 
-        appInfos = ArrayList()
-        adapter = AppCardAdapter(appInfos!!, this)
+        adapter = AppCardAdapter(appInfos, this)
 
         appsList = activity!!.findViewById(R.id.apps)
         appsList.setHasFixedSize(true)
@@ -147,12 +146,12 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
 
         val sharedPkgs = HashMap<String, SharedItems>()
 
-        appInfos!!
+        appInfos
                 .filter {
                     // Don't spam the config with useless entries
                     it.shareData
                 }
-                .forEach { sharedPkgs.put(it.pkg, SharedItems(it.shareData)) }
+                .forEach { sharedPkgs[it.pkg] = SharedItems(it.shareData) }
 
         config!!.indivAppSharingPackages = sharedPkgs
         config!!.apply()
@@ -175,7 +174,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
         searchQuery = newText
 
         val filteredInfoList = filter(appInfos, newText)
-        adapter.animateTo(filteredInfoList)
+        adapter.setTo(filteredInfoList)
         appsList.scrollToPosition(0)
         return true
     }
@@ -196,14 +195,14 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
     }
 
     override fun onLoadFinished(loader: Loader<LoaderResult>, result: LoaderResult?) {
-        appInfos!!.clear()
+        appInfos.clear()
 
         if (result == null) {
             activity!!.finish()
             return
         }
 
-        appInfos!!.addAll(result.appInfos)
+        appInfos.addAll(result.appInfos)
 
         config = result.config
 
@@ -212,7 +211,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
             val filteredInfoList = filter(appInfos, searchQuery!!)
             adapter.setTo(filteredInfoList)
         } else {
-            adapter.setTo(appInfos!!)
+            adapter.setTo(appInfos)
         }
 
         showAppList(true)
@@ -228,7 +227,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
     }
 
     override fun onChangedShared(pkg: String, shareData: Boolean) {
-        val appInfo: AppInformation = appInfos!!.firstOrNull { it.pkg == pkg } ?:
+        val appInfo: AppInformation = appInfos.firstOrNull { it.pkg == pkg } ?:
                 throw IllegalStateException("Sharing state was changed for package $pkg, " +
                         "which is not in the apps list")
 
@@ -237,10 +236,10 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
             appInfo.shareData = shareData
         }
 
-        adapter.animateTo(appInfos!!)
+        adapter.setTo(appInfos)
     }
 
-    class AppInformation(
+    data class AppInformation(
             val pkg: String,
             val name: String,
             val icon: Drawable,
@@ -361,7 +360,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
                 }
 
                 val config = RomConfig.getConfig(rom.configPath!!)
-                sharedPkgsMap.put(rom.id!!, config.indivAppSharingPackages)
+                sharedPkgsMap[rom.id!!] = config.indivAppSharingPackages
             }
 
             return sharedPkgsMap

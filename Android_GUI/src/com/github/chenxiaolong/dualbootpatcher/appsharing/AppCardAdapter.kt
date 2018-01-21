@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 package com.github.chenxiaolong.dualbootpatcher.appsharing
 
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.ViewHolder
@@ -97,62 +98,26 @@ class AppCardAdapter(
     }
 
     fun setTo(infos: List<AppInformation>) {
+        val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return apps[oldItemPosition].pkg == infos[newItemPosition].pkg
+            }
+
+            override fun getOldListSize(): Int {
+                return apps.size
+            }
+
+            override fun getNewListSize(): Int {
+                return infos.size
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return apps[oldItemPosition] == infos[newItemPosition]
+            }
+        })
+
         apps.clear()
         apps.addAll(infos)
-        notifyDataSetChanged()
-    }
-
-    fun animateTo(infos: List<AppInformation>) {
-        applyAndAnimateRemovals(infos)
-        applyAndAnimateAdditions(infos)
-        applyAndAnimateMovedItems(infos)
-    }
-
-    private fun applyAndAnimateRemovals(newInfos: List<AppInformation>) {
-        for (i in apps.indices.reversed()) {
-            val info = apps[i]
-            if (!newInfos.contains(info)) {
-                removeItem(i)
-            }
-        }
-    }
-
-    private fun applyAndAnimateAdditions(newInfos: List<AppInformation>) {
-        var i = 0
-        val count = newInfos.size
-        while (i < count) {
-            val info = newInfos[i]
-            if (!apps.contains(info)) {
-                addItem(i, info)
-            }
-            i++
-        }
-    }
-
-    private fun applyAndAnimateMovedItems(newInfos: List<AppInformation>) {
-        for (toPosition in newInfos.indices.reversed()) {
-            val info = newInfos[toPosition]
-            val fromPosition = apps.indexOf(info)
-            if (fromPosition >= 0 && fromPosition != toPosition) {
-                moveItem(fromPosition, toPosition)
-            }
-        }
-    }
-
-    fun removeItem(position: Int): AppInformation {
-        val info = apps.removeAt(position)
-        notifyItemRemoved(position)
-        return info
-    }
-
-    fun addItem(position: Int, info: AppInformation) {
-        apps.add(position, info)
-        notifyItemInserted(position)
-    }
-
-    fun moveItem(fromPosition: Int, toPosition: Int) {
-        val info = apps.removeAt(fromPosition)
-        apps.add(toPosition, info)
-        notifyItemMoved(fromPosition, toPosition)
+        result.dispatchUpdatesTo(this)
     }
 }
