@@ -19,29 +19,18 @@ package com.github.chenxiaolong.dualbootpatcher.freespace
 
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
-import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-
-import com.github.chenxiaolong.dualbootpatcher.FileUtils
 import com.github.chenxiaolong.dualbootpatcher.R
-import com.github.chenxiaolong.dualbootpatcher.views.CircularProgressBar
-
-import java.util.ArrayList
-import java.util.Random
 
 class FreeSpaceFragment : Fragment() {
-    private val mounts = ArrayList<MountInfo>()
     private lateinit var adapter: MountInfoAdapter
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -49,34 +38,10 @@ class FreeSpaceFragment : Fragment() {
 
         val model = ViewModelProviders.of(this).get(FreeSpaceViewModel::class.java)
         model.mounts.observe(this, Observer { mounts ->
-            mounts!!
-
-            val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    return this@FreeSpaceFragment.mounts[oldItemPosition].mountPoint ==
-                            mounts[newItemPosition].mountPoint
-                }
-
-                override fun getOldListSize(): Int {
-                    return this@FreeSpaceFragment.mounts.size
-                }
-
-                override fun getNewListSize(): Int {
-                    return mounts.size
-                }
-
-                override fun areContentsTheSame(oldItemPosition: Int,
-                                                newItemPosition: Int): Boolean {
-                    return this@FreeSpaceFragment.mounts[oldItemPosition] == mounts[newItemPosition]
-                }
-            })
-
-            this.mounts.clear()
-            this.mounts.addAll(mounts)
-            result.dispatchUpdatesTo(adapter)
+            adapter.setList(mounts!!)
         })
 
-        adapter = MountInfoAdapter(activity!!, mounts, COLORS)
+        adapter = MountInfoAdapter(activity!!, COLORS)
 
         val rv = activity!!.findViewById<RecyclerView>(R.id.mountpoints)
         rv.setHasFixedSize(true)
@@ -103,53 +68,6 @@ class FreeSpaceFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_free_space, container, false)
-    }
-
-    internal class MountInfoViewHolder(v: View) : ViewHolder(v) {
-        var vMountPoint: TextView = v.findViewById(R.id.mount_point)
-        var vTotalSize: TextView = v.findViewById(R.id.size_total)
-        var vAvailSize: TextView = v.findViewById(R.id.size_free)
-        var vProgress: CircularProgressBar = v.findViewById(R.id.mountpoint_usage)
-    }
-
-    internal class MountInfoAdapter constructor(
-            private val context: Context,
-            private val mounts: List<MountInfo>,
-            private val colors: IntArray
-    ) : RecyclerView.Adapter<MountInfoViewHolder>() {
-        // Choose random color to start from (and go down the list)
-        private val startingColorIndex: Int = Random().nextInt(colors.size)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MountInfoViewHolder {
-            val view = LayoutInflater
-                    .from(parent.context)
-                    .inflate(R.layout.card_v7_free_space, parent, false)
-            return MountInfoViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: MountInfoViewHolder, position: Int) {
-            val mount = mounts[position]
-
-            val strTotal = FileUtils.toHumanReadableSize(context, mount.totalSpace, 2)
-            val strAvail = FileUtils.toHumanReadableSize(context, mount.availSpace, 2)
-
-            holder.vMountPoint.text = mount.mountPoint
-            holder.vTotalSize.text = strTotal
-            holder.vAvailSize.text = strAvail
-
-            if (mount.totalSpace == 0L) {
-                holder.vProgress.progress = 0f
-            } else {
-                holder.vProgress.progress = 1.0f - mount.availSpace.toFloat() / mount.totalSpace
-            }
-
-            val color = COLORS[(startingColorIndex + position) % colors.size]
-            holder.vProgress.progressColor = color
-        }
-
-        override fun getItemCount(): Int {
-            return mounts.size
-        }
     }
 
     companion object {
