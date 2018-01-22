@@ -967,3 +967,53 @@
       - fbdev
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
+
+- name: Motorola Moto G5(S) Plus
+  id: sanders
+  codenames:
+    - sanders
+    - sanders_retail
+    - sanders_n
+    - XT1802
+    - XT1804
+    - XT1806
+    - XT1805
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+      - /dev/block/mmcblk0p53
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+      - /dev/block/mmcblk0p52
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+      - /dev/block/mmcblk0p54
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+      - /dev/block/mmcblk0p37
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p38
+
+  boot_ui:
+    supported: true
+    flags:
+      - TW_SCREEN_BLANK_ON_BOOT
+      - TW_QCOM_RTC_FIX
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/backlight/panel/brightness
+    max_brightness: 255
+    default_brightness: 162
+    force_pixel_format: RGB_565
+    theme: portrait_hdpi
