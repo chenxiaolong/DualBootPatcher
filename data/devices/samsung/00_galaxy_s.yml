@@ -1113,13 +1113,14 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
     
-- name: samsung SM-G903F
+- name: Samsung Galaxy S5 Neo
   id: s5neolte
   codenames:
       - SM-G903F
       - s5neolte
       - s5neoltexx
-  architecture: 
+  architecture: arm64-v8a
+  
   block_devs:
     base_dirs:
       - /dev/block/platform/13540000.dwmmc0/by-num
