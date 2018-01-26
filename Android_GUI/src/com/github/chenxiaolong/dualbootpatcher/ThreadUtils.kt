@@ -18,10 +18,12 @@
 package com.github.chenxiaolong.dualbootpatcher
 
 import android.os.Looper
+import android.support.annotation.WorkerThread
 
 object ThreadUtils {
     class ExecutionOnMainThreadException : RuntimeException()
 
+    @WorkerThread
     fun enforceExecutionOnNonMainThread() {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             throw ExecutionOnMainThreadException()
