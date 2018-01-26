@@ -18,9 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -65,6 +66,7 @@ public class NamedSlotIdInputDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         final int type = getArguments().getInt(ARG_TYPE);
 
@@ -74,7 +76,8 @@ public class NamedSlotIdInputDialog extends DialogFragment {
                 .input(R.string.install_location_named_slot_id_hint, 0, false,
                         new InputCallback() {
                             @Override
-                            public void onInput(MaterialDialog dialog, CharSequence input) {
+                            public void onInput(@NonNull MaterialDialog dialog,
+                                                CharSequence input) {
                                 InstallLocation location;
 
                                 if (type == DATA_SLOT) {

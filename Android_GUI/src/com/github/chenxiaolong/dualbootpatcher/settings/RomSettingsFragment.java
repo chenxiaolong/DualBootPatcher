@@ -31,11 +31,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.preference.Preference;
-import android.preference.Preference.OnPreferenceChangeListener;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceFragment;
 import android.provider.DocumentsContract;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.Preference.OnPreferenceChangeListener;
+import android.support.v7.preference.Preference.OnPreferenceClickListener;
+import android.support.v7.preference.PreferenceFragmentCompat;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig;
@@ -57,7 +57,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 
 import java.util.ArrayList;
 
-public class RomSettingsFragment extends PreferenceFragment implements OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
+public class RomSettingsFragment extends PreferenceFragmentCompat implements
+        OnPreferenceChangeListener, ServiceConnection, OnPreferenceClickListener {
     private static final String PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog";
     private static final String CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog";
 
@@ -97,9 +98,7 @@ public class RomSettingsFragment extends PreferenceFragment implements OnPrefere
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         getPreferenceManager().setSharedPreferencesName("settings");
 
         addPreferencesFromResource(R.xml.rom_settings);

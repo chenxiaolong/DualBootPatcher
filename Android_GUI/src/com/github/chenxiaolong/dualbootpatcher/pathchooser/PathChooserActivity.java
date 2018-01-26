@@ -84,7 +84,7 @@ public class PathChooserActivity extends AppCompatActivity implements FileChoose
             }
 
             PathChooserDialog dialog = builder.buildFromActivity(DIALOG_PATH_CHOOSER);
-            dialog.show(getFragmentManager(), DIALOG_PATH_CHOOSER);
+            dialog.show(getSupportFragmentManager(), DIALOG_PATH_CHOOSER);
         }
     }
 

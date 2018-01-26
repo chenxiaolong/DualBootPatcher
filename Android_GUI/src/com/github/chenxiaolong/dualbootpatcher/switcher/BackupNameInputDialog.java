@@ -18,10 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.text.InputType;
 import android.widget.EditText;
 
@@ -79,6 +79,7 @@ public class BackupNameInputDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         String suggestedName = getArguments().getString(ARG_SUGGESTED_NAME);
 

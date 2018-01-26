@@ -18,10 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.dialogs;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
@@ -60,6 +60,7 @@ public class FirstUseDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         int titleResId = getArguments().getInt(ARG_TITLE_RES_ID);
         int messageResId = getArguments().getInt(ARG_MESSAGE_RES_ID);

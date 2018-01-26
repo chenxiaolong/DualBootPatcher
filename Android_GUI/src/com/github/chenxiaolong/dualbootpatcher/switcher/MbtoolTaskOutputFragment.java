@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +26,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcelable;
+import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -101,7 +101,7 @@ public class MbtoolTaskOutputFragment extends Fragment implements ServiceConnect
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mEmulatorView = (EmulatorView) getActivity().findViewById(R.id.terminal);
+        mEmulatorView = getActivity().findViewById(R.id.terminal);
         DisplayMetrics metrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
         mEmulatorView.setDensity(metrics);

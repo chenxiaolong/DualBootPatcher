@@ -17,7 +17,6 @@
 
 package com.github.chenxiaolong.dualbootpatcher.socket;
 
-import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -26,6 +25,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 
 import com.github.chenxiaolong.dualbootpatcher.R;
@@ -206,7 +206,7 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
             throw new IllegalStateException("Invalid mbtool error reason: " + mReason.name());
         }
 
-        dialog.show(getFragmentManager(), DIALOG_TAG);
+        dialog.show(getSupportFragmentManager(), DIALOG_TAG);
     }
 
     private void onMbtoolUpdateFinished(boolean success) {
@@ -214,7 +214,8 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
         mTaskIdUpdateMbtool = -1;
 
         // Dismiss progress dialog
-        DialogFragment dialog = (DialogFragment) getFragmentManager().findFragmentByTag(DIALOG_TAG);
+        DialogFragment dialog =
+                (DialogFragment) getSupportFragmentManager().findFragmentByTag(DIALOG_TAG);
         if (dialog != null) {
             dialog.dismiss();
         }
@@ -224,7 +225,7 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
             builder.message(R.string.mbtool_dialog_update_failed);
             builder.buttonText(R.string.ok);
             dialog = builder.buildFromActivity(DIALOG_TAG);
-            dialog.show(getFragmentManager(), DIALOG_TAG);
+            dialog.show(getSupportFragmentManager(), DIALOG_TAG);
         } else {
             exit(true);
         }
@@ -243,7 +244,7 @@ public class MbtoolErrorActivity extends AppCompatActivity implements ServiceCon
         if (DIALOG_TAG.equals(tag) && choice) {
             GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
             builder.message(R.string.mbtool_dialog_updating_mbtool);
-            builder.build().show(getFragmentManager(), DIALOG_TAG);
+            builder.build().show(getSupportFragmentManager(), DIALOG_TAG);
 
             startMbtoolUpdate();
         } else {

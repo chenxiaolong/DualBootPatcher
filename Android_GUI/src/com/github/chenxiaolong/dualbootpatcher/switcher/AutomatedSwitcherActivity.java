@@ -160,7 +160,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
             if (shouldShow) {
                 ConfirmAutomatedSwitchRomDialog d = ConfirmAutomatedSwitchRomDialog.newInstance(
                         getIntent().getStringExtra(EXTRA_ROM_ID));
-                d.show(getFragmentManager(), CONFIRM_DIALOG_AUTOMATED);
+                d.show(getSupportFragmentManager(), CONFIRM_DIALOG_AUTOMATED);
             } else {
                 switchRom();
             }
@@ -206,7 +206,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         }
 
         GenericProgressDialog d = (GenericProgressDialog)
-                getFragmentManager().findFragmentByTag("automated_switch_rom_waiting");
+                getSupportFragmentManager().findFragmentByTag("automated_switch_rom_waiting");
         if (d != null) {
             d.dismiss();
         }
@@ -267,7 +267,7 @@ public class AutomatedSwitcherActivity extends AppCompatActivity implements
         GenericProgressDialog.Builder builder = new GenericProgressDialog.Builder();
         builder.title(R.string.switching_rom);
         builder.message(R.string.please_wait);
-        builder.build().show(getFragmentManager(), "automated_switch_rom_waiting");
+        builder.build().show(getSupportFragmentManager(), "automated_switch_rom_waiting");
 
         mTaskIdSwitchRom = mService.switchRom(getIntent().getStringExtra(EXTRA_ROM_ID), false);
         mService.addCallback(mTaskIdSwitchRom, mCallback);

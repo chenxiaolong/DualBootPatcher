@@ -45,7 +45,7 @@ foreach(variant ${variants})
         include
         PRIVATE
         .
-        ${CMAKE_SOURCE_DIR}/external
+        ${CMAKE_SOURCE_DIR}/external/minizip/src
     )
 
     # Only build static library if needed
@@ -68,7 +68,7 @@ foreach(variant ${variants})
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mbpio-${variant}
         mblog-${variant}
-        minizip-${variant}
+        libminizip
         LibArchive::LibArchive
     )
 

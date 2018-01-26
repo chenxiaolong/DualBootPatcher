@@ -18,14 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Activity;
-import android.app.Fragment;
-import android.app.LoaderManager.LoaderCallbacks;
-import android.content.AsyncTaskLoader;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -37,6 +33,10 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.provider.DocumentFile;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -205,8 +205,8 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             mPendingActions.addAll(savedActions);
         }
 
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.card_list_loading);
-        RecyclerView cardListView = (RecyclerView) getActivity().findViewById(R.id.card_list);
+        mProgressBar = getActivity().findViewById(R.id.card_list_loading);
+        RecyclerView cardListView = getActivity().findViewById(R.id.card_list);
 
         mAdapter = new PendingActionCardAdapter(getActivity(), mPendingActions);
         cardListView.setHasFixedSize(true);
@@ -221,11 +221,11 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
         cardListView.setLayoutManager(llm);
 
         final FloatingActionMenu fabMenu =
-                (FloatingActionMenu) getActivity().findViewById(R.id.fab_add_item_menu);
+                getActivity().findViewById(R.id.fab_add_item_menu);
         FloatingActionButton fabAddPatchedFile =
-                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_patched_file);
+                getActivity().findViewById(R.id.fab_add_patched_file);
         FloatingActionButton fabAddBackup =
-                (FloatingActionButton) getActivity().findViewById(R.id.fab_add_backup);
+                getActivity().findViewById(R.id.fab_add_backup);
 
         fabAddPatchedFile.setOnClickListener(new OnClickListener() {
             @Override
@@ -276,7 +276,7 @@ public class InAppFlashingFragment extends Fragment implements FirstUseDialogLis
             }
         }
 
-        getActivity().getLoaderManager().initLoader(0, null, this);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override

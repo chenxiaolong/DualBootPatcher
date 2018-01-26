@@ -114,7 +114,7 @@ bool RamdiskUpdater::create_zip()
         return false;
     }
 
-    zipFile zf = MinizipUtils::ctx_get_zip_file(m_z_output);
+    void *handle = MinizipUtils::ctx_get_zip_handle(m_z_output);
 
     if (m_cancelled) return false;
 
@@ -157,7 +157,7 @@ bool RamdiskUpdater::create_zip()
     for (const CopySpec &spec : toCopy) {
         if (m_cancelled) return false;
 
-        result = MinizipUtils::add_file(zf, spec.target, spec.source);
+        result = MinizipUtils::add_file(handle, spec.target, spec.source);
         if (result != ErrorCode::NoError) {
             m_error = result;
             return false;
@@ -169,7 +169,7 @@ bool RamdiskUpdater::create_zip()
     const std::string info_prop =
             ZipPatcher::create_info_prop(m_info->rom_id(), true);
     result = MinizipUtils::add_file(
-            zf, "multiboot/info.prop",
+            handle, "multiboot/info.prop",
             std::vector<unsigned char>(info_prop.begin(), info_prop.end()));
     if (result != ErrorCode::NoError) {
         m_error = result;
@@ -185,7 +185,7 @@ bool RamdiskUpdater::create_zip()
     }
 
     result = MinizipUtils::add_file(
-            zf, "multiboot/device.json",
+            handle, "multiboot/device.json",
             std::vector<unsigned char>(json.begin(), json.end()));
     if (result != ErrorCode::NoError) {
         m_error = result;
@@ -198,7 +198,7 @@ bool RamdiskUpdater::create_zip()
     std::string installer("#!/sbin/sh");
 
     result = MinizipUtils::add_file(
-            zf, "META-INF/com/google/android/update-binary.orig",
+            handle, "META-INF/com/google/android/update-binary.orig",
             std::vector<unsigned char>(installer.begin(), installer.end()));
 
     if (result != ErrorCode::NoError) {
@@ -215,7 +215,8 @@ bool RamdiskUpdater::open_output_archive()
 {
     assert(m_z_output == nullptr);
 
-    m_z_output = MinizipUtils::open_output_file(m_info->output_path());
+    m_z_output = MinizipUtils::open_zip_file(m_info->output_path(),
+                                             ZipOpenMode::Write);
 
     if (!m_z_output) {
         LOGE("minizip: Failed to open for writing: %s",
@@ -231,8 +232,8 @@ void RamdiskUpdater::close_output_archive()
 {
     assert(m_z_output != nullptr);
 
-    int ret = MinizipUtils::close_output_file(m_z_output);
-    if (ret != ZIP_OK) {
+    int ret = MinizipUtils::close_zip_file(m_z_output);
+    if (ret != MZ_OK) {
         LOGW("minizip: Failed to close archive (error code: %d)", ret);
     }
 

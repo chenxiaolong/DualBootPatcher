@@ -17,20 +17,20 @@
 
 package com.github.chenxiaolong.dualbootpatcher.appsharing;
 
-import android.app.LoaderManager;
-import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.Preference;
-import android.preference.Preference.OnPreferenceChangeListener;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceFragment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v13.app.FragmentCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
+import android.support.v7.preference.CheckBoxPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.Preference.OnPreferenceChangeListener;
+import android.support.v7.preference.Preference.OnPreferenceClickListener;
+import android.support.v7.preference.PreferenceFragmentCompat;
 import android.widget.Toast;
 
 import com.github.chenxiaolong.dualbootpatcher.PermissionUtils;
@@ -53,7 +53,7 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
 
 import org.apache.commons.io.IOUtils;
 
-public class AppSharingSettingsFragment extends PreferenceFragment implements
+public class AppSharingSettingsFragment extends PreferenceFragmentCompat implements
         OnPreferenceChangeListener, OnPreferenceClickListener,
         LoaderManager.LoaderCallbacks<NeededInfo>,
         FragmentCompat.OnRequestPermissionsResultCallback,
@@ -80,9 +80,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     private boolean mLoading = true;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         getPreferenceManager().setSharedPreferencesName("settings");
 
         addPreferencesFromResource(R.xml.app_sharing_settings);
@@ -160,8 +158,7 @@ public class AppSharingSettingsFragment extends PreferenceFragment implements
     }
 
     private void requestPermissions() {
-        FragmentCompat.requestPermissions(
-                this, PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+        requestPermissions(PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
     }
 
     private void showPermissionsRationaleDialogYesNo() {

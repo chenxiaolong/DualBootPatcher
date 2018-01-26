@@ -18,7 +18,6 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -34,6 +33,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.FragmentCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -218,12 +218,12 @@ public class PatchFileFragment extends Fragment implements
         }
 
         // Initialize UI elements
-        mRecycler = (RecyclerView) getActivity().findViewById(R.id.files_list);
-        mFAB = (FloatingActionMenu) getActivity().findViewById(R.id.fab);
-        mFABAddZip = (FloatingActionButton) getActivity().findViewById(R.id.fab_add_flashable_zip);
-        mFABAddOdin = (FloatingActionButton) getActivity().findViewById(R.id.fab_add_odin_image);
-        mProgressBar = (ProgressBar) getActivity().findViewById(R.id.loading);
-        mAddZipMessage = (TextView) getActivity().findViewById(R.id.add_zip_message);
+        mRecycler = getActivity().findViewById(R.id.files_list);
+        mFAB = getActivity().findViewById(R.id.fab);
+        mFABAddZip = getActivity().findViewById(R.id.fab_add_flashable_zip);
+        mFABAddOdin = getActivity().findViewById(R.id.fab_add_odin_image);
+        mProgressBar = getActivity().findViewById(R.id.loading);
+        mAddZipMessage = getActivity().findViewById(R.id.add_zip_message);
 
         mItemTouchCallback = new DragSwipeItemTouchCallback(this);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(mItemTouchCallback);
@@ -302,7 +302,7 @@ public class PatchFileFragment extends Fragment implements
      * {@inheritDoc}
      */
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_patcher, container, false);
     }
@@ -679,8 +679,7 @@ public class PatchFileFragment extends Fragment implements
     }
 
     private void requestPermissions() {
-        FragmentCompat.requestPermissions(PatchFileFragment.this,
-                PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
+        requestPermissions(PermissionUtils.STORAGE_PERMISSIONS, PERMISSIONS_REQUEST_STORAGE);
     }
 
     private void showPermissionsRationaleDialogYesNo() {

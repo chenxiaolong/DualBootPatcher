@@ -18,10 +18,10 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher;
 
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -78,6 +78,7 @@ public class RomNameInputDialog extends DialogFragment {
     }
 
     @Override
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         RomInformation info = getArguments().getParcelable(ARG_ROM);
 
@@ -112,8 +113,7 @@ public class RomNameInputDialog extends DialogFragment {
                 })
                 .build();
 
-        TextView tv = (TextView)
-                ((MaterialDialog) dialog).getCustomView().findViewById(R.id.message);
+        TextView tv = ((MaterialDialog) dialog).getCustomView().findViewById(R.id.message);
         tv.setText(message);
 
         setCancelable(false);
