@@ -735,7 +735,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
      * @param device Target device
      * @param romId Target ROM ID
      */
-    override fun onConfirmedOptions(id: Int, device: Device, romId: String?) {
+    override fun onConfirmedOptions(id: Int, device: Device, romId: String) {
         selectedTaskId = id
         selectedDevice = device
         selectedRomId = romId

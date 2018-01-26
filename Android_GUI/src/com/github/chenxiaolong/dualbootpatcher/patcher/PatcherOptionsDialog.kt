@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2015-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +18,12 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher
 
 import android.app.Dialog
+import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
-import android.support.v4.app.LoaderManager.LoaderCallbacks
-import android.support.v4.content.AsyncTaskLoader
-import android.support.v4.content.Loader
 import android.support.v7.widget.AppCompatEditText
 import android.support.v7.widget.AppCompatSpinner
 import android.text.Editable
@@ -39,39 +36,29 @@ import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.TextView
-
 import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
 import com.github.chenxiaolong.dualbootpatcher.R
-import com.github.chenxiaolong.dualbootpatcher.RomUtils
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherOptionsDialog.LoaderResult
-import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils.InstallLocation
 
-import java.util.ArrayList
-import java.util.Collections
-
-class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
+class PatcherOptionsDialog : DialogFragment() {
     private var isInitial: Boolean = false
 
     private var preselectedDeviceId: String? = null
     private var preselectedRomId: String? = null
 
-    private lateinit var dialog: MaterialDialog
     private lateinit var deviceSpinner: AppCompatSpinner
-    private lateinit var romIdSpinner: AppCompatSpinner
-    private lateinit var romIdNamedSlotId: AppCompatEditText
-    private lateinit var romIdDesc: TextView
+    private lateinit var locationSpinner: AppCompatSpinner
+    private lateinit var templateSuffixEditor: AppCompatEditText
     private lateinit var dummy: View
 
     private lateinit var deviceAdapter: ArrayAdapter<String>
-    private val devices = ArrayList<Device>()
-    private val devicesNames = ArrayList<String>()
-    private lateinit var romIdAdapter: ArrayAdapter<String>
-    private val romIds = ArrayList<String>()
-    private val installLocations = ArrayList<InstallLocation>()
+    private lateinit var locationAdapter: ArrayAdapter<String>
 
-    private var isNamedSlot: Boolean = false
+    private lateinit var model: PatcherOptionsViewModel
+
+    private var lastDevicePosition = AppCompatSpinner.INVALID_POSITION
+    private var lastLocationPosition = AppCompatSpinner.INVALID_POSITION
 
     internal val owner: PatcherOptionsDialogListener?
         get() {
@@ -86,31 +73,8 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
             }
         }
 
-    private val romId: String?
-        get() {
-            if (isNamedSlot) {
-                if (romIdSpinner.selectedItemPosition == romIds.size - 2) {
-                    return PatcherUtils.getDataSlotRomId(romIdNamedSlotId.text.toString())
-                } else if (romIdSpinner.selectedItemPosition == romIds.size - 1) {
-                    return PatcherUtils.getExtsdSlotRomId(romIdNamedSlotId.text.toString())
-                }
-            } else {
-                val pos = romIdSpinner.selectedItemPosition
-                if (pos >= 0) {
-                    return installLocations[pos].id
-                }
-            }
-            return null
-        }
-
     interface PatcherOptionsDialogListener {
-        fun onConfirmedOptions(id: Int, device: Device, romId: String?)
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        loaderManager.initLoader(0, null, this)
+        fun onConfirmedOptions(id: Int, device: Device, romId: String)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -121,7 +85,7 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
         preselectedDeviceId = arguments!!.getString(ARG_PRESELECTED_DEVICE_ID)
         preselectedRomId = arguments!!.getString(ARG_PRESELECTED_ROM_ID)
 
-        dialog = MaterialDialog.Builder(activity!!)
+        val dialog = MaterialDialog.Builder(activity!!)
                 .title(R.string.patcher_options_dialog_title)
                 .customView(R.layout.dialog_patcher_opts, true)
                 .positiveText(R.string.proceed)
@@ -129,13 +93,11 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
                 .onPositive { _, _ ->
                     val owner = owner
                     if (owner != null) {
-                        val position = deviceSpinner.selectedItemPosition
-                        val device = devices[position]
-                        if (device.id == "hero2qlte") {
-                            val intent = rickRollIntent
-                            activity!!.startActivity(intent)
+                        val device = model.device
+                        if (RickRollDevices.isRickRollDevice(device)) {
+                            activity!!.startActivity(RickRollDevices.youtubeIntent)
                         } else {
-                            owner.onConfirmedOptions(id, device, romId)
+                            owner.onConfirmedOptions(id, device, model.selectedLocation.value!!.id)
                         }
                     }
                 }
@@ -143,66 +105,139 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
 
         val view = dialog.customView!!
         deviceSpinner = view.findViewById(R.id.spinner_device)
-        romIdSpinner = view.findViewById(R.id.spinner_rom_id)
-        romIdNamedSlotId = view.findViewById(R.id.rom_id_named_slot_id)
-        romIdDesc = view.findViewById(R.id.rom_id_desc)
+        locationSpinner = view.findViewById(R.id.spinner_location)
+        templateSuffixEditor = view.findViewById(R.id.template_suffix)
+        val romIdDesc: TextView = view.findViewById(R.id.location_desc)
         dummy = view.findViewById(R.id.customopts_dummylayout)
 
-        // Initialize devices
         initDevices()
-        // Initialize ROM IDs
-        initRomIds()
-        // Initialize actions
+        initLocations()
         initActions()
 
         isCancelable = false
         dialog.setCanceledOnTouchOutside(false)
 
+        model = ViewModelProviders.of(this)[PatcherOptionsViewModel::class.java]
+
+        model.optionsData.observe(this, Observer {
+            refreshDevices(it!!.devices, it.currentDevice)
+            refreshRomIds(it.installLocations, it.templateLocations)
+
+            if (lastDevicePosition != AppCompatSpinner.INVALID_POSITION) {
+                deviceSpinner.setSelection(lastDevicePosition)
+            }
+            if (lastLocationPosition != AppCompatSpinner.INVALID_POSITION) {
+                locationSpinner.setSelection(lastLocationPosition)
+            }
+        })
+
+        model.selectedLocation.observe(this, Observer {
+            if (it != null) {
+                romIdDesc.text = it.getDescription(context!!)
+            } else {
+                romIdDesc.setText(R.string.install_location_named_slot_id_empty)
+            }
+        })
+
+        model.validationState.observe(this, Observer {
+            val dialogButton = dialog.getActionButton(DialogAction.POSITIVE)
+
+            when (it!!) {
+                PatcherOptionsValidationState.VALID -> {
+                    dialogButton.isEnabled = true
+                }
+                PatcherOptionsValidationState.INVALID -> {
+                    dialogButton.isEnabled = false
+                    templateSuffixEditor.error = getString(
+                            R.string.install_location_named_slot_id_error_invalid)
+                }
+                PatcherOptionsValidationState.EMPTY -> {
+                    dialogButton.isEnabled = false
+                    templateSuffixEditor.error = getString(
+                            R.string.install_location_named_slot_id_error_is_empty)
+                }
+            }
+        })
+
+        model.suffixEditorVisible.observe(this, Observer {
+            templateSuffixEditor.visibility = if (it!!) View.VISIBLE else View.GONE
+        })
+
+        model.deviceSelectionEvent.observe(this, Observer {
+            deviceSpinner.setSelection(it!!)
+        })
+
+        model.locationSelectionEvent.observe(this, Observer {
+            locationSpinner.setSelection(it!!)
+        })
+
+        model.suffixSetEvent.observe(this, Observer {
+            templateSuffixEditor.setText(it)
+        })
+
+        // Load available options when the dialog initially opens
+        if (savedInstanceState == null) {
+            model.loadData()
+        } else {
+            lastDevicePosition = savedInstanceState.getInt(STATE_DEVICE_POSITION,
+                    AppCompatSpinner.INVALID_POSITION)
+            lastLocationPosition = savedInstanceState.getInt(STATE_LOCATION_POSITION,
+                    AppCompatSpinner.INVALID_POSITION)
+        }
+
         return dialog
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_DEVICE_POSITION, deviceSpinner.selectedItemPosition)
+        outState.putInt(STATE_LOCATION_POSITION, locationSpinner.selectedItemPosition)
     }
 
     private fun initDevices() {
         deviceAdapter = ArrayAdapter(activity!!,
-                android.R.layout.simple_spinner_item, android.R.id.text1, devicesNames)
+                android.R.layout.simple_spinner_item, android.R.id.text1)
         deviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
         deviceSpinner.adapter = deviceAdapter
+        deviceSpinner.onItemSelectedListener = object : OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int,
+                                        id: Long) {
+                model.onSelectedDevice(position)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 
-    private fun initRomIds() {
-        romIdAdapter = ArrayAdapter(activity!!,
-                android.R.layout.simple_spinner_item, android.R.id.text1, romIds)
-        romIdAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        romIdSpinner.adapter = romIdAdapter
+    private fun initLocations() {
+        locationAdapter = ArrayAdapter(activity!!,
+                android.R.layout.simple_spinner_item, android.R.id.text1)
+        locationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
-        romIdSpinner.onItemSelectedListener = object : OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
-                dialog.getActionButton(DialogAction.POSITIVE).isEnabled = true
-
-                isNamedSlot = romIds.size >= 2
-                        && (position == romIds.size - 1 || position == romIds.size - 2)
-
-                onRomIdSelected(position)
-                if (isNamedSlot) {
-                    onNamedSlotIdTextChanged(romIdNamedSlotId.text.toString())
-                }
+        locationSpinner.adapter = locationAdapter
+        locationSpinner.onItemSelectedListener = object : OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int,
+                                        id: Long) {
+                model.onSelectedLocationItem(position)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        romIdNamedSlotId.addTextChangedListener(object : TextWatcher {
+        templateSuffixEditor.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
 
             override fun afterTextChanged(s: Editable) {
-                onNamedSlotIdTextChanged(s.toString())
+                model.onTemplateSuffixChanged(s.toString())
             }
         })
     }
 
     private fun initActions() {
-        preventTextViewKeepFocus(romIdNamedSlotId)
+        preventTextViewKeepFocus(templateSuffixEditor)
     }
 
     /**
@@ -226,187 +261,44 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
     /**
      * Refresh the list of supported devices from libmbpatcher.
      */
-    private fun refreshDevices(devices: Array<Device>?, currentDevice: Device?) {
-        this.devices.clear()
-        devicesNames.clear()
-
-        if (devices != null) {
-            for (device in devices) {
-                this.devices.add(device)
-                devicesNames.add("${device.id} - ${device.name}")
-
-                if (device.id == "hero2lte" || device.id == "herolte") {
-                    val rrd = rickRollDevice
-                    this.devices.add(rrd)
-                    devicesNames.add("${rrd.id} - ${rrd.name}")
-                }
-            }
-        }
-
+    private fun refreshDevices(devices: List<Device>, currentDevice: Device?) {
+        deviceAdapter.setNotifyOnChange(false)
+        deviceAdapter.clear()
+        deviceAdapter.addAll(devices.map { "${it.id} - ${it.name}" })
         deviceAdapter.notifyDataSetChanged()
 
+        // Select initial device
         if (isInitial) {
-            var deviceId = preselectedDeviceId
-
-            if (deviceId == null) {
-                if (currentDevice != null) {
-                    deviceId = currentDevice.id
-                } else {
-                    val rrd = rickRollDevice
-                    val codename = RomUtils.getDeviceCodename(activity!!)
-                    for (c in rrd.codenames!!) {
-                        if (c == codename) {
-                            deviceId = rrd.id
-                            break
-                        }
-                    }
-                }
-            }
-            if (deviceId != null) {
-                selectDeviceId(deviceId)
-            }
+            (preselectedDeviceId ?: currentDevice?.id)?.let { model.selectDeviceId(it) }
         }
     }
 
     /**
      * Refresh the list of available ROM IDs
      */
-    private fun refreshRomIds(locations: Array<InstallLocation>?) {
-        installLocations.clear()
-        Collections.addAll(installLocations, *PatcherUtils.getInstallLocations(activity!!))
-        Collections.addAll(installLocations, *locations!!)
-
-        romIds.clear()
-        installLocations.mapTo(romIds) { it.name }
-        romIds.add(getString(R.string.install_location_data_slot))
-        romIds.add(getString(R.string.install_location_extsd_slot))
-        romIdAdapter.notifyDataSetChanged()
+    private fun refreshRomIds(installLocations: List<InstallLocation>,
+                              templateLocations: List<TemplateLocation>) {
+        locationAdapter.setNotifyOnChange(false)
+        locationAdapter.clear()
+        locationAdapter.addAll(installLocations.map { it.getDisplayName(context!!) })
+        locationAdapter.addAll(templateLocations.map { it.getTemplateDisplayName(context!!) })
+        locationAdapter.notifyDataSetChanged()
 
         // Select initial ROM ID
-        if (preselectedRomId != null) {
-            selectRomId(preselectedRomId!!)
-        }
-    }
-
-    private fun selectDeviceId(deviceId: String) {
-        for (i in devices.indices) {
-            if (devices[i].id == deviceId) {
-                deviceSpinner.setSelection(i)
-                return
-            }
-        }
-    }
-
-    private fun selectRomId(romId: String) {
-        for (i in installLocations.indices) {
-            if (installLocations[i].id == romId) {
-                romIdSpinner.setSelection(i)
-                return
-            }
-        }
-        if (PatcherUtils.isDataSlotRomId(romId)) {
-            romIdSpinner.setSelection(romIds.size - 2)
-            val namedId = PatcherUtils.getDataSlotIdFromRomId(romId)
-            romIdNamedSlotId.setText(namedId)
-            onNamedSlotIdChanged(namedId)
-        } else if (PatcherUtils.isExtsdSlotRomId(romId)) {
-            romIdSpinner.setSelection(romIds.size - 1)
-            val namedId = PatcherUtils.getExtsdSlotIdFromRomId(romId)
-            romIdNamedSlotId.setText(namedId)
-            onNamedSlotIdChanged(namedId)
-        }
-    }
-
-    private fun onRomIdSelected(position: Int) {
-        if (isNamedSlot) {
-            onNamedSlotIdChanged(romIdNamedSlotId.text.toString())
-            romIdNamedSlotId.visibility = View.VISIBLE
-        } else {
-            romIdDesc.text = installLocations[position].description
-            romIdNamedSlotId.visibility = View.GONE
-        }
-    }
-
-    private fun onNamedSlotIdTextChanged(text: String) {
-        if (!isNamedSlot) {
-            return
-        }
-
-        if (text.isEmpty()) {
-            romIdNamedSlotId.error = getString(
-                    R.string.install_location_named_slot_id_error_is_empty)
-            dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
-        } else if (!text.matches("[a-z0-9]+".toRegex())) {
-            romIdNamedSlotId.error = getString(
-                    R.string.install_location_named_slot_id_error_invalid)
-            dialog.getActionButton(DialogAction.POSITIVE).isEnabled = false
-        } else {
-            dialog.getActionButton(DialogAction.POSITIVE).isEnabled = true
-        }
-
-        onNamedSlotIdChanged(text)
-    }
-
-    private fun onNamedSlotIdChanged(text: String?) {
-        when {
-            text!!.isEmpty() -> romIdDesc.setText(R.string.install_location_named_slot_id_empty)
-            romIdSpinner.selectedItemPosition == romIds.size - 2 -> {
-                val location = PatcherUtils.getDataSlotInstallLocation(activity!!, text)
-                romIdDesc.text = location.description
-            }
-            romIdSpinner.selectedItemPosition == romIds.size - 1 -> {
-                val location = PatcherUtils.getExtsdSlotInstallLocation(activity!!, text)
-                romIdDesc.text = location.description
-            }
-        }
-    }
-
-    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<LoaderResult> {
-        return OptionsLoader(activity!!)
-    }
-
-    override fun onLoadFinished(loader: Loader<LoaderResult>, result: LoaderResult) {
-        refreshDevices(result.devices, result.currentDevice)
-        refreshRomIds(result.namedLocations)
-    }
-
-    override fun onLoaderReset(loader: Loader<LoaderResult>) {}
-
-    class LoaderResult(
-        internal var currentDevice: Device?,
-        internal var devices: Array<Device>?,
-        internal var namedLocations: Array<InstallLocation>?
-    )
-
-    private class OptionsLoader(context: Context) : AsyncTaskLoader<LoaderResult>(context) {
-        private var result: LoaderResult? = null
-
-        init {
-            onContentChanged()
-        }
-
-        override fun onStartLoading() {
-            if (result != null) {
-                deliverResult(result)
-            } else if (takeContentChanged()) {
-                forceLoad()
-            }
-        }
-
-        override fun loadInBackground(): LoaderResult? {
-            this.result = LoaderResult(PatcherUtils.getCurrentDevice(context),
-                    PatcherUtils.getDevices(context),
-                    PatcherUtils.getNamedInstallLocations(context))
-            return this.result
+        if (isInitial) {
+            preselectedRomId?.let { model.selectRomId(it) }
         }
     }
 
     companion object {
-        private val ARG_ID = "id"
-        private val ARG_PRESELECTED_DEVICE_ID = "preselected_device_id"
-        private val ARG_PRESELECTED_ROM_ID = "rom_id"
+        private const val ARG_ID = "id"
+        private const val ARG_PRESELECTED_DEVICE_ID = "preselected_device_id"
+        private const val ARG_PRESELECTED_ROM_ID = "rom_id"
 
-        private var hero2qlteDevice: Device? = null
+        private val STATE_DEVICE_POSITION =
+                "${PatcherOptionsDialog::class.java.canonicalName}.state.device_position"
+        private val STATE_LOCATION_POSITION =
+                "${PatcherOptionsDialog::class.java.canonicalName}.state.location_position"
 
         fun newInstanceFromFragment(parent: Fragment?, id: Int,
                                     preselectedDeviceId: String?,
@@ -439,27 +331,5 @@ class PatcherOptionsDialog : DialogFragment(), LoaderCallbacks<LoaderResult> {
             frag.arguments = args
             return frag
         }
-
-        private val rickRollDevice: Device
-            get() {
-                if (hero2qlteDevice == null) {
-                    hero2qlteDevice = Device()
-                    hero2qlteDevice!!.id = "hero2qlte"
-                    hero2qlteDevice!!.codenames = arrayOf("hero2qlte", "hero2qlteatt",
-                            "hero2qltespr", "hero2qltetmo", "hero2qltevzw")
-                    hero2qlteDevice!!.name = "Samsung Galaxy S 7 Edge (Qcom)"
-                    hero2qlteDevice!!.architecture = "arm64-v8a"
-                    hero2qlteDevice!!.systemBlockDevs = arrayOf("/dev/null")
-                    hero2qlteDevice!!.cacheBlockDevs = arrayOf("/dev/null")
-                    hero2qlteDevice!!.dataBlockDevs = arrayOf("/dev/null")
-                    hero2qlteDevice!!.bootBlockDevs = arrayOf("/dev/null")
-                    hero2qlteDevice!!.extraBlockDevs = arrayOf("/dev/null")
-                }
-                return hero2qlteDevice!!
-            }
-
-        private val rickRollIntent: Intent
-            get() = Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
     }
 }

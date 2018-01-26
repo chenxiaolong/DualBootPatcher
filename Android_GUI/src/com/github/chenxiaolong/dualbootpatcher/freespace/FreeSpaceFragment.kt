@@ -36,7 +36,7 @@ class FreeSpaceFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        val model = ViewModelProviders.of(this).get(FreeSpaceViewModel::class.java)
+        val model = ViewModelProviders.of(this)[FreeSpaceViewModel::class.java]
         model.mounts.observe(this, Observer { mounts ->
             adapter.setList(mounts!!)
         })

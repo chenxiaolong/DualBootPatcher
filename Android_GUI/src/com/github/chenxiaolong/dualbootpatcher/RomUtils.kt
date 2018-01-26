@@ -23,6 +23,7 @@ import android.os.Environment
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolCommandException
 import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
@@ -37,14 +38,7 @@ import java.io.IOException
 object RomUtils {
     private val TAG = RomUtils::class.java.simpleName
 
-    private var builtinRoms: Array<RomInformation>? = null
-
     val UNKNOWN_ID = "unknown"
-    val PRIMARY_ID = "primary"
-    val SECONDARY_ID = "dual"
-    val MULTI_ID_PREFIX = "multi-slot-"
-    val DATA_ID_PREFIX = "data-slot-"
-    val EXTSD_ID_PREFIX = "extsd-slot-"
 
     class RomInformation : Parcelable {
         // Mount points
@@ -157,28 +151,14 @@ object RomUtils {
             rom.configPath = (Environment.getExternalStorageDirectory().toString()
                     + "/MultiBoot/${rom.id}/config.json")
             rom.imageResId = R.drawable.rom_android
-            rom.defaultName = getDefaultName(context, rom)
+
+            val loc = PatcherUtils.getInstallLocationFromRomId(rom.id!!)
+            rom.defaultName = loc?.getDisplayName(context) ?: UNKNOWN_ID
 
             loadConfig(rom)
         }
 
         return roms
-    }
-
-    @Synchronized
-    fun getBuiltinRoms(context: Context): Array<RomInformation> {
-        if (builtinRoms == null) {
-            val ids = arrayOf("primary", "dual", "multi-slot-1", "multi-slot-2", "multi-slot-3")
-
-            builtinRoms = ids.map {
-                val rom = RomInformation()
-                rom.id = it
-                rom.defaultName = getDefaultName(context, rom)
-                rom
-            }.toTypedArray()
-        }
-
-        return builtinRoms!!
     }
 
     fun loadConfig(info: RomInformation) {
@@ -199,26 +179,6 @@ object RomUtils {
         }
     }
 
-    private fun getDefaultName(context: Context, info: RomInformation): String {
-        when {
-            info.id == PRIMARY_ID -> return context.getString(R.string.primary)
-            info.id == SECONDARY_ID -> return context.getString(R.string.secondary)
-            info.id!!.startsWith(MULTI_ID_PREFIX) -> {
-                val num = info.id!!.substring(MULTI_ID_PREFIX.length)
-                return context.getString(R.string.multislot, num)
-            }
-            info.id!!.startsWith(DATA_ID_PREFIX) -> {
-                val id = info.id!!.substring(DATA_ID_PREFIX.length)
-                return context.getString(R.string.dataslot, id)
-            }
-            info.id!!.startsWith(EXTSD_ID_PREFIX) -> {
-                val id = info.id!!.substring(EXTSD_ID_PREFIX.length)
-                return context.getString(R.string.extsdslot, id)
-            }
-            else -> return UNKNOWN_ID
-        }
-    }
-
     fun getBootImagePath(romId: String): String {
         return Environment.getExternalStorageDirectory().toString() +
                 File.separator + "MultiBoot" +
@@ -227,7 +187,7 @@ object RomUtils {
     }
 
     fun getDeviceCodename(context: Context): String {
-        return SystemPropertiesProxy.get(context, "ro.patcher.device", Build.DEVICE)
+        return SystemPropertiesProxy[context, "ro.patcher.device", Build.DEVICE]
     }
 
     @Throws(IOException::class, MbtoolException::class, MbtoolCommandException::class)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2014-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,48 +23,39 @@ import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
 import com.afollestad.materialdialogs.MaterialDialog
 import com.github.chenxiaolong.dualbootpatcher.R
-import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
-import java.util.*
+import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
+import java.util.ArrayList
 
-class RomIdSelectionDialog : DialogFragment() {
+class InstallLocationSelectionDialog : DialogFragment() {
     internal val owner: RomIdSelectionDialogListener?
         get() = targetFragment as RomIdSelectionDialogListener?
 
-    enum class RomIdType {
-        BUILT_IN_ROM_ID,
-        NAMED_DATA_SLOT,
-        NAMED_EXTSD_SLOT
-    }
-
     interface RomIdSelectionDialogListener {
-        fun onSelectedRomId(type: RomIdType, romId: String?)
+        fun onSelectedInstallLocation(romId: String)
+
+        fun onSelectedTemplateLocation(prefix: String)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val infos = arguments!!.getParcelableArrayList<RomInformation>(ARG_INFOS)
-        val names = arrayOfNulls<String>(infos!!.size + 2)
+        val names = ArrayList<String>()
 
-        for (i in infos.indices) {
-            names[i] = infos[i].defaultName
-        }
-
-        names[infos.size] = getString(R.string.install_location_data_slot)
-        names[infos.size + 1] = getString(R.string.install_location_extsd_slot)
+        PatcherUtils.installLocations.mapTo(names) { it.getDisplayName(context!!) }
+        PatcherUtils.templateLocations.mapTo(names) { it.getTemplateDisplayName(context!!) }
 
         val dialog = MaterialDialog.Builder(activity!!)
                 .title(R.string.in_app_flashing_dialog_installation_location)
-                .items(*names)
+                .items(*names.toTypedArray())
                 .negativeText(R.string.cancel)
                 .itemsCallbackSingleChoice(-1) { _, _, which, _ ->
-                    val owner = owner
-                    if (owner != null) {
-                        when (which) {
-                            infos.size -> owner.onSelectedRomId(RomIdType.NAMED_DATA_SLOT, null)
-                            infos.size + 1 -> owner.onSelectedRomId(RomIdType.NAMED_EXTSD_SLOT, null)
-                            else -> {
-                                val info = infos[which]
-                                owner.onSelectedRomId(RomIdType.BUILT_IN_ROM_ID, info.id)
-                            }
+                    when (which) {
+                        in 0..PatcherUtils.installLocations.size -> {
+                            val loc = PatcherUtils.installLocations[which]
+                            owner?.onSelectedInstallLocation(loc.id)
+                        }
+                        else -> {
+                            val index = which - PatcherUtils.installLocations.size
+                            val template = PatcherUtils.templateLocations[index]
+                            owner?.onSelectedTemplateLocation(template.prefix)
                         }
                     }
 
@@ -79,10 +70,7 @@ class RomIdSelectionDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_INFOS = "infos"
-
-        fun newInstance(parent: Fragment?, infos: ArrayList<RomInformation>):
-                RomIdSelectionDialog {
+        fun newInstance(parent: Fragment?): InstallLocationSelectionDialog {
             if (parent != null) {
                 if (parent !is RomIdSelectionDialogListener) {
                     throw IllegalStateException(
@@ -90,11 +78,8 @@ class RomIdSelectionDialog : DialogFragment() {
                 }
             }
 
-            val frag = RomIdSelectionDialog()
+            val frag = InstallLocationSelectionDialog()
             frag.setTargetFragment(parent, 0)
-            val args = Bundle()
-            args.putParcelableArrayList(ARG_INFOS, infos)
-            frag.arguments = args
             return frag
         }
     }

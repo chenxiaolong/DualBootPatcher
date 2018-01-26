@@ -20,7 +20,6 @@ package com.github.chenxiaolong.dualbootpatcher.patcher
 import android.content.Context
 import android.os.Environment
 import android.util.Log
-
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig
 import com.github.chenxiaolong.dualbootpatcher.FileUtils
 import com.github.chenxiaolong.dualbootpatcher.R
@@ -29,9 +28,7 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadUtils
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff
-
 import org.apache.commons.io.Charsets
-
 import java.io.File
 import java.io.IOException
 import java.util.ArrayList
@@ -41,26 +38,59 @@ object PatcherUtils {
     private val FILENAME = "data-%s.tar.xz"
     private val DIRNAME = "data-%s"
 
-    private val PREFIX_DATA_SLOT = "data-slot-"
-    private val PREFIX_EXTSD_SLOT = "extsd-slot-"
-
     val PATCHER_ID_ZIPPATCHER = "ZipPatcher"
     val PATCHER_ID_ODINPATCHER = "OdinPatcher"
 
+    val PRIMARY_SLOT = InstallLocation("primary",
+            R.string.install_location_primary_upgrade,
+            R.string.install_location_primary_upgrade_desc)
+
+    val SECONDARY_SLOT = InstallLocation("dual",
+            R.string.secondary, emptyArray(),
+            R.string.install_location_desc, arrayOf("/system/multiboot/dual"))
+
+    val MULTI_SLOT_TEMPLATE = TemplateLocation("multi-slot-",
+            0, emptyArray(),
+            R.string.multislot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
+            R.string.install_location_desc,
+                    arrayOf("/cache/multiboot/${TemplateLocation.PLACEHOLDER_ID}"))
+
+    val DATA_SLOT_TEMPLATE = TemplateLocation("data-slot-",
+            R.string.install_location_data_slot, emptyArray(),
+            R.string.dataslot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
+            R.string.install_location_desc,
+                    arrayOf("/data/multiboot/${TemplateLocation.PLACEHOLDER_ID}"))
+
+    val EXTSD_SLOT_TEMPLATE = TemplateLocation("extsd-slot-",
+            R.string.install_location_extsd_slot, emptyArray(),
+            R.string.extsdslot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
+            R.string.install_location_desc,
+                    arrayOf("[External SD]/multiboot/${TemplateLocation.PLACEHOLDER_ID}"))
+
     private var initialized: Boolean = false
 
-    private var devices: Array<Device>? = null
+    private var devices: List<Device>? = null
     private var currentDevice: Device? = null
 
     private var targetFile: String
     private var targetDir: String
 
-    private var installLocations: Array<InstallLocation>? = null
+    var installLocations: Array<InstallLocation>
+    var templateLocations: Array<TemplateLocation>
 
     init {
         val version = BuildConfig.VERSION_NAME.split("-")[0]
         targetFile = String.format(FILENAME, version)
         targetDir = String.format(DIRNAME, version)
+
+        installLocations = arrayOf(
+                PRIMARY_SLOT,
+                SECONDARY_SLOT,
+                MULTI_SLOT_TEMPLATE.toInstallLocation("1"),
+                MULTI_SLOT_TEMPLATE.toInstallLocation("2"),
+                MULTI_SLOT_TEMPLATE.toInstallLocation("3"))
+
+        templateLocations = arrayOf(DATA_SLOT_TEMPLATE, EXTSD_SLOT_TEMPLATE)
     }
 
     private fun getTargetFile(context: Context): File {
@@ -87,7 +117,7 @@ object PatcherUtils {
     }
 
     @Synchronized
-    fun getDevices(context: Context): Array<Device>? {
+    fun getDevices(context: Context): List<Device>? {
         ThreadUtils.enforceExecutionOnNonMainThread()
         initializePatcher(context)
 
@@ -100,12 +130,11 @@ object PatcherUtils {
                 Device.newListFromJson(json)?.filterTo(validDevices) { it.validate() == 0L }
 
                 if (!validDevices.isEmpty()) {
-                    this.devices = validDevices.toTypedArray()
+                    this.devices = validDevices
                 }
             } catch (e: IOException) {
                 Log.w(TAG, "Failed to read $path", e)
             }
-
         }
 
         return devices
@@ -116,22 +145,27 @@ object PatcherUtils {
         ThreadUtils.enforceExecutionOnNonMainThread()
 
         if (currentDevice == null) {
-            val realCodename = RomUtils.getDeviceCodename(context)
             val devices = getDevices(context)
-
             if (devices != null) {
-                outer@ for (d in devices) {
-                    for (codename in d.codenames!!) {
-                        if (realCodename == codename) {
-                            currentDevice = d
-                            break@outer
-                        }
-                    }
-                }
+                currentDevice = getCurrentDevice(context, devices)
             }
         }
 
         return currentDevice
+    }
+
+    fun getCurrentDevice(context: Context, devices: Collection<Device>): Device? {
+        val realCodename = RomUtils.getDeviceCodename(context)
+
+        for (d in devices) {
+            for (codename in d.codenames!!) {
+                if (realCodename == codename) {
+                    return d
+                }
+            }
+        }
+
+        return null
     }
 
     @Synchronized
@@ -177,42 +211,10 @@ object PatcherUtils {
         }
     }
 
-    class InstallLocation(
-            val id: String,
-            val name: String,
-            val description: String
-    )
-
-    fun getInstallLocations(context: Context): Array<InstallLocation> {
-        if (installLocations == null) {
-            val locations = ArrayList<InstallLocation>()
-
-            locations.add(InstallLocation("primary",
-                    context.getString(R.string.install_location_primary_upgrade),
-                    context.getString(R.string.install_location_primary_upgrade_desc)))
-
-            locations.add(InstallLocation("dual",
-                    context.getString(R.string.secondary),
-                    String.format(context.getString(R.string.install_location_desc),
-                            "/system/multiboot/dual")))
-
-            (1..3).mapTo(locations) {
-                InstallLocation("multi-slot-$it",
-                        String.format(context.getString(R.string.multislot), it),
-                        String.format(context.getString(R.string.install_location_desc),
-                                "/cache/multiboot/multi-slot-$it"))
-            }
-
-            installLocations = locations.toTypedArray()
-        }
-
-        return installLocations!!
-    }
-
-    fun getNamedInstallLocations(context: Context): Array<InstallLocation> {
+    fun getInstalledTemplateLocations(): Array<InstallLocation> {
         ThreadUtils.enforceExecutionOnNonMainThread()
 
-        Log.d(TAG, "Looking for named ROMs")
+        Log.d(TAG, "Looking for existing template install locations")
 
         val dir = File(Environment.getExternalStorageDirectory(), "MultiBoot")
 
@@ -220,13 +222,14 @@ object PatcherUtils {
 
         val files = dir.listFiles()
         if (files != null) {
-            files.map { it.name }.forEach {
-                if (it.startsWith("data-slot-") && it != "data-slot-") {
-                    Log.d(TAG, "- Found data-slot: ${it.substring(10)}")
-                    locations.add(getDataSlotInstallLocation(context, it.substring(10)))
-                } else if (it.startsWith("extsd-slot-") && it != "extsd-slot-") {
-                    Log.d(TAG, "- Found extsd-slot: ${it.substring(11)}")
-                    locations.add(getExtsdSlotInstallLocation(context, it.substring(11)))
+            files.map { it.name }.forEach { filename ->
+                for (template in templateLocations) {
+                    if (filename.startsWith(template.prefix) && filename != template.prefix) {
+                        val loc = template.toInstallLocation(filename.substring(template.prefix.length))
+                        Log.d(TAG, "- Found ${loc.id}")
+                        locations.add(loc)
+                        break
+                    }
                 }
             }
         } else {
@@ -236,49 +239,10 @@ object PatcherUtils {
         return locations.toTypedArray()
     }
 
-    fun getDataSlotInstallLocation(context: Context, dataSlotId: String): InstallLocation {
-        return InstallLocation(getDataSlotRomId(dataSlotId),
-                String.format(context.getString(R.string.dataslot), dataSlotId),
-                context.getString(R.string.install_location_desc,
-                        "/data/multiboot/data-slot-$dataSlotId"))
-    }
-
-    fun getExtsdSlotInstallLocation(context: Context, extsdSlotId: String): InstallLocation {
-        return InstallLocation(getExtsdSlotRomId(extsdSlotId),
-                String.format(context.getString(R.string.extsdslot), extsdSlotId),
-                context.getString(R.string.install_location_desc,
-                        "[External SD]/multiboot/extsd-slot-$extsdSlotId"))
-    }
-
-    fun getDataSlotRomId(dataSlotId: String): String {
-        return PREFIX_DATA_SLOT + dataSlotId
-    }
-
-    fun getExtsdSlotRomId(extsdSlotId: String): String {
-        return PREFIX_EXTSD_SLOT + extsdSlotId
-    }
-
-    fun isDataSlotRomId(romId: String): Boolean {
-        return romId.startsWith(PREFIX_DATA_SLOT)
-    }
-
-    fun isExtsdSlotRomId(romId: String): Boolean {
-        return romId.startsWith(PREFIX_EXTSD_SLOT)
-    }
-
-    fun getDataSlotIdFromRomId(romId: String): String? {
-        return if (isDataSlotRomId(romId)) {
-            romId.substring(PREFIX_DATA_SLOT.length)
-        } else {
-            null
-        }
-    }
-
-    fun getExtsdSlotIdFromRomId(romId: String): String? {
-        return if (isExtsdSlotRomId(romId)) {
-            romId.substring(PREFIX_EXTSD_SLOT.length)
-        } else {
-            null
-        }
+    fun getInstallLocationFromRomId(romId: String): InstallLocation? {
+        return installLocations.firstOrNull { it.id == romId }
+                ?: templateLocations
+                        .firstOrNull { romId.startsWith(it.prefix) }
+                        ?.let { it.toInstallLocation(romId.substring(it.prefix.length)) }
     }
 }

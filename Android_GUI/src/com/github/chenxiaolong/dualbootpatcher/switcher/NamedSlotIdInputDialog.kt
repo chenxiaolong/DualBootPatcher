@@ -26,7 +26,6 @@ import android.text.InputType
 import android.text.TextWatcher
 import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.InputCallback
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
 
@@ -39,29 +38,21 @@ class NamedSlotIdInputDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val type = arguments!!.getInt(ARG_TYPE)
+        val prefix = arguments!!.getString(ARG_PREFIX)
+        val template = PatcherUtils.templateLocations.find {
+            it.prefix == prefix
+        } ?: throw IllegalArgumentException("Invalid prefix: $prefix")
 
         val builder = MaterialDialog.Builder(activity!!)
                 .content(R.string.install_location_named_slot_id_hint)
                 .inputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
                 .input(R.string.install_location_named_slot_id_hint, 0, false,
-                        InputCallback { _, input ->
-                            val location = when (type) {
-                                DATA_SLOT -> PatcherUtils.getDataSlotInstallLocation(
-                                        activity!!, input.toString())
-                                EXTSD_SLOT -> PatcherUtils.getExtsdSlotInstallLocation(
-                                        activity!!, input.toString())
-                                else -> return@InputCallback
-                            }
-
-                            owner?.onSelectedNamedSlotRomId(location.id)
+                        { _, input ->
+                            val loc = template.toInstallLocation(input.toString())
+                            owner?.onSelectedNamedSlotRomId(loc.id)
                         })
 
-        if (type == DATA_SLOT) {
-            builder.title(R.string.install_location_data_slot)
-        } else if (type == EXTSD_SLOT) {
-            builder.title(R.string.install_location_extsd_slot)
-        }
+        builder.title(template.getTemplateDisplayName(context!!))
 
         val dialog = builder.build()
 
@@ -86,12 +77,8 @@ class NamedSlotIdInputDialog : DialogFragment() {
                     dialog.getActionButton(DialogAction.POSITIVE).isEnabled = true
                 }
 
-                val location = when (type) {
-                    DATA_SLOT -> PatcherUtils.getDataSlotInstallLocation(activity!!, text)
-                    EXTSD_SLOT -> PatcherUtils.getExtsdSlotInstallLocation(activity!!, text)
-                    else -> return
-                }
-                dialog.setContent(location.description)
+                val loc = template.toInstallLocation(text)
+                dialog.setContent(loc.getDescription(context!!))
             }
         })
 
@@ -102,12 +89,9 @@ class NamedSlotIdInputDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_TYPE = "type"
+        private val ARG_PREFIX = "prefix"
 
-        val DATA_SLOT = 1
-        val EXTSD_SLOT = 2
-
-        fun newInstance(parent: Fragment?, type: Int): NamedSlotIdInputDialog {
+        fun newInstance(parent: Fragment?, prefix: String): NamedSlotIdInputDialog {
             if (parent != null) {
                 if (parent !is NamedSlotIdInputDialogListener) {
                     throw IllegalStateException(
@@ -116,7 +100,7 @@ class NamedSlotIdInputDialog : DialogFragment() {
             }
 
             val args = Bundle()
-            args.putInt(ARG_TYPE, type)
+            args.putString(ARG_PREFIX, prefix)
 
             val frag = NamedSlotIdInputDialog()
             frag.arguments = args

@@ -18,9 +18,18 @@
 package com.github.chenxiaolong.dualbootpatcher.switcher
 
 import android.app.Activity
-import android.content.*
+import android.content.ComponentName
+import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.net.Uri
-import android.os.*
+import android.os.AsyncTask
+import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.support.v4.app.Fragment
 import android.support.v4.app.LoaderManager.LoaderCallbacks
 import android.support.v4.content.AsyncTaskLoader
@@ -55,9 +64,8 @@ import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature
 import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSelectionDialog.BackupRestoreTargetsSelectionDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.ChangeInstallLocationDialog.ChangeInstallLocationDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.InAppFlashingFragment.LoaderResult
+import com.github.chenxiaolong.dualbootpatcher.switcher.InstallLocationSelectionDialog.RomIdSelectionDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.NamedSlotIdInputDialog.NamedSlotIdInputDialogListener
-import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdSelectionDialogListener
-import com.github.chenxiaolong.dualbootpatcher.switcher.RomIdSelectionDialog.RomIdType
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils.VerificationResult
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams.Action
@@ -69,7 +77,9 @@ import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback.OnItemMovedOrDismissedListener
 import com.github.clans.fab.FloatingActionButton
 import com.github.clans.fab.FloatingActionMenu
-import java.util.*
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.Collections
 
 class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelectionDialogListener,
         NamedSlotIdInputDialogListener, ChangeInstallLocationDialogListener,
@@ -93,8 +103,6 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
 
     private val pendingActions = ArrayList<MbtoolAction>()
     private lateinit var adapter: PendingActionCardAdapter
-
-    private val builtinRoms = ArrayList<RomInformation>()
 
     private var verifyZipOnServiceConnected: Boolean = false
 
@@ -285,12 +293,6 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
     }
 
     override fun onLoadFinished(loader: Loader<LoaderResult>, result: LoaderResult) {
-        builtinRoms.clear()
-
-        if (result.builtinRoms != null) {
-            Collections.addAll(builtinRoms, *result.builtinRoms!!)
-        }
-
         if (result.currentRom != null) {
             currentRomId = result.currentRom!!.id
         }
@@ -476,23 +478,14 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
         showRomIdSelectionDialog()
     }
 
-    override fun onSelectedRomId(type: RomIdType, romId: String?) {
-        when (type) {
-            RomIdSelectionDialog.RomIdType.BUILT_IN_ROM_ID -> {
-                selectedRomId = romId
-                onHaveRomId()
-            }
-            RomIdSelectionDialog.RomIdType.NAMED_DATA_SLOT -> {
-                val d = NamedSlotIdInputDialog.newInstance(
-                        this, NamedSlotIdInputDialog.DATA_SLOT)
-                d.show(fragmentManager!!, CONFIRM_DIALOG_NAMED_SLOT_ID)
-            }
-            RomIdSelectionDialog.RomIdType.NAMED_EXTSD_SLOT -> {
-                val d = NamedSlotIdInputDialog.newInstance(
-                        this, NamedSlotIdInputDialog.EXTSD_SLOT)
-                d.show(fragmentManager!!, CONFIRM_DIALOG_NAMED_SLOT_ID)
-            }
-        }
+    override fun onSelectedInstallLocation(romId: String) {
+        selectedRomId = romId
+        onHaveRomId()
+    }
+
+    override fun onSelectedTemplateLocation(prefix: String) {
+        val d = NamedSlotIdInputDialog.newInstance(this, prefix)
+        d.show(fragmentManager!!, CONFIRM_DIALOG_NAMED_SLOT_ID)
     }
 
     override fun onSelectedNamedSlotRomId(romId: String) {
@@ -553,7 +546,7 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
     }
 
     private fun showRomIdSelectionDialog() {
-        val dialog = RomIdSelectionDialog.newInstance(this, builtinRoms)
+        val dialog = InstallLocationSelectionDialog.newInstance(this)
         dialog.show(fragmentManager!!, CONFIRM_DIALOG_ROM_ID)
     }
 
@@ -590,13 +583,12 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
                 // Ignore
             }
 
-            result = LoaderResult(RomUtils.getBuiltinRoms(context), currentRom)
+            result = LoaderResult(currentRom)
             return result
         }
     }
 
     class LoaderResult(
-        internal var builtinRoms: Array<RomInformation>?,
         internal var currentRom: RomInformation?
     )
 
