@@ -121,12 +121,12 @@ TEST(SignTest, TestLoadInvalidPemKeys)
                         "zyxwvutsrqponmlkjihgfedcba", 26), 26);
 
     ScopedEVP_PKEY private_key(mb::sign::load_private_key(
-            bio_private_key.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            *bio_private_key, mb::sign::KEY_FORMAT_PEM, nullptr),
             EVP_PKEY_free);
     ASSERT_FALSE(private_key);
 
     ScopedEVP_PKEY public_key(mb::sign::load_public_key(
-            bio_public_key.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            *bio_public_key, mb::sign::KEY_FORMAT_PEM, nullptr),
             EVP_PKEY_free);
     ASSERT_FALSE(public_key);
 }
@@ -145,12 +145,12 @@ TEST(SignTest, TestLoadInvalidPkcs12PrivateKey)
                         "zyxwvutsrqponmlkjihgfedcba", 26), 26);
 
     ScopedEVP_PKEY private_key(mb::sign::load_private_key(
-            bio_private_key.get(), mb::sign::KEY_FORMAT_PKCS12, nullptr),
+            *bio_private_key, mb::sign::KEY_FORMAT_PKCS12, nullptr),
             EVP_PKEY_free);
     ASSERT_FALSE(private_key);
 
     ScopedEVP_PKEY public_key(mb::sign::load_public_key(
-            bio_public_key.get(), mb::sign::KEY_FORMAT_PKCS12, nullptr),
+            *bio_public_key, mb::sign::KEY_FORMAT_PKCS12, nullptr),
             EVP_PKEY_free);
     ASSERT_FALSE(public_key);
 }
@@ -182,15 +182,15 @@ TEST(SignTest, TestLoadValidPemKeys)
 
     // Read back the keys
     ScopedEVP_PKEY private_key_enc_read(mb::sign::load_private_key(
-            bio_private_key_enc.get(), mb::sign::KEY_FORMAT_PEM, "testing"),
+            *bio_private_key_enc, mb::sign::KEY_FORMAT_PEM, "testing"),
             EVP_PKEY_free);
     ASSERT_TRUE(!!private_key_enc_read);
     ScopedEVP_PKEY private_key_noenc_read(mb::sign::load_private_key(
-            bio_private_key_noenc.get(), mb::sign::KEY_FORMAT_PEM, nullptr),
+            *bio_private_key_noenc, mb::sign::KEY_FORMAT_PEM, nullptr),
             EVP_PKEY_free);
     ASSERT_TRUE(!!private_key_noenc_read);
     ScopedEVP_PKEY public_key_read(mb::sign::load_public_key(
-            bio_public_key.get(), mb::sign::KEY_FORMAT_PEM, "testing"),
+            *bio_public_key, mb::sign::KEY_FORMAT_PEM, "testing"),
             EVP_PKEY_free);
     ASSERT_TRUE(!!public_key_read);
 
@@ -219,7 +219,7 @@ TEST(SignTest, TestLoadValidPemKeysWithInvalidPassphrase)
 
     // Read back the key using invalid password
     ScopedEVP_PKEY private_key_read(mb::sign::load_private_key(
-            bio.get(), mb::sign::KEY_FORMAT_PEM, "gnitset"),
+            *bio, mb::sign::KEY_FORMAT_PEM, "gnitset"),
             EVP_PKEY_free);
     ASSERT_FALSE(private_key_read);
 }

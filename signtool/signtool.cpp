@@ -84,8 +84,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    bool ret = mb::sign::sign_data(bio_data_in.get(), bio_sig_out.get(),
-                                   private_key.get());
+    bool ret = mb::sign::sign_data(*bio_data_in, *bio_sig_out, *private_key);
 
     if (!BIO_free(bio_data_in.release())) {
         fprintf(stderr, "%s: Failed to close input file\n", file_input);

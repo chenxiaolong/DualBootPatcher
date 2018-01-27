@@ -19,7 +19,8 @@
 
 #include "mbsign/mbsign.h"
 
-#include <cassert>
+#include <string>
+
 #include <cstring>
 
 #ifdef __clang__
@@ -123,20 +124,18 @@ static void openssl_log_errors()
  * \note \a pkey, \a cert, and \a ca must be freed with the appropriate
  *       functions if this function returns success.
  *
- * \param bio_pkcs12 Input stream for PKCS12 structure
- * \param pem_cb Password callback
- * \param cb_data User-provided data to pass to password callback
- * \param pkey Output pointer for private key
- * \param cert Output pointer for certificate corresponding to \a pkey
- * \param ca Output pointer for list of additional certificates
+ * \param[in] bio_pkcs12 Input stream for PKCS12 structure
+ * \param[in] pem_cb Password callback
+ * \param[in] cb_data User-provided data to pass to password callback
+ * \param[out] pkey Output private key
+ * \param[out] cert Output certificate corresponding to \a pkey
+ * \param[out] ca Output pointer for list of additional certificates
  *
  * \return Whether the PKCS12 structure was successfully loaded
  */
-static bool load_pkcs12(BIO *bio_pkcs12, pem_password_cb *pem_cb, void *cb_data,
-                        EVP_PKEY **pkey, X509 **cert, STACK_OF(X509) **ca)
+static bool load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
+                        EVP_PKEY *&pkey, X509 *&cert, STACK_OF(X509) **ca)
 {
-    assert(bio_pkcs12 && pem_cb && pkey && cert);
-
     PKCS12 *p12;
     const char *pass;
     char buf[PEM_BUFSIZE];
@@ -144,7 +143,7 @@ static bool load_pkcs12(BIO *bio_pkcs12, pem_password_cb *pem_cb, void *cb_data,
     int ret = 0;
 
     // Load PKCS12 from stream
-    p12 = d2i_PKCS12_bio(bio_pkcs12, nullptr);
+    p12 = d2i_PKCS12_bio(&bio_pkcs12, nullptr);
     if (!p12) {
         LOGE("Failed to load PKCS12 file");
         openssl_log_errors();
@@ -172,7 +171,7 @@ static bool load_pkcs12(BIO *bio_pkcs12, pem_password_cb *pem_cb, void *cb_data,
         }
         pass = buf;
     }
-    ret = PKCS12_parse(p12, pass, pkey, cert, ca);
+    ret = PKCS12_parse(p12, pass, &pkey, &cert, ca);
 
 finished:
     PKCS12_free(p12);
@@ -190,22 +189,20 @@ finished:
  *
  * \return EVP_PKEY object for the private key
  */
-EVP_PKEY * load_private_key(BIO *bio_key, int format, const char *pass)
+EVP_PKEY * load_private_key(BIO &bio_key, int format, const char *pass)
 {
-    assert(bio_key);
-
     EVP_PKEY *pkey;
 
     switch (format) {
     case KEY_FORMAT_PEM:
-        pkey = PEM_read_bio_PrivateKey(
-                bio_key, nullptr, &password_callback, const_cast<char *>(pass));
+        pkey = PEM_read_bio_PrivateKey(&bio_key, nullptr, &password_callback,
+                                       const_cast<char *>(pass));
         break;
     case KEY_FORMAT_PKCS12: {
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, &password_callback, const_cast<char *>(pass),
-                         &pkey, &x509, nullptr)) {
+        if (!load_pkcs12(bio_key, password_callback, const_cast<char *>(pass),
+                         pkey, x509, nullptr)) {
             return nullptr;
         }
 
@@ -251,7 +248,7 @@ EVP_PKEY * load_private_key_from_file(const char *file, int format,
         return nullptr;
     }
 
-    pkey = load_private_key(bio_key, format, pass);
+    pkey = load_private_key(*bio_key, format, pass);
 
     BIO_free(bio_key);
     return pkey;
@@ -268,23 +265,21 @@ EVP_PKEY * load_private_key_from_file(const char *file, int format,
  *
  * \return EVP_PKEY object for the public key
  */
-EVP_PKEY * load_public_key(BIO *bio_key, int format, const char *pass)
+EVP_PKEY * load_public_key(BIO &bio_key, int format, const char *pass)
 {
-    assert(bio_key);
-
     EVP_PKEY *pkey = nullptr;
 
     switch (format) {
     case KEY_FORMAT_PEM:
-        pkey = PEM_read_bio_PUBKEY(
-                bio_key, nullptr, &password_callback, const_cast<char *>(pass));
+        pkey = PEM_read_bio_PUBKEY(&bio_key, nullptr, &password_callback,
+                                   const_cast<char *>(pass));
         break;
     case KEY_FORMAT_PKCS12: {
         EVP_PKEY *public_key;
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, &password_callback, const_cast<char *>(pass),
-                         &public_key, &x509, nullptr)) {
+        if (!load_pkcs12(bio_key, password_callback, const_cast<char *>(pass),
+                         public_key, x509, nullptr)) {
             return nullptr;
         }
 
@@ -332,7 +327,7 @@ EVP_PKEY * load_public_key_from_file(const char *file, int format,
         return nullptr;
     }
 
-    pkey = load_public_key(bio_key, format, pass);
+    pkey = load_public_key(*bio_key, format, pass);
 
     BIO_free(bio_key);
     return pkey;
@@ -347,10 +342,8 @@ EVP_PKEY * load_public_key_from_file(const char *file, int format,
  *
  * \return Whether the signing operation was successful
  */
-bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
+bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 {
-    assert(bio_data_in && bio_sig_out && pkey);
-
     unsigned int version = VERSION_LATEST;
     const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
@@ -390,7 +383,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     }
 #endif
 
-    if (!EVP_DigestSignInit(mctx, &pctx, md_type, nullptr, pkey)) {
+    if (!EVP_DigestSignInit(mctx, &pctx, md_type, nullptr, &pkey)) {
         LOGE("Failed to set message digest context");
         openssl_log_errors();
         goto error;
@@ -404,9 +397,9 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
-    bio_input = bio_data_in;
+    bio_input = &bio_data_in;
 #else
-    bio_input = BIO_push(bio_md, bio_data_in);
+    bio_input = BIO_push(bio_md, &bio_data_in);
 #endif
 
     while (true) {
@@ -439,14 +432,14 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
     hdr.version = version;
 
-    if (BIO_write(bio_sig_out, &hdr, static_cast<int>(sizeof(hdr)))
+    if (BIO_write(&bio_sig_out, &hdr, static_cast<int>(sizeof(hdr)))
             != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to write header to signature BIO stream");
         openssl_log_errors();
         goto error;
     }
 
-    if (BIO_write(bio_sig_out, buf, static_cast<int>(len))
+    if (BIO_write(&bio_sig_out, buf, static_cast<int>(len))
             != static_cast<int>(len)) {
         LOGE("Failed to write signature to signature BIO stream");
         openssl_log_errors();
@@ -474,19 +467,17 @@ error:
 /*!
  * \brief Verify signature of data from stream
  *
- * \param bio_data_in Input stream for data
- * \param bio_sig_in Input stream for signature
- * \param pkey Public key
- * \param result_out Output pointer for result of verification operation
+ * \param[in] bio_data_in Input stream for data
+ * \param[in] bio_sig_in Input stream for signature
+ * \param[in] pkey Public key
+ * \param[out] result_out Output for result of verification operation
  *
  * \return Whether the verification operation completed successfully (does not
  *         indicate whether the signature is valid)
  */
-bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
-                 EVP_PKEY *pkey, bool *result_out)
+bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
+                 EVP_PKEY &pkey, bool &result_out)
 {
-    assert(bio_data_in && bio_sig_in && pkey && result_out);
-
     SigHeader hdr;
     const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
@@ -520,7 +511,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
 #endif
 
     // Read header from signature file
-    if (BIO_read(bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
+    if (BIO_read(&bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
             != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to read header from signature BIO stream");
         openssl_log_errors();
@@ -543,7 +534,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
-    if (!EVP_DigestVerifyInit(mctx, &pctx, md_type, nullptr, pkey)) {
+    if (!EVP_DigestVerifyInit(mctx, &pctx, md_type, nullptr, &pkey)) {
         LOGE("Failed to set message digest context");
         openssl_log_errors();
         goto error;
@@ -556,7 +547,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         goto error;
     }
 
-    siglen = EVP_PKEY_size(pkey);
+    siglen = EVP_PKEY_size(&pkey);
     sigbuf = static_cast<unsigned char *>(
             OPENSSL_malloc(static_cast<size_t>(siglen)));
     if (!sigbuf) {
@@ -564,7 +555,7 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
         openssl_log_errors();
         goto error;
     }
-    siglen = BIO_read(bio_sig_in, sigbuf, siglen);
+    siglen = BIO_read(&bio_sig_in, sigbuf, siglen);
     if (siglen <= 0) {
         LOGE("Failed to read signature BIO stream");
         openssl_log_errors();
@@ -572,9 +563,9 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
-    bio_input = bio_data_in;
+    bio_input = &bio_data_in;
 #else
-    bio_input = BIO_push(bio_md, bio_data_in);
+    bio_input = BIO_push(bio_md, &bio_data_in);
 #endif
 
     while (true) {
@@ -598,9 +589,9 @@ bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
 
     n = EVP_DigestVerifyFinal(mctx, sigbuf, static_cast<size_t>(siglen));
     if (n == 1) {
-        *result_out = true;
+        result_out = true;
     } else if (n == 0) {
-        *result_out = false;
+        result_out = false;
     } else {
         LOGE("Failed to verify data");
         openssl_log_errors();

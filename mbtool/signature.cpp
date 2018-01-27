@@ -130,8 +130,7 @@ static SigVerifyResult verify_signature_with_key(const char *path,
         return SigVerifyResult::Failure;
     }
 
-    ret = sign::verify_data(bio_data_in.get(), bio_sig_in.get(), public_key,
-                            &valid);
+    ret = sign::verify_data(*bio_data_in, *bio_sig_in, *public_key, valid);
 
     return ret ? (valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid)
             : SigVerifyResult::Failure;

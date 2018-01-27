@@ -31,17 +31,17 @@ enum {
     KEY_FORMAT_PKCS12 = 2
 };
 
-MB_EXPORT EVP_PKEY * load_private_key(BIO *bio_key, int format,
+MB_EXPORT EVP_PKEY * load_private_key(BIO &bio_key, int format,
                                       const char *pass);
 MB_EXPORT EVP_PKEY * load_private_key_from_file(const char *file, int format,
                                                 const char *pass);
-MB_EXPORT EVP_PKEY * load_public_key(BIO *bio_key, int format,
+MB_EXPORT EVP_PKEY * load_public_key(BIO &bio_key, int format,
                                      const char *pass);
 MB_EXPORT EVP_PKEY * load_public_key_from_file(const char *file, int format,
                                                const char *pass);
-MB_EXPORT bool sign_data(BIO *bio_data_in, BIO *bio_sig_out,
-                         EVP_PKEY *pkey);
-MB_EXPORT bool verify_data(BIO *bio_data_in, BIO *bio_sig_in,
-                           EVP_PKEY *pkey, bool *result_out);
+MB_EXPORT bool sign_data(BIO &bio_data_in, BIO &bio_sig_out,
+                         EVP_PKEY &pkey);
+MB_EXPORT bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
+                           EVP_PKEY &pkey, bool &result_out);
 
 }
