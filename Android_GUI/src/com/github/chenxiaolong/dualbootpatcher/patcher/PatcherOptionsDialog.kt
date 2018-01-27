@@ -42,8 +42,6 @@ import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 
 class PatcherOptionsDialog : DialogFragment() {
-    private var isInitial: Boolean = false
-
     private var preselectedDeviceId: String? = null
     private var preselectedRomId: String? = null
 
@@ -78,8 +76,6 @@ class PatcherOptionsDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        isInitial = savedInstanceState == null
-
         val id = arguments!!.getInt(ARG_ID)
 
         preselectedDeviceId = arguments!!.getString(ARG_PRESELECTED_DEVICE_ID)
@@ -265,7 +261,7 @@ class PatcherOptionsDialog : DialogFragment() {
         deviceAdapter.notifyDataSetChanged()
 
         // Select initial device
-        if (isInitial) {
+        if (lastDevicePosition == AppCompatSpinner.INVALID_POSITION) {
             (preselectedDeviceId ?: currentDevice?.id)?.let { model.selectDeviceId(it) }
         }
     }
@@ -282,7 +278,7 @@ class PatcherOptionsDialog : DialogFragment() {
         locationAdapter.notifyDataSetChanged()
 
         // Select initial ROM ID
-        if (isInitial) {
+        if (lastLocationPosition == AppCompatSpinner.INVALID_POSITION) {
             preselectedRomId?.let { model.selectRomId(it) }
         }
     }
