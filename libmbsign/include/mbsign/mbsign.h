@@ -51,6 +51,6 @@ load_public_key_from_file(const char *file, KeyFormat format, const char *pass);
 MB_EXPORT Result<void>
 sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey);
 MB_EXPORT Result<void>
-verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey, bool &result_out);
+verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey);
 
 }

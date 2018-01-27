@@ -110,8 +110,6 @@ static SigVerifyResult verify_signature_with_key(const char *path,
                                                  const char *sig_path,
                                                  EVP_PKEY &public_key)
 {
-    bool valid;
-
     ScopedBIO bio_data_in(BIO_new_file(path, "rb"), BIO_free);
     if (!bio_data_in) {
         LOGE("%s: Failed to open input file", path);
@@ -126,17 +124,21 @@ static SigVerifyResult verify_signature_with_key(const char *path,
         return SigVerifyResult::Failure;
     }
 
-    auto ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key, valid);
+    auto ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key);
     if (!ret) {
-        LOGE("%s: Failed to verify signature: %s", sig_path,
-             ret.error().ec.message().c_str());
-        if (ret.error().has_openssl_error) {
-            openssl_log_errors();
+        if (ret.error().ec == sign::Error::BadSignature) {
+            return SigVerifyResult::Invalid;
+        } else {
+            LOGE("%s: Failed to verify signature: %s", sig_path,
+                 ret.error().ec.message().c_str());
+            if (ret.error().has_openssl_error) {
+                openssl_log_errors();
+            }
+            return SigVerifyResult::Failure;
         }
-        return SigVerifyResult::Failure;
     }
 
-    return valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid;
+    return SigVerifyResult::Valid;
 }
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)

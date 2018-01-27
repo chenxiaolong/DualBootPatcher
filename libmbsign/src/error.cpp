@@ -56,6 +56,8 @@ std::string ErrorCategory::message(int ev) const
         return "invalid signature version";
     case Error::InvalidSignatureMagic:
         return "invalid signature magic";
+    case Error::BadSignature:
+        return "bad signature";
     case Error::PrivateKeyLoadError:
         return "failed to load private key";
     case Error::PublicKeyLoadError:

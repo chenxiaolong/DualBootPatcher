@@ -31,16 +31,18 @@ enum class Error
     InvalidSignatureVersion = 11,
     InvalidSignatureMagic   = 12,
 
-    PrivateKeyLoadError     = 20,
-    PublicKeyLoadError      = 21,
-    Pkcs12LoadError         = 22,
-    Pkcs12MacVerifyError    = 23,
+    BadSignature            = 20,
 
-    IoError                 = 30,
+    PrivateKeyLoadError     = 30,
+    PublicKeyLoadError      = 31,
+    Pkcs12LoadError         = 32,
+    Pkcs12MacVerifyError    = 33,
 
-    OpensslError            = 40,
+    IoError                 = 40,
 
-    InternalError           = 50,
+    OpensslError            = 50,
+
+    InternalError           = 60,
 };
 
 MB_EXPORT std::error_code make_error_code(Error e);

@@ -396,16 +396,16 @@ Result<void> sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 /*!
  * \brief Verify signature of data from stream
  *
- * \param[in] bio_data_in Input stream for data
- * \param[in] bio_sig_in Input stream for signature
- * \param[in] pkey Public key
- * \param[out] result_out Output for result of verification operation
+ * \param bio_data_in Input stream for data
+ * \param bio_sig_in Input stream for signature
+ * \param pkey Public key
  *
- * \return Whether the verification operation completed successfully (does not
- *         indicate whether the signature is valid)
+ * \return Whether the verification operation completed successfully. If the
+ *         signature is invalid, the error code will be set to
+ *         Error::BadSignature.
  */
 Result<void>
-verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey, bool &result_out)
+verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey)
 {
     EVP_MD_CTX *mctx = nullptr;
 
@@ -497,14 +497,12 @@ verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey, bool &result_out)
     int n = EVP_DigestVerifyFinal(mctx, sigbuf.get(),
                                   static_cast<size_t>(siglen));
     if (n == 1) {
-        result_out = true;
+        return oc::success();
     } else if (n == 0) {
-        result_out = false;
+        return ErrorInfo{Error::BadSignature, false};
     } else {
         return ErrorInfo{Error::OpensslError, true};
     }
-
-    return oc::success();
 }
 
 }
