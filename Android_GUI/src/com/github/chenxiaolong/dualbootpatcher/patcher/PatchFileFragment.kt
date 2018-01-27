@@ -458,6 +458,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
                     service!!.getDevice(taskId)!!,
                     service!!.getRomId(taskId)!!
             )
+            item.taskId = taskId
             item.state = service!!.getState(taskId)
             item.details = service!!.getDetails(taskId)
             item.bytes = service!!.getCurrentBytes(taskId)
