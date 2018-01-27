@@ -48,13 +48,11 @@
 
 #define LOG_TAG                 "mbsign"
 
-#define BUFSIZE                 1024 * 8
+constexpr char MAGIC[]                      = "!MBSIGN!";
+constexpr size_t MAGIC_SIZE                 = 8;
 
-#define MAGIC                   "!MBSIGN!"
-#define MAGIC_SIZE              8
-
-#define VERSION_1_SHA512_DGST   1u
-#define VERSION_LATEST          VERSION_1_SHA512_DGST
+constexpr uint32_t VERSION_1_SHA512_DGST    = 1u;
+constexpr uint32_t VERSION_LATEST           = VERSION_1_SHA512_DGST;
 
 // NOTE: All integers are stored in little endian form
 struct SigHeader
@@ -381,8 +379,9 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
         return false;
     }
 
+    constexpr size_t buf_size = 8192;
     ScopedMallocable<unsigned char> buf(
-            static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE)),
+            static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
             openssl_free_wrapper);
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
@@ -397,7 +396,7 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 #endif
 
     while (true) {
-        int n = BIO_read(bio_input, buf.get(), BUFSIZE);
+        int n = BIO_read(bio_input, buf.get(), buf_size);
         if (n < 0) {
             LOGE("Failed to read from input data BIO stream");
             openssl_log_errors();
@@ -415,7 +414,7 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 #endif
     }
 
-    size_t len = BUFSIZE;
+    size_t len = buf_size;
     if (!EVP_DigestSignFinal(mctx, buf.get(), &len)) {
         LOGE("Failed to sign data");
         openssl_log_errors();
@@ -515,8 +514,9 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
         return false;
     }
 
+    constexpr size_t buf_size = 8192;
     ScopedMallocable<unsigned char> buf(
-            static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE)),
+            static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
             openssl_free_wrapper);
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
@@ -547,7 +547,7 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
 #endif
 
     while (true) {
-        int n = BIO_read(bio_input, buf.get(), BUFSIZE);
+        int n = BIO_read(bio_input, buf.get(), buf_size);
         if (n < 0) {
             LOGE("Failed to read input data BIO stream");
             openssl_log_errors();
