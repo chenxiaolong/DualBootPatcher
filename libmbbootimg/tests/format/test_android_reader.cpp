@@ -231,7 +231,7 @@ TEST(AndroidSetHeaderTest, ValuesShouldMatch)
              "Test board name");
     snprintf(reinterpret_cast<char *>(ahdr.cmdline), sizeof(ahdr.cmdline),
              "Test cmdline");
-    memset(ahdr.id, 0xff, sizeof(ahdr.id));
+    std::fill(std::begin(ahdr.id), std::end(ahdr.id), 0xff);
 
     ASSERT_TRUE(AndroidFormatReader::convert_header(ahdr, header));
 

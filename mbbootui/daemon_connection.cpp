@@ -341,7 +341,7 @@ bool MbtoolConnection::connect()
     }
 
     int fd;
-    struct sockaddr_un addr;
+    sockaddr_un addr = {};
 
     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -356,15 +356,14 @@ bool MbtoolConnection::connect()
     char abs_name[] = "\0" SOCKET_ADDRESS;
     size_t abs_name_len = sizeof(abs_name) - 1;
 
-    memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_LOCAL;
     memcpy(addr.sun_path, abs_name, abs_name_len);
 
     // Calculate correct length so the trailing junk is not included in the
     // abstract socket name
-    socklen_t addr_len = offsetof(struct sockaddr_un, sun_path) + abs_name_len;
+    socklen_t addr_len = offsetof(sockaddr_un, sun_path) + abs_name_len;
 
-    if (::connect(fd, (struct sockaddr *) &addr, addr_len) < 0) {
+    if (::connect(fd, reinterpret_cast<sockaddr *>(&addr), addr_len) < 0) {
         LOGE("Failed to connect to socket: %s", strerror(errno));
         return false;
     }

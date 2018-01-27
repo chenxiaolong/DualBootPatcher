@@ -296,7 +296,7 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
     uint64_t aboot_offset;
     LokiTarget *tgt = nullptr;
     android::AndroidHeader ahdr;
-    LokiHeader lhdr;
+    LokiHeader lhdr = {};
 
     memcpy(patch, LOKI_SHELLCODE, LOKI_SHELLCODE_SIZE);
 
@@ -354,8 +354,6 @@ oc::result<void> _loki_patch_file(Writer &writer, File &file,
     OUTCOME_TRYV(_loki_read_android_header(writer, file, ahdr));
 
     // Set up Loki header
-    memset(&lhdr, 0, sizeof(lhdr));
-
     memcpy(lhdr.magic, LOKI_MAGIC, LOKI_MAGIC_SIZE);
     lhdr.recovery = 0;
     strncpy(lhdr.build, tgt->build, sizeof(lhdr.build) - 1);

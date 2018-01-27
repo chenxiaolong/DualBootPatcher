@@ -307,8 +307,7 @@ bool selinux_get_enforcing(int &value)
         return false;
     }
 
-    char buf[20];
-    memset(buf, 0, sizeof(buf));
+    char buf[20] = {};
     ssize_t ret = read(fd, buf, sizeof(buf) - 1);
     close(fd);
     if (ret < 0) {

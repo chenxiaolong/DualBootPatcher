@@ -257,16 +257,13 @@ static void put_socket_to_env(const char *name, int fd)
  */
 static int create_new_socket()
 {
-    struct sockaddr_un addr;
-    int fd;
-
-    fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return -1;
     }
 
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
@@ -374,9 +371,7 @@ static bool send_message(int fd, const char *command,
  */
 static int connect_to_installd()
 {
-    struct sockaddr_un addr;
-
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "%s",
              INSTALLD_SOCKET_PATH);
@@ -502,7 +497,8 @@ static bool do_remove(const std::vector<std::string> &args)
 #undef TAG
 }
 
-struct CommandInfo {
+struct CommandInfo
+{
     const char *name;
     unsigned int nargs;
     bool (*func)(const std::vector<std::string> &args);
@@ -753,9 +749,7 @@ static bool proxy_process(int fd, bool can_appsync)
 
         LOGD("---");
 
-        struct pollfd fds[2];
-        memset(fds, 0, sizeof(fds));
-
+        pollfd fds[2] = {};
         fds[0].fd = client_fd;
         fds[0].events = POLLIN;
         fds[1].fd = installd_fd;

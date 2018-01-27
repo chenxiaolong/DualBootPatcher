@@ -439,7 +439,7 @@ oc::result<size_t> SparseFile::on_read(void *buf, size_t size)
             break;
         }
         case CHUNK_TYPE_DONT_CARE:
-            memset(buf, 0, static_cast<size_t>(to_read));
+            std::fill_n(reinterpret_cast<unsigned char *>(buf), to_read, 0);
             n_read = to_read;
             break;
         default:
