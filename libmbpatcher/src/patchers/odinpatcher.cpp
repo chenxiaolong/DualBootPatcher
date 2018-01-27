@@ -20,6 +20,7 @@
 #include "mbpatcher/patchers/odinpatcher.h"
 
 #include <algorithm>
+#include <array>
 #include <thread>
 #include <unordered_set>
 
@@ -372,16 +373,16 @@ bool OdinPatcher::process_file(archive *a, archive_entry *entry, bool sparse)
 
 static const char * indent(unsigned int depth)
 {
-    static char buf[16];
-    memset(buf, ' ', sizeof(buf));
+    static std::array<char, 16> buf;
+    buf.fill(' ');
 
-    if (depth * 2 < sizeof(buf) - 1) {
+    if (depth * 2 < buf.size() - 1) {
         buf[depth * 2] = '\0';
     } else {
-        buf[sizeof(buf) - 1] = '\0';
+        buf[buf.size() - 1] = '\0';
     }
 
-    return buf;
+    return buf.data();
 }
 
 struct NestedCtx

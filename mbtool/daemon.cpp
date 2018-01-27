@@ -190,10 +190,7 @@ static bool client_connection(int fd)
 
 static bool run_daemon()
 {
-    int fd;
-    struct sockaddr_un addr;
-
-    fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+    int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
     if (fd < 0) {
         LOGE("Failed to create socket: %s", strerror(errno));
         return false;
@@ -206,7 +203,7 @@ static bool run_daemon()
     char abs_name[] = "\0mbtool.daemon";
     size_t abs_name_len = sizeof(abs_name) - 1;
 
-    memset(&addr, 0, sizeof(addr));
+    sockaddr_un addr = {};
     addr.sun_family = AF_LOCAL;
     memcpy(addr.sun_path, abs_name, abs_name_len);
 

@@ -367,6 +367,7 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     unsigned char *buf = nullptr;
     size_t len;
     int n;
+    SigHeader hdr = {};
 
     if (version == VERSION_1_SHA512_DGST) {
         md_type = EVP_sha512();
@@ -438,8 +439,6 @@ bool sign_data(BIO *bio_data_in, BIO *bio_sig_out, EVP_PKEY *pkey)
     }
 
     // Write header
-    SigHeader hdr;
-    memset(&hdr, 0, sizeof(hdr));
     memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
     hdr.version = version;
 

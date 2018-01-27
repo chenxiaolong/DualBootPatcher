@@ -19,6 +19,7 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -456,8 +457,9 @@ TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    memset(buf.data(), 'a', buf.size() / 2);
-    memset(buf.data() + buf.size() / 2, 'b', buf.size() / 2);
+    auto middle = buf.begin() + buf.size() / 2;
+    std::fill(buf.begin(), middle, 'a');
+    std::fill(middle, buf.end(), 'b');
 
     MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
@@ -475,8 +477,9 @@ TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    memset(buf.data(), 'a', buf.size() / 2);
-    memset(buf.data() + buf.size() / 2, 'b', buf.size() / 2);
+    auto middle = buf.begin() + buf.size() / 2;
+    std::fill(buf.begin(), middle, 'a');
+    std::fill(middle, buf.end(), 'b');
 
     MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());

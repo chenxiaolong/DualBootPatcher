@@ -212,8 +212,8 @@ oc::result<size_t> MemoryFile::on_write(const void *buf, size_t size)
             }
 
             // Zero-initialize new space
-            memset(static_cast<char *>(new_data) + m_size, 0,
-                   desired_size - m_size);
+            std::fill_n(static_cast<char *>(new_data) + m_size,
+                        desired_size - m_size, 0);
 
             m_data = new_data;
             m_size = desired_size;
@@ -272,8 +272,8 @@ oc::result<void> MemoryFile::on_truncate(uint64_t size)
 
         // Zero-initialize new space
         if (size > m_size) {
-            memset(static_cast<char *>(new_data) + m_size, 0,
-                   static_cast<size_t>(size) - m_size);
+            std::fill_n(static_cast<char *>(new_data) + m_size,
+                        static_cast<size_t>(size) - m_size, 0);
         }
 
         m_data = new_data;

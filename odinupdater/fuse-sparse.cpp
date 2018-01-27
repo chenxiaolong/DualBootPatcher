@@ -308,8 +308,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    fuse_operations fuse_oper;
-    memset(&fuse_oper, 0, sizeof(fuse_oper));
+    fuse_operations fuse_oper = {};
     fuse_oper.getattr = fuse_getattr;
     fuse_oper.open    = fuse_open;
     fuse_oper.read    = fuse_read;

@@ -112,11 +112,10 @@ char ** dup_cstring_list(const char * const *list)
     for (items = 0; list[items]; ++items);
     size_t size = (items + 1) * sizeof(list[0]);
 
-    copy = static_cast<char **>(malloc(size));
+    copy = static_cast<char **>(calloc(1, size));
     if (!copy) {
         return nullptr;
     }
-    memset(copy, 0, size);
 
     for (size_t i = 0; i < items; ++i) {
         copy[i] = strdup(list[i]);
