@@ -105,13 +105,10 @@ static int password_callback(char *buf, int size, int rwflag, void *userdata)
 static int log_callback(const char *str, size_t len, void *userdata)
 {
     (void) userdata;
-    char *copy = strdup(str);
-    if (copy) {
-        // Strip newline
-        copy[len - 1] = '\0';
-        LOGE("%s", copy);
-        free(copy);
-    }
+
+    // Strip newline
+    LOGE("%s", std::string(str, len > 0 ? len - 1 : len).c_str());
+
     return static_cast<int>(len);
 }
 
