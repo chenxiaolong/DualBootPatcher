@@ -175,10 +175,7 @@ class PatcherOptionsDialog : DialogFragment() {
             templateSuffixEditor.setText(it)
         })
 
-        // Load available options when the dialog initially opens
-        if (savedInstanceState == null) {
-            model.loadData()
-        } else {
+        if (savedInstanceState != null) {
             lastDevicePosition = savedInstanceState.getInt(STATE_DEVICE_POSITION,
                     AppCompatSpinner.INVALID_POSITION)
             lastLocationPosition = savedInstanceState.getInt(STATE_LOCATION_POSITION,

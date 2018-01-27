@@ -21,21 +21,14 @@ import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
-import android.os.AsyncTask
 import com.github.chenxiaolong.dualbootpatcher.OneTimeLiveEvent
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 
 internal class PatcherOptionsViewModel(application: Application) : AndroidViewModel(application) {
     /**
-     * Backing field for [optionsData].
-     */
-    private val _optionsData = MutableLiveData<PatcherOptionsData>()
-
-    /**
      * Asynchronously loaded data containing the available patcher options.
      */
-    val optionsData: LiveData<PatcherOptionsData>
-        get() = _optionsData
+    val optionsData: PatcherOptionsLiveData = PatcherOptionsLiveData(application)
 
     /**
      * Backing field for [selectedLocation].
@@ -126,17 +119,10 @@ internal class PatcherOptionsViewModel(application: Application) : AndroidViewMo
     private var templateSuffix: String = ""
 
     /**
-     * Start loading patcher options data asynchronously.
-     */
-    fun loadData() {
-        PatcherOptionsLoadTask().execute()
-    }
-
-    /**
      * Called when a device is selected.
      */
     fun onSelectedDevice(position: Int) {
-        val data = _optionsData.value!!
+        val data = optionsData.value!!
         device = data.devices[position]
     }
 
@@ -147,7 +133,7 @@ internal class PatcherOptionsViewModel(application: Application) : AndroidViewMo
      * [onTemplateSuffixChanged] had already been called.
      */
     fun onSelectedLocationItem(position: Int) {
-        val data = _optionsData.value!!
+        val data = optionsData.value!!
 
         if (position >= data.installLocations.size) {
             // Template location
@@ -183,7 +169,7 @@ internal class PatcherOptionsViewModel(application: Application) : AndroidViewMo
      * If the device does not match anything, the UI is left unchanged.
      */
     fun selectDeviceId(deviceId: String) {
-        val data = _optionsData.value!!
+        val data = optionsData.value!!
 
         for ((i, device) in data.devices.withIndex()) {
             if (device.id == deviceId) {
@@ -199,7 +185,7 @@ internal class PatcherOptionsViewModel(application: Application) : AndroidViewMo
      * If the ROM ID does not match anything, the UI is left unchanged.
      */
     fun selectRomId(romId: String) {
-        val data = _optionsData.value!!
+        val data = optionsData.value!!
 
         for ((i, loc) in data.installLocations.withIndex()) {
             if (loc.id == romId) {
@@ -259,36 +245,6 @@ internal class PatcherOptionsViewModel(application: Application) : AndroidViewMo
 
         private fun isValidTemplateSuffix(suffix: String): Boolean {
             return suffix.matches(SUFFIX_REGEX)
-        }
-    }
-
-    private inner class PatcherOptionsLoadTask : AsyncTask<Void, Void, PatcherOptionsData>() {
-        override fun doInBackground(vararg params: Void?): PatcherOptionsData {
-            // Build list of built-in and rick roll devices
-            val devices = ArrayList<Device>()
-            val knownDevices = PatcherUtils.getDevices(getApplication())
-            if (knownDevices != null) {
-                devices.addAll(knownDevices)
-            }
-            RickRollDevices.addRickRollDevices(devices)
-
-            // Find current device in our list in case it matches a rick roll device
-            val currentDevice = PatcherUtils.getCurrentDevice(getApplication(), devices)
-
-            // Build list of fixed install locations
-            val installLocations = ArrayList<InstallLocation>()
-            installLocations.addAll(PatcherUtils.installLocations)
-            installLocations.addAll(PatcherUtils.getInstalledTemplateLocations())
-
-            // Build list of template install locations
-            val templateLocations = ArrayList<TemplateLocation>()
-            templateLocations.addAll(PatcherUtils.templateLocations)
-
-            return PatcherOptionsData(currentDevice, devices, installLocations, templateLocations)
-        }
-
-        override fun onPostExecute(result: PatcherOptionsData) {
-            _optionsData.value = result
         }
     }
 }
