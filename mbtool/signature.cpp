@@ -68,7 +68,7 @@ static inline bool hex2num(char c, char *out)
     return true;
 }
 
-static inline bool hex2bin(const std::string &source, std::string *out)
+static inline bool hex2bin(const std::string &source, std::string &out)
 {
     std::string result;
     result.reserve((source.size() + 1) / 2);
@@ -87,20 +87,17 @@ static inline bool hex2bin(const std::string &source, std::string *out)
         result += static_cast<char>(temp1 << 4 | temp2);
     }
 
-    out->swap(result);
+    out.swap(result);
     return true;
 }
 
 static int log_callback(const char *str, size_t len, void *userdata)
 {
     (void) userdata;
-    char *copy = strdup(str);
-    if (copy) {
-        // Strip newline
-        copy[len - 1] = '\0';
-        LOGE("%s", copy);
-        free(copy);
-    }
+
+    // Strip newline
+    LOGE("%s", std::string(str, len > 0 ? len - 1 : len).c_str());
+
     return static_cast<int>(len);
 }
 
@@ -111,7 +108,7 @@ static void openssl_log_errors()
 
 static SigVerifyResult verify_signature_with_key(const char *path,
                                                  const char *sig_path,
-                                                 EVP_PKEY *public_key)
+                                                 EVP_PKEY &public_key)
 {
     bool ret = false;
     bool valid;
@@ -130,7 +127,7 @@ static SigVerifyResult verify_signature_with_key(const char *path,
         return SigVerifyResult::Failure;
     }
 
-    ret = sign::verify_data(*bio_data_in, *bio_sig_in, *public_key, valid);
+    ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key, valid);
 
     return ret ? (valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid)
             : SigVerifyResult::Failure;
@@ -140,7 +137,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
 {
     for (const std::string &hex_der : valid_certs) {
         std::string der;
-        if (!hex2bin(hex_der, &der)) {
+        if (!hex2bin(hex_der, der)) {
             LOGE("Failed to convert hex-encoded certificate to binary: %s",
                  hex_der.c_str());
             return SigVerifyResult::Failure;
@@ -175,7 +172,7 @@ SigVerifyResult verify_signature(const char *path, const char *sig_path)
         }
 
         SigVerifyResult result =
-                verify_signature_with_key(path, sig_path, public_key.get());
+                verify_signature_with_key(path, sig_path, *public_key);
         if (result == SigVerifyResult::Invalid) {
             // Keep trying ...
             continue;
