@@ -19,6 +19,7 @@
 
 #include "mbsign/mbsign.h"
 
+#include <memory>
 #include <string>
 
 #include <cstring>
@@ -40,6 +41,8 @@
 #ifdef __clang__
 #  pragma GCC diagnostic pop
 #endif
+
+#include "mbcommon/finally.h"
 
 #include "mblog/logging.h"
 
@@ -64,6 +67,12 @@ struct SigHeader
 
 namespace mb::sign
 {
+
+template <typename T>
+using ScopedMallocable = std::unique_ptr<T, decltype(free) *>;
+
+using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
+using ScopedPKCS12 = std::unique_ptr<PKCS12, decltype(PKCS12_free) *>;
 
 /*!
  * \brief Password callback
@@ -118,6 +127,11 @@ static void openssl_log_errors()
     ERR_print_errors_cb(&log_callback, nullptr);
 }
 
+static void openssl_free_wrapper(void *ptr) noexcept
+{
+    OPENSSL_free(ptr);
+}
+
 /*!
  * \brief Load PKCS12 structure from a BIO stream
  *
@@ -136,46 +150,41 @@ static void openssl_log_errors()
 static bool load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
                         EVP_PKEY *&pkey, X509 *&cert, STACK_OF(X509) **ca)
 {
-    PKCS12 *p12;
-    const char *pass;
-    char buf[PEM_BUFSIZE];
-    int len;
-    int ret = 0;
-
     // Load PKCS12 from stream
-    p12 = d2i_PKCS12_bio(&bio_pkcs12, nullptr);
+    ScopedPKCS12 p12(d2i_PKCS12_bio(&bio_pkcs12, nullptr), PKCS12_free);
     if (!p12) {
         LOGE("Failed to load PKCS12 file");
         openssl_log_errors();
-        goto finished;
+        return false;
     }
 
+    const char *pass;
+
     // Try empty password
-    if (PKCS12_verify_mac(p12, "", 0) || PKCS12_verify_mac(p12, nullptr, 0)) {
+    if (PKCS12_verify_mac(p12.get(), "", 0)
+            || PKCS12_verify_mac(p12.get(), nullptr, 0)) {
         pass = "";
     } else {
+        char buf[PEM_BUFSIZE];
+
         // Otherwise, get password from callback
-        len = pem_cb(buf, PEM_BUFSIZE, 0, cb_data);
+        int len = pem_cb(buf, sizeof(buf), 0, cb_data);
         if (len < 0) {
             LOGE("Passphrase callback failed");
-            goto finished;
+            return false;
         }
-        if (len < PEM_BUFSIZE) {
-            buf[len] = 0;
+        if (len < static_cast<int>(sizeof(buf))) {
+            buf[len] = '\0';
         }
-        if (!PKCS12_verify_mac(p12, buf, len)) {
+        if (!PKCS12_verify_mac(p12.get(), buf, len)) {
             LOGE("Failed to verify MAC in PKCS12 file"
                  " (possibly incorrect password)");
             openssl_log_errors();
-            goto finished;
+            return false;
         }
         pass = buf;
     }
-    ret = PKCS12_parse(p12, pass, &pkey, &cert, ca);
-
-finished:
-    PKCS12_free(p12);
-    return ret > 0;
+    return PKCS12_parse(p12.get(), pass, &pkey, &cert, ca) > 0;
 }
 
 /*!
@@ -238,20 +247,14 @@ EVP_PKEY * load_private_key(BIO &bio_key, int format, const char *pass)
 EVP_PKEY * load_private_key_from_file(const char *file, int format,
                                       const char *pass)
 {
-    BIO *bio_key;
-    EVP_PKEY *pkey = nullptr;
-
-    bio_key = BIO_new_file(file, "rb");
+    ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
     if (!bio_key) {
         LOGE("%s: Failed to load private key", file);
         openssl_log_errors();
         return nullptr;
     }
 
-    pkey = load_private_key(*bio_key, format, pass);
-
-    BIO_free(bio_key);
-    return pkey;
+    return load_private_key(*bio_key, format, pass);
 }
 
 /*!
@@ -317,20 +320,14 @@ EVP_PKEY * load_public_key(BIO &bio_key, int format, const char *pass)
 EVP_PKEY * load_public_key_from_file(const char *file, int format,
                                      const char *pass)
 {
-    BIO *bio_key;
-    EVP_PKEY *pkey = nullptr;
-
-    bio_key = BIO_new_file(file, "rb");
+    ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
     if (!bio_key) {
         LOGE("%s: Failed to load public key", file);
         openssl_log_errors();
         return nullptr;
     }
 
-    pkey = load_public_key(*bio_key, format, pass);
-
-    BIO_free(bio_key);
-    return pkey;
+    return load_public_key(*bio_key, format, pass);
 }
 
 /*!
@@ -344,20 +341,9 @@ EVP_PKEY * load_public_key_from_file(const char *file, int format,
  */
 bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 {
-    unsigned int version = VERSION_LATEST;
+    constexpr unsigned int version = VERSION_LATEST;
     const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
-    EVP_PKEY_CTX *pctx = nullptr;
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX ctx;
-#else
-    BIO *bio_md = nullptr;
-#endif
-    BIO *bio_input = nullptr;
-    unsigned char *buf = nullptr;
-    size_t len;
-    int n;
-    SigHeader hdr = {};
 
     if (version == VERSION_1_SHA512_DGST) {
         md_type = EVP_sha512();
@@ -367,68 +353,77 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
+    EVP_MD_CTX ctx;
     EVP_MD_CTX_init(&ctx);
+
+    auto free_ctx = finally([&ctx] {
+        EVP_MD_CTX_cleanup(&ctx);
+    });
+
     mctx = &ctx;
 #else
-    bio_md = BIO_new(BIO_f_md());
+    ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
     if (!bio_md) {
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (!BIO_get_md_ctx(bio_md, &mctx)) {
+    if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
         LOGE("Failed to get message digest context");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 #endif
 
-    if (!EVP_DigestSignInit(mctx, &pctx, md_type, nullptr, &pkey)) {
+    if (!EVP_DigestSignInit(mctx, nullptr, md_type, nullptr, &pkey)) {
         LOGE("Failed to set message digest context");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
+    ScopedMallocable<unsigned char> buf(
+            static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE)),
+            openssl_free_wrapper);
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
-    bio_input = &bio_data_in;
+    BIO *bio_input = &bio_data_in;
 #else
-    bio_input = BIO_push(bio_md, &bio_data_in);
+    BIO *bio_input = BIO_push(bio_md.get(), &bio_data_in);
 #endif
 
     while (true) {
-        n = BIO_read(bio_input, buf, BUFSIZE);
+        int n = BIO_read(bio_input, buf.get(), BUFSIZE);
         if (n < 0) {
             LOGE("Failed to read from input data BIO stream");
             openssl_log_errors();
-            goto error;
+            return false;
         }
         if (n == 0) {
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
+        if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
-            goto error;
+            return false;
         }
 #endif
     }
 
-    len = BUFSIZE;
-    if (!EVP_DigestSignFinal(mctx, buf, &len)) {
+    size_t len = BUFSIZE;
+    if (!EVP_DigestSignFinal(mctx, buf.get(), &len)) {
         LOGE("Failed to sign data");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
     // Write header
+    SigHeader hdr = {};
     memcpy(hdr.magic, MAGIC, MAGIC_SIZE);
     hdr.version = version;
 
@@ -436,32 +431,17 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
             != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to write header to signature BIO stream");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (BIO_write(&bio_sig_out, buf, static_cast<int>(len))
+    if (BIO_write(&bio_sig_out, buf.get(), static_cast<int>(len))
             != static_cast<int>(len)) {
         LOGE("Failed to write signature to signature BIO stream");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX_cleanup(&ctx);
-#else
-    BIO_free(bio_md);
-#endif
-    OPENSSL_free(buf);
     return true;
-
-error:
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX_cleanup(&ctx);
-#else
-    BIO_free(bio_md);
-#endif
-    OPENSSL_free(buf);
-    return false;
 }
 
 /*!
@@ -478,116 +458,115 @@ error:
 bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
                  EVP_PKEY &pkey, bool &result_out)
 {
-    SigHeader hdr;
-    const EVP_MD *md_type = nullptr;
     EVP_MD_CTX *mctx = nullptr;
-    EVP_PKEY_CTX *pctx = nullptr;
+
 #ifdef OPENSSL_IS_BORINGSSL
     EVP_MD_CTX ctx;
-#else
-    BIO *bio_md = nullptr;
-#endif
-    BIO *bio_input = nullptr;
-    unsigned char *buf = nullptr;
-    unsigned char *sigbuf = nullptr;
-    int siglen;
-    int n;
-
-#ifdef OPENSSL_IS_BORINGSSL
     EVP_MD_CTX_init(&ctx);
+
+    auto free_ctx = finally([&ctx] {
+        EVP_MD_CTX_cleanup(&ctx);
+    });
+
     mctx = &ctx;
 #else
-    bio_md = BIO_new(BIO_f_md());
+    ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
     if (!bio_md) {
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (!BIO_get_md_ctx(bio_md, &mctx)) {
+    if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
         LOGE("Failed to get message digest context");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 #endif
 
     // Read header from signature file
+    SigHeader hdr;
     if (BIO_read(&bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
             != static_cast<int>(sizeof(hdr))) {
         LOGE("Failed to read header from signature BIO stream");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
     // Verify header
     if (memcmp(hdr.magic, MAGIC, MAGIC_SIZE) != 0) {
         LOGE("Invalid magic in signature file");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
     // Verify version
+    const EVP_MD *md_type = nullptr;
     if (hdr.version == VERSION_1_SHA512_DGST) {
         md_type = EVP_sha512();
     } else {
         LOGE("Invalid version in signature file: %u", hdr.version);
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    if (!EVP_DigestVerifyInit(mctx, &pctx, md_type, nullptr, &pkey)) {
+    if (!EVP_DigestVerifyInit(mctx, nullptr, md_type, nullptr, &pkey)) {
         LOGE("Failed to set message digest context");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    buf = static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE));
+    ScopedMallocable<unsigned char> buf(
+            static_cast<unsigned char *>(OPENSSL_malloc(BUFSIZE)),
+            openssl_free_wrapper);
     if (!buf) {
         LOGE("Failed to allocate I/O buffer");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-    siglen = EVP_PKEY_size(&pkey);
-    sigbuf = static_cast<unsigned char *>(
-            OPENSSL_malloc(static_cast<size_t>(siglen)));
+    int siglen = EVP_PKEY_size(&pkey);
+    ScopedMallocable<unsigned char> sigbuf(static_cast<unsigned char *>(
+            OPENSSL_malloc(static_cast<size_t>(siglen))),
+            openssl_free_wrapper);
     if (!sigbuf) {
         LOGE("Failed to allocate signature buffer");
         openssl_log_errors();
-        goto error;
+        return false;
     }
-    siglen = BIO_read(&bio_sig_in, sigbuf, siglen);
+    siglen = BIO_read(&bio_sig_in, sigbuf.get(), siglen);
     if (siglen <= 0) {
         LOGE("Failed to read signature BIO stream");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
-    bio_input = &bio_data_in;
+    BIO *bio_input = &bio_data_in;
 #else
-    bio_input = BIO_push(bio_md, &bio_data_in);
+    BIO *bio_input = BIO_push(bio_md.get(), &bio_data_in);
 #endif
 
     while (true) {
-        n = BIO_read(bio_input, buf, BUFSIZE);
+        int n = BIO_read(bio_input, buf.get(), BUFSIZE);
         if (n < 0) {
             LOGE("Failed to read input data BIO stream");
             openssl_log_errors();
-            goto error;
+            return false;
         }
         if (n == 0) {
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
-        if (!EVP_DigestUpdate(mctx, buf, static_cast<size_t>(n))) {
+        if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
             LOGE("Failed to update digest");
             openssl_log_errors();
-            goto error;
+            return false;
         }
 #endif
     }
 
-    n = EVP_DigestVerifyFinal(mctx, sigbuf, static_cast<size_t>(siglen));
+    int n = EVP_DigestVerifyFinal(mctx, sigbuf.get(),
+                                  static_cast<size_t>(siglen));
     if (n == 1) {
         result_out = true;
     } else if (n == 0) {
@@ -595,27 +574,10 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
     } else {
         LOGE("Failed to verify data");
         openssl_log_errors();
-        goto error;
+        return false;
     }
 
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX_cleanup(&ctx);
-#else
-    BIO_free(bio_md);
-#endif
-    OPENSSL_free(sigbuf);
-    OPENSSL_free(buf);
     return true;
-
-error:
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_MD_CTX_cleanup(&ctx);
-#else
-    BIO_free(bio_md);
-#endif
-    OPENSSL_free(sigbuf);
-    OPENSSL_free(buf);
-    return false;
 }
 
 }
