@@ -89,7 +89,7 @@ class NamedSlotIdInputDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_PREFIX = "prefix"
+        private const val ARG_PREFIX = "prefix"
 
         fun newInstance(parent: Fragment?, prefix: String): NamedSlotIdInputDialog {
             if (parent != null) {

@@ -682,24 +682,24 @@ class InAppFlashingFragment : Fragment(), FirstUseDialogListener, RomIdSelection
     }
 
     companion object {
-        private val PERFORM_ACTIONS = 1234
+        private const val PERFORM_ACTIONS = 1234
 
-        private val EXTRA_PENDING_ACTIONS = "pending_actions"
-        private val EXTRA_SELECTED_URI = "selected_uri"
-        private val EXTRA_SELECTED_URI_FILE_NAME = "selected_uri_file_name"
-        private val EXTRA_SELECTED_BACKUP_DIR_URI = "selected_backup_uri"
-        private val EXTRA_SELECTED_BACKUP_NAME = "selected_backup_name"
-        private val EXTRA_SELECTED_BACKUP_TARGETS = "selected_backup_targets"
-        private val EXTRA_SELECTED_ROM_ID = "selected_rom_id"
-        private val EXTRA_ZIP_ROM_ID = "zip_rom_id"
-        private val EXTRA_ADD_TYPE = "add_type"
-        private val EXTRA_TASK_ID_VERIFY_ZIP = "task_id_verify_zip"
-        private val EXTRA_QUERYING_METADATA = "querying_metadata"
+        private const val EXTRA_PENDING_ACTIONS = "pending_actions"
+        private const val EXTRA_SELECTED_URI = "selected_uri"
+        private const val EXTRA_SELECTED_URI_FILE_NAME = "selected_uri_file_name"
+        private const val EXTRA_SELECTED_BACKUP_DIR_URI = "selected_backup_uri"
+        private const val EXTRA_SELECTED_BACKUP_NAME = "selected_backup_name"
+        private const val EXTRA_SELECTED_BACKUP_TARGETS = "selected_backup_targets"
+        private const val EXTRA_SELECTED_ROM_ID = "selected_rom_id"
+        private const val EXTRA_ZIP_ROM_ID = "zip_rom_id"
+        private const val EXTRA_ADD_TYPE = "add_type"
+        private const val EXTRA_TASK_ID_VERIFY_ZIP = "task_id_verify_zip"
+        private const val EXTRA_QUERYING_METADATA = "querying_metadata"
 
-        private val PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog"
+        private const val PREF_SHOW_FIRST_USE_DIALOG = "zip_flashing_first_use_show_dialog"
 
-        /** Request code for file picker (used in [.onActivityResult])  */
-        private val ACTIVITY_REQUEST_FILE = 1000
+        /** Request code for file picker (used in [.onActivityResult]) */
+        private const val ACTIVITY_REQUEST_FILE = 1000
 
         private val PROGRESS_DIALOG_VERIFY_ZIP =
                 "${InAppFlashingFragment::class.java.canonicalName}.progress.verify_zip"

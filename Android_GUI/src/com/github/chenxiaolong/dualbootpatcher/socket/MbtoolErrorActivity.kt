@@ -259,11 +259,11 @@ class MbtoolErrorActivity : AppCompatActivity(), ServiceConnection, GenericYesNo
         private val DIALOG_TAG = "${MbtoolErrorActivity::class.java.canonicalName}.dialog"
 
         // Argument extras
-        val EXTRA_REASON = "reason"
+        const val EXTRA_REASON = "reason"
         // Saved state extras
-        private val EXTRA_STATE_TASK_ID_UPDATE_MBTOOL = "state.update_mbtool"
-        private val EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_remove"
+        private const val EXTRA_STATE_TASK_ID_UPDATE_MBTOOL = "state.update_mbtool"
+        private const val EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_remove"
         // Result extras
-        val EXTRA_RESULT_CAN_RETRY = "result.can_retry"
+        const val EXTRA_RESULT_CAN_RETRY = "result.can_retry"
     }
 }

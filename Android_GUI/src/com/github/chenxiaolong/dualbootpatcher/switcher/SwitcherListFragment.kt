@@ -342,7 +342,7 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
      *
      * @param runnable Runnable that requires access to the service
      */
-    fun executeNeedsService(runnable: Runnable) {
+    private fun executeNeedsService(runnable: Runnable) {
         if (service != null) {
             runnable.run()
         } else {
@@ -608,7 +608,7 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
         }
     }
 
-    private fun onSetKernel(romId: String, result: SetKernelResult) {
+    private fun onSetKernel(result: SetKernelResult) {
         // Remove cached task from service
         removeCachedTaskId(taskIdSetKernel)
         taskIdSetKernel = -1
@@ -729,7 +729,7 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
 
         override fun onSetKernel(taskId: Int, romId: String, result: SetKernelResult) {
             if (taskId == taskIdSetKernel) {
-                handler.post { this@SwitcherListFragment.onSetKernel(romId, result) }
+                handler.post { this@SwitcherListFragment.onSetKernel(result) }
             }
         }
 
@@ -743,20 +743,20 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
     }
 
     companion object {
-        val FRAGMENT_TAG = SwitcherListFragment::class.java.canonicalName
+        val FRAGMENT_TAG: String = SwitcherListFragment::class.java.canonicalName
         private val TAG = SwitcherListFragment::class.java.simpleName
 
-        private val EXTRA_TASK_ID_GET_ROMS_STATE = "task_id_get_roms_state"
-        private val EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom"
-        private val EXTRA_TASK_ID_SET_KERNEL = "task_id_set_kernel"
-        private val EXTRA_TASK_IDS_TO_REMOVE = "task_ids_to_reomve"
+        private const val EXTRA_TASK_ID_GET_ROMS_STATE = "task_id_get_roms_state"
+        private const val EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom"
+        private const val EXTRA_TASK_ID_SET_KERNEL = "task_id_set_kernel"
+        private const val EXTRA_TASK_IDS_TO_REMOVE = "task_ids_to_remove"
 
-        private val EXTRA_PERFORMING_ACTION = "performing_action"
-        private val EXTRA_SELECTED_ROM = "selected_rom"
-        private val EXTRA_ACTIVE_ROM_ID = "active_rom_id"
-        private val EXTRA_SHOWED_SET_KERNEL_WARNING = "showed_set_kernel_warning"
-        private val EXTRA_HAVE_PERMISSIONS_RESULT = "have_permissions_result"
-        private val EXTRA_IS_LOADING = "is_loading"
+        private const val EXTRA_PERFORMING_ACTION = "performing_action"
+        private const val EXTRA_SELECTED_ROM = "selected_rom"
+        private const val EXTRA_ACTIVE_ROM_ID = "active_rom_id"
+        private const val EXTRA_SHOWED_SET_KERNEL_WARNING = "showed_set_kernel_warning"
+        private const val EXTRA_HAVE_PERMISSIONS_RESULT = "have_permissions_result"
+        private const val EXTRA_IS_LOADING = "is_loading"
 
         /** Fragment tag for progress dialog for switching ROMS  */
         private val PROGRESS_DIALOG_SWITCH_ROM =
@@ -780,11 +780,11 @@ class SwitcherListFragment : Fragment(), RomCardActionListener, SetKernelNeededD
          * Request code for storage permissions request
          * (used in [.onRequestPermissionsResult])
          */
-        private val PERMISSIONS_REQUEST_STORAGE = 1
+        private const val PERMISSIONS_REQUEST_STORAGE = 1
 
-        private val REQUEST_FLASH_ZIP = 2345
-        private val REQUEST_ROM_DETAILS = 3456
-        private val REQUEST_MBTOOL_ERROR = 4567
+        private const val REQUEST_FLASH_ZIP = 2345
+        private const val REQUEST_ROM_DETAILS = 3456
+        private const val REQUEST_MBTOOL_ERROR = 4567
 
         fun newInstance(): SwitcherListFragment {
             return SwitcherListFragment()

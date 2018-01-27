@@ -51,7 +51,7 @@ class SetKernelNeededDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_MESSAGE_RES_ID = "message_res_id"
+        private const val ARG_MESSAGE_RES_ID = "message_res_id"
 
         fun newInstance(parent: Fragment?, messageResId: Int): SetKernelNeededDialog {
             if (parent != null) {

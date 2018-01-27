@@ -38,7 +38,7 @@ import java.io.IOException
 object RomUtils {
     private val TAG = RomUtils::class.java.simpleName
 
-    val UNKNOWN_ID = "unknown"
+    private const val UNKNOWN_ID = "unknown"
 
     class RomInformation : Parcelable {
         // Mount points

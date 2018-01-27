@@ -271,11 +271,11 @@ class MbtoolTaskOutputFragment : Fragment(), ServiceConnection {
     }
 
     companion object {
-        val FRAGMENT_TAG = MbtoolTaskOutputFragment::class.java.canonicalName
+        val FRAGMENT_TAG: String = MbtoolTaskOutputFragment::class.java.canonicalName
 
         private val EXTRA_IS_RUNNING = "$FRAGMENT_TAG.is_running"
         private val EXTRA_TASK_ID = "$FRAGMENT_TAG.task_id"
 
-        val PARAM_ACTIONS = "actions"
+        const val PARAM_ACTIONS = "actions"
     }
 }

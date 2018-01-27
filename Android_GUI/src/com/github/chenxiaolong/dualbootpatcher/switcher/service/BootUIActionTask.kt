@@ -184,6 +184,7 @@ class BootUIActionTask(
             return false
         }
 
+        @Suppress("DEPRECATION")
         val abi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Build.SUPPORTED_ABIS[0]
         } else {
@@ -348,16 +349,16 @@ class BootUIActionTask(
     companion object {
         private val TAG = BootUIActionTask::class.java.simpleName
 
-        private val CACHE_MOUNT_POINT = "/cache"
-        private val RAW_CACHE_MOUNT_POINT = "/raw/cache"
+        private const val CACHE_MOUNT_POINT = "/cache"
+        private const val RAW_CACHE_MOUNT_POINT = "/raw/cache"
 
         private val MAPPINGS = arrayOf(
                 FileMapping("/bootui/%s/bootui.zip", "/multiboot/bootui.zip", 420 /* 0644 */),
                 FileMapping("/bootui/%s/bootui.zip.sig", "/multiboot/bootui.zip.sig", 420 /* 0644 */))
 
-        private val PROPERTIES_FILE = "info.prop"
-        private val PROP_VERSION = "bootui.version"
-        private val PROP_GIT_VERSION = "bootui.git-version"
+        private const val PROPERTIES_FILE = "info.prop"
+        private const val PROP_VERSION = "bootui.version"
+        private const val PROP_GIT_VERSION = "bootui.git-version"
 
         @Throws(IOException::class, MbtoolException::class)
         private fun pathExists(iface: MbtoolInterface?, path: String): Boolean {

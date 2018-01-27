@@ -75,7 +75,7 @@ class GetRomsStateTask(taskId: Int, context: Context) : BaseServiceTask(taskId, 
                 val end = System.currentTimeMillis()
 
                 Log.d(TAG, "It took ${end - start} milliseconds to complete boot image checks")
-                Log.d(TAG, "Current boot partition ROM ID: ${activeRomId}")
+                Log.d(TAG, "Current boot partition ROM ID: $activeRomId")
                 Log.d(TAG, "Kernel status: ${kernelStatus.name}")
             }
         } catch (e: IOException) {

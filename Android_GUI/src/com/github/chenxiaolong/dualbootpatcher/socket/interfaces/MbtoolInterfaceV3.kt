@@ -919,6 +919,6 @@ class MbtoolInterfaceV3(
         private val TAG = MbtoolInterfaceV3::class.java.simpleName
 
         /** Flatbuffers buffer size (same as the C++ default)  */
-        private val FBB_SIZE = 1024
+        private const val FBB_SIZE = 1024
     }
 }

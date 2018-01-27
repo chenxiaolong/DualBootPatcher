@@ -424,14 +424,14 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         }
     }
 
-    fun refreshOptionalItems() {
+    private fun refreshOptionalItems() {
         val reboot = prefs.getBoolean(PREF_SHOW_REBOOT, true)
         val exit = prefs.getBoolean(PREF_SHOW_EXIT, false)
         showReboot(reboot)
         showExit(exit)
     }
 
-    fun showReboot(visible: Boolean) {
+    private fun showReboot(visible: Boolean) {
         val menu = drawerView.menu
         val item = menu.findItem(R.id.nav_reboot)
         if (item != null) {
@@ -439,7 +439,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
         }
     }
 
-    fun showExit(visible: Boolean) {
+    private fun showExit(visible: Boolean) {
         val menu = drawerView.menu
         val item = menu.findItem(R.id.nav_exit)
         if (item != null) {
@@ -448,25 +448,25 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
     }
 
     companion object {
-        private val EXTRA_SELECTED_ITEM = "selected_item"
-        private val EXTRA_TITLE = "title"
-        private val EXTRA_FRAGMENT = "fragment"
+        private const val EXTRA_SELECTED_ITEM = "selected_item"
+        private const val EXTRA_TITLE = "title"
+        private const val EXTRA_FRAGMENT = "fragment"
 
-        private val PREF_SHOW_REBOOT = "show_reboot"
-        private val PREF_SHOW_EXIT = "show_exit"
+        private const val PREF_SHOW_REBOOT = "show_reboot"
+        private const val PREF_SHOW_EXIT = "show_exit"
 
         private val PROGRESS_DIALOG_REBOOT =
                 "${MainActivity::class.java.canonicalName}.progress.reboot"
 
-        private val REQUEST_SETTINGS_ACTIVITY = 1000
+        private const val REQUEST_SETTINGS_ACTIVITY = 1000
 
-        val FRAGMENT_ROMS = 1
-        val FRAGMENT_PATCH_FILE = 2
-        val FRAGMENT_FREE_SPACE = 3
-        val FRAGMENT_ABOUT = 4
+        const val FRAGMENT_ROMS = 1
+        const val FRAGMENT_PATCH_FILE = 2
+        const val FRAGMENT_FREE_SPACE = 3
+        const val FRAGMENT_ABOUT = 4
 
-        private val INITIAL_SCREEN_ABOUT = "ABOUT"
-        private val INITIAL_SCREEN_ROMS = "ROMS"
-        private val INITIAL_SCREEN_PATCHER = "PATCHER"
+        private const val INITIAL_SCREEN_ABOUT = "ABOUT"
+        private const val INITIAL_SCREEN_ROMS = "ROMS"
+        private const val INITIAL_SCREEN_PATCHER = "PATCHER"
     }
 }

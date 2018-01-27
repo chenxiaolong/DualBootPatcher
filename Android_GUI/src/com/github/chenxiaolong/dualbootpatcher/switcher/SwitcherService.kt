@@ -24,15 +24,27 @@ import android.net.Uri
 import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.util.Log
+import android.util.SparseArray
 import com.github.chenxiaolong.dualbootpatcher.MainActivity
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction
-import com.github.chenxiaolong.dualbootpatcher.switcher.service.*
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BaseServiceTask.BaseServiceTaskListener
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.BootUIActionTask.BootUIAction
-import java.util.*
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CacheWallpaperTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateLauncherTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.CreateRamdiskUpdaterTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomDetailsTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.GetRomsStateTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SetKernelTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.SwitchRomTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.UpdateMbtoolWithRootTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask
+import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -70,7 +82,8 @@ class SwitcherService : ThreadPoolService() {
     private fun addTask(taskId: Int, task: BaseServiceTask) {
         try {
             taskCacheLock.writeLock().lock()
-            taskCache.put(taskId, task)
+            // append() is optimized for inserting keys that are larger than all existing keys
+            taskCache.append(taskId, task)
         } finally {
             taskCacheLock.writeLock().unlock()
         }
@@ -88,7 +101,9 @@ class SwitcherService : ThreadPoolService() {
     private fun removeTask(taskId: Int): BaseServiceTask? {
         try {
             taskCacheLock.writeLock().lock()
-            return taskCache.remove(taskId)
+            val task = taskCache[taskId]
+            taskCache.remove(taskId)
+            return task
         } finally {
             taskCacheLock.writeLock().unlock()
         }
@@ -243,13 +258,13 @@ class SwitcherService : ThreadPoolService() {
     companion object {
         private val TAG = SwitcherService::class.java.simpleName
 
-        private val THREAD_POOL_DEFAULT = "default"
-        private val THREAD_POOL_DEFAULT_THREADS = 2
+        private const val THREAD_POOL_DEFAULT = "default"
+        private const val THREAD_POOL_DEFAULT_THREADS = 2
 
-        private val NOTIFICATION_ID = 1
+        private const val NOTIFICATION_ID = 1
 
         private val newTaskId = AtomicInteger(0)
-        private val taskCache = HashMap<Int, BaseServiceTask>()
+        private val taskCache = SparseArray<BaseServiceTask>()
         private val taskCacheLock = ReentrantReadWriteLock()
     }
 }

@@ -78,7 +78,7 @@ class BackupNameInputDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_SUGGESTED_NAME = "suggested_name"
+        private const val ARG_SUGGESTED_NAME = "suggested_name"
 
         fun newInstanceFromFragment(parent: Fragment?, suggestedName: String):
                 BackupNameInputDialog {

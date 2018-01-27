@@ -22,7 +22,7 @@ import android.content.Context
 
 @SuppressLint("PrivateApi")
 object SystemPropertiesProxy {
-    private val SYSTEM_PROPERTIES = "android.os.SystemProperties"
+    private const val SYSTEM_PROPERTIES = "android.os.SystemProperties"
 
     /**
      * Get the value for the given key.

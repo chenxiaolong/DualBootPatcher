@@ -112,15 +112,15 @@ constructor(context: Context) : Closeable {
         private val TAG = MbtoolConnection::class.java.simpleName
 
         /** mbtool daemon's abstract socket address  */
-        private val SOCKET_ADDRESS = "mbtool.daemon"
+        private const val SOCKET_ADDRESS = "mbtool.daemon"
 
         /** Protocol version to use  */
-        private val PROTOCOL_VERSION = 3
+        private const val PROTOCOL_VERSION = 3
 
         /** Minimum protocol version for signed exec  */
-        private val SIGNED_EXEC_MIN_PROTOCOL_VERSION = 3
+        private const val SIGNED_EXEC_MIN_PROTOCOL_VERSION = 3
         /** Maximum protocol version for signed exec  */
-        private val SIGNED_EXEC_MAX_PROTOCOL_VERSION = 3
+        private const val SIGNED_EXEC_MAX_PROTOCOL_VERSION = 3
 
         // Handshake responses
 
@@ -128,27 +128,27 @@ constructor(context: Context) : Closeable {
          * Handshake response indicating that the app signature has been verified and the connection
          * is allowed.
          */
-        private val HANDSHAKE_RESPONSE_ALLOW = "ALLOW"
+        private const val HANDSHAKE_RESPONSE_ALLOW = "ALLOW"
         /**
          * Handshake response indicating the the app signature is invalid and the negotiation has
          * been denied. The daemon will terminate the connection after sending this response.
          */
-        private val HANDSHAKE_RESPONSE_DENY = "DENY"
+        private const val HANDSHAKE_RESPONSE_DENY = "DENY"
         /**
          * Handshake response indicating that the requested protocol version is supported.
          */
-        private val HANDSHAKE_RESPONSE_OK = "OK"
+        private const val HANDSHAKE_RESPONSE_OK = "OK"
         /**
          * Handshake response indicating that the requested protocol version is unsupported. The
          * daemon will terminate the connection after sending this response.
          */
-        private val HANDSHAKE_RESPONSE_UNSUPPORTED = "UNSUPPORTED"
+        private const val HANDSHAKE_RESPONSE_UNSUPPORTED = "UNSUPPORTED"
 
         // Paths
 
-        private val TMPFS_MOUNTPOINT = "/mnt/mb_tmp"
-        private val MBTOOL_TMPFS_PATH = "$TMPFS_MOUNTPOINT/mbtool"
-        private val MBTOOL_ROOTFS_PATH = "/mbtool"
+        private const val TMPFS_MOUNTPOINT = "/mnt/mb_tmp"
+        private const val MBTOOL_TMPFS_PATH = "$TMPFS_MOUNTPOINT/mbtool"
+        private const val MBTOOL_ROOTFS_PATH = "/mbtool"
 
         /**
          * Bind to mbtool socket
@@ -238,6 +238,7 @@ constructor(context: Context) : Closeable {
             }
         }
 
+        @Suppress("DEPRECATION")
         private val abi: String
             get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 Build.SUPPORTED_ABIS[0]

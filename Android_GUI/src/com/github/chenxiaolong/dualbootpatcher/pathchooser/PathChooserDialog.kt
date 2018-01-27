@@ -334,13 +334,13 @@ class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserIte
         private val DIALOG_NEW_FOLDER =
                 "${PathChooserDialog::class.java.canonicalName}.dialog.new_folder"
 
-        private val EMULATED_STORAGE_DIR = "/storage/emulated"
+        private const val EMULATED_STORAGE_DIR = "/storage/emulated"
 
-        private val ARG_BUILDER = "builder"
-        private val ARG_TARGET = "target"
-        private val ARG_TAG = "tag"
+        private const val ARG_BUILDER = "builder"
+        private const val ARG_TARGET = "target"
+        private const val ARG_TAG = "tag"
 
-        private val EXTRA_CWD = "cwd"
+        private const val EXTRA_CWD = "cwd"
 
         private val PATH_COMPARATOR = DirectoryFirstNameComparator()
         private val DIRECTORY_COMPARATOR = DirectoryComparator()

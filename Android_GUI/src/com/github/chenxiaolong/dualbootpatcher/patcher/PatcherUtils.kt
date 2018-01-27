@@ -35,33 +35,33 @@ import java.util.ArrayList
 
 object PatcherUtils {
     private val TAG = PatcherUtils::class.java.simpleName
-    private val FILENAME = "data-%s.tar.xz"
-    private val DIRNAME = "data-%s"
+    private const val FILENAME = "data-%s.tar.xz"
+    private const val DIRNAME = "data-%s"
 
-    val PATCHER_ID_ZIPPATCHER = "ZipPatcher"
-    val PATCHER_ID_ODINPATCHER = "OdinPatcher"
+    const val PATCHER_ID_ZIPPATCHER = "ZipPatcher"
+    const val PATCHER_ID_ODINPATCHER = "OdinPatcher"
 
-    val PRIMARY_SLOT = InstallLocation("primary",
+    private val PRIMARY_SLOT = InstallLocation("primary",
             R.string.install_location_primary_upgrade,
             R.string.install_location_primary_upgrade_desc)
 
-    val SECONDARY_SLOT = InstallLocation("dual",
+    private val SECONDARY_SLOT = InstallLocation("dual",
             R.string.secondary, emptyArray(),
             R.string.install_location_desc, arrayOf("/system/multiboot/dual"))
 
-    val MULTI_SLOT_TEMPLATE = TemplateLocation("multi-slot-",
+    private val MULTI_SLOT_TEMPLATE = TemplateLocation("multi-slot-",
             0, emptyArray(),
             R.string.multislot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
             R.string.install_location_desc,
                     arrayOf("/cache/multiboot/${TemplateLocation.PLACEHOLDER_ID}"))
 
-    val DATA_SLOT_TEMPLATE = TemplateLocation("data-slot-",
+    private val DATA_SLOT_TEMPLATE = TemplateLocation("data-slot-",
             R.string.install_location_data_slot, emptyArray(),
             R.string.dataslot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
             R.string.install_location_desc,
                     arrayOf("/data/multiboot/${TemplateLocation.PLACEHOLDER_ID}"))
 
-    val EXTSD_SLOT_TEMPLATE = TemplateLocation("extsd-slot-",
+    private val EXTSD_SLOT_TEMPLATE = TemplateLocation("extsd-slot-",
             R.string.install_location_extsd_slot, emptyArray(),
             R.string.extsdslot, arrayOf(TemplateLocation.PLACEHOLDER_SUFFIX),
             R.string.install_location_desc,

@@ -43,6 +43,7 @@ object LibMbPatcher {
     /** Log (almost) all native method calls and their parameters */
     private const val DEBUG = false
 
+    @Suppress("FunctionName")
     internal object CWrapper {
         init {
             Native.register(CWrapper::class.java, "mbpatcher")
@@ -157,9 +158,9 @@ object LibMbPatcher {
     private fun <T> incrementRefCount(instances: HashMap<T, Int>, instance: T) {
         if (instances.containsKey(instance)) {
             var count = instances[instance]!!
-            instances.put(instance, ++count)
+            instances[instance] = ++count
         } else {
-            instances.put(instance, 1)
+            instances[instance] = 1
         }
     }
 
@@ -175,7 +176,7 @@ object LibMbPatcher {
             true
         } else {
             // Decrement
-            instances.put(instance, count)
+            instances[instance] = count
             false
         }
     }
@@ -217,6 +218,7 @@ object LibMbPatcher {
     private fun validate(ptr: PointerType?, clazz: Class<*>, method: String, vararg params: Any?) {
         val signature = getSig(ptr, clazz, method, *params)
 
+        @Suppress("ConstantConditionIf")
         if (DEBUG) {
             Log.d("libmbpatcher", signature)
         }
@@ -226,6 +228,7 @@ object LibMbPatcher {
         }
     }
 
+    @Suppress("unused")
     class FileInfo : Parcelable {
         private var cFileInfo: CFileInfo? = null
 
@@ -298,7 +301,7 @@ object LibMbPatcher {
         fun destroy() {
             synchronized(instances) {
                 validate(cFileInfo, FileInfo::class.java, "destroy")
-                if (cFileInfo != null && decrementRefCount<CFileInfo>(instances, cFileInfo!!)) {
+                if (cFileInfo != null && decrementRefCount(instances, cFileInfo!!)) {
                     validate(cFileInfo, FileInfo::class.java, "(Destroyed)")
                     CWrapper.mbpatcher_fileinfo_destroy(cFileInfo)
                 }
@@ -314,6 +317,7 @@ object LibMbPatcher {
             return cFileInfo!!.hashCode()
         }
 
+        @Suppress("ProtectedInFinal")
         protected fun finalize() {
             destroy()
         }
@@ -352,6 +356,7 @@ object LibMbPatcher {
         }
     }
 
+    @Suppress("unused")
     class PatcherConfig : Parcelable {
         private var cPatcherConfig: CPatcherConfig? = null
 
@@ -438,6 +443,7 @@ object LibMbPatcher {
             return cPatcherConfig!!.hashCode()
         }
 
+        @Suppress("ProtectedInFinal")
         protected fun finalize() {
             destroy()
         }
@@ -499,6 +505,7 @@ object LibMbPatcher {
         }
     }
 
+    @Suppress("unused")
     class Patcher : Parcelable {
         private var cPatcher: CPatcher? = null
 
@@ -611,6 +618,7 @@ object LibMbPatcher {
         }
     }
 
+    @Suppress("unused")
     class AutoPatcher : Parcelable {
         private var cAutoPatcher: CAutoPatcher? = null
 

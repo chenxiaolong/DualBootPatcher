@@ -39,6 +39,6 @@ class Constants {
      * Preference key constants.
      */
     object Preferences {
-        val BACKUP_DIRECTORY_URI = "backup_directory_uri"
+        const val BACKUP_DIRECTORY_URI = "backup_directory_uri"
     }
 }

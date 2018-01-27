@@ -124,7 +124,7 @@ open class ThreadPoolService : Service() {
 
         val executor = ThreadPoolExecutor(maxThreads, maxThreads,
                 KEEP_ALIVE_TIME.toLong(), KEEP_ALIVE_TIME_UNITS, LinkedBlockingQueue())
-        threadPools.put(id, executor)
+        threadPools[id] = executor
     }
 
     /**
@@ -155,7 +155,7 @@ open class ThreadPoolService : Service() {
                     }
                 }
             }
-            wrappedRunnables.put(runnable, wrapped)
+            wrappedRunnables[runnable] = wrapped
             executor.execute(wrapped)
             log("Added runnable $runnable to thread pool: $id")
         }
@@ -213,12 +213,12 @@ open class ThreadPoolService : Service() {
     companion object {
         private val TAG = ThreadPoolService::class.java.simpleName
 
-        private val DEBUG = true
+        private const val DEBUG = true
 
         /** Number of cores  */
         private val NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors()
         /** Time an idle thread will wait before it exits  */
-        private val KEEP_ALIVE_TIME = 1
+        private const val KEEP_ALIVE_TIME = 1
         /** Units of [.KEEP_ALIVE_TIME]  */
         private val KEEP_ALIVE_TIME_UNITS = TimeUnit.SECONDS
     }

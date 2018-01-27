@@ -258,20 +258,20 @@ class AutomatedSwitcherActivity : AppCompatActivity(), ConfirmAutomatedSwitchRom
     }
 
     companion object {
-        private val PREF_SHOW_CONFIRM_DIALOG = "show_confirm_automated_switcher_dialog"
-        private val PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents"
+        private const val PREF_SHOW_CONFIRM_DIALOG = "show_confirm_automated_switcher_dialog"
+        private const val PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents"
 
-        private val EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom"
+        private const val EXTRA_TASK_ID_SWITCH_ROM = "task_id_switch_rom"
 
         private val CONFIRM_DIALOG_AUTOMATED =
                 "${AutomatedSwitcherActivity::class.java.canonicalName}.confirm.automated"
 
-        val EXTRA_ROM_ID = "rom_id"
-        val EXTRA_REBOOT = "reboot"
+        const val EXTRA_ROM_ID = "rom_id"
+        const val EXTRA_REBOOT = "reboot"
 
-        val RESULT_CODE = "code"
-        val RESULT_MESSAGE = "message"
+        const val RESULT_CODE = "code"
+        const val RESULT_MESSAGE = "message"
 
-        private val REQUEST_MBTOOL_ERROR = 1234
+        private const val REQUEST_MBTOOL_ERROR = 1234
     }
 }

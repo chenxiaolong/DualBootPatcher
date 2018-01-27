@@ -40,12 +40,13 @@ object LibMiniZip {
     private val TAG = LibMiniZip::class.java.simpleName
 
     // BEGIN: mz.h
-    private val MZ_OK = 0
-    private val MZ_END_OF_LIST = -100
+    private const val MZ_OK = 0
+    private const val MZ_END_OF_LIST = -100
 
-    private val MZ_OPEN_MODE_READ = 0x01
+    private const val MZ_OPEN_MODE_READ = 0x01
     // END: mz.h
 
+    @Suppress("PropertyName", "unused", "ClassName")
     class mz_zip_file(p: Pointer) : Structure(p) {
         @JvmField var version_madeby: Short /* uint16_t */ = 0
         @JvmField var version_needed: Short /* uint16_t */ = 0
@@ -82,6 +83,7 @@ object LibMiniZip {
         }
     }
 
+    @Suppress("FunctionName")
     internal object CWrapper {
         init {
             Native.register(CWrapper::class.java, "minizip")
@@ -261,6 +263,7 @@ object LibMiniZip {
             }
         }
 
+        @Suppress("ProtectedInFinal")
         protected fun finalize() {
             if (file != null) {
                 Log.w(TAG, "Zip was open in finalize()!")

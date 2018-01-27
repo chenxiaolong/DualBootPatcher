@@ -34,6 +34,7 @@ import java.util.HashMap
 //       wrapper. As a rule of thumb, don't pass null to any function.
 
 object LibMbDevice {
+    @Suppress("FunctionName", "unused")
     internal object CWrapper {
         init {
             Native.register(CWrapper::class.java, "mbdevice")
@@ -261,9 +262,9 @@ object LibMbDevice {
     private fun <T> incrementRefCount(instances: HashMap<T, Int>, instance: T) {
         if (instances.containsKey(instance)) {
             var count = instances[instance]!!
-            instances.put(instance, ++count)
+            instances[instance] = ++count
         } else {
-            instances.put(instance, 1)
+            instances[instance] = 1
         }
     }
 
@@ -279,11 +280,12 @@ object LibMbDevice {
             true
         } else {
             // Decrement
-            instances.put(instance, count)
+            instances[instance] = count
             false
         }
     }
 
+    @Suppress("unused")
     class JsonError {
         internal var pointer: CJsonError? = null
             private set
@@ -302,6 +304,7 @@ object LibMbDevice {
             pointer = null
         }
 
+        @Suppress("ProtectedInFinal")
         protected fun finalize() {
             destroy()
         }
@@ -335,6 +338,7 @@ object LibMbDevice {
         }
     }
 
+    @Suppress("unused", "MemberVisibilityCanBePrivate")
     class Device : Parcelable {
         internal var pointer: CDevice? = null
         private var destroyable: Boolean = false
@@ -519,7 +523,7 @@ object LibMbDevice {
             }
 
             synchronized(instances) {
-                incrementRefCount<CDevice>(instances, pointer!!)
+                incrementRefCount(instances, pointer!!)
             }
             destroyable = true
         }
@@ -538,7 +542,7 @@ object LibMbDevice {
 
         fun destroy() {
             synchronized(instances) {
-                if (pointer != null && decrementRefCount<CDevice>(instances, pointer!!)
+                if (pointer != null && decrementRefCount(instances, pointer!!)
                         && destroyable) {
                     CWrapper.mb_device_free(pointer!!)
                 }
@@ -562,6 +566,7 @@ object LibMbDevice {
             return hashCode
         }
 
+        @Suppress("ProtectedInFinal")
         protected fun finalize() {
             destroy()
         }
@@ -582,7 +587,7 @@ object LibMbDevice {
             pointer!!.pointer = Pointer(peer)
             destroyable = p.readInt() != 0
             synchronized(instances) {
-                incrementRefCount<CDevice>(instances, pointer!!)
+                incrementRefCount(instances, pointer!!)
             }
             if (pointer == null) {
                 throw IllegalStateException("Deserialized device object is null")

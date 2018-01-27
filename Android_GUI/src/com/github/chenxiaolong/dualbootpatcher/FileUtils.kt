@@ -37,14 +37,14 @@ import java.util.*
 object FileUtils {
     private val TAG = FileUtils::class.java.simpleName
 
-    val FILE_SCHEME = "file"
-    val SAF_SCHEME = "content"
-    val SAF_AUTHORITY = "com.android.externalstorage.documents"
+    const val FILE_SCHEME = "file"
+    const val SAF_SCHEME = "content"
+    const val SAF_AUTHORITY = "com.android.externalstorage.documents"
 
-    private val FORCE_PATH_CHOOSER = false
-    private val FORCE_GET_CONTENT = false
+    private const val FORCE_PATH_CHOOSER = false
+    private const val FORCE_GET_CONTENT = false
 
-    private val PROC_MOUNTS = "/proc/mounts"
+    private const val PROC_MOUNTS = "/proc/mounts"
 
     // According to the getmntent(3) manpage and the glibc source code, these are the only escaped
     // values

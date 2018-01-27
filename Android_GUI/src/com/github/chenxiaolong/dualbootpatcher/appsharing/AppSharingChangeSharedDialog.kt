@@ -83,11 +83,11 @@ class AppSharingChangeSharedDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_PKG = "pkg"
-        private val ARG_NAME = "name"
-        private val ARG_SHARE_DATA = "share_data"
-        private val ARG_IS_SYSTEM_APP = "is_system_app"
-        private val ARG_ROMS_USING_SHARED_DATA = "roms_using_shared_data"
+        private const val ARG_PKG = "pkg"
+        private const val ARG_NAME = "name"
+        private const val ARG_SHARE_DATA = "share_data"
+        private const val ARG_IS_SYSTEM_APP = "is_system_app"
+        private const val ARG_ROMS_USING_SHARED_DATA = "roms_using_shared_data"
 
         fun newInstance(parent: Fragment?, pkg: String, name: String,
                         shareData: Boolean, isSystemApp: Boolean,

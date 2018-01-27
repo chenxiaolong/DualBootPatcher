@@ -66,8 +66,8 @@ class FirstUseDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_TITLE_RES_ID = "titleResid"
-        private val ARG_MESSAGE_RES_ID = "messageResId"
+        private const val ARG_TITLE_RES_ID = "titleResId"
+        private const val ARG_MESSAGE_RES_ID = "messageResId"
 
         fun newInstance(parent: Fragment?, titleResId: Int, messageResId: Int): FirstUseDialog {
             if (parent != null) {

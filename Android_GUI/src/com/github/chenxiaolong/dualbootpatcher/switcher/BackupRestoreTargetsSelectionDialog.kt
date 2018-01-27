@@ -66,6 +66,7 @@ class BackupRestoreTargetsSelectionDialog : DialogFragment() {
 
         val selected = ArrayList<String>(items.size)
 
+        @Suppress("UNCHECKED_CAST")
         val dialog = MaterialDialog.Builder(activity!!)
                 .content(descResid)
                 .items(*items as Array<CharSequence>)
@@ -107,7 +108,7 @@ class BackupRestoreTargetsSelectionDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_ACTION = "action"
+        private const val ARG_ACTION = "action"
 
         fun newInstanceFromFragment(parent: Fragment?, action: Action):
                 BackupRestoreTargetsSelectionDialog {

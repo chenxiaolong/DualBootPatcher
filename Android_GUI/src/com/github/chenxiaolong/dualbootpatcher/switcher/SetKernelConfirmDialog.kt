@@ -66,7 +66,7 @@ class SetKernelConfirmDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_ROM = "rom"
+        private const val ARG_ROM = "rom"
 
         fun newInstanceFromFragment(parent: Fragment?, info: RomInformation):
                 SetKernelConfirmDialog {

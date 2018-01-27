@@ -51,7 +51,7 @@ object RickRollDevices {
             val device = iter.next()
             if (device.id == "hero2lte" || device.id == "herolte") {
                 iter.add(hero2qlte)
-                ++count;
+                ++count
             }
         }
 

@@ -238,8 +238,8 @@ class GenericInputDialog : DialogFragment(), MaterialDialog.InputCallback {
     }
 
     companion object {
-        private val ARG_BUILDER = "builder"
-        private val ARG_TARGET = "target"
-        private val ARG_TAG = "tag"
+        private const val ARG_BUILDER = "builder"
+        private const val ARG_TARGET = "target"
+        private const val ARG_TAG = "tag"
     }
 }

@@ -27,7 +27,7 @@ import java.util.WeakHashMap
 class PaletteGeneratorTransformation private constructor() : Transformation {
     override fun transform(source: Bitmap): Bitmap {
         val palette = Palette.from(source).generate()
-        CACHE.put(source, palette)
+        CACHE[source] = palette
         return source
     }
 

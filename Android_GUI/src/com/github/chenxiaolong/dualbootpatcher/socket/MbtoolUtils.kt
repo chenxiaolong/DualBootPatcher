@@ -35,20 +35,20 @@ object MbtoolUtils {
         @Suppress("ConstantConditionIf")
         if (BuildConfig.BUILD_TYPE == "ci") {
             // Snapshot builds
-            minVersionMap.put(Feature.DAEMON, Version("9.1.0.r54"))
-            minVersionMap.put(Feature.APP_SHARING, Version("8.0.0.r2155"))
-            minVersionMap.put(Feature.IN_APP_INSTALLATION, Version("8.0.0.r2859"))
+            minVersionMap[Feature.DAEMON] = Version("9.1.0.r54")
+            minVersionMap[Feature.APP_SHARING] = Version("8.0.0.r2155")
+            minVersionMap[Feature.IN_APP_INSTALLATION] = Version("8.0.0.r2859")
         } else {
             // Debug/release builds
-            minVersionMap.put(Feature.DAEMON, Version("9.1.0"))
-            minVersionMap.put(Feature.APP_SHARING, Version("8.99.13"))
-            minVersionMap.put(Feature.IN_APP_INSTALLATION, Version("8.99.15"))
+            minVersionMap[Feature.DAEMON] = Version("9.1.0")
+            minVersionMap[Feature.APP_SHARING] = Version("8.99.13")
+            minVersionMap[Feature.IN_APP_INSTALLATION] = Version("8.99.15")
         }
     }
 
     fun getSystemMbtoolVersion(context: Context): Version {
         try {
-            return Version(SystemPropertiesProxy.get(context, "ro.multiboot.version"))
+            return Version(SystemPropertiesProxy[context, "ro.multiboot.version"])
         } catch (e: Exception) {
             Log.e(TAG, "Failed to get system mbtool version", e)
         }

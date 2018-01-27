@@ -88,6 +88,6 @@ class AutomatedPatcherActivity : AppCompatActivity() /* , PatcherListener */ {
         val RESULT_NEW_FILE = "new_file"
         */
 
-        private val PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents"
+        private const val PREF_ALLOW_3RD_PARTY_INTENTS = "allow_3rd_party_intents"
     }
 }

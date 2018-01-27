@@ -21,35 +21,35 @@ import java.util.EnumSet
 import java.util.HashMap
 
 object AnsiStuff {
-    private val ANSI_ESCAPE = "\u001b"
-    private val RESET = "0"
+    private const val ANSI_ESCAPE = "\u001b"
+    private const val RESET = "0"
 
     private val fgColorMap = HashMap<Color, String>()
     private val bgColorMap = HashMap<Color, String>()
     private val attrMap = HashMap<Attribute, String>()
 
     init {
-        fgColorMap.put(Color.BLACK, "30")
-        fgColorMap.put(Color.RED, "31")
-        fgColorMap.put(Color.GREEN, "32")
-        fgColorMap.put(Color.YELLOW, "33")
-        fgColorMap.put(Color.BLUE, "34")
-        fgColorMap.put(Color.MAGENTA, "35")
-        fgColorMap.put(Color.CYAN, "36")
-        fgColorMap.put(Color.WHITE, "37")
+        fgColorMap[Color.BLACK] = "30"
+        fgColorMap[Color.RED] = "31"
+        fgColorMap[Color.GREEN] = "32"
+        fgColorMap[Color.YELLOW] = "33"
+        fgColorMap[Color.BLUE] = "34"
+        fgColorMap[Color.MAGENTA] = "35"
+        fgColorMap[Color.CYAN] = "36"
+        fgColorMap[Color.WHITE] = "37"
 
-        bgColorMap.put(Color.BLACK, "40")
-        bgColorMap.put(Color.RED, "41")
-        bgColorMap.put(Color.GREEN, "42")
-        bgColorMap.put(Color.YELLOW, "43")
-        bgColorMap.put(Color.BLUE, "44")
-        bgColorMap.put(Color.MAGENTA, "45")
-        bgColorMap.put(Color.CYAN, "46")
-        bgColorMap.put(Color.WHITE, "47")
+        bgColorMap[Color.BLACK] = "40"
+        bgColorMap[Color.RED] = "41"
+        bgColorMap[Color.GREEN] = "42"
+        bgColorMap[Color.YELLOW] = "43"
+        bgColorMap[Color.BLUE] = "44"
+        bgColorMap[Color.MAGENTA] = "45"
+        bgColorMap[Color.CYAN] = "46"
+        bgColorMap[Color.WHITE] = "47"
 
-        attrMap.put(Attribute.BOLD, "1")
-        attrMap.put(Attribute.UNDERSCORE, "4")
-        attrMap.put(Attribute.BLINK, "5")
+        attrMap[Attribute.BOLD] = "1"
+        attrMap[Attribute.UNDERSCORE] = "4"
+        attrMap[Attribute.BLINK] = "5"
     }
 
     enum class Color {

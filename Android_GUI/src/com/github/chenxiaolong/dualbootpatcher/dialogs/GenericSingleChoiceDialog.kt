@@ -233,11 +233,11 @@ class GenericSingleChoiceDialog : DialogFragment(), ListCallbackSingleChoice, Si
     }
 
     companion object {
-        private val ARG_BUILDER = "builder"
-        private val ARG_TARGET = "target"
-        private val ARG_TAG = "tag"
+        private const val ARG_BUILDER = "builder"
+        private const val ARG_TARGET = "target"
+        private const val ARG_TAG = "tag"
 
-        private val EXTRA_SELECTED_INDEX = "selected_index"
-        private val EXTRA_SELECTED_TEXT = "selected_text"
+        private const val EXTRA_SELECTED_INDEX = "selected_index"
+        private const val EXTRA_SELECTED_TEXT = "selected_text"
     }
 }

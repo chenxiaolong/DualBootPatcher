@@ -214,8 +214,8 @@ class RomDetailAdapter internal constructor(
     }
 
     companion object {
-        val ITEM_TYPE_ROM_CARD = 1
-        val ITEM_TYPE_INFO = 2
-        val ITEM_TYPE_ACTION = 3
+        const val ITEM_TYPE_ROM_CARD = 1
+        const val ITEM_TYPE_INFO = 2
+        const val ITEM_TYPE_ACTION = 3
     }
 }

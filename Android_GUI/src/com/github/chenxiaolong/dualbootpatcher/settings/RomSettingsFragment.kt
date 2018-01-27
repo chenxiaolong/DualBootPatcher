@@ -450,20 +450,20 @@ class RomSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChangeListen
     }
 
     companion object {
-        private val PROGRESS_DIALOG_BOOT_UI = "boot_ui_progres_dialog"
-        private val CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog"
+        private const val PROGRESS_DIALOG_BOOT_UI = "boot_ui_progress_dialog"
+        private const val CONFIRM_DIALOG_BOOT_UI = "boot_ui_confirm_dialog"
 
-        private val EXTRA_TASK_ID_CHECK_SUPPORTED = "task_id_check_supported"
-        private val EXTRA_TASK_ID_GET_VERSION = "task_id_get_version"
-        private val EXTRA_TASK_ID_INSTALL = "task_id_install"
-        private val EXTRA_TASK_ID_UNINSTALL = "task_id_uninstall"
+        private const val EXTRA_TASK_ID_CHECK_SUPPORTED = "task_id_check_supported"
+        private const val EXTRA_TASK_ID_GET_VERSION = "task_id_get_version"
+        private const val EXTRA_TASK_ID_INSTALL = "task_id_install"
+        private const val EXTRA_TASK_ID_UNINSTALL = "task_id_uninstall"
 
-        private val KEY_BACKUP_DIRECTORY = "backup_directory"
-        private val KEY_BOOT_UI_INSTALL = "boot_ui_install"
-        private val KEY_BOOT_UI_UNINSTALL = "boot_ui_uninstall"
-        private val KEY_PARALLEL_PATCHING = "parallel_patching_threads"
-        private val KEY_USE_DARK_THEME = "use_dark_theme"
+        private const val KEY_BACKUP_DIRECTORY = "backup_directory"
+        private const val KEY_BOOT_UI_INSTALL = "boot_ui_install"
+        private const val KEY_BOOT_UI_UNINSTALL = "boot_ui_uninstall"
+        private const val KEY_PARALLEL_PATCHING = "parallel_patching_threads"
+        private const val KEY_USE_DARK_THEME = "use_dark_theme"
 
-        private val REQUEST_BACKUP_DIRECTORY = 1000
+        private const val REQUEST_BACKUP_DIRECTORY = 1000
     }
 }

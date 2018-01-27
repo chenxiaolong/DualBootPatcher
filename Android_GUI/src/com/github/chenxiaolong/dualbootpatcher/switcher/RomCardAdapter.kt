@@ -156,7 +156,7 @@ class RomCardAdapter(
     }
 
     companion object {
-        private val ITEM_TYPE_ROM = 1
-        private val ITEM_TYPE_SPACER = 2
+        private const val ITEM_TYPE_ROM = 1
+        private const val ITEM_TYPE_SPACER = 2
     }
 }

@@ -219,9 +219,9 @@ class CreateRamdiskUpdaterTask(
         private val TAG = CreateRamdiskUpdaterTask::class.java.simpleName
 
         /** [Patcher] ID for the libmbpatcher patcher  */
-        private val LIBMBPATCHER_RAMDISK_UPDATER = "RamdiskUpdater"
+        private const val LIBMBPATCHER_RAMDISK_UPDATER = "RamdiskUpdater"
         /** Suffix for boot image backup  */
-        private val BOOT_IMAGE_BACKUP_SUFFIX = ".before-ramdisk-update.img"
+        private const val BOOT_IMAGE_BACKUP_SUFFIX = ".before-ramdisk-update.img"
 
         /**
          * Log the libmbpatcher error and destoy the PatcherError object

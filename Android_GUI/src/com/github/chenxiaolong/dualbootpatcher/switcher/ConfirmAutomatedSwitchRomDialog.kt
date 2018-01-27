@@ -71,7 +71,7 @@ class ConfirmAutomatedSwitchRomDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_ROM_ID = "rom_id"
+        private const val ARG_ROM_ID = "rom_id"
 
         fun newInstance(romId: String): ConfirmAutomatedSwitchRomDialog {
             val frag = ConfirmAutomatedSwitchRomDialog()

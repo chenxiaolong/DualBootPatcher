@@ -44,10 +44,10 @@ import kotlin.concurrent.thread
 object SwitcherUtils {
     private val TAG = SwitcherUtils::class.java.simpleName
 
-    private val ZIP_MULTIBOOT_DIR = "multiboot/"
-    private val ZIP_INFO_PROP = ZIP_MULTIBOOT_DIR + "info.prop"
-    private val PROP_INSTALLER_VERSION = "mbtool.installer.version"
-    private val PROP_INSTALL_LOCATION = "mbtool.installer.install-location"
+    private const val ZIP_MULTIBOOT_DIR = "multiboot/"
+    private const val ZIP_INFO_PROP = "${ZIP_MULTIBOOT_DIR}info.prop"
+    private const val PROP_INSTALLER_VERSION = "mbtool.installer.version"
+    private const val PROP_INSTALL_LOCATION = "mbtool.installer.install-location"
 
     @Throws(IOException::class, MbtoolException::class)
     private fun pathExists(iface: MbtoolInterface, path: String): Boolean {

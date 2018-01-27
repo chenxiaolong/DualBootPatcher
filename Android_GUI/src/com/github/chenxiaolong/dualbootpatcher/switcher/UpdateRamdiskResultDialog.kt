@@ -85,8 +85,8 @@ class UpdateRamdiskResultDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_SUCCEEDED = "succeeded"
-        private val ARG_ALLOW_REBOOT = "allow_reboot"
+        private const val ARG_SUCCEEDED = "succeeded"
+        private const val ARG_ALLOW_REBOOT = "allow_reboot"
 
         fun newInstanceFromFragment(parent: Fragment?, succeeded: Boolean, allowReboot: Boolean):
                 UpdateRamdiskResultDialog {

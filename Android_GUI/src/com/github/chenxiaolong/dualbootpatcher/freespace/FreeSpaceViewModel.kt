@@ -83,7 +83,9 @@ internal class FreeSpaceViewModel : ViewModel() {
                 totalSpace = statFs.blockSizeLong * statFs.blockCountLong
                 availSpace = statFs.blockSizeLong * statFs.availableBlocksLong
             } else {
+                @Suppress("DEPRECATION")
                 totalSpace = (statFs.blockSize * statFs.blockCount).toLong()
+                @Suppress("DEPRECATION")
                 availSpace = (statFs.blockSize * statFs.availableBlocks).toLong()
             }
 

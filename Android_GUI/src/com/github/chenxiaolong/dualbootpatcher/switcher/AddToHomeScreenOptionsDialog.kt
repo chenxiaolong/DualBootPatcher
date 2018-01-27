@@ -21,10 +21,7 @@ import android.app.Dialog
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
-
-import com.afollestad.materialdialogs.DialogAction
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.MaterialDialog.SingleButtonCallback
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 
@@ -69,7 +66,7 @@ class AddToHomeScreenOptionsDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_ROM_INFO = "rom_info"
+        private const val ARG_ROM_INFO = "rom_info"
 
         fun newInstanceFromFragment(parent: Fragment?, info: RomInformation):
                 AddToHomeScreenOptionsDialog {

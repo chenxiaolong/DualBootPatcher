@@ -292,8 +292,8 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
     }
 
     companion object {
-        private val KEY_SHARE_INDIV_APPS = "share_indiv_apps"
-        private val KEY_MANAGE_INDIV_APPS = "manage_indiv_apps"
+        private const val KEY_SHARE_INDIV_APPS = "share_indiv_apps"
+        private const val KEY_MANAGE_INDIV_APPS = "manage_indiv_apps"
 
         private val YES_NO_DIALOG_PERMISSIONS =
                 "${AppSharingSettingsFragment::class.java.canonicalName}.yes_no.permissions"
@@ -304,6 +304,6 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
          * Request code for storage permissions request
          * (used in [.onRequestPermissionsResult])
          */
-        private val PERMISSIONS_REQUEST_STORAGE = 1
+        private const val PERMISSIONS_REQUEST_STORAGE = 1
     }
 }

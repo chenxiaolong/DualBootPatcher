@@ -22,23 +22,20 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.util.Log
-
+import android.util.SparseArray
 import com.github.chenxiaolong.dualbootpatcher.BuildConfig
 import com.github.chenxiaolong.dualbootpatcher.LogUtils
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService
-import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbCommon
+import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.FileInfo
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher.ProgressListener
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig
-
 import org.apache.commons.io.IOUtils
-
 import java.io.FileNotFoundException
 import java.lang.ref.WeakReference
 import java.util.ArrayList
-import java.util.HashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -62,10 +59,9 @@ class PatcherService : ThreadPoolService() {
         get() {
             try {
                 patcherTasksLock.readLock().lock()
-                val taskIds = IntArray(patcherTasks.size)
-                var index = 0
-                for (taskId in patcherTasks.keys) {
-                    taskIds[index++] = taskId
+                val taskIds = IntArray(patcherTasks.size())
+                for (i in 0 until patcherTasks.size()) {
+                    taskIds[i] = patcherTasks.keyAt(i)
                 }
                 return taskIds
             } finally {
@@ -83,8 +79,8 @@ class PatcherService : ThreadPoolService() {
         // preserve our tasks throughout the service lifecycle.
         try {
             callbacksLock.writeLock().lock()
-            for ((_, value) in patcherTasks) {
-                value.service = this
+            for (i in 0 until patcherTasks.size()) {
+                patcherTasks.valueAt(i).service = this
             }
         } finally {
             callbacksLock.writeLock().unlock()
@@ -168,7 +164,9 @@ class PatcherService : ThreadPoolService() {
     private fun removeTask(taskId: Int): PatchFileTask? {
         try {
             patcherTasksLock.writeLock().lock()
-            return patcherTasks.remove(taskId)
+            val task = patcherTasks[taskId]
+            patcherTasks.remove(taskId)
+            return task
         } finally {
             patcherTasksLock.writeLock().unlock()
         }
@@ -654,15 +652,15 @@ class PatcherService : ThreadPoolService() {
     companion object {
         private val TAG = PatcherService::class.java.simpleName
 
-        val DEFAULT_PATCHING_THREADS = 2
+        const val DEFAULT_PATCHING_THREADS = 2
 
-        private val THREAD_POOL_DEFAULT = "default"
-        private val THREAD_POOL_PATCHING = "patching"
-        private val THREAD_POOL_DEFAULT_THREADS = 2
+        private const val THREAD_POOL_DEFAULT = "default"
+        private const val THREAD_POOL_PATCHING = "patching"
+        private const val THREAD_POOL_DEFAULT_THREADS = 2
 
         // TODO: Won't survive out-of-memory app restart
         private val patcherTasksLock = ReentrantReadWriteLock()
-        private val patcherTasks = HashMap<Int, PatchFileTask>()
+        private val patcherTasks = SparseArray<PatchFileTask>()
         private val patcherNewTaskId = AtomicInteger(0)
     }
 }

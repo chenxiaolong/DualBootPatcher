@@ -265,6 +265,7 @@ class MbtoolTask(
             }
         }
 
+        @Suppress("DEPRECATION")
         val abi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Build.SUPPORTED_ABIS[0]
         } else {
@@ -466,11 +467,11 @@ class MbtoolTask(
     companion object {
         private val TAG = MbtoolTask::class.java.simpleName
 
-        private val DEBUG_USE_ALTERNATE_MBTOOL = false
-        private val ALTERNATE_MBTOOL_PATH = "/data/local/tmp/mbtool_recovery"
-        private val ALTERNATE_MBTOOL_SIG_PATH = "/data/local/tmp/mbtool_recovery.sig"
+        private const val DEBUG_USE_ALTERNATE_MBTOOL = false
+        private const val ALTERNATE_MBTOOL_PATH = "/data/local/tmp/mbtool_recovery"
+        private const val ALTERNATE_MBTOOL_SIG_PATH = "$ALTERNATE_MBTOOL_PATH.sig"
 
-        private val UPDATE_BINARY = "META-INF/com/google/android/update-binary"
-        private val UPDATE_BINARY_SIG = UPDATE_BINARY + ".sig"
+        private const val UPDATE_BINARY = "META-INF/com/google/android/update-binary"
+        private const val UPDATE_BINARY_SIG = "$UPDATE_BINARY.sig"
     }
 }

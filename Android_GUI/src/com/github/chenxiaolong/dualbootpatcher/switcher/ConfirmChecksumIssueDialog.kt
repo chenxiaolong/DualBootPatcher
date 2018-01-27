@@ -69,11 +69,11 @@ class ConfirmChecksumIssueDialog : DialogFragment() {
     }
 
     companion object {
-        val CHECKSUM_INVALID = 1
-        val CHECKSUM_MISSING = 2
+        const val CHECKSUM_INVALID = 1
+        const val CHECKSUM_MISSING = 2
 
-        private val ARG_ISSUE = "issue"
-        private val ARG_ROM_ID = "rom_id"
+        private const val ARG_ISSUE = "issue"
+        private const val ARG_ROM_ID = "rom_id"
 
         fun newInstanceFromFragment(parent: Fragment?, issue: Int, romId: String):
                 ConfirmChecksumIssueDialog {

@@ -30,6 +30,7 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SimpleItemAnimator
 import android.support.v7.widget.helper.ItemTouchHelper
 import android.util.Log
+import android.util.SparseIntArray
 import android.view.*
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -93,7 +94,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
     /** List of patcher items (pending, in progress, or complete)  */
     private val items = ArrayList<PatchFileItem>()
     /** Map task IDs to item indexes  */
-    private val itemsMap = HashMap<Int, Int>()
+    private val itemsMap = SparseIntArray()
 
     /** Item touch callback for dragging and swiping  */
     private lateinit var itemTouchCallback: DragSwipeItemTouchCallback
@@ -396,7 +397,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
      */
     override fun onItemDismissed(position: Int) {
         val item = items[position]
-        itemsMap.remove(item.taskId)
+        itemsMap.delete(item.taskId)
 
         items.removeAt(position)
         adapter.notifyItemRemoved(position)
@@ -534,7 +535,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
         var preselectedRomId: String? = null
 
         if (taskId >= 0) {
-            val item = items[itemsMap[taskId]!!]
+            val item = items[itemsMap[taskId]]
             preselectedDeviceId = item.device.id
             preselectedRomId = item.romId
         }
@@ -755,7 +756,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
         if (selectedTaskId >= 0) {
             // Edit existing task
             executeNeedsService(Runnable {
-                val index = itemsMap[selectedTaskId]!!
+                val index = itemsMap[selectedTaskId]
                 val item = items[index]
                 item.device = selectedDevice!!
                 item.romId = selectedRomId!!
@@ -831,8 +832,8 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
 
         override fun onPatcherUpdateDetails(taskId: Int, details: String) {
             handler.post {
-                if (itemsMap.containsKey(taskId)) {
-                    val itemIndex = itemsMap[taskId]!!
+                if (itemsMap.indexOfKey(taskId) >= 0) {
+                    val itemIndex = itemsMap[taskId]
                     val item = items[itemIndex]
                     item.details = details
                     adapter.notifyItemChanged(itemIndex)
@@ -842,8 +843,8 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
 
         override fun onPatcherUpdateProgress(taskId: Int, bytes: Long, maxBytes: Long) {
             handler.post {
-                if (itemsMap.containsKey(taskId)) {
-                    val itemIndex = itemsMap[taskId]!!
+                if (itemsMap.indexOfKey(taskId) >= 0) {
+                    val itemIndex = itemsMap[taskId]
                     val item = items[itemIndex]
                     item.bytes = bytes
                     item.maxBytes = maxBytes
@@ -854,8 +855,8 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
 
         override fun onPatcherUpdateFilesProgress(taskId: Int, files: Long, maxFiles: Long) {
             handler.post {
-                if (itemsMap.containsKey(taskId)) {
-                    val itemIndex = itemsMap[taskId]!!
+                if (itemsMap.indexOfKey(taskId) >= 0) {
+                    val itemIndex = itemsMap[taskId]
                     val item = items[itemIndex]
                     item.files = files
                     item.maxFiles = maxFiles
@@ -866,8 +867,8 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
 
         override fun onPatcherStarted(taskId: Int) {
             handler.post {
-                if (itemsMap.containsKey(taskId)) {
-                    val itemIndex = itemsMap[taskId]!!
+                if (itemsMap.indexOfKey(taskId) >= 0) {
+                    val itemIndex = itemsMap[taskId]
                     val item = items[itemIndex]
                     item.state = PatchFileState.IN_PROGRESS
                     updateToolbarIcons()
@@ -881,8 +882,8 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
         override fun onPatcherFinished(taskId: Int, state: PatchFileState, ret: Boolean,
                                        errorCode: Int) {
             handler.post {
-                if (itemsMap.containsKey(taskId)) {
-                    val itemIndex = itemsMap[taskId]!!
+                if (itemsMap.indexOfKey(taskId) >= 0) {
+                    val itemIndex = itemsMap[taskId]
                     val item = items[itemIndex]
 
                     item.state = state
@@ -929,7 +930,7 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
     }
 
     companion object {
-        val FRAGMENT_TAG = PatchFileFragment::class.java.canonicalName
+        val FRAGMENT_TAG: String = PatchFileFragment::class.java.canonicalName
         private val TAG = PatchFileFragment::class.java.simpleName
 
         private val DIALOG_PATCHER_OPTIONS =
@@ -941,25 +942,25 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
         private val PROGRESS_DIALOG_QUERYING_METADATA =
                 "${PatchFileFragment::class.java.canonicalName}.progress.querying_metadata"
 
-        private val EXTRA_SELECTED_PATCHER_ID = "selected_patcher_id"
-        private val EXTRA_SELECTED_INPUT_URI = "selected_input_file"
-        private val EXTRA_SELECTED_OUTPUT_URI = "selected_output_file"
-        private val EXTRA_SELECTED_INPUT_FILE_NAME = "selected_input_file_name"
-        private val EXTRA_SELECTED_INPUT_FILE_SIZE = "selected_input_file_size"
-        private val EXTRA_SELECTED_TASK_ID = "selected_task_id"
-        private val EXTRA_SELECTED_DEVICE = "selected_device"
-        private val EXTRA_SELECTED_ROM_ID = "selected_rom_id"
-        private val EXTRA_QUERYING_METADATA = "querying_metadata"
+        private const val EXTRA_SELECTED_PATCHER_ID = "selected_patcher_id"
+        private const val EXTRA_SELECTED_INPUT_URI = "selected_input_file"
+        private const val EXTRA_SELECTED_OUTPUT_URI = "selected_output_file"
+        private const val EXTRA_SELECTED_INPUT_FILE_NAME = "selected_input_file_name"
+        private const val EXTRA_SELECTED_INPUT_FILE_SIZE = "selected_input_file_size"
+        private const val EXTRA_SELECTED_TASK_ID = "selected_task_id"
+        private const val EXTRA_SELECTED_DEVICE = "selected_device"
+        private const val EXTRA_SELECTED_ROM_ID = "selected_rom_id"
+        private const val EXTRA_QUERYING_METADATA = "querying_metadata"
 
         /** Request code for choosing input file  */
-        private val ACTIVITY_REQUEST_INPUT_FILE = 1000
+        private const val ACTIVITY_REQUEST_INPUT_FILE = 1000
         /** Request code for choosing output file  */
-        private val ACTIVITY_REQUEST_OUTPUT_FILE = 1001
+        private const val ACTIVITY_REQUEST_OUTPUT_FILE = 1001
         /**
          * Request code for storage permissions request
          * (used in [.onRequestPermissionsResult])
          */
-        private val PERMISSIONS_REQUEST_STORAGE = 1
+        private const val PERMISSIONS_REQUEST_STORAGE = 1
 
         fun newInstance(): PatchFileFragment {
             return PatchFileFragment()

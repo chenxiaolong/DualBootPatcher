@@ -419,9 +419,9 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
     companion object {
         private val TAG = AppListFragment::class.java.simpleName
 
-        private val EXTRA_SEARCH_QUERY = "search_query"
+        private const val EXTRA_SEARCH_QUERY = "search_query"
 
-        private val PREF_SHOW_FIRST_USE_DIALOG = "indiv_app_sync_first_use_show_dialog"
+        private const val PREF_SHOW_FIRST_USE_DIALOG = "indiv_app_sync_first_use_show_dialog"
 
         private val CONFIRM_DIALOG_FIRST_USE =
                 "${AppListFragment::class.java.canonicalName}.confirm.first_use"

@@ -81,9 +81,9 @@ class AppSharingService : IntentService(TAG) {
     companion object {
         private val TAG = AppSharingService::class.java.simpleName
 
-        val ACTION = "action"
-        val ACTION_PACKAGE_REMOVED = "package_removed"
+        const val ACTION = "action"
+        const val ACTION_PACKAGE_REMOVED = "package_removed"
 
-        val EXTRA_PACKAGE = "package"
+        const val EXTRA_PACKAGE = "package"
     }
 }

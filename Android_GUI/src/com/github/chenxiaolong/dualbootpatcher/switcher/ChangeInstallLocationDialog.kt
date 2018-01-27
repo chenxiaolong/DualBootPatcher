@@ -56,7 +56,7 @@ class ChangeInstallLocationDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_ZIP_ROM_ID = "zip_rom_id"
+        private const val ARG_ZIP_ROM_ID = "zip_rom_id"
 
         fun newInstance(parent: Fragment?, zipRomId: String): ChangeInstallLocationDialog {
             if (parent != null) {

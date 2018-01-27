@@ -65,8 +65,8 @@ class ConfirmMismatchedSetKernelDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_CURRENT_ROM = "current_rom"
-        private val ARG_TARGET_ROM = "target_rom"
+        private const val ARG_CURRENT_ROM = "current_rom"
+        private const val ARG_TARGET_ROM = "target_rom"
 
         fun newInstanceFromFragment(parent: Fragment?, currentRom: String, targetRom: String):
                 ConfirmMismatchedSetKernelDialog {

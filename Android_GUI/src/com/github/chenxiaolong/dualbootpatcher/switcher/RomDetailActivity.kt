@@ -36,17 +36,20 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.graphics.Palette
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.Toolbar
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
-import com.github.chenxiaolong.dualbootpatcher.*
+import com.github.chenxiaolong.dualbootpatcher.Constants
+import com.github.chenxiaolong.dualbootpatcher.FileUtils
+import com.github.chenxiaolong.dualbootpatcher.R
+import com.github.chenxiaolong.dualbootpatcher.RomUtils
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.CacheWallpaperResult
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
+import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder
+import com.github.chenxiaolong.dualbootpatcher.Version
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog
 import com.github.chenxiaolong.dualbootpatcher.picasso.PaletteGeneratorCallback
@@ -63,7 +66,12 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.BackupRestoreTargetsSele
 import com.github.chenxiaolong.dualbootpatcher.switcher.CacheRomThumbnailTask.CacheRomThumbnailTaskListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmChecksumIssueDialog.ConfirmChecksumIssueDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.ConfirmMismatchedSetKernelDialog.ConfirmMismatchedSetKernelDialogListener
-import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.*
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.ActionItem
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.DividerItemDecoration
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.InfoItem
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.Item
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.RomCardItem
+import com.github.chenxiaolong.dualbootpatcher.switcher.RomDetailAdapter.RomDetailAdapterListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.RomNameInputDialog.RomNameInputDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.SetKernelConfirmDialog.SetKernelConfirmDialogListener
 import com.github.chenxiaolong.dualbootpatcher.switcher.UpdateRamdiskResultDialog.UpdateRamdiskResultDialogListener
@@ -84,7 +92,9 @@ import com.squareup.picasso.Picasso
 import mbtool.daemon.v3.MbWipeTarget
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.ArrayList
+import java.util.Date
+import java.util.Locale
 import kotlin.concurrent.thread
 
 class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
@@ -1070,27 +1080,27 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
     companion object {
         private val TAG = RomDetailActivity::class.java.simpleName
 
-        private val MENU_EDIT_NAME = Menu.FIRST
-        private val MENU_CHANGE_IMAGE = Menu.FIRST + 1
-        private val MENU_RESET_IMAGE = Menu.FIRST + 2
+        private const val MENU_EDIT_NAME = Menu.FIRST
+        private const val MENU_CHANGE_IMAGE = Menu.FIRST + 1
+        private const val MENU_RESET_IMAGE = Menu.FIRST + 2
 
-        private val INFO_SLOT = 1
-        private val INFO_VERSION = 2
-        private val INFO_BUILD = 3
-        private val INFO_MBTOOL_STATUS = 4
-        private val INFO_APPS_COUNTS = 5
-        private val INFO_SYSTEM_PATH = 6
-        private val INFO_CACHE_PATH = 7
-        private val INFO_DATA_PATH = 8
-        private val INFO_SYSTEM_SIZE = 9
-        private val INFO_CACHE_SIZE = 10
-        private val INFO_DATA_SIZE = 11
+        private const val INFO_SLOT = 1
+        private const val INFO_VERSION = 2
+        private const val INFO_BUILD = 3
+        private const val INFO_MBTOOL_STATUS = 4
+        private const val INFO_APPS_COUNTS = 5
+        private const val INFO_SYSTEM_PATH = 6
+        private const val INFO_CACHE_PATH = 7
+        private const val INFO_DATA_PATH = 8
+        private const val INFO_SYSTEM_SIZE = 9
+        private const val INFO_CACHE_SIZE = 10
+        private const val INFO_DATA_SIZE = 11
 
-        private val ACTION_UPDATE_RAMDISK = 1
-        private val ACTION_SET_KERNEL = 2
-        private val ACTION_BACKUP = 3
-        private val ACTION_ADD_TO_HOME_SCREEN = 4
-        private val ACTION_WIPE_ROM = 5
+        private const val ACTION_UPDATE_RAMDISK = 1
+        private const val ACTION_SET_KERNEL = 2
+        private const val ACTION_BACKUP = 3
+        private const val ACTION_ADD_TO_HOME_SCREEN = 4
+        private const val ACTION_WIPE_ROM = 5
 
         private val PROGRESS_DIALOG_SWITCH_ROM =
                 "${RomDetailActivity::class.java.canonicalName}.progress.switch_rom"
@@ -1123,27 +1133,27 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
         private val INPUT_DIALOG_BACKUP_NAME =
                 "${RomDetailActivity::class.java.canonicalName}.input.backup_name"
 
-        private val REQUEST_IMAGE = 1234
-        private val REQUEST_MBTOOL_ERROR = 2345
+        private const val REQUEST_IMAGE = 1234
+        private const val REQUEST_MBTOOL_ERROR = 2345
 
         // Argument extras
-        val EXTRA_ROM_INFO = "rom_info"
-        val EXTRA_BOOTED_ROM_INFO = "booted_rom_info"
-        val EXTRA_ACTIVE_ROM_ID = "active_rom_id"
+        const val EXTRA_ROM_INFO = "rom_info"
+        const val EXTRA_BOOTED_ROM_INFO = "booted_rom_info"
+        const val EXTRA_ACTIVE_ROM_ID = "active_rom_id"
         // Saved state extras
-        private val EXTRA_STATE_TASK_ID_CACHE_WALLPAPER = "state.cache_wallpaper"
-        private val EXTRA_STATE_TASK_ID_SWITCH_ROM = "state.switch_rom"
-        private val EXTRA_STATE_TASK_ID_SET_KERNEL = "state.set_kernel"
-        private val EXTRA_STATE_TASK_ID_UPDATE_RAMDISK = "state.update_ramdisk"
-        private val EXTRA_STATE_TASK_ID_WIPE_ROM = "state.wipe_rom"
-        private val EXTRA_STATE_TASK_ID_CREATE_LAUNCHER = "state.create_launcher"
-        private val EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details"
-        private val EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_reomve"
-        private val EXTRA_STATE_RESULT_INTENT = "state.result_intent"
-        private val EXTRA_STATE_BACKUP_TARGETS = "state.backup_targets"
+        private const val EXTRA_STATE_TASK_ID_CACHE_WALLPAPER = "state.cache_wallpaper"
+        private const val EXTRA_STATE_TASK_ID_SWITCH_ROM = "state.switch_rom"
+        private const val EXTRA_STATE_TASK_ID_SET_KERNEL = "state.set_kernel"
+        private const val EXTRA_STATE_TASK_ID_UPDATE_RAMDISK = "state.update_ramdisk"
+        private const val EXTRA_STATE_TASK_ID_WIPE_ROM = "state.wipe_rom"
+        private const val EXTRA_STATE_TASK_ID_CREATE_LAUNCHER = "state.create_launcher"
+        private const val EXTRA_STATE_TASK_ID_GET_ROM_DETAILS = "state.get_rom_details"
+        private const val EXTRA_STATE_TASK_IDS_TO_REMOVE = "state.task_ids_to_remove"
+        private const val EXTRA_STATE_RESULT_INTENT = "state.result_intent"
+        private const val EXTRA_STATE_BACKUP_TARGETS = "state.backup_targets"
         // Result extras
-        val EXTRA_RESULT_WIPED_ROM = "result.wiped_rom"
+        const val EXTRA_RESULT_WIPED_ROM = "result.wiped_rom"
 
-        private val FORCE_RAMDISK_UPDATE_TAPS = 7
+        private const val FORCE_RAMDISK_UPDATE_TAPS = 7
     }
 }

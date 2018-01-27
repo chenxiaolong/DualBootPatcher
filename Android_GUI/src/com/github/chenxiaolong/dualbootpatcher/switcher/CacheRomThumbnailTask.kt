@@ -82,6 +82,6 @@ class CacheRomThumbnailTask(
     }
 
     companion object {
-        val TAG = CacheRomThumbnailTask::class.java.simpleName
+        val TAG: String = CacheRomThumbnailTask::class.java.simpleName
     }
 }

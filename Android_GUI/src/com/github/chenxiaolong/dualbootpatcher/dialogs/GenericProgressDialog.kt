@@ -98,6 +98,6 @@ class GenericProgressDialog : DialogFragment() {
     }
 
     companion object {
-        private val ARG_BUILDER = "builder"
+        private const val ARG_BUILDER = "builder"
     }
 }
