@@ -48,7 +48,7 @@ class InstallLocationSelectionDialog : DialogFragment() {
                 .negativeText(R.string.cancel)
                 .itemsCallbackSingleChoice(-1) { _, _, which, _ ->
                     when (which) {
-                        in 0..PatcherUtils.installLocations.size -> {
+                        in 0 until PatcherUtils.installLocations.size -> {
                             val loc = PatcherUtils.installLocations[which]
                             owner?.onSelectedInstallLocation(loc.id)
                         }
