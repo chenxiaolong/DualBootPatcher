@@ -21,27 +21,36 @@
 
 #include "mbcommon/common.h"
 
+#include <memory>
+
 #include <openssl/evp.h>
+
+#include "mbsign/error.h"
 
 namespace mb::sign
 {
 
-enum {
-    KEY_FORMAT_PEM = 1,
-    KEY_FORMAT_PKCS12 = 2
+using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
+
+enum class KeyFormat
+{
+    Pem,
+    Pkcs12,
 };
 
-MB_EXPORT EVP_PKEY * load_private_key(BIO &bio_key, int format,
-                                      const char *pass);
-MB_EXPORT EVP_PKEY * load_private_key_from_file(const char *file, int format,
-                                                const char *pass);
-MB_EXPORT EVP_PKEY * load_public_key(BIO &bio_key, int format,
-                                     const char *pass);
-MB_EXPORT EVP_PKEY * load_public_key_from_file(const char *file, int format,
-                                               const char *pass);
-MB_EXPORT bool sign_data(BIO &bio_data_in, BIO &bio_sig_out,
-                         EVP_PKEY &pkey);
-MB_EXPORT bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
-                           EVP_PKEY &pkey, bool &result_out);
+MB_EXPORT Result<ScopedEVP_PKEY>
+load_private_key(BIO &bio_key, KeyFormat format, const char *pass);
+MB_EXPORT Result<ScopedEVP_PKEY>
+load_private_key_from_file(const char *file, KeyFormat format, const char *pass);
+
+MB_EXPORT Result<ScopedEVP_PKEY>
+load_public_key(BIO &bio_key, KeyFormat format, const char *pass);
+MB_EXPORT Result<ScopedEVP_PKEY>
+load_public_key_from_file(const char *file, KeyFormat format, const char *pass);
+
+MB_EXPORT Result<void>
+sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey);
+MB_EXPORT Result<void>
+verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey, bool &result_out);
 
 }

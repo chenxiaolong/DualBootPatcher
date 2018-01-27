@@ -48,7 +48,7 @@
 #define COMPILE_ERROR_STRINGS 0
 
 using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
-using ScopedEVP_PKEY = std::unique_ptr<EVP_PKEY, decltype(EVP_PKEY_free) *>;
+using mb::sign::ScopedEVP_PKEY;
 using ScopedX509 = std::unique_ptr<X509, decltype(X509_free) *>;
 
 namespace mb
@@ -110,7 +110,6 @@ static SigVerifyResult verify_signature_with_key(const char *path,
                                                  const char *sig_path,
                                                  EVP_PKEY &public_key)
 {
-    bool ret = false;
     bool valid;
 
     ScopedBIO bio_data_in(BIO_new_file(path, "rb"), BIO_free);
@@ -127,10 +126,17 @@ static SigVerifyResult verify_signature_with_key(const char *path,
         return SigVerifyResult::Failure;
     }
 
-    ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key, valid);
+    auto ret = sign::verify_data(*bio_data_in, *bio_sig_in, public_key, valid);
+    if (!ret) {
+        LOGE("%s: Failed to verify signature: %s", sig_path,
+             ret.error().ec.message().c_str());
+        if (ret.error().has_openssl_error) {
+            openssl_log_errors();
+        }
+        return SigVerifyResult::Failure;
+    }
 
-    return ret ? (valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid)
-            : SigVerifyResult::Failure;
+    return valid ? SigVerifyResult::Valid : SigVerifyResult::Invalid;
 }
 
 SigVerifyResult verify_signature(const char *path, const char *sig_path)

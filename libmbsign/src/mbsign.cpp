@@ -31,7 +31,6 @@
 #  endif
 #endif
 
-#include <openssl/err.h>
 #ifdef OPENSSL_IS_BORINGSSL
 #include <openssl/mem.h>
 #endif
@@ -43,10 +42,6 @@
 #endif
 
 #include "mbcommon/finally.h"
-
-#include "mblog/logging.h"
-
-#define LOG_TAG                 "mbsign"
 
 constexpr char MAGIC[]                      = "!MBSIGN!";
 constexpr size_t MAGIC_SIZE                 = 8;
@@ -100,31 +95,6 @@ static int password_callback(char *buf, int size, int rwflag, void *userdata)
     return 0;
 }
 
-/*!
- * \brief Logging callback
- *
- * \param str Log message
- * \param len strlen(str)
- * \param userdata User-provided callback data
- *
- * \return Positive integer for normal return. Non-positive integer to stop
- *         processing further lines in the error buffer
- */
-static int log_callback(const char *str, size_t len, void *userdata)
-{
-    (void) userdata;
-
-    // Strip newline
-    LOGE("%s", std::string(str, len > 0 ? len - 1 : len).c_str());
-
-    return static_cast<int>(len);
-}
-
-static void openssl_log_errors()
-{
-    ERR_print_errors_cb(&log_callback, nullptr);
-}
-
 static void openssl_free_wrapper(void *ptr) noexcept
 {
     OPENSSL_free(ptr);
@@ -145,17 +115,17 @@ static void openssl_free_wrapper(void *ptr) noexcept
  *
  * \return Whether the PKCS12 structure was successfully loaded
  */
-static bool load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
-                        EVP_PKEY *&pkey, X509 *&cert, STACK_OF(X509) **ca)
+static Result<void>
+load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
+            EVP_PKEY *&pkey, X509 *&cert, STACK_OF(X509) **ca)
 {
     // Load PKCS12 from stream
     ScopedPKCS12 p12(d2i_PKCS12_bio(&bio_pkcs12, nullptr), PKCS12_free);
     if (!p12) {
-        LOGE("Failed to load PKCS12 file");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::Pkcs12LoadError, true};
     }
 
+    char buf[PEM_BUFSIZE];
     const char *pass;
 
     // Try empty password
@@ -163,26 +133,25 @@ static bool load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
             || PKCS12_verify_mac(p12.get(), nullptr, 0)) {
         pass = "";
     } else {
-        char buf[PEM_BUFSIZE];
-
         // Otherwise, get password from callback
         int len = pem_cb(buf, sizeof(buf), 0, cb_data);
         if (len < 0) {
-            LOGE("Passphrase callback failed");
-            return false;
+            return ErrorInfo{Error::InternalError, false};
         }
         if (len < static_cast<int>(sizeof(buf))) {
             buf[len] = '\0';
         }
         if (!PKCS12_verify_mac(p12.get(), buf, len)) {
-            LOGE("Failed to verify MAC in PKCS12 file"
-                 " (possibly incorrect password)");
-            openssl_log_errors();
-            return false;
+            return ErrorInfo{Error::Pkcs12MacVerifyError, true};
         }
         pass = buf;
     }
-    return PKCS12_parse(p12.get(), pass, &pkey, &cert, ca) > 0;
+
+    if (!PKCS12_parse(p12.get(), pass, &pkey, &cert, ca)) {
+        return ErrorInfo{Error::Pkcs12LoadError, true};
+    }
+
+    return oc::success();
 }
 
 /*!
@@ -196,39 +165,37 @@ static bool load_pkcs12(BIO &bio_pkcs12, pem_password_cb &pem_cb, void *cb_data,
  *
  * \return EVP_PKEY object for the private key
  */
-EVP_PKEY * load_private_key(BIO &bio_key, int format, const char *pass)
+Result<ScopedEVP_PKEY>
+load_private_key(BIO &bio_key, KeyFormat format, const char *pass)
 {
     EVP_PKEY *pkey;
 
     switch (format) {
-    case KEY_FORMAT_PEM:
+    case KeyFormat::Pem:
         pkey = PEM_read_bio_PrivateKey(&bio_key, nullptr, &password_callback,
                                        const_cast<char *>(pass));
         break;
-    case KEY_FORMAT_PKCS12: {
+    case KeyFormat::Pkcs12: {
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, password_callback, const_cast<char *>(pass),
-                         pkey, x509, nullptr)) {
-            return nullptr;
-        }
-
-        if (x509) {
+        auto free_x509 = finally([&x509] {
             X509_free(x509);
-        }
+        });
+
+        OUTCOME_TRYV(load_pkcs12(bio_key, password_callback,
+                                 const_cast<char *>(pass), pkey, x509,
+                                 nullptr));
 
         break;
     }
     default:
-        LOGE("Invalid key format");
-        return nullptr;
+        return ErrorInfo{Error::InvalidKeyFormat, false};
     }
 
     if (!pkey) {
-        LOGE("Failed to load private key");
-        openssl_log_errors();
+        return ErrorInfo{Error::PrivateKeyLoadError, true};
     }
-    return pkey;
+    return {pkey, EVP_PKEY_free};
 }
 
 /*!
@@ -242,14 +209,12 @@ EVP_PKEY * load_private_key(BIO &bio_key, int format, const char *pass)
  *
  * \return EVP_PKEY object for the private key
  */
-EVP_PKEY * load_private_key_from_file(const char *file, int format,
-                                      const char *pass)
+Result<ScopedEVP_PKEY>
+load_private_key_from_file(const char *file, KeyFormat format, const char *pass)
 {
     ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
     if (!bio_key) {
-        LOGE("%s: Failed to load private key", file);
-        openssl_log_errors();
-        return nullptr;
+        return ErrorInfo{Error::IoError, true};
     }
 
     return load_private_key(*bio_key, format, pass);
@@ -266,42 +231,47 @@ EVP_PKEY * load_private_key_from_file(const char *file, int format,
  *
  * \return EVP_PKEY object for the public key
  */
-EVP_PKEY * load_public_key(BIO &bio_key, int format, const char *pass)
+Result<ScopedEVP_PKEY>
+load_public_key(BIO &bio_key, KeyFormat format, const char *pass)
 {
     EVP_PKEY *pkey = nullptr;
 
     switch (format) {
-    case KEY_FORMAT_PEM:
+    case KeyFormat::Pem:
         pkey = PEM_read_bio_PUBKEY(&bio_key, nullptr, &password_callback,
                                    const_cast<char *>(pass));
         break;
-    case KEY_FORMAT_PKCS12: {
-        EVP_PKEY *public_key;
+    case KeyFormat::Pkcs12: {
+        EVP_PKEY *private_key = nullptr;
+
+        auto free_public_key = finally([&private_key] {
+            EVP_PKEY_free(private_key);
+        });
+
         X509 *x509 = nullptr;
 
-        if (!load_pkcs12(bio_key, password_callback, const_cast<char *>(pass),
-                         public_key, x509, nullptr)) {
-            return nullptr;
-        }
+        auto free_x509 = finally([&x509] {
+            X509_free(x509);
+        });
+
+        OUTCOME_TRYV(load_pkcs12(bio_key, password_callback,
+                                 const_cast<char *>(pass), private_key, x509,
+                                 nullptr));
 
         if (x509) {
             pkey = X509_get_pubkey(x509);
-            X509_free(x509);
         }
-        EVP_PKEY_free(public_key);
 
         break;
     }
     default:
-        LOGE("Invalid key format");
-        return nullptr;
+        return ErrorInfo{Error::InvalidKeyFormat, false};
     }
 
     if (!pkey) {
-        LOGE("Failed to load public key");
-        openssl_log_errors();
+        return ErrorInfo{Error::PublicKeyLoadError, true};
     }
-    return pkey;
+    return {pkey, EVP_PKEY_free};
 }
 
 /*!
@@ -315,14 +285,12 @@ EVP_PKEY * load_public_key(BIO &bio_key, int format, const char *pass)
  *
  * \return EVP_PKEY object for the public key
  */
-EVP_PKEY * load_public_key_from_file(const char *file, int format,
-                                     const char *pass)
+Result<ScopedEVP_PKEY>
+load_public_key_from_file(const char *file, KeyFormat format, const char *pass)
 {
     ScopedBIO bio_key(BIO_new_file(file, "rb"), BIO_free);
     if (!bio_key) {
-        LOGE("%s: Failed to load public key", file);
-        openssl_log_errors();
-        return nullptr;
+        return ErrorInfo{Error::IoError, true};
     }
 
     return load_public_key(*bio_key, format, pass);
@@ -337,7 +305,7 @@ EVP_PKEY * load_public_key_from_file(const char *file, int format,
  *
  * \return Whether the signing operation was successful
  */
-bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
+Result<void> sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 {
     constexpr unsigned int version = VERSION_LATEST;
     const EVP_MD *md_type = nullptr;
@@ -346,8 +314,7 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
     if (version == VERSION_1_SHA512_DGST) {
         md_type = EVP_sha512();
     } else {
-        LOGE("Invalid signature file version");
-        return false;
+        return ErrorInfo{Error::InvalidSignatureVersion, false};
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -362,21 +329,16 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 #else
     ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
     if (!bio_md) {
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
-        LOGE("Failed to get message digest context");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 #endif
 
     if (!EVP_DigestSignInit(mctx, nullptr, md_type, nullptr, &pkey)) {
-        LOGE("Failed to set message digest context");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     constexpr size_t buf_size = 8192;
@@ -384,9 +346,7 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
             static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
             openssl_free_wrapper);
     if (!buf) {
-        LOGE("Failed to allocate I/O buffer");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -398,27 +358,21 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
     while (true) {
         int n = BIO_read(bio_input, buf.get(), buf_size);
         if (n < 0) {
-            LOGE("Failed to read from input data BIO stream");
-            openssl_log_errors();
-            return false;
+            return ErrorInfo{Error::IoError, true};
         }
         if (n == 0) {
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
         if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
-            LOGE("Failed to update digest");
-            openssl_log_errors();
-            return false;
+            return ErrorInfo{Error::OpensslError, true};
         }
 #endif
     }
 
     size_t len = buf_size;
     if (!EVP_DigestSignFinal(mctx, buf.get(), &len)) {
-        LOGE("Failed to sign data");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     // Write header
@@ -428,19 +382,15 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
 
     if (BIO_write(&bio_sig_out, &hdr, static_cast<int>(sizeof(hdr)))
             != static_cast<int>(sizeof(hdr))) {
-        LOGE("Failed to write header to signature BIO stream");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::IoError, true};
     }
 
     if (BIO_write(&bio_sig_out, buf.get(), static_cast<int>(len))
             != static_cast<int>(len)) {
-        LOGE("Failed to write signature to signature BIO stream");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::IoError, true};
     }
 
-    return true;
+    return oc::success();
 }
 
 /*!
@@ -454,8 +404,8 @@ bool sign_data(BIO &bio_data_in, BIO &bio_sig_out, EVP_PKEY &pkey)
  * \return Whether the verification operation completed successfully (does not
  *         indicate whether the signature is valid)
  */
-bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
-                 EVP_PKEY &pkey, bool &result_out)
+Result<void>
+verify_data(BIO &bio_data_in, BIO &bio_sig_in, EVP_PKEY &pkey, bool &result_out)
 {
     EVP_MD_CTX *mctx = nullptr;
 
@@ -471,14 +421,11 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
 #else
     ScopedBIO bio_md(BIO_new(BIO_f_md()), BIO_free);
     if (!bio_md) {
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     if (!BIO_get_md_ctx(bio_md.get(), &mctx)) {
-        LOGE("Failed to get message digest context");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 #endif
 
@@ -486,16 +433,12 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
     SigHeader hdr;
     if (BIO_read(&bio_sig_in, &hdr, static_cast<int>(sizeof(hdr)))
             != static_cast<int>(sizeof(hdr))) {
-        LOGE("Failed to read header from signature BIO stream");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::IoError, true};
     }
 
     // Verify header
     if (memcmp(hdr.magic, MAGIC, MAGIC_SIZE) != 0) {
-        LOGE("Invalid magic in signature file");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::InvalidSignatureMagic, false};
     }
 
     // Verify version
@@ -503,15 +446,11 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
     if (hdr.version == VERSION_1_SHA512_DGST) {
         md_type = EVP_sha512();
     } else {
-        LOGE("Invalid version in signature file: %u", hdr.version);
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::InvalidSignatureVersion, false};
     }
 
     if (!EVP_DigestVerifyInit(mctx, nullptr, md_type, nullptr, &pkey)) {
-        LOGE("Failed to set message digest context");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     constexpr size_t buf_size = 8192;
@@ -519,9 +458,7 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
             static_cast<unsigned char *>(OPENSSL_malloc(buf_size)),
             openssl_free_wrapper);
     if (!buf) {
-        LOGE("Failed to allocate I/O buffer");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
     int siglen = EVP_PKEY_size(&pkey);
@@ -529,15 +466,11 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
             OPENSSL_malloc(static_cast<size_t>(siglen))),
             openssl_free_wrapper);
     if (!sigbuf) {
-        LOGE("Failed to allocate signature buffer");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
     siglen = BIO_read(&bio_sig_in, sigbuf.get(), siglen);
     if (siglen <= 0) {
-        LOGE("Failed to read signature BIO stream");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::IoError, true};
     }
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -549,18 +482,14 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
     while (true) {
         int n = BIO_read(bio_input, buf.get(), buf_size);
         if (n < 0) {
-            LOGE("Failed to read input data BIO stream");
-            openssl_log_errors();
-            return false;
+            return ErrorInfo{Error::IoError, true};
         }
         if (n == 0) {
             break;
         }
 #ifdef OPENSSL_IS_BORINGSSL
         if (!EVP_DigestUpdate(mctx, buf.get(), static_cast<size_t>(n))) {
-            LOGE("Failed to update digest");
-            openssl_log_errors();
-            return false;
+            return ErrorInfo{Error::OpensslError, true};
         }
 #endif
     }
@@ -572,12 +501,10 @@ bool verify_data(BIO &bio_data_in, BIO &bio_sig_in,
     } else if (n == 0) {
         result_out = false;
     } else {
-        LOGE("Failed to verify data");
-        openssl_log_errors();
-        return false;
+        return ErrorInfo{Error::OpensslError, true};
     }
 
-    return true;
+    return oc::success();
 }
 
 }
