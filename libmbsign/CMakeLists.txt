@@ -17,7 +17,7 @@ foreach(variant ${variants})
         ${lib_target}
         ${uvariant}
         src/error.cpp
-        src/mbsign.cpp
+        src/sign.cpp
     )
 
     # Includes

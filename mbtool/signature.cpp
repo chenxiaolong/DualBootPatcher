@@ -39,7 +39,7 @@
 #endif
 
 #include "mblog/logging.h"
-#include "mbsign/mbsign.h"
+#include "mbsign/sign.h"
 
 #include "validcerts.h"
 

@@ -26,7 +26,7 @@
 #include <openssl/err.h>
 
 // libmbsign
-#include "mbsign/mbsign.h"
+#include "mbsign/sign.h"
 
 using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;
 

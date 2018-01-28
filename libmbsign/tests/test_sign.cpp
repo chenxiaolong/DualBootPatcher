@@ -25,7 +25,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
-#include "mbsign/mbsign.h"
+#include "mbsign/sign.h"
 
 using ScopedBIGNUM = std::unique_ptr<BIGNUM, decltype(BN_free) *>;
 using ScopedBIO = std::unique_ptr<BIO, decltype(BIO_free) *>;

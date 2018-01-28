@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016  Andrew Gunnerson <andrewgunnerson@gmail.com>
+ * Copyright (C) 2016-2018  Andrew Gunnerson <andrewgunnerson@gmail.com>
  *
  * This file is part of DualBootPatcher
  *
@@ -17,7 +17,7 @@
  * along with DualBootPatcher.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mbsign/mbsign.h"
+#include "mbsign/sign.h"
 
 #include <memory>
 #include <string>
