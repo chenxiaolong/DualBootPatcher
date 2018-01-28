@@ -36,7 +36,7 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
-    
+
 - name: WALTON Primo N2
   id: Primo_N2
   codenames:
@@ -63,7 +63,7 @@
     recovery:
       - /dev/block/platform/mtk-msdc.0/by-name/recovery
       - /dev/block/mmcblk0p8
-      
+
   boot_ui:
     supported: yes
     graphics_backends:
@@ -185,6 +185,42 @@
     - Primo_NF2+
     - vsun6580_we_m
     - vsun6580_we_l
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/mtk-msdc.0/by-name
+    system:
+      - /dev/block/platform/mtk-msdc.0/by-name/system
+      - /dev/block/mmcblk0p18
+    cache:
+      - /dev/block/platform/mtk-msdc.0/by-name/cache
+      - /dev/block/mmcblk0p19
+    data:
+      - /dev/block/platform/mtk-msdc.0/by-name/userdata
+      - /dev/block/mmcblk0p20
+    boot:
+      - /dev/block/platform/mtk-msdc.0/by-name/boot
+      - /dev/block/mmcblk0p7
+    recovery:
+      - /dev/block/platform/mtk-msdc.0/by-name/recovery
+      - /dev/block/mmcblk0p8
+
+  boot_ui:
+    supported: yes
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
+    theme: portrait_hdpi
+
+- name: Walton Primo HM3+
+  id: Walton_Primo HM3+
+  codenames:
+    - HM3+
+    - Walton
+    - Primo_HM3+
   architecture: armeabi-v7a
 
   block_devs:
