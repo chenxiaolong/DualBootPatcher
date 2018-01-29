@@ -1,4 +1,4 @@
-sudo": "required",
+sudo": "False",
   "services": [
     "docker"
   ],
@@ -29,4 +29,5 @@ sudo": "required",
   "language": "ruby",
   "group": "deprecated-2017Q4",
   "dist": "trusty",
+  "Os": "Linux",
 }
