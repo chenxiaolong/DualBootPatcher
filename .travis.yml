@@ -1,13 +1,9 @@
-sudo: required
-
-languagelanguage: ruby
-group: deprecated-2017Q4
-dist: trusty
-os: linux
-
+}
+sudosudo: required
+}
 servicesservices:
   - docker
-
+}
 before_install:
   # Clone DualBootPatcher Repository
   - git clone --recursive https://github.com/killergg789/DualBootPatcher -b killergg789-patch-1 DualBootPatcher/
@@ -47,8 +43,9 @@ after_success:
   - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/Android_GUI/build/outputs/apk/debug/ &&  curl --upload-file ./Android_GUI-debug.apk https://transfer.sh/Android_GUI-debug-${TRAVIS_CURRENT_DATE}.apk
   - cd ${TRAVIS_BUILD_DIR}//DualBootPatcher/builder/utilities/ && curl --upload-file ./DualBootUtilities-9.3.0.zip https://transfer.sh/DualBootUtilities-9.3.0-${TRAVIS_CURRENT_DATE}.zip
   - cd ${TRAVIS_BUILD_DIR}/DualBootPatcher/builder/ && curl --upload-file ./DualBootPatcher-9.3.0-Linux.zip https://transfer.sh/DualBootPatcher-9.3.0-${TRAVIS_CURRENT_DATE}-Linux.zip
-
+}
 language: "ruby",
 group: "deprecated-2017Q4",
 dist: "trusty",
 os: "linux",
+}
