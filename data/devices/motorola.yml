@@ -380,7 +380,7 @@
     pixel_format: RGBX_8888
     theme: portrait_hdpi
 
-- name: Motorola Moto E4
+- name: Motorola Moto E4 (MediaTek)
   id: woods
   codenames:
     - woods
