@@ -21,17 +21,14 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <optional>
 #include <vector>
 
 #include <cstdint>
 
-#include "mbcommon/optional.h"
-
 #include "mbbootimg/writer.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class SegmentWriterState
@@ -45,7 +42,7 @@ struct SegmentWriterEntry
 {
     int type;
     uint64_t offset;
-    optional<uint32_t> size;
+    std::optional<uint32_t> size;
     uint64_t align;
 };
 
@@ -76,8 +73,7 @@ private:
 
     uint32_t m_entry_size;
 
-    optional<uint64_t> m_pos;
+    std::optional<uint64_t> m_pos;
 };
 
-}
 }

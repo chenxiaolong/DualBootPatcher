@@ -59,12 +59,9 @@
 #  define OPER(...)
 #endif
 
-namespace mb
+namespace mb::sparse
 {
-using namespace detail;
-
-namespace sparse
-{
+using namespace mb::detail;
 using namespace detail;
 
 static void fix_sparse_header_byte_order(SparseHeader &header)
@@ -442,7 +439,7 @@ oc::result<size_t> SparseFile::on_read(void *buf, size_t size)
             break;
         }
         case CHUNK_TYPE_DONT_CARE:
-            memset(buf, 0, static_cast<size_t>(to_read));
+            std::fill_n(reinterpret_cast<unsigned char *>(buf), to_read, 0);
             n_read = to_read;
             break;
         default:
@@ -1000,5 +997,4 @@ oc::result<void> SparseFile::move_to_chunk(uint64_t offset)
     return oc::success();
 }
 
-}
 }

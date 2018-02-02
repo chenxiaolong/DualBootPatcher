@@ -29,7 +29,6 @@ foreach(variant ${variants})
         # Private classes
         src/private/fileutils.cpp
         src/private/miniziputils.cpp
-        src/private/stringutils.cpp
         # Autopatchers
         src/autopatchers/standardpatcher.cpp
         src/autopatchers/mountcmdpatcher.cpp
@@ -46,7 +45,7 @@ foreach(variant ${variants})
         include
         PRIVATE
         .
-        ${CMAKE_SOURCE_DIR}/external
+        ${CMAKE_SOURCE_DIR}/external/minizip/src
     )
 
     # Only build static library if needed
@@ -69,13 +68,9 @@ foreach(variant ${variants})
         $<$<STREQUAL:${variant},shared>:interface.mbcommon.dynamic-link>
         mbpio-${variant}
         mblog-${variant}
-        minizip-${variant}
+        libminizip
         LibArchive::LibArchive
     )
-
-    if(${MBP_BUILD_TARGET} STREQUAL android-app)
-        target_link_libraries(${lib_target} PRIVATE c_compat)
-    endif()
 
     if(UNIX AND NOT ANDROID)
         target_link_libraries(${lib_target} PRIVATE pthread)

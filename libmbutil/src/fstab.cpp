@@ -38,9 +38,7 @@
 #define LOG_TAG "mbutil/fstab"
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -125,7 +123,7 @@ static unsigned long options_to_flags(const MountFlag *flags_map,
         new_args_out->clear();
     }
 
-    char *temp = strtok_r(&args[0], ",", &save_ptr);
+    char *temp = strtok_r(args.data(), ",", &save_ptr);
     while (temp) {
         const MountFlag *it;
 
@@ -323,5 +321,4 @@ std::vector<TwrpFstabRec> read_twrp_fstab(const std::string &path)
     return fstab;
 }
 
-}
 }

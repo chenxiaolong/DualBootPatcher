@@ -51,7 +51,8 @@
  * \sa Patcher, AutoPatcher
  */
 
-extern "C" {
+extern "C"
+{
 
 struct CallbackWrapper
 {

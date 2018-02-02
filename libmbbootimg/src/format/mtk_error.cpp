@@ -21,11 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 struct MtkErrorCategory : std::error_category
@@ -73,6 +69,4 @@ std::string MtkErrorCategory::message(int ev) const
     }
 }
 
-}
-}
 }

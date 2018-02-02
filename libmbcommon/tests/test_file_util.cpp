@@ -19,6 +19,7 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -339,7 +340,7 @@ TEST_F(FileSearchTest, CheckInvalidBoundariesFail)
     MemoryFile file("", 0);
     ASSERT_TRUE(file.is_open());
 
-    auto result = file_search(file, 20, 10, 0, "x", 1, -1, &_result_cb, this);
+    auto result = file_search(file, 20, 10, 0, "x", 1, {}, &_result_cb, this);
     ASSERT_FALSE(result);
     ASSERT_EQ(result.error(), FileError::ArgumentOutOfRange);
 }
@@ -349,7 +350,7 @@ TEST_F(FileSearchTest, CheckZeroMaxMatches)
     MemoryFile file("", 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, -1, -1, 0, "x", 1, 0, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, 0, &_result_cb, this));
 }
 
 TEST_F(FileSearchTest, CheckZeroPatternSize)
@@ -357,7 +358,7 @@ TEST_F(FileSearchTest, CheckZeroPatternSize)
     MemoryFile file("", 0);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, -1, -1, 0, nullptr, 0, -1, &_result_cb,
+    ASSERT_TRUE(file_search(file, {}, {}, 0, nullptr, 0, {}, &_result_cb,
                             this));
 }
 
@@ -367,15 +368,15 @@ TEST_F(FileSearchTest, CheckBufferSize)
     ASSERT_TRUE(file.is_open());
 
     // Auto buffer size
-    ASSERT_TRUE(file_search(file, -1, -1, 0, "x", 1, -1, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "x", 1, {}, &_result_cb, this));
 
     // Too small
-    auto result = file_search(file, -1, -1, 1, "xxx", 3, -1, &_result_cb, this);
+    auto result = file_search(file, {}, {}, 1, "xxx", 3, {}, &_result_cb, this);
     ASSERT_FALSE(result);
     ASSERT_EQ(result.error(), FileError::ArgumentOutOfRange);
 
     // Equal to pattern size
-    ASSERT_TRUE(file_search(file, -1, -1, 1, "x", 1, -1, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 1, "x", 1, {}, &_result_cb, this));
 }
 
 TEST_F(FileSearchTest, FindNormal)
@@ -383,7 +384,7 @@ TEST_F(FileSearchTest, FindNormal)
     MemoryFile file("abc", 3);
     ASSERT_TRUE(file.is_open());
 
-    ASSERT_TRUE(file_search(file, -1, -1, 0, "a", 1, -1, &_result_cb, this));
+    ASSERT_TRUE(file_search(file, {}, {}, 0, "a", 1, {}, &_result_cb, this));
 }
 
 TEST(FileMoveTest, DegenerateCasesShouldSucceed)
@@ -456,8 +457,9 @@ TEST(FileMoveTest, LargeForwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    memset(buf.data(), 'a', buf.size() / 2);
-    memset(buf.data() + buf.size() / 2, 'b', buf.size() / 2);
+    auto middle = buf.begin() + buf.size() / 2;
+    std::fill(buf.begin(), middle, 'a');
+    std::fill(middle, buf.end(), 'b');
 
     MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());
@@ -475,8 +477,9 @@ TEST(FileMoveTest, LargeBackwardsCopyShouldSucceed)
 {
     std::vector<unsigned char> buf(100000);
 
-    memset(buf.data(), 'a', buf.size() / 2);
-    memset(buf.data() + buf.size() / 2, 'b', buf.size() / 2);
+    auto middle = buf.begin() + buf.size() / 2;
+    std::fill(buf.begin(), middle, 'a');
+    std::fill(middle, buf.end(), 'b');
 
     MemoryFile file(buf.data(), buf.size());
     ASSERT_TRUE(file.is_open());

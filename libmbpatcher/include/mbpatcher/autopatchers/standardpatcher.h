@@ -23,9 +23,7 @@
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class StandardPatcher : public AutoPatcher
@@ -59,5 +57,4 @@ private:
     const FileInfo &m_info;
 };
 
-}
 }

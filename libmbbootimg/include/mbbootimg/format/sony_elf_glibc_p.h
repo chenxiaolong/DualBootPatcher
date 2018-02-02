@@ -31,11 +31,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 using Elf32_Half    = uint16_t;
@@ -133,6 +129,4 @@ struct Sony_Elf32_Phdr
     Elf32_Word    p_align;                  // Segment alignment
 };
 
-}
-}
 }

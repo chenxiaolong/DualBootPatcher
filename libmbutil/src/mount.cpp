@@ -48,9 +48,7 @@
 
 #define DELETED_SUFFIX " (deleted)"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -220,7 +218,7 @@ bool mount(const std::string &source, const std::string &target,
             }
             if (fstype == "auto"
                     && (S_ISREG(sb.st_mode) || S_ISBLK(sb.st_mode))) {
-                optional<std::string> detected;
+                std::optional<std::string> detected;
                 if (!blkid_get_fs_type(source, detected) || !detected) {
                     return false;
                 } else if (*detected == "ext") {
@@ -340,5 +338,4 @@ bool mount_get_avail_size(const std::string &path, uint64_t &size)
     return true;
 }
 
-}
 }

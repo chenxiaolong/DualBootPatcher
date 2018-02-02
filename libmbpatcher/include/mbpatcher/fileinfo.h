@@ -23,9 +23,7 @@
 #include "mbdevice/device.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class MB_EXPORT FileInfo
@@ -50,5 +48,4 @@ private:
     std::string m_rom_id;
 };
 
-}
 }

@@ -21,7 +21,7 @@
 
 #include "mbbootimg/guard_p.h"
 
-#include "mbcommon/optional.h"
+#include <optional>
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_reader_p.h"
@@ -29,11 +29,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace android
+namespace mb::bootimg::android
 {
 
 class AndroidFormatReader : public detail::FormatReader
@@ -81,13 +77,11 @@ private:
     AndroidHeader m_hdr;
 
     // Offsets
-    optional<uint64_t> m_header_offset;
+    std::optional<uint64_t> m_header_offset;
 
     bool m_allow_truncated_dt;
 
-    optional<SegmentReader> m_seg;
+    std::optional<SegmentReader> m_seg;
 };
 
-}
-}
 }

@@ -34,6 +34,7 @@ foreach(variant ${variants})
         mbbootimg-${variant}
         mbpio-${variant}
         mbcommon-${variant}
+        rapidjson
     )
 
     # Link dependencies

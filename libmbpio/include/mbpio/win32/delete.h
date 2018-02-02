@@ -23,15 +23,9 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace io
-{
-namespace win32
+namespace mb::io::win32
 {
 
 MB_EXPORT bool delete_recursively(const std::string &path);
 
-}
-}
 }

@@ -26,9 +26,7 @@
  * \brief Boot image reader API
  */
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 // Formats documentation
@@ -122,5 +120,4 @@ namespace bootimg
  * \brief Format name for Sony ELF boot images
  */
 
-}
 }

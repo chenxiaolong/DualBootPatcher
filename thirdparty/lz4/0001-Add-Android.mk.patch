@@ -1,32 +1,47 @@
-From 400c5cc3f94ac2590f246c140431f8c1511f90f0 Mon Sep 17 00:00:00 2001
-From: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
-Date: Wed, 21 Jan 2015 20:34:46 -0500
+From 009367d58f2e1a6d59092aca2ee167b6f0529ee8 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sun, 24 Dec 2017 13:42:22 -0500
 Subject: [PATCH] Add Android.mk
 
 ---
- Android.mk | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ Android.mk | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
  create mode 100644 Android.mk
 
 diff --git a/Android.mk b/Android.mk
 new file mode 100644
-index 0000000..82fe783
+index 0000000..3a40d69
 --- /dev/null
 +++ b/Android.mk
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,28 @@
 +LOCAL_PATH := $(call my-dir)
 +
-+# libloki
 +include $(CLEAR_VARS)
-+LOCAL_SRC_FILES := lib/lz4.c lib/lz4hc.c lib/lz4frame.c lib/xxhash.c
-+LOCAL_MODULE := liblz4
++LOCAL_C_INCLUDES := lib
++LOCAL_SRC_FILES := \
++	lib/lz4.c \
++	lib/lz4frame.c \
++	lib/lz4hc.c \
++	lib/xxhash.c
++LOCAL_MODULE := lz4
 +
-+LOCAL_CFLAGS := -O3
 +# cflags from original makefile
-+LOCAL_CFLAGS += -I. -std=c99 -Wall -Wextra -Wundef -Wshadow -Wcast-align -Wstrict-prototypes -pedantic
-+# Avoid warnings on Android
-+LOCAL_CFLAGS += -Wno-undef
++LOCAL_CFLAGS := -O3
++LOCAL_CFLAGS += -DXXH_NAMESPACE=LZ4_
++LOCAL_CFLAGS += \
++	-Wall \
++	-Wextra \
++	-Wcast-qual \
++	-Wcast-align \
++	-Wshadow \
++	-Wswitch-enum \
++	-Wdeclaration-after-statement \
++	-Wstrict-prototypes \
++	-Wundef \
++	-Wpointer-arith \
++	-Wstrict-aliasing=1
++
 +include $(BUILD_STATIC_LIBRARY)
 -- 
-2.2.2
+2.14.3
 

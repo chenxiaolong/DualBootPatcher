@@ -20,6 +20,7 @@
 #include "mbbootimg/format/loki_reader_p.h"
 
 #include <algorithm>
+#include <optional>
 
 #include <cerrno>
 #include <cinttypes>
@@ -29,7 +30,6 @@
 #include "mbcommon/endian.h"
 #include "mbcommon/file.h"
 #include "mbcommon/file_util.h"
-#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mbbootimg/entry.h"
@@ -42,9 +42,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace loki
 {
@@ -285,7 +283,7 @@ LokiFormatReader::find_ramdisk_address(Reader &reader, File &file,
             return FileSearchAction::Continue;
         };
 
-        auto ret = file_search(file, -1, -1, 0, LOKI_SHELLCODE,
+        auto ret = file_search(file, {}, {}, 0, LOKI_SHELLCODE,
                                LOKI_SHELLCODE_SIZE - 9, 1, result_cb, &offset);
         if (!ret) {
             if (file.is_fatal()) { reader.set_fatal(); }
@@ -358,8 +356,8 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
 {
     struct SearchResult
     {
-        optional<uint64_t> flag0_offset;
-        optional<uint64_t> flag8_offset;
+        std::optional<uint64_t> flag0_offset;
+        std::optional<uint64_t> flag8_offset;
     };
 
     // gzip header:
@@ -413,8 +411,8 @@ LokiFormatReader::find_gzip_offset_old(Reader &reader, File &file,
         return FileSearchAction::Continue;
     };
 
-    auto ret = file_search(file, start_offset, -1, 0, gzip_deflate_magic,
-                           sizeof(gzip_deflate_magic), -1, result_cb, &result);
+    auto ret = file_search(file, start_offset, {}, 0, gzip_deflate_magic,
+                           sizeof(gzip_deflate_magic), {}, result_cb, &result);
     if (!ret) {
         if (file.is_fatal()) { reader.set_fatal(); }
         return ret.as_failure();
@@ -783,5 +781,4 @@ oc::result<void> Reader::enable_format_loki()
     return register_format(std::make_unique<loki::LokiFormatReader>(*this));
 }
 
-}
 }

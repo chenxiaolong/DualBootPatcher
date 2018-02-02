@@ -19,15 +19,15 @@
 
 #include "mbutil/socket.h"
 
+#include <cerrno>
 #include <climits>
 #include <cstdlib>
 #include <cstring>
+
 #include <sys/socket.h>
 #include <unistd.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 ssize_t socket_read(int fd, void *buf, size_t size)
@@ -348,5 +348,4 @@ bool socket_send_fds(int fd, const std::vector<int> &fds)
     return false;
 }
 
-}
 }

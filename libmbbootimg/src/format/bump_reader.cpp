@@ -21,9 +21,7 @@
 
 #include "mbbootimg/reader_p.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 /*!
@@ -39,5 +37,4 @@ oc::result<void> Reader::enable_format_bump()
 }
 
 
-}
 }

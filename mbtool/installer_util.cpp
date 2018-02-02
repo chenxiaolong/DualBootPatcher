@@ -20,6 +20,7 @@
 #include "installer_util.h"
 
 #include <memory>
+#include <optional>
 
 #include <cerrno>
 #include <cstdio>
@@ -40,7 +41,6 @@
 #include "mbcommon/file_util.h"
 #include "mbcommon/file/standard.h"
 #include "mbcommon/finally.h"
-#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 
 #include "mblog/logging.h"
@@ -296,7 +296,7 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
     // std::string is guaranteed to be contiguous in C++11
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -475,7 +475,7 @@ bool InstallerUtil::patch_ramdisk(const std::string &input_file,
 
     std::string tmpdir = format("%s.XXXXXX", output_file.c_str());
 
-    if (!mkdtemp(&tmpdir[0])) {
+    if (!mkdtemp(tmpdir.data())) {
         LOGE("Failed to create temporary directory: %s", strerror(errno));
         return false;
     }
@@ -553,7 +553,7 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
 
     StandardFile fin;
     StandardFile fout;
-    optional<uint64_t> offset;
+    std::optional<uint64_t> offset;
 
     // Open input file
     auto open_ret = fin.open(input_file, FileOpenMode::ReadOnly);
@@ -575,12 +575,12 @@ bool InstallerUtil::patch_kernel_rkp(const std::string &input_file,
     auto result_cb = [](File &file, void *userdata, uint64_t offset_)
             -> oc::result<FileSearchAction> {
         (void) file;
-        auto ptr = static_cast<optional<uint64_t> *>(userdata);
+        auto ptr = static_cast<std::optional<uint64_t> *>(userdata);
         *ptr = offset_;
         return FileSearchAction::Stop;
     };
 
-    auto search_ret = file_search(fin, -1, -1, 0, source_pattern,
+    auto search_ret = file_search(fin, {}, {}, 0, source_pattern,
                                   sizeof(source_pattern), 1, result_cb,
                                   &offset);
     if (!search_ret) {

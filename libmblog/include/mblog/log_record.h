@@ -24,9 +24,7 @@
 
 #include "mblog/log_level.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 struct LogRecord
@@ -40,5 +38,4 @@ struct LogRecord
     std::string fmt_msg;
 };
 
-}
 }

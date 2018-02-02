@@ -24,9 +24,7 @@
 #include <cinttypes>
 #include <ctime>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 inline void timespec_diff(const timespec &start, const timespec &end,
@@ -95,5 +93,4 @@ uint64_t current_time_ms();
 bool format_time(const std::string &format, std::string &out);
 std::string format_time(const std::string &format);
 
-}
 }

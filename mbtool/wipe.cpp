@@ -172,7 +172,7 @@ static bool log_wipe_directory(const std::string &mountpoint,
         LOGV("Wiping directory %s", mountpoint.c_str());
     } else {
         LOGV("Wiping directory %s (excluding %s)", mountpoint.c_str(),
-             util::join(exclusions, ", ").c_str());
+             join(exclusions, ", ").c_str());
     }
 
     struct stat sb;

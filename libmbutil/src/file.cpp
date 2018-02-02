@@ -34,9 +34,7 @@
 
 #include "mbcommon/finally.h"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
@@ -257,5 +255,4 @@ bool get_blockdev_size(const std::string &path, uint64_t &size_out)
     return true;
 }
 
-}
 }

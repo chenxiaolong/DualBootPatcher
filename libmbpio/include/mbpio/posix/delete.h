@@ -23,15 +23,9 @@
 
 #include "mbcommon/common.h"
 
-namespace mb
-{
-namespace io
-{
-namespace posix
+namespace mb::io::posix
 {
 
 MB_EXPORT bool delete_recursively(const std::string &path);
 
-}
-}
 }

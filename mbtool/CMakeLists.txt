@@ -154,8 +154,8 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
             ${target}
             PRIVATE
             .
-            ${CMAKE_SOURCE_DIR}/external
             ${CMAKE_SOURCE_DIR}/external/flatbuffers/include
+            ${CMAKE_SOURCE_DIR}/external/minizip/src
             ${CMAKE_SOURCE_DIR}/external/pugixml/src
             ${CMAKE_CURRENT_SOURCE_DIR}/external/linux-api-headers
         )
@@ -230,7 +230,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mblog-static
         mbbootimg-static
         mbcommon-static
-        minizip-static
+        libminizip
         rapidjson
         Procps::Procps
     )
@@ -245,7 +245,7 @@ if(${MBP_BUILD_TARGET} STREQUAL android-system)
         mbdevice-static
         mbbootimg-static
         mbcommon-static
-        minizip-static
+        libminizip
         rapidjson
         LibArchive::LibArchive
         Procps::Procps # TODO

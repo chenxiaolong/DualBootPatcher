@@ -38,9 +38,7 @@
 #define LOG_TAG "mbpatcher/private/fileutils"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 oc::result<void> FileUtils::open_file(StandardFile &file,
@@ -145,7 +143,7 @@ ErrorCode FileUtils::read_to_string(const std::string &path,
     std::string data;
     data.resize(static_cast<size_t>(size.value()));
 
-    auto bytes_read = file.read(&data[0], data.size());
+    auto bytes_read = file.read(data.data(), data.size());
     if (!bytes_read || bytes_read.value() != size.value()) {
         LOGE("%s: Failed to read file: %s",
              path.c_str(), bytes_read.error().message().c_str());
@@ -357,7 +355,7 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
     std::string dir_template(directory);
     dir_template += "/mbpatcher-XXXXXX";
 
-    if (mkdtemp(&dir_template[0])) {
+    if (mkdtemp(dir_template.data())) {
         return dir_template;
     }
 
@@ -365,5 +363,4 @@ std::string FileUtils::create_temporary_dir(const std::string &directory)
 #endif
 }
 
-}
 }

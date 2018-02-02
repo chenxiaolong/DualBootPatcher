@@ -19,9 +19,9 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mbcommon/common.h"
+
+MB_BEGIN_C_DECLS
 
 struct CFileInfo;
 typedef struct CFileInfo CFileInfo;
@@ -34,6 +34,4 @@ typedef struct CPatcher CPatcher;
 struct CAutoPatcher;
 typedef struct CAutoPatcher CAutoPatcher;
 
-#ifdef __cplusplus
-}
-#endif
+MB_END_C_DECLS

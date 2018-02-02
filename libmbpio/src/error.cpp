@@ -23,9 +23,7 @@
 #  include <pthread.h>
 #endif
 
-namespace mb
-{
-namespace io
+namespace mb::io
 {
 
 #ifdef __ANDROID__
@@ -110,5 +108,4 @@ void set_last_error(Error error, std::string error_string)
 #endif
 }
 
-}
 }

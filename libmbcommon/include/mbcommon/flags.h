@@ -33,7 +33,7 @@ namespace mb
 template<typename Enum>
 class Flags
 {
-    static_assert(std::is_enum<Enum>::value,
+    static_assert(std::is_enum_v<Enum>,
                   "Flags is only usable on enumeration types.");
 
     struct Private;

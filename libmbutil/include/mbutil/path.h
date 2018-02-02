@@ -22,9 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 std::string get_cwd();
@@ -42,5 +40,4 @@ int path_compare(const std::string &path1, const std::string &path2);
 bool wait_for_path(const std::string &path, unsigned int timeout_ms);
 bool path_exists(const std::string &path, bool follow_symlinks);
 
-}
 }

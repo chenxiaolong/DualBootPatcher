@@ -21,9 +21,7 @@
 
 #include <string>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 struct ReaderErrorCategory : std::error_category
@@ -77,5 +75,4 @@ std::string ReaderErrorCategory::message(int ev) const
     }
 }
 
-}
 }

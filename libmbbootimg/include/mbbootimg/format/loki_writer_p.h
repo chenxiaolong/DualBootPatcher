@@ -21,11 +21,10 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <optional>
 #include <vector>
 
 #include <openssl/sha.h>
-
-#include "mbcommon/optional.h"
 
 #include "mbbootimg/format/android_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
@@ -33,11 +32,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 class LokiFormatWriter : public detail::FormatWriter
@@ -69,9 +64,7 @@ private:
 
     SHA_CTX m_sha_ctx;
 
-    optional<SegmentWriter> m_seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

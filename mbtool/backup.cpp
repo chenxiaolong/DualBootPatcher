@@ -104,10 +104,10 @@ static struct CompressionMap
 
 static BackupTargets parse_targets_string(const std::string &targets)
 {
-    std::vector<std::string> targets_list = util::split(targets, ",");
+    auto targets_list = split_sv(targets, ",");
     BackupTargets result(0);
 
-    for (const std::string &target : targets_list) {
+    for (auto const &target : targets_list) {
         if (target == "all") {
             result |= BackupTarget::All;
         } else if (target == "system") {

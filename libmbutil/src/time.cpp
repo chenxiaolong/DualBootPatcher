@@ -21,9 +21,7 @@
 
 #include <ctime>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 uint64_t current_time_ms()
@@ -73,5 +71,4 @@ std::string format_time(const std::string &format)
     return result;
 }
 
-}
 }

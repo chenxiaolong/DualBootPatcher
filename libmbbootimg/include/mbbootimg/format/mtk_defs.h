@@ -24,11 +24,7 @@
 
 #include "mbbootimg/header.h"
 
-namespace mb
-{
-namespace bootimg
-{
-namespace mtk
+namespace mb::bootimg::mtk
 {
 
 constexpr char MTK_MAGIC[] = "\x88\x16\x88\x58";
@@ -51,6 +47,4 @@ constexpr HeaderFields SUPPORTED_FIELDS =
         | HeaderField::KernelCmdline
         | HeaderField::Id;
 
-}
-}
 }

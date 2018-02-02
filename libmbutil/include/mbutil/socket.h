@@ -24,9 +24,7 @@
 
 #include <inttypes.h>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 ssize_t socket_read(int fd, void *buf, size_t size);
@@ -52,5 +50,4 @@ bool socket_write_string_array(int fd, const std::vector<std::string> &list);
 bool socket_receive_fds(int fd, std::vector<int> &fds);
 bool socket_send_fds(int fd, const std::vector<int> &fds);
 
-}
 }

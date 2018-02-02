@@ -27,9 +27,7 @@
 #include "mbpatcher/errors.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 class FileUtils
@@ -54,5 +52,4 @@ public:
     static std::string create_temporary_dir(const std::string &directory);
 };
 
-}
 }

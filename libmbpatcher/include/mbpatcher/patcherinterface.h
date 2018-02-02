@@ -25,9 +25,7 @@
 #include "mbpatcher/fileinfo.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 /*!
@@ -142,5 +140,4 @@ public:
     virtual bool patch_files(const std::string &directory) = 0;
 };
 
-}
 }

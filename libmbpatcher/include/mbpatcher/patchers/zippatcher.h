@@ -25,9 +25,7 @@
 #include "mbpatcher/patcherinterface.h"
 
 
-namespace mb
-{
-namespace patcher
+namespace mb::patcher
 {
 
 struct UnzCtx;
@@ -82,7 +80,7 @@ private:
     void *m_userdata;
 
     // Patching
-    UnzCtx *m_z_input = nullptr;
+    ZipCtx *m_z_input = nullptr;
     ZipCtx *m_z_output = nullptr;
     std::vector<AutoPatcher *> m_auto_patchers;
 
@@ -104,5 +102,4 @@ private:
     static void la_progress_cb(uint64_t bytes, void *userdata);
 };
 
-}
 }

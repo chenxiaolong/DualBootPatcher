@@ -43,9 +43,7 @@
 #define OPEN_ATTEMPTS           5
 
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 class RecursiveSetContext : public FtsWrapper {
@@ -309,8 +307,7 @@ bool selinux_get_enforcing(int &value)
         return false;
     }
 
-    char buf[20];
-    memset(buf, 0, sizeof(buf));
+    char buf[20] = {};
     ssize_t ret = read(fd, buf, sizeof(buf) - 1);
     close(fd);
     if (ret < 0) {
@@ -461,5 +458,4 @@ bool selinux_set_process_attr(pid_t pid, SELinuxAttr attr,
     return n >= 0;
 }
 
-}
 }

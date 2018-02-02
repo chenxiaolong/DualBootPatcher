@@ -40,9 +40,7 @@
 // WARNING: Everything operates on paths, so it's subject to race conditions
 // Directory copy operations will not cross mountpoint boundaries
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool copy_data_fd(int fd_source, int fd_target)
@@ -285,8 +283,7 @@ bool copy_file(const std::string &source, const std::string &target,
         }
 
         // Treat as file
-        [[gnu::fallthrough]];
-        [[clang::fallthrough]];
+        [[fallthrough]];
 
     case S_IFREG:
         if (!copy_data(source, target)) {
@@ -659,5 +656,4 @@ bool copy_dir(const std::string &source, const std::string &target,
     return ret;
 }
 
-}
 }

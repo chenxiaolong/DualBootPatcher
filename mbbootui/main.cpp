@@ -35,7 +35,6 @@
 #include "mbutil/directory.h"
 #include "mbutil/file.h"
 #include "mbutil/properties.h"
-#include "mbutil/string.h"
 
 #include <android/log.h>
 
@@ -494,7 +493,7 @@ int main(int argc, char *argv[])
     // Exit action
     std::string exit_action;
     DataManager::GetValue(VAR_TW_EXIT_ACTION, exit_action);
-    std::vector<std::string> args = mb::util::split(exit_action, ",");
+    std::vector<std::string> args = mb::split(exit_action, ',');
 
     // Save settings
     DataManager::Flush();

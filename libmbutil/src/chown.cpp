@@ -35,9 +35,7 @@
 
 #define LOG_TAG "mbutil/chown"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static bool chown_internal(const std::string &path,
@@ -147,5 +145,4 @@ bool chown(const std::string &path,
     }
 }
 
-}
 }

@@ -50,16 +50,15 @@ if(${MBP_BUILD_TARGET} STREQUAL android-app
         OR ${MBP_BUILD_TARGET} STREQUAL android-system)
     # r13 bug: ANDROID_NDK_RELEASE has newline at the end
     string(REGEX REPLACE "^r(.+)[\r\n]+$" "\\1" ndk_release "${ANDROID_NDK_RELEASE}")
-    set(ndk_min_version 150.0)
-    set(ndk_max_version 153.0)
+    set(ndk_min_version 161.0)
+    set(ndk_max_version 162.0)
 
     # FIXME: Due to https://github.com/android-ndk/ndk/issues/222, we need a
     # custom toolchain file. Since we can't guarantee that the custom toolchain
     # file will work with newer versions of the NDK, we'll depend on an exact
     # version.
     set(ndk_version_whitelist
-        150.4075724
-        152.4203891
+        161.4479499
     )
 
     if(DEFINED ndk_version_whitelist
@@ -173,6 +172,9 @@ include(${MBP_TARGET_CONFIG_FILE})
 
 # Implicit system include directories
 include(cmake/ImplicitIncludeDirs.cmake)
+
+# Helper functions to backup/restore variables
+include(cmake/VariableBackup.cmake)
 
 # Compile and link flags
 include(cmake/CompilerFlags.cmake)

@@ -82,7 +82,7 @@ If you're using Arch Linux, the mingw packages are available in the AUR.
     If you're making a portable build, use `cpack` to generate an archive.
 
     ```sh
-    cpack -G ZIP # Or TBZ2, TGZ, TXZ, TZ, etc.
+    cpack
     ```
 
     Note that the `.dll` dependencies have to be manually added to the resulting archive in order to be used on other machines.

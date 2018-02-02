@@ -33,9 +33,7 @@
 
 #define LOG_TAG "mbutil/chmod"
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 class RecursiveChmod : public FtsWrapper {
@@ -102,5 +100,4 @@ bool chmod(const std::string &path, mode_t perms, ChmodFlags flags)
     }
 }
 
-}
 }

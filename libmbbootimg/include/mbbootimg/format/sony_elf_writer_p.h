@@ -21,9 +21,8 @@
 
 #include "mbbootimg/guard_p.h"
 
+#include <optional>
 #include <string>
-
-#include "mbcommon/optional.h"
 
 #include "mbbootimg/format/sony_elf_p.h"
 #include "mbbootimg/format/segment_writer_p.h"
@@ -31,11 +30,7 @@
 #include "mbbootimg/writer_p.h"
 
 
-namespace mb
-{
-namespace bootimg
-{
-namespace sonyelf
+namespace mb::bootimg::sonyelf
 {
 
 class SonyElfFormatWriter : public detail::FormatWriter
@@ -71,9 +66,7 @@ private:
 
     std::string m_cmdline;
 
-    optional<SegmentWriter> m_seg;
+    std::optional<SegmentWriter> m_seg;
 };
 
-}
-}
 }

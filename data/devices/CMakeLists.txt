@@ -4,16 +4,20 @@ endif()
 
 set(files
     360.yml
+    acer.yml
     alcatel.yml
     archos.yml
     ark.yml
     asus.yml
+    blu.yml
+    bq.yml
     cagabi.yml
     cherrymobile.yml
     coolpad.yml
     dexp.yml
     doogee.yml
     elephone.yml
+    energy_sistem.yml
     gionee.yml
     google.yml
     gree.yml
@@ -61,6 +65,7 @@ set(files
     xiaomi/04_redmi_note.yml
     xiaomi/05_other.yml
     yu.yml
+    zoji.yml
     zte.yml
     zuk.yml
 )

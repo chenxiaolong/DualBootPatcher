@@ -26,9 +26,7 @@
 #include <cstdarg>
 #include <cstring>
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 static void replace_internal(std::string &source,
@@ -61,40 +59,6 @@ void replace_all(std::string &source,
     replace_internal(source, from, to, false);
 }
 
-std::vector<std::string> split(const std::string &str, const std::string &delim)
-{
-    std::size_t begin = 0;
-    std::size_t end;
-    std::vector<std::string> result;
-
-    if (!delim.empty()) {
-        while ((end = str.find(delim, begin)) != std::string::npos) {
-            result.push_back(str.substr(begin, end - begin));
-            begin = end + delim.size();
-        }
-        result.push_back(str.substr(begin));
-    }
-
-    return result;
-}
-
-std::string join(const std::vector<std::string> &list, const std::string &delim)
-{
-    std::string result;
-    bool first = true;
-
-    for (const std::string &str : list) {
-        if (!first) {
-            result += delim;
-        } else {
-            first = false;
-        }
-        result += str;
-    }
-
-    return result;
-}
-
 std::vector<std::string> tokenize(const std::string &str,
                                   const std::string &delims)
 {
@@ -113,67 +77,6 @@ std::vector<std::string> tokenize(const std::string &str,
     }
 
     return tokens;
-}
-
-/*!
- * \brief Trim whitespace from the left (in place)
- */
-void trim_left(std::string &s)
-{
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
-    s.erase(s.begin(), nonspace);
-}
-
-/*!
- * \brief Trim whitespace from the right (in place)
- */
-void trim_right(std::string &s)
-{
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
-    s.erase(nonspace.base(), s.end());
-}
-
-/*!
- * \brief Trim whitespace from the left and the right (in place)
- */
-void trim(std::string &s)
-{
-    trim_left(s);
-    trim_right(s);
-}
-
-/*!
- * \brief Trim whitespace from the left (one copy)
- */
-std::string trimmed_left(const std::string &s)
-{
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.begin(), s.end(), isspace_fn);
-    return std::string(nonspace, s.end());
-}
-
-/*!
- * \brief Trim whitespace from the right (one copy)
- */
-std::string trimmed_right(const std::string &s)
-{
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto nonspace = std::find_if(s.rbegin(), s.rend(), isspace_fn);
-    return std::string(s.begin(), nonspace.base());
-}
-
-/*!
- * \brief Trim whitespace from the left and the right (one copy)
- */
-std::string trimmed(const std::string &s)
-{
-    auto isspace_fn = std::not1(std::ptr_fun<int, int>(std::isspace));
-    auto begin = std::find_if(s.begin(), s.end(), isspace_fn);
-    auto search_end = std::string::const_reverse_iterator(begin);
-    auto end = std::find_if(s.rbegin(), search_end, isspace_fn);
-    return std::string(begin, end.base());
 }
 
 /*!
@@ -209,11 +112,10 @@ char ** dup_cstring_list(const char * const *list)
     for (items = 0; list[items]; ++items);
     size_t size = (items + 1) * sizeof(list[0]);
 
-    copy = static_cast<char **>(malloc(size));
+    copy = static_cast<char **>(calloc(1, size));
     if (!copy) {
         return nullptr;
     }
-    memset(copy, 0, size);
 
     for (size_t i = 0; i < items; ++i) {
         copy[i] = strdup(list[i]);
@@ -238,5 +140,4 @@ void free_cstring_list(char **list)
     }
 }
 
-}
 }

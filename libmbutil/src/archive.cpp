@@ -46,9 +46,7 @@
 #define LIBARCHIVE_DISK_READER_FLAGS \
     ARCHIVE_READDISK_MAC_COPYFILE
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 using ScopedArchive = std::unique_ptr<archive, decltype(archive_free) *>;
@@ -92,11 +90,9 @@ bool libarchive_copy_data_disk_to_archive(archive *in, archive *out,
     ssize_t bytes_written;
     int64_t offset;
     int64_t progress = 0;
-    char null_buf[64 * 1024];
+    char null_buf[64 * 1024] = {};
     const void *buf;
     int ret;
-
-    memset(null_buf, 0, sizeof(null_buf));
 
     while ((ret = archive_read_data_block(
             in, &buf, &bytes_read, &offset)) == ARCHIVE_OK) {
@@ -825,5 +821,4 @@ bool archive_exists(const std::string &filename,
     return true;
 }
 
-}
 }

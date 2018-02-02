@@ -40,9 +40,7 @@
 #include "mbbootimg/reader_p.h"
 
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 namespace sonyelf
 {
@@ -310,5 +308,4 @@ oc::result<void> Reader::enable_format_sony_elf()
             std::make_unique<sonyelf::SonyElfFormatReader>(*this));
 }
 
-}
 }

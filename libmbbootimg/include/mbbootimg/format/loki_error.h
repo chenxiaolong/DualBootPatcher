@@ -23,11 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
-{
-namespace loki
+namespace mb::bootimg::loki
 {
 
 enum class LokiError
@@ -59,8 +55,6 @@ MB_EXPORT std::error_code make_error_code(LokiError e);
 
 MB_EXPORT const std::error_category & loki_error_category();
 
-}
-}
 }
 
 namespace std

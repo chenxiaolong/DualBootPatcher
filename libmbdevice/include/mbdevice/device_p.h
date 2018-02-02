@@ -21,11 +21,7 @@
 
 #include "mbdevice/flags.h"
 
-namespace mb
-{
-namespace device
-{
-namespace detail
+namespace mb::device::detail
 {
 
 struct BaseOptions
@@ -78,6 +74,4 @@ struct TwOptions
     bool operator==(const TwOptions &other) const;
 };
 
-}
-}
 }

@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "mbcommon/file.h"
 
 namespace mb
@@ -46,9 +48,12 @@ MB_EXPORT oc::result<void> file_write_exact(File &file,
 
 MB_EXPORT oc::result<uint64_t> file_read_discard(File &file, uint64_t size);
 
-MB_EXPORT oc::result<void> file_search(File &file, int64_t start, int64_t end,
+MB_EXPORT oc::result<void> file_search(File &file,
+                                       std::optional<uint64_t> start,
+                                       std::optional<uint64_t> end,
                                        size_t bsize, const void *pattern,
-                                       size_t pattern_size, int64_t max_matches,
+                                       size_t pattern_size,
+                                       std::optional<uint64_t> max_matches,
                                        FileSearchResultCallback result_cb,
                                        void *userdata);
 

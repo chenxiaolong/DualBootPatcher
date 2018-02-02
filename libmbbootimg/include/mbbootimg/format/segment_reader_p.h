@@ -27,9 +27,7 @@
 
 #include "mbbootimg/reader.h"
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class SegmentReaderState
@@ -76,5 +74,4 @@ private:
     uint64_t m_read_cur_offset;
 };
 
-}
 }

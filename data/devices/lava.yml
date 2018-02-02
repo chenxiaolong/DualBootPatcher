@@ -35,3 +35,35 @@
     max_brightness: 255
     cpu_temp_path:  /sys/devices/virtual/thermal/thermal_zone1/temp
     theme: portrait_hdpi
+
+- name: LAVA iris X1Beats
+  id: X1Beats
+  codenames:
+      - LAVA iris X1Beats
+      - LAVA iris X1 Beats
+      - LAVA iris X1_Beats
+      - X1Beats
+      - X1 Beats
+      - X1_Beats
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/sprd-sdhci.3/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/mmcblk0p17
+      - /dev/block/platform/sprd-sdhci.3/by-name/system
+    cache:
+      - /dev/block/mmcblk0p18
+      - /dev/block/platform/sprd-sdhci.3/by-name/cache
+    data:
+      - /dev/block/mmcblk0p21
+      - /dev/block/platform/sprd-sdhci.3/by-name/userdata
+    boot:
+      - /dev/block/mmcblk0p16
+      - /dev/block/platform/sprd-sdhci.3/by-name/boot
+    recovery:
+      - /dev/block/mmcblk0p19
+      - /dev/block/platform/sprd-sdhci.3/by-name/recovery
+    

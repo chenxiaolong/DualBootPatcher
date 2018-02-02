@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <mutex>
+#include <optional>
 #include <string>
 
 #include <cerrno>
@@ -41,16 +42,13 @@
 #endif
 
 #include "mbcommon/error.h"
-#include "mbcommon/optional.h"
 #include "mbcommon/string.h"
 #include "mbcommon/type_traits.h"
 
 #include "mblog/log_record.h"
 #include "mblog/stdio_logger.h"
 
-namespace mb
-{
-namespace log
+namespace mb::log
 {
 
 #if defined(_WIN32)
@@ -312,7 +310,7 @@ static std::string _format_prio(LogLevel prio)
 static std::string _format_rec(const LogRecord &rec)
 {
     std::string buf;
-    optional<std::string> time_buf;
+    std::optional<std::string> time_buf;
 
     for (auto it = g_format.begin(); it != g_format.end(); ++it) {
         if (*it == '%') {
@@ -427,5 +425,4 @@ void set_format(std::string fmt)
     g_format = std::move(fmt);
 }
 
-}
 }

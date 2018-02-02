@@ -1,0 +1,35 @@
+From 108394c4fbca3d51d963e2a31df7c32a1b9c8985 Mon Sep 17 00:00:00 2001
+From: Andrew Gunnerson <chenxiaolong@cxl.epac.to>
+Date: Sat, 23 Dec 2017 20:00:08 -0500
+Subject: [PATCH] Fix build with NDK unified headers
+
+---
+ coregrind/m_coredump/coredump-elf.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/coregrind/m_coredump/coredump-elf.c b/coregrind/m_coredump/coredump-elf.c
+index 82de1d5..5e92315 100644
+--- a/coregrind/m_coredump/coredump-elf.c
++++ b/coregrind/m_coredump/coredump-elf.c
+@@ -135,18 +135,6 @@ static void fill_phdr(ESZ(Phdr) *phdr, const NSegment *seg, UInt off, Bool write
+    phdr->p_align = VKI_PAGE_SIZE;
+ }
+ 
+-#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+-    || defined(VGPV_mips32_linux_android)
+-/* Android's libc doesn't provide a definition for this.  Hence: */
+-typedef
+-   struct {
+-      Elf32_Word n_namesz;
+-      Elf32_Word n_descsz;
+-      Elf32_Word n_type;
+-   }
+-   Elf32_Nhdr;
+-#endif
+-
+ struct note {
+    struct note *next;
+    ESZ(Nhdr) note;
+-- 
+2.14.3
+

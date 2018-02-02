@@ -19,6 +19,8 @@
 
 #include "mbcommon/string.h"
 
+#include <algorithm>
+
 #include <cerrno>
 #include <climits>
 #include <cstdint>
@@ -33,9 +35,6 @@
 #include "mbcommon/error.h"
 #include "mbcommon/error_code.h"
 #include "mbcommon/locale.h"
-#include "mbcommon/string_p.h"
-
-#include "mbcommon/libc/string.h"
 
 #ifdef _WIN32
 #  define strncasecmp _strnicmp
@@ -81,19 +80,6 @@
  *
  * \brief printf format argument to convert `size_t` to uppercase hex
  */
-
-MB_BEGIN_C_DECLS
-
-void * _mb_mempcpy(void *dest, const void *src, size_t n)
-{
-#if defined(_WIN32) || defined(__ANDROID__)
-    return static_cast<char *>(memcpy(dest, src, n)) + n;
-#else
-    return mempcpy(dest, src, n);
-#endif
-}
-
-MB_END_C_DECLS
 
 namespace mb
 {
@@ -199,8 +185,7 @@ oc::result<std::string> format_v_safe(const char *fmt, va_list ap)
     buf.resize(static_cast<size_t>(ret) + 1);
 
     va_copy(copy, ap);
-    // NOTE: Change `&buf[0]` to `buf.data()` once we target C++17.
-    ret = vsnprintf(&buf[0], buf.size(), fmt, copy);
+    ret = vsnprintf(buf.data(), buf.size(), fmt, copy);
     va_end(copy);
 
     if (ret < 0) {
@@ -241,578 +226,144 @@ std::string format_v(const char *fmt, va_list ap)
 }
 
 /*!
- * \brief Check if string has prefix (allows non-NULL-terminated strings)
- *        (case sensitive)
+ * \brief Check if string has prefix (case sensitive)
  *
  * \param string String
- * \param len_string String length
  * \param prefix Prefix
- * \param len_prefix Prefix length
  *
  * \return Whether the string starts with the prefix
  */
-bool starts_with_n(const char *string, size_t len_string,
-                   const char *prefix, size_t len_prefix)
+bool starts_with(std::string_view string, std::string_view prefix)
 {
-    return len_string < len_prefix
+    return string.size() < prefix.size()
             ? false
-            : strncmp(string, prefix, len_prefix) == 0;
+            : strncmp(string.data(), prefix.data(), prefix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has prefix (allows non-NULL-terminated strings)
- *        (case insensitive)
+ * \brief Check if string has prefix (case insensitive)
  *
  * \warning Use with care! The case-insensitive matching behavior is
  *          platform-dependent and may even fail to properly handle ASCII
  *          characters depending on the locale.
  *
  * \param string String
- * \param len_string String length
  * \param prefix Prefix
- * \param len_prefix Prefix length
  *
  * \return Whether the string starts with the prefix
  */
-bool starts_with_icase_n(const char *string, size_t len_string,
-                         const char *prefix, size_t len_prefix)
+bool starts_with_icase(std::string_view string, std::string_view prefix)
 {
-    return len_string < len_prefix
+    return string.size() < prefix.size()
             ? false
-            : strncasecmp(string, prefix, len_prefix) == 0;
+            : strncasecmp(string.data(), prefix.data(), prefix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has prefix
- *        (case sensitive)
+ * \brief Check if string has suffix (case sensitive)
  *
  * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const char *string, const char *prefix)
-{
-    return starts_with_n(string, strlen(string), prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const std::string &string, const char *prefix)
-{
-    return starts_with_n(string.c_str(), string.size(), prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const char *string, const std::string &prefix)
-{
-    return starts_with_n(string, strlen(string), prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case sensitive)
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with(const std::string &string, const std::string &prefix)
-{
-    return starts_with_n(string.c_str(), string.size(),
-                         prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const char *string, const char *prefix)
-{
-    return starts_with_icase_n(string, strlen(string),
-                               prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const std::string &string, const char *prefix)
-{
-    return starts_with_icase_n(string.c_str(), string.size(),
-                               prefix, strlen(prefix));
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const char *string, const std::string &prefix)
-{
-    return starts_with_icase_n(string, strlen(string),
-                               prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has prefix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param prefix Prefix
- *
- * \return Whether the string starts with the prefix
- */
-bool starts_with_icase(const std::string &string, const std::string &prefix)
-{
-    return starts_with_icase_n(string.c_str(), string.size(),
-                               prefix.c_str(), prefix.size());
-}
-
-/*!
- * \brief Check if string has suffix (allows non-NULL-terminated strings)
- *        (case sensitive)
- *
- * \param string String
- * \param len_string String length
  * \param suffix Suffix
- * \param len_suffix Suffix length
  *
  * \return Whether the string ends with the suffix
  */
-bool ends_with_n(const char *string, size_t len_string,
-                 const char *suffix, size_t len_suffix)
+bool ends_with(std::string_view string, std::string_view suffix)
 {
-    return len_string < len_suffix
+    return string.size() < suffix.size()
             ? false
-            : strncmp(string + len_string - len_suffix,
-                      suffix, len_suffix) == 0;
+            : strncmp(string.data() + string.size() - suffix.size(),
+                      suffix.data(), suffix.size()) == 0;
 }
 
 /*!
- * \brief Check if string has suffix (allows non-NULL-terminated strings)
- *        (case insensitive)
+ * \brief Check if string has suffix (case insensitive)
  *
  * \warning Use with care! The case-insensitive matching behavior is
  *          platform-dependent and may even fail to properly handle ASCII
  *          characters depending on the locale.
  *
  * \param string String
- * \param len_string String length
  * \param suffix Suffix
- * \param len_suffix Suffix length
  *
  * \return Whether the string ends with the suffix
  */
-bool ends_with_icase_n(const char *string, size_t len_string,
-                       const char *suffix, size_t len_suffix)
+bool ends_with_icase(std::string_view string, std::string_view suffix)
 {
-    return len_string < len_suffix
+    return string.size() < suffix.size()
             ? false
-            : strncasecmp(string + len_string - len_suffix,
-                          suffix, len_suffix) == 0;
+            : strncasecmp(string.data() + string.size() - suffix.size(),
+                          suffix.data(), suffix.size()) == 0;
+}
+
+template<typename Iterator>
+static Iterator find_first_non_space(Iterator begin, Iterator end)
+{
+    return std::find_if(begin, end, [](char c) {
+        return !std::isspace(c);
+    });
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case sensitive)
+ * \brief Trim whitespace from the left (in place)
  *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s Reference to string to trim
  */
-bool ends_with(const char *string, const char *suffix)
+void trim_left(std::string &s)
 {
-    return ends_with_n(string, strlen(string), suffix, strlen(suffix));
+    s.erase(s.begin(), find_first_non_space(s.begin(), s.end()));
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case sensitive)
+ * \brief Trim whitespace from the right (in place)
  *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s Reference to string to trim
  */
-bool ends_with(const std::string &string, const char *suffix)
+void trim_right(std::string &s)
 {
-    return ends_with_n(string.c_str(), string.size(), suffix, strlen(suffix));
+    s.erase(find_first_non_space(s.rbegin(), s.rend()).base(), s.end());
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case sensitive)
+ * \brief Trim whitespace from the left and the right (in place)
  *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s Reference to string to trim
  */
-bool ends_with(const char *string, const std::string &suffix)
+void trim(std::string &s)
 {
-    return ends_with_n(string, strlen(string), suffix.c_str(), suffix.size());
+    trim_left(s);
+    trim_right(s);
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case sensitive)
+ * \brief Trim whitespace from the left
  *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s String view to trim
  */
-bool ends_with(const std::string &string, const std::string &suffix)
+std::string_view trimmed_left(std::string_view s)
 {
-    return ends_with_n(string.c_str(), string.size(),
-                       suffix.c_str(), suffix.size());
+    return s.substr(static_cast<size_t>(
+            find_first_non_space(s.begin(), s.end()) - s.begin()));
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case insensitive)
+ * \brief Trim whitespace from the right
  *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s String view to trim
  */
-bool ends_with_icase(const char *string, const char *suffix)
+std::string_view trimmed_right(std::string_view s)
 {
-    return ends_with_icase_n(string, strlen(string), suffix, strlen(suffix));
+    return s.substr(0, static_cast<size_t>(find_first_non_space(
+            s.rbegin(), s.rend()).base() - s.begin()));
 }
 
 /*!
- * \brief Check if string has suffix
- *        (case insensitive)
+ * \brief Trim whitespace from the left and the right
  *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
+ * \param s String view to trim
  */
-bool ends_with_icase(const std::string &string, const char *suffix)
+std::string_view trimmed(std::string_view s)
 {
-    return ends_with_icase_n(string.c_str(), string.size(),
-                             suffix, strlen(suffix));
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const char *string, const std::string &suffix)
-{
-    return ends_with_icase_n(string, strlen(string),
-                             suffix.c_str(), suffix.size());
-}
-
-/*!
- * \brief Check if string has suffix
- *        (case insensitive)
- *
- * \warning Use with care! The case-insensitive matching behavior is
- *          platform-dependent and may even fail to properly handle ASCII
- *          characters depending on the locale.
- *
- * \param string String
- * \param suffix Suffix
- *
- * \return Whether the string ends with the suffix
- */
-bool ends_with_icase(const std::string &string, const std::string &suffix)
-{
-    return ends_with_icase_n(string.c_str(), string.size(),
-                             suffix.c_str(), suffix.size());
-}
-
-/*!
- * \brief Insert byte sequence into byte sequence
- *
- * Insert (\p data, \p data_pos) into (\p *mem, \p *mem_size). It the function
- * succeeds, \p *mem will be passed to `free()` and \p *mem and \p *mem_size
- * will be updated to point to the newly allocated block of memory and its size.
- * If the function fails, \p *mem will be left unchanged.
- *
- * \param[in,out] mem Pointer to byte sequence to modify
- * \param[in,out] mem_size Pointer to size of bytes sequence to modify
- * \param[in] pos Position in which to insert new byte sequence
- *                (0 \<= \p pos \<= \p *mem_size)
- * \param[in] data New byte sequence to insert
- * \param[in] data_size Size of new byte sequence to insert
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> mem_insert(void **mem, size_t *mem_size, size_t pos,
-                            const void *data, size_t data_size)
-{
-    void *buf;
-    size_t buf_size;
-
-    if (pos > *mem_size) {
-        return std::make_error_code(std::errc::invalid_argument);
-    } else if (*mem_size >= SIZE_MAX - data_size) {
-        return std::make_error_code(std::errc::value_too_large);
-    }
-
-    buf_size = *mem_size + data_size;
-
-    buf = static_cast<char *>(malloc(buf_size));
-    if (!buf) {
-        return ec_from_errno();
-    }
-
-    void *target_ptr = buf;
-
-    // Copy data left of the insertion point
-    target_ptr = _mb_mempcpy(target_ptr, *mem, pos);
-
-    // Copy new data
-    target_ptr = _mb_mempcpy(target_ptr, data, data_size);
-
-    // Copy data right of the insertion point
-    target_ptr = _mb_mempcpy(target_ptr, static_cast<char*>(*mem) + pos,
-                             *mem_size - pos);
-
-    free(*mem);
-    *mem = buf;
-    *mem_size = buf_size;
-    return oc::success();
-}
-
-/*!
- * \brief Insert string into string
- *
- * Insert \p s into \p *str. It the function succeeds. \p *str will be passed to
- * `free()` and \p *str will be updated to point to the newly allocated string.
- * If the function fails, \p *str will be left unchanged.
- *
- * \param[in,out] str Pointer to string to modify
- * \param[in] pos Position in which to insert new string
- *                (0 \<= \p pos \<= \p *mem_size)
- * \param[in] s New string to insert
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> str_insert(char **str, size_t pos, const char *s)
-{
-    size_t str_size;
-
-    str_size = strlen(*str);
-
-    if (pos > str_size) {
-        return std::make_error_code(std::errc::invalid_argument);
-    } else if (str_size == SIZE_MAX) {
-        return std::make_error_code(std::errc::value_too_large);
-    }
-
-    ++str_size;
-
-    return mem_insert(reinterpret_cast<void **>(str), &str_size, pos,
-                      s, strlen(s));
-}
-
-/*!
- * \brief Replace byte sequence in byte sequence
- *
- * Replace (\p from, \p from_size) with (\p to, \p to_size) in (\p *mem,
- * \p *mem_size), up to \p n times if \p n \> 0. If the function succeeds,
- * \p *mem will be passed to `free()` and \p *mem and \p *mem_size will be
- * updated to point to the newly allocated block of memory and its size. If
- * \p n_replaced is not NULL, the number of replacements done will be stored at
- * the value pointed by \p n_replaced. If the function fails, \p *mem will be
- * left unchanged.
- *
- * \param[in,out] mem Pointer to byte sequence to modify
- * \param[in,out] mem_size Pointer to size of bytes sequence to modify
- * \param[in] from Byte sequence to replace
- * \param[in] from_size Size of byte sequence to replace
- * \param[in] to Replacement byte sequence
- * \param[in] to_size Size of replacement byte sequence
- * \param[in] n Number of replacements to attempt (0 to disable limit)
- * \param[out] n_replaced Pointer to store number of replacements made
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> mem_replace(void **mem, size_t *mem_size,
-                             const void *from, size_t from_size,
-                             const void *to, size_t to_size,
-                             size_t n, size_t *n_replaced)
-{
-    char *buf = nullptr;
-    size_t buf_size = 0;
-    void *target_ptr;
-    auto base_ptr = static_cast<char *>(*mem);
-    auto ptr = static_cast<char *>(*mem);
-    size_t ptr_remain = *mem_size;
-    size_t matches = 0;
-
-    // Special case for replacing nothing
-    if (from_size == 0) {
-        if (n_replaced) {
-            *n_replaced = 0;
-        }
-        return oc::success();
-    }
-
-    while ((n == 0 || matches < n) && (ptr = static_cast<char *>(
-            mb_memmem(ptr, ptr_remain, from, from_size)))) {
-        // Resize buffer to accomodate data
-        if (buf_size >= SIZE_MAX - static_cast<size_t>(ptr - base_ptr)
-                || buf_size + static_cast<size_t>(ptr - base_ptr)
-                        >= SIZE_MAX - to_size) {
-            free(buf);
-            return std::make_error_code(std::errc::value_too_large);
-        }
-
-        size_t new_buf_size =
-                buf_size + static_cast<size_t>(ptr - base_ptr) + to_size;
-        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
-        if (!new_buf) {
-            free(buf);
-            return ec_from_errno();
-        }
-
-        target_ptr = new_buf + buf_size;
-
-        // Copy data left of the match
-        target_ptr = _mb_mempcpy(target_ptr, base_ptr,
-                                 static_cast<size_t>(ptr - base_ptr));
-
-        // Copy replacement
-        target_ptr = _mb_mempcpy(target_ptr, to, to_size);
-
-        buf = new_buf;
-        buf_size = new_buf_size;
-
-        ptr += from_size;
-        ptr_remain -= static_cast<size_t>(ptr - base_ptr);
-        base_ptr = ptr;
-
-        ++matches;
-    }
-
-    // Copy remainder of string
-    if (ptr_remain > 0) {
-        if (buf_size >= SIZE_MAX - ptr_remain) {
-            free(buf);
-            return std::make_error_code(std::errc::value_too_large);
-        }
-
-        size_t new_buf_size = buf_size + ptr_remain;
-        auto new_buf = static_cast<char *>(realloc(buf, new_buf_size));
-        if (!new_buf) {
-            free(buf);
-            return ec_from_errno();
-        }
-
-        target_ptr = new_buf + buf_size;
-        target_ptr = _mb_mempcpy(target_ptr, base_ptr, ptr_remain);
-
-        buf = new_buf;
-        buf_size = new_buf_size;
-    }
-
-    free(*mem);
-    *mem = buf;
-    *mem_size = buf_size;
-
-    if (n_replaced) {
-        *n_replaced = matches;
-    }
-
-    return oc::success();
-}
-
-/*!
- * \brief Replace string in string
- *
- * Replace \p from with \p to in \p *str, up to \p n times if \p n \> 0. If the
- * function succeeds, \p *str will be passed to `free()` and \p *str will be
- * updated to point to the newly allocated string. If \p n_replaced is not NULL,
- * the number of replacements done will be stored at the value pointed by
- * \p n_replaced. If the function fails, \p *str will be left unchanged.
- *
- * \param[in,out] str Pointer to string to modify
- * \param[in] from String to replace
- * \param[in] to Replacement string
- * \param[in] n Number of replacements to attempt (0 to disable limit)
- * \param[out] n_replaced Pointer to store number of replacements made
- *
- * \return Nothing if successful. Otherwise, the error code.
- */
-oc::result<void> str_replace(char **str, const char *from, const char *to,
-                             size_t n, size_t *n_replaced)
-{
-    size_t str_size = strlen(*str) + 1;
-
-    return mem_replace(reinterpret_cast<void **>(str), &str_size,
-                       from, strlen(from), to, strlen(to), n, n_replaced);
+    return trimmed_left(trimmed_right(s));
 }
 
 }

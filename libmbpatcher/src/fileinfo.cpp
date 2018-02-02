@@ -20,11 +20,8 @@
 #include "mbpatcher/fileinfo.h"
 
 
-namespace mb
+namespace mb::patcher
 {
-namespace patcher
-{
-
 
 /*!
  * \class FileInfo
@@ -98,5 +95,4 @@ void FileInfo::set_rom_id(std::string id)
     m_rom_id = std::move(id);
 }
 
-}
 }

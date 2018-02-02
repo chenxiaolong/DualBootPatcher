@@ -23,9 +23,7 @@
 
 #include <system_error>
 
-namespace mb
-{
-namespace bootimg
+namespace mb::bootimg
 {
 
 enum class ReaderError
@@ -51,7 +49,6 @@ MB_EXPORT std::error_code make_error_code(ReaderError e);
 
 MB_EXPORT const std::error_category & reader_error_category();
 
-}
 }
 
 namespace std

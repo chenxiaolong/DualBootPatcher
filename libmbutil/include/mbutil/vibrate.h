@@ -19,12 +19,9 @@
 
 #pragma once
 
-namespace mb
-{
-namespace util
+namespace mb::util
 {
 
 bool vibrate(unsigned int timeout_ms, unsigned int additional_wait_ms);
 
-}
 }

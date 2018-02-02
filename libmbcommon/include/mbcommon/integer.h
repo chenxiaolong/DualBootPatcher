@@ -22,6 +22,7 @@
 #include <limits>
 #include <type_traits>
 
+#include <cctype>
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
@@ -29,50 +30,77 @@
 namespace mb
 {
 
-template<typename SIntType>
-inline typename std::enable_if_t<std::is_signed<SIntType>::value, bool>
-str_to_num(const char *str, int base, SIntType &out)
+/*!
+ * \brief Convert a string to an integer
+ *
+ * \param[in] str String to parse
+ * \param[in] base Base of the integer value (valid: {0, 2, 3, ..., 36})
+ * \param[out] out Reference to store result
+ *
+ * \return
+ *   * If conversion is successful and result is in range, then returns true and
+ *     sets \p out to the result.
+ *   * If conversion is successful, but result is out of range, then returns
+ *     false and sets `errno` to ERANGE.
+ *   * If IntType is unsigned and \p str represents a negative number, then
+ *     returns false and sets `errno` to ERANGE.
+ *   * If \p str is an empty string, then returns false and sets `errno` to
+ *     EINVAL.
+ *   * If \p str contains characters that could not be parsed as a number, then
+ *     returns false and sets `errno` to EINVAL.
+ */
+template<typename IntType>
+inline bool str_to_num(const char *str, int base, IntType &out)
 {
-    static_assert(std::numeric_limits<SIntType>::min() >= LLONG_MIN
-                  && std::numeric_limits<SIntType>::max() <= LLONG_MAX,
-                  "Integer type to too large to handle");
+    if constexpr (std::is_signed_v<IntType>) {
+        static_assert(std::numeric_limits<IntType>::min() >= LLONG_MIN
+                      && std::numeric_limits<IntType>::max() <= LLONG_MAX,
+                      "Integer type to too large to handle");
 
-    char *end;
-    errno = 0;
-    auto num = strtoll(str, &end, base);
-    if (errno == ERANGE
-            || num < std::numeric_limits<SIntType>::min()
-            || num > std::numeric_limits<SIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
+        char *end;
+        errno = 0;
+        auto num = strtoll(str, &end, base);
+        if (errno != 0) {
+            return false;
+        } else if (*str == '\0' || *end != '\0') {
+            errno = EINVAL;
+            return false;
+        } else if (num < std::numeric_limits<IntType>::min()
+                || num > std::numeric_limits<IntType>::max()) {
+            errno = ERANGE;
+            return false;
+        }
+        out = static_cast<IntType>(num);
+        return true;
+    } else {
+        static_assert(std::numeric_limits<IntType>::max() <= ULLONG_MAX,
+                      "Integer type to too large to handle");
+
+        // Skip leading whitespace
+        for (; *str && isspace(*str); ++str);
+
+        // Disallow negative numbers since strtoull can only wrap 64-bit
+        // integers
+        if (*str == '-') {
+            errno = ERANGE;
+            return false;
+        }
+
+        char *end;
+        errno = 0;
+        auto num = strtoull(str, &end, base);
+        if (errno != 0) {
+            return false;
+        } else if (*str == '\0' || *end != '\0') {
+            errno = EINVAL;
+            return false;
+        } else if (num > std::numeric_limits<IntType>::max()) {
+            errno = ERANGE;
+            return false;
+        }
+        out = static_cast<IntType>(num);
+        return true;
     }
-    out = static_cast<SIntType>(num);
-    return true;
-}
-
-template<typename UIntType>
-inline typename std::enable_if_t<std::is_unsigned<UIntType>::value, bool>
-str_to_num(const char *str, int base, UIntType &out)
-{
-    static_assert(std::numeric_limits<UIntType>::max() <= ULLONG_MAX,
-                  "Integer type to too large to handle");
-
-    char *end;
-    errno = 0;
-    auto num = strtoull(str, &end, base);
-    if (errno == ERANGE
-            || num > std::numeric_limits<UIntType>::max()) {
-        errno = ERANGE;
-        return false;
-    } else if (*str == '\0' || *end != '\0') {
-        errno = EINVAL;
-        return false;
-    }
-    out = static_cast<UIntType>(num);
-    return true;
 }
 
 }
