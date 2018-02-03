@@ -30,7 +30,7 @@ import android.support.v4.provider.DocumentFile
 import android.util.Log
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMiniZip.MiniZipInputFile
 import com.github.chenxiaolong.dualbootpatcher.pathchooser.PathChooserActivity
-import org.apache.commons.lang3.text.translate.LookupTranslator
+import org.apache.commons.text.translate.LookupTranslator
 import java.io.*
 import java.util.*
 
@@ -48,13 +48,14 @@ object FileUtils {
 
     // According to the getmntent(3) manpage and the glibc source code, these are the only escaped
     // values
-    private val UNESCAPE_MOUNT_ENTRY = LookupTranslator(
-            arrayOf("\\040", " "),
-            arrayOf("\\011", "\t"),
-            arrayOf("\\012", "\n"),
-            arrayOf("\\134", "\\"),
-            arrayOf("\\\\", "\\")
-    )
+    @Suppress("UNCHECKED_CAST")
+    private val UNESCAPE_MOUNT_ENTRY = LookupTranslator(hashMapOf(
+            "\\040" to " ",
+            "\\011" to "\t",
+            "\\012" to "\n",
+            "\\134" to "\\",
+            "\\\\" to "\\"
+    ) as Map<CharSequence, CharSequence>)
 
     private val BASE2_ABBREVS = arrayOf(
             Base2Abbrev(1L shl 60, R.string.format_exbibytes),

@@ -25,10 +25,6 @@ android {
     buildToolsVersion "27.0.3"
 
     packagingOptions {
-        // Both commons-lang3 and common-io want to include these file
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-
         // CMake will strip the libraries automatically for release builds
         doNotStrip '**.so'
     }
@@ -161,7 +157,7 @@ dependencies {
     implementation 'com.afollestad.material-dialogs:core:0.9.6.0'
     implementation 'com.afollestad.material-dialogs:commons:0.9.6.0'
     implementation 'com.github.clans:fab:1.6.4'
-    implementation 'org.apache.commons:commons-lang3:3.7'
+    implementation 'org.apache.commons:commons-text:1.2'
     implementation 'net.java.dev.jna:jna:4.5.0@aar'
     implementation project(":emulatorview")
     implementation project(":rootshell")

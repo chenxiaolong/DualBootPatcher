@@ -40,7 +40,6 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.RomInstallerParams
 import mbtool.daemon.v3.PathDeleteFlag
 import mbtool.daemon.v3.SignedExecResult
-import org.apache.commons.lang3.StringUtils
 import java.io.File
 import java.io.IOException
 import java.util.ArrayList
@@ -293,7 +292,7 @@ class MbtoolTask(
         args.add("-r")
         args.add(params.romId!!)
         args.add("-t")
-        args.add(StringUtils.join(params.targets, ','))
+        args.add(params.targets!!.joinToString(","))
         if (params.backupName != null) {
             args.add("-n")
             args.add(params.backupName!!)
@@ -423,7 +422,7 @@ class MbtoolTask(
     }
 
     private fun printSeparator() {
-        printBoldText(Color.WHITE, StringUtils.repeat('-', 16) + "\n")
+        printBoldText(Color.WHITE, "-".repeat(16) + "\n")
     }
 
     override fun onListenerAdded(listener: BaseServiceTask.BaseServiceTaskListener) {
