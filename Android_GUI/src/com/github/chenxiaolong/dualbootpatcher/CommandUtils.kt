@@ -68,7 +68,7 @@ object CommandUtils {
                     }
 
                     override fun commandTerminated(id: Int, reason: String) {
-                        synchronized(result) {
+                        synchronized(result.lock) {
                             result.exitCode = -1
                             result.terminationMessage = reason
                             result.lock.notify()
@@ -78,7 +78,7 @@ object CommandUtils {
                     }
 
                     override fun commandCompleted(id: Int, exitCode: Int) {
-                        synchronized(result) {
+                        synchronized(result.lock) {
                             result.exitCode = exitCode
                             result.lock.notify()
                         }
@@ -89,7 +89,7 @@ object CommandUtils {
 
                 RootShell.getShell(true).add(command)
 
-                synchronized(result) {
+                synchronized(result.lock) {
                     result.lock.wait()
                 }
 
