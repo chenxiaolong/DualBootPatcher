@@ -39,10 +39,11 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.DialogListenerTarget
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericInputDialog
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericInputDialog.GenericInputDialogListener
 import com.github.chenxiaolong.dualbootpatcher.pathchooser.PathChooserItemAdapter.PathChooserItemClickListener
-import org.apache.commons.io.FilenameUtils
 import java.io.File
 import java.io.Serializable
-import java.util.*
+import java.util.ArrayList
+import java.util.Collections
+import java.util.Comparator
 
 class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserItemClickListener, GenericInputDialogListener {
     private lateinit var builder: Builder
@@ -371,8 +372,7 @@ class PathChooserDialog : DialogFragment(), SingleButtonCallback, PathChooserIte
 
         private fun isMimeType(file: File, filter: String?, mimeTypeMap: MimeTypeMap): Boolean {
             if (filter != null) {
-                val extension = FilenameUtils.getExtension(file.name)
-                val mimeType = mimeTypeMap.getMimeTypeFromExtension(extension)
+                val mimeType = mimeTypeMap.getMimeTypeFromExtension(file.extension)
                 return mimeMatches(filter, mimeType)
             }
             return true

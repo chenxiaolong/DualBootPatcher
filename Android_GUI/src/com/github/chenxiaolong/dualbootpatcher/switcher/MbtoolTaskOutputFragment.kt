@@ -30,7 +30,7 @@ import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-
+import com.github.chenxiaolong.dualbootpatcher.NullOutputStream
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder
 import com.github.chenxiaolong.dualbootpatcher.ThreadUtils
@@ -39,19 +39,14 @@ import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.BackupRestoreParams
 import com.github.chenxiaolong.dualbootpatcher.switcher.actions.MbtoolAction
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.MbtoolTask.MbtoolTaskListener
-
-import org.apache.commons.io.IOUtils
-import org.apache.commons.io.output.NullOutputStream
-
+import jackpal.androidterm.emulatorview.EmulatorView
+import jackpal.androidterm.emulatorview.TermSession
 import java.io.IOException
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.charset.Charset
 import java.util.ArrayList
 import java.util.Arrays
-
-import jackpal.androidterm.emulatorview.EmulatorView
-import jackpal.androidterm.emulatorview.TermSession
 import kotlin.concurrent.thread
 
 class MbtoolTaskOutputFragment : Fragment(), ServiceConnection {
@@ -169,7 +164,7 @@ class MbtoolTaskOutputFragment : Fragment(), ServiceConnection {
     override fun onStop() {
         super.onStop()
 
-        IOUtils.closeQuietly(pos)
+        pos.use {}
 
         // Destroy session
         session!!.finish()

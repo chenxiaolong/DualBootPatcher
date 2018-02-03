@@ -43,7 +43,9 @@ import mbtool.daemon.v3.SignedExecResult
 import org.apache.commons.lang3.StringUtils
 import java.io.File
 import java.io.IOException
-import java.util.*
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.EnumSet
 
 class MbtoolTask(
         taskId: Int,
@@ -136,8 +138,7 @@ class MbtoolTask(
                 printBoldText(Color.YELLOW, "[DEBUG] Copying alternate mbtool binary: "
                         + "$ALTERNATE_MBTOOL_PATH\n")
                 try {
-                    org.apache.commons.io.FileUtils.copyFile(
-                            File(ALTERNATE_MBTOOL_PATH), zipInstaller)
+                    File(ALTERNATE_MBTOOL_PATH).copyTo(zipInstaller, overwrite = true)
                 } catch (e: IOException) {
                     printBoldText(Color.RED, "Failed to copy alternate mbtool binary\n")
                     return false
@@ -146,8 +147,7 @@ class MbtoolTask(
                 printBoldText(Color.YELLOW, "[DEBUG] Copying alternate mbtool signature: "
                         + "$ALTERNATE_MBTOOL_SIG_PATH\n")
                 try {
-                    org.apache.commons.io.FileUtils.copyFile(
-                            File(ALTERNATE_MBTOOL_SIG_PATH), zipInstallerSig)
+                    File(ALTERNATE_MBTOOL_SIG_PATH).copyTo(zipInstallerSig, overwrite = true)
                 } catch (e: IOException) {
                     printBoldText(Color.RED, "Failed to copy alternate mbtool signature\n")
                     return false

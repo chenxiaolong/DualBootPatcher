@@ -139,7 +139,7 @@ class CreateRamdiskUpdaterTask(
                 // Back up existing boot image
                 val bootImageBackupFile = File(bootImageFile.toString() + BOOT_IMAGE_BACKUP_SUFFIX)
                 try {
-                    org.apache.commons.io.FileUtils.copyFile(bootImageFile, bootImageBackupFile)
+                    bootImageFile.copyTo(bootImageBackupFile, overwrite = true)
                 } catch (e: IOException) {
                     Log.w(TAG, "Failed to copy $bootImageFile to $bootImageBackupFile", e)
                 }
