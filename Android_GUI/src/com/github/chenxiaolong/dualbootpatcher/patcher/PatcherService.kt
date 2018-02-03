@@ -19,7 +19,6 @@ package com.github.chenxiaolong.dualbootpatcher.patcher
 
 import android.content.ContentResolver
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.util.Log
 import android.util.SparseArray
@@ -32,8 +31,8 @@ import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.FileInfo
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.Patcher.ProgressListener
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig
-import org.apache.commons.io.IOUtils
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.lang.ref.WeakReference
 import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -553,46 +552,46 @@ class PatcherService : ThreadPoolService() {
             PatcherUtils.initializePatcher(service!!)
 
             val fileInfo = FileInfo()
-            var pfdIn: ParcelFileDescriptor? = null
-            var pfdOut: ParcelFileDescriptor? = null
             try {
-                pfdIn = cr.openFileDescriptor(inputUri, "r")
-                pfdOut = cr.openFileDescriptor(outputUri, "w")
-                if (pfdIn == null || pfdOut == null) {
-                    Log.e(TAG, "Failed to open input or output URI")
-                    state.set(PatchFileState.CANCELLED)
-                    service!!.onPatcherFinished(taskId, PatchFileState.CANCELLED, false, -1)
-                    return
+                (cr.openFileDescriptor(inputUri, "r")
+                        ?: throw IOException("Failed to open input URI")).use { pfdIn ->
+                    (cr.openFileDescriptor(outputUri, "w")
+                            ?: throw IOException("Failed to open output URI")).use { pfdOut ->
+                        Log.d(TAG, "Input file descriptor is: ${pfdIn.fd}")
+                        Log.d(TAG, "Output file descriptor is: ${pfdOut.fd}")
+
+                        fileInfo.device = device
+                        fileInfo.inputPath = "/proc/self/fd/${pfdIn.fd}"
+                        fileInfo.outputPath = "/proc/self/fd/${pfdOut.fd}"
+                        fileInfo.romId = romId
+
+                        patcher!!.setFileInfo(fileInfo)
+
+                        val ret = patcher!!.patchFile(this)
+                        successful.set(ret)
+                        errorCode.set(patcher!!.error)
+
+                        val cancelled = cancelled.get()
+
+                        // Set to complete if the task wasn't cancelled
+                        val state = if (cancelled) {
+                            PatchFileState.CANCELLED
+                        } else {
+                            PatchFileState.COMPLETED
+                        }
+                        this.state.set(state)
+
+                        service!!.onPatcherFinished(taskId, state, ret, patcher!!.error)
+                    }
                 }
-                Log.d(TAG, "Input file descriptor is: ${pfdIn.fd}")
-                Log.d(TAG, "Output file descriptor is: ${pfdOut.fd}")
-
-                fileInfo.device = device
-                fileInfo.inputPath = "/proc/self/fd/${pfdIn.fd}"
-                fileInfo.outputPath = "/proc/self/fd/${pfdOut.fd}"
-                fileInfo.romId = romId
-
-                patcher!!.setFileInfo(fileInfo)
-
-                val ret = patcher!!.patchFile(this)
-                successful.set(ret)
-                errorCode.set(patcher!!.error)
-
-                val cancelled = cancelled.get()
-
-                // Set to complete if the task wasn't cancelled
-                val state = if (cancelled) {
-                    PatchFileState.CANCELLED
-                } else {
-                    PatchFileState.COMPLETED
-                }
-                this.state.set(state)
-
-                service!!.onPatcherFinished(taskId, state, ret, patcher!!.error)
             } catch (e: FileNotFoundException) {
                 Log.e(TAG, "Failed to open URI", e)
                 state.set(PatchFileState.COMPLETED)
                 service!!.onPatcherFinished(taskId, PatchFileState.COMPLETED, false, -1)
+            } catch (e: IOException) {
+                Log.e(TAG, "I/O error", e)
+                state.set(PatchFileState.CANCELLED)
+                service!!.onPatcherFinished(taskId, PatchFileState.CANCELLED, false, -1)
             } finally {
                 // Ensure we destroy allocated objects on the C++ side
                 synchronized(this) {
@@ -603,24 +602,18 @@ class PatcherService : ThreadPoolService() {
                 }
                 fileInfo.destroy()
 
-                IOUtils.closeQuietly(pfdIn)
-                IOUtils.closeQuietly(pfdOut)
-
                 // Save log
                 LogUtils.dump("patch-file.log")
             }
         }
 
         private fun queryDisplayName(cr: ContentResolver, uri: Uri?): String? {
-            val cursor = cr.query(uri!!, null, null, null, null, null)
-            try {
-                if (cursor != null && cursor.moveToFirst()) {
-                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    return cursor.getString(nameIndex)
+            return cr.query(uri!!, null, null, null, null, null)?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    return it.getString(nameIndex)
                 }
                 return null
-            } finally {
-                IOUtils.closeQuietly(cursor)
             }
         }
 

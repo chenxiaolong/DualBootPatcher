@@ -36,8 +36,11 @@ import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterfaceV3
 import com.stericson.RootShell.exceptions.RootDeniedException
 import mbtool.daemon.v3.SignedExecResult
-import org.apache.commons.io.IOUtils
-import java.io.*
+import java.io.Closeable
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 
 class MbtoolConnection @Throws(IOException::class, MbtoolException::class)
 constructor(context: Context) : Closeable {
@@ -94,18 +97,12 @@ constructor(context: Context) : Closeable {
 
     @Throws(IOException::class)
     override fun close() {
-        if (socketIS != null) {
-            socketIS!!.close()
-            socketIS = null
-        }
-        if (socketOS != null) {
-            socketOS!!.close()
-            socketOS = null
-        }
-        if (socket != null) {
-            socket!!.close()
-            socket = null
-        }
+        // Streams are closed when the socket is closed
+        socketOS = null
+        socketIS = null
+
+        socket?.close()
+        socket = null
     }
 
     companion object {
@@ -334,54 +331,51 @@ constructor(context: Context) : Closeable {
                     File.separator + "mbtool.sig")
 
             for (i in SIGNED_EXEC_MAX_PROTOCOL_VERSION downTo SIGNED_EXEC_MIN_PROTOCOL_VERSION) {
-                var socket: LocalSocket? = null
-                var socketIS: InputStream? = null
-                var socketOS: OutputStream? = null
-
                 try {
                     // Try connecting to the socket
-                    socket = initConnectToSocket()
-                    socketIS = socket.inputStream
-                    socketOS = socket.outputStream
+                    initConnectToSocket().use { socket ->
+                        val socketIS = socket.inputStream
+                        val socketOS = socket.outputStream
 
-                    // mbtool will immediately send a message telling us whether the app signature is
-                    // allowed or denied
-                    initVerifyCredentials(socketIS)
+                        // mbtool will immediately send a message telling us whether the app signature is
+                        // allowed or denied
+                        initVerifyCredentials(socketIS)
 
-                    // Request interface version
-                    initRequestInterface(socketIS, socketOS, i)
+                        // Request interface version
+                        initRequestInterface(socketIS, socketOS, i)
 
-                    // Create interface
-                    val iface = createInterface(socketIS, socketOS, i) ?:
-                            throw IllegalStateException("Failed to create interface for version: $i")
+                        // Create interface
+                        val iface = createInterface(socketIS, socketOS, i)
+                                ?: throw IllegalStateException("Failed to create interface for version: $i")
 
-                    // Use signed exec to replace mbtool. This purposely sets argv[0] to "mbtool" and
-                    // argv[1] to "daemon" instead of just setting argv[0] to "daemon" because --replace
-                    // kills processes with cmdlines matching the former case.
-                    val completion = iface.signedExec(
-                            mbtool.absolutePath, mbtoolSig.absolutePath,
-                            "mbtool", arrayOf("daemon", "--replace", "--daemonize"), null)
+                        // Use signed exec to replace mbtool. This purposely sets argv[0] to "mbtool" and
+                        // argv[1] to "daemon" instead of just setting argv[0] to "daemon" because --replace
+                        // kills processes with cmdlines matching the former case.
+                        val completion = iface.signedExec(
+                                mbtool.absolutePath, mbtoolSig.absolutePath,
+                                "mbtool", arrayOf("daemon", "--replace", "--daemonize"), null)
 
-                    return when (completion.result) {
-                        SignedExecResult.PROCESS_EXITED -> {
-                            Log.d(TAG, "mbtool signed exec exited with status: ${completion.exitStatus}")
-                            completion.exitStatus == 0
-                        }
-                        SignedExecResult.PROCESS_KILLED_BY_SIGNAL -> {
-                            Log.d(TAG, "mbtool signed exec killed by signal: ${completion.termSig}")
-                            false
-                        }
-                        SignedExecResult.INVALID_SIGNATURE -> {
-                            Log.d(TAG, "mbtool signed exec failed due to invalid signature")
-                            false
-                        }
-                        SignedExecResult.OTHER_ERROR -> {
-                            Log.d(TAG, "mbtool signed exec failed: ${completion.errorMsg}")
-                            false
-                        }
-                        else -> {
-                            Log.d(TAG, "mbtool signed exec failed: ${completion.errorMsg}")
-                            false
+                        return when (completion.result) {
+                            SignedExecResult.PROCESS_EXITED -> {
+                                Log.d(TAG, "mbtool signed exec exited with status: ${completion.exitStatus}")
+                                completion.exitStatus == 0
+                            }
+                            SignedExecResult.PROCESS_KILLED_BY_SIGNAL -> {
+                                Log.d(TAG, "mbtool signed exec killed by signal: ${completion.termSig}")
+                                false
+                            }
+                            SignedExecResult.INVALID_SIGNATURE -> {
+                                Log.d(TAG, "mbtool signed exec failed due to invalid signature")
+                                false
+                            }
+                            SignedExecResult.OTHER_ERROR -> {
+                                Log.d(TAG, "mbtool signed exec failed: ${completion.errorMsg}")
+                                false
+                            }
+                            else -> {
+                                Log.d(TAG, "mbtool signed exec failed: ${completion.errorMsg}")
+                                false
+                            }
                         }
                     }
                 } catch (e: IOException) {
@@ -397,10 +391,6 @@ constructor(context: Context) : Closeable {
                 } catch (e: MbtoolCommandException) {
                     // Keep trying
                     Log.w(TAG, "mbtool command error", e)
-                } finally {
-                    IOUtils.closeQuietly(socketIS)
-                    IOUtils.closeQuietly(socketOS)
-                    IOUtils.closeQuietly(socket)
                 }
             }
 

@@ -18,16 +18,12 @@
 package com.github.chenxiaolong.dualbootpatcher.nativelib
 
 import android.util.Log
-
 import com.sun.jna.Memory
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
 import com.sun.jna.Structure
 import com.sun.jna.ptr.PointerByReference
-
-import org.apache.commons.io.Charsets
-
 import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream

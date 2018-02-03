@@ -39,7 +39,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.Toast
-
 import com.github.chenxiaolong.dualbootpatcher.R
 import com.github.chenxiaolong.dualbootpatcher.RomConfig
 import com.github.chenxiaolong.dualbootpatcher.RomConfig.SharedItems
@@ -51,9 +50,6 @@ import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingChangeShared
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog
 import com.github.chenxiaolong.dualbootpatcher.dialogs.FirstUseDialog.FirstUseDialogListener
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection
-
-import org.apache.commons.io.IOUtils
-
 import java.text.Collator
 import java.util.ArrayList
 import java.util.Collections
@@ -271,20 +267,18 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
         override fun loadInBackground(): LoaderResult? {
             val start = System.currentTimeMillis()
 
-            val info: RomInformation?
-            val roms: Array<RomInformation>
+            var info: RomInformation? = null
+            var roms: Array<RomInformation> = emptyArray()
 
-            var conn: MbtoolConnection? = null
             try {
-                conn = MbtoolConnection(context)
-                val iface = conn.`interface`!!
+                MbtoolConnection(context).use {
+                    val iface = it.`interface`!!
 
-                info = RomUtils.getCurrentRom(context, iface)
-                roms = RomUtils.getRoms(context, iface)
+                    info = RomUtils.getCurrentRom(context, iface)
+                    roms = RomUtils.getRoms(context, iface)
+                }
             } catch (e: Exception) {
                 return null
-            } finally {
-                IOUtils.closeQuietly(conn)
             }
 
             if (info == null) {
@@ -292,7 +286,7 @@ class AppListFragment : Fragment(), FirstUseDialogListener, AppCardActionListene
             }
 
             // Get shared apps from the config file
-            val config = RomConfig.getConfig(info.configPath!!)
+            val config = RomConfig.getConfig(info!!.configPath!!)
 
             if (!config.isIndivAppSharingEnabled) {
                 throw IllegalStateException("Tried to open AppListFragment when " +

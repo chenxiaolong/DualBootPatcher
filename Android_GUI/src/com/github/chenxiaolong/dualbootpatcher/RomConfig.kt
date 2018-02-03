@@ -23,9 +23,13 @@ import com.google.gson.JsonParseException
 import com.google.gson.annotations.SerializedName
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import org.apache.commons.io.Charsets
-import java.io.*
-import java.util.*
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.FileReader
+import java.io.OutputStreamWriter
+import java.util.ArrayList
+import java.util.HashMap
 import kotlin.concurrent.thread
 
 class RomConfig private constructor(private val filename: String) {
@@ -38,14 +42,14 @@ class RomConfig private constructor(private val filename: String) {
         get() {
             val result = HashMap<String, SharedItems>()
             for ((key, value) in sharedPkgs) {
-                result.put(key, SharedItems(value))
+                result[key] = SharedItems(value)
             }
             return result
         }
         set(pkgs) {
             sharedPkgs = HashMap()
             for ((key, value) in pkgs) {
-                sharedPkgs.put(key, SharedItems(value))
+                sharedPkgs[key] = SharedItems(value)
             }
         }
 
@@ -116,7 +120,7 @@ class RomConfig private constructor(private val filename: String) {
             if (root.appSharing!!.packages != null) {
                 root.appSharing!!.packages!!
                         .filter { it.pkgId != null }
-                        .forEach { sharedPkgs.put(it.pkgId!!, SharedItems(it.shareData)) }
+                        .forEach { sharedPkgs[it.pkgId!!] = SharedItems(it.shareData) }
             }
         }
     }
@@ -188,7 +192,7 @@ class RomConfig private constructor(private val filename: String) {
                 Log.e(TAG, "Failed to load $file", e)
             }
 
-            instances.put(file.absolutePath, config)
+            instances[file.absolutePath] = config
 
             return config
         }

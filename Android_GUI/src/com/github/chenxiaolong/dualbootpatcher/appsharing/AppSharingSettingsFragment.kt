@@ -30,7 +30,10 @@ import android.support.v7.preference.Preference.OnPreferenceChangeListener
 import android.support.v7.preference.Preference.OnPreferenceClickListener
 import android.support.v7.preference.PreferenceFragmentCompat
 import android.widget.Toast
-import com.github.chenxiaolong.dualbootpatcher.*
+import com.github.chenxiaolong.dualbootpatcher.PermissionUtils
+import com.github.chenxiaolong.dualbootpatcher.R
+import com.github.chenxiaolong.dualbootpatcher.RomConfig
+import com.github.chenxiaolong.dualbootpatcher.RomUtils
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 import com.github.chenxiaolong.dualbootpatcher.appsharing.AppSharingSettingsFragment.NeededInfo
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
@@ -40,7 +43,6 @@ import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericYesNoDialog.Generi
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolUtils.Feature
-import org.apache.commons.io.IOUtils
 
 class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChangeListener,
         OnPreferenceClickListener, LoaderManager.LoaderCallbacks<NeededInfo>,
@@ -264,19 +266,16 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
         }
 
         override fun loadInBackground(): NeededInfo? {
-            val currentRom: RomInformation?
-
-            var conn: MbtoolConnection? = null
+            var currentRom: RomInformation? = null
 
             try {
-                conn = MbtoolConnection(context)
-                val iface = conn.`interface`!!
+                MbtoolConnection(context).use {
+                    val iface = it.`interface`!!
 
-                currentRom = RomUtils.getCurrentRom(context, iface)
+                    currentRom = RomUtils.getCurrentRom(context, iface)
+                }
             } catch (e: Exception) {
                 return null
-            } finally {
-                IOUtils.closeQuietly(conn)
             }
 
             if (currentRom == null) {
@@ -285,7 +284,7 @@ class AppSharingSettingsFragment : PreferenceFragmentCompat(), OnPreferenceChang
 
             val systemMbtoolVersion = MbtoolUtils.getSystemMbtoolVersion(context)
 
-            return NeededInfo(RomConfig.getConfig(currentRom.configPath!!),
+            return NeededInfo(RomConfig.getConfig(currentRom!!.configPath!!),
                     systemMbtoolVersion >=
                             MbtoolUtils.getMinimumRequiredVersion(Feature.APP_SHARING))
         }

@@ -29,7 +29,6 @@ import com.github.chenxiaolong.dualbootpatcher.socket.exceptions.MbtoolException
 import com.github.chenxiaolong.dualbootpatcher.socket.interfaces.MbtoolInterface
 import com.squareup.picasso.Picasso
 import mbtool.daemon.v3.FileOpenFlag
-import org.apache.commons.io.Charsets
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

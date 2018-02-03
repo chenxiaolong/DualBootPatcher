@@ -28,7 +28,6 @@ import com.github.chenxiaolong.dualbootpatcher.ThreadUtils
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbDevice.Device
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibMbPatcher.PatcherConfig
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.LibMiscStuff
-import org.apache.commons.io.Charsets
 import java.io.File
 import java.io.IOException
 import java.util.ArrayList
@@ -124,7 +123,7 @@ object PatcherUtils {
         if (devices == null) {
             val path = File(getTargetDirectory(context), "devices.json")
             try {
-                val json = org.apache.commons.io.FileUtils.readFileToString(path, Charsets.UTF_8)
+                val json = path.readText()
 
                 val validDevices = ArrayList<Device>()
                 Device.newListFromJson(json)?.filterTo(validDevices) { it.validate() == 0L }
@@ -176,13 +175,13 @@ object PatcherUtils {
                             || it.name.startsWith("tmp")
                             || it.name.startsWith("data-")
                 }
-                .forEach { org.apache.commons.io.FileUtils.deleteQuietly(it) }
+                .forEach { it.deleteRecursively() }
         context.filesDir.listFiles()
                 .filter { it.isDirectory }
                 .forEach {
                     it.listFiles()
                             .filter { it.name.contains("tmp") }
-                            .forEach { org.apache.commons.io.FileUtils.deleteQuietly(it) }
+                            .forEach { it.deleteRecursively() }
                 }
 
         val targetFile = getTargetFile(context)
@@ -197,7 +196,7 @@ object PatcherUtils {
 
             // Remove all previous files
             context.filesDir.listFiles().forEach {
-                org.apache.commons.io.FileUtils.deleteQuietly(it)
+                it.deleteRecursively()
             }
 
             try {

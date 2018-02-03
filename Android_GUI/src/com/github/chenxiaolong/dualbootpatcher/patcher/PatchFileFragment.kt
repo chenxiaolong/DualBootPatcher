@@ -18,9 +18,17 @@
 package com.github.chenxiaolong.dualbootpatcher.patcher
 
 import android.app.Activity
-import android.content.*
+import android.content.ComponentName
+import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
-import android.os.*
+import android.os.AsyncTask
+import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.support.design.widget.Snackbar
 import android.support.v13.app.FragmentCompat
 import android.support.v4.app.Fragment
@@ -31,11 +39,21 @@ import android.support.v7.widget.SimpleItemAnimator
 import android.support.v7.widget.helper.ItemTouchHelper
 import android.util.Log
 import android.util.SparseIntArray
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ProgressBar
 import android.widget.TextView
-import com.github.chenxiaolong.dualbootpatcher.*
+import com.github.chenxiaolong.dualbootpatcher.FileUtils
 import com.github.chenxiaolong.dualbootpatcher.FileUtils.UriMetadata
+import com.github.chenxiaolong.dualbootpatcher.MenuUtils
+import com.github.chenxiaolong.dualbootpatcher.PermissionUtils
+import com.github.chenxiaolong.dualbootpatcher.R
+import com.github.chenxiaolong.dualbootpatcher.SnackbarUtils
 import com.github.chenxiaolong.dualbootpatcher.ThreadPoolService.ThreadPoolServiceBinder
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericConfirmDialog
 import com.github.chenxiaolong.dualbootpatcher.dialogs.GenericProgressDialog
@@ -49,8 +67,10 @@ import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback
 import com.github.chenxiaolong.dualbootpatcher.views.DragSwipeItemTouchCallback.OnItemMovedOrDismissedListener
 import com.github.clans.fab.FloatingActionButton
 import com.github.clans.fab.FloatingActionMenu
-import org.apache.commons.io.FilenameUtils
-import java.util.*
+import java.io.File
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.Collections
 
 class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogListener,
         OnItemMovedOrDismissedListener, PatchFileItemClickListener,
@@ -610,26 +630,24 @@ class PatchFileFragment : Fragment(), ServiceConnection, PatcherOptionsDialogLis
      * @see [.onSelectedOutputUri]
      */
     private fun selectOutputFile() {
-        val baseName: String?
-        val extension: String?
+        val baseName: String
+        val extension: String
         if (selectedPatcherId == PatcherUtils.PATCHER_ID_ODINPATCHER) {
             baseName = selectedInputFileName!!.replace(
                     "(\\.tar\\.md5(\\.gz|\\.xz)?|\\.zip)$".toRegex(), "")
             extension = "zip"
         } else {
-            baseName = FilenameUtils.getBaseName(selectedInputFileName)
-            extension = FilenameUtils.getExtension(selectedInputFileName)
+            baseName = File(selectedInputFileName).nameWithoutExtension
+            extension = File(selectedInputFileName).extension
         }
         val sb = StringBuilder()
-        if (baseName != null) {
-            sb.append(baseName)
-            sb.append('_')
-        }
+        sb.append(baseName)
+        sb.append('_')
         sb.append(selectedRomId)
-        if (extension != null) {
+        if (extension.isNotEmpty() || selectedInputFileName!!.endsWith('.')) {
             sb.append('.')
-            sb.append(extension)
         }
+        sb.append(extension)
         val desiredName = sb.toString()
         val intent = FileUtils.getFileSaveIntent(activity!!, "*/*", desiredName)
         startActivityForResult(intent, ACTIVITY_REQUEST_OUTPUT_FILE)

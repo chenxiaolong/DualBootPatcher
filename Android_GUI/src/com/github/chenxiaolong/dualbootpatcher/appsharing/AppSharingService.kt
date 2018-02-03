@@ -28,24 +28,20 @@ import com.github.chenxiaolong.dualbootpatcher.RomConfig
 import com.github.chenxiaolong.dualbootpatcher.RomUtils
 import com.github.chenxiaolong.dualbootpatcher.RomUtils.RomInformation
 import com.github.chenxiaolong.dualbootpatcher.socket.MbtoolConnection
-import org.apache.commons.io.IOUtils
 
 class AppSharingService : IntentService(TAG) {
     private fun onPackageRemoved(pkg: String) {
-        val info: RomInformation?
-
-        var conn: MbtoolConnection? = null
+        var info: RomInformation? = null
 
         try {
-            conn = MbtoolConnection(this)
-            val iface = conn.`interface`!!
+            MbtoolConnection(this).use {
+                val iface = it.`interface`!!
 
-            info = RomUtils.getCurrentRom(this, iface)
+                info = RomUtils.getCurrentRom(this, iface)
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to determine current ROM. App sharing status was NOT updated", e)
             return
-        } finally {
-            IOUtils.closeQuietly(conn)
         }
 
         if (info == null) {
@@ -55,7 +51,7 @@ class AppSharingService : IntentService(TAG) {
 
         // Unshare package if explicitly removed. This only exists to keep the config file clean.
         // Mbtool will not touch any app that's not listed in the package database.
-        val config = RomConfig.getConfig(info.configPath!!)
+        val config = RomConfig.getConfig(info!!.configPath!!)
         val sharedPkgs = config.indivAppSharingPackages
         if (sharedPkgs.containsKey(pkg)) {
             sharedPkgs.remove(pkg)
