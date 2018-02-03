@@ -467,8 +467,6 @@
       - /dev/block/bootdevice/by-name
     system:
       - /dev/block/bootdevice/by-name/system
-    system_image:
-      - /dev/block/bootdevice/by-name/system
     cache:
       - /dev/block/bootdevice/by-name/cache
     data:
@@ -582,8 +580,6 @@
     base_dirs:
       - /dev/block/bootdevice/by-name
     system:
-      - /dev/block/bootdevice/by-name/system
-    system_image:
       - /dev/block/bootdevice/by-name/system
     cache:
       - /dev/block/bootdevice/by-name/cache
