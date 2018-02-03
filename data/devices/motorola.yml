@@ -1053,3 +1053,107 @@
       - fbdev
     theme: portrait_hdpi
     brightness_path: /sys/class/leds/lcd-backlight/brightness
+
+---
+- name: motorola Moto G5
+  id: cedric
+  codenames:
+      - G5
+      - Moto
+      - cedric
+      - XT1672
+      - XT1675
+  architecture: armeabi-v7a
+  
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/soc/7824900.sdhci/by-name
+      - /dev/block/bootdevice/by-name
+    system:
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p53
+      - /dev/block/platform/soc/7824900.sdhci/by-name/system
+    cache:
+      - /dev/block/bootdevice/by-name/cache
+      - /dev/block/mmcblk0p52
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cache
+    data:
+      - /dev/block/bootdevice/by-name/userdata
+      - /dev/block/mmcblk0p54
+      - /dev/block/platform/soc/7824900.sdhci/by-name/userdata
+    boot:
+      - /dev/block/bootdevice/by-name/boot
+      - /dev/block/bootdevice/by-name/system
+      - /dev/block/mmcblk0p37
+      - /dev/block/mmcblk0p53
+      - /dev/block/platform/soc/7824900.sdhci/by-name/boot
+    recovery:
+      - /dev/block/bootdevice/by-name/recovery
+      - /dev/block/mmcblk0p38
+      - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+    extra:
+      - /dev/block/mmcblk1p1
+      - /dev/block/platform/soc/7824900.sdhci/by-name/DDR
+      - /dev/block/platform/soc/7824900.sdhci/by-name/aboot
+      - /dev/block/platform/soc/7824900.sdhci/by-name/abootbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/apdp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/carrier
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cid
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib64
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlib64bak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/cmnlibbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/devcfg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/devcfgbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dip
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dpo
+      - /dev/block/platform/soc/7824900.sdhci/by-name/dsp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/frp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/fsc
+      - /dev/block/platform/soc/7824900.sdhci/by-name/fsg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/hw
+      - /dev/block/platform/soc/7824900.sdhci/by-name/keymaster
+      - /dev/block/platform/soc/7824900.sdhci/by-name/keymasterbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/kpan
+      - /dev/block/platform/soc/7824900.sdhci/by-name/limits
+      - /dev/block/platform/soc/7824900.sdhci/by-name/logo
+      - /dev/block/platform/soc/7824900.sdhci/by-name/logs
+      - /dev/block/platform/soc/7824900.sdhci/by-name/metadata
+      - /dev/block/platform/soc/7824900.sdhci/by-name/misc
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modemst1
+      - /dev/block/platform/soc/7824900.sdhci/by-name/modemst2
+      - /dev/block/platform/soc/7824900.sdhci/by-name/mota
+      - /dev/block/platform/soc/7824900.sdhci/by-name/msadp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/oem
+      - /dev/block/platform/soc/7824900.sdhci/by-name/padA
+      - /dev/block/platform/soc/7824900.sdhci/by-name/persist
+      - /dev/block/platform/soc/7824900.sdhci/by-name/prov
+      - /dev/block/platform/soc/7824900.sdhci/by-name/provbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/rpm
+      - /dev/block/platform/soc/7824900.sdhci/by-name/rpmbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sbl1
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sbl1bak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sec
+      - /dev/block/platform/soc/7824900.sdhci/by-name/sp
+      - /dev/block/platform/soc/7824900.sdhci/by-name/ssd
+      - /dev/block/platform/soc/7824900.sdhci/by-name/syscfg
+      - /dev/block/platform/soc/7824900.sdhci/by-name/tz
+      - /dev/block/platform/soc/7824900.sdhci/by-name/tzbak
+      - /dev/block/platform/soc/7824900.sdhci/by-name/utags
+      - /dev/block/platform/soc/7824900.sdhci/by-name/utagsBackup
+      - /dev/block/mmcblk1
+      - /dev/block/mmcblk1p1
+ 
+  boot_ui:
+    supported: true
+    flags:
+      - TW_GRAPHICS_FORCE_USE_LINELENGTH
+    brightness_path: /sys/class/leds/lcd-backlight/brightness
+    max_brightness: 255
+    default_brightness: 168
+    cpu_temp_path: /sys/devices/virtual/thermal/thermal_zone0/temp
+    battery_path: /sys/class/power_supply/battery/capacity
+    graphics_backends:
+      - fbdev
+    theme: portrait_hdpi
