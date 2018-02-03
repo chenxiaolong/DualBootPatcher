@@ -550,8 +550,8 @@
     - /dev/block/mmcblk0p21
     recovery:
     - /dev/block/bootdevice/by-name/recovery
-    - /dev/block/platform/soc/7824900.sdhci/by-name/recover
-    -               /dev/block/mmcblk0p22
+    - /dev/block/platform/soc/7824900.sdhci/by-name/recovery
+    - /dev/block/mmcblk0p22
     extra:
       # cust
       - /dev/block/bootdevice/by-name/cust	  
