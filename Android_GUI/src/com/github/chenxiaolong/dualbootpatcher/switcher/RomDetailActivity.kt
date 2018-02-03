@@ -365,13 +365,13 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
     private fun populateInfoItems() {
         items.add(InfoItem(INFO_SLOT,
                 getString(R.string.rom_details_info_slot),
-                romInfo.id!!))
+                romInfo.id ?: ""))
         items.add(InfoItem(INFO_VERSION,
                 getString(R.string.rom_details_info_version),
-                romInfo.version!!))
+                romInfo.version ?: ""))
         items.add(InfoItem(INFO_BUILD,
                 getString(R.string.rom_details_info_build),
-                romInfo.build!!))
+                romInfo.build ?: ""))
         items.add(InfoItem(INFO_MBTOOL_STATUS,
                 getString(R.string.rom_details_info_mbtool_status),
                 getString(updateRamdiskResId)))
@@ -380,13 +380,13 @@ class RomDetailActivity : AppCompatActivity(), RomNameInputDialogListener,
                 getString(R.string.rom_details_info_calculating)))
         items.add(InfoItem(INFO_SYSTEM_PATH,
                 getString(R.string.rom_details_info_system_path),
-                romInfo.systemPath!!))
+                romInfo.systemPath ?: ""))
         items.add(InfoItem(INFO_CACHE_PATH,
                 getString(R.string.rom_details_info_cache_path),
-                romInfo.cachePath!!))
+                romInfo.cachePath ?: ""))
         items.add(InfoItem(INFO_DATA_PATH,
                 getString(R.string.rom_details_info_data_path),
-                romInfo.dataPath!!))
+                romInfo.dataPath ?: ""))
         items.add(InfoItem(INFO_SYSTEM_SIZE,
                 getString(R.string.rom_details_info_system_size),
                 getString(R.string.rom_details_info_calculating)))
