@@ -43,7 +43,6 @@ import com.github.chenxiaolong.dualbootpatcher.settings.RomSettingsActivity
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherListFragment
 import com.github.chenxiaolong.dualbootpatcher.switcher.SwitcherUtils
 import com.squareup.picasso.Picasso
-import org.apache.commons.lang3.ArrayUtils
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
@@ -141,7 +140,7 @@ class MainActivity : AppCompatActivity(), OnNavigationItemSelectedListener {
             val initialScreens = resources.getStringArray(
                     R.array.initial_screen_entry_values)
             var initialScreen = prefs.getString("initial_screen", null)
-            if (initialScreen == null || !ArrayUtils.contains(initialScreens, initialScreen)) {
+            if (initialScreen == null || !initialScreens.contains(initialScreen)) {
                 // Show about screen by default
                 initialScreen = INITIAL_SCREEN_ABOUT
                 val e = prefs.edit()
