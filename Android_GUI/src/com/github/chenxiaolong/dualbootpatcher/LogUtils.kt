@@ -39,8 +39,15 @@ object LogUtils {
         val path = File(getPath(logFile))
         path.parentFile.mkdirs()
         try {
-            Log.v(TAG, "Dumping logcat to $path")
-            Runtime.getRuntime().exec("logcat -d -v threadtime -f $path *").waitFor()
+            val command = arrayOf(
+                    "logcat",
+                    "-d",
+                    "-f", path.toString(),
+                    "-v", "threadtime",
+                    "*:V"
+            )
+            Log.v(TAG, "Dumping logcat: ${command.contentToString()}")
+            Runtime.getRuntime().exec(command).waitFor()
         } catch (e: InterruptedException) {
             Log.e(TAG, "Failed to wait for logcat to exit", e)
         } catch (e: IOException) {
