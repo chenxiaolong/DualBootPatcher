@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 class PatcherService : ThreadPoolService() {
     /** List of callbacks for receiving events  */
@@ -56,15 +58,12 @@ class PatcherService : ThreadPoolService() {
      */
     val patchFileTaskIds: IntArray
         get() {
-            try {
-                patcherTasksLock.readLock().lock()
+            patcherTasksLock.read {
                 val taskIds = IntArray(patcherTasks.size())
                 for (i in 0 until patcherTasks.size()) {
                     taskIds[i] = patcherTasks.keyAt(i)
                 }
                 return taskIds
-            } finally {
-                patcherTasksLock.readLock().unlock()
             }
         }
 
@@ -76,13 +75,10 @@ class PatcherService : ThreadPoolService() {
 
         // Update WeakReferences in all of our tasks. This is extremely ugly, but we need to
         // preserve our tasks throughout the service lifecycle.
-        try {
-            callbacksLock.writeLock().lock()
+        callbacksLock.write {
             for (i in 0 until patcherTasks.size()) {
                 patcherTasks.valueAt(i).service = this
             }
-        } finally {
-            callbacksLock.writeLock().unlock()
         }
 
         val prefs = getSharedPreferences("settings", 0)
@@ -101,11 +97,8 @@ class PatcherService : ThreadPoolService() {
             return
         }
 
-        try {
-            callbacksLock.writeLock().lock()
+        callbacksLock.write {
             callbacks.add(callback)
-        } finally {
-            callbacksLock.writeLock().unlock()
         }
     }
 
@@ -115,24 +108,18 @@ class PatcherService : ThreadPoolService() {
             return
         }
 
-        try {
-            callbacksLock.writeLock().lock()
+        callbacksLock.write {
             if (!callbacks.remove(callback)) {
                 Log.w(TAG, "Callback was never registered: $callback")
             }
-        } finally {
-            callbacksLock.writeLock().unlock()
         }
     }
 
     private fun executeAllCallbacks(runnable: CallbackRunnable) {
-        try {
-            callbacksLock.readLock().lock()
+        callbacksLock.read {
             for (cb in callbacks) {
                 runnable.call(cb)
             }
-        } finally {
-            callbacksLock.readLock().unlock()
         }
     }
 
@@ -143,31 +130,22 @@ class PatcherService : ThreadPoolService() {
     // Patcher helper methods
 
     private fun addTask(taskId: Int, task: PatchFileTask) {
-        try {
-            patcherTasksLock.writeLock().lock()
+        patcherTasksLock.write {
             patcherTasks.put(taskId, task)
-        } finally {
-            patcherTasksLock.writeLock().unlock()
         }
     }
 
     private fun getTask(taskId: Int): PatchFileTask {
-        try {
-            patcherTasksLock.readLock().lock()
+        patcherTasksLock.read {
             return patcherTasks[taskId]!!
-        } finally {
-            patcherTasksLock.readLock().unlock()
         }
     }
 
     private fun removeTask(taskId: Int): PatchFileTask? {
-        try {
-            patcherTasksLock.writeLock().lock()
+        patcherTasksLock.write {
             val task = patcherTasks[taskId]
             patcherTasks.remove(taskId)
             return task
-        } finally {
-            patcherTasksLock.writeLock().unlock()
         }
     }
 
