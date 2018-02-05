@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <array>
 #include <string>
 
 #include <openssl/sha.h>
@@ -26,7 +27,8 @@
 namespace mb::util
 {
 
-bool sha512_hash(const std::string &path,
-                 unsigned char digest[SHA512_DIGEST_LENGTH]);
+using Sha512Digest = std::array<unsigned char, SHA512_DIGEST_LENGTH>;
+
+bool sha512_hash(const std::string &path, Sha512Digest &digest);
 
 }

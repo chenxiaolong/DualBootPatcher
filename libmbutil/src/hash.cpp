@@ -38,13 +38,11 @@ using ScopedFILE = std::unique_ptr<FILE, decltype(fclose) *>;
  * \brief Compute SHA512 hash of a file
  *
  * \param path Path to file
- * \param digest `unsigned char` array of size `SHA512_DIGEST_LENGTH` to store
- *               computed hash value
+ * \param digest Byte array to store computed hash value
  *
  * \return true on success, false on failure and errno set appropriately
  */
-bool sha512_hash(const std::string &path,
-                 unsigned char digest[SHA512_DIGEST_LENGTH])
+bool sha512_hash(const std::string &path, Sha512Digest &digest)
 {
     ScopedFILE fp(fopen(path.c_str(), "rb"), fclose);
     if (!fp) {
@@ -52,7 +50,7 @@ bool sha512_hash(const std::string &path,
         return false;
     }
 
-    unsigned char buf[10240];
+    std::array<unsigned char, 10240> buf;
     size_t n;
 
     SHA512_CTX ctx;
@@ -61,12 +59,12 @@ bool sha512_hash(const std::string &path,
         return false;
     }
 
-    while ((n = fread(buf, 1, sizeof(buf), fp.get())) > 0) {
-        if (!SHA512_Update(&ctx, buf, n)) {
+    while ((n = fread(buf.data(), 1, buf.size(), fp.get())) > 0) {
+        if (!SHA512_Update(&ctx, buf.data(), n)) {
             LOGE("openssl: SHA512_Update() failed");
             return false;
         }
-        if (n < sizeof(buf)) {
+        if (n < buf.size()) {
             break;
         }
     }
@@ -77,7 +75,7 @@ bool sha512_hash(const std::string &path,
         return false;
     }
 
-    if (!SHA512_Final(digest, &ctx)) {
+    if (!SHA512_Final(digest.data(), &ctx)) {
         LOGE("openssl: SHA512_Final() failed");
         return false;
     }

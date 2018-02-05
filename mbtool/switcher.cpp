@@ -19,6 +19,8 @@
 
 #include "switcher.h"
 
+#include <array>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
@@ -361,9 +363,9 @@ SwitchRomResult switch_rom(const std::string &id,
         }
 
         // Get actual sha512sum
-        unsigned char digest[SHA512_DIGEST_LENGTH];
-        SHA512(f.data.data(), f.data.size(), digest);
-        f.hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
+        std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
+        SHA512(f.data.data(), f.data.size(), digest.data());
+        f.hash = util::hex_string(digest.data(), digest.size());
 
         if (force_update_checksums) {
             checksums_update(&props, id, util::base_name(f.image), f.hash);
@@ -465,9 +467,9 @@ bool set_kernel(const std::string &id, const std::string &boot_blockdev)
     }
 
     // Get actual sha512sum
-    unsigned char digest[SHA512_DIGEST_LENGTH];
-    SHA512(data.data(), data.size(), digest);
-    std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
+    std::array<unsigned char, SHA512_DIGEST_LENGTH> digest;
+    SHA512(data.data(), data.size(), digest.data());
+    std::string hash = util::hex_string(digest.data(), digest.size());
 
     // Add to checksums.prop
     std::unordered_map<std::string, std::string> props;

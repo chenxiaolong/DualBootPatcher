@@ -44,6 +44,9 @@ std::function<RamdiskPatcherFn>
 rp_symlink_init();
 
 std::function<RamdiskPatcherFn>
+rp_restore_init();
+
+std::function<RamdiskPatcherFn>
 rp_add_device_json(const std::string &device_json_file);
 
 }
