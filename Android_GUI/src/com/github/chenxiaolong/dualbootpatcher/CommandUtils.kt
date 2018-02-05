@@ -39,7 +39,6 @@ object CommandUtils {
     private class RootCommandResult {
         internal var exitCode: Int = 0
         internal var terminationMessage: String? = null
-        internal var lock = Object()
     }
 
     class RootExecutionException : Exception {
@@ -71,7 +70,8 @@ object CommandUtils {
                         synchronized(result) {
                             result.exitCode = -1
                             result.terminationMessage = reason
-                            result.lock.notify()
+                            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                            (result as Object).notify()
                         }
 
                         super.commandTerminated(id, reason)
@@ -80,7 +80,8 @@ object CommandUtils {
                     override fun commandCompleted(id: Int, exitCode: Int) {
                         synchronized(result) {
                             result.exitCode = exitCode
-                            result.lock.notify()
+                            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                            (result as Object).notify()
                         }
 
                         super.commandCompleted(id, exitCode)
@@ -90,7 +91,8 @@ object CommandUtils {
                 RootShell.getShell(true).add(command)
 
                 synchronized(result) {
-                    result.lock.wait()
+                    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                    (result as Object).wait()
                 }
 
                 if (result.exitCode == -1) {

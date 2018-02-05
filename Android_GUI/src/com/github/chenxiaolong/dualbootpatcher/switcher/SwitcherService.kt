@@ -47,6 +47,8 @@ import com.github.chenxiaolong.dualbootpatcher.switcher.service.VerifyZipTask
 import com.github.chenxiaolong.dualbootpatcher.switcher.service.WipeRomTask
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 class SwitcherService : ThreadPoolService() {
     fun addCallback(taskId: Int, callback: BaseServiceTaskListener): Boolean {
@@ -80,32 +82,23 @@ class SwitcherService : ThreadPoolService() {
     }
 
     private fun addTask(taskId: Int, task: BaseServiceTask) {
-        try {
-            taskCacheLock.writeLock().lock()
+        taskCacheLock.write {
             // append() is optimized for inserting keys that are larger than all existing keys
             taskCache.append(taskId, task)
-        } finally {
-            taskCacheLock.writeLock().unlock()
         }
     }
 
     private fun getTask(taskId: Int): BaseServiceTask? {
-        try {
-            taskCacheLock.readLock().lock()
+        taskCacheLock.read {
             return taskCache[taskId]
-        } finally {
-            taskCacheLock.readLock().unlock()
         }
     }
 
     private fun removeTask(taskId: Int): BaseServiceTask? {
-        try {
-            taskCacheLock.writeLock().lock()
+        taskCacheLock.write {
             val task = taskCache[taskId]
             taskCache.remove(taskId)
             return task
-        } finally {
-            taskCacheLock.writeLock().unlock()
         }
     }
 
