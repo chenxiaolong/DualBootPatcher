@@ -273,6 +273,9 @@
   codenames:
     - OnePlus5T
     - OnePlus5t
+    - dumpling
+    - A5010
+    - op5t
   architecture: arm64-v8a
 
   block_devs:
