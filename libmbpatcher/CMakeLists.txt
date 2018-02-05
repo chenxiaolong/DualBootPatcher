@@ -30,8 +30,9 @@ foreach(variant ${variants})
         src/private/fileutils.cpp
         src/private/miniziputils.cpp
         # Autopatchers
-        src/autopatchers/standardpatcher.cpp
+        src/autopatchers/magiskpatcher.cpp
         src/autopatchers/mountcmdpatcher.cpp
+        src/autopatchers/standardpatcher.cpp
         # Patchers
         src/patchers/odinpatcher.cpp
         src/patchers/ramdiskupdater.cpp

@@ -31,6 +31,9 @@
 #include "mblog/logging.h"
 #include "mbpio/delete.h"
 
+#include "mbpatcher/autopatchers/magiskpatcher.h"
+#include "mbpatcher/autopatchers/mountcmdpatcher.h"
+#include "mbpatcher/autopatchers/standardpatcher.h"
 #include "mbpatcher/patcherconfig.h"
 #include "mbpatcher/private/fileutils.h"
 #include "mbpatcher/private/miniziputils.h"
@@ -143,22 +146,19 @@ bool ZipPatcher::patch_zip()
 {
     std::unordered_set<std::string> exclude_from_pass1;
 
-    auto *standard_ap = m_pc.create_auto_patcher("StandardPatcher", *m_info);
-    if (!standard_ap) {
-        m_error = ErrorCode::AutoPatcherCreateError;
-        return false;
-    }
+    for (auto const &id : {
+        StandardPatcher::Id,
+        MountCmdPatcher::Id,
+        MagiskPatcher::Id,
+    }) {
+        auto *ap = m_pc.create_auto_patcher(id, *m_info);
+        if (!ap) {
+            m_error = ErrorCode::AutoPatcherCreateError;
+            return false;
+        }
 
-    auto *mount_cmd_ap = m_pc.create_auto_patcher("MountCmdPatcher", *m_info);
-    if (!mount_cmd_ap) {
-        m_error = ErrorCode::AutoPatcherCreateError;
-        return false;
-    }
+        m_auto_patchers.push_back(ap);
 
-    m_auto_patchers.push_back(standard_ap);
-    m_auto_patchers.push_back(mount_cmd_ap);
-
-    for (auto *ap : m_auto_patchers) {
         // AutoPatcher files should be excluded from the first pass
         for (auto const &file : ap->existing_files()) {
             exclude_from_pass1.insert(file);

@@ -535,7 +535,7 @@ bool StandardPatcher::patch_updater(const std::string &directory)
 
     FileUtils::read_to_string(path, &contents);
 
-    if (contents.size() >= 2 && std::memcmp(contents.data(), "#!", 2) == 0) {
+    if (starts_with(contents, "#!")) {
         // Ignore any script with a shebang line
         return true;
     }
