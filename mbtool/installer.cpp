@@ -1001,13 +1001,6 @@ bool Installer::run_real_updater()
         }
     }
 
-    char argv1[20];
-    char argv2[20];
-
-    snprintf(argv1, sizeof(argv1), "%d", _interface);
-    snprintf(argv2, sizeof(argv2), "%d",
-             _passthrough ? _output_fd : pipe_fds[1]);
-
     // Run updater in the chroot
     std::vector<std::string> argv{
 #if DEBUG_USE_UPDATER_WRAPPER
@@ -1017,8 +1010,8 @@ bool Installer::run_real_updater()
 #endif
 #endif
         "/mb/updater",
-        argv1,
-        argv2,
+        format("%d", _interface),
+        format("%d", _passthrough ? _output_fd : pipe_fds[1]),
         "/mb/install.zip"
     };
 
@@ -1545,15 +1538,6 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
 {
     LOGD("[Installer] Chroot set up stage");
 
-    // Calculate SHA512 hash of the boot partition
-    if (!util::sha512_hash(_boot_block_dev, _boot_hash)) {
-        display_msg("Failed to compute sha512sum of boot partition");
-        return ProceedState::Fail;
-    }
-
-    std::string digest = util::hex_string(_boot_hash, SHA512_DIGEST_LENGTH);
-    LOGD("Boot partition SHA512sum: %s", digest.c_str());
-
     // Save a copy of the boot image that we'll restore if the installation fails
     if (!util::copy_contents(_boot_block_dev, _temp + "/boot.orig")) {
         display_msg("Failed to backup boot partition");
@@ -1576,6 +1560,24 @@ Installer::ProceedState Installer::install_stage_set_up_chroot()
     } else {
         LOGV("Won't switch to non-existent target ROM");
     }
+
+    // Patch current boot image to undo the init symlink patch. This is
+    // necessary to flash something that also tries to touch /init.
+    LOGV("Patching ramdisk to undo init modifications");
+    std::vector<std::function<RamdiskPatcherFn>> rps{rp_restore_init()};
+    if (!InstallerUtil::patch_boot_image(_boot_block_dev, _boot_block_dev,
+                                         rps)) {
+        LOGW("Failed to patch boot image. Continuing anyway...");
+    }
+
+    // Calculate SHA512 hash of the boot partition
+    if (!util::sha512_hash(_boot_block_dev, _boot_hash)) {
+        display_msg("Failed to compute sha512sum of boot partition");
+        return ProceedState::Fail;
+    }
+
+    std::string digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
+    LOGD("Boot partition SHA512sum: %s", digest.c_str());
 
     // Wrap busybox to disable some applets
     if (!set_up_busybox_wrapper()) {
@@ -1840,18 +1842,18 @@ Installer::ProceedState Installer::install_stage_finish()
     LOGD("[Installer] Finalization stage");
 
     // Calculate SHA512 hash of the boot partition after installation
-    unsigned char new_hash[SHA512_DIGEST_LENGTH];
+    util::Sha512Digest new_hash;
     if (!util::sha512_hash(_boot_block_dev, new_hash)) {
         display_msg("Failed to compute sha512sum of boot partition");
         return ProceedState::Fail;
     }
 
-    std::string old_digest = util::hex_string(_boot_hash, SHA512_DIGEST_LENGTH);
-    std::string new_digest = util::hex_string(new_hash, SHA512_DIGEST_LENGTH);
+    std::string old_digest = util::hex_string(_boot_hash.data(), _boot_hash.size());
+    std::string new_digest = util::hex_string(new_hash.data(), new_hash.size());
     LOGD("Old boot partition SHA512sum: %s", old_digest.c_str());
     LOGD("New boot partition SHA512sum: %s", new_digest.c_str());
 
-    bool changed = memcmp(_boot_hash, new_hash, SHA512_DIGEST_LENGTH) != 0;
+    bool changed = _boot_hash != new_hash;
     bool force_update = _prop["mbtool.installer.always-patch-ramdisk"] == "true";
 
     // Set kernel if it was changed
@@ -1904,14 +1906,14 @@ Installer::ProceedState Installer::install_stage_finish()
         }
 
         // Update checksums
-        unsigned char digest[SHA512_DIGEST_LENGTH];
+        util::Sha512Digest digest;
 
         if (!util::sha512_hash(temp_boot_img, digest)) {
             display_msg("Failed to compute sha512sum of new boot image");
             return ProceedState::Fail;
         }
 
-        std::string hash = util::hex_string(digest, SHA512_DIGEST_LENGTH);
+        std::string hash = util::hex_string(digest.data(), digest.size());
 
         std::unordered_map<std::string, std::string> props;
         checksums_read(&props);

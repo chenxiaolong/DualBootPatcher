@@ -311,6 +311,11 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     Entry in_entry;
     Entry out_entry;
 
+    // Debug
+    LOGD("Patching boot image");
+    LOGD("- Input: %s", input_file.c_str());
+    LOGD("- Output: %s", output_file.c_str());
+
     // Open input boot image
     auto ret = reader.enable_format_all();
     if (!ret) {
@@ -340,9 +345,6 @@ bool InstallerUtil::patch_boot_image(const std::string &input_file,
     }
 
     // Debug
-    LOGD("Patching boot image");
-    LOGD("- Input: %s", input_file.c_str());
-    LOGD("- Output: %s", output_file.c_str());
     LOGD("- Format: %s", reader.format_name().c_str());
 
     // Copy header
