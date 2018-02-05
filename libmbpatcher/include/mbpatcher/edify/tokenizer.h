@@ -254,7 +254,7 @@ public:
 
     std::string generate() const
     {
-        return {1, m_char};
+        return std::string(1, m_char);
     }
 
 private:
