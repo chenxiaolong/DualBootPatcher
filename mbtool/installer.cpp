@@ -1001,13 +1001,6 @@ bool Installer::run_real_updater()
         }
     }
 
-    char argv1[20];
-    char argv2[20];
-
-    snprintf(argv1, sizeof(argv1), "%d", _interface);
-    snprintf(argv2, sizeof(argv2), "%d",
-             _passthrough ? _output_fd : pipe_fds[1]);
-
     // Run updater in the chroot
     std::vector<std::string> argv{
 #if DEBUG_USE_UPDATER_WRAPPER
@@ -1017,8 +1010,8 @@ bool Installer::run_real_updater()
 #endif
 #endif
         "/mb/updater",
-        argv1,
-        argv2,
+        format("%d", _interface),
+        format("%d", _passthrough ? _output_fd : pipe_fds[1]),
         "/mb/install.zip"
     };
 
