@@ -73,3 +73,37 @@
     default_brightness: 2047
     pixel_format: RGBA_8888
     theme: portrait_hdpi
+
+- name: Xiaomi MIPAD 1
+  id: mocha
+  codenames:
+    - mocha
+  architecture: armeabi-v7a
+
+  block_devs:
+    base_dirs:
+      - /dev/block/platform/700b0600.sdhci/by-name
+    system:
+      - /dev/block/platform/700b0600.sdhci/by-name/system
+      - /dev/block/mmcblk0p26
+    cache:
+      - /dev/block/platform/700b0600.sdhci/by-name/cache
+      - /dev/block/mmcblk0p28
+    data:
+      - /dev/block/platform/700b0600.sdhci/by-name/data
+      - /dev/block/mmcblk0p29
+    boot:
+      - /dev/block/platform/700b0600.sdhci/by-name/boot
+      - /dev/block/mmcblk0p22
+    recovery:
+      - /dev/block/platform/700b0600.sdhci/by-name/recovery
+      - /dev/block/mmcblk0p24
+
+  boot_ui:
+    supported: true
+    graphics_backends:
+      - fbdev
+    brightness_path: /sys/devices/platform/7000c000.i2c/i2c-0/0-002c/backlight/lcd-backlight/brightness
+    max_brightness: 255
+    pixel_format: RGBA_8888
+    theme: portrait_hdpi
