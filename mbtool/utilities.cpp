@@ -284,6 +284,11 @@ public:
             mz_stream_delete(&_buf_stream);
         });
 
+        if (mz_stream_set_base(_buf_stream, _stream) != MZ_OK) {
+            LOGD("Failed to set base stream for buffered stream");
+            return false;
+        }
+
         if (mz_stream_open(_buf_stream, _zippath.c_str(),
                            MZ_OPEN_MODE_READWRITE | MZ_OPEN_MODE_CREATE) != MZ_OK) {
             LOGE("%s: Failed to open stream", _zippath.c_str());
