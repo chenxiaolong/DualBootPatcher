@@ -299,14 +299,14 @@ public:
             mz_stream_close(_buf_stream);
         });
 
-        auto *handle = mz_zip_open(_buf_stream, MZ_OPEN_MODE_WRITE);
-        if (!handle) {
+        _handle = mz_zip_open(_buf_stream, MZ_OPEN_MODE_WRITE);
+        if (!_handle) {
             LOGE("%s: Failed to open zip", _zippath.c_str());
             return false;
         }
 
         auto close_zip = finally([&]{
-            mz_zip_close(handle);
+            mz_zip_close(_handle);
         });
 
         close_zip.dismiss();
