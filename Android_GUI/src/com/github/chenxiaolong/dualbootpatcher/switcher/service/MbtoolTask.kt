@@ -26,6 +26,7 @@ import com.github.chenxiaolong.dualbootpatcher.AnsiStuff
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Attribute
 import com.github.chenxiaolong.dualbootpatcher.AnsiStuff.Color
 import com.github.chenxiaolong.dualbootpatcher.FileUtils
+import com.github.chenxiaolong.dualbootpatcher.LogUtils
 import com.github.chenxiaolong.dualbootpatcher.nativelib.LibC
 import com.github.chenxiaolong.dualbootpatcher.nativelib.libmiscstuff.Constants
 import com.github.chenxiaolong.dualbootpatcher.patcher.PatcherUtils
@@ -402,6 +403,8 @@ class MbtoolTask(
                 sendTasksCompleted()
                 finished = true
             }
+
+            LogUtils.dump("mbtool-action.log")
         }
     }
 
